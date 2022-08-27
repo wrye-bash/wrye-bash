@@ -339,11 +339,13 @@ class MreRecord(object):
         # MultiBound
         (31,'multiBound'), # {0x80000000}
     )
-    __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
-                 u'changed', u'data', u'inName']
+    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
+                 'changed', 'data', 'inName')
     isKeyedByEid = False
     #--Set at end of class data definitions.
     type_class = {}
+    # Record types that have a complex child structure (e.g. CELL), are part of
+    # such a complex structure (e.g. REFR) or are the file header (TES3/TES4)
     simpleTypes = set()
     # Maps subrecord signatures to a set of record signatures that can contain
     # those subrecords
@@ -523,7 +525,7 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
-    __slots__ = []
+    __slots__ = ()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         if self.__class__.rec_sig != header.recType:

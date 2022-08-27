@@ -26,7 +26,7 @@ from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
-    AMreGmst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
+    AMreFlst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, \
-    MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
+    MelActorSounds, MelFactRanks, MelSorted, MelReflectedRefractedBy, \
     perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
@@ -47,11 +47,12 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
-    MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
+    MelAspcRdat, MelAspcBnam, MelBookText, MelImpactDataset, MelFlstFids, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
-    MelRandomTeleports, MelSoundLooping, MelDualData
+    MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
+    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -227,18 +228,18 @@ class MelLLItems(AMelLLItems):
 class MelLocation(MelUnion):
     """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
     def __init__(self, sub_sig):
-        super(MelLocation, self).__init__({
-            (0, 1, 4, 6): MelOptStruct(sub_sig, [u'i', u'I', u'i'], u'location_type',
-                (FID, u'location_value'), u'location_radius'),
-            (2, 3, 7, 10, 11, 12): MelOptStruct(sub_sig, [u'i', u'4s', u'i'],
-                u'location_type', u'location_value', u'location_radius'),
-            5: MelOptStruct(sub_sig, [u'i', u'I', u'i'], u'location_type',
-                u'location_value', u'location_radius'),
-            (8, 9): MelOptStruct(sub_sig, [u'3i'], u'location_type',
-                u'location_value', u'location_radius'),
+        super().__init__({
+            (0, 1, 4, 6): MelOptStruct(sub_sig, ['i', 'I', 'i'],
+                'location_type', (FID, 'location_value'), 'location_radius'),
+            (2, 3, 7, 10, 11, 12): MelOptStruct(sub_sig, ['i', '4s', 'i'],
+                'location_type', 'location_value', 'location_radius'),
+            5: MelOptStruct(sub_sig, ['i', 'I', 'i'], 'location_type',
+                'location_value', 'location_radius'),
+            (8, 9): MelOptStruct(sub_sig, ['3i'], 'location_type',
+                'location_value', 'location_radius'),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(sub_sig, u'location_type'),
-                decider=AttrValDecider(u'location_type'))
+                loader=MelSInt32(sub_sig, 'location_type'),
+                decider=AttrValDecider('location_type'))
         )
 
 #------------------------------------------------------------------------------
@@ -292,8 +293,8 @@ class MelSpit(MelStruct):
 
     def __init__(self):
         super().__init__(b'SPIT', ['3I', 'f', '2I', '2f', 'I'], 'cost',
-            (self.spit_flags, 'dataFlags'), 'spellType', 'chargeTime',
-            'castType', 'targetType', 'castDuration', 'range',
+            (self.spit_flags, 'dataFlags'), 'spellType', 'charge_time',
+            'cast_type', 'spell_target_type', 'castDuration', 'range',
             (FID, 'halfCostPerk'))
 
 #------------------------------------------------------------------------------
@@ -363,6 +364,7 @@ class MreTes4(AMreHeader):
 class MreAact(MelRecord):
     """Action."""
     rec_sig = b'AACT'
+
     melSet = MelSet(
         MelEdid(),
         MelColorO(),
@@ -572,7 +574,7 @@ class MreArmo(MelRecord):
         MelBounds(),
         MelFull(),
         MelEnchantment(),
-        MelSInt16(b'EAMT', 'enchantmentAmount'),
+        MelSInt16(b'EAMT', 'enchantment_amount'),
         MelModel(b'MOD2', 'maleWorld'),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
         MelModel(b'MOD4', 'femaleWorld'),
@@ -618,18 +620,6 @@ class MreAspc(MelRecord):
         MelSound(),
         MelAspcRdat(),
         MelAspcBnam(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreAstp(MelRecord):
-    """Association Type."""
-    rec_sig = b'ASTP'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelAstpTitles(),
-        MelAstpData(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -736,8 +726,8 @@ class MreBptd(MelRecord):
                 'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
                 'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
                 'bpnd_gore_effect_pos_rot_z',
-                (FID, 'bpnd_severable_impact_data_set'),
-                (FID, 'bpnd_explodable_impact_data_set'),
+                (FID, 'bpnd_severable_impact_dataset'),
+                (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
                 'bpnd_unused', 'bpnd_limb_replacement_scale'),
             MelString(b'NAM1', 'limb_replacement_model'),
@@ -950,7 +940,7 @@ class MreCont(AMreWithItems):
 
 #------------------------------------------------------------------------------
 class MreCpth(MelRecord):
-    """Camera Path"""
+    """Camera Path."""
     rec_sig = b'CPTH'
 
     melSet = MelSet(
@@ -1055,31 +1045,19 @@ class MreDoor(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDual(MelRecord):
-    """Dual Cast Data."""
-    rec_sig = b'DUAL'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelDualData(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreEczn(MelRecord):
     """Encounter Zone."""
     rec_sig = b'ECZN'
 
-    EcznTypeFlags = Flags.from_names('neverResets', 'matchPCBelowMinimumLevel',
-                                     'disableCombatBoundary')
+    _eczn_flags = Flags.from_names('never_resets',
+        'match_pc_below_minimum_level', 'disable_combat_boundary')
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'DATA', [u'2I', u'2b', u'B', u'b'], (FID, u'owner'),
-                           (FID, u'location'), u'rank',
-                           'minimumLevel', (EcznTypeFlags, u'flags'),
-                           'maxLevel', old_versions={'2I'}),
+        MelTruncatedStruct(b'DATA', ['2I', '2b', 'B', 'b'],
+            (FID, 'eczn_owner'), (FID, 'eczn_location'), 'eczn_rank',
+            'eczn_minimum_level', (_eczn_flags, 'eczn_flags'),
+            'eczn_max_level', old_versions={'2I'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1088,84 +1066,88 @@ class MreEfsh(MelRecord):
     """Effect Shader."""
     rec_sig = b'EFSH'
 
-    EfshGeneralFlags = Flags.from_names(
-        (0, 'noMembraneShader'),
-        (1, 'membraneGrayscaleColor'),
-        (2, 'membraneGrayscaleAlpha'),
-        (3, 'noParticleShader'),
-        (4, 'edgeEffectInverse'),
-        (5, 'affectSkinOnly'),
-        (6, 'ignoreAlpha'),
-        (7, 'projectUVs'),
-        (8, 'ignoreBaseGeometryAlpha'),
-        (9, 'lighting'),
-        (10, 'noWeapons'),
-        (11, 'unknown11'),
-        (12, 'unknown12'),
-        (13, 'unknown13'),
-        (14, 'unknown14'),
-        (15, 'particleAnimated'),
-        (16, 'particleGrayscaleColor'),
-        (17, 'particleGrayscaleAlpha'),
-        (18, 'unknown18'),
-        (19, 'unknown19'),
-        (20, 'unknown20'),
-        (21, 'unknown21'),
-        (22, 'unknown22'),
-        (23, 'unknown23'),
-        (24, 'useBloodGeometry'),
+    _efsh_flags = Flags.from_names(
+        (0,  'no_membrane_shader'),
+        (1,  'membrane_grayscale_color'),
+        (2,  'membrane_grayscale_alpha'),
+        (3,  'no_particle_shader'),
+        (4,  'ee_inverse'),
+        (5,  'affect_skin_only'),
+        (6,  'te_ignore_alpha'),
+        (7,  'te_project_uvs'),
+        (8,  'ignore_base_geometry_alpha'),
+        (9,  'te_lighting'),
+        (10, 'te_no_weapons'),
+        (15, 'particle_animated'),
+        (16, 'particle_grayscale_color'),
+        (17, 'particle_grayscale_alpha'),
+        (24, 'use_blood_geometry'),
     )
 
     melSet = MelSet(
         MelEdid(),
-        MelIcon(u'fillTexture'),
-        MelIco2(u'particleTexture'),
-        MelString(b'NAM7','holesTexture'),
-        MelString(b'NAM8','membranePaletteTexture'),
-        MelString(b'NAM9','particlePaletteTexture'),
+        MelIcon('fill_texture'),
+        MelIco2('particle_texture'),
+        MelString(b'NAM7', 'holes_texture'),
+        MelString(b'NAM8', 'membrane_palette_texture'),
+        MelString(b'NAM9', 'particle_palette_texture'),
         MelTruncatedStruct(b'DATA',
-            [u'4s', u'3I', u'3B', u's', u'9f', u'3B', u's', u'8f', u'5I',
-             u'19f', u'3B', u's', u'3B', u's', u'3B', u's', u'11f', u'I',
-             u'5f', u'3B', u's', u'f', u'2I', u'6f', u'I', u'3B', u's', u'3B',
-             u's', u'9f', u'8I', u'2f', u'I'],
-            'unused1', 'memSBlend', 'memBlendOp', 'memZFunc','fillRed',
-            'fillGreen', 'fillBlue', 'unused2', 'fillAlphaIn', 'fillFullAlpha',
-            'fillAlphaOut', 'fillAlphaRatio', 'fillAlphaAmp', 'fillAlphaPulse',
-            'fillAnimSpeedU', 'fillAnimSpeedV', 'edgeEffectOff', 'edgeRed',
-            'edgeGreen', 'edgeBlue', 'unused3', 'edgeAlphaIn', 'edgeFullAlpha',
-            'edgeAlphaOut', 'edgeAlphaRatio', 'edgeAlphaAmp', 'edgeAlphaPulse',
-            'fillFullAlphaRatio', 'edgeFullAlphaRatio', 'memDestBlend',
-            'partSourceBlend', 'partBlendOp', 'partZTestFunc', 'partDestBlend',
-            'partBSRampUp', 'partBSFull', 'partBSRampDown', 'partBSRatio',
-            'partBSPartCount', 'partBSLifetime', 'partBSLifetimeDelta',
-            'partSSpeedNorm', 'partSAccNorm', 'partSVel1', 'partSVel2',
-            'partSVel3', 'partSAccel1', 'partSAccel2', 'partSAccel3',
-            'partSKey1', 'partSKey2', 'partSKey1Time', 'partSKey2Time',
-            'key1Red', 'key1Green', 'key1Blue', 'unused4', 'key2Red',
-            'key2Green', 'key2Blue', 'unused5', 'key3Red', 'key3Green',
-            'key3Blue', 'unused6', 'colorKey1Alpha', 'colorKey2Alpha',
-            'colorKey3Alpha', 'colorKey1KeyTime', 'colorKey2KeyTime',
-            'colorKey3KeyTime', 'partSSpeedNormDelta', 'partSSpeedRotDeg',
-            'partSSpeedRotDegDelta', 'partSRotDeg', 'partSRotDegDelta',
-            (FID, 'addonModels'), 'holesStart', 'holesEnd', 'holesStartVal',
-            'holesEndVal', 'edgeWidthAlphaUnit', 'edgeAlphRed',
-            'edgeAlphGreen', 'edgeAlphBlue', 'unused7', 'expWindSpeed',
-            'textCountU', 'textCountV', 'addonModelIn', 'addonModelOut',
-            'addonScaleStart', 'addonScaleEnd', 'addonScaleIn',
-            'addonScaleOut', (FID, 'ambientSound'), 'key2FillRed',
-            'key2FillGreen', 'key2FillBlue', 'unused8', 'key3FillRed',
-            'key3FillGreen', 'key3FillBlue', 'unused9', 'key1ScaleFill',
-            'key2ScaleFill', 'key3ScaleFill', 'key1FillTime', 'key2FillTime',
-            'key3FillTime', 'colorScale', 'birthPosOffset',
-            'birthPosOffsetRange','startFrame', 'startFrameVariation',
-            'endFrame','loopStartFrame', 'loopStartVariation', 'frameCount',
-            'frameCountVariation', (EfshGeneralFlags, u'flags'),
-            'fillTextScaleU', 'fillTextScaleV', 'sceneGraphDepthLimit',
-            old_versions={
+            ['4s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f', '3B',
+             's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's', 'f', '2I',
+             '6f', 'I', '3B', 's', '3B', 's', '9f', '8I', '2f', '4s'],
+            'unknown1', 'ms_source_blend_mode', 'ms_blend_operation',
+            'ms_z_test_function', 'fill_color1_red',
+            'fill_color1_green', 'fill_color1_blue', 'unused1',
+            'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+            'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+            'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+            'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
+            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
+            'unused2', 'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+            'ms_dest_blend_mode', 'ps_source_blend_mode', 'ps_blend_operation',
+            'ps_z_test_function', 'ps_dest_blend_mode',
+            'ps_particle_birth_ramp_up_time', 'ps_full_particle_birth_time',
+            'ps_particle_birth_ramp_down_time', 'ps_full_particle_birth_ratio',
+            'ps_persistent_particle_count', 'ps_particle_lifetime',
+            'ps_particle_lifetime_delta', 'ps_initial_speed_along_normal',
+            'ps_acceleration_along_normal', 'ps_initial_velocity1',
+            'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
+            'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
+            'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
+            'color_key1_red', 'color_key1_green', 'color_key1_blue', 'unused3',
+            'color_key2_red', 'color_key2_green', 'color_key2_blue', 'unused4',
+            'color_key3_red', 'color_key3_green', 'color_key3_blue', 'unused5',
+            'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
+            'color_key1_time', 'color_key2_time', 'color_key3_time',
+            'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
+            'ps_initial_rotation_delta', 'ps_rotation_speed',
+            'ps_rotation_speed_delta', (FID, 'addon_models'),
+            'holes_start_time', 'holes_end_time', 'holes_start_value',
+            'holes_end_value', 'ee_width', 'edge_color_red',
+            'edge_color_green', 'edge_color_blue', 'unused6',
+            'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
+            'addon_models_fade_in_time', 'addon_models_fade_out_time',
+            'addon_models_scale_start', 'addon_models_scale_end',
+            'addon_models_scale_in_time', 'addon_models_scale_out_time',
+            (FID, 'sound_ambient'), 'fill_color2_red',
+            'fill_color2_green', 'fill_color2_blue', 'unused7',
+            'fill_color3_red', 'fill_color3_green', 'fill_color3_blue',
+            'unused8', 'fill_color1_scale', 'fill_color2_scale',
+            'fill_color3_scale', 'fill_color1_time', 'fill_color2_time',
+            'fill_color3_time', 'color_scale', 'birth_position_offset',
+            'birth_position_offset_range_delta', 'psa_start_frame',
+            'psa_start_frame_variation', 'psa_end_frame',
+            'psa_loop_start_frame', 'psa_loop_start_variation',
+            'psa_frame_count', 'psa_frame_count_variation',
+            (_efsh_flags, 'efsh_flags'), 'fill_texture_scale_u',
+            'fill_texture_scale_v', 'unused9', old_versions={
                 '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2f',
                 '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs6f',
                 '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI',
-                '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f'
+                '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',
             }),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1175,19 +1157,20 @@ class MreEnch(MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
-    EnchGeneralFlags = Flags.from_names('noAutoCalc', 'unknownTwo',
-                                        'extendDurationOnRecast')
+    _enit_flags = Flags.from_names(
+        (0, 'ench_no_auto_calc'),
+        (2, 'extend_duration_on_recast'),
+    )
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelTruncatedStruct(b'ENIT', [u'i', u'2I', u'i', u'2I', u'f', u'2I'], 'enchantmentCost',
-                           (EnchGeneralFlags, u'generalFlags'), 'castType',
-                           'enchantmentAmount', 'targetType', 'enchantType',
-                           'chargeTime', (FID, 'baseEnchantment'),
-                           (FID, 'wornRestrictions'),
-                           old_versions={'i2Ii2IfI'}),
+        MelTruncatedStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
+            'enchantment_amount', 'enchantment_target_type',
+            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            (FID, 'worn_restrictions'), old_versions={'i2Ii2IfI'}),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1196,10 +1179,11 @@ class MreEnch(MelRecord):
 class MreEqup(MelRecord):
     """Equip Type."""
     rec_sig = b'EQUP'
+
     melSet = MelSet(
         MelEdid(),
-        MelSimpleArray('canBeEquipped', MelFid(b'PNAM')),
-        MelUInt32(b'DATA', 'useAllParents'), # actually a bool
+        MelEqupPnam(),
+        MelUInt32(b'DATA', 'use_all_parents'), # actually a bool
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1208,15 +1192,15 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    ExplTypeFlags = Flags.from_names(
-        (1, 'alwaysUsesWorldOrientation'),
-        (2, 'knockDownAlways'),
-        (3, 'knockDownByFormular'),
-        (4, 'ignoreLosCheck'),
-        (5, 'pushExplosionSourceRefOnly'),
-        (6, 'ignoreImageSpaceSwap'),
-        (7, 'chain'),
-        (8, 'noControllerVibration'),
+    _expl_flags = Flags.from_names(
+        (1, 'always_uses_world_orientation'),
+        (2, 'knock_down_always'),
+        (3, 'knock_down_by_formula'),
+        (4, 'ignore_los_check'),
+        (5, 'push_explosion_source_ref_only'),
+        (6, 'ignore_image_space_swap'),
+        (7, 'explosion_chain'),
+        (8, 'no_controller_vibration'),
     )
 
     melSet = MelSet(
@@ -1226,28 +1210,13 @@ class MreExpl(MelRecord):
         MelModel(),
         MelEnchantment(),
         MelImageSpaceMod(),
-        MelTruncatedStruct(
-            b'DATA', [u'6I', u'5f', u'2I'], (FID, u'light'), (FID, u'sound1'),
-            (FID, u'sound2'), (FID, u'impactDataset'),
-            (FID, u'placedObject'), (FID, u'spawnProjectile'),
-            u'force', u'damage', u'radius', u'isRadius', u'verticalOffsetMult',
-            (ExplTypeFlags, u'flags'), u'soundLevel',
-            old_versions={u'6I5fI', u'6I5f', u'6I4f'}),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    EyesTypeFlags = Flags.from_names('playable', 'notMale', 'notFemale')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcons(),
-        MelUInt8Flags(b'DATA', u'flags', EyesTypeFlags),
+        MelTruncatedStruct(b'DATA', ['6I', '5f', '2I'], (FID, 'expl_light'),
+            (FID, 'expl_sound1'), (FID, 'expl_sound2'),
+            (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
+            (FID, 'spawn_projectile'), 'expl_force', 'expl_damage',
+            'expl_radius', 'is_radius', 'vertical_offset_mult',
+            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            old_versions={'6I5fI', '6I5f', '6I4f'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1256,48 +1225,20 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags.from_names(
-        ( 0, u'hidden_from_pc'),
-        ( 1, u'special_combat'),
-        ( 6, u'track_crime'),
-        ( 7, u'ignore_crimes_murder'),
-        ( 8, u'ignore_crimes_assault'),
-        ( 9, u'ignore_crimes_stealing'),
-        (10, u'ignore_crimes_trespass'),
-        (11, u'do_not_report_crimes_against_members'),
-        (12, u'crime_gold_use_defaults'),
-        (13, u'ignore_crimes_pickpocket'),
-        (14, u'allow_sell'), # vendor
-        (15, u'can_be_owner'),
-        (16, u'ignore_crimes_werewolf'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelRelations(),
-        MelUInt32Flags(b'DATA', u'general_flags', _general_flags),
-        MelFid(b'JAIL', u'exterior_jail_marker'),
-        MelFid(b'WAIT', u'follower_wait_marker'),
-        MelFid(b'STOL', u'stolen_goods_container'),
-        MelFid(b'PLCN', u'player_inventory_container'),
-        MelFid(b'CRGR', u'shared_crime_faction_list'),
-        MelFid(b'JOUT', u'jail_outfit'),
+        MelFactFlags(),
+        MelFactFids(),
         # 'cv_arrest' and 'cv_attack_on_sight' are actually bools, cv means
         # 'crime value' (which is what this struct is about)
-        MelTruncatedStruct(b'CRVA', [u'2B', u'5H', u'f', u'2H'], u'cv_arrest',
-                           u'cv_attack_on_sight', u'cv_murder', u'cv_assault',
-                           u'cv_trespass', u'cv_pickpocket',
-                           u'cv_unknown', u'cv_steal_multiplier', u'cv_escape',
-                           u'cv_werewolf', old_versions={u'2B5Hf', u'2B5H'}),
-        MelFactionRanks(),
-        MelFid(b'VEND', u'vendor_buy_sell_list'),
-        MelFid(b'VENC', u'merchant_container'),
-        # 'vv_only_buys_stolen_items' and 'vv_not_sell_buy' are actually bools,
-        # vv means 'vendor value' (which is what this struct is about)
-        MelStruct(b'VENV', [u'3H', u'2s', u'2B', u'2s'], u'vv_start_hour', u'vv_end_hour',
-                  u'vv_radius', u'vv_unknown1', u'vv_only_buys_stolen_items',
-                  u'vv_not_sell_buy', u'vv_unknown2'),
+        MelTruncatedStruct(b'CRVA', ['2B', '5H', 'f', '2H'], 'cv_arrest',
+            'cv_attack_on_sight', 'cv_murder', 'cv_assault', 'cv_trespass',
+            'cv_pickpocket', 'cv_unknown', 'cv_steal_multiplier', 'cv_escape',
+            'cv_werewolf', old_versions={'2B5Hf', '2B5H'}),
+        MelFactRanks(),
+        MelFactVendorInfo(),
         MelLocation(b'PLVD'),
         MelConditions(),
     )
@@ -1316,37 +1257,21 @@ class MreFlor(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','unknown01'),
+        MelColor(b'PNAM'),
         MelAttx(b'RNAM'),
-        MelBase(b'FNAM','unknown02'),
-        MelFid(b'PFIG','ingredient'),
+        MelActiFlags(),
+        MelIngredient(),
         MelSound(),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','winter',),
+        MelSeasons(),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreFstp(MelRecord):
-    """Footstep."""
-    rec_sig = b'FSTP'
-
+class MreFlst(AMreFlst):
+    """FormID List."""
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'DATA','impactSet'),
-        MelString(b'ANAM','tag'),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreFsts(MelRecord):
-    """Footstep Set."""
-    rec_sig = b'FSTS'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelStruct(b'XCNT', [u'5I'],'walkForward','runForward','walkForwardAlt',
-                  'runForwardAlt','walkForwardAlternate2',),
-        MelSimpleArray('footstepSets', MelFid(b'DATA')),
+        MelFlstFids(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1355,49 +1280,34 @@ class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
 
-    FurnGeneralFlags = Flags.from_names((1, 'ignoredBySandbox'))
-
-    FurnActiveMarkerFlags = Flags.from_names(
-        (0, 'sit0'),
-        (1, 'sit1'),
-        (2, 'sit2'),
-        (3, 'sit3'),
-        (4, 'sit4'),
-        (5, 'sit5'),
-        (6, 'sit6'),
-        (7, 'sit7'),
-        (8, 'sit8'),
-        (9, 'sit9'),
-        (10, 'sit10'),
-        (11, 'sit11'),
-        (12, 'sit12'),
-        (13, 'sit13'),
-        (14, 'sit14'),
-        (15, 'sit15'),
-        (16, 'sit16'),
-        (17, 'sit17'),
-        (18, 'sit18'),
-        (19, 'sit19'),
-        (20, 'sit20'),
-        (21, 'Sit21'),
-        (22, 'Sit22'),
-        (23, 'sit23'),
-        (24, 'unknown25'),
-        (25, 'disablesActivation'),
-        (26, 'isPerch'),
-        (27, 'mustExittoTalk'),
-        (28, 'unknown29'),
-        (29, 'unknown30'),
-        (30, 'unknown31'),
-        (31, 'unknown32'),
-    )
-
-    MarkerEntryPointFlags = Flags.from_names(
-        (0, 'front'),
-        (1, 'behind'),
-        (2, 'right'),
-        (3, 'left'),
-        (4, 'up'),
+    _active_markers_flags = Flags.from_names(
+        (0,  'sit_0'),
+        (1,  'sit_1'),
+        (2,  'sit_2'),
+        (3,  'sit_3'),
+        (4,  'sit_4'),
+        (5,  'sit_5'),
+        (6,  'sit_6'),
+        (7,  'sit_7'),
+        (8,  'sit_8'),
+        (9,  'sit_9'),
+        (10, 'sit_10'),
+        (11, 'sit_11'),
+        (12, 'sit_12'),
+        (13, 'sit_13'),
+        (14, 'sit_14'),
+        (15, 'sit_15'),
+        (16, 'sit_16'),
+        (17, 'sit_17'),
+        (18, 'sit_18'),
+        (19, 'sit_19'),
+        (20, 'sit_20'),
+        (21, 'sit_21'),
+        (22, 'sit_22'),
+        (23, 'sit_23'),
+        (25, 'disables_activation'),
+        (26, 'is_perch'),
+        (27, 'must_exit_to_talk'),
     )
 
     melSet = MelSet(
@@ -1408,31 +1318,15 @@ class MreFurn(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','pnam_p'),
-        MelUInt16Flags(b'FNAM', u'general_f', FurnGeneralFlags),
-        MelFid(b'KNAM','interactionKeyword'),
-        MelUInt32Flags(b'MNAM', u'activeMarkers', FurnActiveMarkerFlags),
-        MelStruct(b'WBDT', [u'B', u'b'],'benchType','usesSkill',),
-        MelFid(b'NAM1','associatedSpell'),
-        MelGroups('markers',
-            MelUInt32(b'ENAM', 'markerIndex',),
-            MelStruct(b'NAM0', [u'2s', u'H'], u'unknown1',
-                      (MarkerEntryPointFlags, u'disabledPoints_f')),
-            MelFid(b'FNMK','markerKeyword',),
-        ),
-        MelGroups('entryPoints',
-            MelStruct(b'FNPR', [u'2H'], u'markerType',
-                      (MarkerEntryPointFlags, u'entryPointsFlags')),
-        ),
-        MelString(b'XMRK','modelFilename'),
+        MelColor(b'PNAM'),
+        MelActiFlags(),
+        MelInteractionKeyword(),
+        MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
+        MelStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill'),
+        MelFid(b'NAM1', 'associated_spell'),
+        MelFurnMarkerData(with_marker_keyword=True),
     )
     __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    isKeyedByEid = True # NULL fids are acceptable.
-    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -1459,13 +1353,9 @@ class MreHazd(MelRecord):
     """Hazard."""
     rec_sig = b'HAZD'
 
-    HazdTypeFlags = Flags.from_names(
-        (0, 'affectsPlayerOnly'),
-        (1, 'inheritDurationFromSpawnSpell'),
-        (2, 'alignToImpactNormal'),
-        (3, 'inheritRadiusFromSpawnSpell'),
-        (4, 'dropToGround'),
-    )
+    _hazd_flags = Flags.from_names('affects_player_only',
+        'inherit_duration_from_spawn_spell', 'align_to_impact_normal',
+        'inherit_radius_from_spawn_spell', 'drop_to_ground')
 
     melSet = MelSet(
         MelEdid(),
@@ -1473,9 +1363,11 @@ class MreHazd(MelRecord):
         MelFull(),
         MelModel(),
         MelImageSpaceMod(),
-        MelStruct(b'DATA', [u'I', u'4f', u'5I'],'limit','radius','lifetime',
-                  'imageSpaceRadius','targetInterval',(HazdTypeFlags, u'flags'),
-                  (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
+        MelStruct(b'DATA', ['I', '4f', '5I'], 'hazd_limit', 'hazd_radius',
+            'hazd_lifetime', 'image_space_radius', 'target_interval',
+            (_hazd_flags, 'hazd_flags'), (FID, 'hazd_spell'),
+            (FID, 'hazd_light'), (FID, 'hazd_impact_dataset'),
+            (FID, 'hazd_sound')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1486,10 +1378,10 @@ class MreHdpt(MelRecord):
 
     HdptTypeFlags = Flags.from_names(
         (0, 'playable'),
-        (1, 'notFemale'),
-        (2, 'notMale'),
-        (3, 'isExtraPart'),
-        (4, 'useSolidTint'),
+        (1, 'not_female'),
+        (2, 'not_male'),
+        (3, 'is_extra_part'),
+        (4, 'use_solid_tint'),
     )
 
     melSet = MelSet(
@@ -2131,7 +2023,7 @@ class MreMatt(MelRecord):
         MelStruct(b'CNAM', [u'3f'], 'red', 'green', 'blue'),
         MelFloat(b'BNAM', 'buoyancy'),
         MelUInt32Flags(b'FNAM', u'flags', MattTypeFlags),
-        MelFid(b'HNAM', 'havokImpactDataSet',),
+        MelImpactDataset(b'HNAM'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2555,13 +2447,13 @@ class MrePack(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelStruct(b'PKDT', [u'I', u'3B', u's', u'H', u'2s'], (_GeneralFlags, u'generalFlags'),
-                  'package_type', 'interruptOverride', 'preferredSpeed',
-                  'unknown1', (_InterruptFlags, u'interruptFlags'),
-                  'unknown2'),
-        MelStruct(b'PSDT', [u'2b', u'B', u'2b', u'3s', u'i'], 'schedule_month', 'schedule_day',
-                  'schedule_date', 'schedule_hour', 'schedule_minute',
-                  'unused1', 'schedule_duration'),
+        MelStruct(b'PKDT', ['I', '3B', 's', 'H', '2s'],
+            (_GeneralFlags, 'pack_flags'), 'package_type',
+            'interruptOverride', 'preferredSpeed', 'unknown1',
+            (_InterruptFlags, 'interruptFlags'), 'unknown2'),
+        MelStruct(b'PSDT', ['2b', 'B', '2b', '3s', 'i'], 'schedule_month',
+            'schedule_day', 'schedule_date', 'schedule_hour',
+            'schedule_minute', 'unused1', 'schedule_duration'),
         MelConditionList(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', u'animation_flags'),
@@ -2968,7 +2860,7 @@ class _MelTintMasks(MelGroups):
 
 class _RaceDataFlags1(TrimmedFlags):
     """The Overlay/Override Head Part List flags are mutually exclusive."""
-    __slots__ = []
+    __slots__ = ()
     def _clean_flags(self):
         if self.overlay_head_part_list and self.override_head_part_list:
             self.overlay_head_part_list = False
@@ -3078,7 +2970,7 @@ class MreRace(MelRecord):
         MelBaseR(b'FNAM', 'female_graph_marker'), # required
         MelModel(b'MODL', 'female_behavior_graph'),
         MelFid(b'NAM4', u'material_type'),
-        MelFid(b'NAM5', u'impact_data_set'),
+        MelImpactDataset(b'NAM5'),
         MelFid(b'NAM7', u'decapitation_fx'),
         MelFid(b'ONAM', u'open_loot_sound'),
         MelFid(b'LNAM', u'close_loot_sound'),
@@ -3845,7 +3737,6 @@ class MreStat(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-# MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
 #------------------------------------------------------------------------------
 class MreTact(MelRecord):
     """Talking Activator."""
@@ -3859,9 +3750,9 @@ class MreTact(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','pnam_p'),
+        MelColor(b'PNAM'),
         MelSound(),
-        MelBase(b'FNAM','fnam_p'),
+        MelActiFlags(),
         MelFid(b'VNAM', 'voiceType'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3876,9 +3767,9 @@ class MreTree(MelRecord):
         MelVmad(),
         MelBounds(),
         MelModel(),
-        MelFid(b'PFIG','harvestIngredient'),
+        MelIngredient(),
         MelSound(),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','wsinter',),
+        MelSeasons(),
         MelFull(),
         MelStruct(b'CNAM', [u'12f'], u'trunk_flexibility', u'branch_flexibility',
                   u'trunk_amplitude', u'front_amplitude', u'back_amplitude',
@@ -4066,7 +3957,7 @@ class MreWeap(MelRecord):
                 ##: Why use null3 instead of crit_unknown2?
                 unpacked_val = (crit_damage, crit_unknown1, crit_mult,
                                 crit_flags, null3, null4, crit_effect, null4)
-            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
+            return super()._pre_process_unpacked(unpacked_val)
 
     melSet = MelSet(
         MelEdid(),
@@ -4086,7 +3977,7 @@ class MreWeap(MelRecord):
         MelDescription(),
         MelModel(b'MOD3', 'model2'),
         MelBase(b'NNAM','unused1'),
-        MelFid(b'INAM','impactDataSet',),
+        MelImpactDataset(b'INAM'),
         MelFid(b'WNAM','firstPersonModelObject',),
         MelSound(),
         MelFid(b'XNAM','attackSound2D',),

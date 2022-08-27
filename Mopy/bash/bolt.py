@@ -1327,7 +1327,7 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 #------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
-    __slots__ = [u'_field']
+    __slots__ = ('_field',)
     _names = {}
 
     @classmethod
@@ -1344,7 +1344,7 @@ class Flags(object):
             elif flg_name: #--skip if "name" is 0 or None
                 namesDict[flg_name] = index
         class __Flags(cls):
-            __slots__ = []
+            __slots__ = ()
             _names = namesDict
         return __Flags
 
@@ -1459,7 +1459,7 @@ class Flags(object):
 class TrimmedFlags(Flags):
     """Flag subtype that will discard unnamed flags on __init__ and dump
     (or perform other kind of trimming)."""
-    __slots__ = []
+    __slots__ = ()
 
     def __init__(self, value=0):
         super().__init__(value)

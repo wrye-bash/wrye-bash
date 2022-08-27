@@ -30,8 +30,9 @@ from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion, MelSorted, MelSimpleArray
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
-    MelUnicode, unpackSubHeader, MelUInt32Flags, MelString
-from .common_subrecords import MelEdid, MelDescription, MelColor, MelDebrData
+    MelUnicode, unpackSubHeader, MelUInt32Flags, MelString, MelUInt8Flags
+from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
+    MelColor, MelDebrData, MelFull, MelIcon, MelBounds
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
@@ -44,7 +45,7 @@ from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
 class AMreWithItems(MelRecord):
     """Base class for record types that contain a list of items (see
     common_subrecords.AMelItems)."""
-    __slots__ = []
+    __slots__ = ()
 
     def mergeFilter(self, modSet):
         self.items = [i for i in self.items if i.item.mod_id in modSet]
@@ -52,7 +53,7 @@ class AMreWithItems(MelRecord):
 #------------------------------------------------------------------------------
 class AMreActor(AMreWithItems):
     """Base class for Creatures and NPCs."""
-    __slots__ = []
+    __slots__ = ()
 
     def mergeFilter(self, modSet):
         super().mergeFilter(modSet)
@@ -60,24 +61,60 @@ class AMreActor(AMreWithItems):
         self.factions = [x for x in self.factions if x.faction.mod_id in modSet]
 
 #------------------------------------------------------------------------------
-class AMreGmst(MelRecord):
-    """Game Setting record.  Base class, each game should derive from this
-    class."""
-    Ids = None
-    rec_sig = b'GMST'
+class AMreFlst(MelRecord):
+    """FormID List."""
+    rec_sig = b'FLST'
+    __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
+                 're_records')
 
-    melSet = MelSet(
-        MelEdid(),
-        MelUnion({
-            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
-            u'f': MelFloat(b'DATA', u'value'),
-            u's': MelLString(b'DATA', u'value'),
-        }, decider=AttrValDecider(
-            u'eid', transformer=lambda e: e[0] if e else u'i'),
-            fallback=MelSInt32(b'DATA', u'value')
-        ),
-    )
-    __slots__ = melSet.getSlotsUsed()
+    def __init__(self, header, ins=None, do_unpack=False):
+        super().__init__(header, ins, do_unpack=do_unpack)
+        self.mergeOverLast = False #--Merge overrides last mod merged
+        self.mergeSources = None #--Set to list by other functions
+        self.items = None #--Set of items included in list
+        #--Set of items deleted by list (Deflst mods) unused for Skyrim
+        self.de_records = None #--Set of items deleted by list (Deflst mods)
+        self.re_records = None # unused, needed by patcher
+
+    def mergeFilter(self, modSet):
+        self.formIDInList = [f for f in self.formIDInList if
+                             f.mod_id in modSet]
+
+    def mergeWith(self,other,otherMod):
+        """Merges newLevl settings and entries with self.
+        Requires that: self.items, other.de_records be defined."""
+        #--Remove items based on other.removes
+        if other.de_records:
+            removeItems = self.items & other.de_records
+            self.formIDInList = [fi for fi in self.formIDInList
+                                 if fi not in removeItems]
+            self.items |= other.de_records
+        #--Add new items from other
+        newItems = set()
+        formIDInListAppend = self.formIDInList.append
+        newItemsAdd = newItems.add
+        for fi in other.formIDInList:
+            if fi not in self.items:
+                formIDInListAppend(fi)
+                newItemsAdd(fi)
+        if newItems:
+            self.items |= newItems
+        #--Is merged list different from other? (And thus written to patch.)
+        if len(self.formIDInList) != len(other.formIDInList):
+            self.mergeOverLast = True
+        else:
+            for selfEntry, otherEntry in zip(self.formIDInList,
+                                              other.formIDInList):
+                if selfEntry != otherEntry:
+                    self.mergeOverLast = True
+                    break
+            else:
+                self.mergeOverLast = False
+        if self.mergeOverLast:
+            self.mergeSources.append(otherMod)
+        else:
+            self.mergeSources = [otherMod]
+        self.setChanged()
 
 #------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
@@ -206,7 +243,7 @@ class AMreHeader(MelRecord):
     @property
     def num_masters(self): return len(self.masters)
 
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class AMreLeveledList(MelRecord):
@@ -230,8 +267,8 @@ class AMreLeveledList(MelRecord):
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
     entry_copy_attrs = (u'listId', u'level', u'count')
-    __slots__ = [u'mergeOverLast', u'mergeSources', u'items', u'de_records',
-                 u're_records']
+    __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
+                 're_records')
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
@@ -328,6 +365,21 @@ class AMreLeveledList(MelRecord):
 #------------------------------------------------------------------------------
 # Full classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Association Type."""
+    rec_sig = b'ASTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'MPRT', 'male_parent_title'),
+        MelString(b'FPRT', 'female_parent_title'),
+        MelString(b'MCHT', 'male_child_title'),
+        MelString(b'FCHT', 'female_child_title'),
+        MelUInt32(b'DATA', 'family_association'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreColl(MelRecord):
     """Collision Layer."""
     rec_sig = b'COLL'
@@ -397,67 +449,63 @@ class MreDlvw(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreFlst(MelRecord):
-    """FormID List."""
-    rec_sig = b'FLST'
+class MreDual(MelRecord):
+    """Dual Cast Data."""
+    rec_sig = b'DUAL'
+
+    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
+        'projectile_scale', 'explosion_scale')
 
     melSet = MelSet(
         MelEdid(),
-        MelFids('formIDInList', MelFid(b'LNAM')),  # do *not* sort!
+        MelBounds(),
+        MelStruct(b'DATA', ['6I'], (FID, 'dual_projectile'),
+            (FID, 'dual_explosion'), (FID, 'effect_shader'),
+            (FID, 'dual_hit_effect_art'), (FID, 'dual_impact_dataset'),
+            (_inherit_scale_flags, 'inherit_scale_flags')),
     )
+    __slots__ = melSet.getSlotsUsed()
 
-    __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
-                                         u'items', u'de_records',
-                                         u're_records']
+#------------------------------------------------------------------------------
+class MreEyes(MelRecord):
+    """Eyes."""
+    rec_sig = b'EYES'
 
-    def __init__(self, header, ins=None, do_unpack=False):
-        super(MreFlst, self).__init__(header, ins, do_unpack=do_unpack)
-        self.mergeOverLast = False #--Merge overrides last mod merged
-        self.mergeSources = None #--Set to list by other functions
-        self.items = None #--Set of items included in list
-        #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.de_records = None #--Set of items deleted by list (Deflst mods)
-        self.re_records = None # unused, needed by patcher
+    # not_male and not_female exist since FO3
+    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
 
-    def mergeFilter(self, modSet):
-        self.formIDInList = [f for f in self.formIDInList if
-                             f.mod_id in modSet]
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelIcon(),
+        MelUInt8Flags(b'DATA', 'flags', _eyes_flags),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
-    def mergeWith(self,other,otherMod):
-        """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.de_records be defined."""
-        #--Remove items based on other.removes
-        if other.de_records:
-            removeItems = self.items & other.de_records
-            self.formIDInList = [fi for fi in self.formIDInList
-                                 if fi not in removeItems]
-            self.items |= other.de_records
-        #--Add new items from other
-        newItems = set()
-        formIDInListAppend = self.formIDInList.append
-        newItemsAdd = newItems.add
-        for fi in other.formIDInList:
-            if fi not in self.items:
-                formIDInListAppend(fi)
-                newItemsAdd(fi)
-        if newItems:
-            self.items |= newItems
-        #--Is merged list different from other? (And thus written to patch.)
-        if len(self.formIDInList) != len(other.formIDInList):
-            self.mergeOverLast = True
-        else:
-            for selfEntry, otherEntry in zip(self.formIDInList,
-                                              other.formIDInList):
-                if selfEntry != otherEntry:
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
-        if self.mergeOverLast:
-            self.mergeSources.append(otherMod)
-        else:
-            self.mergeSources = [otherMod]
-        self.setChanged()
+#------------------------------------------------------------------------------
+class MreFstp(MelRecord):
+    """Footstep."""
+    rec_sig = b'FSTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelImpactDataset(b'DATA'),
+        MelString(b'ANAM', 'fstp_tag'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFsts(MelRecord):
+    """Footstep Set."""
+    rec_sig = b'FSTS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'XCNT', ['5I'], 'count_walking', 'count_running',
+            'count_sprinting', 'count_sneaking', 'count_swimming'),
+        MelSimpleArray('footstep_sets', MelFid(b'DATA')),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGlob(MelRecord):
@@ -471,6 +519,25 @@ class MreGlob(MelRecord):
         # float), are stored as floats -- which means that very large integers
         # lose precision
         MelFloat(b'FLTV', u'global_value'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(MelRecord):
+    """Game Setting.."""
+    rec_sig = b'GMST'
+    isKeyedByEid = True # NULL fids are acceptable.
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUnion({
+            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
+            u'f': MelFloat(b'DATA', u'value'),
+            u's': MelLString(b'DATA', u'value'),
+        }, decider=AttrValDecider(
+            u'eid', transformer=lambda e: e[0] if e else u'i'),
+            fallback=MelSInt32(b'DATA', u'value')
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 

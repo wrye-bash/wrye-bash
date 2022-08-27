@@ -366,9 +366,9 @@ class NpcCheckerPatcher(Patcher):
         defaultMaleHair = {}
         defaultFemaleHair = {}
         maleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
-                     if not x.flags.notMale}
+                     if not x.flags.not_male}
         femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
-                       if not x.flags.notFemale}
+                       if not x.flags.not_female}
         for race in patchFile.tops[b'RACE'].records:
             if (race.flags.playable or race.fid == bush.game.master_fid(
                     0x038010)) and race.eyes:

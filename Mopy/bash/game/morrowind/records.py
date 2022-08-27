@@ -31,9 +31,8 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, \
     MelIcons, MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, \
-    FixedString, AutoFixedString, AMreGmst, AMreLeveledList, MelUInt16, \
-    SizeDecider, MelLists, MelTruncatedStruct, MelColor, MelStrings, \
-    MelUInt32Flags
+    FixedString, AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, \
+    MelLists, MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -658,7 +657,7 @@ class MelGmstUnion(MelUnion):
             return self._get_element(self._fmt_mapping[format_char])
         return super(MelGmstUnion, self)._get_element_from_record(record)
 
-class MreGmst(AMreGmst):
+class MreGmst(MelRecord):
     """Game Setting."""
     melSet = MelSet(
         MelMWId(),
@@ -749,13 +748,13 @@ class MreLand(MelRecord):
 class MreLevc(MreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LEVC'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLevi(MreLeveledList):
     """Leveled Item."""
     rec_sig = b'LEVI'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLigh(MelRecord):

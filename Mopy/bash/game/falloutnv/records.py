@@ -22,14 +22,12 @@
 # =============================================================================
 """This module contains the falloutnv record classes."""
 from ..fallout3.records import MelDestructible, MelModel
-from ...bolt import Flags, struct_calcsize
+from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelSimpleArray, AMreHeader, MelFloat, \
-    MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
-    MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
-    MelDescription, MelSoundPickupDrop, MelUInt8Flags, MelSInt32, \
-    MelSorted, MelValueWeight, MelConditionsFo3, MelUInt8
-from ...exception import ModSizeError
+    MelFid, MelFids, MelBase, MelSimpleArray, AMreHeader, MelFloat, MelEdid, \
+    MelUInt32, MelBounds, MelTruncatedStruct, MelIcons, MelIcon, MelUInt8, \
+    MelFull, MelNull, MelScript, MelDescription, MelSoundPickupDrop, MelIco2, \
+    MelUInt8Flags, MelSInt32, MelSorted, MelValueWeight, MelConditionsFo3
 
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
@@ -404,90 +402,5 @@ class MreSlpd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MelWthrColorsFnv(MelArray):
-    """Used twice in WTHR for PNAM and NAM0. Needs to handle older versions
-    as well. Can't simply use MelArray because MelTruncatedStruct does not
-    have a static_size."""
-    # TODO(inf) Rework MelArray - instead of static_size, have a
-    #  get_entry_size that receives the total size_ of load_mel.
-    #  MelTruncatedStruct could override that and make a guess based on its
-    #  sizes. If that guess doesn't work, a small override class can be
-    #  created by hand
-    _new_sizes = {b'PNAM': 96, b'NAM0': 240}
-    _old_sizes = {b'PNAM': 64, b'NAM0': 160}
-
-    def __init__(self, wthr_sub_sig, wthr_attr):
-        struct_definition = [
-            [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's',
-             u'3B', u's'], u'riseRed', u'riseGreen', u'riseBlue',
-            u'unused1', u'dayRed', u'dayGreen', u'dayBlue',
-            u'unused2', u'setRed', u'setGreen', u'setBlue',
-            u'unused3', u'nightRed', u'nightGreen', u'nightBlue',
-            u'unused4', u'noonRed', u'noonGreen', u'noonBlue',
-            u'unused5', u'midnightRed', u'midnightGreen',
-            u'midnightBlue', u'unused6'
-        ]
-        super(MelWthrColorsFnv, self).__init__(wthr_attr,
-            MelStruct(wthr_sub_sig, *struct_definition),
-        )
-        self._element_old = MelTruncatedStruct(
-            wthr_sub_sig, *struct_definition,
-            old_versions={u'3Bs3Bs3Bs3Bs'})
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        if size_ == self._new_sizes[sub_type]:
-            super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
-                                                   size_, *debug_strs)
-        elif size_ == self._old_sizes[sub_type]:
-            # Copied and adjusted from MelArray. Yuck. See comment below
-            # docstring for some ideas for getting rid of this
-            append_entry = getattr(record, self.attr).append
-            entry_slots = self._element_old.attrs
-            entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
-            load_entry = self._element_old.load_mel
-            for x in range(size_ // entry_size):
-                arr_entry = MelObject()
-                append_entry(arr_entry)
-                arr_entry.__slots__ = entry_slots
-                load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
-        else:
-            _expected_sizes = (self._new_sizes[sub_type],
-                               self._old_sizes[sub_type])
-            raise ModSizeError(ins.inName, debug_strs, _expected_sizes, size_)
-
-class MreWthr(MelRecord):
-    """Weather."""
-    rec_sig = b'WTHR'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFid(b'\x00IAD', 'sunriseImageSpaceModifier'),
-        MelFid(b'\x01IAD', 'dayImageSpaceModifier'),
-        MelFid(b'\x02IAD', 'sunsetImageSpaceModifier'),
-        MelFid(b'\x03IAD', 'nightImageSpaceModifier'),
-        MelFid(b'\x04IAD', 'unknown1ImageSpaceModifier'),
-        MelFid(b'\x05IAD', 'unknown2ImageSpaceModifier'),
-        MelString(b'DNAM','upperLayer'),
-        MelString(b'CNAM','lowerLayer'),
-        MelString(b'ANAM','layer2'),
-        MelString(b'BNAM','layer3'),
-        MelModel(),
-        MelBase(b'LNAM','unknown1'),
-        MelStruct(b'ONAM', [u'4B'],'cloudSpeed0','cloudSpeed1','cloudSpeed3','cloudSpeed4'),
-        MelWthrColorsFnv(b'PNAM', u'cloudColors'),
-        MelWthrColorsFnv(b'NAM0', u'daytimeColors'),
-        MelStruct(b'FNAM', [u'6f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase(b'INAM', 'unused1', null1 * 304),
-        MelStruct(b'DATA', [u'15B'],
-            'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
-            'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
-            'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
-        MelGroups('sounds',
-            MelStruct(b'SNAM', [u'2I'], (FID, 'sound'), 'type'),
-        ),
     )
     __slots__ = melSet.getSlotsUsed()

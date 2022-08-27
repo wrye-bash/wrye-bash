@@ -278,11 +278,11 @@ class _ARGenderlessTweak(_ARaceTweak):
     tweak_choices = [(u'Get it done', 1)]
 
     def wants_record(self, record):
-        return record.flags.notMale or record.flags.notFemale
+        return record.flags.not_male or record.flags.not_female
 
     def tweak_record(self, record):
-        record.flags.notMale = False
-        record.flags.notFemale = False
+        record.flags.not_male = False
+        record.flags.not_female = False
 
 class RaceTweak_GenderlessHairs(_ARGenderlessTweak):
     """Sets all hairs to be playable, regardless of gender."""

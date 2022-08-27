@@ -30,7 +30,7 @@ from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     AMreHeader, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
-    AMreGmst, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
+    MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, MelRace, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
@@ -40,11 +40,12 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
-    MelClmtWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
+    MelClmtWeatherTypes, MelFactRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
-    MelDoorFlags, MelSoundLooping, MelRandomTeleports
+    MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
+    MelSeasons, MelIngredient
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -143,7 +144,7 @@ class MelLevListLvlo(MelTruncatedStruct):
         if len(unpacked_val) == 2:
             # Pad it in the middle, then let our parent deal with the rest
             unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
-        return super(MelLevListLvlo, self)._pre_process_unpacked(unpacked_val)
+        return super()._pre_process_unpacked(unpacked_val)
 
 #------------------------------------------------------------------------------
 class MelLLItems(AMelLLItems):
@@ -256,7 +257,7 @@ actor_values = [ # Human-readable names for each actor value
 
 class MreHasEffects(object):
     """Mixin class for magic items."""
-    __slots__ = []
+    __slots__ = ()
     _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
     _recipient_name_number = {y.lower(): x for x, y in
                               _recipient_number_name.items() if x is not None}
@@ -926,39 +927,52 @@ class MreEfsh(MelRecord):
     """Effect Shader."""
     rec_sig = b'EFSH'
 
-    _flags = Flags.from_names(
-        (0, u'noMemShader'),
-        (3, u'noPartShader'),
-        (4, u'edgeInverse'),
-        (5, u'memSkinOnly'),
+    _efsh_flags = Flags.from_names(
+        (0, 'no_membrane_shader'),
+        (3, 'no_particle_shader'),
+        (4, 'ee_inverse'),
+        (5, 'affect_skin_only'),
     )
 
     melSet = MelSet(
         MelEdid(),
-        MelIcon(u'fillTexture'),
-        MelIco2(u'particleTexture'),
-        MelTruncatedStruct(b'DATA', [u'B', u'3s', u'3I', u'3B', u's', u'9f', u'3B', u's', u'8f', u'5I', u'19f', u'3B', u's', u'3B', u's', u'3B', u's', u'6f'],
-            (_flags, u'flags'), u'unused1', u'memSBlend',
-            u'memBlendOp', u'memZFunc', u'fillRed', u'fillGreen', u'fillBlue',
-            u'unused2', u'fillAIn', u'fillAFull', u'fillAOut',
-            u'fillAPRatio', u'fillAAmp', u'fillAFreq', u'fillAnimSpdU',
-            u'fillAnimSpdV', u'edgeOff', u'edgeRed', u'edgeGreen', u'edgeBlue',
-            u'unused3', u'edgeAIn', u'edgeAFull', u'edgeAOut',
-            u'edgeAPRatio', u'edgeAAmp', u'edgeAFreq', u'fillAFRatio',
-            u'edgeAFRatio', u'memDBlend', (u'partSBlend', 5),
-            (u'partBlendOp', 1), (u'partZFunc', 4), (u'partDBlend', 6),
-            u'partBUp', u'partBFull', u'partBDown', (u'partBFRatio', 1.0),
-            (u'partBPRatio', 1.0), (u'partLTime', 1.0), u'partLDelta',
-            u'partNSpd', u'partNAcc', u'partVel1', u'partVel2', u'partVel3',
-            u'partAcc1', u'partAcc2', u'partAcc3', u'partKey1',
-            (u'partKey2', 1.0), u'partKey1Time', (u'partKey2Time', 1.0),
-            (u'key1Red', 255), (u'key1Green', 255), (u'key1Blue', 255),
-            u'unused4', (u'key2Red', 255), (u'key2Green', 255),
-            (u'key2Blue', 255), u'unused5', (u'key3Red', 255),
-            (u'key3Green', 255), (u'key3Blue', 255), u'unused6',
-            (u'key1A', 1.0), (u'key2A', 1.0), (u'key3A', 1.0), u'key1Time',
-            (u'key2Time', 0.5), (u'key3Time', 1.0),
-            old_versions={u'B3s3I3Bs9f3Bs8fI'}),
+        MelIcon('fill_texture'),
+        MelIco2('particle_texture'),
+        MelTruncatedStruct(b'DATA',
+            ['B', '3s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f',
+             '3B', 's', '3B', 's', '3B', 's', '6f'],
+            (_efsh_flags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
+            'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
+            'fill_color1_green', 'fill_color1_blue', 'unused2',
+            'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+            'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+            'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+            'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
+            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
+            'unused3', 'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+            'ms_dest_blend_mode', ('ps_source_blend_mode', 5),
+            ('ps_blend_operation', 1), ('ps_z_test_function', 4),
+            ('ps_dest_blend_mode', 6), 'ps_particle_birth_ramp_up_time',
+            'ps_full_particle_birth_time', 'ps_particle_birth_ramp_down_time',
+            ('ps_full_particle_birth_ratio', 1.0),
+            ('ps_persistent_particle_birth_ratio', 1.0),
+            ('ps_particle_lifetime', 1.0), 'ps_particle_lifetime_delta',
+            'ps_initial_speed_along_normal', 'ps_acceleration_along_normal',
+            'ps_initial_velocity1', 'ps_initial_velocity2',
+            'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
+            'ps_acceleration3', 'ps_scale_key1', ('ps_scale_key2', 1.0),
+            'ps_scale_key1_time', ('ps_scale_key2_time', 1.0),
+            ('color_key1_red', 255), ('color_key1_green', 255),
+            ('color_key1_blue', 255), 'unused4', ('color_key2_red', 255),
+            ('color_key2_green', 255), ('color_key2_blue', 255), 'unused5',
+            ('color_key3_red', 255), ('color_key3_green', 255),
+            ('color_key3_blue', 255), 'unused6', ('color_key1_alpha', 1.0),
+            ('color_key2_alpha', 1.0), ('color_key3_alpha', 1.0),
+            'color_key1_time', ('color_key2_time', 0.5),
+            ('color_key3_time', 1.0), old_versions={'B3s3I3Bs9f3Bs8fI'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -967,32 +981,17 @@ class MreEnch(MreHasEffects, MelRecord):
     """Enchantment."""
     rec_sig = b'ENCH'
 
-    _flags = Flags.from_names('noAutoCalc')
+    _enit_flags = Flags.from_names('ench_no_auto_calc')
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(), #--At least one mod has this. Odd.
-        MelStruct(b'ENIT', [u'3I', u'B', u'3s'], 'itemType', 'chargeAmount', 'enchantCost',
-                  (_flags, u'flags'), 'unused1'),
+        MelStruct(b'ENIT', ['3I', 'B', '3s'], 'item_type', 'charge_amount',
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    _flags = Flags.from_names('playable')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
-    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -1000,16 +999,15 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags.from_names(u'hidden_from_pc', u'evil',
-                                      u'special_combat')
+    _fact_flags = Flags.from_names('hidden_from_pc', 'evil', 'special_combat')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelRelations(with_gcr=False),
-        MelUInt8Flags(b'DATA', u'general_flags', _general_flags),
-        MelFloat(b'CNAM', u'crime_gold_multiplier'),
-        MelFactionRanks(),
+        MelUInt8Flags(b'DATA', 'fact_flags', _fact_flags),
+        MelFloat(b'CNAM', 'crime_gold_multiplier'),
+        MelFactRanks(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1023,8 +1021,8 @@ class MreFlor(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'PFIG','ingredient'),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','winter'),
+        MelIngredient(),
+        MelSeasons(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1033,23 +1031,14 @@ class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
 
-    _flags = Flags #--Governs type of furniture and which anims are available
-    #--E.g., whether it's a bed, and which of the bed entry/exit animations
-    # are available
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelScript(),
-        MelUInt32Flags(b'MNAM', u'activeMarkers', _flags), # ByteArray in xEdit
+        MelBase(b'MNAM', 'active_markers_flags'), # not decoded in xEdit
     )
     __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -1073,14 +1062,12 @@ class MreHair(MelRecord):
     """Hair."""
     rec_sig = b'HAIR'
 
-    _flags = Flags.from_names('playable', 'notMale', 'notFemale', 'fixed')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelHairFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1239,19 +1226,19 @@ class MreLtex(MelRecord):
 class MreLvlc(MreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LVLC'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreMgef(MelRecord):
@@ -1868,9 +1855,8 @@ class MreRefr(MelRecord):
         """Skips unused2, in the middle of the struct."""
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) == 5:
-                unpacked_val = (unpacked_val[:-2]
-                                + self.defaults[len(unpacked_val) - 2:-2]
-                                + unpacked_val[-2:])
+                unpacked_val = (unpacked_val[:3] + self.defaults[3:4] +
+                                unpacked_val[3:])
             return unpacked_val
 
     melSet = MelSet(
@@ -2178,7 +2164,7 @@ class MelWatrData(MelTruncatedStruct):
     def _pre_process_unpacked(self, unpacked_val):
         if len(unpacked_val) != 36:
             unpacked_val = unpacked_val[:-1]
-        return super(MelWatrData, self)._pre_process_unpacked(unpacked_val)
+        return super()._pre_process_unpacked(unpacked_val)
 
 #------------------------------------------------------------------------------
 class MreWatr(MelRecord):

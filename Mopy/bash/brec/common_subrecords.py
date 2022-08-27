@@ -85,7 +85,8 @@ class AMelLLItems(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelActiFlags(MelUInt16Flags):
-    """Handles the FNAM (Flags) subrecord in ACTI records."""
+    """Handles the ACTI subrecord FNAM (Flags). Note that this subrecord is
+    inherited by a couple other records too."""
     _acti_flags = Flags.from_names(
         (0, 'no_displacement'),
         (1, 'ignored_by_sandbox'),
@@ -155,7 +156,7 @@ class MelAddnDnam(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelAlchEnit(MelStruct):
-    """Handles the ALCH subrecord ENIT (Effect Data)."""
+    """Handles the ALCH subrecord ENIT (Effect Data) since Skyrim."""
     _enit_flags = Flags.from_names(
         (0,  'noAutoCalc'),
         (1,  'isFood'),
@@ -187,7 +188,7 @@ class MelArmaDnam(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelArmaModels(MelSequential):
-    """Handles the ARMA MOD2-MOD5 subrecords. Note that you have to pass the
+    """Handles the ARMA subrecords MOD2-MOD5. Note that you have to pass the
     game's MelModel class in as a parameter."""
     def __init__(self, mel_model: Type[MelBase]):
         super().__init__(
@@ -199,7 +200,7 @@ class MelArmaModels(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelArmaSkins(MelSequential):
-    """Handles the ARMA NAM0-NAM3 subrecords."""
+    """Handles the ARMA subrecords NAM0-NAM3."""
     def __init__(self):
         super().__init__(
             MelFid(b'NAM0', 'skin0'),
@@ -234,24 +235,6 @@ class MelAspcRdat(MelFid):
         super().__init__(b'RDAT', 'use_sound_from_region')
 
 #------------------------------------------------------------------------------
-class MelAstpData(MelUInt32):
-    """Handles the ASTP subrecord DATA. Called 'Flags' in xEdit, but is really
-    a boolean enum."""
-    def __init__(self):
-        super().__init__(b'DATA', 'family_association')
-
-#------------------------------------------------------------------------------
-class MelAstpTitles(MelSequential):
-    """Handles the ASTP subrecords MPRT, FPRT, MCHT and FCHT."""
-    def __init__(self):
-        super().__init__(
-            MelString(b'MPRT', 'male_parent_title'),
-            MelString(b'FPRT', 'female_parent_title'),
-            MelString(b'MCHT', 'male_child_title'),
-            MelString(b'FCHT', 'female_child_title'),
-        )
-
-#------------------------------------------------------------------------------
 class MelAttx(MelLString):
     """Handles the common ATTX (Activate Text Override) subrecord. Skyrim uses
     an RNAM signature instead."""
@@ -268,7 +251,7 @@ class MelBamt(MelFid):
 class MelBids(MelFid):
     """Handles the common BIDS (Block Bash Impact Data Set) subrecord."""
     def __init__(self):
-        super().__init__(b'BIDS', 'block_bash_impact_data_set')
+        super().__init__(b'BIDS', 'block_bash_impact_dataset')
 
 #------------------------------------------------------------------------------
 class MelBodyParts(MelSorted):
@@ -449,18 +432,6 @@ class MelDoorFlags(MelUInt8Flags):
         super().__init__(b'FNAM', 'door_flags', self._door_flags)
 
 #------------------------------------------------------------------------------
-class MelDualData(MelStruct):
-    """Handles the DUAL subrecord DATA (Data)."""
-    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
-        'projectile_scale', 'explosion_scale')
-
-    def __init__(self):
-        super().__init__(b'DATA', ['6I'], (FID, 'projectile'),
-            (FID, 'explosion'), (FID, 'effect_shader'),
-            (FID, 'hit_effect_art'), (FID, 'impact_data_set'),
-            (self._inherit_scale_flags, 'inherit_scale_flags')),
-
-#------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):
@@ -490,15 +461,72 @@ class MelEquipmentType(MelFid):
         super().__init__(b'ETYP', 'equipment_type')
 
 #------------------------------------------------------------------------------
-class MelFactionRanks(MelSorted):
-    """Handles the FACT RNAM/MNAM/FNAM/INAM subrecords."""
+class MelEqupPnam(MelSimpleArray):
+    """Handles the EQUP subrecord PNAM (Slot Parents)."""
+    def __init__(self):
+        super().__init__('slot_parents', MelFid(b'PNAM'))
+
+#------------------------------------------------------------------------------
+class MelFactFlags(MelUInt32Flags):
+    """Handles the FACT subrecord DATA (Flags) since Skyrim."""
+    _fact_flags = Flags.from_names(
+        ( 0, 'hidden_from_pc'),
+        ( 1, 'special_combat'),
+        ( 6, 'track_crime'),
+        ( 7, 'ignore_crimes_murder'),
+        ( 8, 'ignore_crimes_assault'),
+        ( 9, 'ignore_crimes_stealing'),
+        (10, 'ignore_crimes_trespass'),
+        (11, 'do_not_report_crimes_against_members'),
+        (12, 'crime_gold_use_defaults'),
+        (13, 'ignore_crimes_pickpocket'),
+        (14, 'allow_sell'), # also called 'vendor'
+        (15, 'can_be_owner'),
+        (16, 'ignore_crimes_werewolf'),
+    )
+
+    def __init__(self):
+        super().__init__(b'DATA', 'fact_flags', self._fact_flags),
+
+#------------------------------------------------------------------------------
+class MelFactFids(MelSequential):
+    """Handles the FACT subrecords JAIL, WAIT, STOL, PCLN, CRGR and JOUT."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'JAIL', 'exterior_jail_marker'),
+            MelFid(b'WAIT', 'follower_wait_marker'),
+            MelFid(b'STOL', 'stolen_goods_container'),
+            MelFid(b'PLCN', 'player_inventory_container'),
+            MelFid(b'CRGR', 'shared_crime_faction_list'),
+            MelFid(b'JOUT', 'jail_outfit'),
+        )
+
+#------------------------------------------------------------------------------
+class MelFactRanks(MelSorted):
+    """Handles the FACT subrecords RNAM, MNAM, FNAM and INAM."""
     def __init__(self):
         super().__init__(MelGroups('ranks',
+            # Unsigned since Skyrim, but no one's going to use ranks >2 billion
             MelSInt32(b'RNAM', 'rank_level'),
             MelLString(b'MNAM', 'male_title'),
             MelLString(b'FNAM', 'female_title'),
             MelString(b'INAM', 'insignia_path'),
         ), sort_by_attrs='rank_level')
+
+#------------------------------------------------------------------------------
+class MelFactVendorInfo(MelSequential):
+    """Handles the FACT subrecords VEND, VENC and VENV."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'VEND', 'vendor_buy_sell_list'),
+            MelFid(b'VENC', 'merchant_container'),
+            # 'vv_only_buys_stolen_items' and 'vv_not_sell_buy' are actually
+            # bools, vv means 'vendor value' (which is what this struct is
+            # about)
+            MelStruct(b'VENV', ['3H', '2s', '2B', '2s'], 'vv_start_hour',
+                'vv_end_hour', 'vv_radius', 'vv_unknown1',
+                'vv_only_buys_stolen_items', 'vv_not_sell_buy', 'vv_unknown2'),
+        )
 
 #------------------------------------------------------------------------------
 class MelFactions(MelSorted):
@@ -508,6 +536,12 @@ class MelFactions(MelSorted):
             MelStruct(b'SNAM', ['I', 'B', '3s'], (FID, 'faction'), 'rank',
                 ('unused1', b'ODB')),
         ), sort_by_attrs='faction')
+
+#------------------------------------------------------------------------------
+class MelFlstFids(MelFids):
+    """Handles the FLST subrecord LNAM (FormIDs)."""
+    def __init__(self):
+        super().__init__('formIDInList', MelFid(b'LNAM')) # Do *not* sort!
 
 #------------------------------------------------------------------------------
 class MelFootstepSound(MelFid):
@@ -520,6 +554,40 @@ class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
         super().__init__(b'FULL', 'full')
+
+#------------------------------------------------------------------------------
+class MelFurnMarkerData(MelSequential):
+    """Handles the FURN subrecords ENAM, NAM0, FNMK (Skyrim only), FNPR and
+    XMRK."""
+    _entry_points = Flags.from_names('entry_point_front', 'entry_point_behind',
+        'entry_point_right', 'entry_point_left', 'entry_point_up')
+
+    def __init__(self, *, with_marker_keyword=False):
+        marker_elements = [
+            # Unsigned in Skyrim, but no one's going to use >2 billion indices
+            MelSInt32(b'ENAM', 'furn_marker_index'),
+            MelStruct(b'NAM0', ['2s', 'H'], 'furn_marker_unknown',
+                (self._entry_points, 'furn_marker_disabled_entry_points')),
+        ]
+        if with_marker_keyword:
+            marker_elements.append(MelFid(b'FNMK', 'furn_marker_keyword'))
+        super().__init__(
+            MelGroups('furn_markers', *marker_elements),
+            MelGroups('marker_entry_points',
+                MelStruct(b'FNPR', ['2H'], 'furn_marker_type',
+                    (self._entry_points, 'furn_marker_entry_points')),
+            ),
+            MelString(b'XMRK', 'marker_model'),
+        )
+
+#------------------------------------------------------------------------------
+class MelHairFlags(MelUInt8Flags):
+    """Handles the HAIR subrecord DATA (Flags)."""
+    _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',
+        'hair_fixed')
+
+    def __init__(self):
+        super().__init__(b'DATA', 'flags', self._hair_flags)
 
 #------------------------------------------------------------------------------
 class MelIcons(MelSequential):
@@ -563,8 +631,20 @@ class MelImageSpaceMod(MelFid):
         super().__init__(b'MNAM', 'image_space_modifier')
 
 #------------------------------------------------------------------------------
+class MelImpactDataset(MelFid):
+    """Handles various common Impact Dataset subrecords."""
+    def __init__(self, ids_sig: bytes):
+        super().__init__(ids_sig, 'impact_dataset')
+
+#------------------------------------------------------------------------------
+class MelIngredient(MelFid):
+    """Handles the common PFIG (Ingredient) subrecord."""
+    def __init__(self):
+        super().__init__(b'PFIG', 'ingredient')
+
+#------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
-    """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
+    """Handles the common KNAM (Interaction Keyword) subrecord."""
     def __init__(self):
         super().__init__(b'KNAM', 'interaction_keyword')
 
@@ -928,6 +1008,13 @@ class MelScriptVars(MelSorted):
         ), sort_by_attrs='var_index')
 
 #------------------------------------------------------------------------------
+class MelSeasons(MelStruct):
+    """Handles the common PFPC (Seasonal Ingredient Production) subrecord."""
+    def __init__(self):
+        super().__init__(b'PFPC', ['4B'], 'sip_spring', 'sip_summer',
+            'sip_fall', 'sip_winter'),
+
+#------------------------------------------------------------------------------
 class MelShortName(MelLString):
     """Defines a 'Short Name' subrecord. Most common signature is ONAM."""
     def __init__(self, sn_sig=b'ONAM'):
@@ -1055,7 +1142,7 @@ class MelXlod(MelOptStruct):
 #------------------------------------------------------------------------------
 class _SpellFlags(Flags):
     """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-    __slots__ = []
+    __slots__ = ()
 
     def __setitem__(self, index, value):
         setter = Flags.__setitem__

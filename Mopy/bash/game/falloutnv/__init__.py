@@ -140,25 +140,24 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreDebr, MreFlst, MreGlob
+        from ...brec import MreDebr, MreEyes, MreGlob, MreGmst
         from .records import MreTes4, MreAloc, MreAmef, MreCcrd, MreCdck, \
             MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
-            MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd, \
-            MreWthr
+            MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
             MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \
-            MreCrea, MreWeap, MreDoor, MreEczn, MreEfsh, MreExpl, MreEyes, \
+            MreCrea, MreWeap, MreDoor, MreEczn, MreEfsh, MreExpl, MreTact, \
             MreFurn, MreGras, MreHair, MreIdlm, MreImgs, MreIngr, MreRace, \
             MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, \
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
             MreWrld, MreAlch, MreActi, MreAmmo, MreArma, MreArmo, MreAspc, \
             MreCont, MreAchr, MreAcre, MreCell, MreCsty, MreDobj, MreEnch, \
-            MreFact, MreGmst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
+            MreFact, MreFlst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
             MreLigh, MreLscr, MreMisc, MreMusc, MrePgre, MrePmis, MreProj, \
-            MreRefr, MreRegn, MreSoun, MreStat, MreTact
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
+            MreRefr, MreRegn, MreSoun, MreStat, MreWthr
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
             MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
@@ -199,7 +198,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not Mergeable
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
         brec.MreRecord.type_class.update(cls.mergeable_sigs)
