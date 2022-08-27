@@ -1614,8 +1614,7 @@ tab. The directories skipped are:
                 mods can't be ESL-flagged.</td></tr>
             <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
             <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
-            <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-            <tr><td rowspan="13">Export<td>Cell Block Info...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
+            <tr><td rowspan="13">Export..<td>Cell Block Info...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
             <tr><td id="modsExportEditorIDs">Editor Ids...<td><strong>For advanced mod authors only.</strong> Exports the Editor IDs of the records in the selected plugin to a CSV file.
             <tr><td id="modsExportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Actors: Factions option.
             <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
@@ -1651,7 +1650,7 @@ tab. The directories skipped are:
                     <li>Soulgem
                     <li>Weapon
                 </ul>
-            <tr><td rowspan="14">Import<td>Editor Ids...<td><strong>For advanced mod authors only.</strong> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes.<br><br><strong>Note:</strong> You may have to recompile any altered scripts in the Construction Set.
+            <tr><td rowspan="14">Import..<td>Editor Ids...<td><strong>For advanced mod authors only.</strong> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes.<br><br><strong>Note:</strong> You may have to recompile any altered scripts in the Construction Set.
                 <br><br>If you wish to update script references <em>after</em> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
             <tr><td id="modsImportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
             <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file (or other mod) into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
@@ -1690,7 +1689,7 @@ tab. The directories skipped are:
                 <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using xEdit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
                 <strong>Note:</strong> You can also use xEdit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. xEdit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
             <tr>
-                <td rowspan="4">Mod Cleaning..</td>
+                <td rowspan="4">Cleaning..</td>
                 <td>Don't Check Against LOOT's Masterlist</td>
                 <td>Skips checking the selected plugins against LOOT's
                     masterlist to determine whether or not they are dirty and

@@ -479,8 +479,10 @@ def InitModLinks():
     ModList.column_links.append(Mods_PluginChecker())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
-        ModList.context_links.append(Mod_FullLoad())
-        ModList.context_links.append(Mod_RecalcRecordCounts())
+        dev_tools_menu = MenuLink('Dev Tools..')
+        dev_tools_menu.links.append(Mod_FullLoad())
+        dev_tools_menu.links.append(Mod_RecalcRecordCounts())
+        ModList.context_links.append(dev_tools_menu)
     if True: #--File
         file_menu = MenuLink(_('File..'))
         file_menu.links.append(File_Duplicate())
@@ -494,41 +496,67 @@ def InitModLinks():
         file_menu.links.append(File_Snapshot())
         file_menu.links.append(File_RevertToSnapshot())
         ModList.context_links.append(file_menu)
-    if True: #--Groups
-        groupMenu = MenuLink(_('Groups..'))
-        groupMenu.links.append(Mod_Groups())
-        ModList.context_links.append(groupMenu)
-    if True: #--Ratings
-        ratingMenu = MenuLink(_('Rating..'))
-        ratingMenu.links.append(Mod_Ratings())
-        ModList.context_links.append(ratingMenu)
     #--------------------------------------------
     ModList.context_links.append(SeparatorLink())
     ModList.context_links.append(Mod_Move())
-    ModList.context_links.append(Mod_OrderByName())
-    ModList.context_links.append(SeparatorLink())
-    if bush.game.Esp.canBash:
-        ModList.context_links.append(Mod_Details())
-    ModList.context_links.append(File_ListMasters())
-    ModList.context_links.append(Mod_ListDependent())
     ModList.context_links.append(Mod_ShowReadme())
-    if bush.game.allTags:
-        ModList.context_links.append(Mod_ListBashTags())
-        ModList.context_links.append(Mod_CreateLOOTReport())
-    ModList.context_links.append(Mod_CopyModInfo())
     ModList.context_links.append(Mod_JumpToInstaller())
+    if True: #--Info
+        info_menu = MenuLink(_('Info..'))
+        if bush.game.allTags:
+            info_menu.links.append(Mod_ListBashTags())
+        info_menu.links.append(Mod_ListDependent())
+        info_menu.links.append(File_ListMasters())
+        if bush.game.Esp.canBash:
+            info_menu.links.append(Mod_ListPatchConfig())
+        info_menu.links.append(SeparatorLink())
+        if bush.game.allTags:
+            info_menu.links.append(Mod_CreateLOOTReport())
+        info_menu.links.append(Mod_CopyModInfo())
+        if bush.game.Esp.canBash:
+            info_menu.links.append(Mod_Details())
+        ModList.context_links.append(info_menu)
     #--------------------------------------------
-    ModList.context_links.append(SeparatorLink())
-    ModList.context_links.append(Mod_AllowGhosting())
-    ModList.context_links.append(Mod_GhostUnghost())
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_MarkMergeable())
         ModList.context_links.append(Mod_Patch_Update())
-        ModList.context_links.append(Mod_ListPatchConfig())
-        ModList.context_links.append(Mod_ExportPatchConfig())
-        #--Advanced
         ModList.context_links.append(SeparatorLink())
+        ModList.context_links.append(Mod_FlipEsm())
+        if bush.game.check_esl:
+            ModList.context_links.append(Mod_FlipEsl())
+        ModList.context_links.append(Mod_FlipMasters())
+        ModList.context_links.append(Mod_CreateDummyMasters())
+    ModList.context_links.append(SeparatorLink())
+    if True: #--Plugin
+        plugin_menu = MenuLink(_('Plugin..'))
+        if True: #--Groups
+            groupMenu = MenuLink(_('Groups..'))
+            groupMenu.links.append(Mod_Groups())
+            plugin_menu.links.append(groupMenu)
+        if True: #--Ratings
+            ratingMenu = MenuLink(_('Rating..'))
+            ratingMenu.links.append(Mod_Ratings())
+            plugin_menu.links.append(ratingMenu)
+        plugin_menu.links.append(SeparatorLink())
+        plugin_menu.links.append(Mod_AllowGhosting())
+        plugin_menu.links.append(Mod_GhostUnghost())
+        plugin_menu.links.append(Mod_OrderByName())
+        if bush.game.Esp.canBash:
+            plugin_menu.links.append(SeparatorLink())
+            plugin_menu.links.append(Mod_CopyToMenu())
+            if True: #--Cleaning
+                cleanMenu = MenuLink(_('Cleaning..'))
+                cleanMenu.links.append(Mod_SkipDirtyCheck())
+                cleanMenu.links.append(SeparatorLink())
+                cleanMenu.links.append(Mod_ScanDirty())
+                cleanMenu.links.append(Mod_RemoveWorldOrphans())
+                if bush.game.fsName == 'Oblivion':
+                    cleanMenu.links.append(Mod_FogFixer())
+                plugin_menu.links.append(cleanMenu)
+        ModList.context_links.append(plugin_menu)
+    if bush.game.Esp.canBash: #--Advanced
+        advanced_menu = MenuLink(_('Advanced..'))
         if True: #--Export
             exportMenu = MenuLink(_('Export..'))
             exportMenu.links.append(Mod_EditorIds_Export())
@@ -554,7 +582,7 @@ def InitModLinks():
                 exportMenu.links.append(Mod_SigilStoneDetails_Export())
                 exportMenu.links.append(Mod_SpellRecords_Export())
                 exportMenu.links.append(Mod_Stats_Export())
-            ModList.context_links.append(exportMenu)
+            advanced_menu.links.append(exportMenu)
         if True: #--Import
             importMenu = MenuLink(_('Import..'))
             importMenu.links.append(Mod_EditorIds_Import())
@@ -585,25 +613,12 @@ def InitModLinks():
                 importMenu.links.append(SeparatorLink())
                 importMenu.links.append(Mod_Face_Import())
                 importMenu.links.append(Mod_Fids_Replace())
-            ModList.context_links.append(importMenu)
-        if True: #--Cleaning
-            cleanMenu = MenuLink(_('Mod Cleaning..'))
-            cleanMenu.links.append(Mod_SkipDirtyCheck())
-            cleanMenu.links.append(SeparatorLink())
-            cleanMenu.links.append(Mod_ScanDirty())
-            cleanMenu.links.append(Mod_RemoveWorldOrphans())
-            if bush.game.fsName == 'Oblivion':
-                cleanMenu.links.append(Mod_FogFixer())
-            ModList.context_links.append(cleanMenu)
-        ModList.context_links.append(Mod_CopyToMenu())
-        ModList.context_links.append(Mod_FlipEsm())
-        if bush.game.check_esl:
-            ModList.context_links.append(Mod_FlipEsl())
-        ModList.context_links.append(Mod_FlipMasters())
-        ModList.context_links.append(Mod_CreateDummyMasters())
+        advanced_menu.links.append(importMenu)
         if bush.game.fsName == 'Oblivion':
-            ModList.context_links.append(Mod_DecompileAll())
-            ModList.context_links.append(Mod_SetVersion())
+            advanced_menu.links.append(SeparatorLink())
+            advanced_menu.links.append(Mod_DecompileAll())
+            advanced_menu.links.append(Mod_SetVersion())
+        ModList.context_links.append(advanced_menu)
     # ModList: Global Links
     # File Menu
     file_menu = ModList.global_links[_('File')]

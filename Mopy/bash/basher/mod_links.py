@@ -45,14 +45,13 @@ from ..exception import AbstractError, BoltError, CancelError
 from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import CsvParser
-from ..patcher import exportConfig, patch_files
+from ..patcher import patch_files
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
            u'Mod_ListBashTags', u'Mod_CreateLOOTReport', u'Mod_CopyModInfo',
            u'Mod_AllowGhosting', u'Mod_GhostUnghost', u'Mod_MarkMergeable',
-           u'Mod_Patch_Update', u'Mod_ListPatchConfig',
-           u'Mod_ExportPatchConfig', u'Mod_EditorIds_Export',
+           'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_EditorIds_Export',
            u'Mod_FullNames_Export', u'Mod_Prices_Export', u'Mod_Stats_Export',
            u'Mod_Factions_Export', u'Mod_ActorLevels_Export', u'Mod_Redate',
            u'Mod_FactionRelations_Export', u'Mod_IngredientDetails_Export',
@@ -87,11 +86,12 @@ class _LoadLink(ItemLink):
         modFile.load(True, **kwargs)
         return modFile
 
+# Dev tools, no need to translate strings here
 class Mod_FullLoad(_LoadLink):
     """Tests all record definitions against a specific mod"""
-    _text = _('Test Record Definitions...')
-    _help = _('Tests the current record definitions for this game against the '
-              'selected plugins.')
+    _text = 'Test Record Definitions...'
+    _help = ('Tests the current record definitions for this game against the '
+             'selected plugins.')
     _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
@@ -105,26 +105,25 @@ class Mod_FullLoad(_LoadLink):
                         progress=SubProgress(progress, i, i + 1),
                         catch_errors=False)
                 except:
-                    failed_msg = (_('%s failed to verify using current record '
-                                    'definitions. The original traceback is '
-                                    'available in the '
-                                    'BashBugDump.') % dbg_inf.fn_key + '\n\n' +
+                    failed_msg = (('%s failed to verify using current record '
+                                   'definitions. The original traceback is '
+                                   'available in the '
+                                   'BashBugDump.') % dbg_inf.fn_key + '\n\n' +
                                   traceback.format_exc())
-                    self._showError(failed_msg, title=_('Verification Failed'))
+                    self._showError(failed_msg, title='Verification Failed')
                     bolt.deprint(f'Exception loading {dbg_inf.fn_key}:',
                                  traceback=True)
                     return
-        self._showOk(_('All selected files fully verified using current '
-                       'record definitions.'),
-            title=_('Verification Succeeded'))
+        self._showOk('All selected files fully verified using current '
+                     'record definitions.', title='Verification Succeeded')
 
 class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     """Useful for debugging if any getNumRecords implementations are broken.
     Simply copy-paste the loop from below into ModFile.save to get output on BP
     save, then compare it to the MobBase-based output from this link."""
-    _text = _(u'Recalculate Record Counts')
-    _help = _(u'Recalculates the group record counts for the selected plugin '
-              u'and writes them to the BashBugDump.')
+    _text = 'Recalculate Record Counts'
+    _help = ('Recalculates the group record counts for the selected plugin '
+             'and writes them to the BashBugDump.')
 
     def Execute(self):
         modFile = self._load_mod(self._selected_info, do_map_fids=False)
@@ -1110,19 +1109,6 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         copy_text_to_clipboard(clip.getvalue())
         log_text = log.out.getvalue()
         self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))
-
-class Mod_ExportPatchConfig(_Mod_BP_Link):
-    """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
-    _text = _(u'Export Patch Config...')
-    _help = _(
-        u'Exports the Bashed Patch configuration to a Wrye Bash readable file')
-
-    @balt.conversation
-    def Execute(self):
-        #--Config
-        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
-        exportConfig(patch_name=self._selected_item, config=config,
-            win=self.window, outDir=bass.dirs[u'patches'])
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
