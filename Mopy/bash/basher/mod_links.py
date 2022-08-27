@@ -698,7 +698,7 @@ class Mod_CopyModInfo(ItemLink):
         info_txt = u''
         if len(self.selected) > 5:
             spoiler = True
-            info_txt += u'[spoiler]'
+            info_txt += '[spoiler]\n'
         else:
             spoiler = False
         # Create the report
@@ -708,9 +708,14 @@ class Mod_CopyModInfo(ItemLink):
             if isFirst: isFirst = False
             else: info_txt += u'\n\n'
             #-- Name of file, plus a link if we can figure it out
-            inst = fileInfo.get_table_prop(u'installer', u'')
-            if not inst: info_txt += fileName
-            else: info_txt += _(u'URL: %s') % _getUrl(inst)
+            info_txt += _('Plugin: %(plugin_file)s') % {
+                'plugin_file': fileName}
+            linked_installer = fileInfo.get_table_prop('installer', '')
+            if linked_installer:
+                installer_url = _getUrl(linked_installer)
+                if installer_url:
+                    info_txt += '\n' + _('URL: %(linked_url)s') % {
+                        'linked_url': installer_url}
             labels = self.window.labels
             for col in self.window.allowed_cols:
                 if col == u'File': continue
@@ -720,7 +725,7 @@ class Mod_CopyModInfo(ItemLink):
             version = bosh.modInfos.getVersion(fileName)
             if version:
                 info_txt += u'\n'+_(u'Version')+u': %s' % version
-        if spoiler: info_txt += u'[/spoiler]'
+        if spoiler: info_txt += '\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_(u'Mod Info Report'), fixedFont=False)

@@ -84,7 +84,7 @@ class Installer(ListInfo):
     # should be renamed by BAIN to avoid conflicts if they are used as doc
     # files (e.g. 'credits' means 'Credits.txt' etc. would be caught). May be
     # regexes too (which will be run on the filename root).
-    _common_doc_roots = {'change[ _]?log', 'changes', 'credits',
+    _common_doc_roots = {'change[ _]?log', 'changes', 'credits', 'licen[cs]e',
                          'version[ _]?history'}
     re_common_docs = re.compile(
         '^(.*)(?:' + '|'.join(_common_doc_roots) + ')(.*)$', re.I)
