@@ -1458,8 +1458,7 @@ class Flags(object):
         return f'0x{self.hex()} ({all_flags})'
 
 class TrimmedFlags(Flags):
-    """Flag subtype that will discard unnamed flags on __init__ and dump
-    (or perform other kind of trimming)."""
+    """Flag subtype that will discard unnamed flags on __init__ and dump."""
     __slots__ = ()
 
     def __init__(self, value=0):
@@ -1476,7 +1475,7 @@ class TrimmedFlags(Flags):
 
     def dump(self):
         self._clean_flags()
-        return super(TrimmedFlags, self).dump()
+        return super().dump()
 
 #------------------------------------------------------------------------------
 class DataDict(object):

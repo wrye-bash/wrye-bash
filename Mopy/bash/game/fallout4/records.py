@@ -46,7 +46,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
-    MelGrasData
+    MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
+    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1416,6 +1417,55 @@ class MreHazd(MelRecord):
             (FID, 'hazd_effect'), (FID, 'hazd_light'),
             (FID, 'hazd_impact_dataset'), (FID, 'hazd_sound'),
             'taper_full_effect_radius', 'taper_weight', 'taper_curse'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreHdpt(MelRecord):
+    """Head Part."""
+    rec_sig = b'HDPT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelModel(),
+        MelHdptShared(),
+        MelConditionList(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIdle(MelRecord):
+    """Idle Animation."""
+    rec_sig = b'IDLE'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelConditionList(),
+        MelString(b'DNAM', 'behavior_graph'),
+        MelIdleEnam(),
+        MelIdleRelatedAnims(),
+        MelIdleData(),
+        MelString(b'GNAM', 'animation_file'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIdlm(MelRecord):
+    """Idle Marker."""
+    rec_sig = b'IDLM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelKeywords(),
+        MelIdlmFlags(),
+        MelCounter(MelUInt8(b'IDLC', 'idlm_animation_count'),
+            counts='idlm_animations'),
+        MelIdleTimerSetting(),
+        MelIdlmIdla(),
+        MelFid(b'QNAM', 'unknown_qnam'),
+        MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
 

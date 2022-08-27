@@ -580,6 +580,33 @@ class MelHairFlags(MelUInt8Flags):
         super().__init__(b'DATA', 'flags', self._hair_flags)
 
 #------------------------------------------------------------------------------
+class MelHdptShared(MelSequential):
+    """Handles the HDPT subrecords DATA, PNAM, HNAM, NAM0, NAM1, TNAM, CNAM and
+    RNAM."""
+    _hdpt_flags = Flags.from_names(
+        'playable',
+        'not_female',
+        'not_male',
+        'is_extra_part',
+        'use_solid_tint',
+        'uses_body_texture', # since FO4
+    )
+
+    def __init__(self):
+        super().__init__(
+            MelUInt8Flags(b'DATA', 'flags', self._hdpt_flags),
+            MelUInt32(b'PNAM', 'hdpt_type'),
+            MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
+            MelGroups('head_parts',
+                MelUInt32(b'NAM0', 'head_part_type'),
+                MelString(b'NAM1', 'head_part_filename'),
+            ),
+            MelFid(b'TNAM', 'hdpt_texture_set'),
+            MelFid(b'CNAM', 'hdpt_color'),
+            MelFid(b'RNAM', 'valid_races'),
+        )
+
+#------------------------------------------------------------------------------
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
@@ -613,6 +640,54 @@ class MelIco2(MelIcons2):
     """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
     def __init__(self, ico2_attr):
         super().__init__(ico2_attr=ico2_attr, mic2_attr='')
+
+#------------------------------------------------------------------------------
+class MelIdleData(MelStruct):
+    """Handles the IDLE subrecord DATA (Data) since Skyrim."""
+    _idle_flags = TrimmedFlags.from_names('idle_parent', 'idle_sequence',
+        'no_attacking', 'idle_blocking')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['4B', 'H'], 'looping_min', 'looping_max',
+            (self._idle_flags, 'idle_flags'), 'animation_group_section',
+            'replay_delay'),
+
+#------------------------------------------------------------------------------
+class MelIdleEnam(MelString):
+    """Handles the IDLE subrecord ENAM (Animation Event)."""
+    def __init__(self):
+        super().__init__(b'ENAM', 'animation_event'),
+
+#------------------------------------------------------------------------------
+class MelIdleRelatedAnims(MelStruct):
+    """Handles the IDLE subrecord Related Idle Animations."""
+    def __init__(self, ra_sig=b'ANAM'):
+        super().__init__(ra_sig, ['2I'], (FID, 'ra_parent'),
+            (FID, 'ra_previous_sibling'))
+
+#------------------------------------------------------------------------------
+class MelIdleTimerSetting(MelFloat):
+    """Handles the common IDLT subrecord (Idle Timer Setting)."""
+    def __init__(self):
+        super().__init__(b'IDLT', 'idle_timer_setting')
+
+#------------------------------------------------------------------------------
+class MelIdlmFlags(MelUInt8Flags):
+    """Handles the IDLM subrecord IDLF (Flags)."""
+    _idlm_flags = Flags.from_names(
+        (0, 'run_in_sequence'),
+        (2, 'do_once'),
+        (4, 'ignored_by_sandbox'), # since Skyrim
+    )
+
+    def __init__(self):
+        super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
+
+#------------------------------------------------------------------------------
+class MelIdlmIdla(MelSimpleArray):
+    """Handles the IDLM subrecord IDLA (Animations)."""
+    def __init__(self):
+        super().__init__('idlm_animations', MelFid(b'IDLA'))
 
 #------------------------------------------------------------------------------
 class MelImageSpaceMod(MelFid):

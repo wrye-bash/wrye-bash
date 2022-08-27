@@ -50,7 +50,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData
+    MelTxstFlags, MelGrasData, MelIdleRelatedAnims, MelIdlmFlags, \
+    MelIdleTimerSetting, MelIdlmIdla
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1275,14 +1276,14 @@ class MreHdpt(MelRecord):
     """Head Part."""
     rec_sig = b'HDPT'
 
-    _flags = Flags.from_names('playable')
+    _hdpt_flags = Flags.from_names('playable')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
-        MelSorted(MelFids('extraParts', MelFid(b'HNAM'))),
+        MelUInt8Flags(b'DATA', 'flags', _hdpt_flags),
+        MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1291,14 +1292,17 @@ class MreIdle(MelRecord):
     """Idle Animation."""
     rec_sig = b'IDLE'
 
+    _idle_flags = Flags.from_names('no_attacking')
+
     melSet = MelSet(
         MelEdid(),
         MelModel(),
         MelConditionsFo3(),
-        MelStruct(b'ANAM', [u'I', u'I'],(FID,'parent'),(FID,'prevId')),
-        MelTruncatedStruct(b'DATA', [u'3B', u's', u'h', u'B', u's'], 'group', 'loopMin', 'loopMax',
-                           'unknown1', 'delay', 'flags',
-                           'unknown2', old_versions={'3Bsh'}),
+        MelIdleRelatedAnims(),
+        MelTruncatedStruct(b'DATA', ['3B', 's', 'h', 'B', 's'],
+            'animation_group_section', 'looping_min', 'looping_max',
+            'unused1', 'replay_delay', (_idle_flags, 'idle_flags'),
+            'unknown2', old_versions={'3Bsh'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1307,17 +1311,15 @@ class MreIdlm(MelRecord):
     """Idle Marker."""
     rec_sig = b'IDLM'
 
-    _flags = Flags.from_names('runInSequence', None, 'doOnce')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8Flags(b'IDLF', u'flags', _flags),
+        MelIdlmFlags(),
         MelPartialCounter(MelTruncatedStruct(b'IDLC', ['B', '3s'],
-            'animation_count', 'unused1', old_versions={'B'}),
-            counters={'animation_count': 'animations'}),
-        MelFloat(b'IDLT', 'idleTimerSetting'),
-        MelSimpleArray('animations', MelFid(b'IDLA')),
+            'idlm_animation_count', 'unused1', old_versions={'B'}),
+            counters={'idlm_animation_count': 'idlm_animations'}),
+        MelIdleTimerSetting(),
+        MelIdlmIdla(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2109,7 +2111,7 @@ class MrePack(MelRecord):
             MelPartialCounter(MelStruct(b'IDLC', ['B', '3s'],
                 'animation_count', 'unused1'),
                 counters={'animation_count': 'animations'}),
-            MelFloat(b'IDLT', 'idleTimerSetting'),
+            MelIdleTimerSetting(),
             MelSimpleArray('animations', MelFid(b'IDLA')),
             MelBase(b'IDLB','idlb_p'),
         ),

@@ -645,7 +645,7 @@ graphicsTypes = {
     b'FLOR': (u'model',),
     b'FURN': (u'model',),
     b'GRAS': (u'model',),
-    b'HDPT': ('model', 'textureSet', 'color'),
+    b'HDPT': ('model', 'hdpt_texture_set', 'hdpt_color'),
     b'INGR': (u'iconPath', u'model'),
     b'IPCT': ('model', 'effect_duration', 'effect_orientation',
               'angle_threshold', 'placement_radius', 'ipct_no_decal_data',

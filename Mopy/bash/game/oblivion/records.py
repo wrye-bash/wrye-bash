@@ -45,7 +45,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
-    MelSeasons, MelIngredient, MelGrasData
+    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1075,10 +1075,8 @@ class MreIdle(MelRecord):
         MelEdid(),
         MelModel(),
         MelConditionsTes4(),
-        MelUInt8(b'ANAM', 'group'),
-        MelArray('related_animations',
-            MelStruct(b'DATA', [u'2I'], (FID, 'parent'), (FID, 'prevId')),
-        ),
+        MelUInt8(b'ANAM', 'animation_group_section'),
+        MelIdleRelatedAnims(b'DATA'),
     )
     __slots__ = melSet.getSlotsUsed()
 
