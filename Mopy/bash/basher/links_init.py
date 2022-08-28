@@ -241,6 +241,9 @@ def InitInstallerLinks():
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_GlobalSkips())
     InstallersList.column_links.append(Installers_GlobalRedirects())
+    InstallersList.column_links.append(SeparatorLink())
+    InstallersList.column_links.append(Misc_SaveData())
+    InstallersList.column_links.append(Misc_SettingsDialog())
     #--Item links
     if True: #--File Menu
         file_menu = MenuLink(_('File..'))
@@ -341,6 +344,8 @@ def InitInstallerLinks():
     file_menu.append(SeparatorLink())
     file_menu.append(Installers_CreateNewProject())
     file_menu.append(Installers_AddMarker())
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = InstallersList.global_links[_('Edit')]
     edit_menu.append(Installers_MonitorExternalInstallation())
@@ -402,6 +407,9 @@ def InitINILinks():
     INIList.column_links.append(SeparatorLink())
     INIList.column_links.append(INI_AllowNewLines())
     INIList.column_links.append(INI_ListINIs())
+    INIList.column_links.append(SeparatorLink())
+    INIList.column_links.append(Misc_SaveData())
+    INIList.column_links.append(Misc_SettingsDialog())
     #--Item menu
     INIList.context_links.append(INI_Apply())
     INIList.context_links.append(INI_CreateNew())
@@ -411,7 +419,10 @@ def InitINILinks():
     INIList.context_links.append(INI_Delete())
     # INIList: Global Links
     # File Menu
-    INIList.global_links[_('File')].append(UIList_OpenStore())
+    file_menu = INIList.global_links[_('File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # View Menu
     view_menu = INIList.global_links[_('View')]
     view_menu.append(SortByMenu(sort_options=[INI_SortValid()]))
@@ -477,6 +488,9 @@ def InitModLinks():
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_CrcRefresh())
     ModList.column_links.append(Mods_PluginChecker())
+    ModList.column_links.append(SeparatorLink())
+    ModList.column_links.append(Misc_SaveData())
+    ModList.column_links.append(Misc_SettingsDialog())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
         dev_tools_menu = MenuLink('Dev Tools..')
@@ -630,6 +644,8 @@ def InitModLinks():
         file_menu.append(Mods_CreateBlankBashedPatch())
     file_menu.append(SeparatorLink())
     file_menu.append(Mods_OpenLOFileMenu())
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = ModList.global_links[_('Edit')]
     am_submenu = MenuLink(_('Active Plugins..'))
@@ -706,6 +722,9 @@ def InitSaveLinks():
         versionsMenu.links.append(Mods_OblivionVersion('GBR SI',
             setProfile=True))
         SaveList.column_links.append(versionsMenu)
+    SaveList.column_links.append(SeparatorLink())
+    SaveList.column_links.append(Misc_SaveData())
+    SaveList.column_links.append(Misc_SettingsDialog())
     #--SaveList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
@@ -759,9 +778,11 @@ def InitSaveLinks():
         SaveList.context_links.append(Save_RepairHair())
     # SaveList: Global Links
     # File Menu
-    file_Menu = SaveList.global_links[_('File')]
-    file_Menu.append(UIList_OpenStore())
-    file_Menu.append(Files_Unhide(_('Unhides hidden saves.')))
+    file_menu = SaveList.global_links[_('File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(Files_Unhide(_('Unhides hidden saves.')))
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = SaveList.global_links[_('Edit')]
     if bush.game.fsName == 'Oblivion':
@@ -802,6 +823,8 @@ def InitBSALinks():
         files_menu.links.append(Files_Unhide(_('Unhides hidden BSAs.')))
     BSAList.column_links.append(files_menu)
     BSAList.column_links.append(SeparatorLink())
+    BSAList.column_links.append(Misc_SaveData())
+    BSAList.column_links.append(Misc_SettingsDialog())
     #--BSAList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
@@ -820,6 +843,8 @@ def InitBSALinks():
     file_menu = BSAList.global_links[_('File')]
     file_menu.append(UIList_OpenStore())
     file_menu.append(Files_Unhide(_('Unhides hidden BSAs.')))
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # View Menu
     view_menu = BSAList.global_links[_('View')]
     view_menu.append(SortByMenu())
@@ -849,6 +874,9 @@ def InitScreenLinks():
         qualityMenu.links.append(Screens_JpgQualityCustom())
         ScreensList.column_links.append(SeparatorLink())
         ScreensList.column_links.append(qualityMenu)
+    ScreensList.column_links.append(SeparatorLink())
+    ScreensList.column_links.append(Misc_SaveData())
+    ScreensList.column_links.append(Misc_SettingsDialog())
     #--ScreensList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
@@ -866,7 +894,10 @@ def InitScreenLinks():
         ScreensList.context_links.append(convertMenu)
     # ScreensList: Global Links
     # File Menu
-    ScreensList.global_links[_('File')].append(UIList_OpenStore())
+    file_menu = ScreensList.global_links[_('File')]
+    file_menu.append(UIList_OpenStore())
+    file_menu.append(SeparatorLink())
+    file_menu.append(Misc_SaveData())
     # View Menu
     view_menu = ScreensList.global_links[_('View')]
     view_menu.append(SortByMenu())

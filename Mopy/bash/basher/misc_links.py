@@ -27,15 +27,16 @@ from . import SaveDetails
 from .settings_dialog import SettingsDialog
 from .. import bass, balt, bosh, bush
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink
+    ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink, \
+    Link
 from ..bolt import GPath
-from ..gui import ImageWrapper
+from ..gui import ImageWrapper, BusyCursor
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
            u'Screens_JpgQualityCustom', u'Screen_Rename', u'Screen_ConvertTo',
            u'Master_AllowEdit', u'Master_ClearRenames', u'SortByMenu',
-           u'Misc_SettingsDialog', u'Master_JumpTo']
+           'Misc_SettingsDialog', 'Master_JumpTo', 'Misc_SaveData']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -248,7 +249,6 @@ class Master_JumpTo(OneItemLink):
     def Execute(self):
         balt.Link.Frame.notebook.SelectPage(u'Mods', self._sel_master)
 
-# Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _Column(CheckLink, EnabledLink):
 
@@ -310,7 +310,6 @@ class ColumnsMenu(ChoiceMenuLink):
     @property
     def _choices(self): return self.window.all_allowed_cols
 
-# Sort By menu ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
@@ -342,7 +341,6 @@ class SortByMenu(ChoiceMenuLink):
     @property
     def _choices(self): return self.window.allowed_cols
 
-# Settings Dialog -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Misc_SettingsDialog(ItemLink):
     _text = _(u'Global Settings...')
@@ -351,3 +349,14 @@ class Misc_SettingsDialog(ItemLink):
 
     def Execute(self):
         SettingsDialog.display_dialog()
+
+#------------------------------------------------------------------------------
+class Misc_SaveData(ItemLink):
+    """Saves WB settings and data."""
+    _text = _('Save Data')
+    _help = _("Saves Wrye Bash's settings and data.")
+    _keyboard_hint = 'Ctrl+S'
+
+    def Execute(self):
+        with BusyCursor():
+            Link.Frame.SaveSettings()

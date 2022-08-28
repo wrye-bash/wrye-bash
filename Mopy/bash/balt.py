@@ -1158,6 +1158,9 @@ class UIList(wx.Panel):
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
         elif cmd_down and kcode == ord(u'O'): # Ctrl+O - open data folder
             self.open_data_store()
+        if cmd_down and kcode == ord('S'): # Ctrl+S - save data
+            with BusyCursor():
+                Link.Frame.SaveSettings()
         # Ctrl+C - copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
