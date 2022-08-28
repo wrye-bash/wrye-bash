@@ -219,9 +219,9 @@ class AMultiTweakItem(object):
         for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
                            u'tweak_log_msg'):
             if getattr(self, tweak_attr) == u'OVERRIDE':
-                self._raise_tweak_syntax_error(u"A '%s' attribute is still "
-                                               u'set to the default '
-                                               u"('OVERRIDE')" % tweak_attr)
+                self._raise_tweak_syntax_error(f"A '{tweak_attr}' attribute "
+                                               f"is still set to the default "
+                                               f"('OVERRIDE')")
         # TODO: docs for attributes below! - done for static ones above
         self.choiceLabels = []
         self.choiceValues = []
@@ -235,7 +235,7 @@ class AMultiTweakItem(object):
             # See comments above for the syntax definition
             choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
             if choice_label == self.default_choice:
-                choice_label = u'[%s]' % choice_label
+                choice_label = f'[{choice_label}]'
                 self.default = choice_index
             self.choiceLabels.append(choice_label)
             self.choiceValues.append(choice_items)
@@ -264,7 +264,7 @@ class AMultiTweakItem(object):
         log(u'* ' + self.tweak_log_msg % {
             u'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
-            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
+            log(f'  * {src_plugin}: {count[src_plugin]}')
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -295,11 +295,11 @@ class AMultiTweakItem(object):
         identifying the offending tweak much easier appended."""
         err_msg += u'\nOffending tweak:'
         # To distinguish dynamic tweaks, which have the same class
-        err_msg += u"\n Name: '%s'" % self.tweak_name
+        err_msg += f"\n Name: '{self.tweak_name}'"
         # To identify problems with e.g. duplicate custom values immediately
-        err_msg += u'\n Choices: %s' % self.tweak_choices
-        err_msg += u'\n Class: %s.%s' % (self.__class__.__module__,
-                                         self.__class__.__name__)
+        err_msg += f'\n Choices: {self.tweak_choices}'
+        err_msg += (f'\n Class: {self.__class__.__module__}.'
+                    f'{self.__class__.__name__}')
         raise SyntaxError(err_msg)
 
     def isNew(self):
@@ -311,7 +311,7 @@ class AMultiTweakItem(object):
         """Returns label to be used in list"""
         tweakname = self.tweak_name
         if len(self.choiceLabels) > 1:
-            tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
+            tweakname += f' [{self.choiceLabels[self.chosen]}]'
         return tweakname
 
     def validate_values(self, chosen_values: tuple) -> str | None:
@@ -375,7 +375,7 @@ class ImportPatcher(ListPatcher, ModLoader):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     def _patchLog(self,log,type_count):
-        log.setHeader(u'= %s' % self._patcher_name)
+        log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         self._plog(log,type_count)
 
@@ -385,10 +385,11 @@ class ImportPatcher(ListPatcher, ModLoader):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
         for top_grup_sig, count in dict_sort(type_count):
-            if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                % {u'type': sig_to_str(top_grup_sig), u'count': count})
+            if count:
+                log('* ' + _('Modified %(tg_type)s Records: %(rec_cnt)d') % {
+                    'tg_type': sig_to_str(top_grup_sig), 'rec_cnt': count})
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
-            log(u'* %s: %3d' % (mod, mod_count[mod]))
+            log(f'* {mod}: {mod_count[mod]:3d}')

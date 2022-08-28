@@ -451,7 +451,8 @@ def playSound(parent,sound):
     if sound.IsOk():
         sound.Play(wx.adv.SOUND_ASYNC)
     else:
-        showError(parent,_(u'Invalid sound file %s.') % sound)
+        showError(parent, _('Invalid sound file %(sound_file)s.') % {
+            'sound_file': sound})
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -973,7 +974,7 @@ class UIList(wx.Panel):
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
         ##: HACK or workaround for installer labels giving back Paths
-        str_label = '%s' % self.labels[allow_cols[0]](self, item)
+        str_label = f'{self.labels[allow_cols[0]](self, item)}'
         if insert:
             # We're inserting a new item, so we need special handling for the
             # first SetItem call - see InsertListCtrlItem
@@ -991,8 +992,7 @@ class UIList(wx.Panel):
             gl_set_item(gItem)
         for col_index, col in enumerate(allow_cols[1:], start=1):
             ##: HACK, same as above
-            gl_set_item(itemDex, col_index, '%s' % self.labels[col](
-                self, item))
+            gl_set_item(itemDex, col_index, f'{self.labels[col](self, item)}')
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -1560,9 +1560,10 @@ class UIList(wx.Panel):
         for fnkey, inf in items:
             destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
-                message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % fnkey)
-                if not askYes(self, message, _(u'Hide Files')): continue
+                message = (_('A file named %(target_file_name)s already '
+                             'exists in the hidden files directory. Overwrite '
+                             'it?') % {'target_file_name': fnkey})
+                if not askYes(self, message, _('Hide Files')): continue
             #--Do it
             with BusyCursor():
                 self.data_store.move_info(fnkey, destDir)
@@ -2033,9 +2034,9 @@ class UIList_OpenItems(ItemLink):
 
     @property
     def link_help(self):
-        return _(u"Open '%s' with the system's default program.") % \
-               self.selected[0] if len(self.selected) == 1 else _(
-            u'Open the selected files.')
+        return (_("Open '%(item_to_open)s' with the system's default "
+                  "program.") % {'item_to_open': self.selected[0]}
+                if len(self.selected) == 1 else _('Open the selected files.'))
 
     def Execute(self): self.window.OpenSelected(selected=self.selected)
 
@@ -2046,7 +2047,8 @@ class UIList_OpenStore(ItemLink):
 
     @property
     def link_help(self):
-        return _(u"Open '%s'") % self.window.data_store.store_dir
+        return _("Open '%(data_store_path)s'.") % {
+            'data_store_path': self.window.data_store.store_dir}
 
     def Execute(self): self.window.open_data_store()
 
@@ -2097,13 +2099,13 @@ class TreeCtrl(_AComponent):
         self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
         for item, subitems in items_dict.items():
             if not isinstance(item, str):
-                deprint(f'{item!r} passed')
-                item = '%s' % item
+                deprint(f'Non-str {item!r} passed')
+                item = f'{item}'
             child = self._native_widget.AppendItem(root, item)
             for subitem in subitems:
                 if not isinstance(subitem, str):
-                    deprint(f'{subitem!r} passed')
-                    subitem = '%s' % subitem
+                    deprint(f'Non-str {subitem!r} passed')
+                    subitem = f'{subitem}'
                 self._native_widget.AppendItem(child, subitem)
             self._native_widget.Expand(child)
 
@@ -2146,7 +2148,7 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         for item_group in lists:
             title = item_group[0] # also serves as key in self._ctrls dict
             item_tip = item_group[1]
-            if not (strs := [u'%s' % x for x in item_group[2:]]): # Path | str
+            if not (strs := [f'{x}' for x in item_group[2:]]): # Path | str
                 continue
             if liststyle == u'check':
                 checksCtrl = CheckListBox(self, choices=strs, isSingle=True,
