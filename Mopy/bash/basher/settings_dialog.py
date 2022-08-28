@@ -475,8 +475,9 @@ class LanguagePage(_AScrollablePage):
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
         # Gather all localizations in the l10n directory
-        all_langs = [b for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po'
-                     and (b := f.fn_body)[-3:].lower() != u'new']
+        all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
+                     if f.fn_ext == '.po'
+                     and (b := f.fn_body)[-3:].lower() != 'new']
         # Insert English since there's no localization file for that
         if u'en_US' not in all_langs:
             all_langs.append(u'en_US')
@@ -595,7 +596,7 @@ class LanguagePage(_AScrollablePage):
     @staticmethod
     def _gather_l10n():
         """Returns a list of all localization files in the l10n directory."""
-        return [f for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po']
+        return [f'{f}' for f in bass.dirs['l10n'].ilist() if f.fn_ext == '.po']
 
     def _handle_editor_cfg_btn(self):
         """Internal callback, called when the 'Configure Editor...' button has
