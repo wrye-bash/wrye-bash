@@ -205,8 +205,9 @@
 </ul>
 <p>Optional libaries:</p>
 <ul>
-    <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The doc browser
-        will be able to display PDFs if this is installed.</li>
+    <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The
+        Doc Browser will be able to display PDFs if this is
+        installed.</li>
 </ul>
 
 <h2 id="bain">Installers Tab <a class="back2top" href="#contents">Back to top</a></h2>
@@ -1580,7 +1581,11 @@ tab. The directories skipped are:
             <tr><td colspan="2">List Dependent...<td>Displays and copies to the clipboard a list of mods that have the currently selected
                 mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
                 <code>++</code>, <code>**</code> and <code>__</code> respectively.
-            <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
+            <tr>
+                <td colspan="2">Readme...</td>
+                <td>Attempts to open the selected plugin's associated readme in
+                    the <a href="#tools-docs">Doc Browser</a>.</td>
+            </tr>
             <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
             <tr>
                 <td colspan="2" id="modsCreateLOOTEntry">Create LOOT Entry...</td>
@@ -9838,27 +9843,53 @@ noted in the description of the tweak.</p>
 <img alt="doc browser" src="../bash/images/readme/doc-browser-set-doc-dialogue.png">
 <figcaption class="tools-docs-figcap">Wrye Bash's Doc Browser.</figcaption>
 </figure>
-<p>The Doc Browser allows you to quickly and easily scan through your mods' documentation. The supported document types are:</p>
+<p>The Doc Browser allows you to quickly and easily scan through your
+    mods' documentation. The supported document types are:</p>
 <ul>
     <li>Text files (<code>.txt</code> and similar)</li>
     <li>HTML files (<code>.html</code> or <code>.htm</code>)</li>
     <li>HTML archives (<code>.mht</code> or <code>.mhtml</code>)</li>
     <li>PDF files (<code>.pdf</code>)</li>
 </ul>
-<p>To display the Doc Browser, double click any plugin in the main list of the Mods tab.</p>
-<p>When you double-click a plugin, Wrye Bash will open the Doc Browser and attempt to determine which document to associate with it. If it can determine one, it will display it. Otherwise, a blank page will be displayed. To associate a document with a plugin, use the <q>Set Doc...</q> button in the Doc Browser. To disassociate a document with a plugin, use the <q>Forget Doc</q> button in the Doc Browser.
-<p>You can also rename an associated document using the <q>Rename Doc...</q> button to select a new name and/or location. The document will be renamed and/or moved to this location.
-<p>You can edit a document by ticking the <q>Allow Editing</q> checkbox. The document can then be edited in the viewing window. To finish editing, uncheck the <q>Allow Editing</q> checkbox again. Changes are automatically saved when you select a new plugin, close the Doc Browser or finish editing.
-<p>A document can be opened in its default external editor by clicking the <q>Open Doc...</q> button.
-<p>A new document can be created for a plugin by clicking the <q>Set Doc...</q> button and choosing a new filename. This creates a document using a blank template that you can then edit. The default template is <code>Data\Docs\My Readme Template</code> if it exists, or if not, <code>Data\Docs\Bash Readme Template.txt</code>. The latter is written in Wrye wiki text format, which will be displayed as HTML when the Doc Browser is not in edit mode.
-<p>To view a different document, select a different plugin in the list on the left of the Doc Browser or in the Mods tab.
-<p>Some notes on Doc Browser behaviour:
+<p>To display the Doc Browser, double click any plugin in the main
+    list of the Mods tab.</p>
+<p>When you double-click a plugin, Wrye Bash will open the Doc Browser and
+    attempt to determine which document to associate with it. If it can
+    determine one, it will display it. Otherwise, a blank page will be
+    displayed. To associate a document with a plugin, use the
+    <q>Set Doc...</q> button. To disassociate a document with a
+    plugin, use the <q>Forget Doc</q> button.</p>
+<p>You can also rename an associated document using the <q>Rename Doc...</q>
+    button to select a new name and/or location. The document will be renamed
+    and/or moved to this location.</p>
+<p>You can edit a document by ticking the <q>Allow Editing</q> checkbox. The
+    document can then be edited in the viewing window. To finish editing,
+    uncheck the <q>Allow Editing</q> checkbox again. Changes are automatically
+    saved when you select a new plugin, close the Doc Browser or
+    finish editing.</p>
+<p>A document can be opened in its default external editor by clicking the
+    <q>Open Doc...</q> button.</p>
+<p>A new document can be created for a plugin by clicking the <q>Set Doc...</q>
+    button and choosing a new filename. This creates a document using a blank
+    template that you can then edit. The default template is
+    <code>Data\Docs\My Readme Template</code> if it exists, or if not,
+    <code>Data\Docs\Bash Readme Template.txt</code>. The latter is written in
+    Wrye wiki text format, which will be displayed as HTML when the Doc Browser
+    is not in edit mode.</p>
+<p>To view a different document, select a different plugin in the list on the
+    left of the Doc Browser or in the Mods tab.</p>
+<p>Some notes on Doc Browser behaviour:</p>
 <ul>
-    <li>If a plugin is renamed in the Mods tab, then any documents associated with it will become associated to the plugin's new name.
-    <li>If a plugin is copied in the Mods tab, then any documents associated with it will also become associated with the copy.
-    <li>Documents can be stored in any location, though <code>Data\Docs</code> is the standard location.
-    <li>If you delete a plugin, its documentation will not be deleted, but it will no longer be viewable through the Doc Browser.
-    <li>If you hide a plugin, its documentation will still be viewable through the Doc Browser.
+    <li>If a plugin is renamed in the Mods tab, then any documents associated
+        with it will become associated to the plugin's new name.</li>
+    <li>If a plugin is copied in the Mods tab, then any documents associated
+        with it will also become associated with the copy.</li>
+    <li>Documents can be stored in any location, though <code>Data\Docs</code>
+        is the standard location.</li>
+    <li>If you delete a plugin, its documentation will not be deleted, but it
+        will no longer be viewable through the Doc Browser.</li>
+    <li>If you hide a plugin, its documentation will still be viewable through
+        the Doc Browser.</li>
 </ul>
 
 
