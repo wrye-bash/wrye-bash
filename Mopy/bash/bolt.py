@@ -177,7 +177,8 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     if goodEncoding:
         if returnEncoding: return goodEncoding
         else: return goodEncoding[0]
-    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+    raise UnicodeEncodeError(f'Text could not be encoded using any of the '
+                             f'following encodings: {encodings}')
 
 def encode_complex_string(string_val: str, max_size: int | None = None,
         min_size: int | None = None,
@@ -601,9 +602,9 @@ class FNDict(dict):
 # Forward compat functions - as we only want to pickle std types those stay
 def forward_compat_path_to_fn(di, value_type=lambda x: x):
     try:
-        return FNDict(('%s' % k, value_type(v)) for k, v in di.items())
+        return FNDict((f'{k}', value_type(v)) for k, v in di.items())
     except ValueError:
-        return FNDict((str('%s' % k), value_type(v)) for k, v in di.items())
+        return FNDict((str(f'{k}'), value_type(v)) for k, v in di.items())
 
 def forward_compat_path_to_fn_list(li, ret_type=list):
     try:
@@ -1601,7 +1602,8 @@ class MainFunctions(object):
         func_key = attrs_.pop(0)
         func = self.funcs.get(func_key)
         if not func:
-            msg = _(u'Unknown function/object: %s') % func_key
+            msg = _('Unknown function/object: %(func_key)s') % {
+                'func_key': func_key}
             try: print(msg)
             except UnicodeError: print(msg.encode(u'mbcs'))
             return
@@ -2086,15 +2088,15 @@ def deprint(*args, traceback=False, trace=True, frame=1):
     else:
         msg = u''
     try:
-        msg += ' '.join(['%s' % x for x in args]) # OK, even with unicode args
+        msg += ' '.join([f'{x}' for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
         for x in args:
             try:
-                msg += u' %s' % x
+                msg += f' {x}'
             except UnicodeError:
-                msg += u' %r' % x
+                msg += f' {x!r}'
     # Print to stdout by default, but change to stderr if we have an error
     target_stream = sys.stdout
     if traceback:
@@ -2703,7 +2705,7 @@ class WryeText(object):
                 else:
                     anchor = anchor[:-1] + str(count)
             anchorlist.append(anchor)
-            return u"<a id='%s'>%s</a>" % (anchor,text)
+            return f"<a id='{anchor}'>{text}</a>"
         #--Bold, Italic, BoldItalic
         reBold = re.compile(u'__',re.U)
         reItalic = re.compile(u'~~',re.U)
@@ -2729,9 +2731,11 @@ class WryeText(object):
         reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
         reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
         def subColor(match):
-            return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return (f'<span style="color:{match.group(1)};">'
+                    f'{match.group(2)}</span>')
         def subBGColor(match):
-            return u'<span style="background-color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return (f'<span style="background-color:{match.group(1)};">'
+                    f'{match.group(2)}</span>')
         def subLink(match):
             address = text = match.group(1).strip()
             if u'|' in text:
@@ -2747,7 +2751,7 @@ class WryeText(object):
                 newWindow = u''
             if not reFullLink.search(address):
                 address += u'.html'
-            return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
+            return f'<a href="{address}"{newWindow}>{text}</a>'
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
         reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
@@ -2886,7 +2890,7 @@ class WryeText(object):
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
                 level_ = len(spaces)//2 + 1
-                line = spaces+u'<p class="list-%i">'%level_+bullet+u'&nbsp; '
+                line = f'{spaces}<p class="list-{level_}">{bullet}&nbsp;'
                 line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:
@@ -2921,7 +2925,7 @@ class WryeText(object):
             with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise exception.BoltError(u'Non css tag in %s' % cssPath)
+                raise exception.BoltError(f'Non css tag in {cssPath}')
         #--Write Output ------------------------------------------------------
         outWrite(WryeText.htmlHead % (title,css))
         didContents = False
@@ -2932,7 +2936,8 @@ class WryeText(object):
                     for (level_,name_,text) in contents:
                         level_ = level_ - baseLevel + 1
                         if level_ <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level_,name_,text))
+                            outWrite(f'<p class="list-{level_}">&bull;&nbsp; '
+                                     f'<a href="#{name_}">{text}</a></p>\n')
                     didContents = True
             else:
                 outWrite(line)
