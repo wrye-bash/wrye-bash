@@ -1698,23 +1698,22 @@ class ModDetails(_ModsSavesDetails):
             self.descriptionStr = new_desc
             self.SetEdited()
 
-    bsaAndBlocking = _(
-        u'This mod has an associated archive (%s) and an associated '
-        u'plugin-name-specific directory (e.g. Sound\\Voice\\%s), which will '
-        u'become detached when the mod is renamed.') + u'\n\n' + _(
-        u'Note that the BSA archive may also contain a plugin-name-specific '
-        u'directory, which would remain detached even if the archive name is '
-        u'adjusted.')
-    bsa = _(
-        u'This mod has an associated archive (%s), which will become detached '
-        u'when the mod is renamed.') + u'\n\n' + _(
-        u'Note that this BSA archive may contain a plugin-name-specific '
-        u'directory (e.g. Sound\\Voice\\%s), which would remain detached even '
-        u'if the archive file name is adjusted.')
-    blocking = _(
-        u'This mod has an associated plugin-name-specific directory, (e.g. '
-        u'Sound\\Voice\\%s) which will become detached when the mod is '
-        u'renamed.')
+    _bsa_and_blocking_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
+        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
+        'which will become detached when the plugin is renamed.') + '\n\n' + _(
+        'Note that the BSA may also contain a plugin-name-specific directory, '
+        'which would remain detached even if the archive name were adjusted.')
+    _bsa_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
+        'become detached when the plugin is renamed.') + '\n\n' + _(
+        'Note that the BSA may contain a plugin-name-specific directory '
+        '(e.g. %(pnd_example)s), which would remain detached even '
+        'if the archive file name were adjusted.')
+    _blocking_msg = _(
+        'This plugin has an associated plugin-name-specific directory (e.g. '
+        '%(pnd_example)s), which will become detached when the plugin is '
+        'renamed.')
 
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
@@ -1736,10 +1735,12 @@ class ModDetails(_ModsSavesDetails):
         changeMasters = self.uilist.edited
         #--Warn on rename if file has BSA and/or dialog
         if changeName:
-            msg = modInfo.askResourcesOk(bsaAndBlocking=self.bsaAndBlocking,
-                                         bsa=self.bsa, blocking=self.blocking)
-            if msg and not balt.askWarning(self, msg, _(
-                u'Rename ') + u'%s' % modInfo): return
+            msg = modInfo.ask_resources_ok(
+                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+            if msg and not balt.askWarning(
+                    self, msg, title=_('Rename %(target_file_name)s') % {
+                        'target_file_name': modInfo}): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)

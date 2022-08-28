@@ -477,7 +477,7 @@ class FileInfo(AFile, ListInfo):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
-    def askResourcesOk(self, bsaAndBlocking, bsa, blocking):
+    def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         return u''
 
 #------------------------------------------------------------------------------
@@ -1078,15 +1078,16 @@ class ModInfo(FileInfo):
         else:
             return status
 
-    def askResourcesOk(self, bsaAndBlocking, bsa, blocking):
+    def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
-        if (hasBsa, hasBlocking) == (False,False):
-            return u''
-        bsa_name = self.fn_key.fn_body + bush.game.Bsa.bsa_extension
-        if hasBsa and hasBlocking: msg = bsaAndBlocking % (bsa_name, self)
-        elif hasBsa: msg = bsa % (bsa_name, self)
-        else: msg = blocking % self
-        return msg
+        if not hasBsa and not hasBlocking: return ''
+        elif hasBsa and hasBlocking: msg = bsa_and_blocking_msg
+        elif hasBsa: msg = bsa_msg
+        else: msg = blocking_msg
+        assoc_bsa = self.fn_key.fn_body + bush.game.Bsa.bsa_extension
+        return msg % {
+            'assoc_bsa_name': assoc_bsa,
+            'pnd_example': os.path.join('sound', 'voice', self.fn_key)}
 
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
@@ -2508,7 +2509,7 @@ class ModInfos(FileInfos):
                 try:
                     canMerge = is_mergeable(fileInfo, self, reasons)
                 except Exception as e:
-                    # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
+                    # deprint("Error scanning mod %s (%s)" % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
             if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
