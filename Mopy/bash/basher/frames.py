@@ -52,9 +52,8 @@ class DocBrowser(WindowFrame):
         # Singleton
         Link.Frame.docBrowser = self
         # Window
-        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
-                                         icon_bundle=Resources.bashBlue,
-                                         sizes_dict=bass.settings)
+        super().__init__(Link.Frame, title=_('Doc Browser'),
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         # Base UI components
         root_window = Splitter(self)
         mod_list_window, main_window = root_window.make_panes(250,
@@ -75,26 +74,26 @@ class DocBrowser(WindowFrame):
              choices=sorted(self._db_doc_paths),
              isSort=True, onSelect=self._do_select_existing)
         # Buttons
-        self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               btn_tooltip=u'Associates this plugin file with '
-                                           u'a document.')
+        self._set_btn = Button(main_window, _('Set Doc...'),
+                               btn_tooltip=_('Associates this plugin file '
+                                             'with a document.'))
         self._set_btn.on_clicked.subscribe(self._do_set)
-        self._forget_btn = Button(main_window, _(u'Forget Doc'),
-                                  btn_tooltip=_(u'Removes the link between '
-                                                u'this plugin file and the '
-                                                u'matching document.'))
+        self._forget_btn = Button(main_window, _('Forget Doc'),
+                                  btn_tooltip=_('Removes the link between '
+                                                'this plugin file and the '
+                                                'matching document.'))
         self._forget_btn.on_clicked.subscribe(self._do_forget)
-        self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  btn_tooltip=_(u'Renames the document.'))
+        self._rename_btn = Button(main_window, _('Rename Doc...'),
+                                  btn_tooltip=_('Renames the document.'))
         self._rename_btn.on_clicked.subscribe(self._do_rename)
-        self._edit_box = CheckBox(main_window, _(u'Allow Editing'),
-                                  chkbx_tooltip=_(u'Enables or disables '
-                                                  u'editing in the text field '
-                                                  u'below.'))
+        self._edit_box = CheckBox(main_window, _('Allow Editing'),
+                                  chkbx_tooltip=_('Enables or disables '
+                                                  'editing in the text field '
+                                                  'below.'))
         self._edit_box.on_checked.subscribe(self._do_edit)
-        self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                btn_tooltip=_(u'Opens the document in your '
-                                              u'default viewer/editor.'))
+        self._open_btn = Button(main_window, _('Open Doc...'),
+                                btn_tooltip=_('Opens the document in your '
+                                              'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = DocumentViewer(main_window)
@@ -211,8 +210,9 @@ class DocBrowser(WindowFrame):
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = ''
-        doc_path = FileOpen.display_dialog(self,
-            _('Select doc for %s:') % mod_name, docs_dir, file_name, '*.*',
+        doc_path = FileOpen.display_dialog(self, _('Select document for '
+                                                   '%(target_file_name)s:') % {
+            'target_file_name': mod_name}, docs_dir, file_name, '*.*',
             allow_create=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
@@ -350,10 +350,10 @@ _BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS, _COPY_TEXT, \
 _UPDATE = range(8)
 
 def _get_mod_checker_setting(key, default=None):
-    return bass.settings.get(u'bash.modChecker.show%s' % key, default)
+    return bass.settings.get(f'bash.modChecker.show{key}', default)
 
 def _set_mod_checker_setting(key, value):
-    bass.settings[u'bash.modChecker.show%s' % key] = value
+    bass.settings[f'bash.modChecker.show{key}'] = value
 
 class PluginChecker(WindowFrame):
     """Plugin Checker frame."""
@@ -387,8 +387,8 @@ class PluginChecker(WindowFrame):
                 btn.on_clicked.subscribe(callback)
             btn.tooltip = setting_tip
             if make_checkbox and setting_key is not None:
-                new_value = bass.settings.get(
-                    u'bash.modChecker.show%s' % setting_key, setting_value)
+                new_value = _get_mod_checker_setting(setting_key,
+                    setting_value)
                 btn.is_checked = new_value
                 self._setting_names[key] = setting_key
             self._controls[key] = btn

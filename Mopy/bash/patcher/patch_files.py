@@ -50,78 +50,86 @@ class PatchFile(ModFile):
             self.merged_or_loaded)
 
     def _log_header(self, log, patch_name):
-        log.setHeader(f'= {patch_name} {u"=" * 30}#', True)
-        log(u'{{CONTENTS=1}}')
+        log.setHeader(f'= {patch_name} {"=" * 30}#', True)
+        log('{{CONTENTS=1}}')
         #--Load Mods and error mods
-        log.setHeader(u'= ' + _(u'Overview'), True)
-        log.setHeader(u'=== ' + _(u'Date/Time'))
-        log(u'* ' + format_date(time.time()))
-        log(u'* ' + _(u'Elapsed Time: ') + u'TIMEPLACEHOLDER')
+        log.setHeader('= ' + _('Overview'), True)
+        log.setHeader('=== ' + _('Date/Time'))
+        log('* ' + format_date(time.time()))
+        log('* ' + _('Elapsed Time: %(elapsed_time)s') % {
+            'elapsed_time': 'TIMEPLACEHOLDER'})
         def _link(link_id):
-            return (readme_url(mopy=bass.dirs[u'mopy'], advanced=True),
+            return (readme_url(mopy=bass.dirs['mopy'], advanced=True) +
                     f'#{link_id}')
         if self.patcher_mod_skipcount:
-            log.setHeader(u'=== ' + _(u'Skipped Imports'))
-            log(_(u'The following import patchers skipped records because the '
-                  u'imported record required a missing or non-active mod to '
-                  u'work properly. If this was not intentional, rebuild the '
-                  u'patch after either deactivating the imported mods listed '
-                  u'below or activating the missing mod(s).'))
+            log.setHeader('=== ' + _('Skipped Imports'))
+            log(_('The following import patchers skipped records because the '
+                  'imported record required a missing or inactive plugin to '
+                  'work properly. If this was not intentional, rebuild the '
+                  'patch after either deactivating the imported plugins '
+                  'listed below or activating the missing plugins.'))
             for patcher, mod_skipcount in self.patcher_mod_skipcount.items():
-                log(u'* ' + _(u'%s skipped %d records:') % (
-                patcher, sum(mod_skipcount.values())))
+                log('* ' + _('%(patcher_n)s skipped %(num_skip)d records:') % {
+                    'patcher_n': patcher,
+                    'num_skip': sum(mod_skipcount.values())})
                 for mod, skipcount in mod_skipcount.items():
-                    log(u'  * ' + _(
-                        u'The imported mod, %s, skipped %d records.') % (
-                        mod, skipcount))
+                    log('  * ' + _('The imported plugin, %(imp_plugin)s, '
+                                   'skipped %(num_recs)d records.') % {
+                        'imp_plugin': mod, 'num_recs': skipcount})
         if self.unFilteredMods:
-            log.setHeader(u'=== ' + _(u'Unfiltered Mods'))
-            log(_(u'The following mods were active when the patch was built. '
-                  u'For the mods to work properly, you should deactivate the '
-                  u'mods and then rebuild the patch with the mods [['
-                  u'%s%s|Merged]] in.') % _link(u'patch-filter'))
-            for mod in self.unFilteredMods: log(u'* %s' % mod)
+            log.setHeader('=== ' + _('Unfiltered Plugins'))
+            log(_('The following plugins were active when the patch was '
+                  'built. For these plugins to work properly, you should '
+                  'deactivate them and then rebuild the patch with them '
+                  '[[%(url_merge_filtering)s|merged]] in.') % {
+                'url_merge_filtering': _link('patch-filter')})
+            for mod in self.unFilteredMods: log(f'* {mod}')
         if self.loadErrorMods:
-            log.setHeader(u'=== ' + _(u'Load Error Mods'))
-            log(_(u'The following mods had load errors and were skipped while '
-                  u'building the patch. Most likely this problem is due to a '
-                  u'badly formatted mod. For more info, generate a '
-                  u'[[https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D'
-                  u'-Reporting-a-bug#the-bashbugdumplog|BashBugDump]].'))
+            log.setHeader('=== ' + _('Load Error Plugins'))
+            log(_('The following plugins had load errors and were skipped '
+                  'while building the patch. Most likely this problem is due '
+                  'to a badly formatted plugin. For more info, generate a '
+                  '[[%(url_bbd)s|BashBugDump]].') % {
+                'url_bbd': 'https://github.com/wrye-bash/wrye-bash/wiki/'
+                           '%5Bgithub%5D-Reporting-a-bug#the-bashbugdumplog'})
             for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
         if self.worldOrphanMods:
-            log.setHeader(u'=== ' + _(u'World Orphans'))
-            log(_(u'The following mods had orphaned world groups, which were '
-                  u'skipped. This is not a major problem, but you might want '
-                  u"to use Bash's [[%s%s|Remove World Orphans]] command to "
-                  u'repair the mods.') % _link(u'modsRemoveWorldOrphans'))
+            log.setHeader('=== ' + _('World Orphans'))
+            log(_("The following plugins had orphaned world groups, which "
+                  "were skipped. This is not a major problem, but you might "
+                  "want to use Wrye Bash's"
+                  "[[%(url_rwo)s|Remove World Orphans]] command to repair "
+                  "the plugins.") % {
+                'url_rwo': _link('modsRemoveWorldOrphans')})
             for mod in self.worldOrphanMods: log(f'* {mod}')
         if self.compiledAllMods:
-            log.setHeader(u'=== ' + _(u'Compiled All'))
-            log(_(u'The following mods have an empty compiled version of '
-                  u'genericLoreScript. This is usually a sign that the mod '
-                  u'author did a __compile all__ while editing scripts. This '
-                  u'may interfere with the behavior of other mods that '
-                  u'intentionally modify scripts from %s. (E.g. Cobl '
-                  u"and Unofficial Oblivion Patch.) You can use Bash's [["
-                  u'%s%s|Decompile All]] command to repair the mods.'
-                  ) % ((bush.game.master_file,) + _link(u'modsDecompileAll')))
+            log.setHeader('=== ' + _('Compiled All'))
+            log(_("The following plugins have an empty compiled version of "
+                  "genericLoreScript. This is usually a sign that the plugin "
+                  "author did a __compile all__ while editing scripts. This "
+                  "may interfere with the behavior of other plugins that "
+                  "intentionally modify scripts from %(game_name)s (e.g. Cobl "
+                  "and Unofficial Oblivion Patch). You can use Wrye Bash's "
+                  "[[%(url_decomp)s|Decompile All]] command to repair the "
+                  "plugins.") % {'game_name': bush.game.master_file,
+                                 'url_decomp': _link('modsDecompileAll')})
             for mod in self.compiledAllMods: log(f'* {mod}')
-        log.setHeader(u'=== ' + _(u'Active Mods'), True)
+        log.setHeader('=== ' + _('Active Plugins'), True)
         for mname in self.merged_or_loaded_ord:
             version = self.p_file_minfos.getVersion(mname)
             if mname in self.loadSet:
                 message = f'* {self.loadMods.index(mname):02X} '
             else:
-                message = u'* ++ '
+                message = '* ++ '
             if version:
-                message += _(u'%s  [Version %s]') % (mname,version)
+                message += _('%(msg_plugin)s  [Version %(plugin_ver)s]') % {
+                    'msg_plugin': mname, 'plugin_ver': version}
             else:
                 message += mname
             log(message)
         #--Load Mods and error mods
         if self.pfile_aliases:
-            log.setHeader(u'= ' + _(u'Mod Aliases'))
+            log.setHeader('= ' + _('Plugin Aliases'))
             for alias_target, alias_repl in dict_sort(self.pfile_aliases):
                 log(f'* {alias_target} >> {alias_repl}')
 
@@ -131,9 +139,9 @@ class PatchFile(ModFile):
         if not self._patcher_instances: return
         progress = progress.setFull(len(self._patcher_instances))
         for index, patcher in enumerate(self._patcher_instances):
-            progress(index, _(u'Preparing') + f'\n{patcher.getName()}')
+            progress(index, _('Preparing') + f'\n{patcher.getName()}')
             patcher.initData(SubProgress(progress, index))
-        progress(progress.full, _(u'Patchers prepared.'))
+        progress(progress.full, _('Patchers prepared.'))
         # initData may set isActive to zero - TODO(ut) track down
         self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
@@ -141,7 +149,7 @@ class PatchFile(ModFile):
     def __init__(self, modInfo, p_file_minfos):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
-        self.tes4.author = u'BASHED PATCH'
+        self.tes4.author = 'BASHED PATCH'
         self.tes4.masters = [bush.game.master_file]
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
@@ -163,7 +171,8 @@ class PatchFile(ModFile):
         loadMods = [m for m in self.all_plugins
                     if load_order.cached_is_active(m)]
         if not loadMods:
-            raise BoltError('No active mods loading before the bashed patch')
+            raise BoltError('No active plugins loading before the Bashed '
+                            'Patch')
         self.loadMods = tuple(loadMods)
         self.loadSet = frozenset(self.loadMods)
         self.set_mergeable_mods([])
@@ -196,7 +205,7 @@ class PatchFile(ModFile):
 
     def initFactories(self,progress):
         """Gets load factories."""
-        progress(0, _(u'Processing.'))
+        progress(0, _('Processing.'))
         read_sigs = set(bush.game.readClasses) | set(chain.from_iterable(
             p.active_read_sigs for p in self._patcher_instances))
         self.readFactory = LoadFactory(False, by_sig=read_sigs)
@@ -225,11 +234,11 @@ class PatchFile(ModFile):
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
-                progress(index, u'%s\n' % modName + _(u'Loading...'))
+                progress(index, f'{modName}\n' + _('Loading...'))
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
             except ModError as e:
-                deprint(u'load error:', traceback=True)
+                deprint('load error:', traceback=True)
                 self.loadErrorMods.append((modName,e))
                 continue
             try:
@@ -237,7 +246,7 @@ class PatchFile(ModFile):
                 if b'WRLD' in modFile.tops and modFile.tops[b'WRLD'].orphansSkipped:
                     self.worldOrphanMods.append(modName)
                 # TODO adapt for other games
-                if bush.game.fsName == u'Oblivion' and b'SCPT' in \
+                if bush.game.fsName == 'Oblivion' and b'SCPT' in \
                         modFile.tops and modName != bush.game.master_file:
                     gls = modFile.tops[b'SCPT'].getRecord(0x00025811)
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
@@ -254,7 +263,7 @@ class PatchFile(ModFile):
                     progress(pstate, f'{modName}\n' + _('Scanning...'))
                     self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self._patcher_instances,
-                        key=attrgetter(u'patcher_order')):
+                        key=attrgetter('patcher_order')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate, f'{modName}\n{patcher.getName()}')
                     patcher.scan_mod_file(modFile,nullProgress)
@@ -263,7 +272,7 @@ class PatchFile(ModFile):
             except:
                 bolt.deprint(f'MERGE/SCAN ERROR: {modName}', traceback=True)
                 raise
-        progress(progress.full, _('Load mods scanned.'))
+        progress(progress.full, _('Load plugins scanned.'))
 
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
@@ -310,32 +319,32 @@ class PatchFile(ModFile):
             subProgress = SubProgress(progress, 0, 0.9,
                 len(self._patcher_instances))
             for i, patcher in enumerate(sorted(self._patcher_instances,
-                    key=attrgetter(u'patcher_order'))):
-                subProgress(i, _(u'Completing') + f'\n{patcher.getName()}...')
+                    key=attrgetter('patcher_order'))):
+                subProgress(i, _('Completing') + f'\n{patcher.getName()}...')
                 patcher.buildPatch(log, SubProgress(subProgress, i))
         # Trim records to only keep ones we actually changed
-        progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
+        progress(0.9, _('Completing') + '\n' + _('Trimming records...'))
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
-        progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
+        progress(0.95, _('Completing') + '\n' + _('Converting FormIDs...'))
         # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
-        progress(1.0, _(u'Compiled.'))
+        progress(1.0, _('Compiled.'))
         # Build the description
         numRecords = sum(x.getNumRecords(includeGroups=False)
                          for x in self.tops.values())
-        self.tes4.description = (
-                _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
-                u'Records Changed: %d') % numRecords)
+        self.tes4.description = (_('Updated: %(update_time)s') % {
+            'update_time': format_date(time.time())} + '\n\n' + _(
+            'Records Changed: %(num_recs)d') % {'num_recs': numRecords})
         # Flag as ESL if the game supports them and the option is enabled
         # Note that we can always safely mark as ESL as long as the number of
         # new records we created is smaller than 0xFFF, since the BP only ever
         # copies overrides into itself, no new records. The only new records it
         # can contain come from Tweak Settings, which creates them through
         # getNextObject and so properly increments nextObject.
-        if (bush.game.has_esl and bass.settings[u'bash.mods.auto_flag_esl'] and
+        if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
                 self.tes4.nextObject <= 0xFFF):
             self.tes4.flags1.eslFile = True
-            self.tes4.description += u'\n' + _(
-                u'This patch has been automatically ESL-flagged to save a '
-                u'load order slot.')
+            self.tes4.description += '\n' + _('This patch has been '
+                                              'automatically ESL-flagged to '
+                                              'save a load order slot.')
