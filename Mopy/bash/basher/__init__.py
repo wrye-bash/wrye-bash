@@ -143,18 +143,20 @@ class Installers_Link(ItemLink):
             _root, msg = msg
             self._showWarning(msg) # warn on extension change
         base_dir = base_dir or self.idata.store_dir
+        fmt_pf = {'package_filename': archive_path}
         if no_dir and base_dir.join(archive_path).is_dir():
-            self._showError(_(u'%s is a directory.') % archive_path)
+            self._showError(_('%(package_filename)s is a directory.') % fmt_pf)
             return
         if no_file and base_dir.join(archive_path).is_file():
-            self._showError(_(u'%s is a file.') % archive_path)
+            self._showError(_('%(package_filename)s is a file.') % fmt_pf)
             return
         if check_exists and base_dir.join(archive_path).exists():
             if disallow_overwrite:
-                self._showError(_(u'%s already exists.') % archive_path)
+                self._showError(_('%(package_filename)s already '
+                                  'exists.') % fmt_pf)
                 return
-            if not self._askYes(
-                    _(u'%s already exists. Overwrite it?') % archive_path,
+            if not self._askYes(_('%(package_filename)s already exists. '
+                                  'Overwrite it?') % fmt_pf,
                     title=self._dialog_title, default=False): return
         return archive_path
 
@@ -232,7 +234,7 @@ class SashPanel(NotebookPanel):
 class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
     listData = None
-    _status_str = u'OVERRIDE:' + u' %d'
+    _status_str = 'OVERRIDE: %(status_num)d'
     _ui_list_type = None # type: type
 
     def __init__(self, parent, isVertical=True):
@@ -244,7 +246,8 @@ class SashUIListPanel(SashPanel):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
 
-    def _sbCount(self): return self.__class__._status_str % len(self.listData)
+    def _sbCount(self): return self.__class__._status_str % {
+        'status_num': len(self.listData)}
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -346,7 +349,7 @@ class MasterList(_ModsUIList):
     labels = OrderedDict([
         (u'File',          lambda self, mi: bosh.modInfos.masterWithVersion(
             self.data_store[mi].curr_name)),
-        (u'Num',           lambda self, mi: u'%02X' % mi),
+        ('Num',           lambda self, mi: f'{mi:02X}'),
         (u'Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
             self.data_store[mi].curr_name)),
         ('Indices', lambda self, mi: self._save_lo_hex_string[
@@ -399,7 +402,7 @@ class MasterList(_ModsUIList):
         if val and (not self.detailsPanel.allowDetailsEdit or not
                balt.askContinue(
                    self, self.message, self.keyPrefix + u'.update.continue',
-                   _(u'Update Masters') + u' ' + _(u'BETA'))):
+                   _('Update Masters') + ' - ' + _('BETA'))):
             return
         bass.settings[self._allowEditKey] = val
         if val:
@@ -476,52 +479,54 @@ class MasterList(_ModsUIList):
         # Text foreground
         if masters_name in bosh.modInfos.bashed_patches:
             item_format.text_key = u'mods.text.bashedPatch'
-            mouseText += _(u'Bashed Patch. ')
+            mouseText += _('Bashed Patch.') + ' '
             if masterInfo.is_esl(): # ugh, copy-paste from below
-                mouseText += _(u'Light plugin. ')
+                mouseText += _('Light plugin.') + ' '
         elif masters_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
                 item_format.text_key = u'mods.text.noMerge'
-                mouseText += _(u'Technically mergeable, but has NoMerge tag. ')
+                mouseText += _('Technically mergeable, but has NoMerge '
+                               'tag.') + ' '
             else:
                 item_format.text_key = u'mods.text.mergeable'
                 if bush.game.check_esl:
-                    mouseText += _(u'Can be ESL-flagged. ')
+                    mouseText += _('Can be ESL-flagged.') + ' '
                 else:
                     # Merged plugins won't be in master lists
-                    mouseText += _(u'Can be merged into Bashed Patch. ')
+                    mouseText += _('Can be merged into Bashed Patch.') + ' '
         else:
             # NoMerge / Mergeable should take priority over ESL/ESM color
             final_text_key = u'mods.text.es'
             if masterInfo.is_esl():
                 final_text_key += u'l'
-                mouseText += _(u'Light plugin. ')
+                mouseText += _('Light plugin.') + ' '
             if masterInfo.in_master_block():
                 final_text_key += u'm'
-                mouseText += _(u'Master plugin. ')
+                mouseText += _('Master plugin.') + ' '
             # Check if it's special, leave ESPs alone
             if final_text_key != u'mods.text.es':
                 item_format.text_key = final_text_key
         # Text background
         if masters_name in bosh.modInfos.activeBad: # if active, it's in LO
             item_format.back_key = u'mods.bkgd.doubleTime.load'
-            mouseText += _(u'Plugin name incompatible, will not load. ')
+            mouseText += _('Plugin name incompatible, will not load.') + ' '
         elif bosh.modInfos.isBadFileName(masters_name): # might not be in LO
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
-            mouseText += _(u'Plugin name incompatible, cannot be activated. ')
+            mouseText += _('Plugin name incompatible, cannot be '
+                           'activated.') + ' '
         elif masterInfo.hasActiveTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.load'
-            mouseText += _(u'Another plugin has the same timestamp. ')
+            mouseText += _('Another plugin has the same timestamp.') + ' '
         elif masterInfo.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
-            mouseText += _(u'Another plugin has the same timestamp. ')
+            mouseText += _('Another plugin has the same timestamp.') + ' '
         elif masterInfo.is_ghost:
             item_format.back_key = u'mods.bkgd.ghosted'
-            mouseText += _(u'Plugin is ghosted. ')
+            mouseText += _('Plugin is ghosted.') + ' '
         elif self._do_size_checks and bosh.modInfos.size_mismatch(
                 masters_name, masterInfo.stored_size):
             item_format.back_key = u'mods.bkgd.size_mismatch'
-            mouseText += _(u'Stored size does not match the one on disk. ')
+            mouseText += _('Stored size does not match the one on disk.') + ' '
         if self.allowEdit:
             if masterInfo.old_name in settings[u'bash.mods.renames']:
                 item_format.strong = True
@@ -531,14 +536,16 @@ class MasterList(_ModsUIList):
             masters_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
-            mouseText += _(u'Missing master of %s.  ') % on_display
+            mouseText += _('Missing master of %(child_plugin_name)s.') % {
+                'child_plugin_name': on_display} + ' '
         #--HACK - load order status
         elif on_display in bosh.modInfos:
             if status == 20:
-                mouseText += _(u'Reordered relative to other masters.  ')
+                mouseText += _('Reordered relative to other masters.') + ' '
             lo_index = load_order.cached_lo_index
             if lo_index(on_display) < lo_index(masters_name):
-                mouseText += _(u'Loads after %s.  ') % on_display
+                mouseText += _('Loads after %(child_plugin_name)s.') % {
+                    'child_plugin_name': on_display} + ' '
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
@@ -605,7 +612,8 @@ class MasterList(_ModsUIList):
         elif evt_label == u'':
             return EventResult.CANCEL
         else:
-            balt.showError(self, _(u'File %s does not exist.') % evt_label)
+            balt.showError(self, _('File %(selected_file)s does not '
+                                   'exist.') % {'selected_file': evt_label})
             return EventResult.CANCEL
 
     #--GetMasters
@@ -661,7 +669,7 @@ class INIList(balt.UIList):
         tweaklist += u'[spoiler]\n'
         for tweak, info in dict_sort(self.data_store):
             if not info.tweak_status() == 20: continue
-            tweaklist+= u'%s\n' % tweak
+            tweaklist+= f'{tweak}\n'
         tweaklist += u'[/spoiler]\n'
         return tweaklist
 
@@ -680,32 +688,34 @@ class INIList(balt.UIList):
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied
-        mousetext = u''
+        mousetext = ''
         if status == 20:
             # Valid tweak, applied
             checkMark = 1
-            mousetext = _(u'Tweak is currently applied.')
+            mousetext = _('Tweak is currently applied.')
         elif status == 15:
             # Valid tweak, some settings applied, others are
             # overwritten by values in another tweak from same installer
             checkMark = 3
-            mousetext = _(u'Some settings are applied.  Some are overwritten by another tweak from the same installer.')
+            mousetext = _('Some settings are applied. Some are overwritten '
+                          'by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon = 10
             checkMark = 3
-            mousetext = _(u'Some settings are changed.')
+            mousetext = _('Some settings are changed.')
         elif status < 0:
             # Bad tweak
             if not iniInfo.is_applicable(status):
                 icon = 20
-                mousetext = _(u'Tweak is invalid')
+                mousetext = _('Tweak is invalid.')
             else:
                 icon = 0
-                mousetext = _(u'Tweak adds new settings')
+                mousetext = _('Tweak adds new settings.')
         if iniInfo.is_default_tweak:
-            mousetext = _(u'Default Bash Tweak') + (
-                (u'.  ' + mousetext) if mousetext else u'')
+            def_tweak_text = _('Default Wrye Bash tweak.')
+            mousetext = (def_tweak_text + f' {mousetext}'
+                         if mousetext else def_tweak_text)
             item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
         item_format.icon_key = icon, checkMark
@@ -723,12 +733,18 @@ class INIList(balt.UIList):
 
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
+        tweak_infos_list = list(tweak_infos) # may be a generator
         target_ini_file = target_ini or bosh.iniInfos.ini
-        if not cls.ask_create_target_ini(target_ini_file) or not \
-                cls._warn_tweak_game_ini(target_ini_file.abs_path.stail):
+        if not cls.ask_create_target_ini(target_ini_file):
+            return False
+        # Default tweaks are tested, so no need to warn about trust and
+        # crashes, etc.
+        tweaks_are_trusted = all(t.is_default_tweak for t in tweak_infos_list)
+        if (not tweaks_are_trusted and
+                not cls._warn_tweak_game_ini(target_ini_file.abs_path.stail)):
             return False
         needsRefresh = False
-        for ini_info in tweak_infos:
+        for ini_info in tweak_infos_list:
             #--No point applying a tweak that's already applied
             if target_ini: # if target was given calculate the status for it
                 stat = ini_info.getStatus(target_ini_file)
@@ -766,10 +782,14 @@ class INIList(balt.UIList):
                 bosh.iniInfos.refresh(refresh_infos=False)
             return True
         except OSError:
-            error_msg = u'Failed to copy %s to %s' % (
-                default_ini, target_ini_file.abs_path)
-            deprint(error_msg, traceback=True)
-            balt.showError(None, error_msg, _(u'Missing game Ini'))
+            target_ini_pth = target_ini_file.abs_path
+            deprint(f'Failed to copy {default_ini} to {target_ini_pth}',
+                traceback=True)
+            balt.showError(None,
+                _('Failed to copy %(def_ini_path)s to %(target_ini_pth)s.') % {
+                    'def_ini_path': default_ini,
+                    'target_ini_pth': target_ini_pth},
+                title=_('Missing Game INI'))
         return False
 
     @staticmethod
@@ -777,11 +797,11 @@ class INIList(balt.UIList):
     def _warn_tweak_game_ini(chosen):
         ask = True
         if chosen in bush.game.Ini.dropdown_inis:
-            message = (_(u'Apply an ini tweak to %s?') % chosen + u'\n\n' + _(
-                u'WARNING: Incorrect tweaks can result in CTDs and even '
-                u'damage to your computer!'))
-            ask = balt.askContinue(balt.Link.Frame, message,
-                                   u'bash.iniTweaks.continue', _(u'INI Tweaks'))
+            ask = balt.askContinue(balt.Link.Frame,
+                _('Apply an INI tweak to %(curr_target_ini)s? Make sure you '
+                  'trust the tweak, as incorrect tweaks can cause '
+                  'crashes.') % {'curr_target_ini': chosen},
+                'bash.iniTweaks.continue', title=_('INI Tweaks'))
         return ask
 
 #------------------------------------------------------------------------------
@@ -957,7 +977,7 @@ class ModList(_ModsUIList):
         try:
             bosh.modInfos.cached_lo_save_all()
         except BoltError as e:
-            balt.showError(self, u'%s' % e)
+            balt.showError(self, f'{e}')
         first_impacted = load_order.cached_lo_tuple()[first_index]
         self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
                        refreshSaves=True)
@@ -977,51 +997,57 @@ class ModList(_ModsUIList):
         fileBashTags = mod_info.getBashTags()
         # Text foreground
         if mod_name in bosh.modInfos.activeBad:
-            mouseText += _(u'Plugin name incompatible, will not load. ')
+            mouseText += _('Plugin name incompatible, will not load.') + ' '
         if mod_name in bosh.modInfos.bad_names:
-            mouseText += _(u'Plugin name incompatible, cannot be activated. ')
+            mouseText += _('Plugin name incompatible, cannot be '
+                           'activated.') + ' '
         if mod_name in bosh.modInfos.missing_strings:
-            mouseText += _(u'Plugin is missing string localization files. ')
+            mouseText += _('Plugin is missing string localization '
+                           'files.') + ' '
         if mod_name in bosh.modInfos.bashed_patches:
             item_format.text_key = u'mods.text.bashedPatch'
-            mouseText += _(u'Bashed Patch. ')
+            mouseText += _('Bashed Patch.') + ' '
             if mod_info.is_esl(): # ugh, copy-paste from below
-                mouseText += _(u'Light plugin. ')
+                mouseText += _('Light plugin.') + ' '
         elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
                 item_format.text_key = u'mods.text.noMerge'
-                mouseText += _(u'Technically mergeable, but has NoMerge tag. ')
+                mouseText += _('Technically mergeable, but has NoMerge '
+                               'tag.') + ' '
             else:
                 item_format.text_key = u'mods.text.mergeable'
                 if bush.game.check_esl:
-                    mouseText += _(u'Can be ESL-flagged. ')
+                    mouseText += _('Can be ESL-flagged.') + ' '
                 else:
                     if checkMark == 2:
-                        mouseText += _(u'Merged into Bashed Patch. ')
+                        mouseText += _('Merged into Bashed Patch.') + ' '
                     else:
-                        mouseText += _(u'Can be merged into Bashed Patch. ')
+                        mouseText += _('Can be merged into Bashed '
+                                       'Patch.') + ' '
         else:
             # NoMerge / Mergeable should take priority over ESL/ESM color
             final_text_key = u'mods.text.es'
             if mod_info.is_esl():
                 final_text_key += u'l'
-                mouseText += _(u'Light plugin. ')
+                mouseText += _('Light plugin.') + ' '
             if mod_info.in_master_block():
                 final_text_key += u'm'
-                mouseText += _(u'Master plugin. ')
+                mouseText += _('Master plugin.') + ' '
             # Check if it's special, leave ESPs alone
             if final_text_key != u'mods.text.es':
                 item_format.text_key = final_text_key
         # Mirror the checkbox color info in the status bar
         if status == 30:
-            mouseText += _(u'One or more masters are missing. ')
+            mouseText += _('One or more masters are missing.') + ' '
         else:
             if status in {20, 21}:
-                mouseText += _(u'Loads before its master(s). ')
+                mouseText += _('Loads before its masters.') + ' '
             if status in {10, 21}:
-                mouseText += _(u'Masters have been re-ordered. ')
-        if checkMark == 1:   mouseText += _(u'Active in load order. ')
-        elif checkMark == 3: mouseText += _(u'Imported into Bashed Patch. ')
+                mouseText += _('Masters have been re-ordered.') + ' '
+        if checkMark == 1:
+            mouseText += _('Active in load order.') + ' '
+        elif checkMark == 3:
+            mouseText += _('Imported into Bashed Patch.') + ' '
         if u'Deactivate' in fileBashTags:
             item_format.italics = True
         # Text background
@@ -1039,23 +1065,23 @@ class ModList(_ModsUIList):
                 item_format.back_key = u'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = u'mods.bkgd.doubleTime.exists'
-            mouseText += _(u'Has master names that will not load. ')
+            mouseText += _('Has master names that will not load.') + ' '
         elif mod_info.hasActiveTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.load'
-            mouseText += _(u'Another plugin has the same timestamp. ')
+            mouseText += _('Another plugin has the same timestamp.') + ' '
         elif u'Deactivate' in fileBashTags and checkMark == 1:
             item_format.back_key = u'mods.bkgd.deactivate'
-            mouseText += _(u'Mod should be imported and deactivated. ')
+            mouseText += _('Mod should be imported and deactivated.') + ' '
         elif mod_info.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
-            mouseText += _(u'Another plugin has the same timestamp. ')
+            mouseText += _('Another plugin has the same timestamp.') + ' '
         elif mod_info.isGhost:
             item_format.back_key = u'mods.bkgd.ghosted'
-            mouseText += _(u'Plugin is ghosted. ')
+            mouseText += _('Plugin is ghosted.') + ' '
         elif (bush.game.Esp.check_master_sizes
               and mod_info.has_master_size_mismatch()):
             item_format.back_key = u'mods.bkgd.size_mismatch'
-            mouseText += _(u'Has size-mismatched master(s). ')
+            mouseText += _('Has size-mismatched masters.') + ' '
         if settings[u'bash.mods.scanDirty']:
             message = mod_info.getDirtyMessage()
             mouseText += message[1]
@@ -1241,7 +1267,7 @@ class ModList(_ModsUIList):
                     changes[self.__deactivated_key][act] = \
                         load_order.get_ordered(changed)
             except BoltError as e:
-                balt.showError(self, u'%s' % e)
+                balt.showError(self, f'{e}')
         # Activate ?
         # Track illegal activations for the return value
         illegal_activations = []
@@ -1448,10 +1474,10 @@ class _EditableMixinOnFileInfos(_EditableMixin):
                                                   notify_bain=True)
             return self.file_info.fn_key
         except FileError as e:
-            deprint(u'Failed to edit details for %s' % self.displayed_item,
+            deprint(f'Failed to edit details for {self.displayed_item}',
                     traceback=True)
-            balt.showError(self,
-                           _(u'File corrupted on save!') + u'\n' + e.message)
+            balt.showError(self, _('File corrupted on save!') +
+                                 f'\n{e.message}')
             return None
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
@@ -1608,7 +1634,7 @@ class ModDetails(_ModsSavesDetails):
             self.authorStr = modInfo.header.author
             self.modifiedStr = format_date(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
-            self.versionStr = u'v%0.2f' % modInfo.header.version
+            self.versionStr = f'v{modInfo.header.version:0.2f}'
             minf_tags = list(modInfo.getBashTags())
         else:
             minf_tags = []
@@ -1682,7 +1708,9 @@ class ModDetails(_ModsSavesDetails):
             newTimeTup = unformat_date(modifiedStr)
             time.mktime(newTimeTup)
         except ValueError:
-            balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
+            balt.showError(self,
+                _('Unrecognized date: %(unrecognized_date)s') % {
+                    'unrecognized_data': modifiedStr})
             self.modified_txt.text_content = self.modifiedStr
             return
         #--Normalize format
@@ -1756,13 +1784,15 @@ class ModDetails(_ModsSavesDetails):
             oldName,newName = modInfo.fn_key, file_str
             #--Bad name?
             if (bosh.modInfos.isBadFileName(str(newName)) and
-                not balt.askContinue(self,_(
-                    u'File name %s cannot be encoded to ASCII. %s may not be '
-                    u'able to activate this plugin because of this. Do you '
-                    u'want to rename the plugin anyway?')
-                                     % (newName,bush.game.displayName),
-                                     u'bash.rename.isBadFileName.continue')
-                ):
+                not balt.askContinue(self, _(
+                    'File name %(bad_file_name)s cannot be encoded to '
+                    '%(needed_encoding)s. %(game_name)s may not be able to '
+                    'activate this plugin because of this. Do you want to '
+                    'rename the plugin anyway?') % {
+                    'bad_file_name': newName,
+                    'needed_encoding': 'Windows-1252',
+                    'game_name': bush.game.displayName},
+                    'bash.rename.isBadFileName.continue')):
                 return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName)
@@ -1887,10 +1917,11 @@ class ModDetails(_ModsSavesDetails):
         old_tags -= deleted_tags
         dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
         class Tags_CopyToBashTags(EnabledLink):
-            _text = _(u'Copy to BashTags')
-            _help = _(u'Copies a diff between currently applied tags and '
-                      u'description/LOOT tags to %s.') % (
-                bass.dirs[u'tag_files'].join(f'{mod_info.fn_key.fn_body}.txt'))
+            _text = _('Copy to BashTags')
+            _help = _('Copies a diff between currently applied tags and '
+                      'description/LOOT tags to %(bashtags_path)s.') % {
+                'bashtags_path': bass.dirs['tag_files'].join(
+                    f'{mod_info.fn_key.fn_body}.txt')}
             def _enable(self):
                 return (not mod_info.is_auto_tagged() and
                         bosh.read_dir_tags(tag_plugin_name) != dir_diff)
@@ -2122,7 +2153,8 @@ class INIPanel(BashTab):
 
     def _sbCount(self):
         stati = self.uiList.CountTweakStatus()
-        return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
+        return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
+            'status_num': stati[0], 'total_status_num': sum(stati[:-1])}
 
 #------------------------------------------------------------------------------
 class ModPanel(BashTab):
@@ -2137,15 +2169,19 @@ class ModPanel(BashTab):
 
     def _sbCount(self):
         all_mods = load_order.cached_active_tuple()
-        total_str = _(u'Mods:') + u' %u/%u' % (len(all_mods),
-                                               len(bosh.modInfos))
         if not bush.game.has_esl:
-            return total_str
+            return _('Mods: %(status_num)d/%(total_status_num)d') % {
+                'status_num': len(all_mods),
+                'total_status_num': len(bosh.modInfos)}
         else:
             regular_mods_count = reduce(lambda accum, mod_path: accum + 1 if
             not bosh.modInfos[mod_path].is_esl() else accum, all_mods, 0)
-            return total_str + _(u' (ESP/M: %u, ESL: %u)') % (
-                regular_mods_count, len(all_mods) - regular_mods_count)
+            return _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                     '%(status_num_espm)d, ESL: %(status_num_esl)d)') % {
+                'status_num': len(all_mods),
+                'total_status_num': len(bosh.modInfos),
+                'status_num_espm': regular_mods_count,
+                'status_num_esl': len(all_mods) - regular_mods_count}
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -2176,7 +2212,7 @@ class SaveList(balt.UIList):
     def _playTime(saveInfo):
         if not saveInfo.header: return u'-'
         playMinutes = saveInfo.header.gameTicks // 60000
-        return u'%d:%02d' % (playMinutes//60, (playMinutes % 60))
+        return f'{playMinutes // 60}:{playMinutes % 60:02d}'
     labels = OrderedDict([
         (u'File',     lambda self, p: p),
         (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
@@ -2283,13 +2319,13 @@ class _SaveMasterList(MasterList):
             # For ESL masters, we have to add an offset to the real index
             for i, m in enumerate(new_file_info.header.masters_esl):
                 self._save_lo_real_index[m] = num_regular + i
-                self._save_lo_hex_string[m] = 'FE %03X' % i # fstring is slower
+                self._save_lo_hex_string[m] = f'FE {i:03X}'
         else:
             save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.masterNames)}
         # For regular masters, simply store the LO index
         self._save_lo_real_index.update(save_lo_regular)
-        self._save_lo_hex_string.update({m: '%02X' % i for m, i
+        self._save_lo_hex_string.update({m: f'{i:02X}' for m, i
                                          in save_lo_regular.items()})
 
 class SaveDetails(_ModsSavesDetails):
@@ -2380,11 +2416,13 @@ class SaveDetails(_ModsSavesDetails):
         self._update_masters_warning()
 
     def _set_player_info_label(self):
-        self.playerInfo.label_text = (self.playerNameStr + u'\n' +
-            _(u'Level') + u' %d, ' + _(u'Day') + u' %d, ' +
-            _(u'Play') + u' %d:%02d\n%s') % (
-            self.playerLevel, int(self.gameDays), self.playMinutes // 60,
-            (self.playMinutes % 60), self.curCellStr)
+        localized_info = _('Level %(player_level)d, Day %(save_day)d, '
+                           'Play %(play_time)s') % {
+            'player_level': self.playerLevel, 'save_day': int(self.gameDays),
+            'play_time': f'{self.playMinutes // 60}:'
+                         f'{self.playMinutes % 60:02d}'}
+        self.playerInfo.label_text = (f'{self.playerNameStr}\n{localized_info}'
+                                      f'\n{self.curCellStr}')
 
     def _update_masters_warning(self):
         """Show or hide the 'inaccurate masters' warning."""
@@ -2393,10 +2431,11 @@ class SaveDetails(_ModsSavesDetails):
             _(u'Masters (likely inaccurate, hover for more info):')
             if show_warning else _(u'Masters:'))
         self._masters_label.tooltip = (
-            _(u'This save has ESL masters and cannot be displayed accurately '
-              u'without an up-to-date cosave. Please install the latest '
-              u'version of %s and create a new save to see the true master '
-              u'order.') % bush.game.Se.se_abbrev if show_warning else u'')
+            _('This save has ESL masters and cannot be displayed accurately '
+              'without an up-to-date cosave. Please install the latest '
+              'version of %(se_name)s and create a new save to see the true '
+              'master order.') % {'se_name': bush.game.Se.se_abbrev}
+            if show_warning else '')
         if show_warning:
             self._masters_label.set_foreground_color(colors[u'default.warn'])
         else:
@@ -2454,14 +2493,14 @@ class SaveDetails(_ModsSavesDetails):
 class SavePanel(BashTab):
     """Savegames tab."""
     keyPrefix = u'bash.saves'
-    _status_str = _(u'Saves:') + u' %d'
+    _status_str = _('Saves: %(status_num)d')
     _ui_list_type = SaveList
     _details_panel_type = SaveDetails
 
     def __init__(self,parent):
         if not bush.game.Ess.canReadBasic:
-            raise BoltError(u'Wrye Bash cannot read save games for %s.' %
-                bush.game.displayName)
+            raise BoltError(f'Wrye Bash cannot read save games for '
+                            f'{bush.game.displayName}.')
         self.listData = bosh.saveInfos
         super(SavePanel, self).__init__(parent)
         BashFrame.saveList = self.uiList
@@ -2500,11 +2539,11 @@ class InstallersList(balt.UIList):
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
     labels = OrderedDict([
-        (u'Package',  lambda self, p: p),
-        (u'Order',    lambda self, p: u'%d' % self.data_store[p].order),
-        (u'Modified', lambda self, p: format_date(self.data_store[p].modified)),
-        (u'Size',     lambda self, p: self.data_store[p].size_string()),
-        (u'Files',    lambda self, p: self.data_store[p].number_string(
+        ('Package',  lambda self, p: p),
+        ('Order',    lambda self, p: f'{self.data_store[p].order}'),
+        ('Modified', lambda self, p: format_date(self.data_store[p].modified)),
+        ('Size',     lambda self, p: self.data_store[p].size_string()),
+        ('Files',    lambda self, p: self.data_store[p].number_string(
             self.data_store[p].num_of_files)),
     ])
     #--DnD
@@ -2553,13 +2592,14 @@ class InstallersList(balt.UIList):
         if renaming_type is None: return None
         for item in self.GetSelectedInfos():
             if not type(item) is renaming_type:
-                balt.showError(self, _(
-                    u"Bash can't rename mixed installers types"))
+                balt.showError(self, _("Wrye Bash can't rename mixed "
+                                       "package types."))
                 return None
             #--Also, don't allow renaming the 'Last' marker
             elif item is self.data_store[self.data_store.lastKey]:
-                balt.showError(self, _(u'Renaming %s is not '
-                                       u'allowed') % self.data_store.lastKey)
+                balt.showError(self,
+                    _('Renaming %(last_marker)s is not allowed.') % {
+                        'last_marker': self.data_store.lastKey})
                 return None
         return renaming_type
 
@@ -2645,9 +2685,12 @@ class InstallersList(balt.UIList):
                 progress(i, om_name)
                 outDir = bass.dirs[u'installers'].join(omod.body)
                 if outDir.exists():
-                    if balt.askYes(progress.dialog, _(
-                        u"The project '%s' already exists.  Overwrite "
-                        u"with '%s'?") % (omod.sbody, om_name)):
+                    if balt.askYes(progress.dialog,
+                            _("The project '%(omod_project)s' already exists. "
+                              "Do you want to overwrite it with "
+                              "'%(omod_name)s'?") % {
+                                'omod_project': omod.sbody,
+                                'omod_name': om_name}):
                         env.shellDelete(outDir, parent=self,
                                         recycle=True)  # recycle
                     else: continue
@@ -2706,7 +2749,7 @@ class InstallersList(balt.UIList):
                      not x in dirs and x.cext in archives.omod_exts]
         converters = {x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(
-                          FName('%s' % x))}
+                          FName(f'{x}'))}
         filenames = [x for x in filenames if x in dirs
                      or x.cext in archives.readExts and x not in converters]
         if not (omodnames or converters or filenames): return
@@ -2852,8 +2895,8 @@ class InstallersList(balt.UIList):
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
-                    progress(0, _(u'Refreshing From %s...')
-                             % bush.game.mods_dir + u'\n' + u' ' * 60)
+                    progress(0, _('Refreshing from %(data_folder)s...') % {
+                        'data_folder': bush.game.mods_dir} + f'\n{" " * 60}')
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
@@ -3066,7 +3109,8 @@ class InstallersDetails(_SashDetailsPanel):
             else:
                 return u''
         if pageName == u'gGeneral':
-            inf_ = ['== ' + _('Overview'), _('Type: ') + installer.type_string,
+            inf_ = ['== ' + _('Overview'), _('Type: %(package_type)s') % {
+                'package_type': installer.type_string},
                     installer.structure_string(), installer.size_info_str()]
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
@@ -3074,17 +3118,22 @@ class InstallersDetails(_SashDetailsPanel):
             is_mark = installer.is_marker
             numstr = partial(installer.number_string, marker_string='N/A')
             inf_.extend([
-                _('Modified:') + (' N/A' if is_mark else
-                    f' {format_date(installer.modified)}'),
-                _('Data CRC:') + (' N/A' if is_mark else
-                    f' {installer.crc:08X}'),
-                _('Files:') + f' {numstr(installer.num_of_files)}',
-                _('Configured:') + (' N/A' if is_mark else
-                    f' {nConfigured:d} ({round_size(installer.unSize)})'),
-                _('  Matched:') + ' %s' % numstr(
-                    nConfigured - nMissing - nMismatched),
-                 _('  Missing:') + f' {numstr(nMissing)}',
-                 _('  Conflicts:') + f' {numstr(nMismatched)}',
+                _('Modified: %(modified_date)s') % {
+                    'modified_date': 'N/A' if is_mark else
+                    format_date(installer.modified)},
+                _('Data CRC: %(data_crc)s') % {
+                    'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
+                _('Files: %(num_files)s') % {
+                    'num_files': f'{numstr(installer.num_of_files)}'},
+                _('Configured: %(files_and_size)s') % {
+                    'files_and_size': 'N/A' if is_mark else
+                    f'{nConfigured:d} ({round_size(installer.unSize)})'},
+                '  ' + _('Matched: %(num_files)s') % {
+                    'num_files': numstr(nConfigured - nMissing - nMismatched)},
+                '  ' + _('Missing: %(num_files)s') % {
+                    'num_files': numstr(nMissing)},
+                '  ' + _('Conflicts: %(num_files)s') % {
+                    'num_files': numstr(nMismatched)},
                 '', # One newline in between the main info and the file list
                 _dumpFiles(installer.ci_dest_sizeCrc,
                            '== ' + _('Configured Files'))])
@@ -3414,7 +3463,8 @@ class InstallersPanel(BashTab):
 
     def _sbCount(self):
         active = sum(x.is_active for x in self.listData.values())
-        return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
+        return _('Packages: %(status_num)d/%(total_status_num)d') % {
+            'status_num': active, 'total_status_num': len(self.listData)}
 
     def RefreshUIMods(self, mods_changed, inis_changed):
         """Refresh UI plus refresh mods state."""
@@ -3469,8 +3519,8 @@ class ScreensList(balt.UIList):
         selected = self.GetSelectedInfos()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
-        digits = len(u'%s' % (num + len(selected) - 1))
-        numStr = numStr.zfill(digits) if numStr else u''
+        digits = len(f'{(num + len(selected) - 1)}')
+        numStr = numStr.zfill(digits) if numStr else ''
         with BusyCursor():
             to_select = set()
             to_del = set()
@@ -3543,7 +3593,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 class ScreensPanel(BashTab):
     """Screenshots tab."""
     keyPrefix = u'bash.screens'
-    _status_str = _(u'Screens:') + u' %d'
+    _status_str = _('Screens: %(status_num)d')
     _ui_list_type = ScreensList
     _details_panel_type = ScreensDetails
 
@@ -3613,10 +3663,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = self._bsa_info.fn_key
-            self.gInfo.text_content = self._bsa_info.get_table_prop(u'info',
-                _(u'Notes: '))
+            self.gInfo.text_content = self._bsa_info.get_table_prop('info',
+                _('Notes:') + ' ')
         else:
-            self.gInfo.text_content = _(u'Notes: ')
+            self.gInfo.text_content = _('Notes:') + ' '
         #--Set Fields
         self._fname_ctrl.text_content = self.fileStr
         #--Info Box
@@ -3638,7 +3688,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 class BSAPanel(BashTab):
     """BSA info tab."""
     keyPrefix = u'bash.BSAs'
-    _status_str = _(u'BSAs:') + u' %d'
+    _status_str = _('BSAs: %(status_num)d')
     _ui_list_type = BSAList
     _details_panel_type = BSADetails
 
@@ -3746,7 +3796,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             className, title, item = tabInfo[page]
             panel = globals().get(className,None)
             if panel is None: continue
-            deprint(u"Constructing panel '%s'" % title)
+            deprint(f"Constructing panel '{title}'")
             # Some page specific stuff
             if page == u'Installers': iInstallers = self.GetPageCount()
             elif page == u'Mods': iMods = self.GetPageCount()
@@ -3756,14 +3806,14 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 self.AddPage(item._native_widget, title)
                 tabInfo[page][2] = item
                 _widget_to_panel[item.wx_id_()] = item
-                deprint(u"Panel '%s' constructed successfully" % title)
+                deprint(f"Panel '{title}' constructed successfully")
             except:
-                if page == u'Mods':
-                    deprint(u"Fatal error constructing panel '%s'." % title)
+                if page == 'Mods':
+                    deprint(f"Fatal error constructing panel '{title}'.")
                     raise
-                deprint(u"Error constructing '%s' panel." % title,
+                deprint(f"Error constructing '{title}' panel.",
                         traceback=True)
-                settings[u'bash.tabs.order'][page] = False
+                settings['bash.tabs.order'][page] = False
         #--Selection
         pageIndex = max(min(
             settings[u'bash.page'], self.GetPageCount() - 1), 0)
@@ -3790,7 +3840,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 if not enabled: return
                 break
             ind += enabled
-        else: raise BoltError(u'Invalid page: %s' % page_title)
+        else: raise BoltError(f'Invalid page: {page_title}')
         self.SetSelection(ind)
         tabInfo[page_title][2].SelectUIListItem(item, deselectOthers=True)
 
@@ -3861,7 +3911,7 @@ class BashStatusBar(DnDStatusBar):
             try:
                 self._addButton(link)
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(u'Failed to load button %r' % (uid,), traceback=True)
+                deprint(f'Failed to load button {uid!r}', traceback=True)
         # Add any new buttons
         for link in BashStatusBar.buttons:
             # Already tested?
@@ -3874,7 +3924,7 @@ class BashStatusBar(DnDStatusBar):
             try:
                 self._addButton(link)
             except AttributeError:
-                deprint(u'Failed to load button %r' % (uid,), traceback=True)
+                deprint(f'Failed to load button {uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 
@@ -4003,18 +4053,23 @@ class BashFrame(WindowFrame):
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
                 settings[u'bash.mods.autoGhost']:
-            message = _(u'It appears that you have more than 325 mods and bsas'
-                u' in your %s directory and auto-ghosting is disabled. This '
-                u'may cause problems in %s; see the readme under auto-ghost '
-                u'for more details and please enable auto-ghost.') % \
-                      (bush.game.mods_dir, bush.game.displayName)
+            message = _(
+                'It appears that you have more than 325 plugins and BSAs '
+                'in your %(data_folder)s folder and auto-ghosting is '
+                'disabled. This may cause problems in %(game_name)s; see the '
+                'auto-ghost section of the readme for more details and '
+                'consider enabling auto-ghosting.') % {
+                'data_folder': bush.game.mods_dir,
+                'game_name': bush.game.displayName}
             if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
-                message = _(u'It appears that you have more than 400 mods and '
-                    u'bsas in your %s directory and auto-ghosting is '
-                    u'disabled. This will cause problems in %s; see the readme'
-                    u' under auto-ghost for more details. ') % \
-                          (bush.game.mods_dir, bush.game.displayName)
-            balt.showWarning(self, message, _(u'Too many mod files.'))
+                message = _(
+                    'It appears that you have more than 400 plugins and BSAs '
+                    'in your %(data_folder)s folder and auto-ghosting is '
+                    'disabled. This will cause problems in %(game_name)s; see '
+                    'the auto-ghost section of the readme for more '
+                    'details.') % {'data_folder': bush.game.mods_dir,
+                                   'game_name': bush.game.displayName}
+            balt.showWarning(self, message, title=_('Too Many Plugins.'))
 
     def bind_refresh(self, bind=True):
         if self._native_widget:
@@ -4047,19 +4102,27 @@ class BashFrame(WindowFrame):
     def set_bash_frame_title(self):
         """Set title. Set to default if no title supplied."""
         if bush.game.altName and settings[u'bash.useAltName']:
-            title = bush.game.altName + u' %s%s'
+            if bass.is_standalone:
+                title = _('%(wb_alt_name)s %(wb_version)s (Standalone)')
+            else:
+                title = '%(wb_alt_name)s %(wb_version)s'
         else:
-            title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-        title %= (bass.AppVersion, (u' ' + _(u'(Standalone)'))
-                                    if bass.is_standalone else u'')
-        title += u': '
+            if bass.is_standalone:
+                title = _('Wrye Bash %(wb_version)s (Standalone) for '
+                          '%(game_name)s')
+            else:
+                title = _('Wrye Bash %(wb_version)s for %(game_name)s')
+        title %= {'wb_alt_name': bush.game.altName,
+                  'wb_version': bass.AppVersion,
+                  'game_name': bush.game.displayName}
+        title += ': '
         # chop off save prefix - +1 for the path separator
         maProfile = bosh.saveInfos.localSave[len(
             bush.game.Ini.save_prefix) + 1:]
         if maProfile:
             title += maProfile
         else:
-            title += _(u'Default')
+            title += _('Default')
         if bosh.modInfos.voCurrent:
             title += f' [{bosh.modInfos.voCurrent}]'
         self._native_widget.SetTitle(title)
@@ -4163,15 +4226,15 @@ class BashFrame(WindowFrame):
         message = []
         corruptMods = set(bosh.modInfos.corrupted)
         if warn_mods and not corruptMods <= self.knownCorrupted:
-            m = [_(u'Plugin warnings'),
-                 _(u'The following mod files have unrecognized headers: ')]
+            m = [_('Plugin warnings'),
+                 _('The following mod files have unrecognized headers:')]
             m.extend(sorted(corruptMods))
             message.append(m)
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted)
         if warn_saves and not corruptSaves <= self.knownCorrupted:
-            m = [_(u'Save game warnings'),
-                 _(u'The following save files have errors: ')]
+            m = [_('Save game warnings'),
+                 _('The following save files have errors:')]
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
@@ -4179,77 +4242,85 @@ class BashFrame(WindowFrame):
         invalidVersions = {ck for ck, x in bosh.modInfos.items() if
                            all(x.header.version != v for v in valid_vers)}
         if warn_mods and not invalidVersions <= self.known_invalid_versions:
-            m = [_(u'Unrecognized Versions'),
-                 _(u'The following mods have unrecognized header versions: ')]
+            m = [_('Unrecognized Versions'),
+                 _('The following mods have unrecognized header versions:')]
             m.extend(sorted(invalidVersions - self.known_invalid_versions))
             message.append(m)
             self.known_invalid_versions |= invalidVersions
         old_fvers = bosh.modInfos.older_form_versions
         if warn_mods and not old_fvers <= self.known_older_form_versions:
-            m = [_(u'Old Header Form Versions'),
-                 _(u"The following mods don't use the current plugin Form Version: ")]
+            m = [_('Old Header Form Versions'),
+                 _("The following mods don't use the current plugin Form "
+                   "Version:")]
             m.extend(sorted(old_fvers - self.known_older_form_versions))
             message.append(m)
             self.known_older_form_versions |= old_fvers
         if warn_strings and bosh.modInfos.new_missing_strings:
-            m = [_(u'Missing String Localization files:'),
-                 _(u'This will cause CTDs if activated.')]
+            m = [_('Missing String Localization Files'),
+                 _('This will cause CTDs if activated.')]
             m.extend(sorted(bosh.modInfos.missing_strings))
             message.append(m)
             bosh.modInfos.new_missing_strings.clear()
         bsa_mvers = bosh.bsaInfos.mismatched_versions
         if warn_bsas and not bsa_mvers <= self.known_mismatched_version_bsas:
-            m = [_(u'Mismatched BSA Versions'),
-                 _(u'The following BSAs have a version other than the one '
-                   u'this game expects. This can lead to CTDs, please extract '
-                   u'and repack them using the %s-provided tool: ') %
-                 bush.game.Ck.long_name]
+            m = [_('Mismatched BSA Versions'),
+                 _('The following BSAs have a version other than the one '
+                   '%(game_name)s expects. This can lead to CTDs, please '
+                   'extract and repack them using the %(ck_name)s-provided '
+                   'tool:') % {'game_name': bush.game.displayName,
+                               'ck_name': bush.game.Ck.long_name}]
             m.extend(sorted(bsa_mvers - self.known_mismatched_version_bsas))
             message.append(m)
             self.known_mismatched_version_bsas |= bsa_mvers
         ba2_colls = bosh.bsaInfos.ba2_collisions
         if warn_bsas and not ba2_colls <= self.known_ba2_collisions:
-            m = [_(u'BA2 Hash Collisions'),
-                 _(u'The following BA2s have filenames whose hashes collide, '
-                   u'which will cause one or more of them to fail to work '
-                   u'correctly. This should be corrected by the mod author(s) '
-                   u'by renaming the files to avoid the collision: ')]
+            m = [_('BA2 Hash Collisions'),
+                 _('The following BA2s have filenames whose hashes collide, '
+                   'which will cause one or more of them to fail to work '
+                   'correctly. This should be corrected by the mod author(s) '
+                   'by renaming the files to avoid the collision:')]
             m.extend(sorted(ba2_colls - self.known_ba2_collisions))
             message.append(m)
             self.known_ba2_collisions |= ba2_colls
         if message:
             ListBoxes.display_dialog(
-              self, _(u'Warnings'), _(u'The following warnings were found:'),
+              self, _('Warnings'), _('The following warnings were found:'),
             message, liststyle=u'list', canCancel=False)
 
-    _ini_missing = _(u'%(ini)s does not exist yet.  %(game)s will create this '
-        u'file on first run.  INI tweaks will not be usable until then.')
+    _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
+                     'will create this file on first run. INI tweaks will not '
+                     'be usable until then.')
     @balt.conversation
     def warn_game_ini(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
             if self.oblivionIniCorrupted:
-                msg = u'\n'.join([self.oblivionIniCorrupted, u'', _(u'Please '
-                    u'replace the ini with a default copy and restart Bash.')])
-                balt.showWarning(self, msg, _(u'Corrupted game Ini'))
+                msg = '\n'.join([self.oblivionIniCorrupted, '', _(
+                    'Please replace the INI with a default copy and restart '
+                    'Wrye Bash.')])
+                balt.showWarning(self, msg, title=_('Corrupted Game INI'))
         elif self.oblivionIniMissing != self._oblivionIniMissing:
             self._oblivionIniMissing = self.oblivionIniMissing
             if self._oblivionIniMissing:
                 balt.showWarning(self, self._ini_missing % {
-                    u'ini': bosh.oblivionIni.abs_path,
-                    u'game': bush.game.displayName}, _(u'Missing game Ini'))
+                    'game_ini_file': bosh.oblivionIni.abs_path,
+                    'game_name': bush.game.displayName},
+                    title=_('Missing Game INI'))
 
     def _missingDocsDir(self):
         #--Missing docs directory?
         testFile = bass.dirs[u'mopy'].join(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
-        msg = _(u'Installation appears incomplete. Please re-unzip bash to '
-                u'game directory so that ALL files are installed.') + u'\n\n'\
-              + _(u'Correct installation will create a Mopy and %s\\Docs '
-                  u'directories.') % bush.game.mods_dir
-        balt.showWarning(self, msg, _(u'Incomplete Installation'))
+        msg = (_('Installation appears incomplete. Please reinstall Wrye Bash '
+                 'to the game directory so that all files are '
+                 'installed.') + '\n\n' +
+               _('Correct installation will create %(wb_folder)s and '
+                 '%(data_docs_dir)s folders.') % {
+                   'wb_folder': 'Mopy',
+                   'data_docs_dir': os.path.join(bush.game.mods_dir, 'Docs')})
+        balt.showWarning(self, msg, title=_('Incomplete Installation'))
 
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
@@ -4279,8 +4350,8 @@ class BashFrame(WindowFrame):
             try:
                 panel.ClosePanel(destroy)
             except:
-                deprint(u'An error occurred while saving settings of '
-                        u'the %s panel:' % tab_name, traceback=True)
+                deprint(f'An error occurred while saving settings of '
+                        f'the {tab_name} panel:', traceback=True)
         settings.save()
 
     @staticmethod
@@ -4422,7 +4493,7 @@ def InitSettings(): # this must run first !
     settings.loadDefaults(settingDefaults)
     bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
         bass.settings['bash.mods.renames'],
-        value_type=lambda x: FName(str('%s' % x))) # str**2 in case of CIstr
+        value_type=lambda x: FName(str(f'{x}'))) # str**2 in case of CIstr
     # The colors dictionary only gets copied into settings if it is missing
     # entirely, copy new entries if needed
     for color_key, color_val in settingDefaults[u'bash.colors'].items():
