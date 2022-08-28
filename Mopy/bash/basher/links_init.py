@@ -73,17 +73,17 @@ def InitStatusBar():
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Game_Button(
-            bass.dirs[u'app'].join(bush.game.launch_exe),
-            bass.dirs[u'app'].join(bush.game.version_detect_file),
+            bass.dirs['app'].join(bush.game.launch_exe),
+            bass.dirs['app'].join(bush.game.version_detect_file),
             imageList(bush.game.game_icon),
-            u' '.join((_(u'Launch'), bush.game.displayName)),
-            u' '.join((_(u'Launch'), bush.game.displayName, u'%(version)s'))))
+            ' '.join((_('Launch'), bush.game.displayName)),
+            ' '.join((_('Launch'), bush.game.displayName, '%(app_version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bass.dirs[u'app'].join(bush.game.Ck.exe),
+            bass.dirs['app'].join(bush.game.Ck.exe),
             imageList(bush.game.Ck.image_name),
-            u' '.join((_(u'Launch'), bush.game.Ck.ck_abbrev)),
-            u' '.join((_(u'Launch'), bush.game.Ck.ck_abbrev, u'%(version)s')),
+            ' '.join((_('Launch'), bush.game.Ck.ck_abbrev)),
+            ' '.join((_('Launch'), bush.game.Ck.ck_abbrev, '%(app_version)s')),
             bush.game.Ck.se_args))
     BashStatusBar.buttons.append( #OBMM
         app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),
