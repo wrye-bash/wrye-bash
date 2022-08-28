@@ -169,13 +169,12 @@ class PatchDialog(DialogWindow):
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
             if patchFile.tes4.num_masters > bush.game.Esp.master_limit:
-                balt.showError(self,
-                    _(u'The resulting Bashed Patch contains too many '
-                      u'masters (>%u). You can try to disable some '
-                      u'patchers, create a second Bashed Patch and '
-                      u'rebuild that one with only the patchers you '
-                      u'disabled in this one active.')
-                    % bush.game.Esp.master_limit)
+                balt.showError(self, _(
+                    'The resulting Bashed Patch contains too many masters '
+                    '(>%(max_masters)d). You can try to disable some '
+                    'patchers, create a second Bashed Patch and rebuild that '
+                    'one with only the patchers you disabled in this one '
+                    'active.') % {'max_masters': bush.game.Esp.master_limit})
                 return # Abort, we'll just blow up on saving it
             #--Save
             progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
@@ -222,20 +221,22 @@ class PatchDialog(DialogWindow):
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 self.mods_to_reselect.clear()
                 bosh.modInfos.cached_lo_save_active() ##: also done below duh
-            count, message = 0, _(u'Activate %s?') % patch_name
+            message = _('Activate %(bp_name)s?') % {'bp_name': patch_name}
+            count = 0
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings[u'PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name)):
                 try:
-                    changedFiles = bosh.modInfos.lo_activate(patch_name,
-                                                             doSave=True)
-                    count = len(changedFiles)
-                    if count > 1: Link.Frame.set_status_info(
-                            _(u'Masters Activated: ') + str(count - 1))
+                    count = len(bosh.modInfos.lo_activate(patch_name,
+                        doSave=True))
+                    if count > 1:
+                        Link.Frame.set_status_info(
+                            _('Masters Activated: %(num_activated)d') % {
+                                'num_activated': count - 1})
                 except PluginsFullError:
-                    balt.showError(self, _(
-                        u'Unable to add mod %s because load list is full.')
-                                   % patch_name)
+                    balt.showError(self,
+                        _('Unable to activate plugin %(bp_name)s because the '
+                          'load order is full.') % {'bp_name': patch_name})
             # although improbable user has package with bashed patches...
             info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             if info.fsize == patch_size:
@@ -252,9 +253,9 @@ class PatchDialog(DialogWindow):
             self._error(_(u'The configuration of the Bashed Patch is '
                           u'incorrect.') + f'\n{e}')
         except (BoltError, FileEditError) as e: # Nonfatal error
-            self._error(u'%s' % e)
+            self._error(f'{e}')
         except Exception as e: # Fatal error
-            self._error(u'%s' % e)
+            self._error(f'{e}')
             raise
         finally:
             if progress: progress.Destroy()
@@ -324,16 +325,18 @@ class PatchDialog(DialogWindow):
                 patchConfigs = table_get(self.__old_key)
             if not patchConfigs:
                 balt.showWarning(self,
-                    _(u'No patch config data found in %s') % textPath,
-                    title=_(u'Import Config'))
+                    _('No patch config data found in %(bp_config_path)s') % {
+                        'bp_config_path': textPath},
+                    title=_('Import Config'))
                 return
             balt.showError(self,
-                _(u'The patch config data in %s is too old for this version '
-                  u'of Wrye Bash to handle or was created with CBash. Please '
-                  u'use Wrye Bash 307 to import the config, then rebuild the '
-                  u'patch using PBash to convert it and finally export the '
-                  u'config again to get one that will work in this '
-                  u'version.') % textPath, title=_(u'Config Too Old'))
+                _('The patch config data in %(bp_config_path)s is too old for '
+                  'this version of Wrye Bash to handle or was created with '
+                  'CBash. Please use Wrye Bash 307 to import the config, then '
+                  'rebuild the patch using PBash to convert it and finally '
+                  'export the config again to get one that will work in this '
+                  'version.') % {'bp_config_path': textPath},
+                title=_('Config Too Old'))
             return
         self._load_config(patchConfigs)
 

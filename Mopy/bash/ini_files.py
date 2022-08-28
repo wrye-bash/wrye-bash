@@ -131,8 +131,10 @@ class IniFile(AFile):
                     self._ci_settings_cache_linenum, self._deleted_cache, \
                         self.isCorrupted = self._get_ci_settings(self.abs_path)
                 except UnicodeDecodeError as e:
-                    self.isCorrupted = (_(u'Your %s seems to have unencodable '
-                        u'characters:') + u'\n\n%s') % (self.abs_path, e)
+                    self.isCorrupted = _(
+                        'The INI file %(ini_full_path)s seems to have '
+                        'unencodable characters:') % {
+                        'ini_full_path': self.abs_path} + f'\n\n{e}'
                     return ({}, {}) if with_deleted else {}
         except OSError:
             return ({}, {}) if with_deleted else {}
@@ -192,8 +194,9 @@ class IniFile(AFile):
                     if sectionSettings is None:
                         sectionSettings = ci_settings[default_section]
                         isCorrupted = _(
-                            u'Your %s should begin with a section header ('
-                            u'e.g. "[General]"), but does not.') % tweakPath
+                            "Your %(tweak_ini)s should begin with a section "
+                            "header (e.g. '[General]'), but it does not.") % {
+                            'tweak_ini': tweakPath}
                     sectionSettings[maSetting.group(1)] = maSetting.group(
                         2).strip(), i
                 elif maDeleted:
@@ -213,11 +216,10 @@ class IniFile(AFile):
             decoded = str(content, self.ini_encoding)
             return decoded.splitlines(False) # keepends=False
         except UnicodeDecodeError:
-            deprint(u'Failed to decode %s using %s' % (
-                self.abs_path, self.ini_encoding), traceback=True)
+            deprint(f'Failed to decode {self.abs_path} using '
+                    f'{self.ini_encoding}', traceback=True)
         except OSError:
-            deprint(u'Error reading ini file %s' % self.abs_path,
-                    traceback=True)
+            deprint(f'Error reading ini file {self.abs_path}', traceback=True)
         return []
 
     def analyse_tweak(self, tweak_file):
@@ -318,7 +320,7 @@ class IniFile(AFile):
                 if section in ini_settings: del ini_settings[section]
                 if not sectionSettings: return
                 for sett, val in sectionSettings.items():
-                    tmpFileWrite(u'%s=%s\n' % (sett, val))
+                    tmpFileWrite(f'{sett}={val}\n')
                 tmpFileWrite(u'\n')
             for line in self.read_ini_content(as_unicode=True):
                 stripped = reComment.sub(u'', line).strip()
@@ -335,7 +337,7 @@ class IniFile(AFile):
                         setting = match.group(1)
                         if setting in sectionSettings:
                             value = sectionSettings[setting]
-                            line = u'%s=%s' % (setting, value)
+                            line = f'{setting}={value}'
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-' + line
@@ -346,7 +348,7 @@ class IniFile(AFile):
             for section, sectionSettings in list(ini_settings.items()):
                 # _add_remaining_new_items may modify ini_settings
                 if sectionSettings:
-                    tmpFileWrite(u'[%s]\n' % section)
+                    tmpFileWrite(f'[{section}]\n')
                     _add_remaining_new_items()
         #--Done
         self.abs_path.untemp()
@@ -670,8 +672,8 @@ class GameIni(IniFile):
             msg = _(u'The game INI must exist to apply a tweak to it.')
         target_exists = super(GameIni, self).target_ini_exists()
         if target_exists: return True
-        msg = _(u'%(ini_path)s does not exist.') % {
-            u'ini_path': self.abs_path} + u'\n\n' + msg + u'\n\n'
+        msg = _('%(ini_full_path)s does not exist.') % {
+            'ini_full_path': self.abs_path} + f'\n\n{msg}\n\n'
         return msg
 
     #--BSA Redirection --------------------------------------------------------
