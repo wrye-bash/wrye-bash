@@ -43,7 +43,8 @@ def _is_mergeable_no_load(modInfo, reasons):
                          for p in modInfo.get_store().ini_files()}
     if plugin_ini_name.lower() in plugin_inis_lower:
         if not verbose: return False
-        reasons.append(_('Has plugin INI (%s).') % plugin_ini_name)
+        reasons.append(_('Has plugin INI (%(plugin_ini_name)s).') % {
+            'plugin_ini_name': plugin_ini_name})
     #--Bsa / blocking resources?
     has_resources = modInfo.hasResources()
     if has_resources != (False, False):
@@ -57,9 +58,9 @@ def _is_mergeable_no_load(modInfo, reasons):
                 blocking_dir = _format_blocking_dir(pnd)
                 if blocking_dir:
                     dir_list += u'\n  - ' + blocking_dir
-            reasons.append((_(u'Has plugin-specific directory - one of the '
-                              u'following:') + dir_list) % {
-                u'plugin_name': modInfo.fn_key})
+            reasons.append((_('Has plugin-specific directory - one of the '
+                              'following:') + dir_list) % {
+                'blocking_plugin_name': modInfo.fn_key})
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -67,7 +68,7 @@ def _is_mergeable_no_load(modInfo, reasons):
 def _format_blocking_dir(blocking_dir):
     """Formats a path with path separators. Returns u'' for empty paths."""
     if blocking_dir:
-        return blocking_dir + os.sep + u'%(plugin_name)s'
+        return blocking_dir + os.sep + '%(blocking_plugin_name)s'
     else:
         return u''
 
@@ -79,8 +80,11 @@ def _pbash_mergeable_no_load(modInfo, reasons):
     if modInfo.isMissingStrings():
         if not verbose: return False
         from . import oblivionIni
-        reasons.append(_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.fn_key.fn_body, oblivionIni.get_ini_language()))
+        strings_example = (f'{os.path.join("Strings", modInfo.fn_key.fn_body)}'
+                           f'_{oblivionIni.get_ini_language()}.STRINGS')
+        reasons.append(_('Missing string translation files '
+                         '(%(strings_example)s, etc).') % {
+            'strings_example': strings_example})
     return False if reasons else True
 
 def isPBashMergeable(modInfo, minfos, reasons):
@@ -120,7 +124,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
     dependent = _dependent(self_name, minfos)
     if dependent:
         if not verbose: return False
-        reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
+        reasons.append(_('Is a master of non-mergeable plugins: ') +
+                       ', '.join(sorted(dependent)) + '.')
     return False if reasons else True
 
 def _join_sigs(sigs):
@@ -151,7 +156,7 @@ def is_esl_capable(modInfo, _minfos, reasons):
         formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
     except ModError as e:
         if not verbose: return False
-        reasons.append(u'%s.' % e)
+        reasons.append(f'{e}.')
     if not formids_valid:
         if not verbose: return False
         reasons.append(_(u'New FormIDs greater than 0xFFF.'))

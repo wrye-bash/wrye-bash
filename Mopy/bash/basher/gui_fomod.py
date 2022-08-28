@@ -63,7 +63,8 @@ class ValidatorPopup(DialogWindow):
 
     def __init__(self, parent, fm_name, error_lines):
         super().__init__(parent,
-            title=_('FOMOD Validation Failed - %s') % fm_name,
+            title=_('FOMOD Validation Failed - %(fomod_title)s') % {
+                'fomod_title': fm_name},
             sizes_dict=balt.sizes)
         copy_log_btn = Button(self, _('Copy Log'))
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
@@ -127,8 +128,9 @@ class InstallerFomod(WizardDialog):
             version_string)
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
-            title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
-            size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
+            title=_('FOMOD Installer - %(fomod_title)s') % {
+                'fomod_title': self.fomod_parser.fomod_name},
+            size_key='bash.fomod.size', pos_key='bash.fomod.pos')
         self.is_arch = target_installer.is_archive
         if self.is_arch:
             self.archive_path = bass.getTempDir()
@@ -552,7 +554,8 @@ class _GroupLink(EnabledLink):
 
     @property
     def link_help(self):
-        return self._help % self.selected_group.group_name
+        return self._help % {
+            'curr_fomod_group': self.selected_group.group_name}
 
     @property
     def selected_group(self): # type: () -> InstallerGroup
@@ -574,22 +577,22 @@ class _Group_MassSelect(_GroupLink):
 
 class _Group_SelectAll(_Group_MassSelect):
     """Select all options in the selected group."""
-    _text = _(u'Select All')
-    _help = _(u"Selects all options in the '%s' group.")
+    _text = _('Select All')
+    _help = _("Selects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return True
 
 class _Group_DeselectAll(_Group_MassSelect):
     """Deselect all options in the selected group."""
-    _text = _(u'Deselect All')
-    _help = _(u"Deselects all options in the '%s' group.")
+    _text = _('Deselect All')
+    _help = _("Deselects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return False
 
 class _Group_ToggleAll(_Group_MassSelect):
     """Toggle all options in the selected group."""
-    _text = _(u'Toggle Selection')
-    _help = _(u"Deselects all selected options in the '%s' group and vice "
-              u'versa.')
+    _text = _('Toggle Selection')
+    _help = _("Deselects all selected options in the '%(curr_fomod_group)s' "
+              "group and vice versa.")
 
     def _should_enable(self, checkable): return not checkable.is_checked

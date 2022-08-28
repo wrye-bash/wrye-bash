@@ -1087,7 +1087,7 @@ class ModInfo(FileInfo):
         assoc_bsa = self.fn_key.fn_body + bush.game.Bsa.bsa_extension
         return msg % {
             'assoc_bsa_name': assoc_bsa,
-            'pnd_example': os.path.join('sound', 'voice', self.fn_key)}
+            'pnd_example': os.path.join('Sound', 'Voice', self.fn_key)}
 
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
