@@ -122,6 +122,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _config_key = u'CoblExhaustion'
     _read_sigs = (b'SPEL',)
     _key2_getter = itemgetter(0, 1)
+    _parser_sigs = [b'FACT']
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
     def __init__(self, p_name, p_file, p_sources):
@@ -152,7 +153,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         patchRecords = self.patchFile.tops[b'SPEL']
         id_info = self.id_stored_data[b'FACT']
         for record in modFile.tops[b'SPEL'].getActiveRecords():
-            if not record.spellType == 2: continue
+            if record.spellType != 2: continue
             if record.fid in id_info:
                 patchRecords.setRecord(record.getTypeCopy())
 
@@ -175,7 +176,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
                    for ef in record.effects):
                 continue
             #--Okay, do it
-            record.full = u'+' + record.full
+            record.full = f'+{record.full}'
             record.spellType = 3 #--Lesser power
             effect = record.getDefault(u'effects')
             effect.effect_sig = b'SEFF'
