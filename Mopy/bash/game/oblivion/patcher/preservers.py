@@ -26,7 +26,7 @@ from operator import itemgetter
 from ._shared import cobl_main, ExSpecial
 from .... import load_order
 from ....bolt import deprint
-from ....brec import null4
+from ....brec import null4, FormId
 from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
 from ....patcher.base import ImportPatcher, ListPatcher
@@ -122,6 +122,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _config_key = u'CoblExhaustion'
     _read_sigs = (b'SPEL',)
     _key2_getter = itemgetter(0, 1)
+    _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
@@ -159,7 +160,6 @@ class CoblExhaustionPatcher(_ExSpecialList):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         count = Counter()
-        exhaustId = (cobl_main, 0x05139B)
         keep = self.patchFile.getKeeper()
         id_info = self.id_stored_data[b'FACT']
         for record in self.patchFile.tops[b'SPEL'].records:
@@ -171,7 +171,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
             if any(ef.effect_sig == b'SEFF' and
-                   ef.scriptEffect.script_fid == exhaustId
+                   ef.scriptEffect.script_fid == self._exhaust_fid
                    for ef in record.effects):
                 continue
             #--Okay, do it
@@ -182,7 +182,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             effect.duration = duration
             scriptEffect = record.getDefault(u'effects.scriptEffect')
             scriptEffect.full = u'Power Exhaustion'
-            scriptEffect.script_fid = exhaustId
+            scriptEffect.script_fid = self._exhaust_fid
             scriptEffect.school = 2
             scriptEffect.visual = null4
             scriptEffect.flags.hostile = False
@@ -224,7 +224,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
         self.isActive &= cobl_main in p_file.loadSet
-        self.mFactLong = (cobl_main, 0x33FB)
+        self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
 
     def initData(self,progress):
         """Get names from source files."""

@@ -28,7 +28,7 @@ from itertools import chain
 
 from ._shared import cobl_main, ExSpecial
 from .... import bush
-from ....brec import MreRecord
+from ....brec import MreRecord, FormId
 from ....patcher.base import ModLoader, Patcher
 
 # Cobl Catalogs ---------------------------------------------------------------
@@ -44,7 +44,7 @@ _effect_alchem = (
     (3, 0xCE8, _('Alchemical Effects III')),
     (4, 0xCE6, _('Alchemical Effects IV')),
 )
-_book_fids = {(cobl_main, book_data[1])
+_book_fids = {FormId.from_tuple((cobl_main, book_data[1]))
               for book_data in chain(_ingred_alchem, _effect_alchem)}
 
 class CoblCatalogsPatcher(Patcher, ExSpecial):
@@ -103,7 +103,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         def getBook(object_id, full):
             """Helper method for grabbing a BOOK record by object ID and making
             it ready for editing."""
-            book_fid = (cobl_main, object_id) ##: TODO: test () in dict[FormId..]
+            book_fid = FormId.from_tuple((cobl_main, object_id))
             if book_fid not in patch_books.id_records:
                 return None # This shouldn't happen, but just in case...
             book = patch_books.id_records[book_fid]

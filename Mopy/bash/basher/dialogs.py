@@ -285,7 +285,8 @@ class CreateNewPlugin(DialogWindow):
     _def_size = (400, 500)
 
     def __init__(self, parent):
-        super(CreateNewPlugin, self).__init__(parent, sizes_dict=balt.sizes)
+        super(CreateNewPlugin, self).__init__(parent,
+            icon_bundle=balt.Resources.bashBlue, sizes_dict=balt.sizes)
         self._parent_window = parent
         self._plugin_ext = DropDown(self, value='.esp',
             choices=sorted(bush.game.espm_extensions), auto_tooltip=False)
