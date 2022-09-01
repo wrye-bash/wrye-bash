@@ -64,7 +64,7 @@ class WizardDialog(DialogWindow):
             self._cancel_wizard()
         super(WizardDialog, self).on_closing(destroy)
 
-    def _refresh_buttons(self):
+    def _refresh_buttons(self, *, moving_back: bool):
         """Enables or disables and hides or unhides buttons based on whether or
         not there are pages to go to in either direction. You can override this
         if you want to enable or disable buttons under other conditions."""
@@ -72,9 +72,15 @@ class WizardDialog(DialogWindow):
         can_move_next = self._has_next_page()
         self._next_button.visible = can_move_next
         self._finish_button.visible = not can_move_next
-        # If the finish button is now visible, focus it
+        # Focus the most likely target - finish button if it's now visible,
+        # otherwise the Next or Back button, depending on if we're moving
+        # forwards or backwards
         if not can_move_next:
             self._finish_button.set_focus()
+        elif moving_back:
+            self._back_button.set_focus()
+        else:
+            self._next_button.set_focus()
 
     def _change_page(self, new_page):
         """Changes the page that the wizard is currently on to the specified
@@ -88,16 +94,18 @@ class WizardDialog(DialogWindow):
     def _move_next(self):
         """Moves to the next page in the wizard."""
         if self._has_next_page():
-            self._change_page(self._get_next_page())
-            self._refresh_buttons()
-            self.update_layout()
+            with self.pause_drawing():
+                self._change_page(self._get_next_page())
+                self._refresh_buttons(moving_back=False)
+                self.update_layout()
 
     def _move_prev(self):
         """Moves to the previous page in the wizard."""
         if self._has_prev_page():
-            self._change_page(self._get_prev_page())
-            self._refresh_buttons()
-            self.update_layout()
+            with self.pause_drawing():
+                self._change_page(self._get_prev_page())
+                self._refresh_buttons(moving_back=True)
+                self.update_layout()
 
     def _run_wizard(self):
         """Runs this wizard and block until it is done."""

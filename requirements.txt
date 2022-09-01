@@ -10,8 +10,8 @@ lxml==4.9.1
 # For PDF support in the doc browser
 PyMuPDF==1.20.2
 # Compile/Build-time ----------------------------------------------------------
-pygit2==1.10.0
+pygit2==1.10.1
 pyfiglet==0.8.post1
 pyinstaller==5.3
-pytest==7.1.2
+pytest==7.1.3
 tomli==2.0.1
