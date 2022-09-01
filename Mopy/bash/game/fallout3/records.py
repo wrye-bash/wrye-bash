@@ -299,8 +299,8 @@ class MelSoundRandomLooping(MelFid):
 #------------------------------------------------------------------------------
 class MreLeveledList(AMreLeveledList):
     """Leveled item/creature/spell list.."""
-    top_copy_attrs = (u'chanceNone', u'glob')
-    entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
+    top_copy_attrs = ('chanceNone', 'glob')
+    entry_copy_attrs = ('listId', 'level', 'count', 'owner', 'itemCondition')
 
     melSet = MelSet(
         MelEdid(),

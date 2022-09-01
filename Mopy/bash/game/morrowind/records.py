@@ -216,8 +216,8 @@ class MreLeveledList(AMreLeveledList):
         u'calcFromAllLevels',
         u'calcForEachItem', # LEVI only, but will be ignored for LEVC so fine
     )
-    top_copy_attrs = (u'chanceNone',)
-    entry_copy_attrs = (u'listId', u'level') # no count
+    top_copy_attrs = ('chanceNone',)
+    entry_copy_attrs = ('listId', 'level') # no count
 
     # Bad names to mirror the other games (needed by AMreLeveledList)
     melSet = MelSet(

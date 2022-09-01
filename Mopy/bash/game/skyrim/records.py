@@ -1930,7 +1930,7 @@ class MreLtex(MelRecord):
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    top_copy_attrs = ('chanceNone','glob',)
+    top_copy_attrs = ('chanceNone', 'glob')
 
     melSet = MelSet(
         MelEdid(),
@@ -1946,7 +1946,7 @@ class MreLvli(AMreLeveledList):
 class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
-    top_copy_attrs = ('chanceNone','model','modt_p',)
+    top_copy_attrs = ('chanceNone', 'model', 'modt_p')
 
     melSet = MelSet(
         MelEdid(),

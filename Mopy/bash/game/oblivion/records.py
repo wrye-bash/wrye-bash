@@ -453,7 +453,7 @@ class MreHasEffects(object):
 #------------------------------------------------------------------------------
 class MreLeveledList(AMreLeveledList):
     """Leveled item/creature/spell list."""
-    top_copy_attrs = ('script_fid','template','chanceNone',)
+    top_copy_attrs = ('script_fid', 'template', 'chanceNone',)
 
     melSet = MelSet(
         MelEdid(),

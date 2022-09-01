@@ -1375,8 +1375,8 @@ class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
-    top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
-                      'epicLootChance','overrideName')
+    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
+                      'epicLootChance', 'overrideName')
 
     melSet = MelSet(
         MelEdid(),
@@ -1399,8 +1399,8 @@ class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
-    top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
-                      'model','modt_p')
+    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
+                      'model', 'modt_p')
 
     melSet = MelSet(
         MelEdid(),

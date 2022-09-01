@@ -266,7 +266,7 @@ class AMreLeveledList(MelRecord):
                                    u'useAllSpells', u'specialLoot')
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
-    entry_copy_attrs = (u'listId', u'level', u'count')
+    entry_copy_attrs = ('listId', 'level', 'count')
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
                 # + ['flags', 'entries'] # define those in the subclasses
