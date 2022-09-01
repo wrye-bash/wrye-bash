@@ -94,7 +94,7 @@ class ImportFaceDialog(DialogWindow):
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
-        self.statsText.label_text = _(u'Health ') + str(face.health)
+        self.statsText.label_text = _('Health') + f' {face.health}'
         itemImagePath = bass.dirs['mods'].join('Docs', 'Images', f'{item}.jpg')
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
@@ -138,7 +138,7 @@ class CreateNewProject(DialogWindow):
         self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
         self._check_esp = CheckBox(self, _('Blank.esp'), checked=True,
-            chkbx_tooltip=_('Include a blank plugin file with only the '
+            chkbx_tooltip=_('Include a blank plugin file with only '
                             '%(game_master)s as a master in the project.') % {
                 'game_master': bush.game.master_file})
         self._check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
@@ -372,8 +372,9 @@ class CreateNewPlugin(DialogWindow):
         if limit_exceeded:
             # Only update if limit exceeded to avoid the wx update/redraw cost
             self._too_many_masters.label_text = _(
-                'Too many masters: %u checked, but only %u are allowed by the '
-                'game.') % (count_checked, count_limit)
+                'Too many masters: %(count_checked)d checked, but only '
+                '%(count_limit)d are allowed by the game.') % {
+                'count_checked': count_checked, 'count_limit': count_limit}
         self.update_layout()
 
     def _handle_plugin_ext(self, new_p_ext):

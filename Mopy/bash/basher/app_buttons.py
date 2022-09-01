@@ -44,13 +44,14 @@ class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     @property
     def link_text(self):
-        return _(u"Hide '%s'") % self.window.tooltip
+        return _("Hide '%(status_btn_name)s'") % {
+            'status_btn_name': self.window.tooltip}
 
     @property
     def link_help(self):
-        return _(u"Hides %(buttonname)s's status bar button (can be restored "
-                 u"through the settings menu).") % {
-            u'buttonname': self.window.tooltip}
+        return _("Hides %(status_btn_name)s's status bar button (can be "
+                 "restored through the settings menu).") % {
+            'status_btn_name': self.window.tooltip}
 
     def Execute(self): Link.Frame.statusBar.HideButton(self.window)
 
@@ -108,8 +109,8 @@ class StatusBar_Button(ItemLink):
         for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs[u'app'].join(ver_file)
             if ver_path.exists():
-                return u' ' + u'.'.join([u'%s' % x for x
-                                         in ver_path.strippedVersion])
+                return ' ' + '.'.join([f'{x}' for x
+                                       in ver_path.strippedVersion])
         else:
             return u''
 
@@ -128,7 +129,7 @@ class _App_Button(StatusBar_Button):
         if self.IsPresent():
             version = self.exePath.strippedVersion
             if version != (0,):
-                version = u'.'.join([u'%s'%x for x in version])
+                version = '.'.join([f'{x}' for x in version])
                 return version
         return u''
 
@@ -144,7 +145,7 @@ class _App_Button(StatusBar_Button):
     @property
     def obseTip(self):
         if self._obseTip is None: return None
-        return self._obseTip % {u'version': self.version}
+        return self._obseTip % {'app_version': self.version}
 
     def __init__(self, exePath, exeArgs, images, tip, obseTip=None, uid=None,
                  canHide=True):
@@ -177,22 +178,28 @@ class _App_Button(StatusBar_Button):
 
     def ShowError(self,error):
         balt.showError(Link.Frame,
-                       (f'{error}\n\n' +
-                        _(u'Used Path: ') + f'{self.exePath}\n' +
-                        _(u'Used Arguments: ') + f'{self.exeArgs}'),
-                       _(u"Could not launch '%s'") % self.exePath.stail)
+            (f'{error}\n\n' +
+             _('Used Path: %(launched_exe_path)s') % {
+                 'launched_exe_path': self.exePath} + '\n' +
+             _('Used Arguments: %(launched_exe_args)s') % {
+                 'launched_exe_args': self.exeArgs}),
+            title=_("Could Not Launch '%(launched_exe_name)s'") % {
+                'launched_exe_name': self.exePath.stail})
 
     def _showUnicodeError(self):
-        balt.showError(Link.Frame, _(
-            u'Execution failed, because one or more of the command line '
-            u'arguments failed to encode.'),
-                       _(u"Could not launch '%s'") % self.exePath.stail)
+        balt.showError(Link.Frame, _('Execution failed because one or more of '
+                                     'the command line arguments failed to '
+                                     'encode.'),
+            title=_("Could Not Launch '%(launched_exe_name)s'") % {
+                'launched_exe_name': self.exePath.stail})
 
     def Execute(self):
         if not self.IsPresent():
             balt.showError(Link.Frame,
-                           _(u'Application missing: %s') % self.exePath,
-                           _(u"Could not launch '%s'") % self.exePath.stail)
+                _('Application missing: %(launched_exe_path)s') % {
+                    'launched_exe_path': self.exePath},
+                title=_("Could Not Launch '%(launched_exe_name)s'") % {
+                    'launched_exe_name': self.exePath.stail})
             return
         self._app_button_execute()
 
@@ -258,7 +265,7 @@ class _ExeButton(_App_Button):
             try:
                 import win32api
                 win32api.ShellExecute(0, 'runas', exe_path.s,
-                    u'%s' % self.exeArgs, bass.dirs[u'app'].s, 1)
+                    f'{self.exeArgs}', bass.dirs['app'].s, 1)
             except:
                 self.ShowError(werr)
         except Exception as error:
@@ -479,7 +486,7 @@ class App_BOSS(_AApp_LOManager):
             curr_args.append('-c')
         if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
-            curr_args.append('-g%s' % bush.game.boss_game_name)
+            curr_args.append(f'-g{bush.game.boss_game_name}')
         self.extraArgs = tuple(curr_args)
         super().Execute()
 
@@ -523,20 +530,20 @@ class Game_Button(_ExeButton):
     @property
     def obseTip(self):
         # Oblivion (version)
-        tip_ = self._obseTip % {u'version': self.version}
+        tip_ = self._obseTip % {'app_version': self.version}
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
+        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         # + LAA
         if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.Laa.laa_name
+            tip_ += f' + {bush.game.Laa.laa_name}'
         return tip_
 
     def _app_button_execute(self):
         if bush.ws_info.installed:
             version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
-            gm_cmd = u'shell:AppsFolder\\%s!%s' % (
-                bush.ws_info.app_name, version_info.entry_point)
+            gm_cmd = (f'shell:AppsFolder\\{bush.ws_info.app_name}!'
+                      f'{version_info.entry_point}')
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
             exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
@@ -568,7 +575,7 @@ class Game_Button(_ExeButton):
             version = get_game_version_fallback(
                 self._version_path, bush.ws_info)
         if version != (0,):
-            version = u'.'.join([u'%s' % x for x in version])
+            version = '.'.join([f'{x}' for x in version])
             return version
         return u''
 
@@ -591,20 +598,20 @@ class TESCS_Button(_ExeButton):
     @property
     def obseTip(self):
         # CS/CK (version)
-        tip_ = self._obseTip % {u'version': self.version}
+        tip_ = self._obseTip % {'app_version': self.version}
         if not self.xse_args: return tip_
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
+        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         # + CSE
-        cse_path = bass.dirs[u'mods'].join(u'obse', u'plugins',
-                                           u'Construction Set Extender.dll')
+        cse_path = bass.dirs['mods'].join('obse', 'plugins',
+            'Construction Set Extender.dll')
         if cse_path.exists():
             version = cse_path.strippedVersion
             if version != (0,):
-                version = u'.'.join([u'%i'%x for x in version])
+                version = '.'.join([f'{x}' for x in version])
             else:
-                version = u''
-            tip_ += u' + CSE %s' % version
+                version = ''
+            tip_ += f' + CSE {version}'
         return tip_
 
     def _app_button_execute(self):
@@ -686,8 +693,12 @@ class Obse_Button(_StatefulButton):
         return state
 
     @property
-    def sb_button_tip(self): return ((_(u'%s%s Disabled'), _(u'%s%s Enabled'))[
-        self.button_state]) % (bush.game.Se.se_abbrev, self.obseVersion)
+    def sb_button_tip(self):
+        tip_to_fmt = (
+            _('%(se_name)s%(se_ver)s Enabled') if self.button_state else
+            _('%(se_name)s%(se_ver)s Disabled'))
+        return tip_to_fmt % {'se_name': bush.game.Se.se_abbrev,
+                             'se_ver': self.obseVersion}
 
     def UpdateToolTips(self):
         tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
@@ -743,7 +754,8 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    imageKey, _tip = u'doc.%s', _(u'Doc Browser')
+    imageKey = 'doc.%s'
+    _tip = _('Doc Browser')
 
     def Execute(self):
         if not Link.Frame.docBrowser:

@@ -54,18 +54,20 @@ class Files_Unhide(ItemLink):
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
             if newSrcDir == destDir:
-                self._showError(
-                    _(u"You can't unhide files from this directory."))
+                self._showError(_("You can't unhide files from this "
+                                  "directory."))
                 return
             # Validate that the file is valid and isn't already present
             if not self.window.data_store.rightFileType(srcFileName.s):
-                self._showWarning(_('File skipped: %s. File is not '
-                                    'valid.') % srcFileName)
+                self._showWarning(_('File skipped: %(skipped_file)s. File is '
+                                    'not valid.') % {
+                    'skipped_file': srcFileName})
                 continue
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
-                self._showWarning(_('File skipped: %s. File is already '
-                                    'present.') % srcFileName)
+                self._showWarning(_('File skipped: %(skipped_file)s. File is '
+                                    'already present.') % {
+                    'skipped_file': srcFileName})
                 continue
             # File
             srcFiles.append(srcPath)
@@ -88,23 +90,23 @@ class File_Duplicate(ItemLink):
     _text = _(u'Duplicate...')
     _help = _(u'Make a copy of the selected file(s).')
 
-    _bsaAndBlocking = _(
-        u'This mod has an associated archive (%s) and an associated '
-        u'plugin-name-specific directory (e.g. Sound\\Voice\\%s), which will '
-        u'not be attached to the duplicate mod.') + u'\n\n' + _(
-        u'Note that the BSA archive may also contain a plugin-name-specific '
-        u'directory, which would remain detached even if a duplicate archive '
-        u'were also created.')
-    _bsa = _(
-        u'This mod has an associated archive (%s), which will not be attached '
-        u'to the duplicate mod.') + u'\n\n' + _(
-        u'Note that this BSA archive may contain a plugin-name-specific '
-        u'directory (e.g. Sound\\Voice\\%s), which would remain detached even '
-        u'if a duplicate archive were also created.')
-    _blocking = _(
-        u'This mod has an associated plugin-name-specific directory (e.g. '
-        u'Sound\\Voice\\%s), which will not be attached to the duplicate '
-        u'mod.')
+    _bsa_and_blocking_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
+        'associated plugin-name-specific directory (e.g. %(pnd_example)s), '
+        'which will not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may also contain a plugin-name-specific directory, '
+        'which would remain detached even if a duplicate BSA were also '
+        'created.')
+    _bsa_msg = _(
+        'This plugin has an associated BSA (%(assoc_bsa_name)s), which will '
+        'not be attached to the duplicate plugin.') + '\n\n' + _(
+        'Note that the BSA may contain a plugin-name-specific directory '
+        '(e.g. %(pnd_example)s), which would remain detached even if a '
+        'duplicate BSA were also created.')
+    _blocking_msg = _(
+        'This plugin has an associated plugin-name-specific directory (e.g. '
+        '%(pnd_example)s), which will not be attached to the duplicate '
+        'plugin.')
 
     @balt.conversation
     def Execute(self):
@@ -114,11 +116,12 @@ class File_Duplicate(ItemLink):
         last = len(pairs) - 1
         for dex, (to_duplicate, fileInfo) in enumerate(pairs):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
-            msg = fileInfo.askResourcesOk(
-                bsaAndBlocking=self._bsaAndBlocking, bsa=self._bsa,
-                blocking=self._blocking)
-            if msg and not self._askWarning(msg, _(
-                u'Duplicate %s') % fileInfo): continue
+            msg = fileInfo.ask_resources_ok(
+                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+            if msg and not self._askWarning(msg,
+                    title=_('Duplicate %(target_file_name)s') % {
+                        'target_file_name': fileInfo}): continue
             #--Continue copy
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
@@ -215,13 +218,17 @@ class File_RevertToSnapshot(OneItemLink):
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
-        snapPath = self._askOpen(_('Revert %s to snapshot:') % fileName,
-                                 defaultDir=srcDir, wildcard=wildcard)
+        snapPath = self._askOpen(_('Revert %(target_file_name)s to '
+                                   'snapshot:') % {
+            'target_file_name': fileName}, defaultDir=srcDir,
+            wildcard=wildcard)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
-        message = (_(u'Revert %s to snapshot %s dated %s?') % (
-            fileName, snapName, format_date(snapPath.mtime)))
+        message = (_('Revert %(target_file_name)s to snapshot '
+                     '%(snapsnot_file_name)s dated %(snapshot_date)s?') % {
+            'target_file_name': fileName, 'snapsnot_file_name': snapName,
+            'snapshot_date': format_date(snapPath.mtime)})
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with BusyCursor():
             destPath = self._selected_info.abs_path
@@ -235,14 +242,16 @@ class File_RevertToSnapshot(OneItemLink):
                 self.window.data_store.new_info(fileName, notify_bain=True)
             except exception.FileError:
                 # Reverting to snapshot failed - may be corrupt
-                bolt.deprint(u'Failed to revert to snapshot', traceback=True)
+                bolt.deprint('Failed to revert to snapshot', traceback=True)
                 self.window.panel.ClearDetails()
                 if self._askYes(
-                    _(u'Failed to revert %s to snapshot %s. The snapshot file '
-                      u'may be corrupt. Do you want to restore the original '
-                      u"file again? 'No' keeps the reverted, possibly broken "
-                      u'snapshot instead.') % (fileName, snapName),
-                        title=_(u'Revert to Snapshot - Error')):
+                    _("Failed to revert %(target_file_name)s to snapshot "
+                      "%(snapshot_file_name)s. The snapshot file may be "
+                      "corrupt. Do you want to restore the original file "
+                      "again? 'No' keeps the reverted, possibly broken "
+                      "snapshot instead.") % {'target_file_name': fileName,
+                                              'snapshot_file_name': snapName},
+                        title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.untemp()
                     self.window.data_store.new_info(fileName, notify_bain=True)
@@ -282,8 +291,10 @@ class _RevertBackup(OneItemLink):
     def Execute(self):
         #--Warning box
         sel_file = self._selected_item
-        backup_date = format_date(self.backup_path.mtime)
-        message = _(u'Revert %s to backup dated %s?') % (sel_file, backup_date)
+        backup_date_fmt = format_date(self.backup_path.mtime)
+        message = _('Revert %(target_file_name)s to backup dated '
+                    '%(backup_date)s?') % {'target_file_name': sel_file,
+                                           'backup_date': backup_date_fmt}
         if not self._askYes(message): return
         with BusyCursor():
             # Make a temp backup first in case reverting to backup fails
@@ -293,15 +304,16 @@ class _RevertBackup(OneItemLink):
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
                 # Reverting to backup failed - may be corrupt
-                bolt.deprint(u'Failed to revert to backup', traceback=True)
+                bolt.deprint('Failed to revert to backup', traceback=True)
                 self.window.panel.ClearDetails()
-                if self._askYes(
-                    _(u'Failed to revert %s to backup dated %s. The backup '
-                      u'file may be corrupt. Do you want to restore the '
-                      u"original file again? 'No' keeps the reverted, "
-                      u'possibly broken backup instead.') % (sel_file,
-                                                             backup_date),
-                        title=_(u'Revert to Backup - Error')):
+                if self._askYes(_(
+                        "Failed to revert %(target_file_name)s to backup "
+                        "dated %(backup_date)s. The backup file may be "
+                        "corrupt. Do you want to restore the original file "
+                        "again? 'No' keeps the reverted, possibly broken "
+                        "backup instead.") % {'target_file_name': sel_file,
+                                              'backup_date': backup_date_fmt},
+                        title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.untemp()
                     self.window.data_store.new_info(sel_file, notify_bain=True)

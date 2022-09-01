@@ -35,7 +35,6 @@ import os
 import pickle
 import re
 import sys
-import traceback
 from collections import OrderedDict
 from functools import wraps
 from typing import Iterable, Optional, Type
@@ -117,11 +116,12 @@ class ListInfo(object):
 
         :type name_str: str"""
         if not name_str:
-            return _(u'Empty name !'), None
+            return _('Name may not be empty.'), None
         char = cls._is_filename and bolt.Path.has_invalid_chars(name_str)
         if char:
-            return _(u'%(new_name)s contains invalid character (%(char)s)') % {
-                u'new_name': name_str, u'char': char}, None
+            return _('%(new_name)s contains invalid character '
+                     '(%(bad_char)s).') % {'new_name': name_str,
+                                           'bad_char': char}, None
         rePattern = cls._name_re(allowed_exts)
         maPattern = rePattern.match(name_str)
         if maPattern:
@@ -132,7 +132,8 @@ class ListInfo(object):
                 pass # will return the error message at the end
             elif cls._has_digits: return FName(root + ma_groups[2]), num_str
             else: return FName(name_str), root
-        return (_(u'Bad extension or file root: ') + name_str), None
+        return (_('Bad extension or file root (%(ext_or_root)s).') % {
+            'ext_or_root': name_str}), None
 
     @classmethod
     def _name_re(cls, allowed_exts):
@@ -140,7 +141,8 @@ class ListInfo(object):
             if allowed_exts else cls._valid_exts_re
         # The reason we do the regex like this is to support names like
         # foo.ess.ess.ess etc.
-        final_regex = '^%s(.*?)' % (r'(?=.+\.)' if exts_re else '')
+        exts_prefix = r'(?=.+\.)' if exts_re else ''
+        final_regex = f'^{exts_prefix}(.*?)'
         if cls._has_digits: final_regex += r'(\d*)'
         final_regex += f'{exts_re}$'
         return re.compile(final_regex, re.I)
@@ -459,12 +461,16 @@ class FileInfo(AFile, ListInfo):
     def validate_name(self, name_str, check_store=True):
         # disallow extension change but not if no-extension info type
         check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(self.fn_key.fn_ext.lower()):
-            return _(u'%s: Incorrect file extension (must be %s)') % (
-                name_str, self.fn_key.fn_ext), None
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            return _('%(bad_name_str)s: Incorrect file extension (must be '
+                     '%(expected_ext)s).') % {
+                'bad_name_str': name_str,
+                'expected_ext': self.fn_key.fn_ext}, None
         #--Else file exists?
         if check_store and self.info_dir.join(name_str).exists():
-            return _(u'File %s already exists.') % name_str, None
+            return _('File %(bad_name_str)s already exists.') % {
+                'bad_name_str': name_str}, None
         return self.__class__.validate_filename_str(name_str)
 
     def get_rename_paths(self, newName):
@@ -477,7 +483,7 @@ class FileInfo(AFile, ListInfo):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
-    def askResourcesOk(self, bsaAndBlocking, bsa, blocking):
+    def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         return u''
 
 #------------------------------------------------------------------------------
@@ -896,7 +902,7 @@ class ModInfo(FileInfo):
                 try:
                     found_assets = bsa_info.has_assets(extract)
                 except (BSAError, OverflowError):
-                    deprint(u'Failed to parse %s' % bsa_info, traceback=True)
+                    deprint(f'Failed to parse {bsa_info}', traceback=True)
                     continue
                 if not found_assets: continue
                 bsa_assets[bsa_info] = found_assets
@@ -989,8 +995,7 @@ class ModInfo(FileInfo):
                     if bsa_info.has_assets((assetPath,)):
                         break # found
                 except (BSAError, OverflowError):
-                    print(u'Failed to parse %s:\n%s' % (
-                        bsa_info, traceback.format_exc()))
+                    deprint(f'Failed to parse {bsa_info}', traceback=True)
                     continue
             else: # not found
                 return True
@@ -1078,15 +1083,16 @@ class ModInfo(FileInfo):
         else:
             return status
 
-    def askResourcesOk(self, bsaAndBlocking, bsa, blocking):
+    def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
         hasBsa, hasBlocking = self.hasResources()
-        if (hasBsa, hasBlocking) == (False,False):
-            return u''
-        bsa_name = self.fn_key.fn_body + bush.game.Bsa.bsa_extension
-        if hasBsa and hasBlocking: msg = bsaAndBlocking % (bsa_name, self)
-        elif hasBsa: msg = bsa % (bsa_name, self)
-        else: msg = blocking % self
-        return msg
+        if not hasBsa and not hasBlocking: return ''
+        elif hasBsa and hasBlocking: msg = bsa_and_blocking_msg
+        elif hasBsa: msg = bsa_msg
+        else: msg = blocking_msg
+        assoc_bsa = self.fn_key.fn_body + bush.game.Bsa.bsa_extension
+        return msg % {
+            'assoc_bsa_name': assoc_bsa,
+            'pnd_example': os.path.join('Sound', 'Voice', self.fn_key)}
 
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
@@ -1261,17 +1267,17 @@ class INIInfo(IniFile):
     def listErrors(self):
         """Returns ini tweak errors as text."""
         ini_infos_ini = iniInfos.ini
-        errors = [u'%s:' % self.abs_path.stail]
+        errors = [f'{self.abs_path.stail}:']
         pseudosections_lower = {s.lower() for s in
                                 OBSEIniFile.ci_pseudosections.values()}
         if self._incompatible(ini_infos_ini):
-            errors.append(u' ' + _(u'Format mismatch:'))
+            errors.append(' ' + _('Format mismatch:'))
             if isinstance(self, OBSEIniFile):
-                errors.append(u'  '+ _(u'Target format: INI') +
-                            u'\n  ' + _(u'Tweak format: Batch Script'))
+                errors.append('  ' + _('Target format is INI, tweak format is '
+                                       'Batch Script.'))
             else:
-                errors.append(u'  ' + _(u'Target format: Batch Script') +
-                            u'\n  ' + _(u'Tweak format: INI'))
+                errors.append('  ' + _('Target format is Batch Script, tweak '
+                                       'format is INI.'))
         else:
             tweak_settings = self.get_ci_settings()
             ini_settings = ini_infos_ini.get_ci_settings()
@@ -1288,7 +1294,7 @@ class INIInfo(IniFile):
                     # missing from the ini_settings
                     is_pseudosection = key.lower() in pseudosections_lower
                     if not is_pseudosection and key not in ini_settings:
-                        errors.append(f' [{key}] - ' + _("Invalid Header"))
+                        errors.append(f' [{key}] - ' + _('Invalid Header'))
                     else:
                         for item in tweak_settings[key]:
                             # Avoid modifying ini_settings by using get
@@ -1304,7 +1310,7 @@ class INIInfo(IniFile):
         log = bolt.LogFile(io.StringIO())
         for line in errors:
             log(line)
-        return bolt.to_win_newlines(log.out.getvalue())
+        return log.out.getvalue()
 
 #------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
@@ -1316,8 +1322,8 @@ class SaveInfo(FileInfo):
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         # Dict of cosaves that may come with this save file. Need to get this
-        # first, since readHeader calls _get_masters, which relies on the cosave
-        # for SSE and FO4
+        # first, since readHeader calls _get_masters, which relies on the
+        # cosave for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super(SaveInfo, self).__init__(fullpath, load_cache)
 
@@ -1440,7 +1446,7 @@ class SaveInfo(FileInfo):
             return co_type(co_path)
         except (OSError, FileError) as e:
             if not isinstance(e, FileNotFoundError):
-                deprint(u'Failed to open %s' % co_path, traceback=True)
+                deprint(f'Failed to open {co_path}', traceback=True)
             return None
 
     @staticmethod
@@ -1594,9 +1600,9 @@ class TableFileInfos(DataStore):
 
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
-        deprint(u'Initializing %s' % self.__class__.__name__)
-        deprint(u' store_dir: %s' % self.store_dir)
-        deprint(u' bash_dir: %s' % self.bash_dir)
+        deprint(f'Initializing {self.__class__.__name__}')
+        deprint(f' store_dir: {self.store_dir}')
+        deprint(f' bash_dir: {self.bash_dir}')
         self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.store_dir may need be set
         # the type of the table keys is always bolt.FName
@@ -1625,7 +1631,7 @@ class TableFileInfos(DataStore):
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
             load_cache=True, itsa_ghost=itsa_ghost)
         if owner is not None:
-            info.set_table_prop('installer', '%s' % owner)
+            info.set_table_prop('installer', f'{owner}')
         if notify_bain:
             self._notify_bain(changed={info.abs_path})
         return info
@@ -1743,7 +1749,7 @@ class FileInfos(TableFileInfos):
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not new in self.corrupted \
                         or self.corrupted[new] != e.message:
-                    deprint(u'Failed to load %s: %s' % (new, e.message),
+                    deprint(f'Failed to load {new}: {e.message}',
                         traceback=True)
                     self.corrupted[new] = e.message
                 self.pop(new, None)
@@ -1883,8 +1889,8 @@ class INIInfos(TableFileInfos):
         try:
             csChoices = {x.lower() for x in _target_inis}
         except AttributeError: # 'Path' object has no attribute 'lower'
-            deprint(u'_target_inis contain a Path %s' % list(_target_inis))
-            csChoices = {(u'%s' % x).lower() for x in _target_inis}
+            deprint(f'_target_inis contain a Path {list(_target_inis)}')
+            csChoices = {f'{x}'.lower() for x in _target_inis}
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
@@ -1932,7 +1938,7 @@ class INIInfos(TableFileInfos):
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
         bass.settings[u'bash.ini.choices'] = collections.OrderedDict(
             # convert stray Path instances back to unicode
-            [(u'%s' % k, bass.settings[u'bash.ini.choices'][k]) for k in keys])
+            [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _refresh_ini_tweaks(self):
         """Refresh from file directory."""
@@ -1949,7 +1955,7 @@ class INIInfos(TableFileInfos):
                 try:
                     oldInfo = self.factory(tweak_path)
                 except UnicodeDecodeError:
-                    deprint(u'Failed to read %s' % tweak_path, traceback=True)
+                    deprint(f'Failed to read {tweak_path}', traceback=True)
                     continue
                 except BoltError as e:
                     deprint(e.message)
@@ -2508,7 +2514,7 @@ class ModInfos(FileInfos):
                 try:
                     canMerge = is_mergeable(fileInfo, self, reasons)
                 except Exception as e:
-                    # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
+                    # deprint(f'Error scanning mod {fileName} ({e})')
                     # canMerge = False #presume non-mergeable.
                     raise
             if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
@@ -2602,24 +2608,26 @@ class ModInfos(FileInfos):
         #--Setup
         log = bolt.LogFile(io.StringIO())
         head, bul, sMissing, sDelinquent, sImported = (
-            u'=== ',
-            u'* ',
-            u'  * __%s__' % _(u'Missing Master: %s'),
-            u'  * __%s__' % _(u'Delinquent Master: %s'),
-            u'&bull; &bull;'
+            '=== ',
+            '* ',
+            f"  * __{_('Missing Master: %(m_master)s')}__",
+            f"  * __{_('Delinquent Master: %(d_master)s')}__",
+            '&bull; &bull;'
             ) if wtxt else (
-            u'',
-            u'',
-            u'----> %s' % _(u'MISSING MASTER: %s'),
-            u'----> %s' % _(u'DELINQUENT MASTER: %s'),
-            u'**')
+            '',
+            '',
+            f"----> {_('MISSING MASTER: %(m_master)s')}",
+            f"----> {_('DELINQUENT MASTER: %(d_master)s')}",
+            '**')
         if fileInfo:
             masters_set = set(fileInfo.masterNames)
             missing = sorted(x for x in masters_set if x not in self)
-            log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
+            log.setHeader(head + _('Missing Masters for %(mm_plugin)s:') % {
+                'mm_plugin': fileInfo})
             for mod in missing:
-                log(bul + u'xx %s' % mod)
-            log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
+                log(bul + f'xx {mod}')
+            log.setHeader(head + _('Masters for %(m_plugin)s:') % {
+                'm_plugin': fileInfo})
             present = {x for x in masters_set if x in self}
             if fileInfo.fn_key in self: #--In case is bashed patch (cf getSemiActive)
                 present.add(fileInfo.fn_key)
@@ -2635,28 +2643,31 @@ class ModInfos(FileInfos):
         if not wtxt: log(u'[spoiler]\n', appendNewline=False)
         for mname in all_mods:
             if mname in masters_set:
-                prefix = bul + u'%02X' % modIndex
+                prefix = f'{bul}{modIndex:02X}'
                 modIndex += 1
             elif mname in merged:
-                prefix = bul + u'++'
+                prefix = f'{bul}++'
             else:
-                prefix = bul + sImported
-            log_str = u'%s  %s' % (prefix, mname)
+                prefix = f'{bul}{sImported}'
+            log_str = f'{prefix}  {mname}'
             if showVersion:
                 version = self.getVersion(mname)
-                if version: log_str += _(u'  [Version %s]') % version
+                if version:
+                    log_str += '  ' + _('[Version %(plugin_ver)s]') % {
+                        'plugin_ver': version}
             if showCRC:
-                log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
+                log_str += '  ' + _('[CRC: %(plugin_crc)s]') % {
+                    'plugin_crc': self[mname].crc_string()}
             log(log_str)
             if log_problems and mname in masters_set:
                 for master2 in self[mname].masterNames:
                     if master2 not in self:
-                        log(sMissing + master2)
-                    elif load_order.get_ordered((mname, master2))[
-                        1] == master2:
-                        log(sDelinquent + master2)
+                        log(sMissing % {'m_master': master2})
+                    elif load_order.get_ordered(
+                            (mname, master2))[1] == master2:
+                        log(sDelinquent % {'d_master': master2})
         if not wtxt: log(u'[/spoiler]')
-        return bolt.to_win_newlines(log.out.getvalue())
+        return log.out.getvalue()
 
     @staticmethod
     def _tagsies(modInfo, tagList):
@@ -2666,43 +2677,44 @@ class ModInfos(FileInfos):
         # source B removes it
         has_tags_source = False
         def _tags(tags_msg, tags_iter, tagsList):
-            tags_result = u', '.join(tags_iter) if tags_iter else _(u'No tags')
-            return tagsList + u'  * ' + tags_msg + tags_result + u'\n'
+            tags_result = ', '.join(tags_iter) if tags_iter else _('No tags')
+            return f'{tagsList}  * {tags_msg} {tags_result}\n'
         tags_desc = modInfo.getBashTagsDesc()
         has_tags_source |= bool(tags_desc)
         if tags_desc:
-            tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
-                            tagList)
+            tagList = _tags(_('From Plugin Description:'),
+                sorted(tags_desc), tagList)
         loot_added, loot_removed = read_loot_tags(mname)
         has_tags_source |= bool(loot_added | loot_removed)
         if loot_added:
-            tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
+            tagList = _tags(_('From LOOT Masterlist and/or Userlist:'),
                             sorted(loot_added), tagList)
         if loot_removed:
-            tagList = _tags(_(u'Removed by LOOT Masterlist and / or '
-                              u'Userlist: '), sorted(loot_removed), tagList)
+            tagList = _tags(_('Removed by LOOT Masterlist and/or '
+                              'Userlist:'), sorted(loot_removed), tagList)
         dir_added, dir_removed = read_dir_tags(mname)
         has_tags_source |= bool(dir_added | dir_removed)
-        tags_file = f"'{bush.game.mods_dir}/BashTags/{mname.fn_body}.txt'"
+        tags_file_fmt = {'tags_file': f"'{bush.game.mods_dir}/BashTags"
+                                      f"/{mname.fn_body}.txt'"}
         if dir_added:
-            tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
-                            tagList)
+            tagList = _tags(_('Added by %(tags_file)s:') % tags_file_fmt,
+                sorted(dir_added), tagList)
         if dir_removed:
-            tagList = _tags(_(u'Removed by %s: ') % tags_file,
-                            sorted(dir_removed), tagList)
+            tagList = _tags(_('Removed by %(tags_file)s:') % tags_file_fmt,
+                sorted(dir_removed), tagList)
         sorted_tags = sorted(modInfo.getBashTags())
         if not modInfo.is_auto_tagged() and sorted_tags:
             has_tags_source = True
-            tagList = _tags(_(u'From Manual (overrides all other sources): '),
+            tagList = _tags(_('From Manual (overrides all other sources):'),
                 sorted_tags, tagList)
-        return (_tags(_(u'Result: '), sorted_tags, tagList)
-                if has_tags_source else tagList + u'    %s\n' % _(u'No tags'))
+        return (_tags(_('Result:'), sorted_tags, tagList)
+                if has_tags_source else tagList + f"    {_('No tags')}\n")
 
     def getTagList(self, mod_list=None):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
-        tagList = u'=== ' + _(u'Current Bash Tags') + u':\n'
+        tagList = f"=== {_('Current Bash Tags:')}\n"
         tagList += u'[spoiler]\n'
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
@@ -2715,8 +2727,8 @@ class ModInfos(FileInfos):
                 if modInfo.getBashTags():
                     mod_list.append(modInfo)
         for modInfo in mod_list:
-            tagList += u'\n* %s\n' % modInfo
-            tagList = ModInfos._tagsies(modInfo, tagList)
+            tagList += f'\n* {modInfo}\n'
+            tagList = self._tagsies(modInfo, tagList)
         tagList += u'[/spoiler]'
         return tagList
 
@@ -3258,11 +3270,11 @@ class ModInfos(FileInfos):
             if self[p].is_esl():
                 # sort ESLs after all regular plugins
                 self.real_indices[p] = esl_offset + esl_index
-                self.real_index_strings[p] = 'FE %03X' % esl_index # no fstring
+                self.real_index_strings[p] = f'FE {esl_index:03X}'
                 esl_index += 1
             else:
                 self.real_indices[p] = regular_index
-                self.real_index_strings[p] = '%02X' % regular_index #no fstring
+                self.real_index_strings[p] = f'{regular_index:02X}'
                 regular_index += 1
 
     def _recalc_dependents(self):
@@ -3764,7 +3776,7 @@ def initBosh(bashIni, game_ini_path):
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
     # game ini files
-    deprint(u'Looking for main game INI at %s' % game_ini_path)
+    deprint(f'Looking for main game INI at {game_ini_path}')
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
@@ -3799,30 +3811,37 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         bass.settings = _load()
     except pickle.UnpicklingError as err:
         msg = _(
-            u"Error reading the Bash Settings database (the error is: '%r'). "
-            u"This is probably not recoverable with the current file. Do you "
-            u"want to try the backup BashSettings.dat? (It will have all your "
-            u"UI choices of the time before last that you used Wrye Bash.")
-        usebck = balt.askYes(None, msg % err, _(u'Settings Load Error'))
+            "Error reading the Wrye Bash Settings database (the error is "
+            "'%(settings_err)s'). This is probably not recoverable with the "
+            "current file. Do you want to try the backup "
+            "%(settings_file_name)s (it will have all your settings from the "
+            "second to last time that you used Wrye Bash)?") % {
+            'settings_err': repr(err),
+            'settings_file_name': 'BashSettings.dat'}
+        usebck = balt.askYes(None, msg, _(u'Settings Load Error'))
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
             except pickle.UnpicklingError as err:
                 msg = _(
-                    u"Error reading the BackupBash Settings database (the "
-                    u"error is: '%r'). This is probably not recoverable with "
-                    u"the current file. Do you want to delete the corrupted "
-                    u"settings and load Wrye Bash without your saved UI "
-                    u"settings?. (Otherwise Wrye Bash won't start up)")
-                delete = balt.askYes(None, msg % err, _('Settings Load Error'))
-                if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
-                else:raise
+                    "Error reading the backup Wrye Bash Settings database "
+                    "(the error is '%(settings_err)s'). This is probably not "
+                    "recoverable with the current file. Do you want to delete "
+                    "the corrupted settings and load Wrye Bash without your "
+                    "saved settings (choosing 'No' will cause Wrye Bash to "
+                    "exit)?") % {'settings_err': repr(err)}
+                delete = balt.askYes(None, msg, _('Settings Load Error'))
+                if delete:
+                    bass.settings = _loadBakOrEmpty(delBackup=True)
+                else:
+                    raise
         else:
             msg = _(
-                u'Do you want to delete the corrupted settings and load Wrye '
-                u'Bash without your saved UI settings?. (Otherwise Wrye Bash '
-                u"won't start up)")
-            delete = balt.askYes(None, msg, _(u'Settings Load Error'))
-            if delete: # ignore bak but don't delete
+                "Do you want to delete the corrupted settings and load Wrye "
+                "Bash without your saved settings (choosing 'No' will cause "
+                "Wrye Bash to exit)?")
+            delete = balt.askYes(None, msg, _('Settings Load Error'))
+            if delete: # Ignore bak but don't delete, overwrite on exit instead
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
-            else: raise
+            else:
+                raise

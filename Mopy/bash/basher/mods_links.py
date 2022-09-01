@@ -125,7 +125,7 @@ class Mods_LoadList(ChoiceLink):
                     self.window, _('Active Plugins Lists'), editorData)
         class _SaveLink(EnabledLink):
             _text = _('Save Active Plugins List')
-            _help = _('Save the currently active plugin to a new active '
+            _help = _('Save the currently active plugins to a new active '
                       'plugins list.')
             def _enable(self): return bool(load_order.cached_active_tuple())
             def Execute(self):
@@ -351,15 +351,20 @@ class Mods_CrcRefresh(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
+        message = f"== {_('Mismatched CRCs')}\n\n"
         with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
         mismatched = {k: v for k, v in pairs.items() if v[0] != v[1]}
         if mismatched:
-            message += u'  * ' + u'\n  * '.join(
-                [f'{k}: cached {v[1]:08X} real {v[0]:08X}' for k, v in
-                 mismatched.items()])
+            trans_msg = _('%(mismatched_plugin)s: cached is '
+                          '%(cached_crc_val)s, real is %(real_crc_val)s.')
+            message += '  * ' + '\n  * '.join(
+                [trans_msg % {'mismatched_plugin': k,
+                              # Keep the hex formatting out of the translations
+                              'cached_crc_val': f'{v[1]:08X}',
+                              'real_crc_val': f'{v[0]:08X}'}
+                 for k, v in mismatched.items()])
             self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
-        else: message += _(u'No stale cached CRC values detected')
+        else: message += _('No stale cached CRC values detected.')
         self._showWryeLog(message)
 
 #------------------------------------------------------------------------------
@@ -390,9 +395,9 @@ class Mods_ExportBashTags(_Mods_BashTags):
         if not exp_path: return
         self.plugins_exported = 0
         self.write_text_file(exp_path)
-        self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
-                       u'%(exp_path)s.') % {u'exp_num': self.plugins_exported,
-                                            u'exp_path': exp_path})
+        self._showOk(_('Exported tags for %(exp_num)d plugin(s) to '
+                       '%(exp_path)s.') % {'exp_num': self.plugins_exported,
+                                           'exp_path': exp_path})
 
     def _write_rows(self, out):
         for pl_name, p in dict_sort(bosh.modInfos):
@@ -428,14 +433,14 @@ class Mods_ImportBashTags(_Mods_BashTags):
                               u'bash tags CSV export.'))
             return
         self.window.RefreshUI(redraw=self.plugins_imported, refreshSaves=False)
-        self._showOk(
-            _(u'Imported tags for %u plugin(s).') % len(self.plugins_imported))
+        self._showOk(_('Imported tags for %(total_imported)d plugin(s).') % {
+            'total_imported': len(self.plugins_imported)})
 
     def _parse_line(self, csv_fields):
         if self.first_line: # header validation
             self.first_line = False
             if len(csv_fields) != 2 or csv_fields != [u'Plugin', u'Tags']:
-                raise exception.BoltError(u'Header error: %s' % (csv_fields,))
+                raise exception.BoltError(f'Header error: {csv_fields}')
             return
         pl_name, curr_tags = csv_fields
         if (pl_name := FName(pl_name)) in bosh.modInfos:
@@ -469,18 +474,19 @@ class Mods_ClearManualBashTags(ItemLink):
                 p.set_auto_tagged(True)
                 p.reloadBashTags()
         self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
-        self._showOk(_(u'Cleared tags from %u plugin(s).') % len(pl_reset))
+        self._showOk(_('Cleared tags from %(total_cleared)d plugin(s).') % {
+            'total_cleared': len(pl_reset)})
 
 #------------------------------------------------------------------------------
 class _Mods_OpenLOFile(ItemLink):
     """Opens a load order file in the system's default text editor."""
     def __init__(self, lo_file_path):
-        super(_Mods_OpenLOFile, self).__init__()
+        super().__init__()
         self._lo_file_path = lo_file_path
-        lo_file_name = lo_file_path.stail
-        self._text = _(u'Open %s') % lo_file_name
-        self._help = _(u'Opens the load order management file "%s" in a text '
-                       u'editor.') % lo_file_name
+        lo_file_fmt = {'lo_file_name': lo_file_path.stail}
+        self._text = _('Open %(lo_file_name)s') % lo_file_fmt
+        self._help = _("Opens the load order management file "
+                       "'%(lo_file_name)s' in a text editor.") % lo_file_fmt
 
     def Execute(self):
         self._lo_file_path.start()

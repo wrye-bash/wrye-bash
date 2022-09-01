@@ -101,15 +101,15 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     abspath = os.path.abspath
     # source may be anything - see SHFILEOPSTRUCT - accepts list or item
     if isinstance(source, (Path, (str, bytes))):
-        source = [abspath(u'%s' % source)]
+        source = [abspath(f'{source}')]
     else:
-        source = [abspath(u'%s' % x) for x in source]
+        source = [abspath(f'{x}') for x in source]
     # target may be anything ...
     target = target if target else u'' # abspath(u''): cwd (must be Mopy/)
     if isinstance(target, (Path, (str, bytes))):
-        target = [abspath(u'%s' % target)]
+        target = [abspath(f'{target}')]
     else:
-        target = [abspath(u'%s' % x) for x in target]
+        target = [abspath(f'{x}') for x in target]
     if __shell and shfo is not None:
         res = shfo(operation, source, target, allowUndo, confirm,
                    renameOnCollision, silent, parent)
@@ -126,10 +126,12 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             # renameOnCollision - no effect, deleting files
             # silent - no real effect (we don't show visuals deleting this way)
             if confirm:
-                message = _(u'Are you sure you want to permanently delete '
-                            u'these %(count)d items?') % {u'count':len(source)}
-                message += u'\n\n' + u'\n'.join([u' * %s' % x for x in source])
-                if not balt.askYes(parent,message,_(u'Delete Multiple Items')):
+                message = _('Are you sure you want to permanently delete '
+                            'these %(item_cnt)d items?') % {
+                    'item_cnt': len(source)}
+                message += u'\n\n' + u'\n'.join([f' * {x}' for x in source])
+                if not balt.askYes(parent, message,
+                        _('Delete Multiple Items')):
                     return {}
             # Do deletion
             for toDelete in source:
@@ -160,7 +162,7 @@ def shellDeletePass(node, parent=None):
     """Delete tmp dirs/files - ignore errors (but log them)."""
     if node.exists():
         try: shellDelete(node, parent=parent, confirm=False, recycle=False)
-        except OSError: deprint(u'Error deleting %s:' % node, traceback=True)
+        except OSError: deprint(f'Error deleting {node}:', traceback=True)
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):

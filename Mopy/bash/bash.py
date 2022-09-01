@@ -189,7 +189,7 @@ def exit_cleanup():
     import tempfile
     tmpDir = bolt.GPath(tempfile.tempdir)
     for file_ in tmpDir.ilist():
-        file_ = bolt.GPath_no_norm('%s' % file_)
+        file_ = bolt.GPath_no_norm(f'{file_}')
         if file_.cs.startswith(u'wryebash_'):
             file_ = tmpDir.join(file_)
             try:
@@ -209,8 +209,8 @@ def exit_cleanup():
                     cli = cli[1:]
                 else:
                     exe = sys.executable
-                exe = [u'%s', u'"%s"'][u' ' in exe] % exe
-                cli = u' '.join([u'%s', u'"%s"'][u' ' in x] % x for x in cli)
+                exe = [f'{exe}', f'"{exe}"'][' ' in exe]
+                cli = ' '.join([f'{x}', f'"{x}"'][' ' in x] for x in cli)
                 cmd_line = f'{exe} {cli}'
                 win32api.ShellExecute(0, u'runas', exe, cli, None, True)
                 return
@@ -268,10 +268,10 @@ def dump_environment(wxver=None):
         f'Input encoding: {sys.stdin.encoding if sys.stdin else None}; '
         f'output encoding: {getattr(sys.stdout, u"encoding", None)}',
         f'Filesystem encoding: {fse}'
-        f'{(u" - using %s" % bolt.Path.sys_fs_enc) if not fse else u""}',
+        f'{f" - using {bolt.Path.sys_fs_enc}" if not fse else ""}',
         f'Command line: {sys.argv}',
     ]
-    bolt.deprint(msg := u'\n\t'.join(msg))
+    bolt.deprint(msg := '\n\t'.join(msg))
     return msg
 
 def _bash_ini_parser(bash_ini_path):
@@ -360,8 +360,9 @@ def _main(opts, wx_locale, wxver):
     # if HTML file generation was requested, just do it and quit
     if opts.genHtml is not None:
         ##: See if the encodes are actually necessary
-        msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
-        msg2 = _(u'done')
+        msg1 = _(f"Generating HTML file from '%(gen_target)s'") % {
+            'gen_target': opts.genHtml}
+        msg2 = _('Done')
         try: print(msg1)
         except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
         from . import belt ##: belt does bolt.codebox = WryeParser.codebox - FIXME decouple!
@@ -503,10 +504,10 @@ def _detect_game(opts, backup_bash_ini):
     game_ini_path, init_warnings = initialization.init_dirs(
         bashIni, opts.personalPath, opts.localAppDataPath, bush_game)
     if init_warnings:
-        warning_msg = _(u'The following (non-critical) warnings were found '
-                        u'during initialization:')
-        warning_msg += u'\n\n'
-        warning_msg += u'\n'.join(u'- %s' % w for w in init_warnings)
+        warning_msg = _('The following (non-critical) warnings were found '
+                        'during initialization:')
+        warning_msg += '\n\n'
+        warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
     return bashIni, bush_game, game_ini_path
 
@@ -754,12 +755,13 @@ def _rightWxVersion(wxver):
     called after _import_wx, setup_locale and balt is imported."""
     if not wxver.startswith('4.2'):
         from . import balt
-        return balt.askYes(
-            None, _('Warning: you appear to be using a non-supported version '
-                    'of wxPython (%s). This will cause problems! It is '
-                    'highly recommended you use a %s version. Do you '
-                    'still want to run Wrye Bash?') % (wxver, '4.2.x'),
-            title=_('Warning: Non-Supported wxPython detected'))
+        return balt.askYes(None, _(
+            'Warning: you appear to be using a non-supported version of '
+            'wxPython (%(curr_wx_ver)s). This will cause problems! It is '
+            'highly recommended you use a %(supported_wx_series)s version. Do '
+            'you still want to run Wrye Bash?') % {
+            'curr_wx_ver': wxver, 'supported_wx_series': '4.2.x'},
+            title=_('Unsupported wxPython Version Detected'))
     return True
 
 def _rightPythonVersion():
@@ -768,11 +770,12 @@ def _rightPythonVersion():
     sysVersion = sys.version_info[:3]
     if sysVersion < (3, 10) or sysVersion >= (4,):
         from . import balt
-        balt.showError(
-            None, _("Only Python %s and newer is supported (%s detected). If "
-                    "you know what you're doing, install the Python version of "
-                    "Wrye Bash and edit this warning out. Wrye Bash will now "
-                    "exit.") % ('3.10', sysVersion),
-            title=_('Incompatible Python version detected'))
+        balt.showError(None, _(
+            "Only Python %(min_py_ver)s and newer is supported "
+            "(%(curr_py_ver)s detected). If you know what you're doing, "
+            "install the Python version of Wrye Bash and edit this warning "
+            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.10',
+                                                'curr_py_ver': sysVersion},
+            title=_('Unsupported Python Version Detected'))
         return False
     return True

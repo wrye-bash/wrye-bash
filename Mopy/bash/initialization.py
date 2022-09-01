@@ -52,21 +52,27 @@ def getPersonalPath(bash_ini_, my_docs_path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
-        sErrorInfo = _(u'Folder path specified on command line (-p)')
+        sErrorInfo = _('Folder path specified on command line '
+                       '(%(cli_switch)s)') % {'cli_switch': '-p'}
     else:
         my_docs_path = get_path_from_ini(bash_ini_, u'sPersonalPath')
         if my_docs_path:
-            sErrorInfo = _(
-                u'Folder path specified in bash.ini (%s)') % u'sPersonalPath'
+            sErrorInfo = _('Folder path specified in bash.ini '
+                           '(%(bash_ini_setting)s)') % {
+                'bash_ini_setting': 'sPersonalPath'}
         else:
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
     if not my_docs_path.is_absolute():
-        my_docs_path = dirs[u'app'].join(my_docs_path)
+        my_docs_path = dirs['app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
-        raise BoltError(f'Personal folder does not exist.\nPersonal folder: '
-                        f'{my_docs_path}\nAdditional info:\n{sErrorInfo}')
+        raise BoltError('\n'.join([
+            _('Personal folder does not exist.'),
+            _('Personal folder: %(pers_folder)s') % {
+                'pers_folder': my_docs_path},
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     return my_docs_path
 
 def getLocalAppDataPath(bash_ini_, app_data_local_path):
@@ -74,12 +80,15 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
-        sErrorInfo = _(u'Folder path specified on command line (-l)')
+        sErrorInfo = _('Folder path specified on command line '
+                       '(%(cli_switch)s)') % {'cli_cli_switch': '-l'}
     else:
         app_data_local_path = get_path_from_ini(bash_ini_,
                                                 u'sLocalAppDataPath')
         if app_data_local_path:
-            sErrorInfo = _(u'Folder path specified in bash.ini (%s)') % u'sLocalAppDataPath'
+            sErrorInfo = _('Folder path specified in bash.ini '
+                           '(%(bash_ini_setting)s)') % {
+                'bash_ini_setting': 'sLocalAppDataPath'}
         else:
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
@@ -87,8 +96,12 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
         app_data_local_path = dirs[u'app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
-        raise BoltError(f'Local AppData folder does not exist.\nLocal AppData '
-            f'folder: {app_data_local_path}\nAdditional info:\n{sErrorInfo}')
+        raise BoltError('\n'.join([
+            _('LocalAppData folder does not exist.'),
+            _('LocalAppData folder: %(lad_folder)s') % {
+                'lad_folder': app_data_local_path},
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     return app_data_local_path
 
 def getOblivionModsPath(bash_ini_, game_info):
@@ -203,12 +216,12 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                 oblivionIni.read_file(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
             # Probably not actually a game INI - might be reshade
-            init_warnings.append(
-                _(u'The global INI file in your game directory (%s) does not '
-                  u'appear to be a valid game INI. It might come from an '
-                  u'incorrectly installed third party tool. Consider '
-                  u'deleting it and validating your game files.') %
-                data_oblivion_ini)
+            init_warnings.append(_(
+                'The global INI file in your game directory (%(global_ini)s) '
+                'does not appear to be a valid game INI. It might come from '
+                'an incorrectly installed third party tool. Consider deleting '
+                'it and validating your game files.') % {
+                'global_ini': data_oblivion_ini})
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini

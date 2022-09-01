@@ -761,7 +761,7 @@ class Mod_ListDependent(OneItemLink):
             log(text_list)
         if not text_list:  log(u'None')
         log(u'[/spoiler]')
-        text_list = bolt.to_win_newlines(log.out.getvalue())
+        text_list = log.out.getvalue()
         copy_text_to_clipboard(text_list)
         self._showLog(text_list, title=legend, fixedFont=False)
 
