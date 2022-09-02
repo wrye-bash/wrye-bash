@@ -484,7 +484,7 @@ class Installer(ListInfo):
         skipObse = not bass.settings[u'bash.installers.allowOBSEPlugins']
         if skipObse:
             Installer._global_start_skips.append(
-                bush.game.Se.plugin_dir.lower() + os_sep)
+                bush.game.Se.plugin_dir.lower())
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= bain_image_exts
@@ -588,7 +588,7 @@ class Installer(ListInfo):
         Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
-        voice_dir = os_sep.join((u'sound', u'voice')) + os_sep
+        voice_dir = os_sep.join(('sound', 'voice'))
         start = [voice_dir] if self.skipVoices else []
         skips, skip_ext = [], set()
         if not self.overrideSkips:
@@ -596,11 +596,12 @@ class Installer(ListInfo):
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
         if start:
-            start_tup = tuple(start) # do this ahead of time
+            # Calculate these ahead of time
+            start_tup = tuple(x + os_sep for x in start)
             skips.append(lambda f: f.startswith(start_tup))
         if not self.skipVoices and self.espmNots:
             def _skip_espm_voices(fileLower):
-                farPos = fileLower.startswith( # u'sound\\voice\\', 12 chars
+                farPos = fileLower.startswith( # 'sound\\voice\\', 12 chars
                     voice_dir) and fileLower.find(os_sep, 12)
                 return farPos > 12 and fileLower[12:farPos] in self.espmNots
             skips.append(_skip_espm_voices)
