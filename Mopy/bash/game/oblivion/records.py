@@ -1085,25 +1085,26 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags.from_names(u'goodbye', u'random', u'sayOnce',
-        u'runImmediately', u'infoRefusal', u'randomEnd', u'runForRumors')
+    _info_response_flags = Flags.from_names('goodbye', 'random', 'say_once',
+        'run_immediately', 'info_refusal', 'random_end', 'run_for_rumors')
 
     melSet = MelSet(
-        MelTruncatedStruct(b'DATA', [u'3B'], u'dialType', u'nextSpeaker',
-                           (_flags, u'flags'), old_versions={u'H'}),
-        MelFid(b'QSTI', u'info_quest'),
-        MelFid(b'TPIC', u'info_topic'),
-        MelFid(b'PNAM', u'prev_info'),
-        MelFids('addTopics', MelFid(b'NAME')),
-        MelGroups(u'responses',
-            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s'], u'emotionType', u'emotionValue',
-                u'unused1', u'responseNum', u'unused2'),
-            MelString(b'NAM1', u'responseText'),
-            MelString(b'NAM2', u'actorNotes'),
+        MelTruncatedStruct(b'DATA', ['3B'], 'info_type', 'next_speaker',
+            (_info_response_flags, 'response_flags'), old_versions={'2B'}),
+        MelFid(b'QSTI', 'info_quest'),
+        MelFid(b'TPIC', 'info_topic'),
+        MelFid(b'PNAM', 'prev_info'),
+        MelFids('add_topics', MelFid(b'NAME')),
+        MelGroups('info_responses',
+            MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s'], 'rd_emotion_type',
+                'rd_emotion_value', 'rd_unused1', 'rd_response_number',
+                'rd_unused2'),
+            MelString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
         ),
         MelConditionsTes4(),
-        MelFids('choices', MelFid(b'TCLT')),
-        MelFids('linksFrom', MelFid(b'TCLF')),
+        MelFids('info_choices', MelFid(b'TCLT')),
+        MelFids('link_from', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()

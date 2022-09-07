@@ -716,6 +716,23 @@ class MelImpactDataset(MelFid):
         super().__init__(ids_sig, 'impact_dataset')
 
 #------------------------------------------------------------------------------
+class MelInfoResponsesFo3(MelGroups):
+    """Handles the INFO subrecords TRDT, NAM1-3, SNAM and LNAM in FO3, FNV and
+    TES5."""
+    def __init__(self):
+        super().__init__('info_responses',
+            MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s', 'I', 'B', '3s'],
+                'rd_emotion_type', 'rd_emotion_value', 'rd_unused1',
+                'rd_response_number', 'rd_unused2', (FID, 'rd_sound'),
+                'rd_use_emotion_animation', 'rd_unused3'),
+            MelLString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
+            MelString(b'NAM3', 'response_edits'),
+            MelFid(b'SNAM', 'idle_animations_speaker'),
+            MelFid(b'LNAM', 'idle_animations_listener'),
+        )
+
+#------------------------------------------------------------------------------
 class MelIngredient(MelFid):
     """Handles the common PFIG (Ingredient) subrecord."""
     def __init__(self):

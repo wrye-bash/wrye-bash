@@ -51,7 +51,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
-    perk_distributor
+    perk_distributor, MelInfoResponsesFo3
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1386,56 +1386,41 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags.from_names(
-        'goodbye',
-        'random',
-        'sayOnce',
-        'runImmediately',
-        'infoRefusal',
-        'randomEnd',
-        'runForRumors',
-        'speechChallenge',
-    )
-    _flags2 = Flags.from_names(
-        (0, 'sayOnceADay'),
-        (1, 'alwaysDarken'),
-        fnv_only((4, 'lowIntelligence')),
-        fnv_only((5, 'highIntelligence')),
+    _info_response_flags1 = Flags.from_names('goodbye', 'random', 'say_once',
+        'run_immediately', 'info_refusal', 'random_end', 'run_for_rumors',
+        'speech_challenge')
+    _info_response_flags2 = Flags.from_names(
+        (0, 'say_once_aday'),
+        (1, 'always_darken'),
+        fnv_only((4, 'low_intelligence')),
+        fnv_only((5, 'high_intelligence')),
     )
 
     melSet = MelSet(
-        MelTruncatedStruct(b'DATA', [u'4B'], 'dialType', 'nextSpeaker',
-                           (_flags, 'flags'), (_flags2, 'flagsInfo'),
-                           old_versions={'2B'}),
-        MelFid(b'QSTI', u'info_quest'),
-        MelFid(b'TPIC', u'info_topic'),
+        MelTruncatedStruct(b'DATA', ['4B'], 'info_type', 'next_speaker',
+            (_info_response_flags1, 'response_flags'),
+            (_info_response_flags2, 'response_flags2'), old_versions={'2B'}),
+        MelFid(b'QSTI', 'info_quest'),
+        MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('addTopics', MelFid(b'NAME')),
-        MelGroups('responses',
-            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s', u'I', u'B', u'3s'],'emotionType','emotionValue','unused1','responseNum',('unused2',b'\xcd\xcd\xcd'),
-                      (FID,'sound'),'flags',('unused3',b'\xcd\xcd\xcd')),
-            MelString(b'NAM1','responseText'),
-            MelString(b'NAM2','actorNotes'),
-            MelString(b'NAM3','edits'),
-            MelFid(b'SNAM','speakerAnimation'),
-            MelFid(b'LNAM','listenerAnimation'),
-        ),
+        MelFids('add_topics', MelFid(b'NAME')),
+        MelInfoResponsesFo3(),
         MelConditionsFo3(),
-        MelFids('choices', MelFid(b'TCLT')),
-        MelFids('linksFrom', MelFid(b'TCLF')),
+        MelFids('info_choices', MelFid(b'TCLT')),
+        MelFids('link_from', MelFid(b'TCLF')),
         fnv_only(MelFids('follow_up', MelFid(b'TCFU'))),
-        MelGroup('scriptBegin',
+        MelGroup('script_begin',
             MelEmbeddedScript(),
         ),
-        MelGroup('scriptEnd',
-            MelBase(b'NEXT','marker'),
+        MelGroup('script_end',
+            MelBaseR(b'NEXT', 'script_marker'),
             MelEmbeddedScript(),
         ),
-        MelFid(b'SNDD','sndd_p'),
-        MelString(b'RNAM','prompt'),
-        MelFid(b'ANAM','speaker'),
-        MelFid(b'KNAM','acterValuePeak'),
-        MelUInt32(b'DNAM', 'speechChallenge')
+        MelFid(b'SNDD', 'unused_sndd'),
+        MelString(b'RNAM', 'info_prompt'),
+        MelFid(b'ANAM', 'info_speaker'),
+        MelFid(b'KNAM', 'actor_value_or_perk'),
+        MelUInt32(b'DNAM', 'speech_challenge')
     )
     __slots__ = melSet.getSlotsUsed()
 

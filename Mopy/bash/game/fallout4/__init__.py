@@ -226,7 +226,7 @@ class Fallout4GameInfo(PatchGame):
             MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
             MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
             MreFlor, MreFlst, MreFurn, MreGdry, MreGras, MreHazd, MreHdpt, \
-            MreIdle, MreIdlm, MreImad, MreImgs, \
+            MreIdle, MreIdlm, MreImad, MreImgs, MreInfo, \
             MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
@@ -273,7 +273,7 @@ class Fallout4GameInfo(PatchGame):
         # it when loading)
         header_type.skip_form_version_upgrade = {b'DMGT'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-             (MreTes4,))}
+             (MreTes4, MreInfo, ))}
         brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

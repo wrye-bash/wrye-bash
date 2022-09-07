@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    perk_distributor, MelImgsCinematic
+    perk_distributor, MelImgsCinematic, MelInfoResponsesFo3
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1410,59 +1410,35 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _InfoResponsesFlags = Flags.from_names('useEmotionAnimation')
-
-    _EnamResponseFlags = Flags.from_names(
-        (0,  u'goodbye'),
-        (1,  u'random'),
-        (2,  u'say_once'),
-        (3,  u'requires_player_activation'),
-        (4,  u'info_refusal'),
-        (5,  u'random_end'),
-        (6,  u'invisible_continue'),
-        (7,  u'walk_away'),
-        (8,  u'walk_away_invisible_in_menu'),
-        (9,  u'force_subtitle'),
-        (10, u'can_move_while_greeting'),
-        (11, u'no_lip_file'),
-        (12, u'requires_post_processing'),
-        (13, u'audio_output_override'),
-        (14, u'spends_favor_points'),
-    )
+    _info_response_flags = Flags.from_names('goodbye', 'random', 'say_once',
+        'requires_player_activation', 'info_refusal', 'random_end',
+        'invisible_continue', 'walk_away', 'walk_away_invisible_in_menu',
+        'force_subtitle', 'can_move_while_greeting', 'no_lip_file',
+        'requires_post_processing', 'audio_output_override',
+        'spends_favor_points')
 
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelBase(b'DATA','unknownDATA'),
-        MelStruct(b'ENAM', [u'2H'], (_EnamResponseFlags, u'flags'),
-                  'resetHours',),
-        MelFid(b'TPIC', u'info_topic'),
+        MelBase(b'DATA', 'unknown_data'),
+        MelStruct(b'ENAM', ['2H'], (_info_response_flags, 'response_flags'),
+            'reset_hours'),
+        MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelUInt8(b'CNAM', 'favorLevel'),
-        MelFids('linkTo', MelFid(b'TCLT')),
-        MelFid(b'DNAM','responseData',),
-        MelGroups('responses',
-            MelStruct(b'TRDT', [u'2I', u'4s', u'B', u'3s', u'I', u'B', u'3s'], u'emotionType', u'emotionValue',
-                      u'unused1', u'responseNumber',
-                      u'unused2', (FID, u'sound'),
-                      (_InfoResponsesFlags, u'responseFlags'),
-                      u'unused3'),
-            MelLString(b'NAM1','responseText'),
-            MelString(b'NAM2','scriptNotes'),
-            MelString(b'NAM3','edits'),
-            MelFid(b'SNAM','idleAnimationsSpeaker',),
-            MelFid(b'LNAM','idleAnimationsListener',),
-        ),
+        MelUInt8(b'CNAM', 'favor_level'),
+        MelFids('link_to', MelFid(b'TCLT')),
+        MelFid(b'DNAM', 'response_data'),
+        MelInfoResponsesFo3(),
         MelConditionList(),
-        MelGroups('leftOver',
-            MelBase(b'SCHR','unknown1'),
-            MelFid(b'QNAM','unknown2'),
-            MelNull(b'NEXT'),
+        MelGroups('ck_left_overs',
+            MelBase(b'SCHR', 'left_over_unknown1'),
+            MelFid(b'QNAM', 'left_over_unknown2'),
+            MelBaseR(b'NEXT', 'left_over_marker'),
         ),
-        MelLString(b'RNAM','prompt'),
-        MelFid(b'ANAM','speaker',),
-        MelFid(b'TWAT','walkAwayTopic',),
-        MelFid(b'ONAM','audioOutputOverride',),
+        MelLString(b'RNAM', 'info_prompt'),
+        MelFid(b'ANAM', 'info_speaker'),
+        MelFid(b'TWAT', 'walk_away_topic'),
+        MelFid(b'ONAM', 'audio_output_override'),
     )
     __slots__ = melSet.getSlotsUsed()
 

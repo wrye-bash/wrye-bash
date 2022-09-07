@@ -1529,6 +1529,78 @@ class MreImgs(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Dialog Response."""
+    rec_sig = b'INFO'
+
+    _info_response_flags = Flags.from_names(
+        (0,  'start_scene_on_end'),
+        (1,  'random'),
+        (2,  'say_once'),
+        (3,  'requires_player_activation'),
+        (5,  'random_end'),
+        (6,  'end_running_scene'),
+        (7,  'force_greet_hello'),
+        (8,  'player_address'),
+        (9,  'force_subtitle'),
+        (10, 'can_move_while_greeting'),
+        (11, 'no_lip_file'),
+        (12, 'requires_post_processing'),
+        (13, 'audio_output_override'),
+        (14, 'has_capture'),
+    )
+    _info_response_flags2 = Flags.from_names(
+        (1,  'random'),
+        (3,  'force_all_children_player_activate_only'),
+        (5,  'random_end'),
+        (8,  'child_infos_dont_inherit_reset_data'),
+        (9,  'force_all_children_random'),
+        (11, 'dont_do_all_before_repeating'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelStruct(b'ENAM', ['3H'], (_info_response_flags, 'response_flags'),
+            (_info_response_flags2, 'response_flags2'), 'reset_hours'),
+        MelFid(b'TPIC', 'info_topic'),
+        MelFid(b'PNAM', 'prev_info'),
+        MelFid(b'DNAM', 'shared_info'),
+        MelFid(b'GNAM', 'info_group'),
+        MelString(b'IOVR', 'override_file_name'),
+        MelGroups('info_responses',
+            MelStruct(b'TRDA', ['I', 'B', 'I', 's', 'H', '2i'],
+                (FID, 'rd_emotion'), 'rd_response_number', (FID, 'rd_sound'),
+                'rd_unknown1', 'rd_interrupt_percentage',
+                'rd_camera_target_alias', 'rd_camera_location_alias'),
+            MelLString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
+            MelString(b'NAM3', 'response_edits'),
+            MelString(b'NAM4', 'alternate_lip_text'),
+            MelFid(b'SNAM', 'idle_animations_speaker'),
+            MelFid(b'LNAM', 'idle_animations_listener'),
+            MelUInt16(b'TNAM', 'interrupt_percentage'),
+            MelBase(b'NAM9', 'response_text_hash'),
+            MelFid(b'SRAF', 'response_camera_path'),
+            MelBase(b'WZMD', 'stop_on_scene_end'),
+        ),
+        MelConditionList(),
+        MelLString(b'RNAM', 'info_prompt'),
+        MelFid(b'ANAM', 'info_speaker'),
+        MelFid(b'TSCE', 'start_scene'),
+        MelBase(b'INTV', 'unknown_intv'),
+        MelSInt32(b'ALFA', 'forced_alias'),
+        MelFid(b'ONAM', 'audio_output_override'),
+        MelUInt32(b'GREE', 'greet_distance'),
+        MelStruct(b'TIQS', ['2h'], 'spqs_on_begin', 'spqs_on_end'),
+        MelString(b'NAM0', 'start_scene_phase'),
+        MelUInt32(b'INCC', 'info_challenge'),
+        MelFid(b'MODQ', 'reset_global'),
+        MelUInt32(b'INAM', 'subtitle_priority'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
