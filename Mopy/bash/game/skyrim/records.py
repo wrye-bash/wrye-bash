@@ -38,9 +38,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelTxstFlags, \
-    MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, \
+    MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, MelImgsTint, \
     MelActorSounds, MelFactRanks, MelSorted, MelReflectedRefractedBy, \
-    perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
+    perk_effect_key, MelValueWeight, MelSound, MelWaterType, MelIdlmFlags, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    MelIdlmFlags, perk_distributor
+    perk_distributor, MelImgsCinematic
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1490,14 +1490,15 @@ class MreImgs(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelBase(b'ENAM','eman_p'),
-        MelStruct(b'HNAM', [u'9f'],'eyeAdaptSpeed','bloomBlurRadius','bloomThreshold','bloomScale',
-                  'receiveBloomThreshold','white','sunlightScale','skyScale',
-                  'eyeAdaptStrength',),
-        MelStruct(b'CNAM', [u'3f'],'Saturation','Brightness','Contrast',),
-        MelStruct(b'TNAM', [u'4f'],'tintAmount','tintRed','tintGreen','tintBlue',),
-        MelStruct(b'DNAM', [u'3f', u'2s', u'H'],'dofStrength','dofDistance','dofRange','unknown',
-                  'skyBlurRadius',),
+        MelBase(b'ENAM', 'unknown_enam'),
+        MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed',
+            'hdr_bloom_blur_radius', 'hdr_bloom_threshold', 'hdr_bloom_scale',
+            'hdr_receive_bloom_threshold', 'hdr_white', 'hdr_sunlight_scale',
+            'hdr_sky_scale', 'hdr_eye_adapt_strength'),
+        MelImgsCinematic(),
+        MelImgsTint(),
+        MelStruct(b'DNAM', ['3f', '2s', 'H'], 'dof_strength', 'dof_distance',
+            'dof_range', 'dof_unknown', 'dof_sky_blur_radius'),
     )
     __slots__ = melSet.getSlotsUsed()
 

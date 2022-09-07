@@ -1347,41 +1347,36 @@ class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
 
-    _dnam_flags = TrimmedFlags.from_names(u'saturation', u'contrast', u'tint',
-                                          u'brightness')
+    _dnam_flags = TrimmedFlags.from_names('cinematic_saturation',
+        'cinematic_contrast', 'cinematic_tint', 'cinematic_brightness')
 
     # Struct elements shared by all three DNAM alternatives. Note that we can't
     # just use MelTruncatedStruct, because upgrading the format breaks interior
     # lighting for some reason.
     ##: If this becomes common, extract into dedicated class
     _dnam_common = [
-        u'eyeAdaptSpeed', u'blurRadius', u'blurPasses', u'emissiveMult',
-        u'targetLUM', u'upperLUMClamp', u'brightScale', u'brightClamp',
-        u'lumRampNoTex', u'lumRampMin', u'lumRampMax', u'sunlightDimmer',
-        u'grassDimmer', u'treeDimmer', u'skinDimmer', u'bloomBlurRadius',
-        u'bloomAlphaMultInterior', u'bloomAlphaMultExterior',
-        u'getHitBlurRadius', u'getHitBlurDampingConstant',
-        u'getHitDampingConstant', u'nightEyeTintRed', u'nightEyeTintGreen',
-        u'nightEyeTintBlue', u'nightEyeBrightness', u'cinematicSaturation',
-        u'cinematicAvgLumValue', u'cinematicValue',
-        u'cinematicBrightnessValue', u'cinematicTintRed',
-        u'cinematicTintGreen', u'cinematicTintBlue', u'cinematicTintValue',
+        'eye_adapt_speed', 'blur_radius', 'blur_passes', 'emissive_mult',
+        'target_lum', 'upper_lum_clamp', 'bright_scale', 'bright_clamp',
+        'lum_ramp_no_tex', 'lum_ramp_min', 'lum_ramp_max', 'sunlight_dimmer',
+        'grass_dimmer', 'tree_dimmer', 'skin_dimmer', 'bloom_blur_radius',
+        'bloom_alpha_mult_interior', 'bloom_alpha_mult_exterior',
+        'get_hit_blur_radius', 'get_hit_blur_damping_constant',
+        'get_hit_damping_constant', 'night_eye_tint_red',
+        'night_eye_tint_green', 'night_eye_tint_blue', 'night_eye_brightness',
+        'cinematic_saturation', 'cinematic_avg_lum_value', 'cinematic_value',
+        'cinematic_brightness_value', 'cinematic_tint_red',
+        'cinematic_tint_green', 'cinematic_tint_blue', 'cinematic_tint_value',
     ]
-    _dnam_fmts = [u'33f', u'4s', u'4s', u'4s', u'4s']
+    _dnam_fmts = ['33f', '4s', '4s', '4s', '4s']
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            152: MelStruct(
-                b'DNAM', _dnam_fmts + [u'B', u'3s'], *(_dnam_common + [
-                    u'unused1', u'unused2', u'unused3', u'unused4',
-                    (_dnam_flags, u'dnam_flags'), u'unused5',
-                ])),
-            148: MelStruct(
-                b'DNAM', _dnam_fmts, *(_dnam_common + [
-                    u'unused1', u'unused2',
-                    u'unused3', u'unused4',
-                ])),
-            132: MelStruct(b'DNAM', [u'33f'], *_dnam_common),
+            152: MelStruct(b'DNAM', _dnam_fmts + ['B', '3s'],
+                *(_dnam_common + ['unknown1', 'unused1', 'unused2', 'unused3',
+                                  (_dnam_flags, 'dnam_flags'), 'unused4'])),
+            148: MelStruct(b'DNAM', _dnam_fmts, *(_dnam_common + [
+                'unknown1', 'unused1', 'unused2', 'unused3'])),
+            132: MelStruct(b'DNAM', ['33f'], *_dnam_common),
         }, decider=SizeDecider()),
     )
     __slots__ = melSet.getSlotsUsed()

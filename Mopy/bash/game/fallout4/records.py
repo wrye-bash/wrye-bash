@@ -48,7 +48,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
     MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
     MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
-    AMreImad, MelPartialCounter, perk_distributor
+    AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
+    MelImgsTint
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1493,6 +1494,37 @@ class MreImad(AMreImad): # see AMreImad for details
             old_versions={'If49I2f3I2B2s4I'}),
             counters=AMreImad.dnam_counter_mapping),
         *[AMreImad.special_impls[s](s, a) for s, a in _imad_sig_attr],
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreImgs(MelRecord):
+    """Image Space."""
+    rec_sig = b'IMGS'
+
+    melSet = MelSet(
+        MelEdid(),
+        # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
+        # skip for everything else
+        MelOptStruct(b'ENAM', ['14f'], 'enam_hdr_eye_adapt_speed',
+            'enam_hdr_tonemap_e', 'enam_hdr_bloom_threshold',
+            'enam_hdr_bloom_scale', 'enam_hdr_auto_exposure_min_max',
+            'enam_hdr_sunlight_scale', 'enam_hdr_sky_scale',
+            'enam_cinematic_saturation', 'enam_cinematic_brightness',
+            'enam_cinematic_contrast', 'enam_tint_amount',
+            'enam_tint_color_red', 'enam_tint_color_green',
+            'enam_tint_color_blue'),
+        MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed', 'hdr_tonemap_e',
+            'hdr_bloom_threshold', 'hdr_bloom_scale', 'hdr_auto_exposure_max',
+            'hdr_auto_exposure_min', 'hdr_sunlight_scale', 'hdr_sky_scale',
+            'hdr_middle_gray'),
+        MelImgsCinematic(),
+        MelImgsTint(),
+        MelTruncatedStruct(b'DNAM', ['3f', '2s', 'H', '2f'], 'dof_strength',
+            'dof_distance', 'dof_range', 'dof_unknown', 'dof_sky_blur_radius',
+            'dof_vignette_radius', 'dof_vignette_strength',
+            old_versions={'3f2sH'}),
+        MelString(b'TX00', 'imgs_lut'),
     )
     __slots__ = melSet.getSlotsUsed()
 

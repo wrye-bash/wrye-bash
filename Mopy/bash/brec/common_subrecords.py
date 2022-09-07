@@ -696,6 +696,20 @@ class MelImageSpaceMod(MelFid):
         super().__init__(b'MNAM', 'image_space_modifier')
 
 #------------------------------------------------------------------------------
+class MelImgsCinematic(MelStruct):
+    """Handles the IMGS subrecord CNAM (Cinematic)."""
+    def __init__(self):
+        super().__init__(b'CNAM', ['3f'], 'cinematic_saturation',
+            'cinematic_brightness', 'cinematic_contrast')
+
+#------------------------------------------------------------------------------
+class MelImgsTint(MelStruct):
+    """Handles the IMGS subrecord TNAM (Tint)."""
+    def __init__(self):
+        super().__init__(b'TNAM', ['4f'], 'tint_amount', 'tint_color_red',
+            'tint_color_green', 'tint_color_blue')
+
+#------------------------------------------------------------------------------
 class MelImpactDataset(MelFid):
     """Handles various common Impact Dataset subrecords."""
     def __init__(self, ids_sig: bytes):
