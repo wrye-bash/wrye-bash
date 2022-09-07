@@ -308,7 +308,7 @@ class ModFile(object):
                            f'masters (>{bush.game.Esp.master_limit}).')
         outPath = outPath or self.fileInfo.getPath()
         with FormIdWriteContext(outPath, self.augmented_masters(),
-                                self.tes4) as out:
+                                self.tes4.version) as out:
             #--Mod Record
             self.tes4.setChanged()
             self.tes4.numRecords = sum(block.getNumRecords()
@@ -541,16 +541,14 @@ class ModHeaderReader(object):
     ##: The methods above have to be very fast, but this one can afford to be
     # much slower. Should eventually be absorbed by refactored ModFile API.
     @staticmethod
-    def read_temp_child_headers(mod_info):
+    def read_temp_child_headers(mod_info) -> list[RecordHeader]:
         """Reads the headers of all temporary CELL chilren in the specified mod
-        and returns them as a list. Used for determining FO3/FNV/TES5 ONAM.
-
-        :rtype: list[RecordHeader]"""
+        and returns them as a list. Used for determining FO3/FNV/TES5 ONAM."""
         ret_headers = []
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        with ModReader.from_info(mod_info) as ins:
+        with FormIdReadContext.from_info(mod_info) as ins:
             ins_at_end = ins.atEnd
             try:
                 while not ins_at_end():

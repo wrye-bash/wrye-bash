@@ -390,8 +390,8 @@ class FormIdWriteContext:
     write."""
 
     def __init__(self, out_path=None, augmented_masters=None,
-                 plugin_header=None):
-        self._plugin_header = plugin_header
+                 plugin_header_ver=1.0):
+        self._plugin_header_ver = plugin_header_ver
         self._out_path = out_path
         self._augmented_masters = augmented_masters
 
@@ -405,7 +405,7 @@ class FormIdWriteContext:
         indices = self._get_indices()
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(self._augmented_masters) > 1 and
-                self._plugin_header.version >= 1.0):
+                self._plugin_header_ver >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _short_mapper(formid):
@@ -429,13 +429,13 @@ class FormIdWriteContext:
 class RemapWriteContext(FormIdWriteContext):
     """A write context that can resolve FormIDs from both a new and an old
     master list. Used when remapping masters."""
-    def __init__(self, pre_remap_masters: list[bolt.FName], augmented_masters,
-            out_path=None, plugin_header=None):
+    def __init__(self, pre_remap_masters: list[bolt.FName], out_path=None,
+            augmented_masters=None, plugin_header_ver=1.0):
         # Need the previous masters, but not the file itself
         if len(pre_remap_masters) != len(augmented_masters) - 1:
             raise ValueError('RemapWriteContext needs pre-remap masters that '
                              'match the length of the augmented masters - 1')
-        super().__init__(out_path, augmented_masters, plugin_header)
+        super().__init__(out_path, augmented_masters, plugin_header_ver)
         self._prev_masters = pre_remap_masters
 
     def _get_indices(self):
