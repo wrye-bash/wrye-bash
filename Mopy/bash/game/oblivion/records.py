@@ -541,7 +541,7 @@ class MreAlch(MreHasEffects, MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
-    _flags = Flags.from_names('autoCalc', 'isFood')
+    _flags = Flags.from_names('autoCalc', 'alch_is_food')
 
     melSet = MelSet(
         MelEdid(),
@@ -1114,7 +1114,7 @@ class MreIngr(MreHasEffects, MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    _flags = Flags.from_names('noAutoCalc', 'isFood')
+    _flags = Flags.from_names('ingr_no_auto_calc', 'ingr_is_food')
 
     melSet = MelSet(
         MelEdid(),

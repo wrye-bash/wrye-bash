@@ -152,8 +152,8 @@ class MelAddnDnam(MelStruct):
 class MelAlchEnit(MelStruct):
     """Handles the ALCH subrecord ENIT (Effect Data) since Skyrim."""
     _enit_flags = Flags.from_names(
-        (0,  'noAutoCalc'),
-        (1,  'isFood'),
+        (0,  'alch_no_auto_calc'),
+        (1,  'alch_is_food'),
         (16, 'medicine'),
         (17, 'poison'),
     )
@@ -281,7 +281,7 @@ class MelClmtTextures(MelSequential):
 #------------------------------------------------------------------------------
 class MelClmtWeatherTypes(MelSorted):
     """Handles the CLMT subrecord WLST (Weather Types)."""
-    def __init__(self, with_global=True):
+    def __init__(self, *, with_global=True):
         weather_fmt = ['I', 'i']
         weather_elements = [(FID, 'weather'), 'chance']
         if with_global:
@@ -739,6 +739,19 @@ class MelIngredient(MelFid):
         super().__init__(b'PFIG', 'ingredient')
 
 #------------------------------------------------------------------------------
+class MelIngrEnit(MelStruct):
+    """Handles the INGR subrecord ENIT (Effect Data)."""
+    _enit_flags = Flags.from_names(
+        (0, 'ingr_no_auto_calc'),
+        (1, 'food_item'),
+        (8, 'references_persist'),
+    )
+
+    def __init__(self):
+        super().__init__(b'ENIT', ['i', 'I'], 'ingredient_value',
+            (self._enit_flags, 'flags'))
+
+#------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
     """Handles the common KNAM (Interaction Keyword) subrecord."""
     def __init__(self):
@@ -749,6 +762,39 @@ class MelInventoryArt(MelFid):
     """Handles the BOOK subrecord INAM (Inventory Art)."""
     def __init__(self):
         super().__init__(b'INAM', 'inventory_art')
+
+#------------------------------------------------------------------------------
+class MelIpctHazard(MelFid):
+    """Handles the IPCT subrecord NAM2 (Hazard)."""
+    def __init__(self):
+        super().__init__(b'NAM2', 'ipct_hazard')
+
+#------------------------------------------------------------------------------
+class MelIpctSounds(MelSequential):
+    """Handles the IPCT subrecords SNAM and NAM1."""
+    def __init__(self):
+        super().__init__(
+            MelSound(),
+            MelFid(b'NAM1', 'ipct_sound2'),
+        )
+
+#------------------------------------------------------------------------------
+class MelIpctTextureSets(MelSequential):
+    """Handles the IPCT subrecords DNAM and ENAM."""
+    def __init__(self, *, with_secondary=True):
+        tex_sets = [MelFid(b'DNAM', 'ipct_texture_set')]
+        if with_secondary:
+            tex_sets.append(MelFid(b'ENAM', 'secondary_texture_set'))
+        super().__init__(*tex_sets)
+
+#------------------------------------------------------------------------------
+class MelIpdsPnam(MelSorted):
+    """Handles the IPDS subrecord PNAM (Data)."""
+    def __init__(self):
+        super().__init__(MelGroups('impact_data',
+            MelStruct(b'PNAM', ['2I'], (FID, 'ipds_material'),
+                (FID, 'ipds_impact')),
+        ), sort_by_attrs='ipds_material')
 
 #------------------------------------------------------------------------------
 class MelKeywords(MelSequential):
@@ -776,7 +822,7 @@ class MelMapMarker(MelGroup):
     _marker_flags = Flags.from_names('visible', 'can_travel_to',
                                      'show_all_hidden')
 
-    def __init__(self, with_reputation=False):
+    def __init__(self, *, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', 'marker_data'),
             MelUInt8Flags(b'FNAM', 'marker_flags', self._marker_flags),
@@ -1077,7 +1123,7 @@ class MelRegnEntrySubrecord(MelUnion):
 class MelRelations(MelSorted):
     """Handles the common XNAM (Relations) subrecord. Group combat reaction
     (GCR) can be excluded (i.e. in Oblivion)."""
-    def __init__(self, with_gcr=True):
+    def __init__(self, *, with_gcr=True):
         rel_fmt = ['I', 'i']
         rel_elements = [(FID, 'faction'), 'mod']
         if with_gcr:

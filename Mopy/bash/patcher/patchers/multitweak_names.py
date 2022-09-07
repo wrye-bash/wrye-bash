@@ -498,7 +498,7 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         # Remove existing label and ending
         wip_name = _re_old_potion_label.sub('', record.full)
         wip_name = _re_old_potion_end.sub('', wip_name)
-        if record.flags.isFood:
+        if record.flags.alch_is_food:
             return '.' + wip_name
         else:
             poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
@@ -520,8 +520,8 @@ class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
             etyp_label = u'U' # Unknown
         # Food doubles as the miscellaneous category, so label non-food in the
         # food category as 'other'
-        if etyp_label == u'F' and not record.flags.isFood:
-            etyp_label = u'O'
+        if etyp_label == 'F' and not record.flags.alch_is_food:
+            etyp_label = 'O'
         # Remove existing label and ending
         wip_name = _re_old_potion_label.sub('', record.full)
         wip_name = _re_old_potion_end.sub('', wip_name)

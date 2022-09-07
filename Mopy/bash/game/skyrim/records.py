@@ -53,7 +53,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    perk_distributor, MelImgsCinematic, MelInfoResponsesFo3
+    perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
+    MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1483,12 +1484,6 @@ class MreIngr(MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    IngrTypeFlags = Flags.from_names(
-        (0, 'no_auto_calc'),
-        (1, 'food_item'),
-        (8, 'references_persist'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
@@ -1500,7 +1495,7 @@ class MreIngr(MelRecord):
         MelEquipmentType(),
         MelSoundPickupDrop(),
         MelValueWeight(),
-        MelStruct(b'ENIT', [u'i', u'I'],'ingrValue',(IngrTypeFlags, u'flags'),),
+        MelIngrEnit(),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1518,11 +1513,9 @@ class MreIpct(MelRecord):
             'placement_radius', 'ipct_sound_level', 'ipct_no_decal_data',
             'impact_result', 'unknown1', old_versions={'fI2f'}),
         MelDecalData(),
-        MelFid(b'DNAM', 'ipct_texture_set'),
-        MelFid(b'ENAM', 'secondary_texture_set'),
-        MelSound(),
-        MelFid(b'NAM1', 'ipct_sound2'),
-        MelFid(b'NAM2', 'ipct_hazard'),
+        MelIpctTextureSets(),
+        MelIpctSounds(),
+        MelIpctHazard(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1533,9 +1526,7 @@ class MreIpds(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelGroups('impactData',
-            MelStruct(b'PNAM', [u'2I'], (FID, 'material'), (FID, 'impact')),
-        ), sort_by_attrs='material'),
+        MelIpdsPnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

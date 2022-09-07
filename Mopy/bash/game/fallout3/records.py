@@ -51,7 +51,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
-    perk_distributor, MelInfoResponsesFo3
+    perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -454,7 +454,7 @@ class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
 
-    _flags = Flags.from_names('autoCalc', 'isFood', 'medicine')
+    _flags = Flags.from_names('autoCalc', 'alch_is_food', 'medicine')
 
     melSet = MelSet(
         MelEdid(),
@@ -1429,7 +1429,7 @@ class MreIngr(MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    _flags = Flags.from_names('noAutoCalc', 'isFood')
+    _flags = Flags.from_names('ingr_no_auto_calc', 'ingr_is_food')
 
     melSet = MelSet(
         MelEdid(),
@@ -1457,9 +1457,8 @@ class MreIpct(MelRecord):
             'effect_orientation', 'angle_threshold', 'placement_radius',
             'ipct_sound_level', 'ipct_no_decal_data'),
         MelDecalData(),
-        MelFid(b'DNAM', 'ipct_texture_set'),
-        MelSound(),
-        MelFid(b'NAM1', 'ipct_sound2'),
+        MelIpctTextureSets(with_secondary=False),
+        MelIpctSounds(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1471,11 +1470,13 @@ class MreIpds(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelTruncatedStruct(
-            b'DATA', [u'12I'], (FID, u'stone'), (FID, u'dirt'),
-            (FID, u'grass'), (FID, u'glass'), (FID, u'metal'),
-            (FID, u'wood'), (FID, u'organic'), (FID, u'cloth'),
-            (FID, u'water'), (FID, u'hollowMetal'), (FID, u'organicBug'),
-            (FID, u'organicGlow'), old_versions={'10I', '9I'}),
+            b'DATA', ['12I'], (FID, 'impact_stone'), (FID, 'impact_dirt'),
+            (FID, 'impact_grass'), (FID, 'impact_glass'),
+            (FID, 'impact_metal'), (FID, 'impact_wood'),
+            (FID, 'impact_organic'), (FID, 'impact_cloth'),
+            (FID, 'impact_water'), (FID, 'impact_hollow_metal'),
+            (FID, 'impact_organic_bug'), (FID, 'impact_organic_glow'),
+            old_versions={'10I', '9I'}),
     )
     __slots__ = melSet.getSlotsUsed()
 

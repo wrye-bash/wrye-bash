@@ -49,7 +49,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
     MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
-    MelImgsTint
+    MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
+    MelIpctSounds, MelIpctHazard, MelIpdsPnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1597,6 +1598,81 @@ class MreInfo(MelRecord):
         MelUInt32(b'INCC', 'info_challenge'),
         MelFid(b'MODQ', 'reset_global'),
         MelUInt32(b'INAM', 'subtitle_priority'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIngr(MelRecord):
+    """Ingredient."""
+    rec_sig = b'INGR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelFull(),
+        MelKeywords(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelEquipmentType(),
+        MelSoundPickupDrop(),
+        MelValueWeight(),
+        MelIngrEnit(),
+        MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreInnr(MelRecord):
+    """Instance Naming Rules."""
+    rec_sig = b'INNR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUInt32(b'UNAM', 'innr_target'),
+        MelGroups('naming_rulesets',
+            MelCounter(MelUInt32(b'VNAM', 'naming_rules_count'),
+                counts='naming_rules'),
+            MelGroups('naming_rules',
+                MelLString(b'WNAM', 'naming_rule_text'),
+                MelKeywords(),
+                MelStruct(b'XNAM', ['f', '2B'], 'naming_rule_property_value',
+                    'naming_rule_property_target', 'naming_rule_property_op'),
+                MelUInt16(b'YNAM', 'naming_rule_index'),
+            ),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIpct(MelRecord):
+    rec_sig = b'IPCT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelStruct(b'DATA', ['f', 'I', '2f', 'I', '2B', '2s'],
+            'effect_duration', 'effect_orientation', 'angle_threshold',
+            'placement_radius', 'ipct_sound_level', 'ipct_no_decal_data',
+            'impact_result', 'unknown1'),
+        MelDecalData(),
+        MelIpctTextureSets(),
+        MelIpctSounds(),
+        MelFid(b'NAM3', 'footstep_explosion'),
+        MelIpctHazard(),
+        MelFloat(b'FNAM', 'footstep_particle_max_dist'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIpds(MelRecord):
+    """Impact Dataset."""
+    rec_sig = b'IPDS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelIpdsPnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
