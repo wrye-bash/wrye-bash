@@ -48,7 +48,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
     MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
     MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
-    AMreImad, MelPartialCounter
+    AMreImad, MelPartialCounter, perk_distributor
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1606,13 +1606,5 @@ class MrePerk(MelRecord):
             ),
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
-    ).with_distributor({
-        b'DESC': {
-            b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'perk_trait',
-        },
-        b'PRKE': {
-            b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
-        },
-    })
+    ).with_distributor(perk_distributor)
     __slots__ = melSet.getSlotsUsed()

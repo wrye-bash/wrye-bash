@@ -419,7 +419,7 @@ graphicsTypes = {
               'fill_color1_blue', 'fill_alpha_fade_in_time',
               'fill_full_alpha_time', 'fill_alpha_fade_out_time',
               'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
-              'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_',
+              'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
               'fill_texture_animation_speed_v', 'ee_fall_off', 'ee_color_red',
               'ee_color_green', 'ee_color_blue', 'ee_alpha_fade_in_time',
               'ee_full_alpha_time', 'ee_alpha_fade_out_time',

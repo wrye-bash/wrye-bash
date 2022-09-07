@@ -359,3 +359,14 @@ def get_structs(struct_format):
     tuple."""
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
+
+# Shared distributor for PERK records
+perk_distributor = {
+    b'DESC': {
+        b'CTDA|CIS1|CIS2': 'conditions',
+        b'DATA': 'perk_trait',
+    },
+    b'PRKE': {
+        b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
+    },
+}

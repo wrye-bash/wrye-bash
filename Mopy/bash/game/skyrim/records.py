@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    MelIdlmFlags
+    MelIdlmFlags, perk_distributor
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -2485,15 +2485,7 @@ class MrePerk(MelRecord):
             ),
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
-    ).with_distributor({
-        b'DESC': {
-            b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'perk_trait',
-        },
-        b'PRKE': {
-            b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
-        },
-    })
+    ).with_distributor(perk_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

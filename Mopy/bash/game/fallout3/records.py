@@ -50,7 +50,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad
+    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
+    perk_distributor
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1161,7 +1162,7 @@ class MreEnch(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'ENIT', ['3I', 'B', '3s'], 'item_type', 'charge_amount',
-            'enchantment_cost', (_enit_flags, u'flags'),'unused1'),
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'unused1'),
         MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2121,15 +2122,7 @@ class MrePerk(MelRecord):
             ),
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
-    ).with_distributor({
-        b'DESC': {
-            b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'perk_trait',
-        },
-        b'PRKE': {
-            b'CTDA|CIS1|CIS2|DATA': 'effects',
-        },
-    })
+    ).with_distributor(perk_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
