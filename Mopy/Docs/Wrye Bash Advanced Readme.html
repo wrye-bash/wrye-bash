@@ -4428,15 +4428,15 @@ C.Location, -C.LockList
                             <li>(TX01) High Res Image - Back</li>
                         </ul>
                     </li>
-                    <li>(CHIP) Casino Chip - <strong>Fallout&colon; New Vegas only</strong>
+                    <li>(CHAL) Challenge:
                         <ul>
-                            <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
                             <li>(MICO) Small Icon</li>
                         </ul>
                     </li>
-                    <li>(CHAL) Challenge:
+                    <li>(CHIP) Casino Chip - <strong>Fallout&colon; New Vegas only</strong>
                         <ul>
+                            <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
                             <li>(MICO) Small Icon</li>
                         </ul>
@@ -4500,8 +4500,12 @@ C.Location, -C.LockList
                         <ul>
                             <li>(MODL) Model</li>
                             <li>(MNAM) Image Space Modifier</li>
-                            <li>(DATA) Light</li>
-                            <li>(DATA) Impact Dataset</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Light</li>
+                                    <li>Impact DataSet</li>
+                                </ul>
+                            </li>
                             <li>(INAM) Placed Impact Object</li>
                         </ul>
                     </li>
@@ -4547,11 +4551,15 @@ C.Location, -C.LockList
                     <li>(IPCT) Impact:
                         <ul>
                             <li>(MODL) Model</li>
-                            <li>(DATA) Effect Duration</li>
-                            <li>(DATA) Effect Orientation</li>
-                            <li>(DATA) Angle Threshold</li>
-                            <li>(DATA) Placement Radius</li>
-                            <li>(DATA) Flag - No Decal Data</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Effect - Duration</li>
+                                    <li>Effect - Orientation</li>
+                                    <li>Angle Threshold</li>
+                                    <li>Placement Radius</li>
+                                    <li>Flags</li>
+                                </ul>
+                            </li>
                             <li>(DODT) Decal Data
                                 <ul>
                                     <li>Min Width</li>
@@ -4560,22 +4568,9 @@ C.Location, -C.LockList
                                     <li>Max Height</li>
                                     <li>Depth</li>
                                     <li>Shininess</li>
-                                    <li>Parallax Scale</li>
-                                    <li>Parallax Passes</li>
-                                    <li>Decal Flags
-                                        <ul>
-                                            <li>Parallax</li>
-                                            <li>Alpha - Blending</li>
-                                            <li>Alpha - Testing</li>
-                                        </ul>
-                                    </li>
-                                    <li>Color
-                                        <ul>
-                                            <li>Red</li>
-                                            <li>Green</li>
-                                            <li>Blue</li>
-                                        </ul>
-                                    </li>
+                                    <li>Parallax</li>
+                                    <li>Flags</li>
+                                    <li>Color</li>
                                 </ul>
                             </li>
                             <li>(DNAM) Texture Set</li>
@@ -4583,22 +4578,7 @@ C.Location, -C.LockList
                     </li>
                     <li>(IPDS) Impact Dataset:
                         <ul>
-                            <li>(DATA) Impacts
-                                <ul>
-                                    <li>Stone</li>
-                                    <li>Dirt</li>
-                                    <li>Grass</li>
-                                    <li>Glass</li>
-                                    <li>Metal</li>
-                                    <li>Wood</li>
-                                    <li>Organic</li>
-                                    <li>Cloth</li>
-                                    <li>Water</li>
-                                    <li>Hollow Metal</li>
-                                    <li>Organic Bug</li>
-                                    <li>Organic Glow</li>
-                                </ul>
-                            </li>
+                            <li>(DATA) Impacts - All</li>
                         </ul>
                     </li>
                     <li>(KEYM) Key:
@@ -4612,18 +4592,16 @@ C.Location, -C.LockList
                         <ul>
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
-                            <li>(DATA) Radius</li>
-                            <li>(DATA) Color
+                            <li>(DATA)
                                 <ul>
-                                    <li>Red</li>
-                                    <li>Green</li>
-                                    <li>Blue</li>
+                                    <li>Radius</li>
+                                    <li>Color</li>
+                                    <li>Flags</li>
+                                    <li>Falloff Exponent</li>
+                                    <li>FOV</li>
                                 </ul>
                             </li>
-                            <li>(DATA) Flags</li>
-                            <li>(DATA) Falloff Exponent</li>
-                            <li>(DATA) FOV</li>
-                            <li>(FNAM) Fade</li>
+                            <li>(FNAM) Fade value</li>
                         </ul>
                     </li>
                     <li>(LSCR) Load Screen:
@@ -4633,8 +4611,8 @@ C.Location, -C.LockList
                     </li>
                     <li>(MGEF) Base Effect:
                         <ul>
-                            <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
                             <li>(DATA) Data
                                 <ul>
                                     <li>Light</li>
@@ -4731,8 +4709,6 @@ C.Location, -C.LockList
                             <li>(TX03) Glow Map</li>
                             <li>(TX04) Parallax Map</li>
                             <li>(TX05) Environment Map</li>
-                            <li>(DNAM) Flag - No Decal Data</li>
-                            <li>(DATA) Flag - No Decal Data</li>
                             <li>(DODT) Decal Data
                                 <ul>
                                     <li>Min Width</li>
@@ -4741,24 +4717,12 @@ C.Location, -C.LockList
                                     <li>Max Height</li>
                                     <li>Depth</li>
                                     <li>Shininess</li>
-                                    <li>Parallax Scale</li>
-                                    <li>Parallax Passes</li>
-                                    <li>Decal Flags
-                                        <ul>
-                                            <li>Parallax</li>
-                                            <li>Alpha - Blending</li>
-                                            <li>Alpha - Testing</li>
-                                        </ul>
-                                    </li>
-                                    <li>Color
-                                        <ul>
-                                            <li>Red</li>
-                                            <li>Green</li>
-                                            <li>Blue</li>
-                                        </ul>
-                                    </li>
+                                    <li>Parallax</li>
+                                    <li>Flags</li>
+                                    <li>Color</li>
                                 </ul>
                             </li>
+                            <li>(DNAM) Flags</li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
@@ -4804,9 +4768,13 @@ C.Location, -C.LockList
                                     <li>(WNM7) Mod 1, 2 and 3</li>
                                 </ul>
                             </li>
-                            <li>(DNAM) Animation Type</li>
-                            <li>(DNAM) Grip Animation</li>
-                            <li>(DNAM) Reload Animation</li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>Animation Type</li>
+                                    <li>Grip Animation</li>
+                                    <li>Reload Animation</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -5273,8 +5241,10 @@ C.Location, -C.LockList
                                 </ul>
                             </li>
                             <li>(DAT2) - <strong>Fallout&colon; New Vegas only</strong>
-                                <ul>Proj. Per Shot</ul>
-                                <ul>Weight</ul>
+                                <ul>
+                                    <li>Proj. per Shot</li>
+                                    <li>Weight</li>
+                                </ul>
                             </li>
                         </ul>
                     </li>
