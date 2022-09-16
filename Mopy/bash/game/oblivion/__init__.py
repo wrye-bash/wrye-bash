@@ -124,6 +124,7 @@ class OblivionGameInfo(PatchGame):
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
             '_tejon',
+            'config', # 3P: mod config files (INIs)
             'distantlod',
             'facegen',
             'fonts',
