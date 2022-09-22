@@ -35,7 +35,7 @@ from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8, dict_sort, sig_to_str
 from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, \
-    utils_constants, FormId, ShortFidWriteContext
+    FormId, ShortFidWriteContext, FID
 from ..exception import ModError, StateError, AbstractError
 from ..mod_files import ModFile, LoadFactory
 
@@ -637,7 +637,7 @@ class SaveSpells(_SaveData):
     def __init__(self, saveInfo):
         super().__init__(saveInfo)
         #--spells[(modName,objectIndex)] = (name,type)
-        self.allSpells: dict[utils_constants.FormId, (str, int)] = {}
+        self.allSpells: dict[FormId, (str, int)] = {}
 
     def load_data(self, progress, modInfos):
         """Load savegame and extract created spells from it and its masters."""

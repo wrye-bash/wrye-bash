@@ -382,11 +382,13 @@ class NpcCheckerPatcher(Patcher):
                 defaultFemaleHair[race.fid] = [x for x in race.hairs if
                                                x in femaleHairs]
         #--Npcs with unassigned eyes/hair
+        player_fid = bush.game.master_fid(0x000007)
+        skip_race_fid = bush.game.master_fid(0x038010)
         for npc in patchFile.tops[b'NPC_'].records:
             npc_fid = npc.fid
-            if npc_fid == bush.game.master_fid(0x000007): continue # skip player
-            if npc.full is not None and npc.race == bush.game.master_fid(
-                    0x038010) and not reProcess.search(npc.full): continue
+            if npc_fid == player_fid: continue # skip player
+            if (npc.full is not None and npc.race == skip_race_fid and
+                    not reProcess.search(npc.full)): continue
             if is_templated(npc, u'useModelAnimation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)

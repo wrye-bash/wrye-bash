@@ -32,6 +32,8 @@ from ..brec import MreRecord, RecHeader, null2, int_unpacker, FormId
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
+_player_fid = FormId.from_object_id(0, 0x7)
+
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
     pcf_flags = Flags.from_names('pcf_name', 'race', 'gender', 'hair', 'eye',
@@ -100,7 +102,7 @@ class PCFaces(object):
         """Returns player and created faces from a save file or saveInfo."""
         faces = PCFaces._save_getCreatedFaces(saveFile)
         playerFace = PCFaces.save_getPlayerFace(saveFile)
-        faces[7] = playerFace
+        faces[_player_fid] = playerFace
         return faces
 
     @staticmethod
@@ -179,7 +181,7 @@ class PCFaces(object):
         face.eye = getFid(face.eye)
         face.iclass = getFid(face.iclass)
         #--Changed NPC Record
-        PCFaces.save_getChangedNpc(saveFile,7,face)
+        PCFaces.save_getChangedNpc(saveFile, _player_fid, face)
         #--Done
         return face
 
@@ -345,7 +347,7 @@ class PCFaces(object):
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
         #--Save
-        saveFile.fid_recNum[7] = npc.getTuple(version)
+        saveFile.fid_recNum[_player_fid] = npc.getTuple(version)
 
     # Save Misc ----------------------------------------------------------------
     @staticmethod
