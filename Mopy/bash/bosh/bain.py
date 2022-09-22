@@ -33,6 +33,7 @@ import time
 from functools import partial, wraps
 from itertools import groupby, chain
 from operator import itemgetter, attrgetter
+from typing import Iterable
 from zlib import crc32
 
 from . import bain_image_exts, DataStore, BestIniFile, InstallerConverter, \
@@ -1860,15 +1861,16 @@ class InstallersData(DataStore):
     def files_to_delete(self, filenames, **kwargs):
         toDelete = []
         markers = []
-        for item in filenames:
-            if item == self.lastKey: continue
+        for item in self.filter_essential(filenames):
             if self[item].is_marker: markers.append(item)
             else: toDelete.append(self.store_dir.join(item))
         return toDelete, markers
 
-    def _delete_operation(self, paths, markers, **kwargs):
+    def _delete_operation(self, paths, markers, *, confirm=False,
+            recycle=True):
         for m in markers: del self[m]
-        super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
+        super()._delete_operation(paths, markers, confirm=confirm,
+            recycle=recycle)
 
     def delete_refresh(self, deleted, markers, check_existence):
         if any(isinstance(p, FName) for p in deleted): # UIList.hide path
@@ -1879,6 +1881,10 @@ class InstallersData(DataStore):
             self.irefresh(what=u'I', deleted=deleted)
         elif markers:
             self.refreshOrder()
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # The ==Last== marker must always be present
+        return (i for i in fn_items if i != self.lastKey)
 
     def copy_installer(self, item, destName):
         """Copies archive to new location."""
@@ -2605,8 +2611,7 @@ class InstallersData(DataStore):
             #--Delete mods and remove them from load order
             if removedPlugins:
                 refresh_ui[0] = True
-                modInfos.delete(removedPlugins, recycle=False,
-                                raise_on_master_deletion=False)
+                modInfos.delete(removedPlugins, recycle=False)
             if removedInis:
                 from . import iniInfos
                 refresh_ui[1] = True

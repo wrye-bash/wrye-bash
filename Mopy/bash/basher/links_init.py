@@ -38,9 +38,9 @@ from .mod_links import *
 from .mods_links import *
 from .saves_links import *
 # Rest of internal imports
-from .. import bass, balt, bush
+from .. import bass, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
-    UIList_OpenStore, UIList_Hide
+    UIList_OpenStore, UIList_Hide, UIList_Delete
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
@@ -251,7 +251,7 @@ def InitInstallerLinks():
         file_menu.links.append(Installer_Rename())
         file_menu.links.append(Installer_Duplicate())
         file_menu.links.append(Installer_Hide())
-        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(UIList_Delete())
         InstallersList.context_links.append(file_menu)
     if True: #--Open At...
         openAtMenu = MenuLink(_('Open at..'), oneDatumOnly=True)
@@ -416,7 +416,7 @@ def InitINILinks():
     INIList.context_links.append(INI_ListErrors())
     INIList.context_links.append(SeparatorLink())
     INIList.context_links.append(INI_FileOpenOrCopy())
-    INIList.context_links.append(INI_Delete())
+    INIList.context_links.append(UIList_Delete())
     # INIList: Global Links
     # File Menu
     file_menu = INIList.global_links[_('File')]
@@ -502,7 +502,7 @@ def InitModLinks():
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(Mod_Redate())
-        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(UIList_Delete())
         file_menu.links.append(SeparatorLink())
         file_menu.links.append(File_Backup())
         file_menu.links.append(File_RevertToBackup())
@@ -731,7 +731,7 @@ def InitSaveLinks():
         file_menu.links.append(Save_Rename())
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
-        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(UIList_Delete())
         file_menu.links.append(SeparatorLink())
         file_menu.links.append(File_Backup())
         file_menu.links.append(File_RevertToBackup())
@@ -831,7 +831,7 @@ def InitBSALinks():
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(File_Redate())
-        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(UIList_Delete())
         file_menu.links.append(SeparatorLink())
         file_menu.links.append(File_Backup())
         file_menu.links.append(File_RevertToBackup())
@@ -883,7 +883,7 @@ def InitScreenLinks():
         file_menu.links.append(UIList_OpenItems())
         file_menu.links.append(Screen_Rename())
         file_menu.links.append(File_Duplicate())
-        file_menu.links.append(balt.UIList_Delete())
+        file_menu.links.append(UIList_Delete())
         ScreensList.context_links.append(file_menu)
     if True: #--Convert
         convertMenu = MenuLink(_('Convert..'))

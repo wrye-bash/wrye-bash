@@ -31,7 +31,7 @@ from ..gui import copy_text_to_clipboard
 
 __all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
            u'INI_Apply', u'INI_CreateNew', u'INI_ListErrors',
-           u'INI_FileOpenOrCopy', u'INI_Delete']
+           u'INI_FileOpenOrCopy']
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
@@ -109,22 +109,6 @@ class INI_FileOpenOrCopy(EnabledLink):
         newly_copied = [i for i in self.selected if
                         bosh.iniInfos.open_or_copy(i)]
         self.window.RefreshUI(redraw=newly_copied)
-
-#------------------------------------------------------------------------------
-class INI_Delete(balt.UIList_Delete, EnabledLink):
-    """Delete the file and all backups."""
-
-    def _initData(self, window, selection):
-        super(INI_Delete, self)._initData(window, selection)
-        self.selected = self.window.filterOutDefaultTweaks(self.selected)
-        if len(self.selected) and len(selection) == 1:
-            self._help = _(u'Delete %(filename)s.') % ({u'filename': selection[0]})
-        elif len(self.selected):
-            self._help = _(
-                u"Delete selected tweaks (default tweaks won't be deleted)")
-        else: self._help = _(u"Bash default tweaks can't be deleted")
-
-    def _enable(self): return len(self.selected) > 0
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):

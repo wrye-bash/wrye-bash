@@ -505,12 +505,11 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         self.window.RefreshUI(detail_item=result)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
-    """Hide selected Installers."""
-    _help = UIList_Hide._help + _(u' Not available if any markers have been '
-                                  u'selected.')
-
-    def _enable(self):
-        return not any(inf.is_marker for inf in self.iselected_infos())
+    """Installers tab version of the Hide command."""
+    def _filter_unhideable(self, to_hide_items):
+        # Can't hide markers, so filter those out
+        return (h for h in super()._filter_unhideable(to_hide_items)
+                if not self.idata[h].is_marker)
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""

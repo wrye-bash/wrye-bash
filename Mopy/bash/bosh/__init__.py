@@ -1530,26 +1530,28 @@ class DataStore(DataDict):
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
 
-    def delete(self, delete_keys, **kwargs):
+    def delete(self, delete_keys, *, confirm=False, recycle=True):
         """Deletes member file(s)."""
-        full_delete_paths, delete_info = self.files_to_delete(delete_keys,
-            raise_on_master_deletion=kwargs.pop(
-                u'raise_on_master_deletion', True))
+        full_delete_paths, delete_info = self.files_to_delete(delete_keys)
         try:
-            self._delete_operation(full_delete_paths, delete_info, **kwargs)
+            self._delete_operation(full_delete_paths, delete_info,
+                confirm=confirm, recycle=recycle)
         finally:
-            #--Refresh
-            if kwargs.pop(u'doRefresh', True):
-                self.delete_refresh(full_delete_paths, delete_info,
-                                    check_existence=True)
+            self.delete_refresh(full_delete_paths, delete_info,
+                check_existence=True)
 
     def files_to_delete(self, filenames, **kwargs):
         raise AbstractError
 
-    def _delete_operation(self, paths, delete_info, **kwargs):
-        confirm = kwargs.pop(u'confirm', False)
-        recycle = kwargs.pop(u'recycle', True)
+    def _delete_operation(self, paths, delete_info, *, confirm=False,
+            recycle=True):
         env.shellDelete(paths, confirm=confirm, recycle=recycle)
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        """Filters essential files out of the specified filenames. Useful to
+        determine whether or not a file will cause instability when
+        deleted/hidden."""
+        return fn_items
 
     def delete_refresh(self, deleted, deleted2, check_existence):
         raise AbstractError
@@ -1655,7 +1657,7 @@ class TableFileInfos(DataStore):
         #--Cache table updates
         tableUpdate = {}
         #--Go through each file
-        for fileName in fileNames:
+        for fileName in self.filter_essential(fileNames):
             try:
                 fileInfo = self[fileName]
             except KeyError: # corrupted
@@ -2011,6 +2013,10 @@ class INIInfos(TableFileInfos):
                 self[k] = default_info  # type: DefaultIniInfo
                 default_info.reset_status()
         return deleted
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Can't remove default tweaks
+        return (i for i in fn_items if not self[i].is_default_tweak)
 
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
@@ -3070,13 +3076,7 @@ class ModInfos(FileInfos):
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
-        for f in set(filenames):
-            if f == bush.game.master_file:
-                if kwargs.pop(u'raise_on_master_deletion', True):
-                    raise BoltError(
-                        u"Cannot delete the game's master file(s).")
-                else:
-                    filenames.remove(f)
+        filenames = set(self.filter_essential(filenames))
         self.lo_deactivate(filenames, doSave=False) ##: do this *after* deletion?
         return super(ModInfos, self).files_to_delete(filenames)
 
@@ -3103,6 +3103,10 @@ class ModInfos(FileInfos):
         if not fileInfo.isGhost: # add ghost if not added
             ghost_version = self.store_dir.join(fileInfo.fn_key + u'.ghost')
             if ghost_version.exists(): toDelete.append(ghost_version)
+
+    def filter_essential(self, fn_items: Iterable[FName]):
+        # Removing the game master breaks everything, for obvious reasons
+        return (i for i in fn_items if i != self._master_esm)
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir."""

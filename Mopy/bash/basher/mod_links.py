@@ -38,7 +38,8 @@ from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
-    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
+    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink, \
+    UIList_Hide
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError

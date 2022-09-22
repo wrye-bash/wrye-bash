@@ -673,15 +673,6 @@ class INIList(balt.UIList):
         tweaklist += u'[/spoiler]\n'
         return tweaklist
 
-    @staticmethod
-    def filterOutDefaultTweaks(ini_tweaks):
-        """Filter out default tweaks from tweaks iterable."""
-        return [x for x in ini_tweaks if not bosh.iniInfos[x].is_default_tweak]
-
-    def _toDelete(self, items):
-        items = super(INIList, self)._toDelete(items)
-        return self.filterOutDefaultTweaks(items)
-
     def set_item_format(self, ini_name, item_format, target_ini_setts):
         iniInfo = self.data_store[ini_name]
         status = iniInfo.tweak_status(target_ini_setts)

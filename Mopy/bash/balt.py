@@ -33,8 +33,9 @@ from .exception import AbstractError, AccessDeniedError, BoltError, \
 #--Python
 import time
 import threading
-from functools import partial, wraps
 from collections import OrderedDict
+from functools import partial, wraps
+from typing import Iterable
 #--wx
 import wx
 import wx.adv
@@ -1511,36 +1512,28 @@ class UIList(wx.Panel):
     @conversation
     def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
+        items = items if items is not None else self.GetSelected()
+        # We need a copy of the original items for the error below
+        orig_items = items
         recycle = (self.__class__._recycle and
         # menu items fire 'CommandEvent' - I need a workaround to detect Shift
             (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
-        items = self._toDelete(items)
+        items = list(self.data_store.filter_essential(items))
+        if not items and orig_items:
+            # Only undeletable items selected, inform the user
+            showError(self, _('The selected items cannot be deleted.'))
+            return
         if not self.__class__._shellUI:
             items, = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
-        if not self.__class__._shellUI: # non shellUI path used to delete as
-            # many as possible, mainly to show an error on trying to delete
-            # the master esm - I kept this behavior
-            for i in items:
-                try:
-                    self.data_store.delete([i], doRefresh=False,
-                                           recycle=recycle)
-                except BoltError as e: showError(self, f'{e}')
-                except (AccessDeniedError, CancelError, SkipError): pass
-            else:
-                self.data_store.delete_refresh(items, None,
-                                               check_existence=True)
-        else: # shellUI path tries to delete all at once
-            try:
-                self.data_store.delete(items, confirm=True, recycle=recycle)
-            except (AccessDeniedError, CancelError, SkipError): pass
+        try:
+            self.data_store.delete(items, confirm=self.__class__._shellUI,
+                recycle=recycle)
+        except (AccessDeniedError, CancelError, SkipError): pass
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
-    def _toDelete(self, items):
-        return items if items is not None else self.GetSelected()
-
     def _promptDelete(self, items, dialogTitle, order, recycle):
-        if not items: return items
+        if not items: return (items,)
         message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
         if order: items.sort()
         message.extend(items)
@@ -1558,10 +1551,11 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, items):
+    def hide(self, items: Iterable[bolt.FName]):
+        """Hides the items in the specified iterable."""
         hidden_ = []
-        for fnkey, inf in items:
-            destDir = inf.get_hide_dir()
+        for fnkey in items:
+            destDir = self.data_store[fnkey].get_hide_dir()
             if destDir.join(fnkey).exists():
                 message = (_('A file named %(target_file_name)s already '
                              'exists in the hidden files directory. Overwrite '
@@ -2013,15 +2007,37 @@ class BoolLink(CheckLink):
     def Execute(self): _settings[self._bl_key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
-class UIList_Delete(ItemLink):
+class UIList_Delete(EnabledLink):
     """Delete selected item(s) from UIList."""
-    _text = _(u'Delete')
-    _help = _(u'Delete selected item(s)')
+    _text = _('Delete')
     _keyboard_hint = 'Del'
+
+    def _filter_undeletable(self, to_delete_items):
+        """Filters out undeletable items from the specified iterable."""
+        return self.window.data_store.filter_essential(to_delete_items)
+
+    def _enable(self):
+        # Only enable if at least one deletable file is selected
+        return bool(list(self._filter_undeletable(self.selected)))
+
+    @property
+    def link_help(self):
+        sel_filtered = list(self._filter_undeletable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Delete '%(filename)s'.") % {
+                    'filename': sel_filtered[0]}
+            return _('Delete the selected items.')
+        else:
+            if sel_filtered:
+                return _('Delete the selected items (some of the selected '
+                         'items cannot be deleted and will be skipped).')
+            return _('The selected items cannot be deleted.')
 
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
-        with BusyCursor(): self.window.DeleteItems(items=self.selected)
+        with BusyCursor():
+            self.window.DeleteItems(items=self.selected)
 
 class UIList_Rename(ItemLink):
     """Rename selected UIList item(s)."""
@@ -2055,11 +2071,33 @@ class UIList_OpenStore(ItemLink):
 
     def Execute(self): self.window.open_data_store()
 
-class UIList_Hide(ItemLink):
+class UIList_Hide(EnabledLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    _text = _(u'Hide...')
-    _help = _(u"Hide the selected file(s) by moving them to the 'Hidden' "
-              u'directory.')
+    _text = _('Hide...')
+
+    def _filter_unhideable(self, to_hide_items):
+        """Filters out unhideable items from the specified iterable."""
+        return self.window.data_store.filter_essential(to_hide_items)
+
+    def _enable(self):
+        # Only enable if at least one hideable file is selected
+        return bool(list(self._filter_unhideable(self.selected)))
+
+    @property
+    def link_help(self):
+        sel_filtered = list(self._filter_unhideable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Hide '%(filename)s' by moving it to the 'Hidden' "
+                         "directory.") % {'filename': sel_filtered[0]}
+            return _("Hide the selected items by moving them to the 'Hidden' "
+                     "directory.")
+        else:
+            if sel_filtered:
+                return _("Hide the selected items by moving them to the "
+                         "'Hidden' directory (some of the selected items "
+                         "cannot be hidden and will be skipped).")
+            return _('The selected items cannot be hidden.')
 
     @conversation
     def Execute(self):
@@ -2068,7 +2106,7 @@ class UIList_Hide(ItemLink):
                         u'moved to the %(hdir)s directory.') % (
                           {u'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self.iselected_pairs())
+        self.window.hide(self._filter_unhideable(self.selected))
         self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
