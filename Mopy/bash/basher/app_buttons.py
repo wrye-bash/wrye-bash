@@ -21,8 +21,10 @@
 #
 # =============================================================================
 import os
+import shlex
 import subprocess
 import webbrowser
+
 from . import BashStatusBar, BashFrame
 from .frames import PluginChecker, DocBrowser
 from .settings_dialog import SettingsDialog
@@ -265,7 +267,7 @@ class _ExeButton(_App_Button):
             try:
                 import win32api
                 win32api.ShellExecute(0, 'runas', exe_path.s,
-                    f'{self.exeArgs}', bass.dirs['app'].s, 1)
+                    shlex.join(exe_args[1:]), exe_path.head.s, 1)
             except:
                 self.ShowError(werr)
         except Exception as error:

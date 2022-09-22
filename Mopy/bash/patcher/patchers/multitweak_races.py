@@ -217,7 +217,7 @@ class _ARUnblockTweak(_ARaceTweak):
         setattr(record, race_attr, self.tweak_races_data[race_sig])
 
 # -----------------------------------------------------------------------------
-class RaceTweak_AllHairs(_ARaceTweak):
+class RaceTweak_AllHairs(_ARUnblockTweak):
     """Gives all races ALL hairs."""
     tweak_read_classes = b'HAIR', b'RACE',
     tweak_name = _('Races Have All Hairs')
@@ -226,6 +226,7 @@ class RaceTweak_AllHairs(_ARaceTweak):
     tweak_choices = [('get down tonight', 1)]
     _sig_and_attr = (b'HAIR', 'hairs')
 
+# -----------------------------------------------------------------------------
 class RaceTweak_AllHeadParts(IndexingTweak, CustomChoiceTweak):
     ##: We *only* need FLST here for the create_record call down below
     tweak_read_classes = b'FLST', b'HDPT',
