@@ -52,7 +52,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
-    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData
+    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
+    MelTxstFlags
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1658,22 +1659,19 @@ class MreIpct(MelRecord):
     """Impact."""
     rec_sig = b'IPCT'
 
-    _IpctTypeFlags = Flags.from_names('noDecalData')
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelTruncatedStruct(b'DATA', [u'f', u'I', u'2f', u'I', u'2B', u'2s'], 'effectDuration',
-                           'effectOrientation', 'angleThreshold',
-                           'placementRadius', 'soundLevel',
-                           (_IpctTypeFlags, u'ipctFlags'), 'impactResult',
-                           'unkIpct1', old_versions={'fI2f'}),
+        MelTruncatedStruct(b'DATA', ['f', 'I', '2f', 'I', '2B', '2s'],
+            'effect_duration', 'effect_orientation', 'angle_threshold',
+            'placement_radius', 'ipct_sound_level', 'ipct_no_decal_data',
+            'impact_result', 'unknown1', old_versions={'fI2f'}),
         MelDecalData(),
-        MelFid(b'DNAM','textureSet'),
-        MelFid(b'ENAM','secondarytextureSet'),
+        MelFid(b'DNAM', 'ipct_texture_set'),
+        MelFid(b'ENAM', 'secondary_texture_set'),
         MelSound(),
-        MelFid(b'NAM1','sound2'),
-        MelFid(b'NAM2','hazard'),
+        MelFid(b'NAM1', 'ipct_sound2'),
+        MelFid(b'NAM2', 'ipct_hazard'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3784,27 +3782,19 @@ class MreTxst(MelRecord):
     """Texture Set."""
     rec_sig = b'TXST'
 
-    TxstTypeFlags = Flags.from_names(
-        (0, 'noSpecularMap'),
-        (1, 'facegenTextures'),
-        (2, 'hasModelSpaceNormalMap'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelGroups('destructionData',
-            MelString(b'TX00','difuse'),
-            MelString(b'TX01','normalGloss'),
-            MelString(b'TX02','enviroMaskSubSurfaceTint'),
-            MelString(b'TX03','glowDetailMap'),
-            MelString(b'TX04','height'),
-            MelString(b'TX05','environment'),
-            MelString(b'TX06','multilayer'),
-            MelString(b'TX07','backlightMaskSpecular'),
-        ),
+        MelString(b'TX00', 'diffuse_texture'),
+        MelString(b'TX01', 'normal_gloss_texture'),
+        MelString(b'TX02', 'environment_mask_subsurface_tint_texture'),
+        MelString(b'TX03', 'glow_detail_map_texture'),
+        MelString(b'TX04', 'height_texture'),
+        MelString(b'TX05', 'environment_texture'),
+        MelString(b'TX06', 'multilayer_texture'),
+        MelString(b'TX07', 'backlight_mask_specular_texture'),
         MelDecalData(),
-        MelUInt16Flags(b'DNAM', u'flags', TxstTypeFlags),
+        MelTxstFlags()
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -49,7 +49,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject
+    MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
+    MelTxstFlags
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1571,12 +1572,13 @@ class MreIpct(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelStruct(b'DATA', [u'f', u'I', u'f', u'f', u'I', u'I'],'effectDuration','effectOrientation',
-                  'angleThreshold','placementRadius','soundLevel','flags'),
+        MelStruct(b'DATA', ['f', 'I', '2f', '2I'], 'effect_duration',
+            'effect_orientation', 'angle_threshold', 'placement_radius',
+            'ipct_sound_level', 'ipct_no_decal_data'),
         MelDecalData(),
-        MelFid(b'DNAM','textureSet'),
+        MelFid(b'DNAM', 'ipct_texture_set'),
         MelSound(),
-        MelFid(b'NAM1','sound2'),
+        MelFid(b'NAM1', 'ipct_sound2'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2945,19 +2947,17 @@ class MreTxst(MelRecord):
     """Texture Set."""
     rec_sig = b'TXST'
 
-    TxstTypeFlags = Flags.from_names('noSpecularMap')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString(b'TX00','baseImage'),
-        MelString(b'TX01','normalMap'),
-        MelString(b'TX02','environmentMapMask'),
-        MelString(b'TX03','growMap'),
-        MelString(b'TX04','parallaxMap'),
-        MelString(b'TX05','environmentMap'),
+        MelString(b'TX00', 'base_image_transparency_texture'),
+        MelString(b'TX01', 'normal_map_specular_texture'),
+        MelString(b'TX02', 'environment_map_mask_texture'),
+        MelString(b'TX03', 'glow_map_texture'),
+        MelString(b'TX04', 'parallax_map_texture'),
+        MelString(b'TX05', 'environment_map_texture'),
         MelDecalData(),
-        MelUInt16Flags(b'DNAM', u'flags', TxstTypeFlags),
+        MelTxstFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 

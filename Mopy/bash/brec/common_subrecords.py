@@ -396,19 +396,21 @@ class MelDebrData(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
-    _decal_data_flags = TrimmedFlags.from_names(
+    """Handles the common DODT (Decal Data) subrecord."""
+    _decal_flags = TrimmedFlags.from_names(
         'parallax',
-        'alphaBlending',
-        'alphaTesting',
-        'noSubtextures', # Skyrim+, will just be ignored for earlier games
+        'alpha_blending',
+        'alpha_testing',
+        'no_subtextures', # since Skyrim
     )
 
     def __init__(self):
         super().__init__(b'DODT', ['7f', 'B', 'B', '2s', '3B', 's'],
-            'minWidth', 'maxWidth', 'minHeight', 'maxHeight', 'depth',
-            'shininess', 'parallaxScale', 'parallaxPasses',
-            (self._decal_data_flags, 'decalFlags'), 'unusedDecal1',
-            'redDecal', 'greenDecal', 'blueDecal', 'unusedDecal2')
+            'decal_min_width', 'decal_max_width', 'decal_min_height',
+            'decal_max_height', 'decal_depth', 'decal_shininess',
+            'decal_parallax_scale', 'decal_parallax_passes',
+            (self._decal_flags, 'decal_flags'), 'decal_unused1', 'decal_red',
+            'decal_green', 'decal_blue', 'decal_unused2')
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
@@ -1074,6 +1076,18 @@ class MelTemplateArmor(MelFid):
     """Handles the ARMO subrecord TNAM (Template Armor)."""
     def __init__(self):
         super().__init__(b'TNAM', 'template_armor')
+
+#------------------------------------------------------------------------------
+class MelTxstFlags(MelUInt16Flags):
+    """Handles the TXST subrecord DNAM (Flags)."""
+    _txst_flags = Flags.from_names(
+        'no_specular_map',
+        'facegen_textures', # since Skyrim
+        'has_model_space_normal_map', # since Skyrim
+    )
+
+    def __init__(self):
+        super().__init__(b'DNAM', 'txst_flags', self._txst_flags)
 
 #------------------------------------------------------------------------------
 class MelUnloadEvent(MelString):

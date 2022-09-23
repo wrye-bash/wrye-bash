@@ -4560,19 +4560,7 @@ C.Location, -C.LockList
                                     <li>Flags</li>
                                 </ul>
                             </li>
-                            <li>(DODT) Decal Data
-                                <ul>
-                                    <li>Min Width</li>
-                                    <li>Max Width</li>
-                                    <li>Min Height</li>
-                                    <li>Max Height</li>
-                                    <li>Depth</li>
-                                    <li>Shininess</li>
-                                    <li>Parallax</li>
-                                    <li>Flags</li>
-                                    <li>Color</li>
-                                </ul>
-                            </li>
+                            <li>(DODT) Decal Data - All</li>
                             <li>(DNAM) Texture Set</li>
                         </ul>
                     </li>
@@ -4709,19 +4697,7 @@ C.Location, -C.LockList
                             <li>(TX03) Glow Map</li>
                             <li>(TX04) Parallax Map</li>
                             <li>(TX05) Environment Map</li>
-                            <li>(DODT) Decal Data
-                                <ul>
-                                    <li>Min Width</li>
-                                    <li>Max Width</li>
-                                    <li>Min Height</li>
-                                    <li>Max Height</li>
-                                    <li>Depth</li>
-                                    <li>Shininess</li>
-                                    <li>Parallax</li>
-                                    <li>Flags</li>
-                                    <li>Color</li>
-                                </ul>
-                            </li>
+                            <li>(DODT) Decal Data - All</li>
                             <li>(DNAM) Flags</li>
                         </ul>
                     </li>
@@ -5779,6 +5755,23 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                     <li>(INGR) Ingredient: (ICON) Icon, (MODL) Model</li>
+                    <li>(IPCT) Impact:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Effect - Duration</li>
+                                    <li>Effect - Orientation</li>
+                                    <li>Angle Threshold</li>
+                                    <li>Placement Radius</li>
+                                    <li>Flags</li>
+                                    <li>Impact Result</li>
+                                </ul>
+                            </li>
+                            <li>(DODT) Decal Data - All</li>
+                            <li>(DNAM) Texture Set</li>
+                        </ul>
+                    </li>
                     <li>(KEYM) Key: (ICON) Icon, (MODL) Model</li>
                     <li>(LIGH) Light:
                         <ul>
@@ -5856,8 +5849,30 @@ C.Location, -C.LockList
                     <li>(SPEL) Spell: (MDOB) Menu Display Object</li>
                     <li>(STAT) Static: (MODL) Model</li>
                     <li>(TREE) Tree: (ICON) Icon, (MODL) Model</li>
-                    <li>(WEAP) Weapon: (MODL) Model, (MOD3) Has Scope, (ICON) Icon, (WNAM) 1st Person Model Object.</li>
-                    <li>(WTHR) Directional Ambient Lighting Colors.</li>
+                    <li>(TXST) Texture Set:
+                        <ul>
+                            <li>(TX00) Diffuse</li>
+                            <li>(TX01) Normal/Gloss</li>
+                            <li>(TX02) Environment Mask/Subsurface Tint</li>
+                            <li>(TX03) Glow/Detail Map</li>
+                            <li>(TX04) Height</li>
+                            <li>(TX05) Environment</li>
+                            <li>(TX06) Multilayer</li>
+                            <li>(TX07) Backlight Mask/Specular</li>
+                            <li>(DODT) Decal Data - All</li>
+                            <li>(DNAM) Flags</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(MOD3) Has Scope</li>
+                            <li>(ICON) Icon</li>
+                            <li>(WNAM) 1st Person Model Object</li>
+                        </ul>
+                    </li>
+                    <li>(WTHR) Weather: (DALC) Directional Ambient Lighting
+                        Colors.</li>
                 </ul>
             </td>
         </tr>
@@ -6088,6 +6103,7 @@ C.Location, -C.LockList
                     </li>
                     <li>(IPCT) Impact:
                         <ul>
+                            <li>(DATA) Sound Level</li>
                             <li>(SNAM) Sound 1</li>
                             <li>(NAM1) Sound 2</li>
                         </ul>
