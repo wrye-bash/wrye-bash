@@ -30,8 +30,10 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
+from .balt import ItemLink, Links
 from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
+from .exception import AbstractError
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
@@ -177,8 +179,14 @@ class PageSelect(PageInstaller):
         kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         self._page_parent = parent
+        # Create links to facilitate mass (de)selection
+        self._page_links = Links()
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
+            self.listOptions.on_mouse_right_up.subscribe(self._on_right_click)
+            self._page_links.append(_Page_SelectAll(self.listOptions))
+            self._page_links.append(_Page_DeselectAll(self.listOptions))
+            self._page_links.append(_Page_ToggleAll(self.listOptions))
             for index, default in enumerate(items_default.values()):
                 self.listOptions.lb_check_at_index(index, default)
         else:
@@ -213,6 +221,11 @@ class PageSelect(PageInstaller):
         except FileNotFoundError: pass
         except OSError: bolt.deprint(f'Failed to open {img}.', traceback=True)
 
+    def _on_right_click(self, lb_selection_dex):
+        """Internal callback to show the context menu for appropriate pages."""
+        self._page_links.popup_menu(self, None)
+        self.Selection(lb_selection_dex)
+
     def Selection(self, index):
         self._page_parent.enable_forward(True)
         self.index = index
@@ -242,6 +255,44 @@ class PageSelect(PageInstaller):
         else:
             self._wiz_parent.parser.choices.append(temp_items)
         self._wiz_parent.parser.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values=temp_items, hitCase=False)
+
+class _PageLink(ItemLink):
+    """Base class for mass (de)select page links."""
+    def __init__(self, link_clb: CheckListBox):
+        super().__init__()
+        self._link_clb = link_clb
+
+    def Execute(self):
+        with self._link_clb.pause_drawing():
+            for i in range(self._link_clb.lb_get_items_count()):
+                self._link_clb.lb_check_at_index(i, self._should_enable(
+                    self._link_clb.lb_is_checked_at_index(i)))
+
+    def _should_enable(self, check_state):
+        """Returns True if a checkbox with the specified state should be
+        enabled."""
+        raise AbstractError('_should_enable not implemented')
+
+class _Page_SelectAll(_PageLink):
+    """Select all options on this page."""
+    _text = _('Select All')
+    _help = _('Selects all options on this page.')
+
+    def _should_enable(self, check_state): return True
+
+class _Page_DeselectAll(_PageLink):
+    """Deselect all options on this page."""
+    _text = _('Deselect All')
+    _help = _('Deselects all options on this page.')
+
+    def _should_enable(self, check_state): return False
+
+class _Page_ToggleAll(_PageLink):
+    """Toggle all options on this page."""
+    _text = _('Toggle Selection')
+    _help = _('Deselects all selected options on this page and vice versa.')
+
+    def _should_enable(self, check_state): return not check_state
 
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',

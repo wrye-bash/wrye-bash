@@ -545,8 +545,6 @@ class PageFinish(PageInstaller):
 #  can't update the type hints in balt.py due to cyclic imports :(
 class _GroupLink(EnabledLink):
     """Select, deselect or toggle all options in a group."""
-    def __init__(self):
-        super(_GroupLink, self).__init__()
 
     def _enable(self):
         # Disable for required options, user can't change those
@@ -562,8 +560,6 @@ class _GroupLink(EnabledLink):
         """Returns the group that the clicked on option belongs to."""
         return self.window.checkable_to_group[self.selected]
 
-class _Group_MassSelect(_GroupLink):
-    """Base class for all three types of 'mass select' group links."""
     def Execute(self):
         for checkable in self.window.group_option_map[self.selected_group]:
             # NotUsable options can't ever be enabled, so skip those
@@ -573,23 +569,23 @@ class _Group_MassSelect(_GroupLink):
 
     def _should_enable(self, checkable):
         """Returns True if the specified checkable should be enabled."""
-        raise AbstractError(u'_enable_checkable not implemented')
+        raise AbstractError('_should_enable not implemented')
 
-class _Group_SelectAll(_Group_MassSelect):
+class _Group_SelectAll(_GroupLink):
     """Select all options in the selected group."""
     _text = _('Select All')
     _help = _("Selects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return True
 
-class _Group_DeselectAll(_Group_MassSelect):
+class _Group_DeselectAll(_GroupLink):
     """Deselect all options in the selected group."""
     _text = _('Deselect All')
     _help = _("Deselects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return False
 
-class _Group_ToggleAll(_Group_MassSelect):
+class _Group_ToggleAll(_GroupLink):
     """Toggle all options in the selected group."""
     _text = _('Toggle Selection')
     _help = _("Deselects all selected options in the '%(curr_fomod_group)s' "
