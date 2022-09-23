@@ -372,23 +372,16 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     _bl_key = u'bash.installers.autoRefreshBethsoft'
     _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
-    message = _(u'Enable installation of Bethsoft Content?') + u'\n\n' + _(
-        u'In order to support this, Bethesda ESPs, ESMs, and BSAs need to '
-        u'have their CRCs calculated.  Moreover Bethesda ESPs, ESMs will have '
-        u'their crc recalculated every time on booting BAIN.  Are you sure '
-        u'you want to continue?')
+    _message = _('Enable installation of Bethsoft content?') + '\n\n' + _(
+        "It is recommended to keep backups of any affected files. Unmodified "
+        "copies can be reacquired via Steam's 'Verify integrity of game "
+        "files' command.") + '\n\n' + _('Are you sure you want to continue?')
 
     @balt.conversation
     def Execute(self):
-        if not bass.settings[self._bl_key] and not self._askYes(self.message):
+        if not bass.settings[self._bl_key] and not self._askYes(self._message):
             return
-        super(Installers_AutoRefreshBethsoft, self).Execute()
-        if bass.settings[self._bl_key]:
-            # Refresh Data - only if we are now including Bethsoft files
-            with balt.Progress(
-                    title=_('Refreshing Bethsoft Content')) as progress:
-                self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
-                                                       progress)
+        super().Execute()
         # Refresh Installers
         toRefresh = {iname for iname, installer in self.idata.items() if
                      installer.hasBethFiles}

@@ -757,7 +757,7 @@ class Installer(ListInfo):
         commonlyEditedExts = Installer.commonlyEditedExts
         espmMap = self.espmMap = bolt.DefaultLowerDict(list)
         plugin_extensions = bush.game.espm_extensions
-        reReadMeMatch = Installer.reReadMe.match
+        # FIXME DROP: reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
@@ -2196,12 +2196,6 @@ class InstallersData(DataStore):
         oldGet = self.data_sizeCrcDate.get
         ghost_norm_get = bolt.LowerDict(
             (y, str(x)) for x, y in Installer.getGhosted().items()).get
-        if bass.settings[u'bash.installers.autoRefreshBethsoft']:
-            bethFiles = set()
-        else:
-            beth_keys = {*map(CIstr,
-                              bush.game.bethDataFiles)} - self.overridden_skips
-            bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs[u'mods']) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
@@ -2213,7 +2207,6 @@ class InstallersData(DataStore):
                     rpFile = ghost_norm_get(sFile, sFile)
                     ext = rpFile[rpFile.rfind(u'.'):]
                     if ext.lower() in skipExts: continue
-                    if rpFile in bethFiles: continue
                     top_level_espm = ext in bush.game.espm_extensions
                 else: rpFile = os.path.join(rsDir, sFile)
                 asFile = os.path.join(asDir, sFile)
