@@ -1551,7 +1551,7 @@ class MreKeym(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreKywd(MelRecord):
-    """Keyword record."""
+    """Keyword."""
     rec_sig = b'KYWD'
 
     melSet = MelSet(

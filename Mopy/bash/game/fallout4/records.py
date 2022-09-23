@@ -32,7 +32,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, \
+    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, MelFids, \
     MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
@@ -50,7 +50,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
-    MelIpctSounds, MelIpctHazard, MelIpdsPnam
+    MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -218,6 +218,17 @@ class MelNativeTerminal(MelFid):
         super().__init__(b'NTRM', 'native_terminal')
 
 #------------------------------------------------------------------------------
+class MelNotesTypeRule(MelSequential):
+    """Handles the AACT/KYWD subrecords DNAM (Notes), TNAM (Type) and DATA
+    (Attraction Rule)."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'DNAM', 'aact_kywd_notes'),
+            MelUInt32(b'TNAM', 'aact_kywd_type'),
+            MelFid(b'DATA', 'attraction_rule'),
+        )
+
+#------------------------------------------------------------------------------
 class MelNvnm(AMelNvnm):
     """Handles the NVNM (Navmesh Geometry) subrecord."""
     class _NvnmContextFo4(ANvnmContext):
@@ -301,9 +312,7 @@ class MreAact(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelColorO(),
-        MelString(b'DNAM', 'action_notes'),
-        MelUInt32(b'TNAM', 'action_type'),
-        MelFid(b'DATA', 'attraction_rule'),
+        MelNotesTypeRule(),
         MelFull(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1673,6 +1682,61 @@ class MreIpds(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIpdsPnam(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """Key."""
+    rec_sig = b'KEYM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelValueWeight(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKssm(MelRecord):
+    """Sound Keyword Mapping."""
+    rec_sig = b'KSSM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'DNAM', 'primary_descriptor'),
+        MelFid(b'ENAM', 'exterior_tail'),
+        MelFid(b'VNAM', 'vats_descriptor'),
+        MelFloat(b'TNAM', 'vats_threshold'),
+        MelFids('kssm_keywords', MelFid(b'KNAM')),
+        MelSorted(MelGroups('kssm_sounds',
+            MelStruct(b'RNAM', ['2I'], 'reverb_class',
+                (FID, 'sound_descriptor')),
+        ), sort_by_attrs='reverb_class'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKywd(MelRecord):
+    """Keyword."""
+    rec_sig = b'KYWD'
+    _has_duplicate_attrs = True # NNAM is an older version of FULL
+
+    melSet = MelSet(
+        MelEdid(),
+        MelColorO(),
+        MelNotesTypeRule(),
+        MelFull(),
+        # Older format - read, but only dump FULL
+        MelReadOnly(MelString(b'NNAM', 'full')),
     )
     __slots__ = melSet.getSlotsUsed()
 

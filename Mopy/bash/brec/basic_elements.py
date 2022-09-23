@@ -497,6 +497,7 @@ class MelUnorderedGroups(MelGroups):
             *debug_strs)
 
 #------------------------------------------------------------------------------
+##: Turn into MelSimpleGroups, same way we do MelSimpleArray
 class MelFids(MelGroups):
     """A lighter version of MelGroups, holding an array of separate form id
     subrecords."""
