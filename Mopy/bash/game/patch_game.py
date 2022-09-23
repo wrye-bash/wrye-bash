@@ -68,7 +68,7 @@ class PatchGame(GameInfo):
     # Function Info -----------------------------------------------------------
     # CTDA Data for the game. Maps function ID to tuple with name of function
     # and the parameter types of the function.
-    # 0: no param; 1: int param; 2: formid param; 3: float param
+    # 0: no param; 1: int param; 2: FormID param; 3: float param
     # Note that each line must have the same number of parameters after the
     # function name - so pad out functions with fewer parameters with zeroes
     condition_function_data = {}

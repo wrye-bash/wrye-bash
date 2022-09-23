@@ -27,7 +27,7 @@ bush."""
 # ***no imports!***
 
 # Function Info ---------------------------------------------------------------
-# 0: no param; 1: int param; 2: formid param; 3: float param
+# 0: no param; 1: int param; 2: FormID param; 3: float param
 condition_function_data = {
     1:    (u'GetDistance', 2, 0),
     5:    (u'GetLocked', 0, 0),
@@ -199,30 +199,35 @@ condition_function_data = {
     362:  (u'GetPlayerHasLastRiddenHorse', 0, 0),
     365:  (u'GetPlayerInSEWorld', 0, 0),
 
-    # extended by OBSE
-    1107: (u'IsAmmo', 1, 0),
-    1884: (u'GetPCTrainingSessionsUsed', 2, 0),
-    2213: (u'GetPackageOffersServices', 2, 0),
-    2214: (u'GetPackageMustReachLocation', 2, 0),
-    2215: (u'GetPackageMustComplete', 2, 0),
-    2216: (u'GetPackageLockDoorsAtStart', 2, 0),
-    2217: (u'GetPackageLockDoorsAtEnd', 2, 0),
-    2218: (u'GetPackageLockDoorsAtLocation', 2, 0),
-    2219: (u'GetPackageUnlockDoorsAtStart', 2, 0),
-    2220: (u'GetPackageUnlockDoorsAtEnd', 2, 0),
-    2221: (u'GetPackageUnlockDoorsAtLocation', 2, 0),
-    2222: (u'GetPackageContinueIfPCNear', 2, 0),
-    2223: (u'GetPackageOncePerDay', 2, 0),
-    2224: (u'GetPackageSkipFalloutBehavior', 2, 0),
-    2225: (u'GetPackageAlwaysRun', 2, 0),
-    2226: (u'GetPackageAlwaysSneak', 2, 0),
-    2227: (u'GetPackageAllowSwimming', 2, 0),
-    2228: (u'GetPackageAllowFalls', 2, 0),
-    2229: (u'GetPackageArmorUnequipped', 2, 0),
-    2230: (u'GetPackageWeaponsUnequipped', 2, 0),
-    2231: (u'GetPackageDefensiveCombat', 2, 0),
-    2232: (u'GetPackageUseHorse', 2, 0),
-    2233: (u'GetPackageNoIdleAnims', 2, 0),
+    # Extended by (x)OBSE
+    1107: ('IsAmmo', 1, 0),
+    1122: ('HasSpell', 2, 0),
+    1124: ('IsClassSkill', 1, 2),
+    1884: ('GetPCTrainingSessionsUsed', 2, 0),
+    2213: ('GetPackageOffersServices', 2, 0),
+    2214: ('GetPackageMustReachLocation', 2, 0),
+    2215: ('GetPackageMustComplete', 2, 0),
+    2216: ('GetPackageLockDoorsAtStart', 2, 0),
+    2217: ('GetPackageLockDoorsAtEnd', 2, 0),
+    2218: ('GetPackageLockDoorsAtLocation', 2, 0),
+    2219: ('GetPackageUnlockDoorsAtStart', 2, 0),
+    2220: ('GetPackageUnlockDoorsAtEnd', 2, 0),
+    2221: ('GetPackageUnlockDoorsAtLocation', 2, 0),
+    2222: ('GetPackageContinueIfPCNear', 2, 0),
+    2223: ('GetPackageOncePerDay', 2, 0),
+    2224: ('GetPackageSkipFalloutBehavior', 2, 0),
+    2225: ('GetPackageAlwaysRun', 2, 0),
+    2226: ('GetPackageAlwaysSneak', 2, 0),
+    2227: ('GetPackageAllowSwimming', 2, 0),
+    2228: ('GetPackageAllowFalls', 2, 0),
+    2229: ('GetPackageArmorUnequipped', 2, 0),
+    2230: ('GetPackageWeaponsUnequipped', 2, 0),
+    2231: ('GetPackageDefensiveCombat', 2, 0),
+    2232: ('GetPackageUseHorse', 2, 0),
+    2233: ('GetPackageNoIdleAnims', 2, 0),
+    2571: ('GetBaseAV3', 1, 0),
+    2573: ('IsNaked', 1, 0),
+    2578: ('IsDiseased', 0, 0),
 }
 
 # Known record types

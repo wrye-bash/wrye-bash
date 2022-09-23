@@ -26,9 +26,7 @@ bush."""
 # ***no imports!***
 
 # Function Info ---------------------------------------------------------------
-# Needs to be public so we can import it for FNV
-# 0: no param; 1: int param; 2: formid param; 3: float param
-
+# 0: no param; 1: int param; 2: FormID param; 3: float param
 condition_function_data = {
     1:    (u'GetDistance', 2, 0),
     5:    (u'GetLocked', 0, 0),

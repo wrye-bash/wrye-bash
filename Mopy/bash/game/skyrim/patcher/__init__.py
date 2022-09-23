@@ -27,7 +27,7 @@ bush."""
 # ***no imports!***
 
 # Function Info ---------------------------------------------------------------
-# 0: no param; 1: int param; 2: formid param; 3: float param
+# 0: no param; 1: int param; 2: FormID param; 3: float param
 # Third parameter is always sint32, so no need to specify here
 condition_function_data = {
     0:    (u'GetWantBlocking', 0, 0),

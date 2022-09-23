@@ -27,7 +27,7 @@ bush."""
 from ...fallout3.patcher import *
 
 # Function Info ---------------------------------------------------------------
-# 0: no param; 1: int param; 2: formid param; 3: float param
+# 0: no param; 1: int param; 2: FormID param; 3: float param
 condition_function_data.update({ # new & changed functions in FNV
     398:  (u'IsLimbGone', 1, 1),
     420:  (u'GetObjectiveCompleted', 2, 1),
