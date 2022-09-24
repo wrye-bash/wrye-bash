@@ -45,7 +45,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
-    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims
+    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, MelLandShared
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1142,6 +1142,16 @@ class MreKeym(MelRecord):
         MelIcon(),
         MelScript(),
         MelValueWeight(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 

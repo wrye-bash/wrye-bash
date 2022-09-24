@@ -372,7 +372,7 @@ cellRecAttrs = {
     u'C.Acoustic': (u'acousticSpace',),
     u'C.Climate': (u'climate', u'flags.behaveLikeExterior'),
     u'C.Encounter': (u'encounterZone',),
-    u'C.ForceHideLand': (u'land_flags',),
+    'C.ForceHideLand': ('cell_land_flags',),
     u'C.ImageSpace': (u'imageSpace',),
     ##: Patches unuseds?
     u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',

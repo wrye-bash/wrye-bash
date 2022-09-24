@@ -50,7 +50,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
-    MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential
+    MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
+    MelLandMpcd
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1737,6 +1738,17 @@ class MreKywd(MelRecord):
         MelFull(),
         # Older format - read, but only dump FULL
         MelReadOnly(MelString(b'NNAM', 'full')),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
+        MelLandMpcd(),
     )
     __slots__ = melSet.getSlotsUsed()
 

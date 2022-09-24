@@ -307,17 +307,15 @@ class MelArray(MelBase):
     components. Note that only elements that properly implement static_size
     and fulfill len(self.signatures) == 1, i.e. ones that have a static size
     and resolve to only a single signature, can be used."""
-    def __init__(self, array_attr, element, prelude=None):
+    def __init__(self, array_attr: str, element: MelBase,
+            prelude: MelBase | None = None):
         """Creates a new MelArray with the specified attribute and element.
 
         :param array_attr: The attribute name to give the entire array.
-        :type array_attr: str
         :param element: The element that each entry in this array will be
             loaded and dumped by.
-        :type element: MelBase
         :param prelude: An optional element that will be loaded and dumped once
-            before the repeating element.
-        :type prelude: MelBase"""
+            before the repeating element."""
         try:
             self._element_size = element.static_size
         except exception.AbstractError:
@@ -428,7 +426,7 @@ class MelSimpleArray(MelArray):
     dumping of the array to avoid creating mel objects."""
     _element: MelNum
 
-    def __init__(self, array_attr, element, prelude=None):
+    def __init__(self, array_attr, element: MelNum, prelude=None):
         if not isinstance(element, MelNum):
             raise SyntaxError(f'MelSimpleArray only accepts MelNum, passed: '
                               f'{element!r}')

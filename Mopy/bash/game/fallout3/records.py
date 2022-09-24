@@ -51,7 +51,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
-    perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds
+    perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
+    MelLandShared
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -737,7 +738,8 @@ class MreCell(MelRecord):
         'fogPower'
     )
 
-    _land_flags = TrimmedFlags.from_names('quad1', 'quad2', 'quad3', 'quad4')
+    _cell_land_flags = TrimmedFlags.from_names('hide_quad1', 'hide_quad2',
+        'hide_quad3', 'hide_quad4')
 
     melSet = MelSet(
         MelEdid(),
@@ -745,9 +747,10 @@ class MreCell(MelRecord):
         MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
-        MelSkipInterior(MelTruncatedStruct(b'XCLC', [u'2i', u'I'], (u'posX', None),
-            (u'posY', None), (_land_flags, u'land_flags'), is_optional=True,
-            old_versions={u'2i'})),
+        MelSkipInterior(MelTruncatedStruct(b'XCLC', ['2i', 'I'],
+            ('posX', None), ('posY', None),
+            (_cell_land_flags, 'cell_land_flags'), is_optional=True,
+            old_versions={'2i'})),
         MelTruncatedStruct(
             b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i',
                       u'3f'], 'ambientRed', 'ambientGreen', 'ambientBlue',
@@ -1496,6 +1499,16 @@ class MreKeym(MelRecord):
         MelSoundPickupDrop(),
         MelValueWeight(),
         fnv_only(MelSoundRandomLooping()),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 

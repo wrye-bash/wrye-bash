@@ -26,7 +26,8 @@ from itertools import chain
 from typing import Type
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter
+    MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter, \
+    FidNotNullDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
@@ -803,6 +804,48 @@ class MelKeywords(MelSequential):
         super().__init__(
             MelCounter(MelUInt32(b'KSIZ', 'keyword_count'), counts='keywords'),
             MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
+        )
+
+#------------------------------------------------------------------------------
+class MelLandMpcd(MelGroups):
+    """Handles the LAND subrecord MPCD (Unknown)."""
+    def __init__(self):
+        super().__init__('unknown_mpcd',
+            MelBase(b'MPCD', 'unknown1'),
+        )
+
+#------------------------------------------------------------------------------
+class MelLandShared(MelSequential):
+    """Handles the LAND subrecords shared by all games."""
+    _land_flags = Flags.from_names(
+        (0,  'has_vertex_normals_height_map'),
+        (1,  'has_vertex_colors'),
+        (2,  'has_layers'),
+        (10, 'has_mpcd'), # since Skyrim
+    )
+
+    def __init__(self):
+        super().__init__(
+            MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
+            MelBase(b'VNML', 'vertex_normals'),
+            MelBase(b'VHGT', 'vertex_height_map'),
+            MelBase(b'VCLR', 'vertex_colors'),
+            MelSorted(MelGroups('layers',
+                # Start a new layer each time we hit one of these
+                MelUnion({
+                    b'ATXT': MelStruct(b'ATXT', ['I', 'B', 's', 'h'],
+                        (FID, 'atxt_texture'), 'quadrant', 'unknown', 'layer'),
+                    b'BTXT': MelStruct(b'BTXT', ['I', 'B', 's', 'h'],
+                        (FID, 'btxt_texture'), 'quadrant', 'unknown', 'layer'),
+                }),
+                # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is
+                # valid
+                MelUnion({
+                    True:  MelBase(b'VTXT', 'alpha_layer_data'), # sorted
+                    False: MelNull(b'VTXT'),
+                }, decider=FidNotNullDecider('atxt_texture')),
+            ), sort_by_attrs=('quadrant', 'layer')),
+            MelSimpleArray('vertex_textures', MelFid(b'VTEX')),
         )
 
 #------------------------------------------------------------------------------

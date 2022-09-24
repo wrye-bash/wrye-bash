@@ -54,7 +54,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
-    MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam
+    MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
+    MelLandShared, MelLandMpcd
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -789,7 +790,8 @@ class MreCell(MelRecord):
         (10, 'lightFadeDistances'),
     )
 
-    _land_flags = TrimmedFlags.from_names('quad1', 'quad2', 'quad3', 'quad4')
+    _cell_land_flags = TrimmedFlags.from_names('hide_quad1', 'hide_quad2',
+        'hide_quad3', 'hide_quad4')
 
     melSet = MelSet(
         MelEdid(),
@@ -800,8 +802,8 @@ class MreCell(MelRecord):
         ##: The other games skip this in interiors - why / why not here?
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
-        MelOptStruct(b'XCLC', [u'2i', u'I'], (u'posX', None), (u'posY', None),
-            (_land_flags, u'land_flags')),
+        MelOptStruct(b'XCLC', ['2i', 'I'], ('posX', None), ('posY', None),
+            (_cell_land_flags, 'cell_land_flags')),
         MelTruncatedStruct(b'XCLL',
             [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'3f', u'3B',
              u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B',
@@ -1557,6 +1559,17 @@ class MreKywd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelColorO(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
+        MelLandMpcd(),
     )
     __slots__ = melSet.getSlotsUsed()
 
