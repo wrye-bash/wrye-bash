@@ -40,10 +40,12 @@ class ImportFaceDialog(DialogWindow):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(next(iter(faces)), int):
-            self.fdata = {f'{int_key:08X} {face.pcName}': face for
-                          int_key, face in faces.items()}
+        if faces and not isinstance(next(iter(faces)), str):
+            # Keys are FormIDs, convert them to human-readable strings
+            self.fdata = {f'{key_fid} {val_face.pcName}': val_face for
+                          key_fid, val_face in faces.items()}
         else:
+            # Keys are EditorIDs, good to go
             self.fdata = faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI

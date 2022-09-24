@@ -216,7 +216,7 @@ class _AMerger(ImportPatcher):
                                 record_entries.append(entry)
                 if old_items != sorted(getattr(record, sr_attr), key=en_key):
                     keep(record.fid)
-                    mod_count[record.fid.mod_id] += 1
+                    mod_count[record.fid.mod_fn] += 1
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
@@ -419,7 +419,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     changed = True
                 if changed:
                     keep(record.fid)
-                    mod_count[record.fid.mod_id] += 1
+                    mod_count[record.fid.mod_fn] += 1
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -586,7 +586,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         def sorted_spells(spell_list):
             # First pass: sort by the final load order (and ObjectID)
             spells_ret = sorted(spell_list,
-                key=lambda s: (load_order.cached_lo_index(s.mod_id), s.object_dex))
+                key=lambda s: (load_order.cached_lo_index(s.mod_fn), s.object_dex))
             if special_lvsp_sort:
                 # Second pass: sort LVSP after SPEL
                 spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
@@ -600,7 +600,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 if sorted_spells(record.spells) != merged_spells:
                     record.spells = merged_spells
                     keep(record.fid)
-                    mod_count[record.fid.mod_id] += 1
+                    mod_count[record.fid.mod_fn] += 1
         self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -722,7 +722,7 @@ class _AListsMerger(ListPatcher):
                         list_fid in self.OverhaulUOPSkips):
                     stored_lists[list_fid].mergeOverLast = True
                     continue
-                is_list_owner = (list_fid.mod_id == sc_name)
+                is_list_owner = (list_fid.mod_fn == sc_name)
                 #--Items, delevs and relevs sets
                 new_list.items = items = set(self._get_entries(new_list))
                 if not is_list_owner:

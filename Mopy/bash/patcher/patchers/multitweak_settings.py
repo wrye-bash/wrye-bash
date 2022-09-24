@@ -175,7 +175,7 @@ class _AGmstTweak(_ASettingsTweak):
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
-        if record.fid.mod_id not in bush.game.bethDataFiles:
+        if record.fid.mod_fn not in bush.game.bethDataFiles:
             return False # Avoid adding new masters just for a game setting
         rec_eid = record.eid.lower()
         if rec_eid not in self.eid_was_itpo: return False # not needed

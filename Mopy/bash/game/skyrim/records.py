@@ -2392,7 +2392,7 @@ class MreOtft(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
     def mergeFilter(self, modSet):
-        self.items = [i for i in self.items if i.mod_id in modSet]
+        self.items = [i for i in self.items if i.mod_fn in modSet]
 
 #------------------------------------------------------------------------------
 class MrePack(MelRecord):

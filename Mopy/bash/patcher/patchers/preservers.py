@@ -162,7 +162,7 @@ class APreserver(ImportPatcher):
         if fa_getters:
             for rfid, record in src_top.iter_present_records():
                 fid_attr_values = [getter(record) for getter in fa_getters]
-                if any(f and (f.mod_id not in loaded_mods) for f in
+                if any(f and (f.mod_fn not in loaded_mods) for f in
                        fid_attr_values):
                     # Ignore the record. Another option would be to just ignore
                     # the fid_attr_values result
@@ -549,19 +549,19 @@ class ImportCellsPatcher(ImportPatcher):
         cellData, count = self.cellData, Counter()
         for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
             if cell_fid in cellData and handlePatchCellBlock(cellBlock):
-                count[cell_fid.mod_id] += 1
+                count[cell_fid.mod_fn] += 1
         for worldId, worldBlock in self.patchFile.tops[
             b'WRLD'].id_worldBlocks.items():
             keepWorld = False
             for cell_fid, cellBlock in worldBlock.id_cellBlock.items():
                 if cell_fid in cellData and handlePatchCellBlock(cellBlock):
-                    count[cell_fid.mod_id] += 1
+                    count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if worldBlock.worldCellBlock:
                 cell_fid = worldBlock.worldCellBlock.cell.fid
                 if cell_fid in cellData and handlePatchCellBlock(
                         worldBlock.worldCellBlock):
-                    count[cell_fid.mod_id] += 1
+                    count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if keepWorld:
                 keep(worldId)

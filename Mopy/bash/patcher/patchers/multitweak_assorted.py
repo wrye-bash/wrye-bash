@@ -316,7 +316,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
             if self.wants_record(cell):
                 self.tweak_record(cell)
                 keep(cfid)
-                count[cfid.mod_id] += 1
+                count[cfid.mod_fn] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):
@@ -478,7 +478,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     default_enabled = True
     _silent_attrs = dict.fromkeys(
         ['areaSound', 'boltSound', 'castingSound', 'effectShader',
-         'enchantEffect', 'hitSound', 'light'], bush.game.null_fid)
+         'enchantEffect', 'hitSound', 'light'], bush.game.master_fid(0))
     _silent_attrs['model'] = None
     _silent_attrs['projectileSpeed'] = 9999
 

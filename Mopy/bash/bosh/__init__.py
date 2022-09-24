@@ -50,7 +50,8 @@ from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
     struct_error, dict_sort, top_level_files, os_name, FName, FNDict, \
     forward_compat_path_to_fn_list, forward_compat_path_to_fn
-from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext
+from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext, \
+    FormIdWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, StateError
@@ -777,8 +778,7 @@ class ModInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            with FormIdReadContext(self.fn_key,
-                                   self.abs_path.open('rb')) as ins:
+            with FormIdReadContext.from_info(self) as ins:
                 self.header = ins.plugin_header
         except struct_error as rex:
             raise ModError(self.fn_key, f'Struct.error: {rex}')
@@ -789,14 +789,15 @@ class ModInfo(FileInfo):
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
-        with FormIdReadContext(self.fn_key, self.abs_path.open('rb')) as ins:
-            # If we need to remap masters, construct a proper write context.
-            # Otherwise, we can get away with a simple output stream
+        with FormIdReadContext.from_info(self) as ins:
+            # If we need to remap masters, construct a remapping write context.
+            # Otherwise we need a regular write context due to ONAM fids
+            aug_masters = [*self.header.masters, self.fn_key]
+            ctx_args = [self.abs_path.temp, aug_masters, self.header.version]
             if old_masters is not None:
-                write_ctx = RemapWriteContext(old_masters,
-                    [*self.header.masters, self.fn_key], self.abs_path.temp)
+                write_ctx = RemapWriteContext(old_masters, *ctx_args)
             else:
-                write_ctx = self.abs_path.temp.open('wb')
+                write_ctx = FormIdWriteContext(*ctx_args)
             with write_ctx as out:
                 try:
                     # We already read the file header (in FormIdReadContext),
@@ -1043,7 +1044,7 @@ class ModInfo(FileInfo):
                 # the fid, since both overrides and injected records need ONAM.
                 # We sort because xEdit does as well.
                 new_onam = sorted(h.fid for h in temp_headers
-                                  if (h.fid >> 24) < num_masters)
+                                  if h.fid.mod_dex < num_masters)
             else:
                 # We're no longer a master now, so discard all ONAM
                 new_onam = []

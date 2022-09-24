@@ -186,7 +186,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                                     traceback=True)
                             continue
                         keep(record.fid)
-                        tweak_counter[p_tweak][record.fid.mod_id] += 1
+                        tweak_counter[p_tweak][record.fid.mod_fn] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
         # finishing touches (e.g. creating records for GMST tweaks), then log
         for tweak in self.enabled_tweaks:
@@ -357,14 +357,14 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cfid.mod_id] += 1
+                    count[cfid.mod_fn] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
             for record in cellBlock.persistent_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cfid.mod_id] += 1
+                    count[cfid.mod_fn] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
@@ -375,7 +375,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cfid.mod_id] += 1
+                        count[cfid.mod_fn] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -383,7 +383,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                 for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cfid.mod_id] += 1
+                        count[cfid.mod_fn] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)

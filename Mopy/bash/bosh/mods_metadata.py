@@ -26,7 +26,7 @@ from collections import defaultdict, OrderedDict
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import dict_sort, structs_cache, SubProgress, sig_to_str
-from ..brec import ModReader, SubrecordBlob, RecordHeader
+from ..brec import ModReader, SubrecordBlob, RecordHeader, unpack_header
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 
@@ -704,16 +704,15 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.fn_key, minfo_path.open(u'rb')) as ins:
-            with minfo_path.temp.open(u'wb') as  out:
+        with ModReader.from_info(self.modInfo) as ins:
+            with minfo_path.temp.open(u'wb') as out:
                 def copy(bsize):
                     buff = ins.read(bsize)
                     out.write(buff)
                 while not ins.atEnd():
                     progress(ins.tell())
-                    header = ins.unpackRecHeader()
+                    header = unpack_header(ins)
                     _rsig = header.recType
-                    #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
                     out.write(header.pack_head())
                     if _rsig == b'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups

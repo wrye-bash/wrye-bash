@@ -43,7 +43,7 @@ class FormId:
         if not isinstance(int_val, int):
             ##: re add : {int_val!r} when setDefault is gone - huge performance
             # impact as it run for all _Tes4Fid and blows - repr is expensive!
-            raise TypeError(f'Only int accepted in FormId')
+            raise TypeError('Only int accepted in FormId')
         self.short_fid = int_val
 
     # factories
@@ -111,12 +111,16 @@ class FormId:
         return self.short_fid >> 24
 
     @property # ~0.03s on a 60s BP - no need to cache
-    def mod_id(self):
+    def mod_fn(self):
         """Return the mod id - will raise if long_fid is not a tuple."""
         try:
             return self.long_fid[0]
         except TypeError:
             raise StateError(f'{self!r} not in long format')
+
+    def is_null(self):
+        """Return True if we are a round 0."""
+        return self.short_fid == 0
 
     # Hash and comparisons
     def __hash__(self):
@@ -125,71 +129,87 @@ class FormId:
     def __eq__(self, other):
         try:
             return self.long_fid == other.long_fid
-        except AttributeError:
+        except AttributeError as e:
             if other is None: return False
             # identical code in rest of the methods below
             if not isinstance(self.long_fid, type(other)):
                 if not isinstance(other, (tuple, int)):
                     raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
+                                    f'not supported: {other!r}') from e
+                raise StateError(f'Comparing {self!r} with {other}') from e
         return self.long_fid == other
 
     def __ne__(self, other):
         try:
             return self.long_fid != other.long_fid
-        except AttributeError:
+        except AttributeError as e:
             if other is None: return True
             if not isinstance(self.long_fid, type(other)):
                 if not isinstance(other, (tuple, int)):
                     raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
+                                    f'not supported: {other!r}') from e
+                raise StateError(f'Comparing {self!r} with {other}') from e
         return self.long_fid != other
 
     def __lt__(self, other):
         try:
-            return self.long_fid < other.long_fid
-        except AttributeError:
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
-        return self.long_fid < other
+            # If we're in a write context, compare FormIds properly
+            return short_mapper(self) < short_mapper(other)
+        except TypeError:
+            # Otherwise, use alphanumeric order
+            ##: This is a hack - rewrite _AMerger to not sort and absorb all
+            # mergers (see #497). Same with all the other compare dunders
+            try:
+                return self.long_fid < other.long_fid
+            except AttributeError as e:
+                if not isinstance(self.long_fid, type(other)):
+                    if not isinstance(other, (tuple, int)):
+                        raise TypeError(f'Comparing FormId with {type(other)} '
+                                        f'is not supported: {other!r}') from e
+                    raise StateError(f'Comparing {self!r} with {other}') from e
+            return self.long_fid < other
 
     def __ge__(self, other):
         try:
-            return self.long_fid >= other.long_fid
-        except AttributeError:
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
-        return self.long_fid >= other
+            return short_mapper(self) >= short_mapper(other)
+        except TypeError:
+            try:
+                return self.long_fid >= other.long_fid
+            except AttributeError as e:
+                if not isinstance(self.long_fid, type(other)):
+                    if not isinstance(other, (tuple, int)):
+                        raise TypeError(f'Comparing FormId with {type(other)} '
+                                        f'is not supported: {other!r}') from e
+                    raise StateError(f'Comparing {self!r} with {other}') from e
+            return self.long_fid >= other
 
     def __gt__(self, other):
         try:
-            return self.long_fid > other.long_fid
-        except AttributeError:
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
-        return self.long_fid > other
+            return short_mapper(self) > short_mapper(other)
+        except TypeError:
+            try:
+                return self.long_fid > other.long_fid
+            except AttributeError as e:
+                if not isinstance(self.long_fid, type(other)):
+                    if not isinstance(other, (tuple, int)):
+                        raise TypeError(f'Comparing FormId with {type(other)} '
+                                        f'is not supported: {other!r}') from e
+                    raise StateError(f'Comparing {self!r} with {other}') from e
+            return self.long_fid > other
 
     def __le__(self, other):
         try:
-            return self.long_fid <= other.long_fid
-        except AttributeError:
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}')
-                raise StateError(f'Comparing {self!r} with {other}')
-        return self.long_fid <= other
+            return short_mapper(self) <= short_mapper(other)
+        except TypeError:
+            try:
+                return self.long_fid <= other.long_fid
+            except AttributeError as e:
+                if not isinstance(self.long_fid, type(other)):
+                    if not isinstance(other, (tuple, int)):
+                        raise TypeError(f'Comparing FormId with {type(other)} '
+                                        f'is not supported: {other!r}') from e
+                    raise StateError(f'Comparing {self!r} with {other}') from e
+            return self.long_fid <= other
 
     # avoid setstate/getstate round trip
     def __deepcopy__(self, memodict={}):
@@ -199,7 +219,7 @@ class FormId:
         return self # immutable
 
     def __getstate__(self):
-        raise AbstractError(f'You can\'t pickle a FormId')
+        raise AbstractError("You can't pickle a FormId")
 
     def __str__(self):
         if isinstance(self.long_fid, tuple):
@@ -223,7 +243,7 @@ class _Tes4Fid(FormId):
     @bolt.fast_cached_property
     def long_fid(self):
         from .. import bush
-        return bush.game.null_fid.long_fid
+        return bush.game.master_fid(0).long_fid
 
 # cache an instance of Tes4 and export that to the rest of Bash
 ZERO_FID = _Tes4Fid(0)

@@ -267,6 +267,11 @@ class ModReader(object):
         utils_constants.FORM_ID = self.form_id_type
         self.ins.close()
 
+    @classmethod
+    def from_info(cls, mod_info):
+        """Boilerplate for creating a ModReader wrapping a mod_info."""
+        return cls(mod_info.fn_key, mod_info.abs_path.open('rb'))
+
     def setStringTable(self, string_table):
         self.hasStrings = bool(string_table)
         self.strings = string_table or {} # table may be None
@@ -355,9 +360,6 @@ class ModReader(object):
             raise ModReadError(self.inName, debug_strs, endPos, self.size)
         return struct_unpacker(self.ins.read(size))
 
-    def unpackRecHeader(self, __head_unpack=unpack_header):
-        return __head_unpack(self)
-
     def __repr__(self):
         return f'{type(self).__name__}({self.inName})'
 
@@ -388,8 +390,8 @@ class FormIdWriteContext:
     write."""
 
     def __init__(self, out_path=None, augmented_masters=None,
-                 plugin_header=None):
-        self._plugin_header = plugin_header
+                 plugin_header_ver=1.0):
+        self._plugin_header_ver = plugin_header_ver
         self._out_path = out_path
         self._augmented_masters = augmented_masters
 
@@ -403,16 +405,16 @@ class FormIdWriteContext:
         indices = self._get_indices()
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(self._augmented_masters) > 1 and
-                self._plugin_header.version >= 1.0):
+                self._plugin_header_ver >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _short_mapper(formid):
-                return (indices[formid.mod_id] << 24) | formid.object_dex
+                return (indices[formid.mod_fn] << 24) | formid.object_dex
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _short_mapper(formid):
                 return ((object_id := formid.object_dex) >= 0x800 and indices[
-                    formid.mod_id] << 24) | object_id
+                    formid.mod_fn] << 24) | object_id
         return _short_mapper
 
     def __enter__(self, __head_unpack=unpack_header):
@@ -427,13 +429,13 @@ class FormIdWriteContext:
 class RemapWriteContext(FormIdWriteContext):
     """A write context that can resolve FormIDs from both a new and an old
     master list. Used when remapping masters."""
-    def __init__(self, pre_remap_masters: list[bolt.FName], augmented_masters,
-            out_path=None, plugin_header=None):
+    def __init__(self, pre_remap_masters: list[bolt.FName], out_path=None,
+            augmented_masters=None, plugin_header_ver=1.0):
         # Need the previous masters, but not the file itself
         if len(pre_remap_masters) != len(augmented_masters) - 1:
             raise ValueError('RemapWriteContext needs pre-remap masters that '
                              'match the length of the augmented masters - 1')
-        super().__init__(out_path, augmented_masters, plugin_header)
+        super().__init__(out_path, augmented_masters, plugin_header_ver)
         self._prev_masters = pre_remap_masters
 
     def _get_indices(self):
@@ -464,11 +466,13 @@ class FastModReader(BytesIO):
         self.ins = self
 
     def __enter__(self):
-        utils_constants.FORM_ID = FormId
+        self.form_id_type = utils_constants.FORM_ID
+        if self.form_id_type is None: # else we are called in the context of another reader (DUH)
+            utils_constants.FORM_ID = FormId # keep fids in short format
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        utils_constants.FORM_ID = None
+        utils_constants.FORM_ID = self.form_id_type
         super().__exit__(exc_type, exc_value, exc_traceback)
 
     def unpack(self, struct_unpacker, size, *debug_strs):

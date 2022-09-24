@@ -816,7 +816,7 @@ class MreCobj(MelRecord):
 
     def mergeFilter(self, modSet):
         self.cobj_components = [c for c in self.cobj_components
-                                if c.component_fid.mod_id in modSet]
+                                if c.component_fid.mod_fn in modSet]
 
 #------------------------------------------------------------------------------
 class MreCont(AMreWithItems):
