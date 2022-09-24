@@ -543,7 +543,7 @@ cellRecAttrs = {
     u'C.Acoustic': (u'acousticSpace',),
     u'C.Climate': (u'climate', u'flags.showSky'),
     u'C.Encounter': (u'encounterZone',),
-    u'C.ForceHideLand': (u'land_flags',),
+    'C.ForceHideLand': ('cell_land_flags',),
     u'C.ImageSpace': (u'imageSpace',),
     ##: Patches unused?
     u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
@@ -645,7 +645,7 @@ graphicsTypes = {
     b'FLOR': (u'model',),
     b'FURN': (u'model',),
     b'GRAS': (u'model',),
-    b'HDPT': ('model', 'textureSet', 'color'),
+    b'HDPT': ('model', 'hdpt_texture_set', 'hdpt_color'),
     b'INGR': (u'iconPath', u'model'),
     b'IPCT': ('model', 'effect_duration', 'effect_orientation',
               'angle_threshold', 'placement_radius', 'ipct_no_decal_data',

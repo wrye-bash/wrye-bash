@@ -301,7 +301,7 @@ class OblivionGameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreEyes, MreGlob, MreGmst, MreLand
+        from ...brec import MreEyes, MreGlob, MreGmst
         from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
             MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
             MreDoor, MreEfsh, MreEnch, MrePgrd, MreFact, MreFlor, MreFurn, \
@@ -310,7 +310,7 @@ class OblivionGameInfo(PatchGame):
             MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
             MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-            MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo
+            MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, MreLand
         cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,

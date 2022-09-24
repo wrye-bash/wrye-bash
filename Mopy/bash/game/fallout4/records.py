@@ -32,12 +32,11 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, \
+    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, MelFids, \
     MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
-    MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
-    MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
+    MelUInt32Flags, BipedFlags, MelArmaShared, MelEnchantment, MelObject, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, PartialLoadDecider, MelSeasons, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
@@ -46,7 +45,13 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
     MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, MelObject
+    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
+    MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
+    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
+    AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
+    MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
+    MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
+    MelLandMpcd
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -214,6 +219,17 @@ class MelNativeTerminal(MelFid):
         super().__init__(b'NTRM', 'native_terminal')
 
 #------------------------------------------------------------------------------
+class MelNotesTypeRule(MelSequential):
+    """Handles the AACT/KYWD subrecords DNAM (Notes), TNAM (Type) and DATA
+    (Attraction Rule)."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'DNAM', 'aact_kywd_notes'),
+            MelUInt32(b'TNAM', 'aact_kywd_type'),
+            MelFid(b'DATA', 'attraction_rule'),
+        )
+
+#------------------------------------------------------------------------------
 class MelNvnm(AMelNvnm):
     """Handles the NVNM (Navmesh Geometry) subrecord."""
     class _NvnmContextFo4(ANvnmContext):
@@ -297,9 +313,7 @@ class MreAact(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelColorO(),
-        MelString(b'DNAM', 'action_notes'),
-        MelUInt32(b'TNAM', 'action_type'),
-        MelFid(b'DATA', 'attraction_rule'),
+        MelNotesTypeRule(),
         MelFull(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -478,12 +492,7 @@ class MreArma(MelRecord):
         MelEdid(),
         MelBod2(),
         MelRace(),
-        MelArmaDnam(),
-        MelArmaModels(MelModel),
-        MelArmaSkins(),
-        MelAdditionalRaces(),
-        MelFootstepSound(),
-        MelArtObject(),
+        MelArmaShared(MelModel),
         MelBoneData(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1371,6 +1380,379 @@ class MreFurn(AMreWithItems):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreGdry(MelRecord):
+    """God Rays."""
+    rec_sig = b'GDRY'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['15f'], 'back_color_red', 'back_color_green',
+            'back_color_blue', 'forward_color_red', 'forward_color_green',
+            'forward_color_blue', 'godray_intensity', 'air_color_scale',
+            'back_color_scale', 'forward_color_scale', 'back_phase',
+            'air_color_red', 'air_color_green', 'air_color_blue',
+            'forward_phase'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGras(MelRecord):
+    """Grass."""
+    rec_sig = b'GRAS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelModel(),
+        MelGrasData(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreHazd(MelRecord):
+    """Hazard."""
+    rec_sig = b'HAZD'
+
+    _hazd_flags = Flags.from_names('affects_player_only',
+        'inherit_duration_from_spawn_spell', 'align_to_impact_normal',
+        'inherit_radius_from_spawn_spell', 'drop_to_ground',
+        'taper_effectiveness_by_proximity')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelModel(),
+        MelImageSpaceMod(),
+        MelStruct(b'DNAM', ['I', '4f', '5I', '3f'], 'hazd_limit',
+            'hazd_radius', 'hazd_lifetime', 'image_space_radius',
+            'target_interval', (_hazd_flags, 'hazd_flags'),
+            (FID, 'hazd_effect'), (FID, 'hazd_light'),
+            (FID, 'hazd_impact_dataset'), (FID, 'hazd_sound'),
+            'taper_full_effect_radius', 'taper_weight', 'taper_curse'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreHdpt(MelRecord):
+    """Head Part."""
+    rec_sig = b'HDPT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelModel(),
+        MelHdptShared(),
+        MelConditionList(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIdle(MelRecord):
+    """Idle Animation."""
+    rec_sig = b'IDLE'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelConditionList(),
+        MelString(b'DNAM', 'behavior_graph'),
+        MelIdleEnam(),
+        MelIdleRelatedAnims(),
+        MelIdleData(),
+        MelString(b'GNAM', 'animation_file'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIdlm(MelRecord):
+    """Idle Marker."""
+    rec_sig = b'IDLM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelKeywords(),
+        MelIdlmFlags(),
+        MelCounter(MelUInt8(b'IDLC', 'idlm_animation_count'),
+            counts='idlm_animations'),
+        MelIdleTimerSetting(),
+        MelIdlmIdla(),
+        MelFid(b'QNAM', 'unknown_qnam'),
+        MelModel(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+_dnam_attrs4 = ('dof_vignette_radius', 'dof_vignette_strength')
+_dnam_counters4 = tuple(f'{x}_count' for x in _dnam_attrs4)
+_dnam_counter_mapping = AMreImad.dnam_counter_mapping | dict(
+    zip(_dnam_attrs4, _dnam_counters4))
+_imad_sig_attr = AMreImad.imad_sig_attr.copy()
+_imad_sig_attr.insert(12, (b'NAM5', 'dof_vignette_radius'))
+_imad_sig_attr.insert(13, (b'NAM6', 'dof_vignette_strength'))
+
+class MreImad(AMreImad): # see AMreImad for details
+    """Image Space Adapter."""
+    melSet = MelSet(
+        MelEdid(),
+        MelPartialCounter(MelTruncatedStruct(b'DNAM',
+            ['I', 'f', '49I', '2f', '3I', '2B', '2s', '6I'], 'imad_animatable',
+            'imad_duration', *AMreImad.dnam_counters1,
+            'radial_blur_use_target', 'radial_blur_center_x',
+            'radial_blur_center_y', *AMreImad.dnam_counters2,
+            'dof_use_target', (AMreImad.imad_dof_flags, 'dof_flags'),
+            'unused1', *AMreImad.dnam_counters3, *_dnam_counters4,
+            old_versions={'If49I2f3I2B2s4I'}),
+            counters=AMreImad.dnam_counter_mapping),
+        *[AMreImad.special_impls[s](s, a) for s, a in _imad_sig_attr],
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreImgs(MelRecord):
+    """Image Space."""
+    rec_sig = b'IMGS'
+
+    melSet = MelSet(
+        MelEdid(),
+        # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
+        # skip for everything else
+        MelOptStruct(b'ENAM', ['14f'], 'enam_hdr_eye_adapt_speed',
+            'enam_hdr_tonemap_e', 'enam_hdr_bloom_threshold',
+            'enam_hdr_bloom_scale', 'enam_hdr_auto_exposure_min_max',
+            'enam_hdr_sunlight_scale', 'enam_hdr_sky_scale',
+            'enam_cinematic_saturation', 'enam_cinematic_brightness',
+            'enam_cinematic_contrast', 'enam_tint_amount',
+            'enam_tint_color_red', 'enam_tint_color_green',
+            'enam_tint_color_blue'),
+        MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed', 'hdr_tonemap_e',
+            'hdr_bloom_threshold', 'hdr_bloom_scale', 'hdr_auto_exposure_max',
+            'hdr_auto_exposure_min', 'hdr_sunlight_scale', 'hdr_sky_scale',
+            'hdr_middle_gray'),
+        MelImgsCinematic(),
+        MelImgsTint(),
+        MelTruncatedStruct(b'DNAM', ['3f', '2s', 'H', '2f'], 'dof_strength',
+            'dof_distance', 'dof_range', 'dof_unknown', 'dof_sky_blur_radius',
+            'dof_vignette_radius', 'dof_vignette_strength',
+            old_versions={'3f2sH'}),
+        MelString(b'TX00', 'imgs_lut'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Dialog Response."""
+    rec_sig = b'INFO'
+
+    _info_response_flags = Flags.from_names(
+        (0,  'start_scene_on_end'),
+        (1,  'random'),
+        (2,  'say_once'),
+        (3,  'requires_player_activation'),
+        (5,  'random_end'),
+        (6,  'end_running_scene'),
+        (7,  'force_greet_hello'),
+        (8,  'player_address'),
+        (9,  'force_subtitle'),
+        (10, 'can_move_while_greeting'),
+        (11, 'no_lip_file'),
+        (12, 'requires_post_processing'),
+        (13, 'audio_output_override'),
+        (14, 'has_capture'),
+    )
+    _info_response_flags2 = Flags.from_names(
+        (1,  'random'),
+        (3,  'force_all_children_player_activate_only'),
+        (5,  'random_end'),
+        (8,  'child_infos_dont_inherit_reset_data'),
+        (9,  'force_all_children_random'),
+        (11, 'dont_do_all_before_repeating'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelStruct(b'ENAM', ['3H'], (_info_response_flags, 'response_flags'),
+            (_info_response_flags2, 'response_flags2'), 'reset_hours'),
+        MelFid(b'TPIC', 'info_topic'),
+        MelFid(b'PNAM', 'prev_info'),
+        MelFid(b'DNAM', 'shared_info'),
+        MelFid(b'GNAM', 'info_group'),
+        MelString(b'IOVR', 'override_file_name'),
+        MelGroups('info_responses',
+            MelStruct(b'TRDA', ['I', 'B', 'I', 's', 'H', '2i'],
+                (FID, 'rd_emotion'), 'rd_response_number', (FID, 'rd_sound'),
+                'rd_unknown1', 'rd_interrupt_percentage',
+                'rd_camera_target_alias', 'rd_camera_location_alias'),
+            MelLString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
+            MelString(b'NAM3', 'response_edits'),
+            MelString(b'NAM4', 'alternate_lip_text'),
+            MelFid(b'SNAM', 'idle_animations_speaker'),
+            MelFid(b'LNAM', 'idle_animations_listener'),
+            MelUInt16(b'TNAM', 'interrupt_percentage'),
+            MelBase(b'NAM9', 'response_text_hash'),
+            MelFid(b'SRAF', 'response_camera_path'),
+            MelBase(b'WZMD', 'stop_on_scene_end'),
+        ),
+        MelConditionList(),
+        MelLString(b'RNAM', 'info_prompt'),
+        MelFid(b'ANAM', 'info_speaker'),
+        MelFid(b'TSCE', 'start_scene'),
+        MelBase(b'INTV', 'unknown_intv'),
+        MelSInt32(b'ALFA', 'forced_alias'),
+        MelFid(b'ONAM', 'audio_output_override'),
+        MelUInt32(b'GREE', 'greet_distance'),
+        MelStruct(b'TIQS', ['2h'], 'spqs_on_begin', 'spqs_on_end'),
+        MelString(b'NAM0', 'start_scene_phase'),
+        MelUInt32(b'INCC', 'info_challenge'),
+        MelFid(b'MODQ', 'reset_global'),
+        MelUInt32(b'INAM', 'subtitle_priority'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIngr(MelRecord):
+    """Ingredient."""
+    rec_sig = b'INGR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelFull(),
+        MelKeywords(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelEquipmentType(),
+        MelSoundPickupDrop(),
+        MelValueWeight(),
+        MelIngrEnit(),
+        MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreInnr(MelRecord):
+    """Instance Naming Rules."""
+    rec_sig = b'INNR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUInt32(b'UNAM', 'innr_target'),
+        MelGroups('naming_rulesets',
+            MelCounter(MelUInt32(b'VNAM', 'naming_rules_count'),
+                counts='naming_rules'),
+            MelGroups('naming_rules',
+                MelLString(b'WNAM', 'naming_rule_text'),
+                MelKeywords(),
+                MelStruct(b'XNAM', ['f', '2B'], 'naming_rule_property_value',
+                    'naming_rule_property_target', 'naming_rule_property_op'),
+                MelUInt16(b'YNAM', 'naming_rule_index'),
+            ),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIpct(MelRecord):
+    rec_sig = b'IPCT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelStruct(b'DATA', ['f', 'I', '2f', 'I', '2B', '2s'],
+            'effect_duration', 'effect_orientation', 'angle_threshold',
+            'placement_radius', 'ipct_sound_level', 'ipct_no_decal_data',
+            'impact_result', 'unknown1'),
+        MelDecalData(),
+        MelIpctTextureSets(),
+        MelIpctSounds(),
+        MelFid(b'NAM3', 'footstep_explosion'),
+        MelIpctHazard(),
+        MelFloat(b'FNAM', 'footstep_particle_max_dist'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreIpds(MelRecord):
+    """Impact Dataset."""
+    rec_sig = b'IPDS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelIpdsPnam(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """Key."""
+    rec_sig = b'KEYM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelValueWeight(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKssm(MelRecord):
+    """Sound Keyword Mapping."""
+    rec_sig = b'KSSM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'DNAM', 'primary_descriptor'),
+        MelFid(b'ENAM', 'exterior_tail'),
+        MelFid(b'VNAM', 'vats_descriptor'),
+        MelFloat(b'TNAM', 'vats_threshold'),
+        MelFids('kssm_keywords', MelFid(b'KNAM')),
+        MelSorted(MelGroups('kssm_sounds',
+            MelStruct(b'RNAM', ['2I'], 'reverb_class',
+                (FID, 'sound_descriptor')),
+        ), sort_by_attrs='reverb_class'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreKywd(MelRecord):
+    """Keyword."""
+    rec_sig = b'KYWD'
+    _has_duplicate_attrs = True # NNAM is an older version of FULL
+
+    melSet = MelSet(
+        MelEdid(),
+        MelColorO(),
+        MelNotesTypeRule(),
+        MelFull(),
+        # Older format - read, but only dump FULL
+        MelReadOnly(MelString(b'NNAM', 'full')),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
+        MelLandMpcd(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
@@ -1480,13 +1862,5 @@ class MrePerk(MelRecord):
             ),
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
-    ).with_distributor({
-        b'DESC': {
-            b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'perk_trait',
-        },
-        b'PRKE': {
-            b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
-        },
-    })
+    ).with_distributor(perk_distributor)
     __slots__ = melSet.getSlotsUsed()

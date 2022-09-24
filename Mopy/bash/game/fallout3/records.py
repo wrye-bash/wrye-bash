@@ -30,7 +30,7 @@ from ...bolt import Flags, structs_cache, TrimmedFlags, struct_calcsize
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
     MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
-    MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
+    MelReferences, MelIdleTimerSetting, MelIdleRelatedAnims, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
@@ -50,7 +50,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags
+    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
+    perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
+    MelLandShared
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -453,7 +455,7 @@ class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
 
-    _flags = Flags.from_names('autoCalc', 'isFood', 'medicine')
+    _flags = Flags.from_names('autoCalc', 'alch_is_food', 'medicine')
 
     melSet = MelSet(
         MelEdid(),
@@ -736,7 +738,8 @@ class MreCell(MelRecord):
         'fogPower'
     )
 
-    _land_flags = TrimmedFlags.from_names('quad1', 'quad2', 'quad3', 'quad4')
+    _cell_land_flags = TrimmedFlags.from_names('hide_quad1', 'hide_quad2',
+        'hide_quad3', 'hide_quad4')
 
     melSet = MelSet(
         MelEdid(),
@@ -744,9 +747,10 @@ class MreCell(MelRecord):
         MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
-        MelSkipInterior(MelTruncatedStruct(b'XCLC', [u'2i', u'I'], (u'posX', None),
-            (u'posY', None), (_land_flags, u'land_flags'), is_optional=True,
-            old_versions={u'2i'})),
+        MelSkipInterior(MelTruncatedStruct(b'XCLC', ['2i', 'I'],
+            ('posX', None), ('posY', None),
+            (_cell_land_flags, 'cell_land_flags'), is_optional=True,
+            old_versions={'2i'})),
         MelTruncatedStruct(
             b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i',
                       u'3f'], 'ambientRed', 'ambientGreen', 'ambientBlue',
@@ -1161,7 +1165,7 @@ class MreEnch(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'ENIT', ['3I', 'B', '3s'], 'item_type', 'charge_amount',
-            'enchantment_cost', (_enit_flags, u'flags'),'unused1'),
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'unused1'),
         MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1248,16 +1252,11 @@ class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
 
-    _flags = Flags.from_names('vLighting', 'uScaling', 'fitSlope')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'],'density','minSlope',
-                  'maxSlope','unused1','waterDistance','unused2',
-                  'waterOp','posRange','heightRange','colorRange',
-                  'wave_period', (_flags, 'flags'), 'unused3'),
+        MelGrasData(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1280,14 +1279,14 @@ class MreHdpt(MelRecord):
     """Head Part."""
     rec_sig = b'HDPT'
 
-    _flags = Flags.from_names('playable')
+    _hdpt_flags = Flags.from_names('playable')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
-        MelSorted(MelFids('extraParts', MelFid(b'HNAM'))),
+        MelUInt8Flags(b'DATA', 'flags', _hdpt_flags),
+        MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1296,14 +1295,17 @@ class MreIdle(MelRecord):
     """Idle Animation."""
     rec_sig = b'IDLE'
 
+    _idle_flags = Flags.from_names('no_attacking')
+
     melSet = MelSet(
         MelEdid(),
         MelModel(),
         MelConditionsFo3(),
-        MelStruct(b'ANAM', [u'I', u'I'],(FID,'parent'),(FID,'prevId')),
-        MelTruncatedStruct(b'DATA', [u'3B', u's', u'h', u'B', u's'], 'group', 'loopMin', 'loopMax',
-                           'unknown1', 'delay', 'flags',
-                           'unknown2', old_versions={'3Bsh'}),
+        MelIdleRelatedAnims(),
+        MelTruncatedStruct(b'DATA', ['3B', 's', 'h', 'B', 's'],
+            'animation_group_section', 'looping_min', 'looping_max',
+            'unused1', 'replay_delay', (_idle_flags, 'idle_flags'),
+            'unknown2', old_versions={'3Bsh'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1312,132 +1314,34 @@ class MreIdlm(MelRecord):
     """Idle Marker."""
     rec_sig = b'IDLM'
 
-    _flags = Flags.from_names('runInSequence', None, 'doOnce')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8Flags(b'IDLF', u'flags', _flags),
+        MelIdlmFlags(),
         MelPartialCounter(MelTruncatedStruct(b'IDLC', ['B', '3s'],
-            'animation_count', 'unused1', old_versions={'B'}),
-            counters={'animation_count': 'animations'}),
-        MelFloat(b'IDLT', 'idleTimerSetting'),
-        MelSimpleArray('animations', MelFid(b'IDLA')),
+            'idlm_animation_count', 'unused1', old_versions={'B'}),
+            counters={'idlm_animation_count': 'idlm_animations'}),
+        MelIdleTimerSetting(),
+        MelIdlmIdla(),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreImad(MelRecord):
+class MreImad(AMreImad): # see AMreImad for details
     """Image Space Adapter."""
-    rec_sig = b'IMAD'
-
-    _ImadAnimatableFlags = Flags.from_names('animatable')
-    _ImadRadialBlurFlags = Flags.from_names('useTarget')
-
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', ['I', 'f', '49I', '2f', '3I', 'B', '3s', '4I'],
-                  (_ImadAnimatableFlags, 'aniFlags'),
-                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
-                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
-                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
-                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
-                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
-                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
-                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
-                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
-                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
-                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
-                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
-                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
-                  'saturationMult', 'saturationAdd', 'brightnessMult',
-                  'brightnessAdd', 'contrastMult', 'contrastAdd',
-                  'unknown14Mult', 'unknown54Add',
-                  'tintColor', 'blurRadius', 'doubleVisionStrength',
-                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
-                  (_ImadRadialBlurFlags, u'radialBlurFlags'),
-                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
-                  'dofDistance', 'dofRange', 'dof_use_target', 'unused1',
-                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
-                  'motionBlurStrength'),
-        MelValueInterpolator(b'BNAM', 'blurRadiusInterp'),
-        MelValueInterpolator(b'VNAM', 'doubleVisionStrengthInterp'),
-        MelColorInterpolator(b'TNAM', 'tintColorInterp'),
-        MelColorInterpolator(b'NAM3', 'fadeColorInterp'),
-        MelValueInterpolator(b'RNAM', 'radialBlurStrengthInterp'),
-        MelValueInterpolator(b'SNAM', 'radialBlurRampUpInterp'),
-        MelValueInterpolator(b'UNAM', 'radialBlurStartInterp'),
-        MelValueInterpolator(b'NAM1', 'radialBlurRampDownInterp'),
-        MelValueInterpolator(b'NAM2', 'radialBlurDownStartInterp'),
-        MelValueInterpolator(b'WNAM', 'dofStrengthInterp'),
-        MelValueInterpolator(b'XNAM', 'dofDistanceInterp'),
-        MelValueInterpolator(b'YNAM', 'dofRangeInterp'),
-        MelValueInterpolator(b'NAM4', 'motionBlurStrengthInterp'),
-        MelValueInterpolator(b'\x00IAD', 'eyeAdaptSpeedMultInterp'),
-        MelValueInterpolator(b'\x40IAD', 'eyeAdaptSpeedAddInterp'),
-        MelValueInterpolator(b'\x01IAD', 'bloomBlurRadiusMultInterp'),
-        MelValueInterpolator(b'\x41IAD', 'bloomBlurRadiusAddInterp'),
-        MelValueInterpolator(b'\x02IAD', 'bloomThresholdMultInterp'),
-        MelValueInterpolator(b'\x42IAD', 'bloomThresholdAddInterp'),
-        MelValueInterpolator(b'\x03IAD', 'bloomScaleMultInterp'),
-        MelValueInterpolator(b'\x43IAD', 'bloomScaleAddInterp'),
-        MelValueInterpolator(b'\x04IAD', 'targetLumMinMultInterp'),
-        MelValueInterpolator(b'\x44IAD', 'targetLumMinAddInterp'),
-        MelValueInterpolator(b'\x05IAD', 'targetLumMaxMultInterp'),
-        MelValueInterpolator(b'\x45IAD', 'targetLumMaxAddInterp'),
-        MelValueInterpolator(b'\x06IAD', 'sunlightScaleMultInterp'),
-        MelValueInterpolator(b'\x46IAD', 'sunlightScaleAddInterp'),
-        MelValueInterpolator(b'\x07IAD', 'skyScaleMultInterp'),
-        MelValueInterpolator(b'\x47IAD', 'skyScaleAddInterp'),
-        # FIXME(inf) Test! From here until saturationMultInterp were marked as
-        #  MelBase and unknown in FO3
-        MelValueInterpolator(b'\x08IAD', 'lumRampNoTexMultInterp'),
-        MelValueInterpolator(b'\x48IAD', 'lumRampNoTexAddInterp'),
-        MelValueInterpolator(b'\x09IAD', 'lumRampMinMultInterp'),
-        MelValueInterpolator(b'\x49IAD', 'lumRampMinAddInterp'),
-        MelValueInterpolator(b'\x0AIAD', 'lumRampMaxMultInterp'),
-        MelValueInterpolator(b'\x4AIAD', 'lumRampMaxAddInterp'),
-        MelValueInterpolator(b'\x0BIAD', 'sunlightDimmerMultInterp'),
-        MelValueInterpolator(b'\x4BIAD', 'sunlightDimmerAddInterp'),
-        MelValueInterpolator(b'\x0CIAD', 'grassDimmerMultInterp'),
-        MelValueInterpolator(b'\x4CIAD', 'grassDimmerAddInterp'),
-        MelValueInterpolator(b'\x0DIAD', 'treeDimmerMultInterp'),
-        MelValueInterpolator(b'\x4DIAD', 'treeDimmerAddInterp'),
-        MelValueInterpolator(b'\x0EIAD', 'blurRadiusMultInterp'),
-        MelValueInterpolator(b'\x4EIAD', 'blurRadiusAddInterp'),
-        MelValueInterpolator(b'\x0FIAD', 'alphaMultInteriorMultInterp'),
-        MelValueInterpolator(b'\x4FIAD', 'alphaMultInteriorAddInterp'),
-        MelValueInterpolator(b'\x10IAD', 'alphaMultExteriorMultInterp'),
-        MelValueInterpolator(b'\x50IAD', 'alphaMultExteriorAddInterp'),
-        MelValueInterpolator(b'\x11IAD', 'saturationMultInterp'),
-        MelValueInterpolator(b'\x51IAD', 'saturationAddInterp'),
-        MelValueInterpolator(b'\x12IAD', if_fnv(
-            fo3_version='brightnessMultInterp',
-            fnv_version='contrastMultInterp',
-        )),
-        MelValueInterpolator(b'\x52IAD', if_fnv(
-            fo3_version='brightnessAddInterp',
-            fnv_version='contrastAddInterp',
-        )),
-        MelValueInterpolator(b'\x13IAD', if_fnv(
-            fo3_version='contrastMultInterp',
-            fnv_version='contrastAvgMultInterp',
-        )),
-        MelValueInterpolator(b'\x53IAD', if_fnv(
-            fo3_version='contrastAddInterp',
-            fnv_version='contrastAvgAddInterp',
-        )),
-        # FIXME(inf) Test! These two were MelBase in FO3
-        MelValueInterpolator(b'\x14IAD', if_fnv(
-            fo3_version='unknown14IAD',
-            fnv_version='brightnessMultInterp',
-        )),
-        MelValueInterpolator(b'\x54IAD', if_fnv(
-            fo3_version='unknown54IAD',
-            fnv_version='brightnessAddInterp'
-        )),
-        fnv_only(MelFid(b'RDSD', 'soundIntro')),
-        fnv_only(MelFid(b'RDSI', 'soundOutro')),
+        MelPartialCounter(MelTruncatedStruct(b'DNAM',
+            ['I', 'f', '49I', '2f', '3I', 'B', '3s', '4I'], 'imad_animatable',
+            'imad_duration', *AMreImad.dnam_counters1,
+            'radial_blur_use_target', 'radial_blur_center_x',
+            'radial_blur_center_y', *AMreImad.dnam_counters2,
+            'dof_use_target', 'unused1', *AMreImad.dnam_counters3,
+            old_versions={'If49I2f3IB3s3I', 'If49I2f3IB3s2I', 'If45I'}),
+            counters=AMreImad.dnam_counter_mapping),
+        *[AMreImad.special_impls[s](s, a) for s, a in AMreImad.imad_sig_attr],
+        fnv_only(MelFid(b'RDSD', 'sound_intro')),
+        fnv_only(MelFid(b'RDSI', 'sound_outro')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1446,41 +1350,36 @@ class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
 
-    _dnam_flags = TrimmedFlags.from_names(u'saturation', u'contrast', u'tint',
-                                          u'brightness')
+    _dnam_flags = TrimmedFlags.from_names('cinematic_saturation',
+        'cinematic_contrast', 'cinematic_tint', 'cinematic_brightness')
 
     # Struct elements shared by all three DNAM alternatives. Note that we can't
     # just use MelTruncatedStruct, because upgrading the format breaks interior
     # lighting for some reason.
     ##: If this becomes common, extract into dedicated class
     _dnam_common = [
-        u'eyeAdaptSpeed', u'blurRadius', u'blurPasses', u'emissiveMult',
-        u'targetLUM', u'upperLUMClamp', u'brightScale', u'brightClamp',
-        u'lumRampNoTex', u'lumRampMin', u'lumRampMax', u'sunlightDimmer',
-        u'grassDimmer', u'treeDimmer', u'skinDimmer', u'bloomBlurRadius',
-        u'bloomAlphaMultInterior', u'bloomAlphaMultExterior',
-        u'getHitBlurRadius', u'getHitBlurDampingConstant',
-        u'getHitDampingConstant', u'nightEyeTintRed', u'nightEyeTintGreen',
-        u'nightEyeTintBlue', u'nightEyeBrightness', u'cinematicSaturation',
-        u'cinematicAvgLumValue', u'cinematicValue',
-        u'cinematicBrightnessValue', u'cinematicTintRed',
-        u'cinematicTintGreen', u'cinematicTintBlue', u'cinematicTintValue',
+        'eye_adapt_speed', 'blur_radius', 'blur_passes', 'emissive_mult',
+        'target_lum', 'upper_lum_clamp', 'bright_scale', 'bright_clamp',
+        'lum_ramp_no_tex', 'lum_ramp_min', 'lum_ramp_max', 'sunlight_dimmer',
+        'grass_dimmer', 'tree_dimmer', 'skin_dimmer', 'bloom_blur_radius',
+        'bloom_alpha_mult_interior', 'bloom_alpha_mult_exterior',
+        'get_hit_blur_radius', 'get_hit_blur_damping_constant',
+        'get_hit_damping_constant', 'night_eye_tint_red',
+        'night_eye_tint_green', 'night_eye_tint_blue', 'night_eye_brightness',
+        'cinematic_saturation', 'cinematic_avg_lum_value', 'cinematic_value',
+        'cinematic_brightness_value', 'cinematic_tint_red',
+        'cinematic_tint_green', 'cinematic_tint_blue', 'cinematic_tint_value',
     ]
-    _dnam_fmts = [u'33f', u'4s', u'4s', u'4s', u'4s']
+    _dnam_fmts = ['33f', '4s', '4s', '4s', '4s']
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            152: MelStruct(
-                b'DNAM', _dnam_fmts + [u'B', u'3s'], *(_dnam_common + [
-                    u'unused1', u'unused2', u'unused3', u'unused4',
-                    (_dnam_flags, u'dnam_flags'), u'unused5',
-                ])),
-            148: MelStruct(
-                b'DNAM', _dnam_fmts, *(_dnam_common + [
-                    u'unused1', u'unused2',
-                    u'unused3', u'unused4',
-                ])),
-            132: MelStruct(b'DNAM', [u'33f'], *_dnam_common),
+            152: MelStruct(b'DNAM', _dnam_fmts + ['B', '3s'],
+                *(_dnam_common + ['unknown1', 'unused1', 'unused2', 'unused3',
+                                  (_dnam_flags, 'dnam_flags'), 'unused4'])),
+            148: MelStruct(b'DNAM', _dnam_fmts, *(_dnam_common + [
+                'unknown1', 'unused1', 'unused2', 'unused3'])),
+            132: MelStruct(b'DNAM', ['33f'], *_dnam_common),
         }, decider=SizeDecider()),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1490,56 +1389,41 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags.from_names(
-        'goodbye',
-        'random',
-        'sayOnce',
-        'runImmediately',
-        'infoRefusal',
-        'randomEnd',
-        'runForRumors',
-        'speechChallenge',
-    )
-    _flags2 = Flags.from_names(
-        (0, 'sayOnceADay'),
-        (1, 'alwaysDarken'),
-        fnv_only((4, 'lowIntelligence')),
-        fnv_only((5, 'highIntelligence')),
+    _info_response_flags1 = Flags.from_names('goodbye', 'random', 'say_once',
+        'run_immediately', 'info_refusal', 'random_end', 'run_for_rumors',
+        'speech_challenge')
+    _info_response_flags2 = Flags.from_names(
+        (0, 'say_once_aday'),
+        (1, 'always_darken'),
+        fnv_only((4, 'low_intelligence')),
+        fnv_only((5, 'high_intelligence')),
     )
 
     melSet = MelSet(
-        MelTruncatedStruct(b'DATA', [u'4B'], 'dialType', 'nextSpeaker',
-                           (_flags, 'flags'), (_flags2, 'flagsInfo'),
-                           old_versions={'2B'}),
-        MelFid(b'QSTI', u'info_quest'),
-        MelFid(b'TPIC', u'info_topic'),
+        MelTruncatedStruct(b'DATA', ['4B'], 'info_type', 'next_speaker',
+            (_info_response_flags1, 'response_flags'),
+            (_info_response_flags2, 'response_flags2'), old_versions={'2B'}),
+        MelFid(b'QSTI', 'info_quest'),
+        MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('addTopics', MelFid(b'NAME')),
-        MelGroups('responses',
-            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s', u'I', u'B', u'3s'],'emotionType','emotionValue','unused1','responseNum',('unused2',b'\xcd\xcd\xcd'),
-                      (FID,'sound'),'flags',('unused3',b'\xcd\xcd\xcd')),
-            MelString(b'NAM1','responseText'),
-            MelString(b'NAM2','actorNotes'),
-            MelString(b'NAM3','edits'),
-            MelFid(b'SNAM','speakerAnimation'),
-            MelFid(b'LNAM','listenerAnimation'),
-        ),
+        MelFids('add_topics', MelFid(b'NAME')),
+        MelInfoResponsesFo3(),
         MelConditionsFo3(),
-        MelFids('choices', MelFid(b'TCLT')),
-        MelFids('linksFrom', MelFid(b'TCLF')),
+        MelFids('info_choices', MelFid(b'TCLT')),
+        MelFids('link_from', MelFid(b'TCLF')),
         fnv_only(MelFids('follow_up', MelFid(b'TCFU'))),
-        MelGroup('scriptBegin',
+        MelGroup('script_begin',
             MelEmbeddedScript(),
         ),
-        MelGroup('scriptEnd',
-            MelBase(b'NEXT','marker'),
+        MelGroup('script_end',
+            MelBaseR(b'NEXT', 'script_marker'),
             MelEmbeddedScript(),
         ),
-        MelFid(b'SNDD','sndd_p'),
-        MelString(b'RNAM','prompt'),
-        MelFid(b'ANAM','speaker'),
-        MelFid(b'KNAM','acterValuePeak'),
-        MelUInt32(b'DNAM', 'speechChallenge')
+        MelFid(b'SNDD', 'unused_sndd'),
+        MelString(b'RNAM', 'info_prompt'),
+        MelFid(b'ANAM', 'info_speaker'),
+        MelFid(b'KNAM', 'actor_value_or_perk'),
+        MelUInt32(b'DNAM', 'speech_challenge')
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1548,7 +1432,7 @@ class MreIngr(MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    _flags = Flags.from_names('noAutoCalc', 'isFood')
+    _flags = Flags.from_names('ingr_no_auto_calc', 'ingr_is_food')
 
     melSet = MelSet(
         MelEdid(),
@@ -1576,9 +1460,8 @@ class MreIpct(MelRecord):
             'effect_orientation', 'angle_threshold', 'placement_radius',
             'ipct_sound_level', 'ipct_no_decal_data'),
         MelDecalData(),
-        MelFid(b'DNAM', 'ipct_texture_set'),
-        MelSound(),
-        MelFid(b'NAM1', 'ipct_sound2'),
+        MelIpctTextureSets(with_secondary=False),
+        MelIpctSounds(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1590,11 +1473,13 @@ class MreIpds(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelTruncatedStruct(
-            b'DATA', [u'12I'], (FID, u'stone'), (FID, u'dirt'),
-            (FID, u'grass'), (FID, u'glass'), (FID, u'metal'),
-            (FID, u'wood'), (FID, u'organic'), (FID, u'cloth'),
-            (FID, u'water'), (FID, u'hollowMetal'), (FID, u'organicBug'),
-            (FID, u'organicGlow'), old_versions={'10I', '9I'}),
+            b'DATA', ['12I'], (FID, 'impact_stone'), (FID, 'impact_dirt'),
+            (FID, 'impact_grass'), (FID, 'impact_glass'),
+            (FID, 'impact_metal'), (FID, 'impact_wood'),
+            (FID, 'impact_organic'), (FID, 'impact_cloth'),
+            (FID, 'impact_water'), (FID, 'impact_hollow_metal'),
+            (FID, 'impact_organic_bug'), (FID, 'impact_organic_glow'),
+            old_versions={'10I', '9I'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1614,6 +1499,16 @@ class MreKeym(MelRecord):
         MelSoundPickupDrop(),
         MelValueWeight(),
         fnv_only(MelSoundRandomLooping()),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2114,7 +2009,7 @@ class MrePack(MelRecord):
             MelPartialCounter(MelStruct(b'IDLC', ['B', '3s'],
                 'animation_count', 'unused1'),
                 counters={'animation_count': 'animations'}),
-            MelFloat(b'IDLT', 'idleTimerSetting'),
+            MelIdleTimerSetting(),
             MelSimpleArray('animations', MelFid(b'IDLA')),
             MelBase(b'IDLB','idlb_p'),
         ),
@@ -2221,15 +2116,7 @@ class MrePerk(MelRecord):
             ),
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
-    ).with_distributor({
-        b'DESC': {
-            b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'perk_trait',
-        },
-        b'PRKE': {
-            b'CTDA|CIS1|CIS2|DATA': 'effects',
-        },
-    })
+    ).with_distributor(perk_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

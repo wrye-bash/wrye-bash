@@ -45,7 +45,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
-    MelSeasons, MelIngredient
+    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, MelLandShared
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -541,7 +541,7 @@ class MreAlch(MreHasEffects, MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
-    _flags = Flags.from_names('autoCalc', 'isFood')
+    _flags = Flags.from_names('autoCalc', 'alch_is_food')
 
     melSet = MelSet(
         MelEdid(),
@@ -1045,15 +1045,10 @@ class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
 
-    _flags = Flags.from_names('vLighting','uScaling','fitSlope')
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'], 'density', 'minSlope', 'maxSlope',
-                  'unused1', 'waterDistance', 'unused2',
-                  'waterOp', 'posRange', 'heightRange', 'colorRange',
-                  'wave_period', (_flags, 'flags'), 'unused3'),
+        MelGrasData(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1080,10 +1075,8 @@ class MreIdle(MelRecord):
         MelEdid(),
         MelModel(),
         MelConditionsTes4(),
-        MelUInt8(b'ANAM', 'group'),
-        MelArray('related_animations',
-            MelStruct(b'DATA', [u'2I'], (FID, 'parent'), (FID, 'prevId')),
-        ),
+        MelUInt8(b'ANAM', 'animation_group_section'),
+        MelIdleRelatedAnims(b'DATA'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1092,25 +1085,26 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags.from_names(u'goodbye', u'random', u'sayOnce',
-        u'runImmediately', u'infoRefusal', u'randomEnd', u'runForRumors')
+    _info_response_flags = Flags.from_names('goodbye', 'random', 'say_once',
+        'run_immediately', 'info_refusal', 'random_end', 'run_for_rumors')
 
     melSet = MelSet(
-        MelTruncatedStruct(b'DATA', [u'3B'], u'dialType', u'nextSpeaker',
-                           (_flags, u'flags'), old_versions={u'H'}),
-        MelFid(b'QSTI', u'info_quest'),
-        MelFid(b'TPIC', u'info_topic'),
-        MelFid(b'PNAM', u'prev_info'),
-        MelFids('addTopics', MelFid(b'NAME')),
-        MelGroups(u'responses',
-            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s'], u'emotionType', u'emotionValue',
-                u'unused1', u'responseNum', u'unused2'),
-            MelString(b'NAM1', u'responseText'),
-            MelString(b'NAM2', u'actorNotes'),
+        MelTruncatedStruct(b'DATA', ['3B'], 'info_type', 'next_speaker',
+            (_info_response_flags, 'response_flags'), old_versions={'2B'}),
+        MelFid(b'QSTI', 'info_quest'),
+        MelFid(b'TPIC', 'info_topic'),
+        MelFid(b'PNAM', 'prev_info'),
+        MelFids('add_topics', MelFid(b'NAME')),
+        MelGroups('info_responses',
+            MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s'], 'rd_emotion_type',
+                'rd_emotion_value', 'rd_unused1', 'rd_response_number',
+                'rd_unused2'),
+            MelString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
         ),
         MelConditionsTes4(),
-        MelFids('choices', MelFid(b'TCLT')),
-        MelFids('linksFrom', MelFid(b'TCLF')),
+        MelFids('info_choices', MelFid(b'TCLT')),
+        MelFids('link_from', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1120,7 +1114,7 @@ class MreIngr(MreHasEffects, MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    _flags = Flags.from_names('noAutoCalc', 'isFood')
+    _flags = Flags.from_names('ingr_no_auto_calc', 'ingr_is_food')
 
     melSet = MelSet(
         MelEdid(),
@@ -1148,6 +1142,16 @@ class MreKeym(MelRecord):
         MelIcon(),
         MelScript(),
         MelValueWeight(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLand(MelRecord):
+    """Land."""
+    rec_sig = b'LAND'
+
+    melSet = MelSet(
+        MelLandShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 

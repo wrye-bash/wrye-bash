@@ -26,7 +26,8 @@ from itertools import chain
 from typing import Type
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter
+    MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter, \
+    FidNotNullDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
@@ -140,12 +141,6 @@ class MelActorSounds(MelSorted):
         ), sort_by_attrs='type')
 
 #------------------------------------------------------------------------------
-class MelAdditionalRaces(MelSorted):
-    """Handle the ARMA subrecord MODL (Additional Races)."""
-    def __init__(self):
-        super().__init__(MelFids('additional_races', MelFid(b'MODL')))
-
-#------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
     def __init__(self):
@@ -158,8 +153,8 @@ class MelAddnDnam(MelStruct):
 class MelAlchEnit(MelStruct):
     """Handles the ALCH subrecord ENIT (Effect Data) since Skyrim."""
     _enit_flags = Flags.from_names(
-        (0,  'noAutoCalc'),
-        (1,  'isFood'),
+        (0,  'alch_no_auto_calc'),
+        (1,  'alch_is_food'),
         (16, 'medicine'),
         (17, 'poison'),
     )
@@ -176,44 +171,30 @@ class MelAnimations(MelSorted): ##: case insensitive
         super().__init__(MelStrings(b'KFFZ', 'animations'))
 
 #------------------------------------------------------------------------------
-class MelArmaDnam(MelStruct):
-    """Handles the ARMA subrecord DNAM (Data)."""
+class MelArmaShared(MelSequential):
+    """Handles the ARMA subrecords DNAM, MOD2-MOD5, NAM0-NAM3, MODL, SNDD and
+    ONAM."""
     _weigth_slider_flags = Flags.from_names((1, 'slider_enabled'))
 
-    def __init__(self):
-        super().__init__(b'DNAM', ['4B', '2s', 'B', 's', 'f'], 'male_priority',
-            'female_priority', (self._weigth_slider_flags, 'slider_flags_m'),
-            (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
-            'detection_sound_value', 'unknown_dnam2', 'weapon_adjust')
-
-#------------------------------------------------------------------------------
-class MelArmaModels(MelSequential):
-    """Handles the ARMA subrecords MOD2-MOD5. Note that you have to pass the
-    game's MelModel class in as a parameter."""
     def __init__(self, mel_model: Type[MelBase]):
         super().__init__(
+            MelStruct(b'DNAM', ['4B', '2s', 'B', 's', 'f'],
+                'male_priority', 'female_priority',
+                (self._weigth_slider_flags, 'slider_flags_m'),
+                (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
+                'detection_sound_value', 'unknown_dnam2', 'weapon_adjust'),
             mel_model(b'MOD2', 'male_model'),
             mel_model(b'MOD3', 'female_model'),
             mel_model(b'MOD4', 'male_model_1st'),
             mel_model(b'MOD5', 'female_model_1st'),
-        )
-
-#------------------------------------------------------------------------------
-class MelArmaSkins(MelSequential):
-    """Handles the ARMA subrecords NAM0-NAM3."""
-    def __init__(self):
-        super().__init__(
             MelFid(b'NAM0', 'skin0'),
             MelFid(b'NAM1', 'skin1'),
             MelFid(b'NAM2', 'skin2'),
             MelFid(b'NAM3', 'skin3'),
+            MelSorted(MelFids('additional_races', MelFid(b'MODL'))),
+            MelFid(b'SNDD', 'footstep_sound'),
+            MelFid(b'ONAM', 'art_object'),
         )
-
-#------------------------------------------------------------------------------
-class MelArtObject(MelFid):
-    """Handles the ARMA subrecord ONAM (Art Object)."""
-    def __init__(self):
-        super().__init__(b'ONAM', 'art_object')
 
 #------------------------------------------------------------------------------
 class MelArtType(MelUInt32):
@@ -301,7 +282,7 @@ class MelClmtTextures(MelSequential):
 #------------------------------------------------------------------------------
 class MelClmtWeatherTypes(MelSorted):
     """Handles the CLMT subrecord WLST (Weather Types)."""
-    def __init__(self, with_global=True):
+    def __init__(self, *, with_global=True):
         weather_fmt = ['I', 'i']
         weather_elements = [(FID, 'weather'), 'chance']
         if with_global:
@@ -546,12 +527,6 @@ class MelFlstFids(MelFids):
         super().__init__('formIDInList', MelFid(b'LNAM')) # Do *not* sort!
 
 #------------------------------------------------------------------------------
-class MelFootstepSound(MelFid):
-    """Handles the ARMA subrecord SNDD (Footstep Sound)."""
-    def __init__(self):
-        super().__init__(b'SNDD', 'footstep_sound')
-
-#------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
@@ -583,6 +558,20 @@ class MelFurnMarkerData(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelGrasData(MelStruct):
+    """Handles the GRAS subrecord DATA (Data)."""
+    _gras_flags = Flags.from_names('vertex_lighting', 'uniform_scaling',
+        'fit_to_slope')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['3B', 's', 'H', '2s', 'I', '4f', 'B', '3s'],
+            'gras_density', 'gras_min_slope', 'gras_max_slope',
+            'gras_unknown1', 'units_from_water', 'gras_unknown2',
+            'units_from_water_type', 'position_range', 'height_range',
+            'color_range', 'wave_period', (self._gras_flags, 'gras_flags'),
+            'gras_unknown3')
+
+#------------------------------------------------------------------------------
 class MelHairFlags(MelUInt8Flags):
     """Handles the HAIR subrecord DATA (Flags)."""
     _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',
@@ -590,6 +579,33 @@ class MelHairFlags(MelUInt8Flags):
 
     def __init__(self):
         super().__init__(b'DATA', 'flags', self._hair_flags)
+
+#------------------------------------------------------------------------------
+class MelHdptShared(MelSequential):
+    """Handles the HDPT subrecords DATA, PNAM, HNAM, NAM0, NAM1, TNAM, CNAM and
+    RNAM."""
+    _hdpt_flags = Flags.from_names(
+        'playable',
+        'not_female',
+        'not_male',
+        'is_extra_part',
+        'use_solid_tint',
+        'uses_body_texture', # since FO4
+    )
+
+    def __init__(self):
+        super().__init__(
+            MelUInt8Flags(b'DATA', 'flags', self._hdpt_flags),
+            MelUInt32(b'PNAM', 'hdpt_type'),
+            MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
+            MelGroups('head_parts',
+                MelUInt32(b'NAM0', 'head_part_type'),
+                MelString(b'NAM1', 'head_part_filename'),
+            ),
+            MelFid(b'TNAM', 'hdpt_texture_set'),
+            MelFid(b'CNAM', 'hdpt_color'),
+            MelFid(b'RNAM', 'valid_races'),
+        )
 
 #------------------------------------------------------------------------------
 class MelIcons(MelSequential):
@@ -627,10 +643,72 @@ class MelIco2(MelIcons2):
         super().__init__(ico2_attr=ico2_attr, mic2_attr='')
 
 #------------------------------------------------------------------------------
+class MelIdleData(MelStruct):
+    """Handles the IDLE subrecord DATA (Data) since Skyrim."""
+    _idle_flags = TrimmedFlags.from_names('idle_parent', 'idle_sequence',
+        'no_attacking', 'idle_blocking')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['4B', 'H'], 'looping_min', 'looping_max',
+            (self._idle_flags, 'idle_flags'), 'animation_group_section',
+            'replay_delay'),
+
+#------------------------------------------------------------------------------
+class MelIdleEnam(MelString):
+    """Handles the IDLE subrecord ENAM (Animation Event)."""
+    def __init__(self):
+        super().__init__(b'ENAM', 'animation_event'),
+
+#------------------------------------------------------------------------------
+class MelIdleRelatedAnims(MelStruct):
+    """Handles the IDLE subrecord Related Idle Animations."""
+    def __init__(self, ra_sig=b'ANAM'):
+        super().__init__(ra_sig, ['2I'], (FID, 'ra_parent'),
+            (FID, 'ra_previous_sibling'))
+
+#------------------------------------------------------------------------------
+class MelIdleTimerSetting(MelFloat):
+    """Handles the common IDLT subrecord (Idle Timer Setting)."""
+    def __init__(self):
+        super().__init__(b'IDLT', 'idle_timer_setting')
+
+#------------------------------------------------------------------------------
+class MelIdlmFlags(MelUInt8Flags):
+    """Handles the IDLM subrecord IDLF (Flags)."""
+    _idlm_flags = Flags.from_names(
+        (0, 'run_in_sequence'),
+        (2, 'do_once'),
+        (4, 'ignored_by_sandbox'), # since Skyrim
+    )
+
+    def __init__(self):
+        super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
+
+#------------------------------------------------------------------------------
+class MelIdlmIdla(MelSimpleArray):
+    """Handles the IDLM subrecord IDLA (Animations)."""
+    def __init__(self):
+        super().__init__('idlm_animations', MelFid(b'IDLA'))
+
+#------------------------------------------------------------------------------
 class MelImageSpaceMod(MelFid):
     """Handles the common MNAM (Image Space Modifer) subrecord."""
     def __init__(self):
         super().__init__(b'MNAM', 'image_space_modifier')
+
+#------------------------------------------------------------------------------
+class MelImgsCinematic(MelStruct):
+    """Handles the IMGS subrecord CNAM (Cinematic)."""
+    def __init__(self):
+        super().__init__(b'CNAM', ['3f'], 'cinematic_saturation',
+            'cinematic_brightness', 'cinematic_contrast')
+
+#------------------------------------------------------------------------------
+class MelImgsTint(MelStruct):
+    """Handles the IMGS subrecord TNAM (Tint)."""
+    def __init__(self):
+        super().__init__(b'TNAM', ['4f'], 'tint_amount', 'tint_color_red',
+            'tint_color_green', 'tint_color_blue')
 
 #------------------------------------------------------------------------------
 class MelImpactDataset(MelFid):
@@ -639,10 +717,40 @@ class MelImpactDataset(MelFid):
         super().__init__(ids_sig, 'impact_dataset')
 
 #------------------------------------------------------------------------------
+class MelInfoResponsesFo3(MelGroups):
+    """Handles the INFO subrecords TRDT, NAM1-3, SNAM and LNAM in FO3, FNV and
+    TES5."""
+    def __init__(self):
+        super().__init__('info_responses',
+            MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s', 'I', 'B', '3s'],
+                'rd_emotion_type', 'rd_emotion_value', 'rd_unused1',
+                'rd_response_number', 'rd_unused2', (FID, 'rd_sound'),
+                'rd_use_emotion_animation', 'rd_unused3'),
+            MelLString(b'NAM1', 'response_text'),
+            MelString(b'NAM2', 'script_notes'),
+            MelString(b'NAM3', 'response_edits'),
+            MelFid(b'SNAM', 'idle_animations_speaker'),
+            MelFid(b'LNAM', 'idle_animations_listener'),
+        )
+
+#------------------------------------------------------------------------------
 class MelIngredient(MelFid):
     """Handles the common PFIG (Ingredient) subrecord."""
     def __init__(self):
         super().__init__(b'PFIG', 'ingredient')
+
+#------------------------------------------------------------------------------
+class MelIngrEnit(MelStruct):
+    """Handles the INGR subrecord ENIT (Effect Data)."""
+    _enit_flags = Flags.from_names(
+        (0, 'ingr_no_auto_calc'),
+        (1, 'food_item'),
+        (8, 'references_persist'),
+    )
+
+    def __init__(self):
+        super().__init__(b'ENIT', ['i', 'I'], 'ingredient_value',
+            (self._enit_flags, 'flags'))
 
 #------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
@@ -657,12 +765,87 @@ class MelInventoryArt(MelFid):
         super().__init__(b'INAM', 'inventory_art')
 
 #------------------------------------------------------------------------------
+class MelIpctHazard(MelFid):
+    """Handles the IPCT subrecord NAM2 (Hazard)."""
+    def __init__(self):
+        super().__init__(b'NAM2', 'ipct_hazard')
+
+#------------------------------------------------------------------------------
+class MelIpctSounds(MelSequential):
+    """Handles the IPCT subrecords SNAM and NAM1."""
+    def __init__(self):
+        super().__init__(
+            MelSound(),
+            MelFid(b'NAM1', 'ipct_sound2'),
+        )
+
+#------------------------------------------------------------------------------
+class MelIpctTextureSets(MelSequential):
+    """Handles the IPCT subrecords DNAM and ENAM."""
+    def __init__(self, *, with_secondary=True):
+        tex_sets = [MelFid(b'DNAM', 'ipct_texture_set')]
+        if with_secondary:
+            tex_sets.append(MelFid(b'ENAM', 'secondary_texture_set'))
+        super().__init__(*tex_sets)
+
+#------------------------------------------------------------------------------
+class MelIpdsPnam(MelSorted):
+    """Handles the IPDS subrecord PNAM (Data)."""
+    def __init__(self):
+        super().__init__(MelGroups('impact_data',
+            MelStruct(b'PNAM', ['2I'], (FID, 'ipds_material'),
+                (FID, 'ipds_impact')),
+        ), sort_by_attrs='ipds_material')
+
+#------------------------------------------------------------------------------
 class MelKeywords(MelSequential):
     """Handles the KSIZ/KWDA (Keywords) subrecords."""
     def __init__(self):
         super().__init__(
             MelCounter(MelUInt32(b'KSIZ', 'keyword_count'), counts='keywords'),
             MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
+        )
+
+#------------------------------------------------------------------------------
+class MelLandMpcd(MelGroups):
+    """Handles the LAND subrecord MPCD (Unknown)."""
+    def __init__(self):
+        super().__init__('unknown_mpcd',
+            MelBase(b'MPCD', 'unknown1'),
+        )
+
+#------------------------------------------------------------------------------
+class MelLandShared(MelSequential):
+    """Handles the LAND subrecords shared by all games."""
+    _land_flags = Flags.from_names(
+        (0,  'has_vertex_normals_height_map'),
+        (1,  'has_vertex_colors'),
+        (2,  'has_layers'),
+        (10, 'has_mpcd'), # since Skyrim
+    )
+
+    def __init__(self):
+        super().__init__(
+            MelUInt32Flags(b'DATA', 'land_flags', self._land_flags),
+            MelBase(b'VNML', 'vertex_normals'),
+            MelBase(b'VHGT', 'vertex_height_map'),
+            MelBase(b'VCLR', 'vertex_colors'),
+            MelSorted(MelGroups('layers',
+                # Start a new layer each time we hit one of these
+                MelUnion({
+                    b'ATXT': MelStruct(b'ATXT', ['I', 'B', 's', 'h'],
+                        (FID, 'atxt_texture'), 'quadrant', 'unknown', 'layer'),
+                    b'BTXT': MelStruct(b'BTXT', ['I', 'B', 's', 'h'],
+                        (FID, 'btxt_texture'), 'quadrant', 'unknown', 'layer'),
+                }),
+                # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is
+                # valid
+                MelUnion({
+                    True:  MelBase(b'VTXT', 'alpha_layer_data'), # sorted
+                    False: MelNull(b'VTXT'),
+                }, decider=FidNotNullDecider('atxt_texture')),
+            ), sort_by_attrs=('quadrant', 'layer')),
+            MelSimpleArray('vertex_textures', MelFid(b'VTEX')),
         )
 
 #------------------------------------------------------------------------------
@@ -682,7 +865,7 @@ class MelMapMarker(MelGroup):
     _marker_flags = Flags.from_names('visible', 'can_travel_to',
                                      'show_all_hidden')
 
-    def __init__(self, with_reputation=False):
+    def __init__(self, *, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', 'marker_data'),
             MelUInt8Flags(b'FNAM', 'marker_flags', self._marker_flags),
@@ -983,7 +1166,7 @@ class MelRegnEntrySubrecord(MelUnion):
 class MelRelations(MelSorted):
     """Handles the common XNAM (Relations) subrecord. Group combat reaction
     (GCR) can be excluded (i.e. in Oblivion)."""
-    def __init__(self, with_gcr=True):
+    def __init__(self, *, with_gcr=True):
         rel_fmt = ['I', 'i']
         rel_elements = [(FID, 'faction'), 'mod']
         if with_gcr:

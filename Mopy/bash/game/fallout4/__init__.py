@@ -219,13 +219,15 @@ class Fallout4GameInfo(PatchGame):
     def init(cls):
         cls._dynamic_import_modules(__name__)
         from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
-            MreDual, MreEyes, MreFstp, MreFsts, MreGmst
+            MreDual, MreEyes, MreFstp, MreFsts, MreGlob, MreGmst
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAvif, MreBnds, \
             MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, \
             MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
             MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
-            MreFlor, MreFlst, MreFurn, \
+            MreFlor, MreFlst, MreFurn, MreGdry, MreGras, MreHazd, MreHdpt, \
+            MreIdle, MreIdlm, MreImad, MreImgs, MreInfo, MreIngr, MreInnr, \
+            MreIpct, MreIpds, MreKeym, MreKssm, MreKywd, MreLand, \
             MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
@@ -234,8 +236,10 @@ class Fallout4GameInfo(PatchGame):
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
             MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
             MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts, MreFurn,
-            MreGmst, MreLvli, MreLvln, MrePerk,
+            MreFstp, MreFsts, MreFurn, MreGdry, MreGlob, MreGmst, MreGras,
+            MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr,
+            MreInnr, MreIpct, MreIpds, MreKeym, MreKssm, MreKywd,
+            MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
         from ... import brec
@@ -271,7 +275,7 @@ class Fallout4GameInfo(PatchGame):
         # it when loading)
         header_type.skip_form_version_upgrade = {b'DMGT'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-             (MreTes4,))}
+             (MreTes4, MreInfo, MreLand, ))}
         brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

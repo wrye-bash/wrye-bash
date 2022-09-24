@@ -198,6 +198,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
+        # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
+        # version too
+        header_type.skip_form_version_upgrade = {b'IMGS'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
