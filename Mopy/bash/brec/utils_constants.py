@@ -359,6 +359,15 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
+# Distributors ----------------------------------------------------------------
+# Shared distributor for LENS records
+lens_distributor = {
+    b'DNAM': 'fade_distance_radius_scale',
+    b'LFSP': {
+        b'DNAM': 'lens_flare_sprites',
+    },
+}
+
 # Shared distributor for PERK records
 perk_distributor = {
     b'DESC': {

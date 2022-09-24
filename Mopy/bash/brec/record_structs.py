@@ -156,9 +156,10 @@ class MelSet(object):
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
         for sig_candidate in self.loaders:
-            if len(sig_candidate) != 4 or not isinstance(sig_candidate, bytes):
-                raise SyntaxError(f"Invalid signature '{sig_candidate}': "
-                    f"Signatures must be bytestrings and 4 bytes in length.")
+            if not isinstance(sig_candidate, bytes) or len(sig_candidate) != 4:
+                raise SyntaxError(f"Invalid signature '{sig_candidate!r}': "
+                                  f"Signatures must be bytestrings and 4 "
+                                  f"bytes in length.")
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances

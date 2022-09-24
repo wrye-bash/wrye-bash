@@ -51,7 +51,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
-    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell
+    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
+    MelLctnShared, MelLensShared, lens_distributor
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1692,13 +1693,54 @@ class MreKywd(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
-    """Land."""
+    """Landscape."""
     rec_sig = b'LAND'
 
     melSet = MelSet(
         MelLandShared(),
         MelLandMpcd(),
     )
+
+#------------------------------------------------------------------------------
+class MreLayr(MelRecord):
+    """Layer."""
+    rec_sig = b'LAYR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'PNAM', 'layr_parent'),
+    )
+
+#------------------------------------------------------------------------------
+class MreLcrt(MelRecord):
+    """Location Reference Type."""
+    rec_sig = b'LCRT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelColorO(),
+        MelBase(b'TNAM', 'unknown_tnam'),
+    )
+
+#------------------------------------------------------------------------------
+class MreLctn(MelRecord):
+    """Location."""
+    rec_sig = b'LCTN'
+
+    melSet = MelSet(
+        MelLctnShared(),
+        MelFloat(b'ANAM', 'actor_fade_mult'),
+        MelColorO(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLens(MelRecord):
+    """Lens Flare."""
+    rec_sig = b'LENS'
+
+    melSet = MelSet(
+        MelLensShared(),
+    ).with_distributor(lens_distributor)
 
 #------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):

@@ -797,8 +797,8 @@ class Fallout4GameInfo(PatchGame):
         # package name is fallout4 here
         super()._validate_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
-            b'ALCH', b'AMMO', b'ASPC', b'CELL', b'LAYR', b'LCRT', b'LCTN',
-            b'LENS', b'LGTM', b'LIGH', b'LSCR', b'LTEX', b'LVSP', b'MATO',
+            b'CELL',
+            b'LGTM', b'LIGH', b'LSCR', b'LTEX', b'LVSP', b'MATO',
             b'MATT', b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',
             b'MUSC', b'MUST', b'NAVI', b'NOCM', b'NOTE', b'NPC_', b'OMOD',
             b'OTFT', b'OVIS', b'PACK', b'PKIN', b'PROJ', b'QUST', b'RACE',

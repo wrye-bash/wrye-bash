@@ -56,7 +56,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount, AMreCell, AMreWrld
+    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1519,7 +1519,7 @@ class MreKywd(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
-    """Land."""
+    """Landscape."""
     rec_sig = b'LAND'
 
     melSet = MelSet(
@@ -1543,70 +1543,8 @@ class MreLctn(MelRecord):
     rec_sig = b'LCTN'
 
     melSet = MelSet(
-        MelEdid(),
-        MelArray('actorCellPersistentReference',
-            MelStruct(b'ACPR', [u'2I', u'2h'], (FID, 'actor'), (FID, 'location'),
-                      'gridX', 'gridY'),
-        ),
-        MelArray('locationCellPersistentReference',
-            MelStruct(b'LCPR', [u'2I', u'2h'], (FID, 'actor'), (FID, 'location'),
-                      'gridX', 'gridY'),
-        ),
-        MelSimpleArray('referenceCellPersistentReference', MelFid(b'RCPR')),
-        MelArray('actorCellUnique',
-            MelStruct(b'ACUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
-                      (FID, 'location')),
-        ),
-        MelArray('locationCellUnique',
-            MelStruct(b'LCUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
-                      (FID, 'location')),
-        ),
-        MelSimpleArray('referenceCellUnique', MelFid(b'RCUN')),
-        MelArray('actorCellStaticReference',
-            MelStruct(b'ACSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
-                      (FID, 'location'), 'gridX', 'gridY'),
-        ),
-        MelArray('locationCellStaticReference',
-            MelStruct(b'LCSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
-                      (FID, 'location'), 'gridX', 'gridY'),
-        ),
-        MelSimpleArray('referenceCellStaticReference', MelFid(b'RCSR')),
-        MelGroups(u'actorCellEncounterCell',
-            MelArray(u'coordinates',
-                MelStruct(b'ACEC', [u'2h'], u'grid_x', u'grid_y'),
-                     prelude=MelFid(b'ACEC', u'location'),
-            ),
-        ),
-        MelGroups(u'locationCellEncounterCell',
-            MelArray(u'coordinates',
-                MelStruct(b'LCEC', [u'2h'], u'grid_x', u'grid_y'),
-                     prelude=MelFid(b'LCEC', u'location'),
-            ),
-        ),
-        MelGroups(u'referenceCellEncounterCell',
-            MelArray(u'coordinates',
-                MelStruct(b'RCEC', [u'2h'], u'grid_x', u'grid_y'),
-                     prelude=MelFid(b'RCEC', u'location'),
-            ),
-        ),
-        MelSimpleArray('actorCellMarkerReference', MelFid(b'ACID')),
-        MelSimpleArray('locationCellMarkerReference', MelFid(b'LCID')),
-        MelArray('actorCellEnablePoint',
-            MelStruct(b'ACEP', [u'2I', u'2h'], (FID, 'actor'), (FID,'ref'), 'gridX',
-                      'gridY'),
-        ),
-        MelArray('locationCellEnablePoint',
-            MelStruct(b'LCEP', [u'2I', u'2h'], (FID, 'actor'), (FID,'ref'), 'gridX',
-                      'gridY'),
-        ),
-        MelFull(),
-        MelKeywords(),
-        MelFid(b'PNAM','parentLocation',),
-        MelFid(b'NAM1','music',),
-        MelFid(b'FNAM','unreportedCrimeFaction',),
-        MelFid(b'MNAM','worldLocationMarkerRef',),
-        MelFloat(b'RNAM', 'worldLocationRadius'),
-        MelFid(b'NAM0','horseMarkerRef',),
+        MelLctnShared(),
+        MelFid(b'NAM0', 'horse_marker_ref'),
         MelColorO(),
     )
 

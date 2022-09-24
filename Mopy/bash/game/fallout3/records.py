@@ -1459,7 +1459,7 @@ class MreKeym(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
-    """Land."""
+    """Landscape."""
     rec_sig = b'LAND'
 
     melSet = MelSet(

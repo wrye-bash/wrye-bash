@@ -865,6 +865,104 @@ class MelLandShared(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelLctnShared(MelSequential):
+    """Handles the LCTN subrecords shared between Skyrim and FO4."""
+    def __init__(self):
+        super().__init__(
+            MelEdid(),
+            MelArray('actor_cell_persistent_reference',
+                MelStruct(b'ACPR', ['2I', '2h'], (FID, 'acpr_actor'),
+                    (FID, 'acpr_location'), 'acpr_grid_x', 'acpr_grid_y'),
+            ),
+            MelArray('location_cell_persistent_reference',
+                MelStruct(b'LCPR', ['2I', '2h'], (FID, 'lcpr_actor'),
+                    (FID, 'lcpr_location'), 'lcpr_grid_x', 'lcpr_grid_y'),
+            ),
+            MelSimpleArray('reference_cell_persistent_reference',
+                MelFid(b'RCPR')),
+            MelArray('actor_cell_unique',
+                MelStruct(b'ACUN', ['3I'], (FID, 'acun_actor'),
+                    (FID, 'acun_ref'), (FID, 'acun_location')),
+            ),
+            MelArray('location_cell_unique',
+                MelStruct(b'LCUN', ['3I'], (FID, 'lcun_actor'),
+                    (FID, 'lcun_ref'), (FID, 'lcun_location')),
+            ),
+            MelSimpleArray('reference_cell_unique', MelFid(b'RCUN')),
+            MelArray('actor_cell_static_reference',
+                MelStruct(b'ACSR', ['3I', '2h'], (FID, 'acsr_loc_ref_type'),
+                    (FID, 'acsr_marker'), (FID, 'acsr_location'),
+                    'acsr_grid_x', 'acsr_grid_y'),
+            ),
+            MelArray('location_cell_static_reference',
+                MelStruct(b'LCSR', ['3I', '2h'], (FID, 'lcsr_loc_ref_type'),
+                    (FID, 'lcsr_marker'), (FID, 'lcsr_location'),
+                    'lcsr_grid_x', 'lcsr_grid_y'),
+            ),
+            MelSimpleArray('reference_cell_static_reference', MelFid(b'RCSR')),
+            MelGroups('actor_cell_encounter_cell',
+                MelArray('acec_coordinates',
+                    MelStruct(b'ACEC', ['2h'], 'acec_grid_x', 'acec_grid_y'),
+                    prelude=MelFid(b'ACEC', 'acec_location'),
+                ),
+            ),
+            MelGroups('location_cell_encounter_cell',
+                MelArray('lcec_coordinates',
+                    MelStruct(b'LCEC', ['2h'], 'lcec_grid_x', 'lcec_grid_y'),
+                    prelude=MelFid(b'LCEC', 'lcec_location'),
+                ),
+            ),
+            MelGroups('reference_cell_encounter_cell',
+                MelArray('rcec_coordinates',
+                    MelStruct(b'RCEC', ['2h'], 'rcec_grid_x', 'rcec_grid_y'),
+                    prelude=MelFid(b'RCEC', 'rcec_location'),
+                ),
+            ),
+            MelSimpleArray('actor_cell_marker_reference', MelFid(b'ACID')),
+            MelSimpleArray('location_cell_marker_reference', MelFid(b'LCID')),
+            MelArray('actor_cell_enable_point',
+                MelStruct(b'ACEP', ['2I', '2h'], (FID, 'acep_actor'),
+                    (FID, 'acep_ref'), 'acep_grid_x', 'acep_grid_y'),
+            ),
+            MelArray('location_cell_enable_point',
+                MelStruct(b'LCEP', ['2I', '2h'], (FID, 'lcep_actor'),
+                    (FID, 'lcep_ref'), 'lcep_grid_x', 'lcep_grid_y'),
+            ),
+            MelFull(),
+            MelKeywords(),
+            MelFid(b'PNAM', 'parent_location'),
+            MelFid(b'NAM1', 'lctn_music'),
+            MelFid(b'FNAM', 'unreported_crime_faction'),
+            MelFid(b'MNAM', 'world_location_marker_ref'),
+            MelFloat(b'RNAM', 'world_location_radius'),
+        )
+
+#------------------------------------------------------------------------------
+class MelLensShared(MelSequential):
+    """Handles the LENS subrecords shared between Skyrim and FO4."""
+    _lfs_flags = Flags.from_names('lfs_rotates', 'lfs_shrinks_when_occluded')
+
+    def __init__(self, *, sprites_are_sorted=True):
+        lfs_element = MelGroups('lens_flare_sprites',
+            MelString(b'DNAM', 'lfs_sprite_id'),
+            MelString(b'FNAM', 'lfs_texture'),
+            MelStruct(b'LFSD', ['8f', 'I'], 'lfs_tint_red', 'lfs_tint_green',
+                'lfs_tint_blue', 'lfs_width', 'lfs_height', 'lfs_position',
+                'lfs_angularFade', 'lfs_opacity',
+                (self._lfs_flags, 'lfs_flags')),
+            )
+        if sprites_are_sorted:
+            lfs_element = MelSorted(lfs_element, sort_by_attrs='lfs_sprite_id')
+        super().__init__(
+            MelEdid(),
+            MelFloat(b'CNAM', 'color_influence'),
+            MelFloat(b'DNAM', 'fade_distance_radius_scale'),
+            MelCounter(MelUInt32(b'LFSP', 'sprite_count'),
+                counts='lens_flare_sprites'),
+            lfs_element,
+        )
+
+#------------------------------------------------------------------------------
 class MelLighLensFlare(MelFid):
     """Handles the LIGH subrecord LNAM (Lens Flare)."""
     def __init__(self):
