@@ -448,6 +448,9 @@
         IntOp $0 $0 + 9
         IntOp $1 0 + 0
 
+        ${NSD_CreateLabel} 0 $0u 100% 8u "Additional options:"
+        IntOp $0 $0 + 17
+
         ${NSD_CreateCheckBox} $1% $0u 25% 8u "View Readme"
             Pop $Check_Readme
             ${NSD_SetState} $Check_Readme ${BST_CHECKED}
@@ -457,6 +460,12 @@
             Pop $Check_DeleteOldFiles
             EnableWindow $Check_DeleteOldFiles 0 ; always delete old files
             ${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
+            IntOp $0 $0 + 17
+            IntOp $1 0 + 0
+
+        ${NSD_CreateCheckBox} 0 $0u 100% 8u "Disable Windows 255 character path limit"
+            Pop $Check_PathLimit
+            ${NSD_SetState} $Check_PathLimit ${BST_CHECKED}
 
         nsDialogs::Show
     FunctionEnd
@@ -527,6 +536,12 @@
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             SetOutPath "$Path_Ex2\Mopy"
             ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.exe"
+        ${EndIf}
+
+        !insertmacro UpdateRegistryPaths
+        ${NSD_GetState} $Check_PathLimit $0
+        ${If} $0 == ${BST_CHECKED}
+            WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Control\FileSystem" "LongPathsEnabled" 1
         ${EndIf}
 
         ${NSD_GetState} $Check_Readme $0

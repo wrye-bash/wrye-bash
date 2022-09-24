@@ -107,6 +107,7 @@ ManifestDPIAware true
     Var Browse_Ex2
     Var Check_Readme
     Var Check_DeleteOldFiles
+    Var Check_PathLimit
     Var Function_Browse
     Var Function_Extra
     Var Function_DirPrompt
