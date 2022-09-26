@@ -359,6 +359,15 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
+def gen_color(color_attr_pfx: str) -> list[str]:
+    """Helper method for generating red/green/blue/unused color attributes."""
+    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue',
+                                              'unused')]
+
+def gen_color3(color_attr_pfx: str) -> list[str]:
+    """Helper method for generating red/green/blue color attributes."""
+    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
+
 # Distributors ----------------------------------------------------------------
 # Shared distributor for LENS records
 lens_distributor = {

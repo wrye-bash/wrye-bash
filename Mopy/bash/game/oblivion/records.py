@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
-    MelLandShared, AMreCell, AMreWrld
+    MelLandShared, AMreCell, AMreWrld, gen_color
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -926,37 +926,32 @@ class MreEfsh(MelRecord):
             ['B', '3s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f',
              '3B', 's', '3B', 's', '3B', 's', '6f'],
             (_efsh_flags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
-            'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
-            'fill_color1_green', 'fill_color1_blue', 'unused2',
-            'fill_alpha_fade_in_time', 'fill_full_alpha_time',
-            'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
-            'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
-            'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
-            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
-            'unused3', 'ee_alpha_fade_in_time', 'ee_full_alpha_time',
-            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
-            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
-            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
-            'ms_dest_blend_mode', ('ps_source_blend_mode', 5),
-            ('ps_blend_operation', 1), ('ps_z_test_function', 4),
-            ('ps_dest_blend_mode', 6), 'ps_particle_birth_ramp_up_time',
+            'ms_blend_operation', 'ms_z_test_function',
+            *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+            'fill_full_alpha_time', 'fill_alpha_fade_out_time',
+            'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
+            'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
+            'fill_texture_animation_speed_v', 'ee_fall_off',
+            *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            'ee_full_alpha_time', 'ee_alpha_fade_out_time',
+            'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
+            'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
+            'ee_full_alpha_ratio', 'ms_dest_blend_mode',
+            'ps_source_blend_mode', 'ps_blend_operation', 'ps_z_test_function',
+            'ps_dest_blend_mode', 'ps_particle_birth_ramp_up_time',
             'ps_full_particle_birth_time', 'ps_particle_birth_ramp_down_time',
-            ('ps_full_particle_birth_ratio', 1.0),
-            ('ps_persistent_particle_birth_ratio', 1.0),
-            ('ps_particle_lifetime', 1.0), 'ps_particle_lifetime_delta',
+            'ps_full_particle_birth_ratio',
+            'ps_persistent_particle_birth_ratio', 'ps_particle_lifetime',
+            'ps_particle_lifetime_delta',
             'ps_initial_speed_along_normal', 'ps_acceleration_along_normal',
             'ps_initial_velocity1', 'ps_initial_velocity2',
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
-            'ps_acceleration3', 'ps_scale_key1', ('ps_scale_key2', 1.0),
-            'ps_scale_key1_time', ('ps_scale_key2_time', 1.0),
-            ('color_key1_red', 255), ('color_key1_green', 255),
-            ('color_key1_blue', 255), 'unused4', ('color_key2_red', 255),
-            ('color_key2_green', 255), ('color_key2_blue', 255), 'unused5',
-            ('color_key3_red', 255), ('color_key3_green', 255),
-            ('color_key3_blue', 255), 'unused6', ('color_key1_alpha', 1.0),
-            ('color_key2_alpha', 1.0), ('color_key3_alpha', 1.0),
-            'color_key1_time', ('color_key2_time', 0.5),
-            ('color_key3_time', 1.0), old_versions={'B3s3I3Bs9f3Bs8fI'}),
+            'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
+            'ps_scale_key1_time', 'ps_scale_key2_time',
+            *gen_color('color_key1'), *gen_color('color_key2'),
+            *gen_color('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
+            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
+            'color_key3_time', old_versions={'B3s3I3Bs9f3Bs8fI'}),
     )
 
 #------------------------------------------------------------------------------

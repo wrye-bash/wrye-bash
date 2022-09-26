@@ -32,7 +32,8 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
-from .utils_constants import int_unpacker, FID, null1, ZERO_FID
+from .utils_constants import int_unpacker, FID, null1, ZERO_FID, gen_color, \
+    gen_color3
 from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
     structs_cache
 from ..exception import ModError
@@ -389,8 +390,8 @@ class MelDecalData(MelOptStruct):
             'decal_min_width', 'decal_max_width', 'decal_min_height',
             'decal_max_height', 'decal_depth', 'decal_shininess',
             'decal_parallax_scale', 'decal_parallax_passes',
-            (self._decal_flags, 'decal_flags'), 'decal_unused1', 'decal_red',
-            'decal_green', 'decal_blue', 'decal_unused2')
+            (self._decal_flags, 'decal_flags'), 'decal_unused1',
+            *gen_color('decal_color'))
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
@@ -723,8 +724,8 @@ class MelImgsCinematic(MelStruct):
 class MelImgsTint(MelStruct):
     """Handles the IMGS subrecord TNAM (Tint)."""
     def __init__(self):
-        super().__init__(b'TNAM', ['4f'], 'tint_amount', 'tint_color_red',
-            'tint_color_green', 'tint_color_blue')
+        super().__init__(b'TNAM', ['4f'], 'tint_amount',
+            *gen_color3('tint_color'))
 
 #------------------------------------------------------------------------------
 class MelImpactDataset(MelFid):
@@ -946,10 +947,9 @@ class MelLensShared(MelSequential):
         lfs_element = MelGroups('lens_flare_sprites',
             MelString(b'DNAM', 'lfs_sprite_id'),
             MelString(b'FNAM', 'lfs_texture'),
-            MelStruct(b'LFSD', ['8f', 'I'], 'lfs_tint_red', 'lfs_tint_green',
-                'lfs_tint_blue', 'lfs_width', 'lfs_height', 'lfs_position',
-                'lfs_angularFade', 'lfs_opacity',
-                (self._lfs_flags, 'lfs_flags')),
+            MelStruct(b'LFSD', ['8f', 'I'], *gen_color3('lfs_tint'),
+                'lfs_width', 'lfs_height', 'lfs_position', 'lfs_angular_fade',
+                'lfs_opacity', (self._lfs_flags, 'lfs_flags')),
             )
         if sprites_are_sorted:
             lfs_element = MelSorted(lfs_element, sort_by_attrs='lfs_sprite_id')

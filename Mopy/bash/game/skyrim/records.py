@@ -21,6 +21,8 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
+from itertools import chain
+
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
@@ -56,7 +58,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared
+    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -76,6 +78,17 @@ def sse_only(sse_obj):
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
+#------------------------------------------------------------------------------
+def _gen_ambient_lighting(attr_prefix):
+    """Helper method for generating a ton of repetitive attributes that are
+    shared between a couple record types."""
+    color_types = [f'directional_{t}' for t in (
+        'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
+    color_types.append('specular')
+    color_iters = chain.from_iterable(gen_color(d) for d in color_types)
+    ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
+    return ambient_lighting + [f'{attr_prefix}_ac_scale']
+
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
@@ -152,14 +165,8 @@ class MelAttacks(MelSorted):
 class MelDalc(MelTruncatedStruct):
     """Handles the common DALC subrecord."""
     def __init__(self):
-        super().__init__(b'DALC', ['28B', 'f'], 'redXplus', 'greenXplus',
-            'blueXplus', 'unknownXplus', 'redXminus', 'greenXminus',
-            'blueXminus', 'unknownXminus', 'redYplus', 'greenYplus',
-            'blueYplus', 'unknownYplus', 'redYminus', 'greenYminus',
-            'blueYminus', 'unknownYminus', 'redZplus', 'greenZplus',
-            'blueZplus', 'unknownZplus', 'redZminus', 'greenZminus',
-            'blueZminus', 'unknownZminus', 'redSpec', 'greenSpec', 'blueSpec',
-            'unknownSpec', 'fresnelPower', old_versions={'24B'})
+        super().__init__(b'DALC', ['28B', 'f'],
+            *_gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -400,9 +407,8 @@ class MreAchr(MelRecord):
         MelFloat(b'XHLP', u'ref_health'),
         MelLinkedReferences(),
         MelActivateParents(),
-        MelStruct(b'XCLP', [u'3B', u's', u'3B', u's'], u'start_color_red', u'start_color_green',
-                  u'start_color_blue', u'start_color_unused', u'end_color_red',
-                  u'end_color_green', u'end_color_blue', u'end_color_unused'),
+        MelStruct(b'XCLP', ['3B', 's', '3B', 's'], *gen_color('start_color'),
+            *gen_color('end_color')),
         MelFid(b'XLCN', u'persistent_location'),
         MelFid(b'XLRL', u'location_reference'),
         MelBase(b'XIS2', u'ignored_by_sandbox_2'),
@@ -1072,48 +1078,43 @@ class MreEfsh(MelRecord):
              's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's', 'f', '2I',
              '6f', 'I', '3B', 's', '3B', 's', '9f', '8I', '2f', '4s'],
             'unknown1', 'ms_source_blend_mode', 'ms_blend_operation',
-            'ms_z_test_function', 'fill_color1_red',
-            'fill_color1_green', 'fill_color1_blue', 'unused1',
+            'ms_z_test_function', *gen_color('fill_color1'),
             'fill_alpha_fade_in_time', 'fill_full_alpha_time',
             'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
             'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
             'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
-            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
-            'unused2', 'ee_alpha_fade_in_time', 'ee_full_alpha_time',
-            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
-            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
-            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
-            'ms_dest_blend_mode', 'ps_source_blend_mode', 'ps_blend_operation',
-            'ps_z_test_function', 'ps_dest_blend_mode',
-            'ps_particle_birth_ramp_up_time', 'ps_full_particle_birth_time',
-            'ps_particle_birth_ramp_down_time', 'ps_full_particle_birth_ratio',
-            'ps_persistent_particle_count', 'ps_particle_lifetime',
-            'ps_particle_lifetime_delta', 'ps_initial_speed_along_normal',
-            'ps_acceleration_along_normal', 'ps_initial_velocity1',
-            'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
-            'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
-            'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
-            'color_key1_red', 'color_key1_green', 'color_key1_blue', 'unused3',
-            'color_key2_red', 'color_key2_green', 'color_key2_blue', 'unused4',
-            'color_key3_red', 'color_key3_green', 'color_key3_blue', 'unused5',
-            'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
-            'color_key1_time', 'color_key2_time', 'color_key3_time',
-            'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
-            'ps_initial_rotation_delta', 'ps_rotation_speed',
-            'ps_rotation_speed_delta', (FID, 'addon_models'),
-            'holes_start_time', 'holes_end_time', 'holes_start_value',
-            'holes_end_value', 'ee_width', 'edge_color_red',
-            'edge_color_green', 'edge_color_blue', 'unused6',
-            'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
-            'addon_models_fade_in_time', 'addon_models_fade_out_time',
-            'addon_models_scale_start', 'addon_models_scale_end',
-            'addon_models_scale_in_time', 'addon_models_scale_out_time',
-            (FID, 'sound_ambient'), 'fill_color2_red',
-            'fill_color2_green', 'fill_color2_blue', 'unused7',
-            'fill_color3_red', 'fill_color3_green', 'fill_color3_blue',
-            'unused8', 'fill_color1_scale', 'fill_color2_scale',
-            'fill_color3_scale', 'fill_color1_time', 'fill_color2_time',
-            'fill_color3_time', 'color_scale', 'birth_position_offset',
+            'ee_fall_off', *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            'ee_full_alpha_time', 'ee_alpha_fade_out_time',
+            'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
+            'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
+            'ee_full_alpha_ratio', 'ms_dest_blend_mode',
+            'ps_source_blend_mode', 'ps_blend_operation', 'ps_z_test_function',
+            'ps_dest_blend_mode', 'ps_particle_birth_ramp_up_time',
+            'ps_full_particle_birth_time', 'ps_particle_birth_ramp_down_time',
+            'ps_full_particle_birth_ratio', 'ps_persistent_particle_count',
+            'ps_particle_lifetime', 'ps_particle_lifetime_delta',
+            'ps_initial_speed_along_normal', 'ps_acceleration_along_normal',
+            'ps_initial_velocity1', 'ps_initial_velocity2',
+            'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
+            'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
+            'ps_scale_key1_time', 'ps_scale_key2_time',
+            *gen_color('color_key1'), *gen_color('color_key2'),
+            *gen_color('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
+            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
+            'color_key3_time', 'ps_initial_speed_along_normal_delta',
+            'ps_initial_rotation', 'ps_initial_rotation_delta',
+            'ps_rotation_speed', 'ps_rotation_speed_delta',
+            (FID, 'addon_models'), 'holes_start_time', 'holes_end_time',
+            'holes_start_value', 'holes_end_value', 'ee_width',
+            *gen_color('edge_color'), 'explosion_wind_speed',
+            'texture_count_u', 'texture_count_v', 'addon_models_fade_in_time',
+            'addon_models_fade_out_time', 'addon_models_scale_start',
+            'addon_models_scale_end', 'addon_models_scale_in_time',
+            'addon_models_scale_out_time', (FID, 'sound_ambient'),
+            *gen_color('fill_color2'), *gen_color('fill_color3'),
+            'fill_color1_scale', 'fill_color2_scale', 'fill_color3_scale',
+            'fill_color1_time', 'fill_color2_time', 'fill_color3_time',
+            'color_scale', 'birth_position_offset',
             'birth_position_offset_range_delta', 'psa_start_frame',
             'psa_start_frame_variation', 'psa_end_frame',
             'psa_loop_start_frame', 'psa_loop_start_variation',
@@ -1556,7 +1557,6 @@ class MreLgtm(MelRecord):
     class MelLgtmData(MelStruct):
         """Older format skips 8 bytes in the middle and has the same unpacked
         length, so we can't use MelTruncatedStruct."""
-
         def load_mel(self, record, ins, sub_type, size_, *debug_strs,
                 __unpacker=structs_cache['3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
             if size_ == 92:
@@ -1577,14 +1577,16 @@ class MreLgtm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelLgtmData(b'DATA',
-            ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '32s', '3B',
-             's', '3f', '4s'], 'redLigh', 'greenLigh', 'blueLigh',
-            'unknownLigh', 'redDirect', 'greenDirect', 'blueDirect',
-            'unknownDirect', 'redFog', 'greenFog', 'blueFog', 'unknownFog',
-            'fogNear', 'fogFar', 'dirRotXY', 'dirRotZ', 'directionalFade',
-            'fogClipDist', 'fogPower', 'ambientColors', 'redFogFar',
-            'greenFogFar', 'blueFogFar', 'unknownFogFar', 'fogMax',
-            'lightFaceStart', 'lightFadeEnd', 'unknownData2'),
+            ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '28B', 'f',
+             '3B', 's', '3f', '4s'], *gen_color('lgtm_ambient_color'),
+            *gen_color('lgtm_directional_color'),
+            *gen_color('lgtm_fog_color_near'), 'lgtm_fog_near',
+            'lgtm_fog_far', 'lgtm_directional_rotation_xy',
+            'lgtm_directional_rotation_z', 'lgtm_directional_fade',
+            'lgtm_fog_clip_dist', 'lgtm_fog_power',
+            *_gen_ambient_lighting('lgtm'), *gen_color('lgtm_fog_color_far_'),
+            'lgtm_fog_max', 'lgtm_light_fade_distances_start',
+            'lgtm_light_fade_distances_end', 'lgtm_unknown_data'),
         MelDalc(),
     )
 
