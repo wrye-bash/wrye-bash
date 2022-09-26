@@ -1,7 +1,7 @@
 # Runtime, required -----------------------------------------------------------
 chardet==5.0.0
 lz4==4.0.2
-pywin32==304
+pywin32==304; sys_platform == 'win32'
 PyYAML==6.0
 wxPython==4.2.0
 # Runtime, recommended --------------------------------------------------------

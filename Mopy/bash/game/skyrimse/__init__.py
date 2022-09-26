@@ -79,6 +79,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
     class Esp(SkyrimGameInfo.Esp):
+        extension_forces_flags = True
         warn_older_form_versions = True
 
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}

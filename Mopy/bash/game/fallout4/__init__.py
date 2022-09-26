@@ -123,6 +123,7 @@ class Fallout4GameInfo(PatchGame):
         canBash = True
         canEditHeader = True
         expanded_plugin_range = True
+        extension_forces_flags = True
         max_lvl_list_size = 255
         reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
                            b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}

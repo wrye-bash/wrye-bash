@@ -536,14 +536,14 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
-    def in_master_block(self, __master_exts=frozenset((u'.esm', u'.esl'))):
+    def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
         """Return true for files that load in the masters' block."""
         ##: we should cache this and calculate in reset_cache and co
         mod_ext = self.get_extension()
-        if  bush.game.has_esl:
-            # For esl games .esm and .esl files are set the master flag in
-            # memory even if not set on the file on disk. For esps we must
-            # check for the flag explicitly.
+        if  bush.game.Esp.extension_forces_flags:
+            # For games since FO4/SSE, .esm and .esl files set the master flag
+            # in memory even if not set on the file on disk. For .esp files we
+            # must check for the flag explicitly.
             return mod_ext in __master_exts or self.has_esm_flag()
         elif bush.game.fsName == 'Morrowind':
             ##: This is wrong, but works for now. We need game-specific

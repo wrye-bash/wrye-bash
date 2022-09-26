@@ -427,6 +427,10 @@ class GameInfo(object):
         # 0x000-0x800 range for their own records.
         # If False, that range is reserved for hardcoded engine records.
         expanded_plugin_range = False
+        # If True, then plugins with a .esm extension will always be treated
+        # as having the ESM flag set and plugins with a .esl extension will
+        # always be treated as having the ESL and ESM flags set
+        extension_forces_flags = False
         # If True, generate ONAM by reading each temp CELL child when adding
         # the ESM flag to plugins and discard it when removing the ESM flag.
         generate_temp_child_onam = False

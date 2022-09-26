@@ -85,8 +85,9 @@ class MobBase(object):
     # keepIds - hard right now due to having to trace ModFile.load() calls.
     def set_records_changed(self):
         """Mark all records in this record group as changed."""
-        for r in self.iter_records():
-            r.setChanged()
+        if type(self) != MobBase: # ugh
+            for r in self.iter_records():
+                r.setChanged()
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
