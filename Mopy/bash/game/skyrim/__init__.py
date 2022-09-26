@@ -122,6 +122,8 @@ class SkyrimGameInfo(PatchGame):
             'grass',
             'interface',
             'lodsettings',
+            'mapmarkers', # 3P: Common Marker Addon Project
+            'mcm', # 3P: MCM Helper
             'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
             'osa', # 3P: OSA Animation Framework
             'platform', # 3P: Skyrim Platform
