@@ -52,7 +52,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
     MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
-    MelLctnShared, MelLensShared, lens_distributor
+    MelLctnShared, MelLensShared, lens_distributor, MelWeight
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -125,26 +125,6 @@ class MelBod2(MelUInt32Flags):
 
     def __init__(self):
         super().__init__(b'BOD2', 'biped_flags', self._bp_flags)
-
-#------------------------------------------------------------------------------
-class MelBoneData(MelGroups):
-    """Handles the bone data subrecord complex."""
-    def __init__(self):
-        super().__init__('bone_data',
-            MelUInt32(b'BSMP', 'bone_scale_gender'),
-            MelGroups('bone_weight_scales',
-                MelString(b'BSMB', 'bone_name'),
-                # In the latest version of xEdit's source code, the decoding
-                # for this particular part is much more complex - would
-                # probably have to require custom code to handle (custom
-                # handler for duplicate signatures inside a single MelGroups,
-                # plus conditional loading to read one subrecord ahead and
-                # check its size). This works fine and is *way* simpler, so not
-                # going to bother.
-                MelSimpleArray('weight_scale_values', MelFloat(b'BSMS')),
-                MelUInt32(b'BMMP', 'bone_modifies_gender'),
-            ),
-        )
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -254,7 +234,7 @@ class MelProperties(MelSorted):
         super().__init__(MelArray('properties',
             MelStruct(b'PRPS', ['I', 'f'], (FID, 'prop_actor_value'),
                 'prop_value'),
-        ))
+        ), sort_by_attrs='prop_actor_value')
 
 #------------------------------------------------------------------------------
 class MelResistances(MelSorted):
@@ -406,6 +386,7 @@ class MreAlch(MelRecord):
         MelSoundCrafting(),
         MelDestructible(),
         MelDescription(),
+        MelWeight(),
         MelAlchEnit(),
         MelLString(b'DNAM', 'addiction_name'),
         MelEffects(),
@@ -449,6 +430,10 @@ class MreAmmo(MelRecord):
         MelStruct(b'DNAM', ['I', 'B', '3s', 'f', 'I'], (FID, 'projectile'),
             (_ammo_flags, 'flags'), 'unused_dnam', 'damage', 'health'),
         MelShortName(),
+        MelString(b'NAM1', 'casing_model'),
+        # Ignore texture hashes - they're only an optimization, plenty of
+        # records in Skyrim.esm are missing them
+        MelNull(b'NAM2'),
     )
 
 #------------------------------------------------------------------------------
@@ -484,7 +469,14 @@ class MreArma(MelRecord):
         MelBod2(),
         MelRace(),
         MelArmaShared(MelModel),
-        MelBoneData(),
+        MelGroups('bone_data',
+            MelUInt32(b'BSMP', 'bone_scale_gender'),
+            MelGroups('bone_weight_scales',
+                MelString(b'BSMB', 'bone_name'),
+                MelStruct(b'BSMS', ['3f'], 'weight_scale_value_x',
+                    'weight_scale_value_y', 'weight_scale_value_z'),
+            ),
+        )
     )
 
 #------------------------------------------------------------------------------
