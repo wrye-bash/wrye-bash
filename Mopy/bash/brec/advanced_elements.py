@@ -827,6 +827,7 @@ class MelUnion(MelBase):
                 processed_mapping[split_val] = element
         self.element_mapping = processed_mapping
         self.fid_elements = set()
+        self._sort_elements = set()
         # Create a unique attribute name to dynamically cache decider result
         self.decider_result_attr = f'_union_type_{MelUnion._union_index}'
         MelUnion._union_index += 1
@@ -936,6 +937,18 @@ class MelUnion(MelBase):
     def dumpData(self, record, out):
         self._get_element_from_record(record).dumpData(record, out)
 
+    def needs_sorting(self):
+        # Ask each of our elements, and remember the ones we need to sort
+        for element in self.element_mapping.values():
+            if element.needs_sorting():
+                self._sort_elements.add(element)
+        return bool(self._sort_elements)
+
+    def sort_subrecord(self, record):
+        element = self._get_element_from_record(record)
+        if element in self._sort_elements:
+            element.sort_subrecord(record)
+
     @property
     def signatures(self):
         return self._possible_sigs
@@ -990,6 +1003,12 @@ class _MelWrapper(MelBase):
 
     def mapFids(self, record, function, save_fids=False):
         self._wrapped_mel.mapFids(record, function, save_fids)
+
+    def needs_sorting(self):
+        return self._wrapped_mel.needs_sorting()
+
+    def sort_subrecord(self, record):
+        self._wrapped_mel.sort_subrecord(record)
 
     @property
     def signatures(self):
@@ -1079,7 +1098,7 @@ class MelExtra(_MelWrapper):
 #------------------------------------------------------------------------------
 class MelSorted(_MelWrapper):
     """Wraps a MelBase-derived element with a list as its single attribute and
-    sorts that list right before dumping."""
+    sorts that list right after loading and right before dumping."""
     def __init__(self, sorted_mel, sort_by_attrs=(), sort_special=None):
         """Creates a new MelSorted instance with the specified parameters.
 
@@ -1123,9 +1142,13 @@ class MelSorted(_MelWrapper):
             # Simply use the default key function (whole list entries)
             self._attr_key_func = None
 
-    def dumpData(self, record, out):
-        # Sort the entries right before dumping, using the key func if present
+    def needs_sorting(self):
+        return True
+
+    def sort_subrecord(self, record):
+        # Sort child subrecords first, since the sort for this subrecord may
+        # depend on their order
+        super().sort_subrecord(record)
         to_sort_val = getattr(record, self._wrapped_mel.attr)
         if to_sort_val:
             to_sort_val.sort(key=self._attr_key_func)
-        super(MelSorted, self).dumpData(record, out)

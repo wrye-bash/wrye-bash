@@ -220,6 +220,15 @@ class MelBase(Subrecord):
             f'mapFids called on subrecord without FormIDs (signatures: '
             f'{sorted(self.signatures)})')
 
+    def needs_sorting(self):
+        """Returns True if this subrecord even needs sorting in the first
+        place."""
+        return False
+
+    def sort_subrecord(self, record):
+        """Sorts this subrecord. Does nothing by default, override if you need
+        to sort."""
+
     @property
     def signatures(self) -> set[bytes]:
         """Returns a set containing all the signatures (aka mel_sigs) that
@@ -292,6 +301,7 @@ class MelSequential(MelBase):
         # Filter out None, produced by static deciders like fnv_only
         self.elements = [e for e in elements if e is not None]
         self.form_elements = set()
+        self._sort_elements = []
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
         self._sub_loaders = {}
@@ -335,6 +345,16 @@ class MelSequential(MelBase):
     def mapFids(self, record, function, save_fids=False):
         for element in self.form_elements:
             element.mapFids(record, function, save_fids)
+
+    def needs_sorting(self):
+        for element in self.elements:
+            if element.needs_sorting():
+                self._sort_elements.append(element)
+        return bool(self._sort_elements)
+
+    def sort_subrecord(self, record):
+        for element in self._sort_elements:
+            element.sort_subrecord(record)
 
     @property
     def signatures(self):
@@ -398,6 +418,11 @@ class MelGroup(MelSequential):
         if not target: return
         super(MelGroup, self).mapFids(target, function, save_fids)
 
+    def sort_subrecord(self, record):
+        target = getattr(record, self.attr)
+        if not target: return
+        super().sort_subrecord(target)
+
 #------------------------------------------------------------------------------
 class MelGroups(MelGroup):
     """Represents an array of group record."""
@@ -437,6 +462,12 @@ class MelGroups(MelGroup):
         for target in getattr(record, self.attr):
             for element in formElements:
                 element.mapFids(target, function, save_fids)
+
+    def sort_subrecord(self, record):
+        elements = self.elements
+        for target in getattr(record, self.attr):
+            for element in elements:
+                element.sort_subrecord(target)
 
     @property
     def static_size(self):
