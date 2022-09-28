@@ -205,9 +205,7 @@ class MelScriptId(MelString):
 class MelSpellsTes3(MelGroups):
     """Handles NPCS, Morrowind's version of SPLO."""
     def __init__(self):
-        super().__init__('spells',
-            MelFixedString(b'NPCS', 'spell_id', 32),
-        )
+        super().__init__('spells', MelFixedString(b'NPCS', 'spell_id', 32))
 
 #------------------------------------------------------------------------------
 class MreLeveledList(AMreLeveledList):

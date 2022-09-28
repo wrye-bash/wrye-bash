@@ -385,12 +385,12 @@ class SaveFile(object):
         if master not in self._masters:
             self._masters.append(master)
 
-    def getFid(self,iref,default=None):
+    def getFid(self, iref, iref_default=None):
         """Returns fid corresponding to iref."""
-        if not iref: return default
+        if not iref: return iref_default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(self.fileInfo.fn_key,
-                                                  u'IRef from Mars.')
+        if iref >= len(self.fids):
+            raise ModError(self.fileInfo.fn_key, 'IRef from Mars.')
         return self.fids[iref]
 
     def getIref(self,fid):

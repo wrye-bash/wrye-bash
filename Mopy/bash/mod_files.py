@@ -62,7 +62,7 @@ class MasterMap(object):
                 mast_map[index] = -1
         self._mast_map = mast_map
 
-    def __call__(self, short_fid, default=-1):
+    def __call__(self, short_fid: int | None, dflt_fid=-1):
         """Maps a fid from first set of masters to second. If no mapping
         is possible, then either returns default (if defined) or raises MasterMapError."""
         if not short_fid: return short_fid
@@ -70,8 +70,8 @@ class MasterMap(object):
         outIndex = self._mast_map.get(inIndex, -2)
         if outIndex >= 0:
             return (int(outIndex) << 24 ) | (short_fid & 0xFFFFFF)
-        elif default != -1:
-            return default
+        elif dflt_fid != -1:
+            return dflt_fid
         else:
             raise MasterMapError(inIndex)
 
@@ -126,8 +126,8 @@ class LoadFactory(object):
 
     def getRecClass(self,type):
         """Returns class for record type or None."""
-        default = (self.keepAll and MreRecord) or None
-        return self.type_class.get(type,default)
+        dflt_class = (self.keepAll and MreRecord) or None
+        return self.type_class.get(type,dflt_class)
 
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""

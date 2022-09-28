@@ -97,7 +97,7 @@ class PatchFile(ModFile):
             log.setHeader('=== ' + _('World Orphans'))
             log(_("The following plugins had orphaned world groups, which "
                   "were skipped. This is not a major problem, but you might "
-                  "want to use Wrye Bash's"
+                  "want to use Wrye Bash's "
                   "[[%(url_rwo)s|Remove World Orphans]] command to repair "
                   "the plugins.") % {
                 'url_rwo': _link('modsRemoveWorldOrphans')})

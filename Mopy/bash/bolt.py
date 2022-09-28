@@ -1765,11 +1765,11 @@ class Settings(DataDict):
         else:
             self.vdata = {}
             super().__init__({})
-        self.defaults = {}
+        self._default_settings = {}
 
     def loadDefaults(self, default_settings):
         """Add default settings to dictionary."""
-        self.defaults = default_settings
+        self._default_settings = default_settings
         #--Clean colors dictionary
         if (color_dict := self.get(u'bash.colors', None)) is not None:
             currentColors = set(color_dict)
@@ -1782,8 +1782,8 @@ class Settings(DataDict):
                 self[u'bash.colors'][key] = default_settings[u'bash.colors'][key]
         # fill up missing settings from defaults, making sure we do not
         # modify the latter
-        self._data = collections.ChainMap(self._data,
-                                          copy.deepcopy(self.defaults))
+        self._data = collections.ChainMap(self._data, copy.deepcopy(
+            self._default_settings))
 
     def save(self):
         """Save to pickle file. Only key/values differing from defaults are
@@ -1791,10 +1791,10 @@ class Settings(DataDict):
         dictFile = self.dictFile
         dictFile.vdata = self.vdata.copy()
         to_save = {}
+        dflts = self._default_settings
         for sett_key, sett_val in self.items():
-            if sett_key in self.defaults and self.defaults[
-                sett_key] == sett_val: # not all settings are in defaults
-                continue
+            if sett_key in dflts and dflts[sett_key] == sett_val:
+                continue # not all settings are in defaults
             to_save[sett_key] = sett_val
         self.dictFile.pickled_data = to_save
         dictFile.save()

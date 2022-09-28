@@ -370,10 +370,9 @@ class MelDebrData(MelStruct):
             raise ModError(ins.inName, f'Unexpected subrecord: {debug_strs}')
         record.debr_flags = self._debr_flags(__unpack_byte(byte_data[-1:])[0])
 
-    def pack_subrecord_data(self, record):
-        return b''.join(
-            [struct_pack('B', record.debr_percentage), record.modPath, null1,
-             struct_pack('B', record.debr_flags.dump())])
+    def pack_subrecord_data(self, record, *, __pack=structs_cache['B'].pack):
+        return b''.join([__pack(record.debr_percentage), record.modPath, null1,
+                         __pack(record.debr_flags.dump())])
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
@@ -1094,7 +1093,7 @@ class MelRaceVoices(MelStruct):
     def pack_subrecord_data(self, record, *, __zero_fid=ZERO_FID):
         if record.maleVoice == record.fid: record.maleVoice = __zero_fid
         if record.femaleVoice == record.fid: record.femaleVoice = __zero_fid
-        if (record.maleVoice, record.femaleVoice) != (__zero_fid, __zero_fid):
+        if record.maleVoice != __zero_fid or record.femaleVoice != __zero_fid:
             return super(MelRaceVoices, self).pack_subrecord_data(record)
         return None
 

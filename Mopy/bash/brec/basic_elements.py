@@ -79,8 +79,7 @@ class Subrecord(object):
     sub_header_size = 6
     __slots__ = (u'mel_sig',)
 
-    def packSub(self, out, binary_data):
-        # type: (file, bytes) -> None
+    def packSub(self, out: BinaryIO, binary_data: bytes):
         """Write subrecord header and data to output stream."""
         try:
             self._dump_bytes(out, binary_data, len(binary_data))
@@ -239,8 +238,9 @@ class MelBaseR(MelBase):
     """A required subrecord whose contents are unknown/unused/unimportant.
     Often used for markers, which the game engine uses when parsing to keep
     track of where it is."""
-    def __init__(self, mel_sig, attr):
-        super().__init__(mel_sig, attr, b'')
+
+    def setDefault(self, record):
+        setattr(record, self.attr, b'')
 
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
@@ -542,8 +542,7 @@ class MelString(MelBase):
     def load_bytes(self, ins, size_, *debug_strs):
         return ins.readString(size_, *debug_strs)
 
-    def packSub(self, out, string_val):
-        # type: (BinaryIO, str) -> None
+    def packSub(self, out: BinaryIO, string_val: str):
         """Writes out a string subrecord, properly encoding it beforehand and
         respecting max_size, min_size and preferred_encoding if they are
         set."""
@@ -661,9 +660,8 @@ class MelStruct(MelBase):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
-        for attr, value, action in zip(self.attrs, unpacked, self.actions):
-            setattr(record, attr,
-                    action(value) if action is not None else value)
+        for att, val, action in zip(self.attrs, unpacked, self.actions):
+            setattr(record, att, action(val) if action is not None else val)
 
     def pack_subrecord_data(self, record, *, __attrgetters=attrgetter_cache):
         values = [__attrgetters[a](record) for a in self.attrs]
@@ -689,23 +687,24 @@ class MelStruct(MelBase):
     def _parseElements(self, struct_formats, *elements, __zero_fid=ZERO_FID):
         formAttrs = set()
         lenEls = len(elements)
-        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [None] * lenEls
+        attrs, deflts, actions = [0] * lenEls, [0] * lenEls, [None] * lenEls
         self._action_dexes = set()
         expanded_fmts = self._expand_formats(elements, struct_formats)
         for index, (element, fmt_str) in enumerate(zip(elements, expanded_fmts)):
             if not isinstance(element,tuple):
                 attrs[index] = element
                 if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
-                    defaults[index] = fmt_str * null1
+                    deflts[index] = fmt_str * null1
                 elif fmt_str == u'f':
                     actions[index] = Rounder
+                    self._action_dexes.add(index)
             else:
                 el_0 = element[0]
                 attrIndex = el_0 == 0
                 if callable(el_0):
                     if el_0 is FID:
                         formAttrs.add(element[1])
-                        defaults[index] = __zero_fid
+                        deflts[index] = __zero_fid
                     actions[index] = el_0
                     attrIndex = 1
                     self._action_dexes.add(index)
@@ -716,10 +715,10 @@ class MelStruct(MelBase):
                     self._action_dexes.add(index)
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:
-                    defaults[index] = element[-1] # else leave to 0
+                    deflts[index] = element[-1] # else leave to 0
                 elif type(fmt_str) is int and fmt_str: # 0 for weird subclasses
-                    defaults[index] = fmt_str * null1
-        return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
+                    deflts[index] = fmt_str * null1
+        return tuple(attrs), tuple(deflts), tuple(actions), formAttrs
 
     @staticmethod
     def _expand_formats(elements, struct_formats):

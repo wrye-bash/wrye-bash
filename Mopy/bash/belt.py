@@ -187,13 +187,13 @@ class PageSelect(PageInstaller):
             self._page_links.append(_Page_SelectAll(self.listOptions))
             self._page_links.append(_Page_DeselectAll(self.listOptions))
             self._page_links.append(_Page_ToggleAll(self.listOptions))
-            for index, default in enumerate(items_default.values()):
-                self.listOptions.lb_check_at_index(index, default)
+            for index, dflt in enumerate(items_default.values()):
+                self.listOptions.lb_check_at_index(index, dflt)
         else:
             self.listOptions = ListBox(self, **kwargs)
             parent.enable_forward(False)
-            for index, default in enumerate(items_default.values()):
-                if default:
+            for index, dflt in enumerate(items_default.values()):
+                if dflt:
                     self.listOptions.lb_select_index(index)
                     self.Selection(index)
                     break
@@ -1346,7 +1346,7 @@ class WryeParser(ScriptParser.Parser):
         if self.bAuto:
             # auto wizard will resolve SelectOne/SelectMany only if default(s)
             # were specified.
-            defaults_ = [t for t, default in titles.items() if default]
+            defaults_ = [t for t, dflt in titles.items() if dflt]
             if not bMany: defaults_ = defaults_[:1]
             if defaults_:
                 self.PushFlow(u'Select', False,

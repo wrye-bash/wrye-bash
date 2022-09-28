@@ -1001,9 +1001,9 @@ class MreDial(MelRecord):
         MelFloat(b'PNAM', 'priority',),
         MelFid(b'BNAM','branch',),
         MelFid(b'QNAM','quest',),
-        MelStruct(b'DATA', [u'2B', u'H'],(DialTopicFlags, u'flags_dt'),'category',
-                  'subtype',),
-        MelFixedString(b'SNAM', u'subtypeName', 4),
+        MelStruct(b'DATA', ['2B', 'H'], (DialTopicFlags, 'flags_dt'),
+                  'category', 'subtype'),
+        MelFixedString(b'SNAM', 'subtypeName', 4),
         MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1670,8 +1670,7 @@ class MreLgtm(MelRecord):
         def load_mel(self, record, ins, sub_type, size_, *debug_strs,
                 __unpacker=structs_cache['3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
             if size_ == 92:
-                super(MreLgtm.MelLgtmData, self).load_mel(
-                    record, ins, sub_type, size_, *debug_strs)
+                super().load_mel(record, ins, sub_type, size_, *debug_strs)
                 return
             elif size_ == 84:
                 unpacked_val = ins.unpack(__unpacker, size_, *debug_strs)
@@ -1680,7 +1679,7 @@ class MreLgtm(MelRecord):
                     unpacked_val[19] + null4 * 2, *unpacked_val[20:])
                 for attr, value, action in zip(self.attrs, unpacked_val,
                                                self.actions):
-                    if action is not None: value = action(value) ##: fids?
+                    if action is not None: value = action(value)
                     setattr(record, attr, value)
             else:
                 raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)
@@ -1688,15 +1687,14 @@ class MreLgtm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelLgtmData(b'DATA',
-            [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'3f',
-             u'32s', u'3B', u's', u'3f', u'4s'], 'redLigh', 'greenLigh',
-            'blueLigh','unknownLigh', 'redDirect', 'greenDirect', 'blueDirect',
+            ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '32s', '3B',
+             's', '3f', '4s'], 'redLigh', 'greenLigh', 'blueLigh',
+            'unknownLigh', 'redDirect', 'greenDirect', 'blueDirect',
             'unknownDirect', 'redFog', 'greenFog', 'blueFog', 'unknownFog',
             'fogNear', 'fogFar', 'dirRotXY', 'dirRotZ', 'directionalFade',
-            'fogClipDist', 'fogPower', 'ambientColors',
-            'redFogFar', 'greenFogFar', 'blueFogFar', 'unknownFogFar',
-            'fogMax', 'lightFaceStart', 'lightFadeEnd',
-            'unknownData2'),
+            'fogClipDist', 'fogPower', 'ambientColors', 'redFogFar',
+            'greenFogFar', 'blueFogFar', 'unknownFogFar', 'fogMax',
+            'lightFaceStart', 'lightFadeEnd', 'unknownData2'),
         MelDalc(),
     )
     __slots__ = melSet.getSlotsUsed()

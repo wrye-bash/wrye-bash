@@ -546,8 +546,7 @@ class MelLists(MelStruct):
     def _expand_formats(elements, expanded_fmts):
         # This is fine because we enforce the precondition
         # len(struct_formats) == len(elements) in MelLists.__init__
-        return [int(f[:-1] or 1) if f[-1] == u's' else 0
-                for f in expanded_fmts]
+        return [int(f[:-1] or 1) if f[-1] == 's' else 0 for f in expanded_fmts]
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = list(ins.unpack(self._unpacker, size_, *debug_strs))
@@ -555,10 +554,9 @@ class MelLists(MelStruct):
             setattr(record, attr, unpacked[_slice])
 
     def pack_subrecord_data(self, record):
-        values = list(chain.from_iterable(
-            j if isinstance(j, list) else [j] for j in
-            [getattr(record, a) for a in self.__class__._attr_indexes]))
-        return self._packer(*values)
+        return self._packer(*chain(
+            *(j if isinstance(j, list) else [j] for j in
+              [getattr(record, a) for a in self.__class__._attr_indexes])))
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
