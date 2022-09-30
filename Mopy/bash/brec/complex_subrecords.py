@@ -32,8 +32,8 @@ from itertools import chain
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
     MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider
 from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
-    MelObject, MelOptStruct, MelReadOnly, MelSequential, MelString, \
-    MelStruct, MelUInt32, MelUnorderedGroups
+    MelObject, MelReadOnly, MelSequential, MelString, MelStruct, MelUInt32, \
+    MelUnorderedGroups
 from .common_subrecords import MelFull
 from .utils_constants import FID, ZERO_FID, get_structs
 from .. import bolt
@@ -358,7 +358,7 @@ class _MelObmeScitGroup(MelGroup):
             *debug_strs)
 
 # API -------------------------------------------------------------------------
-class MelObme(MelOptStruct):
+class MelObme(MelStruct):
     """Oblivion Magic Extender subrecord. Prefixed every attribute with obme_
     both for easy grouping in debugger views and to differentiate them from
     vanilla attrs."""
@@ -370,10 +370,9 @@ class MelObme(MelOptStruct):
             extra_format = []
         if extra_contents is None:
             extra_contents = []
-        # Always begins with record version and OBME version - None here is on
-        # purpose, to differentiate from 0 which is almost always the record
-        # version in plugins using OBME
-        struct_contents = [('obme_record_version', None), 'obme_version_beta',
+        # Always begins with record version and OBME version
+        # obme_record_version is almost always 0 in plugins using OBME
+        struct_contents = ['obme_record_version', 'obme_version_beta',
                            'obme_version_minor', 'obme_version_major']
         # Then comes any extra info placed in the middle
         struct_contents += extra_contents
@@ -484,7 +483,7 @@ class MelEffectsTes4(MelSequential):
                 ),
                 MelString(b'EFII', 'obme_icon'),
                 ##: Again, FID here needs testing
-                MelOptStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
+                MelStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
                     'efix_override_mask', 'efix_flags', 'efix_base_cost',
                     (FID, 'resist_av'), 'efix_reserved'),
             ),

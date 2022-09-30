@@ -29,10 +29,10 @@ from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
     FixedString, MelArray, MelBase, MelBookText, MelColor, MelColorO, \
     MelCounter, MelDescription, MelEffectsTes3, MelFixedString, MelFloat, \
     MelGroup, MelGroups, MelIcons, MelLists, MelLLChanceNoneTes3, \
-    MelLLFlagsTes3, MelNull, MelOptStruct, MelRecord, MelRef3D, MelRefScale, \
-    MelSequential, MelSet, MelSInt32, MelString, MelStrings, MelStruct, \
-    MelTruncatedStruct, MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, \
-    MelUnion, SaveDecider, SizeDecider, gen_color, gen_color3
+    MelLLFlagsTes3, MelNull, MelRecord, MelRef3D, MelRefScale, MelSequential, \
+    MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
+    MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
+    SizeDecider, gen_color, gen_color3
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -78,7 +78,7 @@ class MelAIData(MelStruct):
             u'aidt_unknown2', (self._ai_flags, u'ai_flags'))
 
 #------------------------------------------------------------------------------
-class MelAIAccompanyPackage(MelOptStruct):
+class MelAIAccompanyPackage(MelStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
     def __init__(self, ai_package_sig):
         super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
@@ -376,17 +376,15 @@ class MreCell(AMreCell):
         MelString(b'RGNN', u'region_name'),
         MelColorO(b'NAM5'),
         MelFloat(b'WHGT', u'water_height'),
-        MelOptStruct(b'AMBI', ['12B', 'f'], *gen_color('ambi_ambient'),
+        MelStruct(b'AMBI', ['12B', 'f'], *gen_color('ambi_ambient'),
             *gen_color('ambi_sunlight'), *gen_color('ambi_fog'),
             'fog_density'),
         MelGroups(u'moved_references',
             MelUInt32(b'MVRF', u'reference_id'),
             MelString(b'CNAM', u'new_interior_cell'),
-            # None here are on purpose - only present for exterior cells, and
-            # zeroes are perfectly valid X/Y coordinates
             ##: Double-check the signeds - UESP does not list them either way
-            MelOptStruct(b'CNDT', [u'2i'], (u'new_exterior_cell_x', None),
-                (u'new_exterior_cell_y', None)),
+            MelStruct(b'CNDT', ['2i'], 'new_exterior_cell_x',
+                      'new_exterior_cell_y'),
             MelReference(),
         ),
         ##: Move this into a dedicated Mob* class instead - difficult to

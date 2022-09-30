@@ -38,7 +38,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
-    MelObme, MelOptStruct, MelOwnership, MelPartialCounter, MelRace, \
+    MelObme, MelOwnership, MelPartialCounter, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
     MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
     MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
@@ -760,12 +760,9 @@ class MreCell(AMreCell):
         MelEdid(),
         MelFull(),
         MelUInt8Flags(b'DATA', 'flags', _CellFlags),
-        # None defaults here are on purpose - XCLC does not necessarily exist,
-        # but 0 is a valid value for both coordinates (duh)
-        MelSkipInterior(MelOptStruct(b'XCLC', ['2i'],
-                                     ('posX', None), ('posY', None))),
-        MelOptStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i',
-            '2f'], 'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
+        MelSkipInterior(MelStruct(b'XCLC', ['2i'], 'posX', 'posY')),
+        MelStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '2f'],
+            'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
             'directionalRed', 'directionalGreen', 'directionalBlue', 'unused2',
             'fogRed', 'fogGreen', 'fogBlue', 'unused3', 'fogNear', 'fogFar',
             'directionalXY', 'directionalZ', 'directionalFade', 'fogClip'),
@@ -967,8 +964,8 @@ class MreCsty(MelRecord):
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s2f',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s',
             }),
-        MelOptStruct(b'CSAD', ['21f'], 'dodge_fmult', 'dodge_fbase',
-            'enc_sbase', 'enc_smult', 'dodge_atk_mult', 'dodge_natk_mult',
+        MelStruct(b'CSAD', ['21f'], 'dodge_fmult', 'dodge_fbase', 'enc_sbase',
+            'enc_smult', 'dodge_atk_mult', 'dodge_natk_mult',
             'dodge_batk_mult', 'dodge_bnatk_mult', 'dodge_fatk_mult',
             'dodge_fnatk_mult', 'block_mult', 'block_base', 'block_atk_mult',
             'block_natk_mult', 'atk_mult', 'atk_base', 'atk_atk_mult',
@@ -1301,8 +1298,8 @@ class MreLtex(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelOptStruct(b'HNAM', ['3B'], 'hd_material_type', 'hd_friction',
-                     'hd_restitution'), # hd = 'Havok Data'
+        MelStruct(b'HNAM', ['3B'], 'hd_material_type', 'hd_friction',
+                  'hd_restitution'), # hd = 'Havok Data'
         MelLtexSnam(),
         MelLtexGrasses(),
     )
@@ -1788,9 +1785,9 @@ class MrePack(MelRecord):
         MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'], (_PackFlags, 'flags'),
             'aiType', 'unused1', old_versions={'HBs'}),
         MelUnion({
-            (0, 1, 2, 3, 4): MelOptStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
+            (0, 1, 2, 3, 4): MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
                 (FID, 'locId'), 'locRadius'),
-            5: MelOptStruct(b'PLDT', ['i', 'I', 'i'], 'locType', 'locId',
+            5: MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType', 'locId',
                 'locRadius'),
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PLDT', 'locType'),
@@ -1799,9 +1796,9 @@ class MrePack(MelRecord):
         MelStruct(b'PSDT', ['2b', 'B', 'b', 'i'], 'month', 'day', 'date',
             'time', 'duration'),
         MelUnion({
-            (0, 1): MelOptStruct(b'PTDT', ['i', 'I', 'i'], 'targetType',
+            (0, 1): MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType',
                 (FID, 'targetId'), 'targetCount'),
-            2: MelOptStruct(b'PTDT', ['i', 'I', 'i'], 'targetType', 'targetId',
+            2: MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType', 'targetId',
                 'targetCount'),
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PTDT', 'targetType'),
@@ -1904,8 +1901,8 @@ class MreRace(AMreRace):
                     (_RaceFlags, 'flags')),
         MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'),
                       (FID, 'femaleVoice')),
-        MelOptStruct(b'DNAM', ['2I'], (FID, 'defaultHairMale'),
-                     (FID, 'defaultHairFemale')),
+        MelStruct(b'DNAM', ['2I'], (FID, 'defaultHairMale'),
+                  (FID, 'defaultHairFemale')),
         # Corresponds to GMST sHairColorNN
         MelUInt8(b'CNAM', 'defaultHairColor'),
         MelFloat(b'PNAM', 'mainClamp'),
@@ -2005,12 +2002,12 @@ class MreRefr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'NAME', 'base'),
-        MelOptStruct(b'XTEL', ['I', '6f'], (FID, 'destinationFid'),
+        MelStruct(b'XTEL', ['I', '6f'], (FID, 'destinationFid'),
             'destinationPosX', 'destinationPosY', 'destinationPosZ',
             'destinationRotX', 'destinationRotY', 'destinationRotZ'),
         MelRefrXloc(b'XLOC', ['B', '3s', 'I', '4s', 'B', '3s'], 'lockLevel',
             'unused1', (FID, 'lockKey'), 'unused2', (_LockFlags, 'lockFlags'),
-            'unused3', is_optional=True, old_versions={'B3sIB3s'}),
+            'unused3', old_versions={'B3sIB3s'}),
         MelOwnershipTes4(),
         MelEnableParent(),
         MelFid(b'XTRG', 'targetId'),

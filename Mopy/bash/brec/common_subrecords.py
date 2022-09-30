@@ -28,7 +28,7 @@ from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
     MelSorted, MelTruncatedStruct, MelUnion
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
-    MelGroups, MelLString, MelNull, MelOptStruct, MelReadOnly, MelSequential, \
+    MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
@@ -38,7 +38,7 @@ from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
 from ..exception import ModError
 
 #------------------------------------------------------------------------------
-class _MelCoed(MelOptStruct):
+class _MelCoed(MelStruct):
     """Handles the COED (Owner Data) subrecord used for inventory items and
     leveled lists since FO3."""
     ##: Needs custom unpacker to look at FormID type of owner. If item_owner is
@@ -325,7 +325,7 @@ class MelColorInterpolator(MelArray):
             'green', 'blue', 'alpha'))
 
 #------------------------------------------------------------------------------
-class MelColorO(MelOptStruct):
+class MelColorO(MelStruct):
     """Optional Color."""
     def __init__(self, color_sig=b'CNAM'):
         super().__init__(color_sig, ['4B'], 'red', 'green', 'blue',
@@ -405,7 +405,7 @@ class MelDebrData(MelStruct):
                          __pack(record.debr_flags.dump())])
 
 #------------------------------------------------------------------------------
-class MelDecalData(MelOptStruct):
+class MelDecalData(MelStruct):
     """Handles the common DODT (Decal Data) subrecord."""
     class _decal_flags(TrimmedFlags):
         parallax: bool
@@ -448,7 +448,7 @@ class MelEdid(MelString):
         super().__init__(b'EDID', 'eid')
 
 #------------------------------------------------------------------------------
-class MelEnableParent(MelOptStruct):
+class MelEnableParent(MelStruct):
     """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
     # The pop_in flag doesn't technically exist for all XESP subrecords, but it
     # will just be ignored for those where it doesn't exist, so no problem.
@@ -1107,7 +1107,7 @@ class MelMapMarker(MelGroup):
             MelBase(b'XMRK', 'marker_data'),
             MelUInt8Flags(b'FNAM', 'marker_flags', self._marker_flags),
             MelFull(),
-            MelOptStruct(b'TNAM', ['B', 's'], 'marker_type', 'unused1'),
+            MelStruct(b'TNAM', ['B', 's'], 'marker_type', 'unused1'),
         ]
         if with_reputation:
             group_elems.append(MelFid(b'WMI1', 'marker_reputation'))
@@ -1359,7 +1359,7 @@ class MelRandomTeleports(MelSorted):
         super().__init__(MelFids('random_teleports', MelFid(b'TNAM')))
 
 #------------------------------------------------------------------------------
-class MelRef3D(MelOptStruct):
+class MelRef3D(MelStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super().__init__(b'DATA', ['6f'], 'ref_pos_x', 'ref_pos_y',
@@ -1586,7 +1586,7 @@ class MelWthrColors(MelStruct):
             'nightGreen', 'nightBlue', 'unused4')
 
 #------------------------------------------------------------------------------
-class MelXlod(MelOptStruct):
+class MelXlod(MelStruct):
     """Distant LOD Data."""
     def __init__(self):
         super().__init__(b'XLOD', ['3f'], 'lod1', 'lod2', 'lod3')

@@ -886,25 +886,3 @@ class MelFid(MelUInt32):
             fid = None
         result = function(fid)
         if save_fids: setattr(record, attr, result)
-
-#------------------------------------------------------------------------------
-class MelOptStruct(MelStruct):
-    """Represents an optional structure that is only dumped if at least one
-    value is not equal to the default."""
-
-    def pack_subrecord_data(self, record):
-        # TODO: Unfortunately, checking if the attribute is None is not
-        # really effective.  Checking it to be 0,empty,etc isn't effective either.
-        # It really just needs to check it against the default. - make all defaults None?
-        for attr, default in zip(self.attrs, self.defaults):
-            oldValue = getattr(record, attr)
-            if oldValue is not None and oldValue != default:
-                return super(MelOptStruct, self).pack_subrecord_data(record)
-        return None
-
-    def mapFids(self, record, function, save_fids=False):
-        """Don't map if we won't be dumped - this incidentally means that
-        all fids are also on default so not loaded."""
-        if any((rec_val := getattr(record, at)) is not None and
-            rec_val != dflt for at, dflt in zip(self.attrs, self.defaults)):
-            super().mapFids(record, function, save_fids)

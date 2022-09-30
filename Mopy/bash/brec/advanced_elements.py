@@ -451,7 +451,7 @@ class MelTruncatedStruct(MelStruct):
     """Works like a MelStruct, but automatically upgrades certain older,
     truncated struct formats."""
     def __init__(self, sub_sig, sub_fmt, *elements, old_versions,
-                 is_optional=False, is_required=False):
+                 is_required=None):
         """Creates a new MelTruncatedStruct with the specified parameters.
 
         :param sub_sig: The subrecord signature of this struct.
@@ -459,12 +459,11 @@ class MelTruncatedStruct(MelStruct):
         :param elements: The element syntax of this struct.
         :param old_versions: The older formats that are supported by this
             struct.
-        :param is_optional: Whether or not this struct should behave like
-            MelOptStruct."""
+        :param is_required: Whether this struct should be dumped even if not
+            loaded."""
         if not isinstance(old_versions, set):
             raise SyntaxError('MelTruncatedStruct: old_versions must be a set')
         super().__init__(sub_sig, sub_fmt, *elements, is_required=is_required)
-        self._is_optional = is_optional
         self._all_unpackers = {
             structs_cache[alt_fmt].size: structs_cache[alt_fmt].unpack for
             alt_fmt in old_versions}
@@ -495,27 +494,6 @@ class MelTruncatedStruct(MelStruct):
                   zip(unpacked_val, self.actions)),
         # append default values (actions are already applied to self.defaults!)
                 *self.defaults[len(unpacked_val):])
-
-    def pack_subrecord_data(self, record):
-        if self._is_optional:
-            # If this struct is optional, compare the current values to the
-            # defaults and skip the dump conditionally - basically the same
-            # thing MelOptStruct does
-            for attr, default in zip(self.attrs, self.defaults):
-                curr_val = getattr(record, attr)
-                if curr_val is not None and curr_val != default:
-                    break
-            else:
-                return None
-        return super(MelTruncatedStruct, self).pack_subrecord_data(record)
-
-    def mapFids(self, record, function, save_fids=False):
-        """Don't map if we won't be dumped - this incidentally means that
-        all fids are also on default so not loaded."""
-        if not self._is_optional or any((rec_val := getattr(record, at)
-                ) is not None and rec_val != dflt
-                for at, dflt in zip(self.attrs, self.defaults)):
-            super().mapFids(record, function, save_fids)
 
     @property
     def static_size(self):

@@ -47,7 +47,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, MelLscrRotation, \
     MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
-    MelObjectTemplate, MelOptStruct, MelPartialCounter, MelPerkData, \
+    MelObjectTemplate, MelPartialCounter, MelPerkData, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, \
@@ -207,16 +207,16 @@ class MelLocation(MelUnion):
     """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
     def __init__(self, sub_sig):
         super().__init__({
-            (0, 1, 4, 6): MelOptStruct(sub_sig, ['i', 'I', 'i', 'I'],
+            (0, 1, 4, 6): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
                 'location_type', (FID, 'location_value'), 'location_radius',
                 'location_collection_index'),
-            (2, 3, 7, 12, 13): MelOptStruct(sub_sig, ['i', '4s', 'i', 'I'],
+            (2, 3, 7, 12, 13): MelStruct(sub_sig, ['i', '4s', 'i', 'I'],
                 'location_type', 'location_value', 'location_radius',
                 'location_collection_index'),
-            (5, 10, 11): MelOptStruct(sub_sig, ['i', 'I', 'i', 'I'],
+            (5, 10, 11): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
                 'location_type', 'location_value', 'location_radius',
                 'location_collection_index'),
-            (8, 9, 14): MelOptStruct(sub_sig, ['3i', 'I'],
+            (8, 9, 14): MelStruct(sub_sig, ['3i', 'I'],
                 'location_type', 'location_value', 'location_radius',
                 'location_collection_index'),
             }, decider=PartialLoadDecider(
@@ -1596,7 +1596,7 @@ class MreImgs(MelRecord):
         MelEdid(),
         # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
         # skip for everything else
-        MelOptStruct(b'ENAM', ['14f'], 'enam_hdr_eye_adapt_speed',
+        MelStruct(b'ENAM', ['14f'], 'enam_hdr_eye_adapt_speed',
             'enam_hdr_tonemap_e', 'enam_hdr_bloom_threshold',
             'enam_hdr_bloom_scale', 'enam_hdr_auto_exposure_min_max',
             'enam_hdr_sunlight_scale', 'enam_hdr_sky_scale',
