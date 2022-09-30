@@ -83,9 +83,9 @@ class MelAIAccompanyPackage(MelOptStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
     def __init__(self, ai_package_sig):
         super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
-            [u'3f', u'H', u'32s', u'B', u's'], u'dest_x', u'dest_y', u'dest_z', u'package_duration',
-            (FixedString(32), u'package_id'), (u'unknown_marker', 1),
-            u'unused1')
+            ['3f', 'H', '32s', 'B', 's'], 'dest_x', 'dest_y', 'dest_z',
+            'package_duration', (FixedString(32), 'package_id'),
+            'unknown_marker', 'unused1')
 
 class MelAIPackages(MelGroups):
     """Handles the AI_* and CNDT subrecords, which have the additional
