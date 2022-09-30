@@ -35,7 +35,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     appdata_name = u'Enderal'
     # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
     # has TESV.exe, but no Enderal Launcher.exe
-    game_detect_includes = [u'Enderal Launcher.exe', u'TESV.exe']
+    game_detect_includes = {'Enderal Launcher.exe', 'TESV.exe'}
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'
@@ -43,7 +43,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     loot_dir = u'Enderal'
     loot_game_name = 'Enderal'
     boss_game_name = u'' # BOSS does not support Enderal
-    regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
+    registry_keys = [(r'SureAI\Enderal', 'Install_Path')]
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'

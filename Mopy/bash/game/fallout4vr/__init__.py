@@ -36,13 +36,13 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     my_games_name = u'Fallout4VR'
     appdata_name = u'Fallout4VR'
     launch_exe = u'Fallout4VR.exe'
-    game_detect_includes = [u'Fallout4VR.exe']
+    game_detect_includes = {'Fallout4VR.exe'}
     version_detect_file = u'Fallout4VR.exe'
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     loot_game_name = 'Fallout4VR'
-    regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Fallout 4 VR', 'Installed Path')]
 
     espm_extensions = Fallout4GameInfo.espm_extensions - {u'.esl'}
     check_esl = False

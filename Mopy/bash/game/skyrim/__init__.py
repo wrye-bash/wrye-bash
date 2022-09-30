@@ -38,14 +38,14 @@ class SkyrimGameInfo(PatchGame):
     appdata_name = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_includes = [u'SkyrimLauncher.exe']
+    game_detect_includes = {'SkyrimLauncher.exe'}
     version_detect_file = u'TESV.exe'
     master_file = bolt.FName(u'Skyrim.esm')
     taglist_dir = u'Skyrim'
     loot_dir = u'Skyrim'
     loot_game_name = 'Skyrim'
     boss_game_name = u'Skyrim'
-    regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Skyrim', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = u'bash.installers.openSkyrimNexus.continue'

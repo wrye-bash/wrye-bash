@@ -134,55 +134,166 @@
     <li>Nehrim&colon; At Fate's Edge</li>
     <li>Oblivion (Steam and Windows Store versions)</li>
     <li>Skyrim</li>
-    <li>Skyrim&colon; Special Edition (Steam and Windows Store versions)</li>
+    <li>Skyrim&colon; Special Edition (GOG, Steam and Windows Store versions)</li>
     <li>Skyrim VR</li>
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
 
 <h3 id="intro-glossary">Glossary <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Modding for Creation Engine games has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
+<p>Modding for Creation Engine games has a wonderful history of confusing
+    terminology. The list below details some terms commonly used when dealing
+    with mods.</p>
 <ul>
-    <li><strong>The game</strong> is the game that Wrye Bash is managing, one of the ones listed above.</li>
-    <li><strong>Windows Store</strong> refers to a game installed with the Windows Store.  This could also be referred to as a Game Pass, Xbox App, or Microsoft Store game.</li>
-    <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to describe the game crashing.</li>
-    <li><strong>DLC</strong> refers to any of the official downloadable content for the game.</li>
-    <li><strong>Mod</strong> refers to any unofficial user-made modification to the game.</li>
-    <li><strong>Mod author</strong> refers to a person that makes modifications to the game. It can also refer to those who are involved in the creation of utilities that are used by mod authors and/or users.</li>
-    <li><strong>ESM</strong> (case-sensitive) or <strong>ESM-flagged file</strong> refers to any file that the game treats as a <strong>master</strong>. For games before Fallout 4, the only thing that mattered was a flag inside the file called the ESM flag. For newer games, files with the extension <code>.esm</code> are treated as masters too, whether they have the flag set or not. These load before all ESPs (see below). It is an acronym for Elder Scrolls Master.</li>
-    <li><strong>.esm</strong> (case-sensitive) refers to files with the extension <code>.esm</code>. See the ESM entry above for notes on how they behave in different games.</li>
-    <li><strong>ESP</strong> (case-insensitive) refers to any file with a <code>.esp</code> extension. It is an acronym for Elder Scrolls Plugin.</li>
-    <li><strong>ESL</strong> (case-sensitive) refers to any file with a flag called the ESL flag set. Files with the extension <code>.esl</code> are treated as ESLs whether they have the flag or not. Only Fallout 4 and Skyrim&colon; Special Edition currently support these. Certain restrictions apply as to which plugins can be ESL-flagged. They do not take up a regular load order slot, theoretically allowing up to 4096 plugins to be loaded.</li>
-    <li><strong>.esl</strong> (case-sensitive) refers to files with the extension <code>.esl</code>. These automatically receive the ESL and ESM flags. Only Fallout 4 and Skyrim&colon; Special Edition currently support them.</li>
-    <li><strong>ESU</strong> (case-insensitive) refers to any file with a <code>.esu</code> extension. These are an unofficial type of plugin used by xEdit. It is an acronym for Elder Scrolls Update.</li>
+    <li><strong>The game</strong> is the game that Wrye Bash is managing,
+        one of the ones listed above.</li>
+    <li><strong>Windows Store</strong> refers to a game installed with the
+        Windows Store. This could also be referred to as a Game Pass, Xbox App,
+        or Microsoft Store game.</li>
+    <li><strong>GOG</strong> refers to a game bought from GOG.</li>
+    <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to
+        describe the game crashing.</li>
+    <li><strong>DLC</strong> refers to any of the official downloadable content
+        for the game.</li>
+    <li><strong>Mod</strong> refers to any unofficial user-made modification to
+        the game.</li>
+    <li><strong>Mod author</strong> refers to a person that makes modifications
+        to the game. It can also refer to those who are involved in the
+        creation of utilities that are used by mod authors and/or users.</li>
+    <li><strong>ESM</strong> (case-sensitive) or
+        <strong>ESM-flagged file</strong> refers to any file that the game
+        treats as a <strong>master</strong>. For games before Fallout 4, the
+        only thing that mattered was a flag inside the file called the ESM
+        flag. For newer games, files with the extension <code>.esm</code> are
+        treated as masters too, whether they have the flag set or not. These
+        load before all ESPs (see below). It is an acronym for Elder Scrolls
+        Master.</li>
+    <li><strong>.esm</strong> (case-sensitive) refers to files with the
+        extension <code>.esm</code>. See the ESM entry above for notes on how
+        they behave in different games.</li>
+    <li><strong>ESP</strong> (case-insensitive) refers to any file with a
+        <code>.esp</code> extension. It is an acronym for Elder Scrolls
+        Plugin.</li>
+    <li><strong>ESL</strong> (case-sensitive) refers to any file with a flag
+        called the ESL flag set. Files with the extension <code>.esl</code> are
+        treated as ESLs whether they have the flag or not. Only Fallout 4 and
+        Skyrim&colon; Special Edition currently support these. Certain restrictions
+        apply as to which plugins can be ESL-flagged. They do not take up a
+        regular load order slot, theoretically allowing up to 4096 ESL plugins
+        to be loaded.</li>
+    <li><strong>.esl</strong> (case-sensitive) refers to files with the
+        extension <code>.esl</code>. These automatically receive the ESL and
+        ESM flags. Only Fallout 4 and Skyrim&colon; Special Edition currently support
+        them.</li>
+    <li><strong>ESU</strong> (case-insensitive) refers to any file with a
+        <code>.esu</code> extension. These are an unofficial type of plugin
+        used by xEdit. It is an acronym for Elder Scrolls Update.</li>
     <li><strong>Plugin</strong> refers to any of the above file types.</li>
-    <li><strong>Master</strong> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)</li>
-    <li><strong>The game's master file</strong> refers to the ESM that must be loaded for the game to function. A short table showing the master file for each game follows:</li>
+    <li><strong>Master</strong> refers to any plugins that another plugin is
+        dependent on to function. (It can also refer to an ESM file, as it used
+        to be that only ESMs could be masters, until mod authors developed
+        methods of using ESP files as masters too. The latter definition will
+        not be used in this documentation.)</li>
+    <li><strong>The game's master file</strong> refers to the ESM that must be
+        loaded for the game to function. A short table showing the master file
+        for each game follows:</li>
     <table>
-        <thead><tr><th>Game</th><th>Master File</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>Master File</th>
+            </tr>
+        </thead>
         <tbody>
-            <tr><td>Enderal&colon; Forgotten Stories</td><td>Skyrim.esm</td></tr>
-            <tr><td>Enderal&colon; Forgotten Stories&colon; Special Edition</td><td>Skyrim.esm</td></tr>
-            <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
-            <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
-            <tr><td>Fallout 4 VR</td><td>Fallout4.esm</td></tr>
-            <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
-            <tr><td>Morrowind</td><td>Morrowind.esm</td></tr>
-            <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
-            <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
-            <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
-            <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
-            <tr><td>Skyrim VR</td><td>Skyrim.esm</td></tr>
+            <tr>
+                <td>Enderal&colon; Forgotten Stories</td>
+                <td>Skyrim.esm</td>
+            </tr>
+            <tr>
+                <td>Enderal&colon; Forgotten Stories&colon; Special Edition</td>
+                <td>Skyrim.esm</td>
+            </tr>
+            <tr>
+                <td>Fallout 3</td>
+                <td>Fallout3.esm</td>
+            </tr>
+            <tr>
+                <td>Fallout 4</td>
+                <td>Fallout4.esm</td>
+            </tr>
+            <tr>
+                <td>Fallout 4 VR</td>
+                <td>Fallout4.esm</td>
+            </tr>
+            <tr>
+                <td>Fallout&colon; New Vegas</td>
+                <td>FalloutNV.esm</td>
+            </tr>
+            <tr>
+                <td>Morrowind</td>
+                <td>Morrowind.esm</td>
+            </tr>
+            <tr>
+                <td>Nehrim&colon; At Fate's Edge</td>
+                <td>Nehrim.esm</td>
+            </tr>
+            <tr>
+                <td>Oblivion</td>
+                <td>Oblivion.esm</td>
+            </tr>
+            <tr>
+                <td>Skyrim</td>
+                <td>Skyrim.esm</td>
+            </tr>
+            <tr>
+                <td>Skyrim&colon; Special Edition</td>
+                <td>Skyrim.esm</td>
+            </tr>
+            <tr>
+                <td>Skyrim VR</td>
+                <td>Skyrim.esm</td>
+            </tr>
         </tbody>
     </table>
-    <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.</li>
-    <li><strong>Resource Conflicts</strong> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.</li>
-    <li><strong>Data Conflicts</strong> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins or creating patches.</li>
-    <li><strong>BSAs</strong> are Bethesda Softwork Archives, with <code>.bsa</code> (<strong>All but Fallout 4</strong>) or <code>.ba2</code> (<strong>Fallout 4</strong>) file extensions. They can be used to store resource files such as textures and meshes.</li>
-    <li><strong>ITMs</strong> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.</li>
-    <li><strong>UDRs</strong> are Undeleted and Disabled References. Deleted References can cause crashes, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. Note that this acronym does not refer to the deleted references themselves - it actually refers to their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS/LOOT will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.</li>
+    <li><strong>Conflicts</strong> occur when two different mods try to change
+        the same game variable or resource, which could be anything from a
+        specific object in game to a script or a texture. Conflicts can cause
+        problems, including CTDs or save game corruption, but they are not
+        inherently bad, and most modding is the result of purposeful
+        conflicts.</li>
+    <li><strong>Resource Conflicts</strong> occur when two mods contain two
+        different files that go in the same place, so one mod's file overwrites
+        the others's file. This type of conflict can be managed by altering the
+        install order of mods.</li>
+    <li><strong>Data Conflicts</strong> occur when two mod plugins alter the
+        same game data. This type of conflict can be managed by altering the
+        load order of plugins or creating patches.</li>
+    <li><strong>BSAs</strong> are Bethesda Softwork Archives, with
+        <code>.bsa</code> (<strong>All but Fallout 4</strong>) or
+        <code>.ba2</code> (<strong>Fallout 4</strong>) file extensions. They
+        can be used to store resource files such as textures and meshes.</li>
+    <li><strong>ITMs</strong> are Identical To Master records, ie. data in a
+        plugin for something that is identical to the data for that thing in
+        the plugin's master(s). Usually a type of unintended edit, known as a
+        <q>dirty edit</q>, which can break the functionality of other mods that
+        require the record in question to have a specific value, but which have
+        that value overridden by an ITM record.</li>
+    <li><strong>UDRs</strong> are Undeleted and Disabled References. Deleted
+        References can cause crashes, and this can be avoided by first
+        undeleting and then disabling them instead. A type of <q>dirty
+            edit</q>. Note that this acronym does not refer to the deleted
+        references themselves - it actually refers to their fixed counterparts.
+        For example, <q>Scan For UDRs</q> will scan for deleted references, not
+        undeleted and disabled references, and BOSS/LOOT will report the UDR
+        count for a plugin, which is actually the number of deleted references
+        that can be fixed.</li>
 </ul>
-<p>This readme will also use the placeholder <strong>[Game]</strong>. Replace this with the game that you're managing with Wrye Bash. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part of the Wrye Bash documentation.</p>
+<p>This readme will also use the placeholder <strong>[Game]</strong>. Replace
+    this with the game that you're managing with Wrye Bash. Additional
+    terminology specific to Wrye Bash's functions will be introduced as
+    required. Also, links that are followed by
+    <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part
+    of the Wrye Bash documentation.</p>
 
 <h2 id="install">Installation <a class="back2top" href="#contents">Back to top</a></h2>
 <p>The simplest way to install Wrye Bash is using the installer, as it installs

@@ -25,7 +25,7 @@ import struct as _struct
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON
+from .. import WS_COMMON_FILES
 from ... import bolt
 
 class OblivionGameInfo(PatchGame):
@@ -42,15 +42,15 @@ class OblivionGameInfo(PatchGame):
     launch_exe = u'Oblivion.exe'
     # Set to this because that file does not exist in Nehrim, whereas
     # OblivionLauncher.exe and Oblivion.exe do
-    game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {_j('Data', 'Oblivion.esm')}
+    game_detect_excludes = WS_COMMON_FILES
     version_detect_file = u'Oblivion.exe'
     master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
     loot_dir = u'Oblivion'
     loot_game_name = 'Oblivion'
     boss_game_name = u'Oblivion'
-    regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'

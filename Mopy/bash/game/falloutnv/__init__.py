@@ -35,14 +35,14 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     my_games_name = u'FalloutNV'
     appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
-    game_detect_includes = [u'FalloutNV.exe']
+    game_detect_includes = {'FalloutNV.exe'}
     version_detect_file = u'FalloutNV.exe'
     master_file = bolt.FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
     loot_dir = u'FalloutNV'
     loot_game_name = 'FalloutNV'
     boss_game_name = u'FalloutNV'
-    regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\FalloutNV', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
     nexusKey = u'bash.installers.openNewVegasNexus.continue'

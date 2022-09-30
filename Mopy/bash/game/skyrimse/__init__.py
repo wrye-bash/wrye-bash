@@ -21,9 +21,8 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
-
 from ..skyrim import SkyrimGameInfo
-from .. import WS_COMMON
+from .. import GOG_COMMON_FILES, WS_COMMON_FILES
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -35,17 +34,19 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     appdata_name = u'Skyrim Special Edition'
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE
-    game_detect_includes = [u'SkyrimSELauncher.exe']
-    # Steam/GOG SkyrimSE has SkyrimSELauncher.exe, but no appxmanifest.xml
-    # Windows Store SkryimSE has SkyrimSELauncher.exe and appxmanifest.xml
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {'SkyrimSELauncher.exe'}
+    # The Steam version has SkyrimSELauncher.exe, but no appxmanifest.xml or
+    # Galaxy64.dll. The Windows Store version has SkyrimSELauncher.exe and
+    # appxmanifest.xml, but no Galaxy64.dll. The GOG version has
+    # SkyrimSELauncher.exe and Galaxy64.dll, but no appxmanifest.xml.
+    game_detect_excludes = GOG_COMMON_FILES | WS_COMMON_FILES
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'
     loot_game_name = 'Skyrim Special Edition'
     boss_game_name = u'' # BOSS does not support SSE
-    regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
-                      u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Skyrim Special Edition',
+                       'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
@@ -108,7 +109,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         'skyrim - textures6.bsa',
         'skyrim - textures7.bsa',
         'skyrim - textures8.bsa',
-        'skyrim - voices_en0.bsa',
         'skyrim - voices_de0.bsa',
         'skyrim - voices_en0.bsa',
         'skyrim - voices_es0.bsa',

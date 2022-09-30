@@ -31,7 +31,7 @@ class NehrimGameInfo(OblivionGameInfo):
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
-    game_detect_includes = [u'NehrimLauncher.exe']
+    game_detect_includes = {'NehrimLauncher.exe'}
     master_file = bolt.FName(u'Nehrim.esm')
     loot_dir = u'Nehrim'
     loot_game_name = 'Nehrim'

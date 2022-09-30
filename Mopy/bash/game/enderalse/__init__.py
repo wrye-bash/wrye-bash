@@ -38,12 +38,12 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     appdata_name = u'Enderal Special Edition'
     # Enderal LE also has an Enderal Launcher.exe, but no SkyrimSE.exe. Skyrim
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe
-    game_detect_includes = [u'Enderal Launcher.exe', u'SkyrimSE.exe']
+    game_detect_includes = {'Enderal Launcher.exe', 'SkyrimSE.exe'}
     loot_dir = u'Enderal Special Edition'
     loot_game_name = 'Enderal Special Edition'
     # This is in HKCU. There's also one in HKLM that uses 'SureAI\Enderal SE'
     # for some reason
-    regInstallKeys = (u'SureAI\\EnderalSE', u'Install_Path')
+    registry_keys = [(r'SureAI\EnderalSE', 'Install_Path')]
     nexusUrl = u'https://www.nexusmods.com/enderalspecialedition/'
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'

@@ -76,11 +76,12 @@ class GameInfo(object):
     # file is shared by multiple games, in which case you MUST find unique
     # files - for an example, see Enderal and Skyrim (and the SE versions of
     # both).
-    game_detect_includes = []
+    game_detect_includes = set()
     # Path to one or more files to look for to see if this is *not* the right
     # game when joined with the game's root path. Used to differentia between
-    # versions of the game distributed on different platforms (Windows Store).
-    game_detect_excludes = []
+    # versions of the game distributed on different platforms (at the moment
+    # these are GOG, Steam and Windows Store).
+    game_detect_excludes = set()
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
@@ -103,14 +104,17 @@ class GameInfo(object):
     # The name that this game has on the BOSS command line. If empty, indicates
     # that BOSS does not support this game
     boss_game_name = u''
-    # Registry keys to read to find the install location
+    # Registry keys to read to find the install location. This is a list of
+    # tuples of two strings, where each tuple defines the subkey and entry to
+    # try. Multiple tuples in the list will be tried in order, with the first
+    # one that works being used.
     # These are relative to:
     #  HKLM\Software
     #  HKLM\Software\Wow6432Node
     #  HKCU\Software
     #  HKCU\Software\Wow6432Node
-    # Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
-    regInstallKeys = ()
+    # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
+    registry_keys = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -547,6 +551,9 @@ class GameInfo(object):
                 any(test_path.join(p).exists()
                 for p in cls.game_detect_excludes))
 
-WS_COMMON = [u'appxmanifest.xml']
+# Files shared by versions of games that are published on the Windows Store
+WS_COMMON_FILES = {'appxmanifest.xml'}
+# Files shared by versions of games that are published on GOG
+GOG_COMMON_FILES = {'Galaxy64.dll'}
 
 GAME_TYPE = None

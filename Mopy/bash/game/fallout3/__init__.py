@@ -38,14 +38,14 @@ class Fallout3GameInfo(PatchGame):
     my_games_name = u'Fallout3'
     appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
-    game_detect_includes = [u'Fallout3.exe']
+    game_detect_includes = {'Fallout3.exe'}
     version_detect_file = u'Fallout3.exe'
     master_file = bolt.FName(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
     loot_dir = u'Fallout3'
     loot_game_name = 'Fallout3'
     boss_game_name = u'Fallout3'
-    regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Fallout3', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus.continue'

@@ -359,6 +359,15 @@ class fast_cached_property:
             instance.__dict__[self._wrapped_attr] = wrapped_val
         return wrapped_val
 
+class classproperty:
+    """Defines a property on the class rather than an instance. Does not
+    support writing to the property though."""
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, obj, owner):
+        return self.fget(owner)
+
 # LowStrings ------------------------------------------------------------------
 class CIstr(str):
     """See: http://stackoverflow.com/q/43122096/281545"""

@@ -25,7 +25,7 @@
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON
+from .. import WS_COMMON_FILES
 from ... import bolt
 
 class Fallout4GameInfo(PatchGame):
@@ -38,14 +38,14 @@ class Fallout4GameInfo(PatchGame):
     my_games_name = u'Fallout4'
     appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_includes = [u'Fallout4.exe']
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {'Fallout4.exe'}
+    game_detect_excludes = WS_COMMON_FILES
     version_detect_file = u'Fallout4.exe'
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
     loot_dir = u'Fallout4'
     loot_game_name = 'Fallout4'
-    regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Fallout4', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = u'bash.installers.openFallout4Nexus.continue'

@@ -906,12 +906,14 @@ def get_registry_path(subkey, entry, test_path_callback):
 
 def get_registry_game_paths(submod):
     """Check registry-supplied game paths for the game detection file(s)."""
-    reg_keys = submod.regInstallKeys
+    reg_keys = submod.registry_keys
     if not reg_keys:
         return [] # Game is not detectable via registry
-    subkey, entry = reg_keys
-    reg_path = get_registry_path(subkey, entry, submod.test_game_path)
-    return [] if not reg_path else [reg_path]
+    for subkey, entry in reg_keys:
+        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
+        if reg_path:
+            return [reg_path]
+    return []
 
 def get_win_store_game_info(submod):
     """Get all information about a Windows Store application."""

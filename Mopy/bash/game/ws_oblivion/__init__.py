@@ -26,17 +26,17 @@ from ..oblivion import OblivionGameInfo
 from ..windows_store_game import WindowsStoreMixin
 
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
-    displayName = u'Oblivion (WS)'
+    displayName = 'Oblivion (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.
 
     class Ws(OblivionGameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.TESOblivion-PC'
-        game_language_dirs = [u'Oblivion GOTY English',
-                              u'Oblivion GOTY French',
-                              u'Oblivion GOTY German',
-                              u'Oblivion GOTY Italian',
-                              u'Oblivion GOTY Spanish']
+        publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.TESOblivion-PC'
+        game_language_dirs = ['Oblivion GOTY English',
+                              'Oblivion GOTY French',
+                              'Oblivion GOTY German',
+                              'Oblivion GOTY Italian',
+                              'Oblivion GOTY Spanish']
 
 GAME_TYPE = WSOblivionGameInfo

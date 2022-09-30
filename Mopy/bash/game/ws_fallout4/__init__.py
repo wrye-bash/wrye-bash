@@ -26,13 +26,13 @@ from ..fallout4 import Fallout4GameInfo
 from ..windows_store_game import WindowsStoreMixin
 
 class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
-    displayName = u'Fallout 4 (WS)'
-    fsName = u'Fallout4 MS'
-    appdata_name = u'Fallout4 MS'
-    my_games_name = u'Fallout4 MS'
+    displayName = 'Fallout 4 (WS)'
+    fsName = 'Fallout4 MS'
+    my_games_name = 'Fallout4 MS'
+    appdata_name = 'Fallout4 MS'
 
     class Ws(Fallout4GameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.Fallout4-PC'
+        publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.Fallout4-PC'
 
 GAME_TYPE = WSFallout4GameInfo

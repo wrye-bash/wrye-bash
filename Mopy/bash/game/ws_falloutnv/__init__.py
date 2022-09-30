@@ -26,13 +26,13 @@ from ..falloutnv import FalloutNVGameInfo
 from ..windows_store_game import WindowsStoreMixin
 
 class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
-    displayName = u'Fallout New Vegas (WS)'
+    displayName = 'Fallout New Vegas (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.
 
     class Ws(FalloutNVGameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.FalloutNewVegas'
+        publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
         game_language_dirs = ['Fallout New Vegas English',
                               'Fallout New Vegas French',
                               'Fallout New Vegas German',

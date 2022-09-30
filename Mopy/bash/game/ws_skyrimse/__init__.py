@@ -26,13 +26,13 @@ from ..skyrimse import SkyrimSEGameInfo
 from ..windows_store_game import WindowsStoreMixin
 
 class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
-    displayName = u'Skyrim Special Edition (WS)'
-    fsName = u'Skyrim Special Edition MS'
-    appdata_name = u'Skyrim Special Edition MS'
-    my_games_name = u'Skyrim Special Edition MS'
+    displayName = 'Skyrim Special Edition (WS)'
+    fsName = 'Skyrim Special Edition MS'
+    my_games_name = 'Skyrim Special Edition MS'
+    appdata_name = 'Skyrim Special Edition MS'
 
     class Ws(SkyrimSEGameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.SkyrimSE-PC'
+        publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
 
 GAME_TYPE = WSSkyrimSEGameInfo

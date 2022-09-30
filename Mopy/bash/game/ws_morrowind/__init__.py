@@ -26,14 +26,14 @@ from ..morrowind import MorrowindGameInfo
 from ..windows_store_game import WindowsStoreMixin
 
 class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
-    displayName = u'Morrowind (WS)'
+    displayName = 'Morrowind (WS)'
     # Morrowind does not use the personal folders, so no my_games_name etc.
 
     class Ws(MorrowindGameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.TESMorrowind-PC'
-        game_language_dirs = [u'Morrowind GOTY English',
-                              u'Morrowind GOTY French',
-                              u'Morrowind GOTY German']
+        publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
+        game_language_dirs = ['Morrowind GOTY English',
+                              'Morrowind GOTY French',
+                              'Morrowind GOTY German']
 
 GAME_TYPE = WSMorrowindGameInfo

@@ -20,23 +20,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for the Windows Store version of Fallout 3."""
+"""GameInfo override for the GOG version of Skyrim SE."""
+from ..skyrimse import SkyrimSEGameInfo
+from ..gog_game import GOGMixin
 
-from ..fallout3 import Fallout3GameInfo
-from ..windows_store_game import WindowsStoreMixin
+class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
+    displayName = 'Skyrim Special Edition (GOG)'
+    fsName = 'Skyrim Special Edition GOG'
+    my_games_name = 'Skyrim Special Edition GOG'
+    appdata_name = 'Skyrim Special Edition GOG'
+    registry_keys = [(r'GOG.com\Games\1711230643', 'path'),
+                     (r'GOG.com\Games\1162721350', 'path')]
 
-class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
-    displayName = 'Fallout 3 (WS)'
-    # `appdata_name` and `my_games_name` use the original locations, unlike
-    # newer Windows Store games.
-
-    class Ws(Fallout3GameInfo.Ws):
-        publisher_name = 'Bethesda'
-        win_store_name = 'BethesdaSoftworks.Fallout3'
-        game_language_dirs = ['Fallout 3 GOTY English',
-                              'Fallout 3 GOTY French',
-                              'Fallout 3 GOTY German',
-                              'Fallout 3 GOTY Italian',
-                              'Fallout 3 GOTY Spanish']
-
-GAME_TYPE = WSFallout3GameInfo
+GAME_TYPE = GOGSkyrimSEGameInfo

@@ -24,7 +24,7 @@
 import struct as _struct
 
 from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON
+from .. import WS_COMMON_FILES
 from ... import bolt
 
 class MorrowindGameInfo(PatchGame):
@@ -37,8 +37,8 @@ class MorrowindGameInfo(PatchGame):
     uses_personal_folders = False
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
-    game_detect_includes = [u'Morrowind.exe']
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {'Morrowind.exe'}
+    game_detect_excludes = WS_COMMON_FILES
     version_detect_file = u'Morrowind.exe'
     master_file = bolt.FName(u'Morrowind.esm')
     mods_dir = u'Data Files'
@@ -46,7 +46,7 @@ class MorrowindGameInfo(PatchGame):
     loot_dir = u'Morrowind'
     loot_game_name = 'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
-    regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Morrowind', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/morrowind/'
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'

@@ -1001,17 +1001,17 @@ class SkyrimSeBsa(BSA):
 # Factory
 def get_bsa_type(game_fsName):
     """:rtype: type"""
-    if game_fsName == u'Morrowind':
+    if game_fsName == 'Morrowind':
         return MorrowindBsa
-    elif game_fsName == u'Oblivion':
+    elif game_fsName == 'Oblivion':
         return OblivionBsa
-    elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
+    elif game_fsName in ('Enderal', 'Fallout3', 'FalloutNV', 'Skyrim'):
         return BSA
-    elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR',
-                         u'Enderal Special Edition',
-                         u'Skyrim Special Edition MS'):
+    elif game_fsName in ('Skyrim Special Edition', 'Skyrim VR',
+        'Enderal Special Edition', 'Skyrim Special Edition MS',
+        'Skyrim Special Edition GOG'):
         return SkyrimSeBsa
-    elif game_fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
+    elif game_fsName in ('Fallout4', 'Fallout4VR', 'Fallout4 MS'):
         # Hashes are I not Q in BA2s!
-        _HashedRecord.formats = [(u'I', struct_calcsize(u'I'))]
+        _HashedRecord.formats = [('I', struct_calcsize('I'))]
         return BA2
