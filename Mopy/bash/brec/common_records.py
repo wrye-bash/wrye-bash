@@ -169,24 +169,24 @@ class AMreHeader(MelRecord):
     class MelAuthor(MelUnicode):
         def __init__(self):
             from .. import bush
-            super().__init__(b'CNAM', 'author_pstr', '',
-                bush.game.Esp.max_author_length)
+            super().__init__(b'CNAM', 'author_pstr',
+                             maxSize=bush.game.Esp.max_author_length)
 
     class MelDescription(MelUnicode):
         def __init__(self):
             from .. import bush
-            super().__init__(b'SNAM', 'description_pstr', '',
-                bush.game.Esp.max_desc_length)
+            super().__init__(b'SNAM', 'description_pstr',
+                             maxSize=bush.game.Esp.max_desc_length)
 
     @property
     def description(self):
-        return to_unix_newlines(self.description_pstr or u'')
+        return to_unix_newlines(self.description_pstr or '')
     @description.setter
     def description(self, new_desc):
         self.description_pstr = to_win_newlines(new_desc)
     @property
     def author(self):
-        return remove_newlines(self.author_pstr or u'')
+        return remove_newlines(self.author_pstr or '')
     @author.setter
     def author(self, new_author):
         self.author_pstr = remove_newlines(new_author)
@@ -625,7 +625,7 @@ class MreGlob(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFixedString(b'FNAM', 'global_format', 1, 's'),
+        MelFixedString(b'FNAM', 'global_format', 1),
         # Rather stupidly all values, despite their designation (short, long,
         # float, bool (FO4)), are stored as floats - which means that very
         # large integers lose precision

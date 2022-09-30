@@ -2050,7 +2050,7 @@ class MreSlgm(MelRecord):
         MelScript(),
         MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
-        MelUInt8(b'SLCP', u'capacity', 1),
+        MelUInt8(b'SLCP', 'capacity'),
     )
     __slots__ = melSet.getSlotsUsed()
 

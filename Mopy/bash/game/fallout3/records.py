@@ -34,7 +34,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
-    MelRaceVoices, MelBounds, null1, null2, MelScriptVars, MelSorted, \
+    MelRaceVoices, MelBounds, null2, MelScriptVars, MelSorted, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, \
@@ -218,7 +218,7 @@ class MelEquipmentTypeFo3(MelSInt32):
         # 11: 'Stimpak',
         # 12: 'Food',
         # 13: 'Alcohol'
-        super().__init__(b'ETYP', 'equipment_type', -1)
+        super().__init__(b'ETYP', 'equipment_type')
 
 #------------------------------------------------------------------------------
 class MelItems(AMelItems):
@@ -1771,7 +1771,7 @@ class MreNavm(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32(b'NVER', u'version', 11),
+        MelUInt32(b'NVER', 'version'),
         MelStruct(b'DATA', [u'I', u'5I'],(FID,'cell'),'vertexCount','triangleCount','enternalConnectionsCount','nvcaCount','doorsCount'),
         MelArray('vertices',
             MelStruct(b'NVVX', [u'3f'], 'vertexX', 'vertexY', 'vertexZ'),
@@ -2757,7 +2757,7 @@ class MreStat(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        fnv_only(MelSInt8(b'BRUS', 'passthroughSound', -1)),
+        fnv_only(MelSInt8(b'BRUS', 'passthroughSound')),
         fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3215,7 +3215,7 @@ class MreWthr(MelRecord):
             MelWthrColors(b'NAM0'),
         ), fnv_version=MelWthrColorsFnv(b'NAM0', 'daytimeColors')),
         MelStruct(b'FNAM', [u'6f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase(b'INAM', 'unused1', null1 * 304),
+        MelBase(b'INAM', 'unused1'),
         MelStruct(b'DATA', [u'15B'],
             'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
