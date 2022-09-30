@@ -657,9 +657,7 @@ class MelStruct(MelBase):
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        for att, value, action in zip(self.attrs, self.defaults, self.actions):
-            if action is not None and action is not FID:
-                value = action(value)
+        for att, value in zip(self.attrs, self.defaults):
             setattr(record, att, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -704,11 +702,10 @@ class MelStruct(MelBase):
                     self._action_dexes.add(index)
             else:
                 el_0 = element[0]
-                attrIndex = el_0 == 0
+                attrIndex = el_0 == 0 ##: todo is this ever the case?
                 if callable(el_0):
                     if el_0 is FID:
                         formAttrs.add(element[1])
-                        deflts[index] = __zero_fid
                     actions[index] = el_0
                     attrIndex = 1
                     self._action_dexes.add(index)
@@ -722,6 +719,9 @@ class MelStruct(MelBase):
                     deflts[index] = element[-1] # else leave to 0
                 elif type(fmt_str) is int and fmt_str: # 0 for weird subclasses
                     deflts[index] = fmt_str * null1
+        for dex in self._action_dexes: # apply the actions to defaults once
+            act = actions[dex]
+            deflts[dex] = __zero_fid if act is FID else act(deflts[dex])
         return tuple(attrs), tuple(deflts), tuple(actions), formAttrs
 
     @staticmethod

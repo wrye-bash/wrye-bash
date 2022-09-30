@@ -1764,10 +1764,9 @@ class MreRace(MelRecord):
         MelDescription(),
         MelSpellsTes4(),
         MelRelations(with_gcr=False),
-        MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
-                    (u'skills', [0] * 14), 'unused1', 'maleHeight',
-                    'femaleHeight', 'maleWeight', 'femaleWeight',
-                    (_flags, u'flags')),
+        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
+                    'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
+                    'femaleWeight', (_flags, u'flags')),
         MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', [u'2I'], (FID, u'defaultHairMale'),
                      (FID, u'defaultHairFemale')),
@@ -1855,12 +1854,13 @@ class MreRefr(MelRecord):
     _lockFlags = Flags.from_names((2, u'leveledLock'))
 
     class MelRefrXloc(MelTruncatedStruct):
-        """Skips unused2, in the middle of the struct."""
+        """Skips unused2, in the middle of the struct - don't apply an action
+        to it!"""
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) == 5:
-                unpacked_val = (unpacked_val[:3] + self.defaults[3:4] +
-                                unpacked_val[3:])
-            return unpacked_val
+                unpacked_val = (*unpacked_val[:3], self.defaults[3],
+                                *unpacked_val[3:])
+            return super()._pre_process_unpacked(unpacked_val)
 
     melSet = MelSet(
         MelEdid(),

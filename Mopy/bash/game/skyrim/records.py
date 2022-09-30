@@ -2747,8 +2747,8 @@ class MreRace(MelRecord):
         MelBodtBod2(), # required
         MelKeywords(),
         MelRaceData(b'DATA', # required
-            [u'14b', u'2s', u'4f', u'I', u'7f', u'I', u'2i', u'f', u'i', u'5f',
-             'i', '4f', 'I', '9f'], ('skills', [0] * 14), 'unknown1',
+            ['14b', '2s', '4f', 'I', '7f', 'I', '2i', 'f', 'i', '5f', 'i',
+             '4f', 'I', '9f'], ('skills', [0] * 14), 'unknown1',
             u'maleHeight', u'femaleHeight', u'maleWeight', u'femaleWeight',
             (_data_flags_1, u'data_flags_1'), u'starting_health',
             u'starting_magicka', u'starting_stamina', u'base_carry_weight',
