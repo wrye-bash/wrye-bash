@@ -83,10 +83,11 @@ class _MelCtda(MelUnion):
     amounts to a decision tree using MelUnions."""
     # 0 = Unknown/Ignored, 1 = Int, 2 = FormID, 3 = Float
     _param_types = {0: '4s', 1: 'i', 2: 'I', 3: 'f'}
-    class _ctda_type_flags(Flags):
+
+    class _CtdaTypeFlags(Flags):
         # This is technically a lot more complex (the highest three bits also
-        # encode the comparison operator), but we only care about use_global, so we
-        # can treat the rest as unknown flags and just carry them forward
+        # encode the comparison operator), but we only care about use_global,
+        # so we can treat the rest as unknown flags and just carry them forward
         do_or: bool
         use_aliases: bool
         use_global: bool
@@ -136,7 +137,7 @@ class _MelCtda(MelUnion):
         # to handle this via MelUnion, because the deep nesting is going to
         # cause exponential growth and bring PBash down to a crawl.
         prefix_fmt = ['B', '3s', '4s', 'H', '2s']
-        prefix_elements = [(self._ctda_type_flags, 'operFlag'), 'unused1',
+        prefix_elements = [(self._CtdaTypeFlags, 'operFlag'), 'unused1',
                            'compValue', 'ifunc', 'unused2']
         # Builds an argument tuple to use for formatting the struct format
         # string from above plus the suffix we got passed in
@@ -158,7 +159,7 @@ class _MelCtda(MelUnion):
     @staticmethod
     def _build_params(func_data, prefix_elements, suffix_elements):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
-        # First, build up a list of the parameter elemnts to use
+        # First, build up a list of the parameter elements to use
         func_elements = [ # param1, param2, param3 are set here
             # 2 == FormID, see PatchGame.condition_function_data
             (FID, f'param{i}') if func_param == 2 else f'param{i}'
@@ -179,12 +180,16 @@ class _MelCtda(MelUnion):
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
+        if isinstance(record.operFlag, int):
+            record.operFlag = self._CtdaTypeFlags(record.operFlag)
         if record.operFlag.use_global:
             new_comp_val = function(record.compValue)
             if save_fids: record.compValue = new_comp_val
 
     def dumpData(self, record, out):
         # See _build_struct comments above for an explanation of this
+        if isinstance(record.operFlag, int):
+            record.operFlag = self._CtdaTypeFlags(record.operFlag)
         if record.operFlag.use_global:
             record.compValue = record.compValue.dump()
         record.compValue = struct_pack('fI'[record.operFlag.use_global],
@@ -416,18 +421,20 @@ class MelEffectsTes4(MelSequential):
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
         self._vanilla_elements = [
+            # Structs put to required as we create effects/scriptEffect -
+            # maybe rework to assign attributes on the spot
             MelGroups('effects',
                 # REHE is Restore target's Health - EFID.effect_sig
                 # must be the same as EFIT.effect_sig
                 MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
                 MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
                     'magnitude', 'area', 'duration', 'recipient',
-                    'actorValue'),
+                    'actorValue', is_required=True),
                 MelGroup('scriptEffect',
                     _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
                         (FID, 'script_fid'), 'school', 'visual',
                         (self.se_flags, 'flags'), 'unused1',
-                        old_versions={'2I4s', 'I'}),
+                        old_versions={'2I4s', 'I'}, is_required=True),
                     MelFull(),
                 ),
             ),

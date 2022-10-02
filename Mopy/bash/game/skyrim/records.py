@@ -277,7 +277,8 @@ class MelLocation(MelUnion):
                 'location_value', 'location_radius'),
             }, decider=PartialLoadDecider(
                 loader=MelSInt32(sub_sig, 'location_type'),
-                decider=AttrValDecider('location_type'))
+                decider=AttrValDecider('location_type')),
+            fallback=MelNull(b'NULL'), # ignore
         )
 
 #------------------------------------------------------------------------------
@@ -348,7 +349,8 @@ class MelTopicData(MelGroups):
                              'topic_subtype'),
             }, decider=PartialLoadDecider(
                 loader=MelUInt32(b'PDTO', 'data_type'),
-                decider=AttrValDecider('data_type'))),
+                decider=AttrValDecider('data_type')),
+            fallback=MelNull(b'NULL')), # ignore
         )
 
 #------------------------------------------------------------------------------
@@ -388,8 +390,8 @@ class MreTes4(AMreHeader):
         esl_flag: bool = flag(sse_only(9))
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.7), 'numRecords',
-                  ('nextObject', 0x800)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.7), 'numRecords',
+                  ('nextObject', 0x800), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -2327,17 +2329,18 @@ class MrePack(MelRecord):
             MelTopicData('value_topic_data'),
             MelLocation(b'PLDT'),
             MelUnion({
-                (0, 1, 3): MelOptStruct(b'PTDA', [u'i', u'I', u'i'], u'target_type',
-                    (FID, u'target_value'), u'target_count'),
-                2: MelOptStruct(b'PTDA', [u'i', u'I', u'i'], u'target_type',
-                    u'target_value', u'target_count'),
-                4: MelOptStruct(b'PTDA', [u'3i'], u'target_type',
-                    u'target_value', u'target_count'),
-                (5, 6): MelOptStruct(b'PTDA', [u'i', u'4s', u'i'], u'target_type',
-                    u'target_value', u'target_count'),
+                (0, 1, 3): MelOptStruct(b'PTDA', ['i', 'I', 'i'],
+                    'target_type', (FID, 'target_value'), 'target_count'),
+                2: MelOptStruct(b'PTDA', ['i', 'I', 'i'], 'target_type',
+                    'target_value', 'target_count'),
+                4: MelOptStruct(b'PTDA', ['3i'], 'target_type',
+                    'target_value', 'target_count'),
+                (5, 6): MelOptStruct(b'PTDA', ['i', '4s', 'i'], 'target_type',
+                    'target_value', 'target_count'),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(b'PTDA', u'target_type'),
-                decider=AttrValDecider(u'target_type'))),
+                loader=MelSInt32(b'PTDA', 'target_type'),
+                decider=AttrValDecider('target_type')),
+                fallback=MelNull(b'NULL')), # ignore
             MelBase(b'TPIC', 'unknown2'),
         ),
         MelDataInputs('data_inputs1'),

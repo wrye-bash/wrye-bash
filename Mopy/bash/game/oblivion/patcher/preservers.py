@@ -252,6 +252,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                 if not record.ranks:
                     record.ranks = [record.getDefault(u'ranks')]
                 for rank in record.ranks:
+                    if rank.rank_level is None: rank.rank_level = 0
                     if not rank.male_title: rank.male_title = rankName
                     if not rank.female_title: rank.female_title = rankName
                     if not rank.insignia_path:

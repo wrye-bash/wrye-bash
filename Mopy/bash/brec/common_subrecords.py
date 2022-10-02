@@ -545,7 +545,7 @@ class MelFactions(MelSorted):
     def __init__(self):
         super().__init__(MelGroups('factions',
             MelStruct(b'SNAM', ['I', 'B', '3s'], (FID, 'faction'), 'rank',
-                ('unused1', b'ODB')),
+                      ('unused1', b'ODB')),
         ), sort_by_attrs='faction')
 
 #------------------------------------------------------------------------------

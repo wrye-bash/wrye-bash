@@ -24,6 +24,7 @@
 higher-level building blocks can be found in common_subrecords.py."""
 from __future__ import annotations
 
+from itertools import repeat
 from typing import BinaryIO
 
 from . import utils_constants
@@ -214,7 +215,7 @@ class MelBase(Subrecord):
         return getattr(record, self.attr) # this better be bytes here
 
     def mapFids(self, record, function, save_fids=False):
-        """Applies function to fids. If save is True, then fid is set
+        """Applies function to fids. If save_fids is True, then fid is set
         to result of function - see ReplaceFormIDsPatcher."""
         raise NotImplementedError(
             f'mapFids called on subrecord without FormIDs (signatures: '
@@ -647,7 +648,8 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements):
+    def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements,
+                 is_required=None):
         """Parse elements and set attrs, defaults, actions, formAttrs where:
         * attrs is tuple of attributes (names)
         * formAttrs is set of attributes that have fids,
@@ -659,6 +661,7 @@ class MelStruct(MelBase):
         """
         if not isinstance(struct_formats, list):
             raise SyntaxError(f'Expected a list got "{struct_formats}"')
+        self._is_required = is_required
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
         struct_format = u''.join(struct_formats)
@@ -686,8 +689,9 @@ class MelStruct(MelBase):
     def hasFids(self,formElements):
         if self.formAttrs: formElements.add(self)
 
-    def setDefault(self,record):
-        for att, value in zip(self.attrs, self.defaults):
+    def setDefault(self, record, *, __nones=repeat(None)):
+        vals = self.defaults if self._is_required else __nones
+        for att, value in zip(self.attrs, vals):
             setattr(record, att, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -701,11 +705,18 @@ class MelStruct(MelBase):
             try:
                 values[dex] = values[dex].dump()
             except AttributeError:
-                # Apply the action to itself before dumping to handle e.g. a
-                # FixedString getting assigned a unicode value. Needed also
-                # when we read a flag say from a csv
+                if values[dex] is None: # assume all the rest are None
+                    return None # don't dump this one, was not loaded
+                # Apply the action to itself before dumping to handle
+                # e.g. a FixedString getting assigned a unicode value.
+                # Needed also when we read a flag say from a csv
                 values[dex] = self.actions[dex](values[dex]).dump()
-        return self._packer(*values)
+        try:
+            return self._packer(*values)
+        except struct_error:
+            if any(v is None for v in values): # assume all the rest are None
+                return
+            raise
 
     def mapFids(self, record, function, save_fids=False):
         for attr in self.formAttrs:

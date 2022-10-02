@@ -29,7 +29,7 @@ from ._saves import SaveFile, SreNPC
 from .. import bush
 from ..bolt import Flags, Path, encode, pack_byte, pack_int, struct_pack, \
     struct_unpack, structs_cache
-from ..brec import FormId, RecHeader, RecordType, int_unpacker, null2
+from ..brec import FormId, int_unpacker, null2
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
@@ -441,8 +441,7 @@ class PCFaces(object):
             eid = eidForm % count
         #--NPC
         npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
-        npc = RecordType.sig_to_class[b'NPC_'](
-            RecHeader(b'NPC_', 0, 0x40000, npcid, 0, _entering_context=True))
+        npc = modFile.create_record(b'NPC_', npcid, head_flags=0x40000)
         npc.eid = eid
         npc.flags.female = face.gender
         npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
@@ -456,8 +455,6 @@ class PCFaces(object):
             npc.health = face.health
             npc.unused2 = face.unused2
         if face.attributes: npc.attributes = face.attributes
-        npc.setChanged()
-        modFile.tops[b'NPC_'].id_records[npcid] = npc
         #--Save
         modFile.safeSave()
         return npc

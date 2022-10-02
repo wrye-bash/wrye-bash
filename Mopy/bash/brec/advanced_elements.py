@@ -451,7 +451,7 @@ class MelTruncatedStruct(MelStruct):
     """Works like a MelStruct, but automatically upgrades certain older,
     truncated struct formats."""
     def __init__(self, sub_sig, sub_fmt, *elements, old_versions,
-            is_optional=False):
+                 is_optional=False, is_required=False):
         """Creates a new MelTruncatedStruct with the specified parameters.
 
         :param sub_sig: The subrecord signature of this struct.
@@ -463,7 +463,7 @@ class MelTruncatedStruct(MelStruct):
             MelOptStruct."""
         if not isinstance(old_versions, set):
             raise SyntaxError('MelTruncatedStruct: old_versions must be a set')
-        super().__init__(sub_sig, sub_fmt, *elements)
+        super().__init__(sub_sig, sub_fmt, *elements, is_required=is_required)
         self._is_optional = is_optional
         self._all_unpackers = {
             structs_cache[alt_fmt].size: structs_cache[alt_fmt].unpack for
@@ -636,7 +636,7 @@ class AttrValDecider(ACommonDecider):
         else:
             # Raises an AttributeError if target_attr is missing
             ret_val = getattr(record, self.target_attr)
-        if self.transformer:
+        if self.transformer is not None:
             ret_val = self.transformer(ret_val)
         return ret_val
 
@@ -651,7 +651,10 @@ class FidNotNullDecider(ACommonDecider):
         self._target_attr = target_attr
 
     def _decide_common(self, record):
-        return not getattr(record, self._target_attr).is_null()
+        try:
+            return not getattr(record, self._target_attr).is_null()
+        except AttributeError: # 'NoneType' object has no attribute 'is_null'
+            return False # a MelUnion attribute that was set to None default
 
 class FlagDecider(ACommonDecider):
     """Decider that checks if certain flags are set."""

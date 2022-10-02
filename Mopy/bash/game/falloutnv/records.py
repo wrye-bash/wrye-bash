@@ -39,8 +39,8 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = {b'ONAM', b'SCRN'}
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.34), 'numRecords',
-                  ('nextObject', 0x800)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.34), 'numRecords',
+                  ('nextObject', 0x800), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -83,7 +83,7 @@ class MreAmef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'DATA', [u'2I', u'f'],'type','operation','value'),
+        MelStruct(b'DATA', ['2I', 'f'], 'type', 'operation', 'value'),
     )
 
 #------------------------------------------------------------------------------
@@ -105,8 +105,8 @@ class MreCcrd(MelRecord):
         MelUInt32(b'INTV', 'card_value'),
         MelUInt32(b'DATA', 'value'),
     ).with_distributor({
-        b'INTV': (u'card_suit', {
-            b'INTV': u'card_value',
+        b'INTV': ('card_suit', {
+            b'INTV': 'card_value',
         }),
     })
 
@@ -133,8 +133,9 @@ class MreChal(MelRecord):
         MelIcons(),
         MelScript(),
         MelDescription(),
-        MelStruct(b'DATA', [u'4I', u'2s', u'2s', u'4s'],'type','threshold','flags','interval',
-                  'dependOnType1','dependOnType2','dependOnType3'),
+        MelStruct(b'DATA', ['4I', '2s', '2s', '4s'], 'type', 'threshold',
+                  'flags', 'interval', 'dependOnType1', 'dependOnType2',
+                  'dependOnType3'),
         MelFid(b'SNAM','dependOnType4'),
         MelFid(b'XNAM','dependOnType5'),
     )
@@ -177,9 +178,11 @@ class MreCsno(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'DATA', [u'2f', u'9I', u'2I', u'I'],'decksPercentBeforeShuffle','BlackjackPayoutRatio',
-            'slotReel0','slotReel1','slotReel2','slotReel3','slotReel4','slotReel5','slotReel6',
-            'numberOfDecks','maxWinnings',(FID,'currency'),(FID,'casinoWinningQuest'),'flags'),
+        MelStruct(b'DATA', ['2f', '9I', '2I', 'I'],
+            'decksPercentBeforeShuffle', 'BlackjackPayoutRatio', 'slotReel0',
+            'slotReel1', 'slotReel2', 'slotReel3', 'slotReel4', 'slotReel5',
+            'slotReel6', 'numberOfDecks', 'maxWinnings', (FID, 'currency'),
+            (FID, 'casinoWinningQuest'), 'flags'),
         MelGroups('chipModels',
             MelString(b'MODL','model')
         ),
@@ -188,10 +191,10 @@ class MreCsno(MelRecord):
         MelString(b'MODT','extraBlackjackTableModel'),
         MelString(b'MOD4','rouletteTableModel'),
         MelGroups('slotReelTextures',
-            MelIcon(u'texture'),
+            MelIcon('texture'),
         ),
         MelGroups('blackjackDecks',
-            MelIco2(u'texture'),
+            MelIco2('texture'),
         ),
     )
 
@@ -202,7 +205,7 @@ class MreDehy(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )
 
 #------------------------------------------------------------------------------
@@ -236,13 +239,13 @@ class MreDial(MelRecord):
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),
-        MelTruncatedStruct(b'DATA', [u'2B'], 'dialType',
-                           (_DialFlags, u'dialFlags'), old_versions={'B'}),
+        MelTruncatedStruct(b'DATA', ['2B'], 'dialType',
+                           (_DialFlags, 'dialFlags'), old_versions={'B'}),
     ).with_distributor({
-        b'INFC': u'broken_infc',
-        b'INFX': u'broken_infx',
+        b'INFC': 'broken_infc',
+        b'INFX': 'broken_infx',
         b'QSTI': {
-            b'INFC|INFX': u'added_quests',
+            b'INFC|INFX': 'added_quests',
         },
     })
 
@@ -253,7 +256,7 @@ class MreHung(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )
 
 #------------------------------------------------------------------------------
@@ -281,10 +284,12 @@ class MreLsct(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'5I', u'f', u'I', u'3f', u'I', u'20s', u'I', u'3f', u'4s', u'I'],'type','data1X','data1Y','data1Width',
-                         'data1Height','data1Orientation',
-            'data1Font','data1ColorR','data1ColorG','data1ColorB','data1Align','unknown1',
-            'data2Font','data2ColorR','data2ColorG','data2ColorB','unknown2','stats'),
+        MelStruct(b'DATA',
+            ['5I', 'f', 'I', '3f', 'I', '20s', 'I', '3f', '4s', 'I'],
+            'type', 'data1X', 'data1Y', 'data1Width', 'data1Height',
+            'data1Orientation', 'data1Font', 'data1ColorR', 'data1ColorG',
+            'data1ColorB', 'data1Align', 'unknown1', 'data2Font',
+            'data2ColorR', 'data2ColorG', 'data2ColorB', 'unknown2', 'stats'),
     )
 
 #------------------------------------------------------------------------------
@@ -322,7 +327,7 @@ class MreMset(MelRecord):
         MelFloat(b'MNAM', 'mnam'),
         MelFloat(b'NNAM', 'nnam'),
         MelFloat(b'ONAM', 'onam'),
-        MelUInt8Flags(b'PNAM', u'enableFlags', _flags),
+        MelUInt8Flags(b'PNAM', 'enableFlags', _flags),
         MelFloat(b'DNAM', 'dnam'),
         MelFloat(b'ENAM', 'enam'),
         MelFloat(b'FNAM', 'fnam'),
@@ -352,7 +357,8 @@ class MreRcpe(MelRecord):
         MelEdid(),
         MelFull(),
         MelConditionsFo3(),
-        MelStruct(b'DATA', [u'4I'],'skill','level',(FID,'category'),(FID,'subCategory')),
+        MelStruct(b'DATA', ['4I'], 'skill', 'level', (FID, 'category'),
+                  (FID, 'subCategory')),
         MelGroups('ingredients',
             MelFid(b'RCIL','item'),
             MelUInt32(b'RCQY', 'quantity'),
@@ -363,10 +369,10 @@ class MreRcpe(MelRecord):
         ),
     ).with_distributor({
         b'RCIL': {
-            b'RCQY': u'ingredients',
+            b'RCQY': 'ingredients',
         },
         b'RCOD': {
-            b'RCQY': u'outputs',
+            b'RCQY': 'outputs',
         },
     })
 
@@ -389,5 +395,5 @@ class MreSlpd(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )

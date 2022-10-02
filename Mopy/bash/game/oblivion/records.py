@@ -114,11 +114,13 @@ class MelEmbeddedScript(MelSequential):
     """Handles an embedded script, a SCHR/SCDA/SCTX/SLSD/SCVR/SCRO/SCRV
     subrecord combo. SLSD and SCVR can optionally be disabled."""
     def __init__(self, with_script_vars=False):
+        ##: is_required below added for the create_record call in ScriptText.
+        # _additional_processing - we should instead assign required fields there
         seq_elements = [
             MelUnion({
                 b'SCHR': MelStruct(b'SCHR', ['4s', '4I'], 'unused1',
                                    'num_refs', 'compiled_size', 'last_index',
-                                   'script_type'),
+                                   'script_type', is_required=True),
                 b'SCHD': MelBase(b'SCHD', 'old_script_header'),
             }),
             MelBase(b'SCDA', 'compiled_script'),
@@ -471,7 +473,7 @@ class MreTes4(AMreHeader):
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
-                  ('nextObject', 0x800)),
+                  ('nextObject', 0x800), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -1628,8 +1630,8 @@ class MreMgef(MelRecord):
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelTruncatedStruct(b'DATA',
-            ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I',
-             '2f'], (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I', '2f'],
+            (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'school', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'projectileSpeed', (FID, 'effectShader'),
             (FID, 'enchantEffect'), (FID, 'castingSound'), (FID, 'boltSound'),
@@ -1793,7 +1795,7 @@ class MrePack(MelRecord):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PLDT', 'locType'),
             decider=AttrValDecider('locType'),
-        )),
+        ), fallback=MelNull(b'NULL')), # ignore
         MelStruct(b'PSDT', ['2b', 'B', 'b', 'i'], 'month', 'day', 'date',
             'time', 'duration'),
         MelUnion({
@@ -1804,7 +1806,7 @@ class MrePack(MelRecord):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PTDT', 'targetType'),
             decider=AttrValDecider('targetType'),
-        )),
+        ), fallback=MelNull(b'NULL')), # ignore
         MelConditionsTes4(),
     )
 

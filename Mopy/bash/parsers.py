@@ -39,8 +39,7 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
     int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
-from .brec import FormId, MelObject, RecHeader, RecordType, attr_csv_struct, \
-    null3
+from .brec import FormId, RecordType, attr_csv_struct, null3
 from .mod_files import LoadFactory, ModFile
 
 ##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
@@ -498,7 +497,7 @@ class ActorFactions(_AParser):
                     break
             else:
                 # This is an addition, we need to create a new faction instance
-                target_entry = MelObject()
+                target_entry = record.getDefault('factions')
                 record.factions.append(target_entry)
             # Actually write out the attributes from new_info
             target_entry.faction = faction
@@ -512,6 +511,7 @@ class ActorFactions(_AParser):
             ret_obj = RecordType.sig_to_class[top_grup_sig].getDefault(u'factions')
             ret_obj.faction = lfid
             ret_obj.rank = rank
+            ret_obj.unused1 = b'ODB'
             aid = self._key2(csv_fields) ##: pass key2 ?
             self.id_stored_data[top_grup_sig][aid][u'factions'].append(ret_obj)
             return None # block updating id_stored_data in _parse_line
@@ -775,7 +775,7 @@ class FactionRelations(_AParser):
                     break
             else:
                 # It's an addition, we need to make a new relation object
-                target_entry = MelObject()
+                target_entry = record.getDefault('relations')
                 record.relations.append(target_entry)
             # Actually write out the attributes from new_info
             for rel_attr, rel_val in zip(self.cls_rel_attrs,
@@ -1073,16 +1073,9 @@ class ScriptText(_TextParser):
         added = []
         if self.makeNew and self.eid_data:
             for eid, (new_lines, _longid) in self.eid_data.items():
-                ##: #480 - Maybe move create_record to ModFile and use it?
-                scriptFid = FormId.from_object_id(
-                    modFile.tes4.num_masters, modFile.tes4.getNextObject())
-                newScript = RecordType.sig_to_class[b'SCPT'](
-                    RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0,
-                              _entering_context=True))
+                newScript = modFile.create_record(b'SCPT', head_flags=0x40000)
                 newScript.eid = eid
                 newScript.script_source = '\r\n'.join(new_lines)
-                newScript.setChanged()
-                modFile.tops[b'SCPT'].id_records[scriptFid] = newScript
                 added.append(eid)
         if changed_stats or added: return changed_stats, added
         return None

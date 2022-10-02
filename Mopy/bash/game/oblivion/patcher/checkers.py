@@ -28,7 +28,7 @@ from itertools import chain
 
 from ._shared import ExSpecial, cobl_main
 from .... import bush
-from ....brec import FormId, RecordType
+from ....brec import FormId, RecordType, null4, null3, null2
 from ....patcher.base import ModLoader
 
 # Cobl Catalogs ---------------------------------------------------------------
@@ -204,9 +204,13 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 condition.ifunc = 365
                 # Set parameters etc. needed for this function (no parameters
                 # and a float comparison value)
-                condition.param2 = condition.param1 = b'\x00' * 4
+                condition.param2 = condition.param1 = condition.unused3 = null4
                 condition.compValue = 0.0
-                record.conditions.insert(0,condition)
+                # set the rest of the MelStruct fields ad hoc
+                condition.operFlag = 0 # converted to _CtdaTypeFlags on dump
+                condition.unused1 = null3
+                condition.unused2 = null2
+                record.conditions.insert(0, condition)
                 if keep(rid, record):
                     patched.append(record.eid)
         log.setHeader(f'= {self._patcher_name}')

@@ -35,7 +35,7 @@ from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
     RecordHeader, RecordType, Subrecord, TopGrup, int_unpacker, null1, \
-    unpack_header
+    unpack_header, FormId
 from .exception import MasterMapError, ModError, ModReadError, StateError
 from .load_order import get_ordered
 
@@ -348,6 +348,20 @@ class ModFile(object):
 
     def __repr__(self):
         return f'ModFile<{self.fileInfo}>'
+
+    def create_record(self, new_rec_sig: bytes, new_rec_fid: FormId = None, *,
+                      head_flags=0):
+        """Create a new record with the specified record signature (and
+        optionally the specified FormID - if it's not given, it will become a
+        new record inside the mod file's FormID space)."""
+        if new_rec_fid is None:
+            new_rec_fid = FormId.from_tuple(
+                (self.fileInfo.fn_key, self.tes4.getNextObject()))
+        new_rec = RecordType.sig_to_class[new_rec_sig](RecHeader(new_rec_sig,
+            arg1=head_flags, arg2=new_rec_fid, _entering_context=True))
+        new_rec.setChanged()
+        self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
+        return new_rec
 
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):

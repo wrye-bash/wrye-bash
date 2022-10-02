@@ -27,11 +27,10 @@ from collections import Counter, defaultdict
 from itertools import chain, count
 from operator import attrgetter
 
+from .. import bass, load_order
 from .. import bolt # for type hints
 from .. import bush # for game etc
-from .. import bass, load_order
 from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url
-from ..brec import FormId, RecHeader, RecordType
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
@@ -248,19 +247,10 @@ class PatchFile(ModFile):
             return 1
         return _patch_keeper
 
-    def create_record(self, new_rec_sig: bytes, new_rec_fid: FormId = None):
-        """Creates a new record with the specified record signature (and
-        optionally the specified FormID - if it's not given, it will become a
-        new record inside the BP's FormID space), adds it to this patch and
-        returns it."""
-        if new_rec_fid is None:
-            new_rec_fid = FormId.from_tuple(
-                (self.fileInfo.fn_key, self.tes4.getNextObject()))
-        new_rec = RecordType.sig_to_class[new_rec_sig](
-            RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
-        self.keepIds.add(new_rec_fid)
-        self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
-        new_rec.setChanged()
+    def create_record(self, new_rec_sig, new_rec_fid=None, head_flags=0):
+        """In addition to super add the fid of the new record to this patch."""
+        new_rec = super().create_record(new_rec_sig, new_rec_fid)
+        self.keepIds.add(new_rec.fid)
         return new_rec
 
     def new_gmst(self, gmst_eid, gmst_val):

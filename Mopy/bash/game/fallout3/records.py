@@ -337,8 +337,8 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = {b'ONAM', b'SCRN'}
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], ('version', 0.94), 'numRecords',
-                  ('nextObject', 0x800)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 0.94), 'numRecords',
+                  ('nextObject', 0x800), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -2009,7 +2009,7 @@ class MelLocation2(MelUnion):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PLD2', loc2_type),
             decider=AttrValDecider(loc2_type),
-        ))
+        ), fallback=MelNull(b'NULL'))# ignore
 
 class MrePack(MelRecord):
     """Package."""
@@ -2069,8 +2069,8 @@ class MrePack(MelRecord):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PLDT', u'locType'),
             decider=AttrValDecider(u'locType'),
-        )),
-        MelLocation2(u'loc2'),
+        ), fallback=MelNull(b'NULL')), # ignore
+        MelLocation2('loc2'),
         MelStruct(b'PSDT', [u'2b', u'B', u'b', u'i'], 'month', 'day', 'date',
                   'time', 'duration'), # required
         MelUnion({
@@ -2086,7 +2086,7 @@ class MrePack(MelRecord):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PTDT', u'targetType'),
             decider=AttrValDecider(u'targetType'),
-        )),
+        ), fallback=MelNull(b'NULL')), # ignore
         MelConditionsFo3(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', 'animationFlags'),
@@ -2115,7 +2115,7 @@ class MrePack(MelRecord):
         }, decider=PartialLoadDecider(
             loader=MelSInt32(b'PTD2', u'targetType2'),
             decider=AttrValDecider(u'targetType2'),
-        )),
+        ), fallback=MelNull(b'NULL')), # ignore
         MelBase(b'PUID','useItemMarker'),
         MelBase(b'PKAM','ambushMarker'),
         MelTruncatedStruct(
@@ -2123,7 +2123,7 @@ class MrePack(MelRecord):
             (FID, 'dialTopic'), (_dialogue_data_flags, 'dialFlags'),
             'dialUnknown1', 'dialType', 'dialUnknown2', is_optional=True,
             old_versions={'f2I4sI', 'f2I4s', 'f2I'}),
-        MelLocation2(u'loc2_again'),
+        MelLocation2('loc2_again'),
         MelIdleHandler(b'POBA', u'on_begin'), # required
         MelIdleHandler(b'POEA', u'on_end'), # required
         MelIdleHandler(b'POCA', u'on_change'), # required

@@ -221,7 +221,8 @@ class MelLocation(MelUnion):
                 'location_collection_index'),
             }, decider=PartialLoadDecider(
                 loader=MelSInt32(sub_sig, 'location_type'),
-                decider=AttrValDecider('location_type'))
+                decider=AttrValDecider('location_type')),
+            fallback=MelNull(b'NULL') # ignore
         )
 
 #------------------------------------------------------------------------------
@@ -303,8 +304,8 @@ class MreTes4(AMreHeader):
         esl_flag: bool = flag(9)
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
-            (u'nextObject', 0x001)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
+                  ('nextObject', 0x001), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
