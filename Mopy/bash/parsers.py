@@ -886,7 +886,7 @@ class FullNames(_HandleAliases):
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         if csv_fields[-1] == 'NO NAME':
             raise ValueError # Leftover from pre-310 days, just skip it
-        super()._update_from_csv(top_grup_sig, csv_fields, index_dict)
+        return super()._update_from_csv(top_grup_sig, csv_fields, index_dict)
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         super()._read_record(record, id_data)

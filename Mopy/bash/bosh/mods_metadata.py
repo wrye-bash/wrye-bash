@@ -26,7 +26,8 @@ from collections import defaultdict, OrderedDict
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import dict_sort, structs_cache, SubProgress, sig_to_str
-from ..brec import ModReader, SubrecordBlob, RecordHeader, unpack_header
+from ..brec import ModReader, SubrecordBlob, RecordHeader, unpack_header, \
+    ShortFidWriteContext
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 
@@ -705,7 +706,7 @@ class NvidiaFogFixer(object):
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
         with ModReader.from_info(self.modInfo) as ins:
-            with minfo_path.temp.open(u'wb') as out:
+            with ShortFidWriteContext(minfo_path.temp) as out:
                 def copy(bsize):
                     buff = ins.read(bsize)
                     out.write(buff)

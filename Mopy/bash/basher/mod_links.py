@@ -1325,20 +1325,22 @@ class Mod_FogFixer(ItemLink):
                     'interior cells to avoid the Nvidia black screen bug.')
         if not self._askContinue(message, u'bash.cleanMod.continue',
                                  _(u'Nvidia Fog Fix')): return
+        fixed = {}
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
             progress.setFull(len(self.selected))
-            fixed = []
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 if fileName == bush.game.master_file: continue
                 progress(index, _(u'Scanning %s') % fileName)
                 fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
                 if fog_fixer.fixedCells:
-                    fixed.append(
-                        f'* {len(fog_fixer.fixedCells):4d} {fileName}')
+                    fixed[fileName] = fog_fixer.fixedCells
         if fixed:
-            message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
+            message = '===' + _('Cells Fixed:') + '\n' + '\n'.join([
+                f'* {fixed_pname}: {len(cells_fixed)}'
+                for fixed_pname, cells_fixed in fixed.items()])
             self._showWryeLog(message)
+            self.window.RefreshUI(redraw=list(fixed))
         else:
             message = _(u'No changes required.')
             self._showOk(message)
