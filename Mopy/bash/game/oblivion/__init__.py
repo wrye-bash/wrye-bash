@@ -126,6 +126,7 @@ class OblivionGameInfo(PatchGame):
             '_tejon',
             'config', # 3P: mod config files (INIs)
             'distantlod',
+            'enhanced economy', # 3P: Enhanced Economy
             'facegen',
             'fonts',
             'menus',
@@ -151,6 +152,9 @@ class OblivionGameInfo(PatchGame):
         lod_meshes_dir = _j('meshes', 'landscape', 'lod')
         lod_textures_dir = _j('textures', 'landscapelod', 'generated')
         lod_textures_normals_suffix = '_fn'
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
+            'enhanced economy': ['.txt'],
+        }
         skip_bain_refresh = {
             u'tes4edit backups',
             u'tes4edit cache',
