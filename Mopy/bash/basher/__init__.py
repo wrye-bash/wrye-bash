@@ -958,7 +958,7 @@ class ModList(_ModsUIList):
                        u', '.join(str(s) for s in pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
-            balt.askContinue(self, msg, continue_key)
+            balt.askContinue(self, msg, continue_key, show_cancel=False)
             return super(ModList, self).dndAllow(event) # disallow
         return True
 
@@ -1285,16 +1285,17 @@ class ModList(_ModsUIList):
         # can't be deactivated (e.g. vanilla masters on newer games) and/or
         # attempted to activate mods that can't be activated (e.g. .esu
         # plugins).
+        warn_msg = warn_cont_key = ''
         if illegal_deactivations:
-            balt.askContinue(self,
-                             _("You can't deactivate the following mods:") +
-                             f"\n{u', '.join(illegal_deactivations)}",
-                             'bash.mods.dnd.illegal_deactivation.continue')
+            warn_msg = (_("You can't deactivate the following mods:") +
+                        f"\n{', '.join(illegal_deactivations)}")
+            warn_cont_key = 'bash.mods.dnd.illegal_deactivation.continue'
         if illegal_activations:
-            balt.askContinue(self,
-                             _("You can't activate the following mods:") +
-                             f"\n{u', '.join(illegal_activations)}",
-                             'bash.mods.dnd.illegal_activation.continue')
+            warn_msg = (_("You can't activate the following mods:") +
+                        f"\n{', '.join(illegal_activations)}")
+            warn_cont_key = 'bash.mods.dnd.illegal_activation.continue'
+        if warn_msg:
+            balt.askContinue(self, warn_msg, warn_cont_key, show_cancel=False)
         if touched:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
@@ -2768,7 +2769,8 @@ class InstallersList(balt.UIList):
         if not self.sort_column in self._dndColumns:
             msg = _(u"Drag and drop in the Installer's list is only allowed "
                     u'when the list is sorted by install order')
-            balt.askContinue(self, msg, u'bash.installers.dnd.column.continue')
+            balt.askContinue(self, msg, 'bash.installers.dnd.column.continue',
+                show_cancel=False)
             return super(InstallersList, self).dndAllow(event) # disallow
         return True
 

@@ -177,7 +177,8 @@ class ColorChecks(ImageList):
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-def askContinue(parent, message, continueKey, title=_(u'Warning')):
+def askContinue(parent, message, continueKey, title=_(u'Warning'),
+        show_cancel=True):
     """Show a modal continue query if value of continueKey is false. Return
     True to continue.
     Also provides checkbox "Don't show this in future." to set continueKey
@@ -188,8 +189,8 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
     result, check = _ContinueDialog.display_dialog(parent, title=title,
-        message=message, checkBoxTxt=checkBoxTxt)
-    if check:
+        message=message, checkBoxTxt=checkBoxTxt, show_cancel=show_cancel)
+    if result and check: # Don't store setting if user canceled
         _settings[continueKey] = 1
     return result
 
@@ -205,10 +206,13 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
 class _ContinueDialog(DialogWindow):
     _def_size = _min_size = (360, 150)
 
-    def __init__(self, parent, message, title, checkBoxTxt):
+    def __init__(self, parent, message, title, checkBoxTxt, show_cancel):
         super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
         self.gCheckBox = CheckBox(self, checkBoxTxt)
         #--Layout
+        bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
+        if show_cancel:
+            bottom_items.append(CancelButton(self))
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
@@ -216,14 +220,12 @@ class _ContinueDialog(DialogWindow):
              LayoutOptions(weight=1)),
             Stretch(),
             HorizontalLine(self),
-            HLayout(spacing=4, item_expand=True, items=[
-                self.gCheckBox, Stretch(), OkButton(self), CancelButton(self),
-            ]),
+            HLayout(spacing=4, item_expand=True, items=bottom_items),
         ]).apply_to(self)
 
     def show_modal(self):
         #--Get continue key setting and return
-        result = super(_ContinueDialog, self).show_modal()
+        result = super().show_modal()
         check = self.gCheckBox.is_checked
         return result, check
 
@@ -232,9 +234,11 @@ class _ContinueDialog(DialogWindow):
         #--Get continue key setting and return
         if canVista:
             parent, *args = args
+            if not kwargs.pop('show_cancel', False):
+                kwargs['buttons'] = ((BTN_OK, 'ok'),)
             result, check = vistaDialog(cls._resolve(parent), *args, **kwargs)
         else:
-            return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
+            return super().display_dialog(*args, **kwargs)
         return result, check
 
 #------------------------------------------------------------------------------
