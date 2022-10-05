@@ -32,6 +32,8 @@ import traceback
 import tomli
 import wx as _wx
 
+from .. import bolt
+
 # set in _emulate_startup used in set_game - we need to init translations
 # before importing
 bush = None
@@ -110,18 +112,16 @@ resource_to_displayName = {
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
-def set_game(game_fsName):
+def set_game(gm_displayName):
     """Hotswitches bush.game to the game with the specified resource subfolder
     name."""
     # noinspection PyProtectedMember
     try:
-        bush.game = _game_cache[game_fsName]
+        bush.game = _game_cache[gm_displayName]
     except KeyError:
-        bush.game = new_game = bush._allGames[game_fsName](u'')
-        from .. import brec
-        brec.MelModel = None
+        bush.game = new_game = bush._allGames[gm_displayName]('')
         new_game.init()
-        _game_cache[game_fsName] = new_game
+        _game_cache[gm_displayName] = new_game
 
 _wx_app = None
 
@@ -149,6 +149,12 @@ def _emulate_startup():
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()
-    set_game(u'Oblivion') # just need to pick one to start
+    from ..game.patch_game import PatchGame
+    for gm_display_name in sorted(game_class.displayName for game_class in
+                                  PatchGame.supported_games()):
+        if gm_display_name != 'Oblivion':
+            set_game(gm_display_name)
+    else: # pick Oblivion as the most fully supported
+        set_game('Oblivion')
 
 _emulate_startup()

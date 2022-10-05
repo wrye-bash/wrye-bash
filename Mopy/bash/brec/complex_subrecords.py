@@ -156,7 +156,7 @@ class _MelCtda(MelUnion):
     def _build_params(func_data, prefix_elements, suffix_elements):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
-        func_elements = [
+        func_elements = [ # param1, param2, param3 are set here
             # 2 == FormID, see PatchGame.condition_function_data
             (FID, f'param{i}') if func_param == 2 else f'param{i}'
             for i, func_param in enumerate(func_data[1:], start=1)]
