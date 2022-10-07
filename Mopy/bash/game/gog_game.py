@@ -25,7 +25,7 @@
 from . import GOG_COMMON_FILES
 from ..bolt import classproperty
 
-class GOGMixin(object):
+class GOGMixin:
     @classproperty
     def game_detect_includes(cls):
         return super().game_detect_includes | GOG_COMMON_FILES

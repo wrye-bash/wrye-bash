@@ -20,16 +20,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for the GOG version of Skyrim SE."""
-from ..gog_game import GOGMixin
+"""GameInfo override for the Epic Games Store version of Skyrim SE."""
+from ..egs_game import EGSMixin
 from ..skyrimse import SkyrimSEGameInfo
 
-class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
-    displayName = 'Skyrim Special Edition (GOG)'
-    fsName = 'Skyrim Special Edition GOG'
-    my_games_name = 'Skyrim Special Edition GOG'
-    appdata_name = 'Skyrim Special Edition GOG'
-    registry_keys = [(r'GOG.com\Games\1711230643', 'path'),
-                     (r'GOG.com\Games\1162721350', 'path')]
+class EGSSkyrimSEGameInfo(EGSMixin, SkyrimSEGameInfo):
+    displayName = 'Skyrim Special Edition (EGS)'
+    fsName = 'Skyrim Special Edition EPIC'
+    my_games_name = 'Skyrim Special Edition EPIC'
+    appdata_name = 'Skyrim Special Edition EPIC'
+    egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
+                     'ac82db5035584c7f8a2c548d98c86b2c'] # SE
 
-GAME_TYPE = GOGSkyrimSEGameInfo
+GAME_TYPE = EGSSkyrimSEGameInfo

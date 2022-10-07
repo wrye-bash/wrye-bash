@@ -20,28 +20,51 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Common methods used by all platforms."""
+"""Common code used by all platforms, as well as shared helper code used
+internally by various platforms. Helper methods and classes must be prefixed
+with an underscore so they don't get exposed to the rest of the codebase."""
 
 from __future__ import annotations
 
 import datetime
+import functools
+import json
 import os
 import stat
-import sys
 from dataclasses import dataclass, field
 
 from .. import bolt
 
-__all__ = ['clear_read_only', 'WinAppVersionInfo', 'WinAppInfo',
-           'get_game_version_fallback', 'get_win_store_game_paths',
-           'real_sys_prefix']
-
-def clear_read_only(filepath): # copied from bolt
-    os.chmod(f'{filepath}', stat.S_IWUSR | stat.S_IWOTH)
+# Internals ===================================================================
+@functools.cache
+def _find_legendary_games():
+    """Reads the manifests from the third-party Legendary launcher to find all
+    games installed via the Epic Games Store."""
+    found_lgd_games = {}
+    # Look at the XDG location first (Linux only, won't be defined on all Linux
+    # systems and obviously not on Windows)
+    user_config_path = os.environ.get('XDG_CONFIG_HOME')
+    if not user_config_path:
+        # Use the fallback location (which exists on Windows as well, and so is
+        # the only location used there)
+        user_config_path = os.path.join(os.path.expanduser('~'), '.config')
+    lgd_installed_path = os.path.join(user_config_path, 'legendary',
+        'installed.json')
+    try:
+        with open(lgd_installed_path, 'r', encoding='utf-8') as ins:
+            lgd_installed_data = json.load(ins)
+        for lgd_game in lgd_installed_data.values():
+            found_lgd_games[lgd_game['app_name']] = bolt.GPath(
+                lgd_game['install_path'])
+    except FileNotFoundError:
+        pass # Legendary is not installed or no games are installed
+    except (json.JSONDecodeError, KeyError):
+        bolt.deprint('Failed to parse Legendary manifest file', traceback=True)
+    return found_lgd_games
 
 # Windows store dataclasses
 @dataclass
-class WinAppVersionInfo(object):
+class _WinAppVersionInfo(object):
     __slots__ = ('full_name', 'mutable_location', 'install_location',
                  '_version', 'install_time', 'entry_point')
     full_name: str
@@ -56,7 +79,7 @@ class WinAppVersionInfo(object):
     entry_point: str
 
 @dataclass
-class WinAppInfo(object):
+class _WinAppInfo(object):
     ## There are three names used for Windows Apps:
     ## app_name: The most human readable form
     ##   ex: `BethesdaSofworks.SkyrimSE-PC`
@@ -67,8 +90,8 @@ class WinAppInfo(object):
     publisher_name : str = ''
     publisher_id : str = ''
     app_name : str = ''
-    versions: dict[str, WinAppVersionInfo] = field(init=False,
-                                                   default_factory=dict)
+    versions: dict[str, _WinAppVersionInfo] = field(init=False,
+                                                    default_factory=dict)
 
     @property
     def installed(self):
@@ -82,9 +105,13 @@ class WinAppInfo(object):
         return None
 
     def __repr__(self):
-        return f'WinAppInfo(publisher_name={self.publisher_name}, ' \
+        return f'_WinAppInfo(publisher_name={self.publisher_name}, ' \
                f'publisher_id={self.publisher_id}, app_name={self.app_name},' \
                f' versions:{len(self.versions)})'
+
+# API - Functions =============================================================
+def clear_read_only(filepath): # copied from bolt
+    os.chmod(f'{filepath}', stat.S_IWUSR | stat.S_IWOTH)
 
 def get_game_version_fallback(test_path, ws_info):
     """A fallback method of determining the game version for Windows Store
@@ -110,7 +137,7 @@ def get_game_version_fallback(test_path, ws_info):
 def get_win_store_game_paths(submod):
     """Check Windows Store-supplied game paths for the game detection
     file(s)."""
-    # delayed import to pull in the right version, and avoid circular imports
+    # Delayed import to pull in the right version, and avoid circular imports
     from . import get_win_store_game_info
     app_info = get_win_store_game_info(submod)
     # Select the most recently installed entry
@@ -126,10 +153,15 @@ def get_win_store_game_paths(submod):
     else:
         return []
 
-def real_sys_prefix():
-    if hasattr(sys, 'real_prefix'):  # running in virtualenv
-        return sys.real_prefix
-    elif hasattr(sys, 'base_prefix'):  # running in venv
-        return sys.base_prefix
-    else:
-        return sys.prefix
+def get_egs_game_paths(submod):
+    """Check the Epic Games Store manifests to find if the specified game is
+    installed via the EGS and returns its install path."""
+    if egs_anames := submod.egs_app_names:
+        # Delayed import to pull in the right version
+        from . import find_egs_games
+        egs_games = find_egs_games()
+        for egs_an in egs_anames:
+            # Use the first AppName that's present
+            if egs_an in egs_games:
+                return [egs_games[egs_an]]
+    return []

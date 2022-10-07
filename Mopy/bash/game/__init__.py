@@ -27,6 +27,7 @@ and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
 from itertools import chain
 from os.path import join as _j
+from typing import Type
 
 from .. import brec, bolt
 
@@ -115,6 +116,10 @@ class GameInfo(object):
     #  HKCU\Software\Wow6432Node
     # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     registry_keys = []
+    # The AppName in the Epic Games Store manifest for this game. May contain
+    # multiple, in which case the first one that is present is used. Empty if
+    # this game is not available on the Epic Games Store
+    egs_app_names = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -554,9 +559,13 @@ class GameInfo(object):
                 any(test_path.join(p).exists()
                 for p in cls.game_detect_excludes))
 
-# Files shared by versions of games that are published on the Windows Store
-WS_COMMON_FILES = {'appxmanifest.xml'}
+# Constants -------------------------------------------------------------------
+# Files shared by versions of games that are published on the Epic Games Store
+EGS_COMMON_FILES = {'EOSSDK-Win64-Shipping.dll'}
 # Files shared by versions of games that are published on GOG
 GOG_COMMON_FILES = {'Galaxy64.dll'}
+# Files shared by versions of games that are published on the Windows Store
+WS_COMMON_FILES = {'appxmanifest.xml'}
 
-GAME_TYPE = None
+# The GameInfo-derived type used for this game
+GAME_TYPE: Type[GameInfo]

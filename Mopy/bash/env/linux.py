@@ -27,7 +27,7 @@ import subprocess
 import sys
 import functools
 
-from .common import WinAppInfo
+from .common import _WinAppInfo, _find_legendary_games
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
@@ -74,6 +74,11 @@ def drive_exists(dir_path):
     except PermissionError: # as e: # PE on mac
         return False # [Errno 13] Permission denied: '/Volumes/Samsung_T5'
 
+@functools.cache
+def find_egs_games():
+    # No EGS on Linux, so use only Legendary
+    return _find_legendary_games()
+
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
@@ -81,7 +86,7 @@ def get_registry_game_paths(_submod):
     return [] # no registry on Linux
 
 def get_win_store_game_info(_submod):
-    return WinAppInfo() # no Windows Store on Linux
+    return _WinAppInfo() # no Windows Store on Linux
 
 def get_personal_path():
     return _getShellPath(u'Personal'), _get_error_info()
@@ -94,7 +99,8 @@ def init_app_links(_apps_dir, _badIcons, _iconList):
     # The 'shortcuts' concept is hard for users to grasp anyways (remember how
     # many people have trouble setting up a shortcut for QACing using xEdit!),
     # so a better design would be e.g. using our settings dialog to add new
-    # launchers, similar to how MO2 does it
+    # launchers, similar to how MO2 does it - scratch that, I'm actually
+    # thinking about making this a separate tab to make it *super* easy
     return []
 
 def testUAC(_gameDataPath):

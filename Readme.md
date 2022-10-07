@@ -36,7 +36,7 @@ tested on (previous versions or latest versions may or may not work):
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
 Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well,
-as is the GOG version of Skyrim Special Edition.
+as are the Epic Games Store and GOG versions of Skyrim Special Edition.
 
 ### Download
 

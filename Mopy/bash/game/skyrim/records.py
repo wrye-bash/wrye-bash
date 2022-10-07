@@ -60,7 +60,8 @@ from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition',
-    'Skyrim Special Edition MS', 'Skyrim Special Edition GOG')
+    'Skyrim Special Edition MS', 'Skyrim Special Edition GOG',
+    'Skyrim Special Edition EPIC')
 def if_sse(le_version, se_version):
     """Resolves to one of two different objects, depending on whether we're
     managing Skyrim LE or SE."""

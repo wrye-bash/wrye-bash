@@ -21,28 +21,18 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Module providing a mixin class to set some common defaults for Windows Store
-games."""
-from . import GameInfo, WS_COMMON_FILES
+"""Module providing a mixin class to set some common defaults for Epic Games
+Store games."""
+from . import EGS_COMMON_FILES
 from ..bolt import classproperty
 
-class WindowsStoreMixin:
+class EGSMixin:
     registry_keys = []
 
     @classproperty
     def game_detect_includes(cls):
-        return super().game_detect_includes | WS_COMMON_FILES
+        return super().game_detect_includes | EGS_COMMON_FILES
 
     @classproperty
     def game_detect_excludes(cls):
-        return super().game_detect_excludes - WS_COMMON_FILES
-
-    # Disable any tools that require hooking into the game's executable. Even
-    # if the user manually installs these, they will not work, with no workable
-    # solution found by the tool devs.
-    class Se(GameInfo.Se):
-        pass
-    class Sd(GameInfo.Sd):
-        pass
-    class Laa(GameInfo.Laa):
-        pass
+        return super().game_detect_excludes - EGS_COMMON_FILES

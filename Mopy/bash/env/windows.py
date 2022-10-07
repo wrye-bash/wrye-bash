@@ -24,8 +24,10 @@
 
 import datetime
 import functools
+import json
 import os
 import re
+import sys
 import winreg
 import xml.etree.ElementTree as xml
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
@@ -37,7 +39,7 @@ import win32api
 import win32com.client as win32client
 import win32gui
 
-from .common import WinAppInfo, WinAppVersionInfo, real_sys_prefix
+from .common import _WinAppInfo, _WinAppVersionInfo, _find_legendary_games
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
@@ -158,8 +160,6 @@ def _getShellPath(folderKey):
 __folderIcon = None # cached here
 def _get_default_app_icon(idex, target):
     # Use the default icon for that file type
-    if winreg is None: # FIXME(inf) linux.py
-        return u'not\\a\\path', idex
     try:
         if target.is_dir():
             global __folderIcon
@@ -302,7 +302,7 @@ class _WindowsStoreFinder(object):
     }
 
     def __init__(self):
-        self.info_cache = {} # app_name -> WinAppInfo
+        self.info_cache = {} # app_name -> _WinAppInfo
 
     @staticmethod
     def _read_registry_string(reg_key, string_name):
@@ -418,20 +418,20 @@ class _WindowsStoreFinder(object):
         return version, entry_point
 
     def get_app_info(self, app_name, publisher_name=None, publisher_id=None):
-        """Public interface: returns a WinAppInfo object with all applicable
+        """Public interface: returns a _WinAppInfo object with all applicable
            information about the application."""
         if not publisher_id:
             publisher_id = self.developer_ids.get(publisher_name)
         if not publisher_id:
             # Not a common publisher name, need the publisher id
-            return WinAppInfo()
+            return _WinAppInfo()
         package_name = app_name + '_' + publisher_id
         try:
             return self.info_cache[package_name]
         except KeyError:
             # Not cached, look everything up
             pass
-        app_info = WinAppInfo(publisher_name, publisher_id, package_name)
+        app_info = _WinAppInfo(publisher_name, publisher_id, package_name)
         # Gather all versions of the app
         package_full_names = self._get_package_full_names(package_name)
         for full_name in package_full_names:
@@ -447,7 +447,7 @@ class _WindowsStoreFinder(object):
             if not version:
                 version = self._get_package_version_from_full_name(full_name)
             version = _parse_version_string(version)
-            version_info = WinAppVersionInfo(
+            version_info = _WinAppVersionInfo(
                 full_name, install_location, mutable_location, version,
                 install_time, entry_point)
             app_info.versions[full_name] = version_info
@@ -885,14 +885,44 @@ def drive_exists(dir_path):
     """Check if the drive the dir is on exists."""
     return dir_path.s.startswith('\\') or dir_path.drive().exists()
 
+@functools.cache
+def find_egs_games():
+    """Reads the manifests from the EGS launcher (and the third-party Legendary
+    launcher) to find all games installed via the Epic Games Store."""
+    egs_path_app_data = get_registry_path(r'Epic Games\EpicGamesLauncher',
+        'AppDataPath', lambda p: p.join('Manifests').is_dir())
+    if not egs_path_app_data:
+        # EGS is not installed, just use the Legendary games
+        return _find_legendary_games()
+    found_egs_games = {}
+    egs_path_manifests = egs_path_app_data.join('Manifests')
+    # Start by reading the regular EGS manifests
+    for egs_manifest in egs_path_manifests.ilist():
+        if egs_manifest.fn_ext == '.item':
+            try:
+                with open(egs_path_manifests.join(egs_manifest), 'r',
+                        encoding='utf-8') as ins:
+                    egs_manifest_data = json.load(ins)
+                egs_app_name = egs_manifest_data['AppName']
+                game_install_location = egs_manifest_data['InstallLocation']
+                found_egs_games[egs_app_name] = game_install_location
+            except (json.JSONDecodeError, KeyError):
+                # Log, but move on to the other manifests
+                _deprint('Failed to parse Epic Games Store manifest file',
+                    traceback=True)
+    # Add in the ones from the third-party Legendary launcher, overriding EGS
+    # entries in case of conflict (since people using Legendary will probably
+    # prefer it over EGS)
+    found_egs_games.update(_find_legendary_games())
+    return found_egs_games
+
 def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
-    if not winreg: return None
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
                 reg_key = winreg.OpenKey(
-                    hkey, f'Software\\{wow6432}{subkey}', 0,
+                    hkey, fr'Software\{wow6432}{subkey}', 0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
                 reg_val = winreg.QueryValueEx(reg_key, entry)
             except OSError:
@@ -1069,10 +1099,20 @@ def mark_high_dpi_aware():
     except (AttributeError, WindowsError):
         pass  # We are on an unsupported Windows version
 
+def _real_sys_prefix():
+    """Small helper that returns the real prefix when running in a virtual
+    environment."""
+    if hasattr(sys, 'real_prefix'):  # running in virtualenv
+        return sys.real_prefix
+    elif hasattr(sys, 'base_prefix'):  # running in venv
+        return sys.base_prefix
+    else:
+        return sys.prefix
+
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(real_sys_prefix(), u'Tools') # easy on Windows
+    return os.path.join(_real_sys_prefix(), 'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""

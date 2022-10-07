@@ -1693,8 +1693,9 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif game_fsName == u'Enderal Special Edition':
         return EnderalSE(mod_infos, plugins_txt_path)
-    elif game_fsName in ('Skyrim Special Edition',
-                         'Skyrim Special Edition GOG'):
+    elif game_fsName in (
+            'Skyrim Special Edition', 'Skyrim Special Edition GOG',
+            'Skyrim Special Edition EPIC'):
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim VR':
         return SkyrimVR(mod_infos, plugins_txt_path)

@@ -22,7 +22,7 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
 from ..skyrim import SkyrimGameInfo
-from .. import GOG_COMMON_FILES, WS_COMMON_FILES
+from .. import EGS_COMMON_FILES, GOG_COMMON_FILES, WS_COMMON_FILES
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -35,11 +35,10 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE
     game_detect_includes = {'SkyrimSELauncher.exe'}
-    # The Steam version has SkyrimSELauncher.exe, but no appxmanifest.xml or
-    # Galaxy64.dll. The Windows Store version has SkyrimSELauncher.exe and
-    # appxmanifest.xml, but no Galaxy64.dll. The GOG version has
-    # SkyrimSELauncher.exe and Galaxy64.dll, but no appxmanifest.xml.
-    game_detect_excludes = GOG_COMMON_FILES | WS_COMMON_FILES
+    # Files carefully chosen such that no platform has any of them in common
+    # with another platform
+    game_detect_excludes = (EGS_COMMON_FILES | GOG_COMMON_FILES |
+                            WS_COMMON_FILES)
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'

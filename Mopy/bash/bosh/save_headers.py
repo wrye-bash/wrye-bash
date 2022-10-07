@@ -709,10 +709,10 @@ def get_save_header_type(game_fsName):
     """:rtype: type"""
     if game_fsName == u'Oblivion':
         return OblivionSaveHeader
-    elif game_fsName in ('Enderal', 'Skyrim',  'Skyrim Special Edition',
-                         'Skyrim VR', 'Enderal Special Edition',
-                         'Skyrim Special Edition MS',
-                         'Skyrim Special Edition GOG'):
+    elif game_fsName in (
+            'Enderal', 'Skyrim',  'Skyrim Special Edition', 'Skyrim VR',
+            'Enderal Special Edition', 'Skyrim Special Edition MS',
+            'Skyrim Special Edition GOG', 'Skyrim Special Edition EPIC'):
         return SkyrimSaveHeader
     elif game_fsName in (u'Fallout4',  u'Fallout4VR', u'Fallout4 MS'):
         return Fallout4SaveHeader
