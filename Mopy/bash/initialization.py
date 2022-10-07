@@ -31,7 +31,7 @@ from configparser import ConfigParser, MissingSectionHeaderError
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_personal_path, get_local_app_data_path, \
-    get_win_store_game_info, shellMakeDirs
+    get_legacy_ws_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
 
 ##: we need to import LOOTParser after defining this as LOOTParser imports bush
@@ -106,7 +106,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
 
 def getOblivionModsPath(bash_ini_, game_info):
     ob_mods_path = get_path_from_ini(bash_ini_, u'sOblivionMods')
-    ws_info = get_win_store_game_info(game_info)
+    ws_info = get_legacy_ws_game_info(game_info)
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
     elif not ws_info.installed:
@@ -180,7 +180,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
                                                                 localAppData)
     # AppData for the game, depends on if it's a WS game or not.
-    ws_info = get_win_store_game_info(game_info)
+    ws_info = get_legacy_ws_game_info(game_info)
     if ws_info.installed:
         version_info = ws_info.get_installed_version()
         dirs[u'userApp'] = localAppData.join(

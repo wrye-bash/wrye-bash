@@ -31,7 +31,7 @@ class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     # newer Windows Store games.
 
     class Ws(FalloutNVGameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
         game_language_dirs = ['Fallout New Vegas English',
                               'Fallout New Vegas French',

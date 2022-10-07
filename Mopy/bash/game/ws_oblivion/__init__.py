@@ -32,7 +32,7 @@ class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     check_legacy_paths = False
 
     class Ws(OblivionGameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESOblivion-PC'
         game_language_dirs = ['Oblivion GOTY English',
                               'Oblivion GOTY French',

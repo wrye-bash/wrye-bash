@@ -31,7 +31,7 @@ class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
     # newer Windows Store games.
 
     class Ws(Fallout3GameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout3'
         game_language_dirs = ['Fallout 3 GOTY English',
                               'Fallout 3 GOTY French',

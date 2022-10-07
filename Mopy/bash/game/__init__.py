@@ -172,17 +172,13 @@ class GameInfo(object):
         # the main Windows Store path. If empty, indicates that the Windows
         # Store location is the game installtion
         game_language_dirs = []
-        # The publisher name for common games. Currently only 'Bethesda' is
-        # allowed for Bethesda games. If specified, publisher_id is not
-        # required
-        publisher_name = u''
-        # The publisher ID for the publisher of the game. Required except for
-        # common publishers supported above. For example, Bethesda's publisher
-        # ID is '3275kfvn8vcwc'
-        publisher_id = u''
+        # The publisher name for common games. Only needed for games that had
+        # the older legacy installation method available. Can only be
+        # 'Bethesda' or empty
+        legacy_publisher_name = ''
         # The internal name used by the Windows Store to identify the game.
         # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
-        win_store_name = u''
+        win_store_name = ''
 
     class Ck(object):
         """Information about the official plugin editor (generally called some

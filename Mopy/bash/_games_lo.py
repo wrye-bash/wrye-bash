@@ -1302,98 +1302,6 @@ class AsteriskGame(LoGame):
                          f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
 
-class WindowsStoreGame(LoGame):
-    """Mixin for Windows Store games, which have a second, fallback directory
-    which we must keep in sync with the main one."""
-    _second_acti_file: Path | None
-    _second_lo_file: Path | None
-
-    @property
-    def _fallback_lo_files(self):
-        """Returns a tuple containing the fallback actives/LO files"""
-        try:
-            return self._second_acti_file, self._second_lo_file
-        except AttributeError:
-            from . import bush
-            sec_path = bass.dirs[u'local_appdata'].join(bush.game.appdata_name)
-            acti_file = self.get_acti_file()
-            self._second_acti_file = (sec_path.join(acti_file.stail)
-                                      if acti_file else None)
-            lo_file = self.get_lo_file()
-            self._second_lo_file = (sec_path.join(lo_file.stail)
-                                    if lo_file else None)
-            return self._second_acti_file, self._second_lo_file
-
-    def _fetch_load_order(self, cached_load_order, cached_active):
-        _fb_acti_file, fb_lo_file = self._fallback_lo_files
-        lo_file = self.get_lo_file()
-        if lo_file and fb_lo_file:
-            # Use the main LO file if possible, but if the main file is missing
-            # or the fallback file is newer, use that one
-            if lo_file.is_file():
-                file_to_use = lo_file
-                if fb_lo_file.is_file() and fb_lo_file.mtime > lo_file.mtime:
-                    file_to_use = fb_lo_file
-            else:
-                file_to_use = fb_lo_file
-            swap_files = file_to_use is not lo_file
-        else:
-            # We don't even have LO files for this game, skip right to parent
-            file_to_use = None
-            swap_files = False
-        if swap_files:
-            self._set_lo_file(file_to_use)
-        ret_lo = super()._fetch_load_order(cached_load_order, cached_active)
-        if swap_files:
-            self._set_lo_file(lo_file)
-        return ret_lo
-
-    def _fetch_active_plugins(self):
-        fb_acti_file, _fb_lo_file = self._fallback_lo_files
-        acti_file = self.get_acti_file()
-        if acti_file and fb_acti_file:
-            # Use the main actives file if possible, but if the main file is
-            # missing or the fallback file is newer, use that one
-            if acti_file.is_file():
-                file_to_use = acti_file
-                if (fb_acti_file.is_file() and
-                        fb_acti_file.mtime > acti_file.mtime):
-                    file_to_use = fb_acti_file
-            else:
-                file_to_use = fb_acti_file
-            swap_files = file_to_use is not acti_file
-        else:
-            # We don't even have actives files for this game, skip right to
-            # parent
-            file_to_use = None
-            swap_files = False
-        if swap_files:
-            self._set_acti_file(file_to_use)
-        ret_acti = super()._fetch_active_plugins()
-        if swap_files:
-            self._set_acti_file(acti_file)
-        return ret_acti
-
-    def _persist_active_plugins(self, active, lord):
-        super()._persist_active_plugins(active, lord)
-        fb_acti_file, _fb_lo_file = self._fallback_lo_files
-        if fb_acti_file:
-            self.get_acti_file().copyTo(fb_acti_file)
-
-    def _persist_load_order(self, lord, active, *, _cleaned=False):
-        super()._persist_load_order(lord, active, _cleaned=_cleaned)
-        _fb_acti_file, fb_lo_file = self._fallback_lo_files
-        if fb_lo_file:
-            self.get_lo_file().copyTo(fb_lo_file)
-
-    def print_lo_paths(self):
-        super().print_lo_paths()
-        fb_acti_file, fb_lo_file = self._fallback_lo_files
-        if fb_lo_file:
-            bolt.deprint(u' - Load order (fallback): %s' % fb_lo_file)
-        if fb_acti_file and fb_acti_file != fb_lo_file:
-            bolt.deprint(u' - Active plugins (fallback): %s' % fb_acti_file)
-
 # TextfileGame overrides
 class Skyrim(TextfileGame):
     must_be_active_if_present = tuple(map(FName, (
@@ -1678,10 +1586,6 @@ class EnderalSE(SkyrimSE):
             FName(u'Enderal - Forgotten Stories.esm'),
         }
 
-# WindowsStoreGame overrides
-class SkyrimSEWS(WindowsStoreGame, SkyrimSE): pass
-class Fallout4WS(WindowsStoreGame, Fallout4): pass
-
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
@@ -1695,18 +1599,14 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return EnderalSE(mod_infos, plugins_txt_path)
     elif game_fsName in (
             'Skyrim Special Edition', 'Skyrim Special Edition GOG',
-            'Skyrim Special Edition EPIC'):
+            'Skyrim Special Edition EPIC', 'Skyrim Special Edition MS'):
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim VR':
         return SkyrimVR(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Skyrim Special Edition MS':
-        return SkyrimSEWS(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Fallout4':
+    elif game_fsName == ('Fallout4', 'Fallout4 MS'):
         return Fallout4(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4VR':
         return Fallout4VR(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Fallout4 MS':
-        return Fallout4WS(mod_infos, plugins_txt_path)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

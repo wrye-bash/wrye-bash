@@ -30,7 +30,7 @@ class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
     # Morrowind does not use the personal folders, so no my_games_name etc.
 
     class Ws(MorrowindGameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
         game_language_dirs = ['Morrowind GOTY English',
                               'Morrowind GOTY French',

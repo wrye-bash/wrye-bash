@@ -32,7 +32,7 @@ class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
     appdata_name = 'Fallout4 MS'
 
     class Ws(Fallout4GameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout4-PC'
 
 GAME_TYPE = WSFallout4GameInfo

@@ -514,7 +514,8 @@ def _detect_game(opts, backup_bash_ini):
 def _import_bush_and_set_game(opts, bashIni):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    game_infos = bush.detect_and_set_game(cli_game_dir=opts.oblivionPath,
+        bash_ini_=bashIni)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(

@@ -22,6 +22,8 @@
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
+from __future__ import annotations
+
 import datetime
 import functools
 import json
@@ -29,7 +31,10 @@ import os
 import re
 import sys
 import winreg
-import xml.etree.ElementTree as xml
+try:
+    from lxml import etree # lxml is optional
+except ImportError:
+    from xml.etree import ElementTree as etree
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
     c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
@@ -39,11 +44,12 @@ import win32api
 import win32com.client as win32client
 import win32gui
 
-from .common import _WinAppInfo, _WinAppVersionInfo, _find_legendary_games
+from .common import _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _find_legendary_games
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
 from ..bolt import deprint as _deprint
+from ..bolt import unpack_int as _unpack_int
 from ..exception import AccessDeniedError, BoltError, SkipError, \
     FileOperationError
 from ..exception import CancelError as _CancelError
@@ -296,13 +302,13 @@ def _datetime_from_windows_filetime(filetime):
         # Can occur if delta is very large
         return time_zero
 
-class _WindowsStoreFinder(object):
-    developer_ids = {
-        u'Bethesda': u'3275kfvn8vcwc'
+class _LegacyWindowsStoreFinder(object):
+    _developer_ids = {
+        'Bethesda': '3275kfvn8vcwc'
     }
 
     def __init__(self):
-        self.info_cache = {} # app_name -> _WinAppInfo
+        self.info_cache = {} # app_name -> _LegacyWinAppInfo
 
     @staticmethod
     def _read_registry_string(reg_key, string_name):
@@ -395,9 +401,9 @@ class _WindowsStoreFinder(object):
         entry_point = u''
         try:
             manifest = mutable_location.join(u'appxmanifest.xml')
-            tree = xml.parse(manifest.s)
+            tree = etree.parse(manifest.s)
             root = tree.getroot()
-            # AppxManifest.xml uses XML namespaces, don't try to hard to
+            # AppxManifest.xml uses XML namespaces, don't try too hard to
             # extract the applicable namespace
             namespace = root.tag.split(u'}')[0].strip(u'{')
             version_template = u"{%s}Identity[@Version][@Name='%s']"
@@ -412,32 +418,32 @@ class _WindowsStoreFinder(object):
             entry = root.find(entry_template % (namespace, namespace))
             if entry is not None:
                 entry_point = entry.get(u'Id')
-        except (xml.ParseError, OSError):
+        except (etree.ParseError, OSError):
             # Parsing error, or the file doesn't exist
             pass
         return version, entry_point
 
-    def get_app_info(self, app_name, publisher_name=None, publisher_id=None):
-        """Public interface: returns a _WinAppInfo object with all applicable
-           information about the application."""
-        if not publisher_id:
-            publisher_id = self.developer_ids.get(publisher_name)
-        if not publisher_id:
-            # Not a common publisher name, need the publisher id
-            return _WinAppInfo()
-        package_name = app_name + '_' + publisher_id
+    def get_app_info(self, app_name, publisher_name=None):
+        """Public interface: returns a _LegacyWinAppInfo object with all applicable
+        information about the application."""
+        publisher_id = self._developer_ids.get(publisher_name)
+        package_name = f'{app_name}_{publisher_id}'
         try:
             return self.info_cache[package_name]
         except KeyError:
             # Not cached, look everything up
             pass
-        app_info = _WinAppInfo(publisher_name, publisher_id, package_name)
+        app_info = _LegacyWinAppInfo(publisher_name, publisher_id, package_name)
         # Gather all versions of the app
         package_full_names = self._get_package_full_names(package_name)
         for full_name in package_full_names:
             package_index = self._get_package_index(full_name)
+            if package_index is None:
+                continue # Installation is not using the legacy method
             install_location, mutable_location = \
                 self._get_package_locations(package_index)
+            if install_location is None or mutable_location is None:
+                continue # Installation is not using the legacy method
             install_location = _GPath(install_location)
             mutable_location = _GPath(mutable_location)
             install_time = self._get_package_install_time(package_name,
@@ -447,14 +453,88 @@ class _WindowsStoreFinder(object):
             if not version:
                 version = self._get_package_version_from_full_name(full_name)
             version = _parse_version_string(version)
-            version_info = _WinAppVersionInfo(
+            version_info = _LegacyWinAppVersionInfo(
                 full_name, install_location, mutable_location, version,
                 install_time, entry_point)
             app_info.versions[full_name] = version_info
         self.info_cache[package_name] = app_info
         return app_info
 
-_win_store_finder = _WindowsStoreFinder()
+_legacy_win_store_finder = _LegacyWindowsStoreFinder()
+
+# GamingRoot-based Windows Store games
+_gr_magic = b'XBGR' # [XB]ox [G]aming [R]oot
+
+def _parse_gamingroot(gamingroot_path: str) -> str | None:
+    """Parses a .GamingRoot file. The format is: magic (FourCC), version
+    (uint32), library path (string, encoded as UTF-16LE, ends with a null byte
+    after decoding)."""
+    try:
+        with open(gamingroot_path, 'rb') as ins:
+            actual_magic = ins.read(4)[::-1]
+            if actual_magic != _gr_magic:
+                _deprint(f'Failed to parse {gamingroot_path}: Magic wrong - '
+                         f'expected {_gr_magic}, but got {actual_magic}')
+                return None
+            gr_version = _unpack_int(ins)
+            if gr_version != 1:
+                _deprint(f'Unknown .GamingRoot version {gr_version}, only'
+                         f'version 1 is supported')
+                return None
+            # Do *not* strip the null byte before decoding, that will cause
+            # UTF-16LE to fail
+            return ins.read().decode('utf-16le').rstrip('\x00')
+    except FileNotFoundError:
+        return None # No .GamingRoot -> no games installed here
+    except OSError:
+        return None # Happens when we access a disk drive - just skip
+
+def _get_msgame_name(game_content_path: _Path) -> str | None:
+    """Given a game's content path, parses the MicrosoftGame.Config file to
+    determine the game's internal name on the Windows Store."""
+    try:
+        xml_conf = etree.parse(game_content_path.join('MicrosoftGame.Config'))
+    except (etree.ParseError, OSError):
+        _deprint('Failed to parse MicrosoftGame.Config file', traceback=True)
+        return None # Doesn't exist or the XML is invalid
+    try:
+        return xml_conf.getroot().find('Identity').get('Name')
+    except AttributeError:
+        _deprint('MicrosoftGame.Config file has unknown or invalid syntax',
+            traceback=True)
+        return None
+
+@functools.cache
+def _find_ws_games() -> dict[str, _Path]:
+    """Scans all drives for .GamingRoot files, reads those and looks for
+    installed games in the resulting 'Xbox' game libraries."""
+    # First, look for the libraries
+    found_libraries = []
+    # Couldn't just return a list of strings of course - thanks pywin32
+    all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
+    for curr_drive in all_drives:
+        library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
+        if library_path is None:
+            continue # No .GamingRoot or failed to parse - either way, skip
+        full_library_path = _GPath(curr_drive + library_path)
+        if full_library_path.is_dir():
+            found_libraries.append(full_library_path)
+    # Then, collect all installed games
+    found_ws_games = {}
+    for ws_library in found_libraries:
+        for ws_game_fname in ws_library.ilist():
+            # Every WS game installed this way has a 'Content' subfolder that
+            # contains the actual game - e.g. Morrowind could be at
+            # E:\XboxGames\The Elder Scrolls III- Morrowind (PC)\Content
+            ws_content_path = ws_library.join(ws_game_fname, 'Content')
+            if ws_content_path.is_dir():
+                msgame_name = _get_msgame_name(ws_content_path)
+                if msgame_name is None:
+                    # File is missing or failed to parse - may just be a random
+                    # game with a 'Content' folder - in any case, skip
+                    continue
+                found_ws_games[msgame_name] = ws_content_path
+    return found_ws_games
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -945,13 +1025,26 @@ def get_registry_game_paths(submod):
             return [reg_path]
     return []
 
-def get_win_store_game_info(submod):
-    """Get all information about a Windows Store application."""
-    publisher_name = submod.Ws.publisher_name
-    publisher_id = submod.Ws.publisher_id
-    app_name = submod.Ws.win_store_name
-    return _win_store_finder.get_app_info(
-        app_name, publisher_name, publisher_id)
+def get_legacy_ws_game_info(submod):
+    """Get all information about a legacy Windows Store application."""
+    publisher_name = submod.Ws.legacy_publisher_name
+    ws_app_name = submod.Ws.win_store_name
+    return _legacy_win_store_finder.get_app_info(ws_app_name, publisher_name)
+
+def get_ws_game_paths(submod):
+    """Check the .GamingRoot files on each drive to find if the specified game
+    is installed via the Windows Store and return its install path."""
+    if ws_app_name := submod.Ws.win_store_name:
+        all_ws_games = _find_ws_games()
+        if ws_app_name in all_ws_games:
+            first_location = all_ws_games[ws_app_name]
+            if submod.Ws.game_language_dirs:
+                language_locations = [first_location.join(l)
+                                      for l in submod.Ws.game_language_dirs]
+                return [p for p in language_locations if p.is_dir()]
+            else:
+                return [first_location]
+    return []
 
 def get_personal_path():
     return (_GPath(_get_known_path(_FOLDERID.Documents)),

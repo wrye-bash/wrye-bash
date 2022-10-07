@@ -32,7 +32,7 @@ class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
     appdata_name = 'Skyrim Special Edition MS'
 
     class Ws(SkyrimSEGameInfo.Ws):
-        publisher_name = 'Bethesda'
+        legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
 
 GAME_TYPE = WSSkyrimSEGameInfo

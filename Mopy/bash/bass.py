@@ -92,8 +92,9 @@ def newTempDir():
     return _tempDir
 
 def get_ini_option(ini_parser, option_key, section_key=u'General'):
-    # logic for getting the path from the ini - get(section, key, default)
-    # section is case sensitive - key is not - return type is str in py3
-    if not ini_parser or not ini_parser.has_option(section_key, option_key):
+    if not ini_parser:
         return None
-    return ini_parser.get(section_key, option_key)
+    # logic for getting the path from the ini - get(section, key,
+    # fallback=default). section is case sensitive - key is not - return type
+    # is str in py3
+    return ini_parser.get(section_key, option_key, fallback=None)

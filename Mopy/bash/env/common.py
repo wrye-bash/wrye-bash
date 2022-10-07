@@ -63,10 +63,8 @@ def _find_legendary_games():
     return found_lgd_games
 
 # Windows store dataclasses
-@dataclass
-class _WinAppVersionInfo(object):
-    __slots__ = ('full_name', 'mutable_location', 'install_location',
-                 '_version', 'install_time', 'entry_point')
+@dataclass(slots=True)
+class _LegacyWinAppVersionInfo:
     full_name: str
     install_location: bolt.Path
     mutable_location: bolt.Path
@@ -79,18 +77,18 @@ class _WinAppVersionInfo(object):
     entry_point: str
 
 @dataclass
-class _WinAppInfo(object):
-    ## There are three names used for Windows Apps:
-    ## app_name: The most human readable form
-    ##   ex: `BethesdaSofworks.SkyrimSE-PC`
-    ## package_name: The application name along with publisher id
-    ##   ex: `BethesdaSoftworks.Skyrim_PC_3275kfvn8vcwc`
-    ## full_name: The unique app name, includes version and platform
-    ##   ex: `BethesdaSoftworks.TESMorrowind-PC_1.0.0.0_x86__3275kfvn8vcwc`
-    publisher_name : str = ''
+class _LegacyWinAppInfo:
+    # There are three names used for Windows Apps:
+    # app_name: The most human readable form
+    #   ex: `BethesdaSofworks.SkyrimSE-PC`
+    # package_name: The application name along with publisher id
+    #   ex: `BethesdaSoftworks.Skyrim_PC_3275kfvn8vcwc`
+    # full_name: The unique app name, includes version and platform
+    #   ex: `BethesdaSoftworks.TESMorrowind-PC_1.0.0.0_x86__3275kfvn8vcwc`
+    legacy_publisher_name : str = ''
     publisher_id : str = ''
     app_name : str = ''
-    versions: dict[str, _WinAppVersionInfo] = field(init=False,
+    versions: dict[str, _LegacyWinAppVersionInfo] = field(init=False,
                                                     default_factory=dict)
 
     @property
@@ -105,9 +103,10 @@ class _WinAppInfo(object):
         return None
 
     def __repr__(self):
-        return f'_WinAppInfo(publisher_name={self.publisher_name}, ' \
-               f'publisher_id={self.publisher_id}, app_name={self.app_name},' \
-               f' versions:{len(self.versions)})'
+        return (f'_LegacyWinAppInfo('
+                f'legacy_publisher_name={self.legacy_publisher_name},'
+                f'publisher_id={self.publisher_id}, app_name={self.app_name}, '
+                f'versions=<{len(self.versions)} version(s)>)')
 
 # API - Functions =============================================================
 def clear_read_only(filepath): # copied from bolt
@@ -129,17 +128,17 @@ def get_game_version_fallback(test_path, ws_info):
         return ws_info.get_installed_version()._version
     else:
         bolt.deprint(warn_msg + u' ' +
-            _(u'This is not a Windows Store game, your system likely needs '
-              u'to be configured for file permissions.  See the Wrye Bash '
-              u'General Readme for more information.'))
+            _('This is not a legacy Windows Store game, your system likely '
+              'needs to be configured for file permissions. See the Wrye Bash '
+              'General Readme for more information.'))
         return 0, 0, 0, 0
 
-def get_win_store_game_paths(submod):
-    """Check Windows Store-supplied game paths for the game detection
+def get_legacy_ws_game_paths(submod):
+    """Check legacy Windows Store-supplied game paths for the game detection
     file(s)."""
     # Delayed import to pull in the right version, and avoid circular imports
-    from . import get_win_store_game_info
-    app_info = get_win_store_game_info(submod)
+    from . import get_legacy_ws_game_info
+    app_info = get_legacy_ws_game_info(submod)
     # Select the most recently installed entry
     installed_version = app_info.get_installed_version()
     if installed_version:
@@ -155,7 +154,7 @@ def get_win_store_game_paths(submod):
 
 def get_egs_game_paths(submod):
     """Check the Epic Games Store manifests to find if the specified game is
-    installed via the EGS and returns its install path."""
+    installed via the EGS and return its install path."""
     if egs_anames := submod.egs_app_names:
         # Delayed import to pull in the right version
         from . import find_egs_games
