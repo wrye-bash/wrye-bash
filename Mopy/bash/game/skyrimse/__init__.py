@@ -268,7 +268,21 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         'ccvsvsse004-beafarmer.esl',
     }
 
-    _patcher_package = u'bash.game.skyrimse' # We need to override tweaks
+    assorted_tweaks = SkyrimGameInfo.assorted_tweaks | {
+        'AssortedTweak_ArrowWeight'}
+
+    #--------------------------------------------------------------------------
+    # Import Stats
+    #--------------------------------------------------------------------------
+    statsTypes = SkyrimGameInfo.statsTypes | {
+        b'AMMO': ('eid', 'value', 'damage', 'weight'),
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Names
+    #--------------------------------------------------------------------------
+    names_tweaks = SkyrimGameInfo.names_tweaks | {'NamesTweak_AmmoWeight'}
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

@@ -172,76 +172,76 @@ class Fallout3GameInfo(PatchGame):
         )
 
     raceNames = {
-        0x000019 : _(u'Caucasian'),
-        0x0038e5 : _(u'Hispanic'),
-        0x0038e6 : _(u'Asian'),
-        0x003b3e : _(u'Ghoul'),
-        0x00424a : _(u'AfricanAmerican'),
-        0x0042be : _(u'AfricanAmerican Child'),
-        0x0042bf : _(u'AfricanAmerican Old'),
-        0x0042c0 : _(u'Asian Child'),
-        0x0042c1 : _(u'Asian Old'),
-        0x0042c2 : _(u'Caucasian Child'),
-        0x0042c3 : _(u'Caucasian Old'),
-        0x0042c4 : _(u'Hispanic Child'),
-        0x0042c5 : _(u'Hispanic Old'),
-        0x04bb8d : _(u'Caucasian Raider'),
-        0x04bf70 : _(u'Hispanic Raider'),
-        0x04bf71 : _(u'Asian Raider'),
-        0x04bf72 : _(u'AfricanAmerican Raider'),
-        0x0987dc : _(u'Hispanic Old Aged'),
-        0x0987dd : _(u'Asian Old Aged'),
-        0x0987de : _(u'AfricanAmerican Old Aged'),
-        0x0987df : _(u'Caucasian Old Aged'),
-        }
+        0x000019: _('Caucasian'),
+        0x0038e5: _('Hispanic'),
+        0x0038e6: _('Asian'),
+        0x003b3e: _('Ghoul'),
+        0x00424a: _('AfricanAmerican'),
+        0x0042be: _('AfricanAmerican Child'),
+        0x0042bf: _('AfricanAmerican Old'),
+        0x0042c0: _('Asian Child'),
+        0x0042c1: _('Asian Old'),
+        0x0042c2: _('Caucasian Child'),
+        0x0042c3: _('Caucasian Old'),
+        0x0042c4: _('Hispanic Child'),
+        0x0042c5: _('Hispanic Old'),
+        0x04bb8d: _('Caucasian Raider'),
+        0x04bf70: _('Hispanic Raider'),
+        0x04bf71: _('Asian Raider'),
+        0x04bf72: _('AfricanAmerican Raider'),
+        0x0987dc: _('Hispanic Old Aged'),
+        0x0987dd: _('Asian Old Aged'),
+        0x0987de: _('AfricanAmerican Old Aged'),
+        0x0987df: _('Caucasian Old Aged'),
+   }
 
     raceShortNames = {
-        0x000019 : u'Cau',
-        0x0038e5 : u'His',
-        0x0038e6 : u'Asi',
-        0x003b3e : u'Gho',
-        0x00424a : u'Afr',
-        0x0042be : u'AfC',
-        0x0042bf : u'AfO',
-        0x0042c0 : u'AsC',
-        0x0042c1 : u'AsO',
-        0x0042c2 : u'CaC',
-        0x0042c3 : u'CaO',
-        0x0042c4 : u'HiC',
-        0x0042c5 : u'HiO',
-        0x04bb8d : u'CaR',
-        0x04bf70 : u'HiR',
-        0x04bf71 : u'AsR',
-        0x04bf72 : u'AfR',
-        0x0987dc : u'HOA',
-        0x0987dd : u'AOA',
-        0x0987de : u'FOA',
-        0x0987df : u'COA',
-        }
+        0x000019: 'Cau',
+        0x0038e5: 'His',
+        0x0038e6: 'Asi',
+        0x003b3e: 'Gho',
+        0x00424a: 'Afr',
+        0x0042be: 'AfC',
+        0x0042bf: 'AfO',
+        0x0042c0: 'AsC',
+        0x0042c1: 'AsO',
+        0x0042c2: 'CaC',
+        0x0042c3: 'CaO',
+        0x0042c4: 'HiC',
+        0x0042c5: 'HiO',
+        0x04bb8d: 'CaR',
+        0x04bf70: 'HiR',
+        0x04bf71: 'AsR',
+        0x04bf72: 'AfR',
+        0x0987dc: 'HOA',
+        0x0987dd: 'AOA',
+        0x0987de: 'FOA',
+        0x0987df: 'COA',
+    }
 
     raceHairMale = {
-        0x000019 : 0x014b90, #--Cau
-        0x0038e5 : 0x0a9d6f, #--His
-        0x0038e6 : 0x014b90, #--Asi
-        0x003b3e : None, #--Gho
-        0x00424a : 0x0306be, #--Afr
-        0x0042be : 0x060232, #--AfC
-        0x0042bf : 0x0306be, #--AfO
-        0x0042c0 : 0x060232, #--AsC
-        0x0042c1 : 0x014b90, #--AsO
-        0x0042c2 : 0x060232, #--CaC
-        0x0042c3 : 0x02bfdb, #--CaO
-        0x0042c4 : 0x060232, #--HiC
-        0x0042c5 : 0x02ddee, #--HiO
-        0x04bb8d : 0x02bfdb, #--CaR
-        0x04bf70 : 0x02bfdb, #--HiR
-        0x04bf71 : 0x02bfdb, #--AsR
-        0x04bf72 : 0x0306be, #--AfR
-        0x0987dc : 0x0987da, #--HOA
-        0x0987dd : 0x0987da, #--AOA
-        0x0987de : 0x0987d9, #--FOA
-        0x0987df : 0x0987da, #--COA
-        }
+        0x000019: 0x014b90, #--Cau
+        0x0038e5: 0x0a9d6f, #--His
+        0x0038e6: 0x014b90, #--Asi
+        0x003b3e: None, #--Gho
+        0x00424a: 0x0306be, #--Afr
+        0x0042be: 0x060232, #--AfC
+        0x0042bf: 0x0306be, #--AfO
+        0x0042c0: 0x060232, #--AsC
+        0x0042c1: 0x014b90, #--AsO
+        0x0042c2: 0x060232, #--CaC
+        0x0042c3: 0x02bfdb, #--CaO
+        0x0042c4: 0x060232, #--HiC
+        0x0042c5: 0x02ddee, #--HiO
+        0x04bb8d: 0x02bfdb, #--CaR
+        0x04bf70: 0x02bfdb, #--HiR
+        0x04bf71: 0x02bfdb, #--AsR
+        0x04bf72: 0x0306be, #--AfR
+        0x0987dc: 0x0987da, #--HOA
+        0x0987dd: 0x0987da, #--AOA
+        0x0987de: 0x0987d9, #--FOA
+        0x0987df: 0x0987da, #--COA
+    }
 
     raceHairFemale = {
         0x000019 : 0x05dc6b, #--Cau
@@ -265,7 +265,7 @@ class Fallout3GameInfo(PatchGame):
         0x0987dd : 0x044529, #--AOA
         0x0987de : 0x044529, #--FOA
         0x0987df : 0x044529, #--COA
-        }
+    }
 
     bethDataFiles = {
         'anchorage - main.bsa',
@@ -291,6 +291,867 @@ class Fallout3GameInfo(PatchGame):
         'zeta - sounds.bsa',
         'zeta.esm',
     }
+
+    # Function Info -----------------------------------------------------------
+    # 0: no param; 1: int param; 2: FormID param; 3: float param
+    condition_function_data = {
+        1:    ('GetDistance', 2, 0),
+        5:    ('GetLocked', 0, 0),
+        6:    ('GetPos', 0, 0),
+        8:    ('GetAngle', 0, 0),
+        10:   ('GetStartingPos', 0, 0),
+        11:   ('GetStartingAngle', 0, 0),
+        12:   ('GetSecondsPassed', 0, 0),
+        14:   ('GetActorValue', 2, 0),
+        18:   ('GetCurrentTime', 0, 0),
+        24:   ('GetScale', 0, 0),
+        25:   ('IsMoving', 0, 0),
+        26:   ('IsTurning', 0, 0),
+        27:   ('GetLineOfSight', 2, 0),
+        32:   ('GetInSameCell', 2, 0),
+        35:   ('GetDisabled', 0, 0),
+        36:   ('MenuMode', 1, 0),
+        39:   ('GetDisease', 0, 0),
+        40:   ('GetVampire', 0, 0),
+        41:   ('GetClothingValue', 0, 0),
+        42:   ('SameFaction', 2, 0),
+        43:   ('SameRace', 2, 0),
+        44:   ('SameSex', 2, 0),
+        45:   ('GetDetected', 2, 0),
+        46:   ('GetDead', 0, 0),
+        47:   ('GetItemCount', 2, 0),
+        48:   ('GetGold', 0, 0),
+        49:   ('GetSleeping', 0, 0),
+        50:   ('GetTalkedToPC', 0, 0),
+        53:   ('GetScriptVariable', 2, 0),
+        56:   ('GetQuestRunning', 2, 0),
+        58:   ('GetStage', 2, 0),
+        59:   ('GetStageDone', 2, 1),
+        60:   ('GetFactionRankDifference', 2, 2),
+        61:   ('GetAlarmed', 0, 0),
+        62:   ('IsRaining', 0, 0),
+        63:   ('GetAttacked', 0, 0),
+        64:   ('GetIsCreature', 0, 0),
+        65:   ('GetLockLevel', 0, 0),
+        66:   ('GetShouldAttack', 2, 0),
+        67:   ('GetInCell', 2, 0),
+        68:   ('GetIsClass', 2, 0),
+        69:   ('GetIsRace', 2, 0),
+        70:   ('GetIsSex', 1, 0),
+        71:   ('GetInFaction', 2, 0),
+        72:   ('GetIsID', 2, 0),
+        73:   ('GetFactionRank', 2, 0),
+        74:   ('GetGlobalValue', 2, 0),
+        75:   ('IsSnowing', 0, 0),
+        76:   ('GetDisposition', 2, 0),
+        77:   ('GetRandomPercent', 0, 0),
+        79:   ('GetQuestVariable', 2, 0),
+        80:   ('GetLevel', 0, 0),
+        81:   ('GetArmorRating', 0, 0),
+        84:   ('GetDeadCount', 2, 0),
+        91:   ('GetIsAlerted', 0, 0),
+        98:   ('GetPlayerControlsDisabled', 1, 1),
+        99:   ('GetHeadingAngle', 2, 0),
+        101:  ('IsWeaponOut', 0, 0),
+        102:  ('IsTorchOut', 0, 0),
+        103:  ('IsShieldOut', 0, 0),
+        106:  ('IsFacingUp', 0, 0),
+        107:  ('GetKnockedState', 0, 0),
+        108:  ('GetWeaponAnimType', 0, 0),
+        109:  ('IsWeaponSkillType', 2, 0),
+        110:  ('GetCurrentAIPackage', 0, 0),
+        111:  ('IsWaiting', 0, 0),
+        112:  ('IsIdlePlaying', 0, 0),
+        116:  ('GetMinorCrimeCount', 0, 0),
+        117:  ('GetMajorCrimeCount', 0, 0),
+        118:  ('GetActorAggroRadiusViolated', 0, 0),
+        122:  ('GetCrime', 2, 1),
+        123:  ('IsGreetingPlayer', 0, 0),
+        125:  ('IsGuard', 0, 0),
+        127:  ('HasBeenEaten', 0, 0),
+        128:  ('GetFatiguePercentage', 0, 0),
+        129:  ('GetPCIsClass', 2, 0),
+        130:  ('GetPCIsRace', 2, 0),
+        131:  ('GetPCIsSex', 1, 0),
+        132:  ('GetPCInFaction', 2, 0),
+        133:  ('SameFactionAsPC', 0, 0),
+        134:  ('SameRaceAsPC', 0, 0),
+        135:  ('SameSexAsPC', 0, 0),
+        136:  ('GetIsReference', 2, 0),
+        141:  ('IsTalking', 0, 0),
+        142:  ('GetWalkSpeed', 0, 0),
+        143:  ('GetCurrentAIProcedure', 0, 0),
+        144:  ('GetTrespassWarningLevel', 0, 0),
+        145:  ('IsTrespassing', 0, 0),
+        146:  ('IsInMyOwnedCell', 0, 0),
+        147:  ('GetWindSpeed', 0, 0),
+        148:  ('GetCurrentWeatherPercent', 0, 0),
+        149:  ('GetIsCurrentWeather', 2, 0),
+        150:  ('IsContinuingPackagePCNear', 0, 0),
+        153:  ('CanHaveFlames', 0, 0),
+        154:  ('HasFlames', 0, 0),
+        157:  ('GetOpenState', 0, 0),
+        159:  ('GetSitting', 0, 0),
+        160:  ('GetFurnitureMarkerID', 0, 0),
+        161:  ('GetIsCurrentPackage', 2, 0),
+        162:  ('IsCurrentFurnitureRef', 2, 0),
+        163:  ('IsCurrentFurnitureObj', 2, 0),
+        170:  ('GetDayOfWeek', 0, 0),
+        172:  ('GetTalkedToPCParam', 2, 0),
+        175:  ('IsPCSleeping', 0, 0),
+        176:  ('IsPCAMurderer', 0, 0),
+        180:  ('GetDetectionLevel', 2, 0),
+        182:  ('GetEquipped', 2, 0),
+        185:  ('IsSwimming', 0, 0),
+        190:  ('GetAmountSoldStolen', 0, 0),
+        192:  ('GetIgnoreCrime', 0, 0),
+        193:  ('GetPCExpelled', 2, 0),
+        195:  ('GetPCFactionMurder', 2, 0),
+        197:  ('GetPCEnemyofFaction', 2, 0),
+        199:  ('GetPCFactionAttack', 2, 0),
+        203:  ('GetDestroyed', 0, 0),
+        214:  ('HasMagicEffect', 2, 0),
+        215:  ('GetDefaultOpen', 0, 0),
+        219:  ('GetAnimAction', 0, 0),
+        223:  ('IsSpellTarget', 2, 0),
+        224:  ('GetVATSMode', 0, 0),
+        225:  ('GetPersuasionNumber', 0, 0),
+        226:  ('GetSandman', 0, 0),
+        227:  ('GetCannibal', 0, 0),
+        228:  ('GetIsClassDefault', 2, 0),
+        229:  ('GetClassDefaultMatch', 0, 0),
+        230:  ('GetInCellParam', 2, 2),
+        235:  ('GetVatsTargetHeight', 0, 0),
+        237:  ('GetIsGhost', 0, 0),
+        242:  ('GetUnconscious', 0, 0),
+        244:  ('GetRestrained', 0, 0),
+        246:  ('GetIsUsedItem', 2, 0),
+        247:  ('GetIsUsedItemType', 2, 0),
+        254:  ('GetIsPlayableRace', 0, 0),
+        255:  ('GetOffersServicesNow', 0, 0),
+        258:  ('GetUsedItemLevel', 0, 0),
+        259:  ('GetUsedItemActivate', 0, 0),
+        264:  ('GetBarterGold', 0, 0),
+        265:  ('IsTimePassing', 0, 0),
+        266:  ('IsPleasant', 0, 0),
+        267:  ('IsCloudy', 0, 0),
+        274:  ('GetArmorRatingUpperBody', 0, 0),
+        277:  ('GetBaseActorValue', 2, 0),
+        278:  ('IsOwner', 2, 0),
+        280:  ('IsCellOwner', 2, 2),
+        282:  ('IsHorseStolen', 0, 0),
+        285:  ('IsLeftUp', 0, 0),
+        286:  ('IsSneaking', 0, 0),
+        287:  ('IsRunning', 0, 0),
+        288:  ('GetFriendHit', 0, 0),
+        289:  ('IsInCombat', 0, 0),
+        300:  ('IsInInterior', 0, 0),
+        304:  ('IsWaterObject', 0, 0),
+        306:  ('IsActorUsingATorch', 0, 0),
+        309:  ('IsXBox', 0, 0),
+        310:  ('GetInWorldspace', 2, 0),
+        312:  ('GetPCMiscStat', 0, 0),
+        313:  ('IsActorEvil', 0, 0),
+        314:  ('IsActorAVictim', 0, 0),
+        315:  ('GetTotalPersuasionNumber', 0, 0),
+        318:  ('GetIdleDoneOnce', 0, 0),
+        320:  ('GetNoRumors', 0, 0),
+        323:  ('WhichServiceMenu', 0, 0),
+        327:  ('IsRidingHorse', 0, 0),
+        332:  ('IsInDangerousWater', 0, 0),
+        338:  ('GetIgnoreFriendlyHits', 0, 0),
+        339:  ('IsPlayersLastRiddenHorse', 0, 0),
+        353:  ('IsActor', 0, 0),
+        354:  ('IsEssential', 0, 0),
+        358:  ('IsPlayerMovingIntoNewSpace', 0, 0),
+        361:  ('GetTimeDead', 0, 0),
+        362:  ('GetPlayerHasLastRiddenHorse', 0, 0),
+        365:  ('IsChild', 0, 0),
+        367:  ('GetLastPlayerAction', 0, 0),
+        368:  ('IsPlayerActionActive', 1, 0),
+        370:  ('IsTalkingActivatorActor', 2, 0),
+        372:  ('IsInList', 2, 0),
+        382:  ('GetHasNote', 2, 0),
+        391:  ('GetHitLocation', 0, 0),
+        392:  ('IsPC1stPerson', 0, 0),
+        397:  ('GetCauseofDeath', 0, 0),
+        398:  ('IsLimbGone', 1, 0),
+        399:  ('IsWeaponInList', 2, 0),
+        403:  ('HasFriendDisposition', 0, 0),
+        # We set the second to 'unused' here to receive it as 4 bytes, which we
+        # then handle inside _MelCtdaFo3.
+        408:  ('GetVATSValue', 1, 0),
+        409:  ('IsKiller', 2, 0),
+        410:  ('IsKillerObject', 2, 0),
+        411:  ('GetFactionCombatReaction', 2, 2),
+        415:  ('Exists', 2, 0),
+        416:  ('GetGroupMemberCount', 0, 0),
+        417:  ('GetGroupTargetCount', 0, 0),
+        427:  ('GetIsVoiceType', 0, 0),
+        428:  ('GetPlantedExplosive', 0, 0),
+        430:  ('IsActorTalkingThroughActivator', 0, 0),
+        431:  ('GetHealthPercentage', 0, 0),
+        433:  ('GetIsObjectType', 2, 0),
+        435:  ('GetDialogueEmotion', 0, 0),
+        436:  ('GetDialogueEmotionValue', 0, 0),
+        438:  ('GetIsCreatureType', 1, 0),
+        446:  ('GetInZone', 2, 0),
+        449:  ('HasPerk', 2, 0),
+        450:  ('GetFactionRelation', 2, 0),
+        451:  ('IsLastIdlePlayed', 2, 0),
+        454:  ('GetPlayerTeammate', 0, 0),
+        455:  ('GetPlayerTeammateCount', 0, 0),
+        459:  ('GetActorCrimePlayerEnemy', 0, 0),
+        460:  ('GetActorFactionPlayerEnemy', 0, 0),
+        464:  ('IsPlayerGrabbedRef', 2, 0),
+        471:  ('GetDestructionStage', 0, 0),
+        474:  ('GetIsAlignment', 1, 0),
+        478:  ('GetThreatRatio', 2, 0),
+        480:  ('GetIsUsedItemEquipType', 1, 0),
+        489:  ('GetConcussed', 0, 0),
+        492:  ('GetMapMarkerVisible', 0, 0),
+        495:  ('GetPermanentActorValue', 2, 0),
+        496:  ('GetKillingBlowLimb', 0, 0),
+        500:  ('GetWeaponHealthPerc', 0, 0),
+        503:  ('GetRadiationLevel', 0, 0),
+        510:  ('GetLastHitCritical', 0, 0),
+        515:  ('IsCombatTarget', 2, 0),
+        518:  ('GetVATSRightAreaFree', 2, 0),
+        519:  ('GetVATSLeftAreaFree', 2, 0),
+        520:  ('GetVATSBackAreaFree', 2, 0),
+        521:  ('GetVATSFrontAreaFree', 2, 0),
+        522:  ('GetIsLockBroken', 0, 0),
+        523:  ('IsPS3', 0, 0),
+        524:  ('IsWin32', 0, 0),
+        525:  ('GetVATSRightTargetVisible', 2, 0),
+        526:  ('GetVATSLeftTargetVisible', 2, 0),
+        527:  ('GetVATSBackTargetVisible', 2, 0),
+        528:  ('GetVATSFrontTargetVisible', 2, 0),
+        531:  ('IsInCriticalStage', 1, 0),
+        533:  ('GetXPForNextLevel', 0, 0),
+        546:  ('GetQuestCompleted', 2, 0),
+        550:  ('IsGoreDisabled', 0, 0),
+        555:  ('GetSpellUsageNum', 2, 0),
+        557:  ('GetActorsInHigh', 0, 0),
+        558:  ('HasLoaded3D', 0, 0),
+        # extended by FOSE
+        1024: ('GetFOSEVersion', 0, 0),
+        1025: ('GetFOSERevision', 0, 0),
+        1028: ('GetWeight', 2, 0),
+        1082: ('IsKeyPressed', 1, 0),
+        1165: ('GetWeaponHasScope', 2, 0),
+        1166: ('IsControlPressed', 1, 0),
+        1213: ('GetFOSEBeta', 0, 0),
+    }
+    getvatsvalue_index = 408
+
+    #--------------------------------------------------------------------------
+    # Leveled Lists
+    #--------------------------------------------------------------------------
+    listTypes = (b'LVLC',b'LVLI',b'LVLN')
+
+    #--------------------------------------------------------------------------
+    # Import Names
+    #--------------------------------------------------------------------------
+    namesTypes = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
+        b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
+        b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
+        b'QUST', b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Prices
+    #--------------------------------------------------------------------------
+    pricesTypes = {b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'BOOK', b'INGR',
+                   b'KEYM', b'LIGH', b'MISC', b'WEAP'}
+
+    #--------------------------------------------------------------------------
+    # Import Stats
+    #--------------------------------------------------------------------------
+    # The contents of these tuples has to stay fixed because of CSV parsers
+    statsTypes = {
+        b'ALCH': ('eid', 'weight', 'value'),
+        b'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
+        b'ARMA': ('eid', 'weight', 'value', 'health', 'dr'),
+        b'ARMO': ('eid', 'weight', 'value', 'health', 'dr'),
+        b'BOOK': ('eid', 'weight', 'value'),
+        b'EYES': ('eid', 'flags'),
+        b'HAIR': ('eid', 'flags'),
+        b'HDPT': ('eid', 'flags'),
+        b'INGR': ('eid', 'weight', 'value'),
+        b'KEYM': ('eid', 'weight', 'value'),
+        b'LIGH': ('eid', 'weight', 'value', 'duration'),
+        b'MISC': ('eid', 'weight', 'value'),
+        b'WEAP': (
+            'eid', 'weight', 'value', 'health', 'damage', 'clipsize',
+            'animationMultiplier', 'reach', 'ammoUse', 'minSpread', 'spread',
+            'sightFov', 'baseVatsToHitChance', 'projectileCount', 'minRange',
+            'maxRange', 'animationAttackMultiplier', 'fireRate',
+            'overrideActionPoint', 'rumbleLeftMotorStrength',
+            'rumbleRightMotorStrength', 'rumbleDuration',
+            'overrideDamageToWeaponMult', 'attackShotsPerSec', 'reloadTime',
+            'jamTime', 'aimArc', 'rumbleWavelength', 'limbDmgMult',
+            'sightUsage', 'semiAutomaticFireDelayMin',
+            'semiAutomaticFireDelayMax', 'criticalDamage',
+            'criticalMultiplier'),
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Sounds
+    #--------------------------------------------------------------------------
+    soundsTypes = {
+        b'ACTI': ('sound', 'soundActivation'),
+        b'ADDN': ('sound',),
+        b'ALCH': ('dropSound', 'pickupSound', 'soundConsume'),
+        b'ARMO': ('pickupSound', 'dropSound'),
+        b'ASPC': ('sound', 'use_sound_from_region', 'environment_type'),
+        b'COBJ': ('pickupSound', 'dropSound'),
+        b'CONT': ('sound', 'sound_close'),
+        b'CREA': ('footWeight', 'inheritsSoundsFrom', 'sounds'),
+        b'DOOR': ('sound', 'sound_close', 'sound_looping'),
+        b'EXPL': ('expl_sound_level', 'expl_sound1', 'expl_sound2'),
+        b'IPCT': ('ipct_sound_level', 'sound', 'ipct_sound2'),
+        b'LIGH': ('sound',),
+        b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
+        b'NOTE': ('pickupSound', 'dropSound', 'sound'),
+        b'PROJ': ('sound', 'soundCountDown', 'soundDisable', 'soundLevel'),
+    #    b'REGN': ('entries.sounds',),
+        b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
+                  'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
+                  'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
+                  'yLoc'),
+        b'TACT': ('sound',),
+        b'WATR': ('sound',),
+        b'WEAP': ('pickupSound', 'dropSound', 'sound', 'soundGunShot2D',
+                  'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
+                  'soundBlock', 'idleSound', 'equipSound', 'unequipSound',
+                  'soundLevel'),
+        b'WTHR': ('sounds',),
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Cells
+    #--------------------------------------------------------------------------
+    cellRecAttrs = {
+        'C.Acoustic': ('acousticSpace',),
+        'C.Climate': ('climate', 'flags.behaveLikeExterior'),
+        'C.Encounter': ('encounterZone',),
+        'C.ForceHideLand': ('cell_land_flags',),
+        'C.ImageSpace': ('imageSpace',),
+        ##: Patches unuseds?
+        'C.Light': ('ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
+                    'directionalRed', 'directionalGreen', 'directionalBlue',
+                    'unused2', 'fogRed', 'fogGreen', 'fogBlue', 'unused3',
+                    'fogNear', 'fogFar', 'directionalXY', 'directionalZ',
+                    'directionalFade', 'fogClip', 'fogPower', 'lightTemplate',
+                    'lightInheritFlags'),
+        'C.MiscFlags': ('flags.isInterior', 'flags.invertFastTravel',
+                        'flags.noLODWater', 'flags.handChanged'),
+        'C.Music': ('music',),
+        'C.Name': ('full',),
+        'C.Owner': ('ownership', 'flags.publicPlace'),
+        'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+        'C.Regions': ('regions',),
+        'C.Water': ('water', 'waterHeight', 'waterNoiseTexture',
+                    'flags.hasWater'),
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Graphics
+    #--------------------------------------------------------------------------
+    graphicsTypes = {
+        b'ACTI': ('model',),
+        b'ALCH': ('iconPath', 'smallIconPath', 'model'),
+        b'AMMO': ('iconPath', 'smallIconPath', 'model'),
+        b'ARMA': ('maleBody', 'maleWorld', 'maleIconPath', 'maleSmallIconPath',
+                  'femaleBody', 'femaleWorld', 'femaleIconPath',
+                  'femaleSmallIconPath', 'dnamFlags', 'biped_flags'),
+        b'ARMO': ('maleBody', 'maleWorld', 'maleIconPath', 'maleSmallIconPath',
+                  'femaleBody', 'femaleWorld', 'femaleIconPath',
+                  'femaleSmallIconPath', 'dnamFlags', 'biped_flags'),
+        b'AVIF': ('iconPath', 'smallIconPath'),
+        b'BOOK': ('iconPath', 'smallIconPath', 'model'),
+        b'BPTD': ('model',),
+        b'CLAS': ('iconPath',),
+        b'COBJ': ('iconPath', 'smallIconPath', 'model'),
+        b'CONT': ('model',),
+        b'CREA': ('model', 'bodyParts', 'nift_p'),
+        b'DOOR': ('model',),
+        b'EFSH': (
+            'efsh_flags', 'particle_texture', 'fill_texture', 'holes_texture',
+            'ms_source_blend_mode', 'ms_blend_operation', 'ms_z_test_function',
+            'fill_color1_red', 'fill_color1_green', 'fill_color1_blue',
+            'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+            'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+            'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+            'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
+            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
+            'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+            'ms_dest_blend_mode', 'ps_source_blend_mode', 'ps_blend_operation',
+            'ps_z_test_function', 'ps_dest_blend_mode',
+            'ps_particle_birth_ramp_up_time', 'ps_full_particle_birth_time',
+            'ps_particle_birth_ramp_down_time', 'ps_full_particle_birth_ratio',
+            'ps_persistent_particle_birth_ratio', 'ps_particle_lifetime',
+            'ps_particle_lifetime_delta', 'ps_initial_speed_along_normal',
+            'ps_acceleration_along_normal', 'ps_initial_velocity1',
+            'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
+            'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
+            'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
+            'color_key1_red', 'color_key1_green', 'color_key1_blue',
+            'color_key2_red', 'color_key2_green', 'color_key2_blue',
+            'color_key3_red', 'color_key3_green', 'color_key3_blue',
+            'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
+            'color_key1_time', 'color_key2_time', 'color_key3_time',
+            'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
+            'ps_initial_rotation_delta', 'ps_rotation_speed',
+            'ps_rotation_speed_delta', 'holes_start_time', 'holes_end_time',
+            'holes_start_value', 'holes_end_value', 'ee_width',
+            'edge_color_red', 'edge_color_green', 'edge_color_blue',
+            'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
+            'addon_models_fade_in_time', 'addon_models_fade_out_time',
+            'addon_models_scale_start', 'addon_models_scale_end',
+            'addon_models_scale_in_time', 'addon_models_scale_out_time'),
+        b'EXPL': ('model',),
+        b'EYES': ('iconPath',),
+        b'FURN': ('model',),
+        b'GRAS': ('model',),
+        b'HAIR': ('iconPath', 'model'),
+        b'HDPT': ('model',),
+        b'INGR': ('iconPath', 'model'),
+        b'IPCT': ('model', 'effect_duration', 'effect_orientation',
+                  'angle_threshold', 'placement_radius', 'ipct_no_decal_data',
+                  'decal_min_width', 'decal_max_width', 'decal_min_height',
+                  'decal_max_height', 'decal_depth', 'decal_shininess',
+                  'decal_parallax_scale', 'decal_parallax_passes',
+                  'decal_flags', 'decal_red', 'decal_green', 'decal_blue'),
+        b'KEYM': ('iconPath', 'smallIconPath', 'model'),
+        b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue',
+                  'flags', 'falloff', 'fov', 'fade'),
+        b'LSCR': ('iconPath',),
+        b'MGEF': ('iconPath', 'model'),
+        b'MICN': ('iconPath', 'smallIconPath'),
+        b'MISC': ('iconPath', 'smallIconPath', 'model'),
+        b'MSTT': ('model',),
+        b'NOTE': ('iconPath', 'smallIconPath', 'model', 'texture'),
+        b'PERK': ('iconPath', 'smallIconPath'),
+        b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
+                  'muzzleFlashPath'),
+        b'PWAT': ('model',),
+        b'STAT': ('model',),
+        b'TACT': ('model',),
+        b'TERM': ('model',),
+        b'TREE': ('iconPath', 'model'),
+        b'TXST': ('base_image_transparency_texture',
+                  'normal_map_specular_texture',
+                  'environment_map_mask_texture', 'glow_map_texture',
+                  'parallax_map_texture', 'environment_map_texture',
+                  'decal_min_width', 'decal_max_width', 'decal_min_height',
+                  'decal_max_height', 'decal_depth', 'decal_shininess',
+                  'decal_parallax_scale', 'decal_parallax_passes',
+                  'decal_flags', 'decal_red', 'decal_green', 'decal_blue',
+                  'txst_flags'),
+        b'WEAP': ('iconPath', 'smallIconPath', 'model', 'shellCasingModel',
+                  'scopeModel', 'worldModel', 'animationType', 'gripAnimation',
+                  'reloadAnimation'),
+    }
+    graphicsFidTypes = {
+        b'CREA': ('bodyPartData',),
+        b'EFSH': ('addon_models',),
+        b'EXPL': ('image_space_modifier', 'expl_light', 'expl_impact_dataset',
+                  'placed_impact_object'),
+        b'IPCT': ('ipct_texture_set',),
+        b'IPDS': ('impact_stone', 'impact_dirt', 'impact_grass', 'impact_metal',
+                  'impact_wood', 'impact_organic', 'impact_cloth', 'impact_water',
+                  'impact_hollow_metal', 'impact_organic_bug',
+                  'impact_organic_glow'),
+        b'MGEF': ('light', 'effectShader', 'enchantEffect'),
+        b'PROJ': ('light', 'muzzleFlash', 'explosion'),
+        b'WEAP': ('scopeEffect', 'impact_dataset', 'firstPersonModel'),
+    }
+    graphicsModelAttrs = {'model', 'shellCasingModel', 'scopeModel', 'worldModel',
+                          'maleBody', 'maleWorld', 'femaleBody', 'femaleWorld'}
+
+    #--------------------------------------------------------------------------
+    # Import Inventory
+    #--------------------------------------------------------------------------
+    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+
+    #--------------------------------------------------------------------------
+    # Import Text
+    #--------------------------------------------------------------------------
+    text_types = {
+        b'AMMO': ('short_name',),
+        b'AVIF': ('description', 'short_name'),
+        b'BOOK': ('book_text',),
+        b'CLAS': ('description',),
+        b'LSCR': ('description',),
+        b'MESG': ('description',),
+        b'MGEF': ('description',),
+        b'NOTE': ('textTopic',),
+        b'PERK': ('description',),
+        # omit RACE - covered by R.Description
+        b'TERM': ('description',),
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Object Bounds
+    #--------------------------------------------------------------------------
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'ASPC', b'BOOK',
+        b'COBJ', b'CONT', b'CREA', b'DOOR', b'EXPL', b'FURN', b'GRAS', b'IDLM',
+        b'INGR', b'KEYM', b'LIGH', b'LVLC', b'LVLI', b'LVLN', b'MISC', b'MSTT',
+        b'NOTE', b'NPC_', b'PROJ', b'PWAT', b'SCOL', b'SOUN', b'STAT', b'TACT',
+        b'TERM', b'TREE', b'TXST', b'WEAP'}
+
+    #--------------------------------------------------------------------------
+    # Contents Checker
+    #--------------------------------------------------------------------------
+    # Entry types used for CONT, CREA, LVLI and NPC_
+    _common_entry_types = {b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'KEYM',
+                           b'LVLI', b'MISC', b'NOTE', b'WEAP'}
+    # These are marked as {?} in xEdit for FO3, absent for FO3's LVLI, and
+    # completely commented out in xEdit for FNV. Included for now just to be safe.
+    _common_entry_types |= {b'MSTT', b'STAT'}
+    cc_valid_types = {
+        b'CONT': _common_entry_types,
+        b'CREA': _common_entry_types,
+        b'LVLC': {b'CREA', b'LVLC'},
+        b'LVLN': {b'LVLN', b'NPC_'},
+        b'LVLI': _common_entry_types - {b'MSTT', b'STAT'},
+        b'NPC_': _common_entry_types,
+    }
+    cc_passes = (
+        ((b'LVLC', b'LVLN', b'LVLI'), 'entries', 'listId'),
+        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+    )
+
+    #--------------------------------------------------------------------------
+    # Import Scripts
+    #--------------------------------------------------------------------------
+    # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
+    scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT',
+                     b'CREA', b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH',
+                     b'MISC', b'NPC_', b'QUST', b'TACT', b'TERM', b'WEAP'}
+
+    #--------------------------------------------------------------------------
+    # Import Destructible
+    #--------------------------------------------------------------------------
+    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT',
+                          b'CREA', b'DOOR', b'FURN', b'KEYM', b'LIGH', b'MISC',
+                          b'MSTT', b'NPC_', b'PROJ', b'TACT', b'TERM', b'WEAP'}
+
+    #--------------------------------------------------------------------------
+    # Import Actors
+    #--------------------------------------------------------------------------
+    actor_importer_attrs = {
+        b'CREA': {
+            'Actors.ACBS': (
+                'barterGold', 'calcMax', 'calcMin', 'dispositionBase',
+                'fatigue', 'flags.allowPCDialogue', 'flags.allowPickpocket',
+                'flags.biped', 'flags.cantOpenDoors', 'flags.essential',
+                'flags.flies', 'flags.immobile', 'flags.invulnerable',
+                'flags.isGhost', 'flags.noBloodDecal', 'flags.noBloodSpray',
+                'flags.noCombatInWater', 'flags.noHead', 'flags.noKnockDown',
+                'flags.noLeftArm', 'flags.noLowLevel', 'flags.noRightArm',
+                'flags.noRotatingHeadTrack', 'flags.noShadow',
+                'flags.notPushable', 'flags.noVATSMelee', 'flags.respawn',
+                'flags.swims', 'flags.tiltFrontBack', 'flags.tiltLeftRight',
+                'flags.walks', 'flags.weaponAndShield', 'karma',
+                'speedMultiplier',
+                # This flag directly impacts how the level_offset is
+                # calculated, so use a fused attribute to always carry them
+                # forward together
+                ('flags.pcLevelOffset', 'level_offset')),
+            'Actors.AIData': ('aggression', 'aggroRadius',
+                              'aggroRadiusBehavior', 'assistance',
+                              'confidence', 'energyLevel', 'mood',
+                              'responsibility', 'services', 'trainLevel',
+                              'trainSkill'),
+            'Actors.Anims': ('animations',),
+            'Actors.CombatStyle': ('combatStyle',),
+            'Actors.DeathItem': ('deathItem',),
+            'Actors.RecordFlags': ('flags1',),
+            'Actors.Skeleton': ('model',),
+            'Actors.Stats': ('agility', 'charisma', 'combatSkill', 'damage',
+                             'endurance', 'health', 'intelligence', 'luck',
+                             'magicSkill', 'perception', 'stealthSkill',
+                             'strength'),
+            'Actors.Voice': ('voice',),
+            'Creatures.Blood': ('impact_dataset',),
+            'Creatures.Type': ('creatureType',),
+            'NPC.Class': (),
+            'NPC.Race': (),
+        },
+        b'NPC_': {
+            'Actors.ACBS': ('barterGold', 'calcMax', 'calcMin', 'dispositionBase',
+                            'fatigue', 'flags.autoCalc', 'flags.canBeAllRaces',
+                            'flags.essential', 'flags.female',
+                            'flags.isChargenFacePreset', 'flags.noBloodDecal',
+                            'flags.noBloodSpray', 'flags.noKnockDown',
+                            'flags.noLowLevel', 'flags.noRotatingHeadTrack',
+                            'flags.notPushable', 'flags.noVATSMelee',
+                            'flags.respawn', 'karma', 'speedMultiplier',
+                            ('flags.pcLevelOffset', 'level_offset')), # See above
+            'Actors.AIData': ('aggression', 'aggroRadius',
+                              'aggroRadiusBehavior', 'assistance',
+                              'confidence', 'energyLevel', 'mood',
+                              'responsibility', 'services', 'trainLevel',
+                              'trainSkill'),
+            'Actors.Anims': ('animations',),
+            'Actors.CombatStyle': ('combatStyle',),
+            'Actors.DeathItem': ('deathItem',),
+            'Actors.RecordFlags': ('flags1',),
+            'Actors.Skeleton': ('model',),
+            'Actors.Stats': ('attributes', 'health', 'skillOffsets',
+                             'skillValues'),
+            'Actors.Voice': ('voice',),
+            'Creatures.Blood': (),
+            'Creatures.Type': (),
+            'NPC.Class': ('iclass',),
+            'NPC.Race': ('race',),
+        },
+    }
+    actor_types = (b'CREA', b'NPC_')
+
+    #--------------------------------------------------------------------------
+    # Import Spell Stats
+    #--------------------------------------------------------------------------
+    spell_stats_attrs = ('eid', 'cost', 'level', 'spellType', 'spell_flags')
+
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'QuietFeetPatcher',
+        'IrresponsibleCreaturesPatcher',
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Names
+    #--------------------------------------------------------------------------
+    names_tweaks = {
+        'NamesTweak_BodyPartCodes',
+        'NamesTweak_Body_Armor_Fo3',
+        'NamesTweak_Ingestibles_Fo3',
+        'NamesTweak_Weapons_Fo3',
+        'NamesTweak_AmmoWeight_Fo3',
+        'NamesTweak_RenameCaps',
+    }
+    body_part_codes = ('HAGPBFE', 'HBGPEFE')
+    gold_attrs = lambda self: {
+        'eid': 'Caps001',
+        'bounds.boundX1': -2,
+        'bounds.boundY1': -2,
+        'bounds.boundZ1': -1,
+        'bounds.boundX2': 2,
+        'bounds.boundY2': 2,
+        'bounds.boundZ2': 0,
+        'model.modPath': r'Clutter\Junk\NukaColaCap.NIF',
+        'model.modb_p': None,
+        'model.modt_p': None,
+        'model.alternateTextures': None,
+        'model.facegen_model_flags': None,
+        'iconPath': r'Interface\Icons\PipboyImages\Items\items_nuka_cola_cap.dds',
+        'pickupSound': self.master_fid(0x0864D8), # ITMBottlecapsUp
+        'dropSound': self.master_fid(0x0864D7), # ITMBottlecapsDown
+        'value': 1,
+        'weight': 0.0,
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Settings
+    #--------------------------------------------------------------------------
+    settings_tweaks = {
+        'GlobalsTweak_Timescale',
+        'GmstTweak_Camera_ChaseDistance_Fo3',
+        'GmstTweak_Compass_RecognitionDistance',
+        'GmstTweak_Actor_UnconsciousnessDuration',
+        'GmstTweak_Actor_MaxJumpHeight',
+        'GmstTweak_Camera_PCDeathTime',
+        'GmstTweak_World_CellRespawnTime',
+        'GmstTweak_CostMultiplier_Repair_Fo3',
+        'GmstTweak_Combat_MaxActors',
+        'GmstTweak_AI_MaxActiveActors',
+        'GmstTweak_Actor_MaxCompanions',
+        'GmstTweak_AI_MaxDeadActors',
+        'GmstTweak_Player_InventoryQuantityPrompt',
+        'GmstTweak_Gore_CombatDismemberPartChance',
+        'GmstTweak_Gore_CombatExplodePartChance',
+        'GmstTweak_LevelDifference_ItemMax',
+        'GmstTweak_Movement_BaseSpeed',
+        'GmstTweak_Movement_SneakMultiplier',
+        'GmstTweak_Combat_VATSPlayerDamageMultiplier',
+        'GmstTweak_Combat_AutoAimFix',
+        'GmstTweak_Player_PipBoyLightKeypressDelay',
+        'GmstTweak_Combat_VATSPlaybackDelay',
+        'GmstTweak_Combat_NPCDeathXPThreshold',
+        'GmstTweak_Hacking_MaximumNumberOfWords',
+        'GmstTweak_Visuals_ShellCameraDistance',
+        'GmstTweak_Visuals_ShellLitterTime',
+        'GmstTweak_Visuals_ShellLitterCount',
+        'GmstTweak_Hacking_TerminalSpeedAdjustment',
+        'GmstTweak_Player_MaxDraggableWeight',
+        'GmstTweak_Prompt_Activate_Tes4',
+        'GmstTweak_Prompt_Open_Tes4',
+        'GmstTweak_Prompt_Read_Tes4',
+        'GmstTweak_Prompt_Sit_Tes4',
+        'GmstTweak_Prompt_Take_Tes4',
+        'GmstTweak_Prompt_Talk_Tes4',
+        'GmstTweak_Combat_SpeakOnHitChance',
+        'GmstTweak_Combat_SpeakOnHitThreshold',
+        'GmstTweak_Combat_SpeakOnPowerAttackChance',
+        'GmstTweak_Combat_MaxAllyHitsInCombat',
+        'GmstTweak_Combat_MaxAllyHitsOutOfCombat',
+        'GmstTweak_Combat_MaxFriendHitsInCombat',
+        'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Assorted
+    #--------------------------------------------------------------------------
+    ##: Mostly mirrored from valda's version - some of these seem to make no sense
+    # (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
+    assorted_tweaks = {
+        'AssortedTweak_ArmorPlayable',
+        'AssortedTweak_FogFix',
+        'AssortedTweak_NoLightFlicker',
+        'AssortedTweak_WindSpeed',
+        'AssortedTweak_SetSoundAttenuationLevels',
+        'AssortedTweak_LightFadeValueFix',
+        'AssortedTweak_TextlessLSCRs',
+        'AssortedTweak_PotionWeightMinimum',
+        'AssortedTweak_UniformGroundcover',
+        'AssortedTweak_GunsUseISAnimation',
+        'AssortedTweak_BookWeight',
+    }
+    ##: Taken from valda's version, investigate
+    nonplayable_biped_flags = {'pipboy'}
+    not_playable_flag = ('generalFlags', 'notPlayable')
+    static_attenuation_rec_type = b'SOUN'
+
+    #--------------------------------------------------------------------------
+    # Import Relations
+    #--------------------------------------------------------------------------
+    relations_attrs = ('faction', 'mod', 'group_combat_reaction')
+
+    #--------------------------------------------------------------------------
+    # Import Enchantment Stats
+    #--------------------------------------------------------------------------
+    ench_stats_attrs = ('item_type', 'charge_amount', 'enchantment_cost',
+                        'enit_flags')
+
+    #--------------------------------------------------------------------------
+    # Import Effect Stats
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = ('flags', 'base_cost', 'associated_item', 'school',
+                        'resist_value', 'projectileSpeed', 'cef_enchantment',
+                        'cef_barter', 'effect_archetype', 'actorValue')
+
+    #--------------------------------------------------------------------------
+    # Import Races
+    #--------------------------------------------------------------------------
+    import_races_attrs = {
+        b'RACE': {
+            'R.Body-F': ('femaleUpperBody', 'femaleLeftHand',
+                         'femaleRightHand', 'femaleUpperBodyTexture'),
+            'R.Body-M': ('maleUpperBody', 'maleLeftHand', 'maleRightHand',
+                         'maleUpperBodyTexture'),
+            'R.Body-Size-F': ('femaleHeight', 'femaleWeight'),
+            'R.Body-Size-M': ('maleHeight', 'maleWeight'),
+            'R.Description': ('description',),
+            'R.Ears': ('maleEars', 'femaleEars'),
+            'R.Eyes': ('eyes', 'femaleLeftEye', 'femaleRightEye',
+                       'maleLeftEye', 'maleRightEye'),
+            'R.Hair': ('hairs',),
+            'R.Head': ('femaleHead', 'maleHead',),
+            'R.Mouth': ('maleMouth', 'femaleMouth', 'maleTongue',
+                        'femaleTongue'),
+            'R.Skills': ('skills',),
+            'R.Teeth': ('femaleTeethLower', 'femaleTeethUpper',
+                        'maleTeethLower', 'maleTeethUpper'),
+            'R.Voice-F': ('femaleVoice',),
+            'R.Voice-M': ('maleVoice',),
+        },
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = {b'ARMO', b'CREA', b'EXPL', b'NPC_', b'WEAP'}
+
+    #--------------------------------------------------------------------------
+    # Tweak Races
+    #--------------------------------------------------------------------------
+    race_tweaks = {
+        'RaceTweak_PlayableHeadParts',
+        'RaceTweak_MergeSimilarRaceHairs',
+        'RaceTweak_MergeSimilarRaceEyes',
+        'RaceTweak_PlayableEyes',
+        'RaceTweak_PlayableHairs',
+        'RaceTweak_GenderlessHairs',
+        'RaceTweak_AllEyes',
+        'RaceTweak_AllHairs',
+    }
+    race_tweaks_need_collection = True
+
+    #--------------------------------------------------------------------------
+    # NPC Checker
+    #--------------------------------------------------------------------------
+    _standard_eyes = [(None, x) for x in  (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+    default_eyes = {
+        #--FalloutNV.esm
+        # Caucasian
+        (None, 0x000019): _standard_eyes,
+        # Hispanic
+        (None, 0x0038e5): _standard_eyes,
+        # Asian
+        (None, 0x0038e6): _standard_eyes,
+        # Ghoul
+        (None, 0x003b3e): [(None, 0x35e4f)],
+        # AfricanAmerican
+        (None, 0x00424a): _standard_eyes,
+        # AfricanAmerican Child
+        (None, 0x0042be): _standard_eyes,
+        # AfricanAmerican Old
+        (None, 0x0042bf): _standard_eyes,
+        # Asian Child
+        (None, 0x0042c0): _standard_eyes,
+        # Asian Old
+        (None, 0x0042c1): _standard_eyes,
+        # Caucasian Child
+        (None, 0x0042c2): _standard_eyes,
+        # Caucasian Old
+        (None, 0x0042c3): _standard_eyes,
+        # Hispanic Child
+        (None, 0x0042c4): _standard_eyes,
+        # Hispanic Old
+        (None, 0x0042c5): _standard_eyes,
+        # Caucasian Raider
+        (None, 0x04bb8d): [(None, 0x4cb10)],
+        # Hispanic Raider
+        (None, 0x04bf70): [(None, 0x4cb10)],
+        # Asian Raider
+        (None, 0x04bf71): [(None, 0x4cb10)],
+        # AfricanAmerican Raider
+        (None, 0x04bf72): [(None, 0x4cb10)],
+        # Hispanic Old Aged
+        (None, 0x0987dc): _standard_eyes,
+        # Asian Old Aged
+        (None, 0x0987dd): _standard_eyes,
+        # AfricanAmerican Old Aged
+        (None, 0x0987de): _standard_eyes,
+        # Caucasian Old Aged
+        (None, 0x0987df): _standard_eyes,
+    }
+
+    #--------------------------------------------------------------------------
+    # Timescale Checker
+    #--------------------------------------------------------------------------
+    default_wp_timescale = 30
 
     @classmethod
     def init(cls):

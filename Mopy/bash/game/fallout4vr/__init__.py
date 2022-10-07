@@ -84,7 +84,6 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py
     # ---------------------------------------------------------------------
-    _patcher_package = u'bash.game.fallout4'
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

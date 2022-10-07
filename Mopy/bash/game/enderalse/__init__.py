@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This modules defines static data for use by bush, when Enderal SE is set as
+"""This module defines static data for use by bush, when Enderal SE is set as
 the active game."""
 
 from ..enderal import EnderalGameInfo
@@ -95,7 +95,9 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
         'update.esm',
     }
 
-    _patcher_package = 'bash.game.enderalse' # We need to override tweaks
+    names_tweaks = SkyrimSEGameInfo.names_tweaks  | {
+        'NamesTweak_RenamePennies'} - {'NamesTweak_RenameGold'}
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

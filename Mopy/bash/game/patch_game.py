@@ -77,44 +77,6 @@ class PatchGame(GameInfo):
     # the first parameter.
     getvatsvalue_index = 0
 
-    # Dynamic importer --------------------------------------------------------
-    _constants_members = {
-        # patcher and tweaks constants
-        u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'assorted_tweaks', u'names_tweaks', u'cc_passes',
-        'cc_valid_types', 'cellRecAttrs', 'spell_types',
-        u'cell_skip_interior_attrs', u'condition_function_data',
-        u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'getvatsvalue_index', u'graphicsFidTypes',
-        u'graphicsModelAttrs', u'graphicsTypes',
-        u'import_races_attrs', u'inventoryTypes', u'default_wp_timescale',
-        u'keywords_types', u'listTypes',
-        u'mgef_stats_attrs', u'namesTypes',
-        u'nonplayable_biped_flags', u'not_playable_flag', u'body_part_codes',
-        u'object_bounds_types', u'pricesTypes', u'race_tweaks',
-        'race_tweaks_need_collection', 'relations_attrs', 'gold_attrs',
-        u'save_rec_types', u'scripts_types', u'settings_tweaks',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'staff_condition', 'enchantment_types',
-        u'static_attenuation_rec_type', u'statsTypes', 'text_replacer_rpaths',
-        u'text_types',
-    }
-
-    _patcher_package = u'' # read the patcher of another (parent) game
-    @classmethod
-    def _dynamic_import_modules(cls, package_name):
-        """Dynamically import the patcher module."""
-        super(PatchGame, cls)._dynamic_import_modules(package_name)
-        package_name = cls._patcher_package or package_name
-        patchers_module = importlib.import_module(u'.patcher',
-            package=package_name)
-        for k in dir(patchers_module):
-            if k.startswith(u'_'): continue
-            if k not in cls._constants_members:
-                raise SyntaxError(u"Unexpected game constant '%s', check for "
-                                  u'typos or update _constants_members' % k)
-            setattr(cls, k, getattr(patchers_module, k))
-
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
