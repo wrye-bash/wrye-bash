@@ -239,13 +239,15 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'bash_root'] = oblivionMods
     deprint(f'Game Mods location set to {oblivionMods}')
     dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
-    dirs[u'modsBash'], modsBashSrc = getLegacyPathWithSource(
-        dirs[u'modsBash'], dirs[u'app'].join(game_info.mods_dir, u'Bash'),
-        modsBashSrc, u'Relative Path')
+    if game_info.check_legacy_paths:
+        dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
+            dirs['modsBash'], dirs['app'].join(game_info.mods_dir, 'Bash'),
+            modsBashSrc, 'Relative Path')
     deprint(f'Bash Mod Data location set to {dirs[u"modsBash"]}')
     dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
-    dirs[u'installers'] = getLegacyPath(dirs[u'installers'],
-                                        dirs[u'app'].join(u'Installers'))
+    if game_info.check_legacy_paths:
+        dirs['installers'] = getLegacyPath(dirs['installers'],
+                                           dirs['app'].join('Installers'))
     deprint(f'Installers location set to {dirs[u"installers"]}')
     dirs[u'bainData'], bainDataSrc = getBainDataPath(bashIni_)
     deprint(f'Installers bash data location set to {dirs[u"bainData"]}')

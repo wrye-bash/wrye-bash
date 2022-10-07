@@ -29,6 +29,7 @@ class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     displayName = 'Oblivion (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.
+    check_legacy_paths = False
 
     class Ws(OblivionGameInfo.Ws):
         publisher_name = 'Bethesda'

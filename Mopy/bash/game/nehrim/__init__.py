@@ -39,6 +39,7 @@ class NehrimGameInfo(OblivionGameInfo):
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'
+    check_legacy_paths = False
 
     class Bsa(OblivionGameInfo.Bsa):
         redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'

@@ -60,6 +60,7 @@ class OblivionGameInfo(PatchGame):
 
     using_txt_file = False
     has_standalone_pluggy = True
+    check_legacy_paths = True
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
