@@ -4,10 +4,8 @@
 
 ; Prevent redefining the macro if included multiple times
 !ifmacrondef InstallBashFiles
-    !macro InstallBashFiles GameName GameTemplate GameDir RegPath
+    !macro InstallBashFiles GameDir RegPath
         ; Parameters:
-        ;  GameName - name of the game files are being installed for.  This is used for registry entries
-        ;  GameTemplate - name of the game that the template files are coming from (for example, Nehrim uses Oblivion files for templates)
         ;  GameDir - base directory for the game (one folder up from the Data directory)
         ;  RegPath - Name of the registry string that will hold the path installing to
 
@@ -703,6 +701,11 @@
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
         ${EndIf}
 
+        ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
+        ${If} $Path_SkyrimSE_GOG == $Empty
+            ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
+        ${EndIf}
+
         ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Wrye Bash" "Fallout3 Path"
         ${If} $Path_Fallout3 == $Empty
             ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Path"
@@ -759,6 +762,11 @@
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
+        ${If} $Path_SkyrimSE_GOG == $Empty
+            ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
         ${EndIf}
 
         ReadRegStr $Path_Fallout3 HKLM "Software\Wrye Bash" "Fallout3 Path"

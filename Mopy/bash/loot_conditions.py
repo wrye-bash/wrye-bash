@@ -75,9 +75,14 @@ def _process_path(file_path: str) -> Path:
         relative_path = relative_path.head
     final_path = relative_path.join(*child_components)
     # If moving up put us outside the game folder, the path is invalid
-    if not final_path.cs.startswith(bass.dirs['app'].cs + os.sep):
-        raise EvalError('Illegal file path: May not specify paths that '
-                        'resolve to outside the game folder.', file_path)
+    final_game_folder = bass.dirs['app'].cs
+    if not final_game_folder.endswith(os.sep):
+        final_game_folder += os.sep
+    if not final_path.cs.startswith(final_game_folder):
+        raise EvalError(
+            f"Illegal file path: May not specify paths that resolve to "
+            f"outside the game folder.\nResolved path is {final_path}, game "
+            f"folder is {final_game_folder}.", file_path)
     return final_path
 
 def _read_binary_ver(binary_path):

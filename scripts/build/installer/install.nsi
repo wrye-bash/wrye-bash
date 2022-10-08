@@ -9,77 +9,84 @@
         ${If} $CheckState_OB == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_OB != $Empty
-                !insertmacro InstallBashFiles "Oblivion" "Oblivion" "$Path_OB" "Oblivion Path"
+                !insertmacro InstallBashFiles "$Path_OB" "Oblivion Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Nehrim != $Empty
-                !insertmacro InstallBashFiles "Nehrim" "Oblivion" "$Path_Nehrim" "Nehrim Path"
+                !insertmacro InstallBashFiles "$Path_Nehrim" "Nehrim Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Skyrim != $Empty
-                !insertmacro InstallBashFiles "Skyrim" "Skyrim" "$Path_Skyrim" "Skyrim Path"
+                !insertmacro InstallBashFiles "$Path_Skyrim" "Skyrim Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Fallout4 != $Empty
-                !insertmacro InstallBashFiles "Fallout4" "Fallout4" "$Path_Fallout4" "Fallout4 Path"
+                !insertmacro InstallBashFiles "$Path_Fallout4" "Fallout4 Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_SkyrimSE != $Empty
-                !insertmacro InstallBashFiles "SkyrimSE" "SkyrimSE" "$Path_SkyrimSE" "SkyrimSE Path"
+                !insertmacro InstallBashFiles "$Path_SkyrimSE" "SkyrimSE Path"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_SkyrimSE_GOG != $Empty
+                !insertmacro InstallBashFiles "$Path_SkyrimSE_GOG" "SkyrimSE_GOG Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Fallout3 != $Empty
-                !insertmacro InstallBashFiles "Fallout3" "Fallout3" "$Path_Fallout3" "Fallout3 Path"
+                !insertmacro InstallBashFiles "$Path_Fallout3" "Fallout3 Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_FalloutNV == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_FalloutNV != $Empty
-                !insertmacro InstallBashFiles "FalloutNV" "FalloutNV" "$Path_FalloutNV" "FalloutNV Path"
+                !insertmacro InstallBashFiles "$Path_FalloutNV" "FalloutNV Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Enderal == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Enderal != $Empty
-                !insertmacro InstallBashFiles "Enderal" "Enderal" "$Path_Enderal" "Enderal Path"
+                !insertmacro InstallBashFiles "$Path_Enderal" "Enderal Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_EnderalSE == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_EnderalSE != $Empty
-                !insertmacro InstallBashFiles "EnderalSE" "EnderalSE" "$Path_EnderalSE" "EnderalSE Path"
+                !insertmacro InstallBashFiles "$Path_EnderalSE" "EnderalSE Path"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex1 != $Empty
-                !insertmacro InstallBashFiles "Extra Path 1" "" "$Path_Ex1" "Extra Path 1"
+                !insertmacro InstallBashFiles "$Path_Ex1" "Extra Path 1"
             ${EndIf}
         ${EndIf}
 
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex2 != $Empty
-                !insertmacro InstallBashFiles "Extra Path 2" "" "$Path_Ex2" "Extra Path 2"
+                !insertmacro InstallBashFiles "$Path_Ex2" "Extra Path 2"
             ${EndIf}
         ${EndIf}
 
@@ -136,6 +143,13 @@
             ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
+            ${If} $Path_SkyrimSE_GOG != $Empty
+                SetOutPath $Path_SkyrimSE_GOG\Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (GOG).lnk" "$Path_SkyrimSE_GOG\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
 

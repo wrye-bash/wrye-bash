@@ -41,6 +41,12 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
+            ${If} $Path_SkyrimSE_GOG != $Empty
+                !insertmacro UninstallBash $Path_SkyrimSE_GOG "SkyrimSE_GOG"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
             ${If} $Path_Fallout3 != $Empty
                 !insertmacro UninstallBash $Path_Fallout3 "Fallout3"
@@ -89,6 +95,7 @@
         ${AndIf} $Path_Skyrim == $Empty
         ${AndIf} $Path_Fallout4 == $Empty
         ${AndIf} $Path_SkyrimSE == $Empty
+        ${AndIf} $Path_SkyrimSE_GOG == $Empty
         ${AndIf} $Path_Fallout3 == $Empty
         ${AndIf} $Path_FalloutNV == $Empty
         ${AndIf} $Path_Enderal == $Empty

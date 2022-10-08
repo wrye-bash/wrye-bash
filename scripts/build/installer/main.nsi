@@ -51,6 +51,7 @@ ManifestDPIAware true
     Var Path_Skyrim
     Var Path_Fallout4
     Var Path_SkyrimSE
+    Var Path_SkyrimSE_GOG
     Var Path_Fallout3
     Var Path_FalloutNV
     Var Path_Enderal
@@ -64,6 +65,7 @@ ManifestDPIAware true
     Var Check_Skyrim
     Var Check_Fallout4
     Var Check_SkyrimSE
+    Var Check_SkyrimSE_GOG
     Var Check_Extra
     Var Check_Fallout3
     Var Check_FalloutNV
@@ -76,6 +78,7 @@ ManifestDPIAware true
     Var CheckState_Skyrim
     Var CheckState_Fallout4
     Var CheckState_SkyrimSE
+    Var CheckState_SkyrimSE_GOG
     Var CheckState_Extra
     Var CheckState_Fallout3
     Var CheckState_FalloutNV
@@ -88,6 +91,7 @@ ManifestDPIAware true
     Var PathDialogue_Skyrim
     Var PathDialogue_Fallout4
     Var PathDialogue_SkyrimSE
+    Var PathDialogue_SkyrimSE_GOG
     Var PathDialogue_Fallout3
     Var PathDialogue_FalloutNV
     Var PathDialogue_Enderal
@@ -99,6 +103,7 @@ ManifestDPIAware true
     Var Browse_Skyrim
     Var Browse_Fallout4
     Var Browse_SkyrimSE
+    Var Browse_SkyrimSE_GOG
     Var Browse_Fallout3
     Var Browse_FalloutNV
     Var Browse_Enderal
@@ -122,8 +127,9 @@ ManifestDPIAware true
     !define MUI_WELCOMEFINISHPAGE_BITMAP "${WB_CLEAN_MOPY}\bash\images\nsis\wrye_monkey_164x314.bmp"
     !define MUI_UNWELCOMEFINISHPAGE_BITMAP "${WB_CLEAN_MOPY}\bash\images\nsis\wrye_monkey_164x314.bmp"
     !insertmacro MUI_PAGE_WELCOME
-    Page custom PAGE_INSTALLLOCATIONS_ES PAGE_INSTALLLOCATIONS_ES_Leave
-    Page custom PAGE_INSTALLLOCATIONS_FALLOUT PAGE_INSTALLLOCATIONS_FALLOUT_Leave
+    Page custom PAGE_INSTALLLOCATIONS_ES_STEAM PAGE_INSTALLLOCATIONS_ES_STEAM_Leave
+    Page custom PAGE_INSTALLLOCATIONS_ES_GOG PAGE_INSTALLLOCATIONS_ES_GOG_Leave
+    Page custom PAGE_INSTALLLOCATIONS_FALLOUT_STEAM PAGE_INSTALLLOCATIONS_FALLOUT_STEAM_Leave
     Page custom PAGE_INSTALLLOCATIONS_EXTRA PAGE_INSTALLLOCATIONS_EXTRA_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
     !insertmacro MUI_PAGE_COMPONENTS
@@ -131,8 +137,9 @@ ManifestDPIAware true
     Page custom PAGE_FINISH PAGE_FINISH_Leave
 
     !insertmacro MUI_UNPAGE_WELCOME
-    UninstPage custom un.PAGE_SELECT_GAMES_ES un.PAGE_SELECT_GAMES_ES_Leave
-    UninstPage custom un.PAGE_SELECT_GAMES_FALLOUT un.PAGE_SELECT_GAMES_FALLOUT_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_ES_STEAM un.PAGE_SELECT_GAMES_ES_STEAM_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_ES_GOG un.PAGE_SELECT_GAMES_ES_GOG_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_FALLOUT_STEAM un.PAGE_SELECT_GAMES_FALLOUT_STEAM_Leave
     UninstPage custom un.PAGE_SELECT_GAMES_EXTRA un.PAGE_SELECT_GAMES_EXTRA_Leave
     !insertmacro MUI_UNPAGE_INSTFILES
 
@@ -196,6 +203,23 @@ ManifestDPIAware true
         ${EndIf}
         ${If} $Path_SkyrimSE != $Empty
             StrCpy $CheckState_SkyrimSE ${BST_CHECKED}
+        ${EndIf}
+
+        ; TODO There has to a better way to handle the WOW6432Node nonsense in here
+        ${If} $Path_SkyrimSE_GOG == $Empty
+            ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\GOG.com\Games\1711230643" "path"
+            ${If} $Path_SkyrimSE_GOG == $Empty
+                ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\GOG.com\Games\1711230643" "path"
+                ${If} $Path_SkyrimSE_GOG == $Empty
+                    ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\GOG.com\Games\1162721350" "path"
+                    ${If} $Path_SkyrimSE_GOG == $Empty
+                        ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\GOG.com\Games\1162721350" "path"
+                    ${EndIf}
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_SkyrimSE_GOG != $Empty
+            StrCpy $CheckState_SkyrimSE_GOG ${BST_CHECKED}
         ${EndIf}
 
         ${If} $Path_Fallout3 == $Empty
@@ -265,6 +289,8 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_Fallout4
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
+        ${ElseIf} $0 == $Browse_SkyrimSE_GOG
+            StrCpy $1 $PathDialogue_SkyrimSE_GOG
         ${ElseIf} $0 == $Browse_Fallout3
             StrCpy $1 $PathDialogue_Fallout3
         ${ElseIf} $0 == $Browse_FalloutNV
@@ -321,6 +347,8 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_Fallout4
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
+        ${ElseIf} $0 == $Browse_SkyrimSE_GOG
+            StrCpy $1 $PathDialogue_SkyrimSE_GOG
         ${ElseIf} $0 == $Browse_Fallout3
             StrCpy $1 $PathDialogue_Fallout3
         ${ElseIf} $0 == $Browse_FalloutNV
@@ -357,19 +385,17 @@ ManifestDPIAware true
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
 
-  LangString PAGE_INSTALLLOCATIONS_ES_TITLE ${LANG_ENGLISH} "Elder Scrolls Installation Location(s)"
-  LangString PAGE_INSTALLLOCATIONS_ES_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Bash."
-
-  LangString PAGE_INSTALLLOCATIONS_FALLOUT_TITLE ${LANG_ENGLISH} "Fallout Installation Location(s)"
-  LangString PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Flash."
+  LangString PAGE_INSTALLLOCATIONS_ES_STEAM_TITLE ${LANG_ENGLISH} "Steam Elder Scrolls Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_ES_GOG_TITLE ${LANG_ENGLISH} "GOG Elder Scrolls Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_FALLOUT_STEAM_TITLE ${LANG_ENGLISH} "Steam Fallout Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Bash."
 
   LangString PAGE_INSTALLLOCATIONS_EXTRA_TITLE ${LANG_ENGLISH} "Extra Installation Location(s)"
   LangString PAGE_INSTALLLOCATIONS_EXTRA_SUBTITLE ${LANG_ENGLISH} "Please select additional installation path(s) for Wrye Bash/Flash, if desired."
 
   LangString PAGE_CHECK_LOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location Check"
   LangString PAGE_CHECK_LOCATIONS_SUBTITLE ${LANG_ENGLISH} "A risky installation location has been detected."
-  LangString unPAGE_SELECT_GAMES_ES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
-  LangString unPAGE_SELECT_GAMES_FALLOUT_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Flash from."
+  LangString unPAGE_SELECT_GAMES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
   LangString unPAGE_SELECT_GAMES_EXTRA_SUBTITLE ${LANG_ENGLISH} "Please select which additional locations you want to uninstall Wrye Bash/Flash from."
   LangString PAGE_FINISH_TITLE ${LANG_ENGLISH} "Finished installing ${WB_NAME}"
   LangString PAGE_FINISH_SUBTITLE ${LANG_ENGLISH} "Please select post-install tasks."
