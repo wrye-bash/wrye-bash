@@ -26,7 +26,6 @@ from ..skyrimse import SkyrimSEGameInfo
 
 class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
     displayName = 'Skyrim Special Edition (GOG)'
-    fsName = 'Skyrim Special Edition GOG'
     my_games_name = 'Skyrim Special Edition GOG'
     appdata_name = 'Skyrim Special Edition GOG'
     registry_keys = [(r'GOG.com\Games\1711230643', 'path'),

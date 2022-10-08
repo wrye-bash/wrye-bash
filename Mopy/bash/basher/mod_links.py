@@ -595,7 +595,7 @@ class Mod_Details(OneItemLink):
                 self._selected_info, SubProgress(progress, 0.1, 0.7))
             buff = []
             complex_groups = {b'CELL', b'WRLD', b'DIAL'}
-            if bush.game.fsName in ('Fallout4', 'Fallout4VR', 'Fallout4 MS'):
+            if bush.game.fsName in ('Fallout4', 'Fallout4VR'):
                 complex_groups.add(b'QUST')
             progress(0.7, _(u'Sorting records.'))
             for group, group_records in dict_sort(sel_info_data):

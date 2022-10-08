@@ -26,7 +26,6 @@ from ..skyrimse import SkyrimSEGameInfo
 
 class EGSSkyrimSEGameInfo(EGSMixin, SkyrimSEGameInfo):
     displayName = 'Skyrim Special Edition (EGS)'
-    fsName = 'Skyrim Special Edition EPIC'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
     egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE

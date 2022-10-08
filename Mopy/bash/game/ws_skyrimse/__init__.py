@@ -27,7 +27,6 @@ from ..windows_store_game import WindowsStoreMixin
 
 class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
     displayName = 'Skyrim Special Edition (WS)'
-    fsName = 'Skyrim Special Edition MS'
     my_games_name = 'Skyrim Special Edition MS'
     appdata_name = 'Skyrim Special Edition MS'
 
