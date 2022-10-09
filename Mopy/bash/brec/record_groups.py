@@ -454,7 +454,7 @@ class MobDial(MobObjects):
         self.records = [i for i in self.records if i.fid in p_keep_ids]
         if self.records:
             p_keep_ids.add(self.dial.fid) # must keep parent around
-        if self.dial.fid not in p_keep_ids:
+        elif self.dial.fid not in p_keep_ids:
             self.dial = None # will drop us from MobDials
         self.id_records.clear()
         self.setChanged()
@@ -567,7 +567,6 @@ class MobDial(MobObjects):
 class MobDials(MobBase):
     """DIAL top block of mod file."""
     def __init__(self, header, loadFactory, ins=None, do_unpack=True):
-        self.dialogues = []
         self.id_dialogues = {}
         super(MobDials, self).__init__(header, loadFactory, ins, do_unpack)
 
@@ -578,10 +577,10 @@ class MobDials(MobBase):
         if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
         insAtEnd = ins.atEnd
-        append_dialogue = self.dialogues.append
+        # self.id_dialogues.clear()
         loadFactory = self.loadFactory
-        while not insAtEnd(endPos,
-                           errLabel := f'{sig_to_str(expType)} Top Block'):
+        errLabel = f'{sig_to_str(expType)} Top Block'
+        while not insAtEnd(endPos, errLabel):
             #--Get record info and handle it
             dial_header = unpack_header(ins)
             if dial_header.recType == expType:
@@ -596,8 +595,9 @@ class MobDials(MobBase):
                     if (next_header.recType == b'GRUP' and
                             next_header.groupType == 7):
                         # This is a regular DIAL record with children
-                        append_dialogue(MobDial(next_header, loadFactory, dial,
-                            ins, do_unpack=True))
+                        mob_dial = MobDial(next_header, loadFactory, dial, ins,
+                                           do_unpack=True)
+                        self.id_dialogues[dial.fid] = mob_dial
                     elif next_header.recType == expType:
                         # This is a DIAL record without children. Finish this
                         # one, then rewind and process next_header normally
@@ -611,22 +611,21 @@ class MobDials(MobBase):
                 raise ModError(ins.inName,
                                f'Unexpected {dial_header!r} in '
                                f'{sig_to_str(expType)} top block.')
-        self.id_dialogues.clear()
         self.setChanged()
 
     def getSize(self):
         """Returns size of records plus group and record headers."""
-        size = RecordHeader.rec_header_size
-        for dialogue in self.dialogues:
+        hsize = RecordHeader.rec_header_size
+        for dialogue in self.id_dialogues.values():
             # Resynchronize the stamps (##: unsure if needed)
             dialogue.stamp = self.stamp
-            size += dialogue.getSize()
-        return size
+            hsize += dialogue.getSize()
+        return hsize
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self plus info records."""
         self.numRecords = sum(d.getNumRecords(includeGroups)
-                              for d in self.dialogues)
+                              for d in self.id_dialogues.values())
         self.numRecords += includeGroups # top DIAL GRUP
         return self.numRecords
 
@@ -640,37 +639,31 @@ class MobDials(MobBase):
             out.write(TopGrupHeader(dial_size, self.label,
                                     self.stamp).pack_head())
             self._sort_group()
-            for dialogue in self.dialogues:
+            for dialogue in self.id_dialogues.values():
                 dialogue.dump(out)
 
     def get_all_signatures(self):
         return set(chain.from_iterable(d.get_all_signatures()
-                                       for d in self.dialogues))
-
-    def indexRecords(self):
-        self.id_dialogues = {d.dial.fid: d for d in self.dialogues}
+                                       for d in self.id_dialogues.values()))
 
     def iter_records(self):
-        return chain.from_iterable(d.iter_records() for d in self.dialogues)
+        return chain.from_iterable(d.iter_records() for d in self.id_dialogues.values())
 
     def keepRecords(self, p_keep_ids):
-        for dialogue in self.dialogues:
+        for dialogue in self.id_dialogues.values():
             dialogue.keepRecords(p_keep_ids)
-        self.dialogues = [d for d in self.dialogues if d.dial]
-        self.id_dialogues.clear()
+        # loop above may set dialogue.dial to None
+        self.id_dialogues = {k: d for k, d in self.id_dialogues.items() if
+                             d.dial}
         self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
-        if self.dialogues and not self.id_dialogues:
-            self.indexRecords()
         lookup_dial = self.id_dialogues.get
-        filtered_dials = []
-        filtered_append = filtered_dials.append
+        filtered_dials = {}
         loadSetIsSuperset = loadSet.issuperset
-        for src_dialogue in block.dialogues:
+        for src_fid, src_dialogue in block.id_dialogues.items():
             was_newly_added = False
-            src_fid = src_dialogue.dial.fid
             # Check if we already have a dialogue with that FormID
             dest_dialogue = lookup_dial(src_fid)
             if not dest_dialogue:
@@ -699,24 +692,18 @@ class MobDials(MobBase):
                         self.remove_dialogue(dest_dialogue.dial)
                     continue
             # We're either not Filter-tagged or we want to keep this dialogue
-            filtered_append(src_dialogue)
+            filtered_dials[src_fid] = src_dialogue
         # Apply any merge filtering we've done above to the record block
-        block.dialogues = filtered_dials
-        block.indexRecords()
+        block.id_dialogues = filtered_dials
 
     def remove_dialogue(self, dialogue):
         """Removes the specified DIAL from this block. The exact DIAL object
         must be present, otherwise a ValueError is raised."""
-        if self.dialogues and not self.id_dialogues:
-            self.indexRecords()
-        self.dialogues.remove(dialogue)
         del self.id_dialogues[dialogue.fid]
 
     def set_dialogue(self, dialogue):
         """Adds the specified DIAL to self, overriding an existing one with
         the same FormID or creating a new DIAL block."""
-        if self.dialogues and not self.id_dialogues:
-            self.indexRecords()
         dial_fid = dialogue.fid
         if dial_fid in self.id_dialogues:
             self.id_dialogues[dial_fid].dial = dialogue
@@ -724,29 +711,26 @@ class MobDials(MobBase):
             children_head = ChildrenGrupHeader(0, DUMMY_FID, 7, self.stamp)
             dial_block = MobDial(children_head, self.loadFactory, dialogue)
             dial_block.setChanged()
-            self.dialogues.append(dial_block)
             self.id_dialogues[dial_fid] = dial_block
 
     def _sort_group(self):
         """Sorts DIAL groups by the FormID of the DIAL record."""
-        self.dialogues.sort(key=attrgetter_cache[u'dial.fid'])
+        self.id_dialogues = dict(dict_sort(self.id_dialogues))
 
     def updateMasters(self, masterset_add):
-        for dialogue in self.dialogues:
+        for dialogue in self.id_dialogues.values():
             dialogue.updateMasters(masterset_add)
 
     def updateRecords(self, srcBlock, mergeIds):
-        if self.dialogues and not self.id_dialogues:
-            self.indexRecords()
         lookup_dial = self.id_dialogues.get
-        for src_dial in srcBlock.dialogues:
+        for dfid, src_dial in srcBlock.id_dialogues.items():
             # Check if we have a corresponding DIAL record in the destination
-            dest_dial = lookup_dial(src_dial.dial.fid)
+            dest_dial = lookup_dial(dfid)
             if dest_dial:
                 dest_dial.updateRecords(src_dial, mergeIds)
 
     def __repr__(self):
-        return f'<DIAL GRUP: {len(self.dialogues)} record(s)>'
+        return f'<DIAL GRUP: {len(self.id_dialogues)} record(s)>'
 
 #------------------------------------------------------------------------------
 class MobCell(MobBase):
