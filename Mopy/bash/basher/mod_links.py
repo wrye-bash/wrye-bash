@@ -1438,7 +1438,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                                                     load_fact=master_factory)
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source
-                    newRecords = []
+                    newRecords = {}
                     generic_lore_fid = bush.game.master_fid(0x025811)
                     for rfid, record in scpt_grp.iter_present_records():
                         #--Special handling for genericLoreScript
@@ -1451,14 +1451,15 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                               id_text[rfid] == record.script_source):
                             removed.append(record.eid)
                         else:
-                            newRecords.append(record)
-                    scpt_grp.records = newRecords
+                            # don't bother with record.group_key() for 'SCPT'
+                            newRecords[rfid] = record
+                    scpt_grp.id_records = newRecords
                     scpt_grp.setChanged()
                 if len(removed) >= 50 or badGenericLore:
                     modFile.safeSave()
                     m =(_(u'Scripts removed: %d.') + u'\n' +
                         _(u'Scripts remaining: %d')) % (
-                        len(removed), len(scpt_grp.records))
+                        len(removed), len(scpt_grp.id_records))
                 elif removed:
                     m = _(u'Only %d scripts were identical.  This is probably '
                           u'intentional, so no changes have been made.'

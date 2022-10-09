@@ -162,12 +162,11 @@ class CoblExhaustionPatcher(_ExSpecialList):
         count = Counter()
         keep = self.patchFile.getKeeper()
         id_info = self.id_stored_data[b'FACT']
-        for record in self.patchFile.tops[b'SPEL'].records:
+        for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
             if record.obme_record_version is not None: continue
             #--Skip this one?
-            rec_fid = record.fid
-            duration = id_info.get(rec_fid, 0)
+            duration = id_info.get(rid, 0)
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
             if any(ef.effect_sig == b'SEFF' and
@@ -188,8 +187,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
-            keep(rec_fid)
-            count[rec_fid.mod_fn] += 1
+            keep(rid)
+            count[rid.mod_fn] += 1
         #--Log
         self._pLog(log, count)
 

@@ -382,6 +382,14 @@ class MreRecord(object):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
+    def group_key(self): ##: we need an MreRecord mixin - too many ifs
+        """Return a key for indexing the record on the parent (MobObjects)
+        grup."""
+        record_id = self.fid
+        if self.isKeyedByEid and record_id.is_null():
+            record_id = self.eid
+        return record_id
+
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
         instance of the appropriate subclass (!)"""

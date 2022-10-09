@@ -143,10 +143,6 @@ class MobBase(object):
         """Returns a set of all signatures contained in this block."""
         raise AbstractError(u'get_all_signatures not implemented')
 
-    def indexRecords(self):
-        """Indexes records by fid."""
-        raise AbstractError(u'indexRecords not implemented')
-
     def iter_records(self):
         """Flattens the structure of this record block into a linear sequence
         of records. Works as an iterator for memory reasons."""
@@ -195,7 +191,6 @@ class MobObjects(MobBase):
     all top groups except CELL, WRLD and DIAL."""
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
-        self.records = []
         self.id_records = {}
         from .. import bush
         # DarkPCB record
@@ -211,7 +206,6 @@ class MobObjects(MobBase):
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
         insAtEnd = ins.atEnd
-        recordsAppend = self.records.append
         errLabel = f'{(exp_str := sig_to_str(expType))} Top Block'
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
@@ -220,7 +214,7 @@ class MobObjects(MobBase):
                 header_str = sig_to_str(header.recType)
                 msg = f'Unexpected {header_str} record in {exp_str} group.'
                 raise ModError(ins.inName, msg)
-            recordsAppend(recClass(header, ins, do_unpack=True))
+            self.setRecord(recClass(header, ins, do_unpack=True))
         self.setChanged()
 
     def getActiveRecords(self):
@@ -230,7 +224,7 @@ class MobObjects(MobBase):
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self - if empty return 0."""
-        numRecords = len(self.records)
+        numRecords = len(self.id_records)
         if numRecords: numRecords += includeGroups #--Count self
         self.numRecords = numRecords
         return numRecords
@@ -242,7 +236,7 @@ class MobObjects(MobBase):
         else:
             hsize = RecordHeader.rec_header_size
             return hsize + sum(
-                (hsize + record.getSize()) for record in self.records)
+                (hsize + r.getSize()) for r in self.id_records.values())
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -256,55 +250,31 @@ class MobObjects(MobBase):
             if size == RecordHeader.rec_header_size: return
             out.write(TopGrupHeader(size, self.label, self.stamp).pack_head())
             self._sort_group()
-            for record in self.records:
+            for record in self.id_records.values():
                 record.dump(out)
 
     def _sort_group(self):
-        """Sorts records by FormID."""
-        self.records.sort(key=fid_key)
+        """Sorts records by FormID - now eid order matters too for
+        isKeyedByEid records."""
+        self.id_records = dict(dict_sort(self.id_records))
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        for record in self.records:
+        for record in self.iter_records():
             record.updateMasters(masterset_add)
-
-    def indexRecords(self):
-        """Indexes records by fid."""
-        self.id_records.clear()
-        for record in self.records:
-            self.id_records[record.fid] = record
 
     def getRecord(self, rec_rid):
         """Gets record with corresponding id.
         If record doesn't exist, returns None."""
-        if not self.records: return None
-        if not self.id_records: self.indexRecords()
         return self.id_records.get(rec_rid, None)
 
     def setRecord(self,record):
-        """Adds record to record list and indexed."""
-        self_recs = self.records
-        if self_recs and not self.id_records:
-            self.indexRecords()
-        record_id = record.fid
-        if record.isKeyedByEid and record_id.is_null():
-            record_id = record.eid
-        self_id_recs = self.id_records
-        # This check fails fairly often, so do this instead of try/except
-        if record_id in self_id_recs:
-            ##: Building a fid -> index mapping in indexRecords could make this
-            # O(1) instead of O(n) - see if that's worth it (memory!)
-            self_recs[self_recs.index(
-                self_id_recs[record_id])] = record
-        else:
-            self_recs.append(record)
-        self_id_recs[record_id] = record
+        """Adds record to self.id_records."""
+        self.id_records[record.group_key()] = record
 
     def copy_records(self, recs):
         """Copies the specified records into this block, overwriting existing
         records. Note that the records *must* already be in long fid format!
-        If condition_func is given, it will be called on each record to decide
-        whether or not to copy it.
 
         :type recs: list[brec.MreRecord]"""
         copy_record = self.setRecord
@@ -313,15 +283,11 @@ class MobObjects(MobBase):
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        self.records = [record for record in self.records if (
-                record.isKeyedByEid and record.fid.is_null()
-                and record.eid in p_keep_ids) or record.fid in p_keep_ids]
-        self.id_records.clear()
+        self.id_records = {rec_key: record for rec_key, record in
+                           self.id_records.items() if rec_key in p_keep_ids}
         self.setChanged()
 
     def updateRecords(self, srcBlock, mergeIds):
-        if self.records and not self.id_records:
-            self.indexRecords()
         merge_ids_discard = mergeIds.discard
         copy_to_self = self.setRecord
         dest_rec_fids = self.id_records
@@ -333,8 +299,7 @@ class MobObjects(MobBase):
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         # YUCK, drop these local imports!
         from ..mod_files import MasterSet
-        filtered = []
-        filteredAppend = filtered.append
+        filtered = {}
         loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
@@ -352,28 +317,24 @@ class MobObjects(MobBase):
                 if not loadSetIsSuperset(masterset):
                     continue
             # We're either not Filter-tagged or we want to keep this record
-            filteredAppend(record)
+            filtered[rkey := record.group_key()] = record
             # If we're IIM-tagged and this is not one of the IIM-approved
             # record types, skip merging
             if iiSkipMerge: continue
             # We're past all hurdles - stick a copy of this record into
             # ourselves and mark it as merged
-            if record.isKeyedByEid and rid.is_null():
-                mergeIdsAdd(record.eid)
-            else:
-                mergeIdsAdd(rid)
+            mergeIdsAdd(rkey)
             copy_to_self(record.getTypeCopy())
         # Apply any merge filtering we've done above to the record block in
         # question. That way, patchers won't see the records that have been
         # filtered out here.
-        block.records = filtered
-        block.indexRecords()
+        block.id_records = filtered
 
     def iter_records(self):
-        return iter(self.records)
+        return self.id_records.values()
 
     def __repr__(self):
-        return (f'<{sig_to_str(self.label)} GRUP: {len(self.records)} '
+        return (f'<{sig_to_str(self.label)} GRUP: {len(self.id_records)} '
                 f'record(s)>')
 
 #------------------------------------------------------------------------------
@@ -393,11 +354,10 @@ class MobDial(MobObjects):
         if not info_class:
             self.header.skip_blob(ins) # DIAL already read, skip all INFOs
         ins_at_end = ins.atEnd
-        append_info = self.records.append
         while not ins_at_end(endPos, u'DIAL Block'):
             header = unpack_header(ins)
             if header.recType == b'INFO':
-                append_info(info_class(header, ins, do_unpack=True))
+                self.setRecord(info_class(header, ins, do_unpack=True))
             elif header.recType == b'DIAL':
                 raise ModError(ins.inName, f'Duplicate DIAL record '
                     f'({header!r}) inside DIAL block (a header size is likely '
@@ -409,54 +369,54 @@ class MobDial(MobObjects):
 
     def getSize(self):
         hsize = RecordHeader.rec_header_size
-        size = hsize + self.dial.getSize()
-        if self.records:
-            # First hsize is for the single GRUP header before the INFOs
-            size += hsize + sum(hsize + i.getSize() for i in self.records)
-        return size
+        group_size = sum(hsize + i.getSize() for i in self.iter_records())
+        if self.id_records:
+            group_size += hsize # for the single GRUP header before the INFOs
+        return group_size
 
     def getNumRecords(self,includeGroups=True):
         # DIAL record + GRUP + INFOs
-        self.numRecords = 1 + ((includeGroups + len(self.records))
-                               if self.records else 0)
+        self.numRecords = 1 + ((includeGroups + len(self.id_records))
+                               if self.id_records else 0)
         return self.numRecords
 
     def dump(self, out):
         # Update TIFC if needed (i.e. Skyrim+)
         if hasattr(self.dial, u'info_count'):
-            self.dial.info_count = len(self.records)
+            self.dial.info_count = len(self.id_records)
         self.dial.getSize()
         self.dial.dump(out)
         if not self.changed:
             out.write(self.header.pack_head())
             out.write(self.data)
         else:
-            if not self.records: return
+            if not self.id_records: return
             # Now we're ready to dump out the headers and each INFO child
             hsize = RecordHeader.rec_header_size
-            infos_size = hsize + sum(hsize + i.getSize() for i in self.records)
+            infos_size = hsize + sum(
+                hsize + i.getSize() for i in super().iter_records())
             # Write out a GRUP header (needed in order to know the number of
             # bytes to read for all the INFOs), then dump all the INFOs
             out.write(ChildrenGrupHeader(infos_size, self.dial.fid, 7, self.stamp,
                 self.stamp2).pack_head())
             self._sort_group()
-            for info in self.records:
+            for info in super().iter_records():
                 info.dump(out)
 
     def get_all_signatures(self):
-        return {self.dial._rec_sig, *(i._rec_sig for i in self.records)}
+        return {i._rec_sig for i in self.iter_records()}
 
     def iter_records(self):
-        return chain([self.dial], self.records)
+        if self.dial: # May have gotten set to None through merge filtering
+            yield self.dial
+        yield from super().iter_records()
 
     def keepRecords(self, p_keep_ids):
-        self.records = [i for i in self.records if i.fid in p_keep_ids]
-        if self.records:
+        super().keepRecords(p_keep_ids)
+        if self.id_records:
             p_keep_ids.add(self.dial.fid) # must keep parent around
         elif self.dial.fid not in p_keep_ids:
             self.dial = None # will drop us from MobDials
-        self.id_records.clear()
-        self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
@@ -486,11 +446,6 @@ class MobDial(MobObjects):
             super(MobDial, self).merge_records(block, loadSet, mergeIds,
                 iiSkipMerge, doFilter)
 
-    def updateMasters(self, masterset_add):
-        if self.dial: # May have gotten set to None through merge filtering
-            self.dial.updateMasters(masterset_add)
-        super(MobDial, self).updateMasters(masterset_add)
-
     def updateRecords(self, srcBlock, mergeIds):
         src_dial = srcBlock.dial
         # Copy the latest version of the DIAL record over. We can safely mark
@@ -516,7 +471,7 @@ class MobDial(MobObjects):
         # right spot based on their PNAM
         sorted_infos = []
         remaining_infos = deque()
-        for r in self.records:
+        for r in super().iter_records():
             if not r.prev_info:
                 sorted_infos.append(r)
             else:
@@ -558,10 +513,10 @@ class MobDial(MobObjects):
                     # the queue
                     visited_fids.add(curr_info.fid)
                     remaining_infos.appendleft(curr_info)
-        self.records = sorted_infos
+        self.id_records = {rec.fid: rec for rec in sorted_infos}
 
     def __repr__(self):
-        return f'<DIAL ({self.dial!r}): {len(self.records)} INFO record(s)>'
+        return f'<DIAL ({self.dial!r}): {len(self.id_records)} INFO record(s)>'
 
 class MobDials(MobBase):
     """DIAL top block of mod file."""

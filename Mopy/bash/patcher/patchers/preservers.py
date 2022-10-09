@@ -234,7 +234,7 @@ class APreserver(ImportPatcher):
             patchBlock = self.patchFile.tops[rsig]
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
-            copied_records = patchBlock.id_records
+            copied_records = patchBlock.id_records.copy()
             for rfid, record in modFile.tops[rsig].iter_present_records():
                 # Skip if we've already copied this record or if we're not
                 # interested in it

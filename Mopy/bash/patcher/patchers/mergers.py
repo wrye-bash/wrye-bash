@@ -170,8 +170,8 @@ class _AMerger(ImportPatcher):
         en_key = self._entry_key
         for curr_sig in self._present_sigs:
             sr_attr = self._wanted_subrecord[curr_sig]
-            for record in self.patchFile.tops[curr_sig].records:
-                deltas = id_deltas[record.fid]
+            for rid, record in self.patchFile.tops[curr_sig].id_records.items():
+                deltas = id_deltas[rid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
                 # safe because order does not matter for items.
@@ -213,8 +213,8 @@ class _AMerger(ImportPatcher):
                             if en_key(entry) not in current_entries:
                                 record_entries.append(entry)
                 if old_items != sorted(getattr(record, sr_attr), key=en_key):
-                    keep(record.fid)
-                    mod_count[record.fid.mod_fn] += 1
+                    keep(rid)
+                    mod_count[rid.mod_fn] += 1
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
@@ -406,16 +406,15 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
         for top_grup_sig in self._read_sigs:
-            for record in self.patchFile.tops[top_grup_sig].records:
-                fid = record.fid
-                if fid not in merged_deleted: continue
+            for rid, record in self.patchFile.tops[top_grup_sig].id_records.items():
+                if rid not in merged_deleted: continue
                 changed = False
-                if record.aiPackages != merged_deleted[fid][u'merged']:
-                    record.aiPackages = merged_deleted[fid][u'merged']
+                if record.aiPackages != merged_deleted[rid][u'merged']:
+                    record.aiPackages = merged_deleted[rid][u'merged']
                     changed = True
                 if changed:
-                    keep(record.fid)
-                    mod_count[record.fid.mod_fn] += 1
+                    keep(rid)
+                    mod_count[rid.mod_fn] += 1
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -586,15 +585,15 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
             return spells_ret
         for top_grup_sig in self._actor_sigs:
-            for record in self.patchFile.tops[top_grup_sig].records:
-                if record.fid not in merged_deleted:
+            for rid, record in self.patchFile.tops[top_grup_sig].id_records.items():
+                if rid not in merged_deleted:
                     continue
                 merged_spells = sorted_spells(
-                    merged_deleted[record.fid]['merged'])
+                    merged_deleted[rid]['merged'])
                 if sorted_spells(record.spells) != merged_spells:
                     record.spells = merged_spells
-                    keep(record.fid)
-                    mod_count[record.fid.mod_fn] += 1
+                    keep(rid)
+                    mod_count[rid.mod_fn] += 1
         self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -948,8 +947,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         if b'RACE' not in patchFile.tops: return
         keep = patchFile.getKeeper()
         racesPatched = []
-        for race in patchFile.tops[b'RACE'].records:
-            raceData = self.raceData.get(race.fid, None)
+        for rfid, race in patchFile.tops[b'RACE'].id_records.items():
+            raceData = self.raceData.get(rfid, None)
             if not raceData: continue
             orig_spells = race.spells[:]
             if u'spellsOverride' in raceData:
@@ -960,7 +959,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
             #--Changed
             if race.spells != orig_spells:
                 racesPatched.append(race.eid)
-                keep(race.fid)
+                keep(rfid)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
