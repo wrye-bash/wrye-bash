@@ -128,7 +128,7 @@ class Fallout4GameInfo(PatchGame):
         validHeaderVersions = (0.95, 1.0)
 
     patchers = {
-        u'ImportObjectBounds', u'LeveledLists',
+        'ImportObjectBounds', 'LeveledLists', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -721,6 +721,45 @@ class Fallout4GameInfo(PatchGame):
     # Timescale Checker
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
+
+    # ------------------------------------------------------------------------------
+    # Tweak Settings
+    # ------------------------------------------------------------------------------
+    settings_tweaks = {
+        'GlobalsTweak_Timescale_Tes5',
+        'GmstTweak_Actor_GreetingDistance',
+        'GmstTweak_Actor_MaxCompanions',
+        'GmstTweak_Actor_MaxJumpHeight',
+        'GmstTweak_Actor_MerchantRestockTime',
+        'GmstTweak_Actor_StrengthEncumbranceMultiplier',
+        'GmstTweak_Actor_UnconsciousnessDuration',
+        'GmstTweak_Actor_VerticalObjectDetection',
+        'GmstTweak_AI_BumpReactionDelay',
+        'GmstTweak_AI_ConversationChance_Interior',
+        'GmstTweak_AI_ConversationChance_Tes5',
+        'GmstTweak_AI_MaxActiveActors_Tes5',
+        'GmstTweak_AI_MaxDeadActors',
+        'GmstTweak_Combat_CriticalHitChance',
+        'GmstTweak_Combat_DisableProjectileDodging',
+        'GmstTweak_Combat_MaxActors_Tes5',
+        'GmstTweak_Compass_RecognitionDistance',
+        'GmstTweak_Gore_CombatDismemberPartChance_Fo4',
+        'GmstTweak_Gore_CombatExplodePartChance_Fo4',
+        'GmstTweak_Gore_CombatTorsoExplodeChance',
+        'GmstTweak_Hacking_MaximumNumberOfWords',
+        'GmstTweak_Msg_CarryingTooMuch',
+        'GmstTweak_Msg_NoFastTravel',
+        'GmstTweak_Msg_QuickLoad',
+        'GmstTweak_Msg_QuickSave',
+        'GmstTweak_Player_FallDamageThreshold',
+        'GmstTweak_Player_FastTravelTimeMultiplier',
+        'GmstTweak_Player_InventoryQuantityPrompt',
+        'GmstTweak_Player_MaxDraggableWeight',
+        'GmstTweak_Player_SprintingCost',
+        'GmstTweak_Visuals_TerminalDisplayRate',
+        'GmstTweak_Warning_ExteriorDistanceToHostiles',
+        'GmstTweak_Warning_InteriorDistanceToHostiles',
+    }
 
     top_groups = [
         b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST', b'GLOB',

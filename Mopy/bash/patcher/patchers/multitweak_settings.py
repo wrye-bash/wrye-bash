@@ -1194,6 +1194,10 @@ class GmstTweak_Gore_CombatDismemberPartChance(_AGmstCCTweak):
                      (u'100', 100)]
     default_choice = u'50'
 
+class GmstTweak_Gore_CombatDismemberPartChance_Fo4(
+    GmstTweak_Gore_CombatDismemberPartChance):
+    default_choice = '25'
+
 #------------------------------------------------------------------------------
 class GmstTweak_Gore_CombatExplodePartChance(_AGmstCCTweak):
     tweak_name = _(u'Gore: Combat Explode Part Chance')
@@ -1205,6 +1209,28 @@ class GmstTweak_Gore_CombatExplodePartChance(_AGmstCCTweak):
                      (u'75',   75),
                      (u'100', 100)]
     default_choice = u'75'
+
+class GmstTweak_Gore_CombatExplodePartChance_Fo4(
+    GmstTweak_Gore_CombatExplodePartChance):
+    tweak_choices = [('0',     0),
+                     ('5',     5),
+                     ('25',   25),
+                     ('50',   50),
+                     ('75',   75),
+                     ('100', 100)]
+    default_choice = '5'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Gore_CombatTorsoExplodeChance(_AGmstCCTweak):
+    tweak_name = _('Gore: Combat Torso Explode Chance')
+    tweak_tip = _('The chance your hits will make enemies explode.')
+    tweak_key = ('iMessTorsoExplodeChance' ,)
+    tweak_choices = [('0',     0),
+                     ('25',   25),
+                     ('50',   50),
+                     ('75',   75),
+                     ('100', 100)]
+    default_choice = '75'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Movement_BaseSpeed(_AGmstCCTweak):
@@ -1299,6 +1325,15 @@ class GmstTweak_Hacking_MaximumNumberOfWords(_AGmstCCTweak):
                      (u'16', 16),
                      (u'20', 20)]
     default_choice = u'20'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_TerminalDisplayRate(_AGmstCCTweak):
+    tweak_name = _('Visuals: Terminal Display Rate')
+    tweak_tip = _('Controls terminal text display speed.')
+    tweak_key = ('iTerminalDisplayRate',)
+    tweak_choices = [('60',     60),
+                     ('1000', 1000)]
+    default_choice = '60'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Visuals_ShellCameraDistance(_AGmstCCTweak):
