@@ -63,10 +63,9 @@ class ContentsCheckerPatcher(Patcher):
         id_type = self.fid_to_type
         for entry_type in self.entryTypes:
             if entry_type not in modFile.tops: continue
-            for record in modFile.tops[entry_type].getActiveRecords():
-                fid = record.fid
-                if fid not in id_type:
-                    id_type[fid] = entry_type
+            for rid, _record in modFile.tops[entry_type].getActiveRecords():
+                if rid not in id_type:
+                    id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
         # types we may end up patching
         for cont_type in self.contTypes:
@@ -74,8 +73,8 @@ class ContentsCheckerPatcher(Patcher):
             patchBlock = self.patchFile.tops[cont_type]
             pb_add_record = patchBlock.setRecord
             id_records = patchBlock.id_records
-            for record in modFile.tops[cont_type].getActiveRecords():
-                if record.fid not in id_records:
+            for rid, record in modFile.tops[cont_type].getActiveRecords():
+                if rid not in id_records:
                     pb_add_record(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
@@ -169,10 +168,10 @@ class EyeCheckerPatcher(Patcher):
         eye_mesh = self.eye_mesh
         patchBlock = self.patchFile.tops[b'RACE']
         id_records = patchBlock.id_records
-        srcEyes = {record.fid for record in
+        srcEyes = {rid for rid, _record in
                    modFile.tops[b'EYES'].getActiveRecords()}
-        for record in modFile.tops[b'RACE'].getActiveRecords():
-            if record.fid not in id_records:
+        for rid, record in modFile.tops[b'RACE'].getActiveRecords():
+            if rid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy())
             if not record.rightEye or not record.leftEye:
                 # Don't complain if the FULL is missing, that probably means
@@ -285,8 +284,8 @@ class RaceCheckerPatcher(Patcher):
         for pb_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for record in modFile.tops[pb_sig].getActiveRecords():
-                if record.fid not in id_records:
+            for rid, record in modFile.tops[pb_sig].getActiveRecords():
+                if rid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self, log, progress):
@@ -347,8 +346,8 @@ class NpcCheckerPatcher(Patcher):
         for pb_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for record in modFile.tops[pb_sig].getActiveRecords():
-                if record.fid not in id_records:
+            for rid, record in modFile.tops[pb_sig].getActiveRecords():
+                if rid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):

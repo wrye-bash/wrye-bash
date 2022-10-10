@@ -224,8 +224,9 @@ class MobObjects(MobBase):
         self.setChanged()
 
     def getActiveRecords(self):
-        """Returns non-ignored records."""
-        return [record for record in self.records if not record.flags1.ignored]
+        """Returns non-ignored records - XXX what about isKeyedByEid?"""
+        return [(r.fid, r) for r in self.id_records.values() if
+                not r.flags1.ignored]
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self - if empty return 0."""
@@ -273,12 +274,12 @@ class MobObjects(MobBase):
         for record in self.records:
             self.id_records[record.fid] = record
 
-    def getRecord(self, rec_fid):
+    def getRecord(self, rec_rid):
         """Gets record with corresponding id.
         If record doesn't exist, returns None."""
         if not self.records: return None
         if not self.id_records: self.indexRecords()
-        return self.id_records.get(rec_fid, None)
+        return self.id_records.get(rec_rid, None)
 
     def setRecord(self,record):
         """Adds record to record list and indexed."""
@@ -324,11 +325,10 @@ class MobObjects(MobBase):
         merge_ids_discard = mergeIds.discard
         copy_to_self = self.setRecord
         dest_rec_fids = self.id_records
-        for record in srcBlock.getActiveRecords():
-            src_rec_fid = record.fid
-            if src_rec_fid in dest_rec_fids:
+        for rid, record in srcBlock.getActiveRecords():
+            if rid in dest_rec_fids:
                 copy_to_self(record.getTypeCopy())
-                merge_ids_discard(src_rec_fid)
+                merge_ids_discard(rid)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         # YUCK, drop these local imports!
@@ -338,9 +338,8 @@ class MobObjects(MobBase):
         loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
-        for record in block.getActiveRecords():
-            rfid = record.fid
-            if rfid == self._bad_form: continue
+        for rid, record in block.getActiveRecords():
+            if rid == self._bad_form: continue
             #--Include this record?
             if doFilter:
                 # If we're Filter-tagged, perform merge filtering. Then, check
@@ -359,10 +358,10 @@ class MobObjects(MobBase):
             if iiSkipMerge: continue
             # We're past all hurdles - stick a copy of this record into
             # ourselves and mark it as merged
-            if record.isKeyedByEid and rfid.is_null():
+            if record.isKeyedByEid and rid.is_null():
                 mergeIdsAdd(record.eid)
             else:
-                mergeIdsAdd(rfid)
+                mergeIdsAdd(rid)
             copy_to_self(record.getTypeCopy())
         # Apply any merge filtering we've done above to the record block in
         # question. That way, patchers won't see the records that have been

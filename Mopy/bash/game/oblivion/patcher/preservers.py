@@ -152,9 +152,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
         id_info = self.id_stored_data[b'FACT']
-        for record in modFile.tops[b'SPEL'].getActiveRecords():
-            if record.spellType != 2: continue
-            if record.fid in id_info:
+        for rid, record in modFile.tops[b'SPEL'].getActiveRecords():
+            if record.spellType == 2 and rid in id_info:
                 patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
@@ -244,8 +243,8 @@ class MorphFactionsPatcher(_ExSpecialList):
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record.getTypeCopy())
-        for record in modFile.tops[b'FACT'].getActiveRecords():
-            if record.fid in id_info:
+        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+            if rid in id_info:
                 patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
@@ -257,11 +256,10 @@ class MorphFactionsPatcher(_ExSpecialList):
         keep = self.patchFile.getKeeper()
         changed = Counter()
         mFactable = []
-        for record in modFile.tops[b'FACT'].getActiveRecords():
-            rec_fid = record.fid
-            if rec_fid not in id_info: continue
-            if rec_fid == mFactLong: continue
-            mFactable.append(rec_fid)
+        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+            if rid not in id_info: continue
+            if rid == mFactLong: continue
+            mFactable.append(rid)
             #--Update record if it doesn't have an existing relation with
             # mFactLong
             if not any(mFactLong == relation.faction for relation in
@@ -271,7 +269,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relation.faction = mFactLong
                 relation.mod = 10
                 record.relations.append(relation)
-                mname,rankName = id_info[rec_fid]
+                mname, rankName = id_info[rid]
                 record.full = mname
                 if not record.ranks:
                     record.ranks = [record.getDefault(u'ranks')]
@@ -279,12 +277,11 @@ class MorphFactionsPatcher(_ExSpecialList):
                     if not rank.male_title: rank.male_title = rankName
                     if not rank.female_title: rank.female_title = rankName
                     if not rank.insignia_path:
-                        rank.insignia_path = (
-                                u'Menus\\Stats\\Cobl\\generic%02d.dds' %
-                                # if rank_level was not present it will be None
-                                (rank.rank_level or 0))
-                keep(rec_fid)
-                changed[rec_fid.mod_fn] += 1
+                        # if rank_level was not present it will be None
+                        dds_ = f'generic{rank.rank_level or 0:02d}.dds'
+                        rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
+                keep(rid)
+                changed[rid.mod_fn] += 1
         #--MFact record
         record = modFile.tops[b'FACT'].getRecord(mFactLong)
         if record:
