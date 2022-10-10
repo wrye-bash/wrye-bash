@@ -595,9 +595,7 @@ class MobDials(MobBase):
                     if (next_header.recType == b'GRUP' and
                             next_header.groupType == 7):
                         # This is a regular DIAL record with children
-                        mob_dial = MobDial(next_header, loadFactory, dial, ins,
-                                           do_unpack=True)
-                        self.id_dialogues[dial.fid] = mob_dial
+                        self.set_dialogue(dial, ins, next_header)
                     elif next_header.recType == expType:
                         # This is a DIAL record without children. Finish this
                         # one, then rewind and process next_header normally
@@ -647,7 +645,8 @@ class MobDials(MobBase):
                                        for d in self.id_dialogues.values()))
 
     def iter_records(self):
-        return chain.from_iterable(d.iter_records() for d in self.id_dialogues.values())
+        return chain.from_iterable(
+            d.iter_records() for d in self.id_dialogues.values())
 
     def keepRecords(self, p_keep_ids):
         for dialogue in self.id_dialogues.values():
@@ -701,15 +700,16 @@ class MobDials(MobBase):
         must be present, otherwise a ValueError is raised."""
         del self.id_dialogues[dialogue.fid]
 
-    def set_dialogue(self, dialogue):
+    def set_dialogue(self, dialogue, ins=None, children_head=None):
         """Adds the specified DIAL to self, overriding an existing one with
         the same FormID or creating a new DIAL block."""
         dial_fid = dialogue.fid
         if dial_fid in self.id_dialogues:
             self.id_dialogues[dial_fid].dial = dialogue
         else:
-            children_head = ChildrenGrupHeader(0, DUMMY_FID, 7, self.stamp)
-            dial_block = MobDial(children_head, self.loadFactory, dialogue)
+            if children_head is None: # no infos! ins should be None
+                children_head = ChildrenGrupHeader(0, DUMMY_FID, 7, self.stamp)
+            dial_block = MobDial(children_head, self.loadFactory, dialogue, ins)
             dial_block.setChanged()
             self.id_dialogues[dial_fid] = dial_block
 
