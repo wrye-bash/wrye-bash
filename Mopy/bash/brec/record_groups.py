@@ -125,7 +125,7 @@ class MobBase(object):
             raise AbstractError
         if self.numRecords == -1:
             self.getNumRecords()
-        if self.numRecords > 0: ##: trivially True for MobBase with includeGroups=True
+        if self.numRecords > 0:
             self.header.size = self.size
             out.write(self.header.pack_head())
             out.write(self.data)
@@ -418,7 +418,7 @@ class MobDial(MobObjects):
 
     def getNumRecords(self,includeGroups=True):
         # DIAL record + GRUP + INFOs
-        self.numRecords = 1 + (includeGroups + len(self.records)
+        self.numRecords = 1 + ((includeGroups + len(self.records))
                                if self.records else 0)
         return self.numRecords
 
@@ -793,109 +793,74 @@ class MobCell(MobBase):
     def getSize(self):
         """Returns size (including size of any group headers)."""
         return RecordHeader.rec_header_size + self.cell.getSize() + \
-               self.getChildrenSize()
+               self._get_children_arrays()[0]
 
-    def getChildrenSize(self):
+    def _get_children_arrays(self):
         """Returns size of all children, including the group header.  This
-        does not include the cell itself."""
-        size = self.getPersistentSize() + self.getTempSize() + \
-               self.getDistantSize()
-        return size + RecordHeader.rec_header_size * bool(size)
-
-    def getPersistentSize(self):
-        """Returns size of all persistent children, including the persistent
-        children group."""
+        does not include the cell itself. Returns the arrays themselves ready
+        for dump complete with their size and group_type."""
         hsize = RecordHeader.rec_header_size
-        size = sum(hsize + x.getSize() for x in self.persistent_refs)
-        return size + hsize * bool(size)
+        children_arrays = []
+        children = self._cell_children()
+        for refs, group_type in zip(children, (8, 9, 10)):
+            if refs:
+                refs_size = sum(hsize + x.getSize() for x in refs) + hsize
+                children_arrays.append([refs_size, group_type, refs])
+        children_size = sum(t[0] for t in children_arrays)
+        if children_size: # include the GRUP (type 6) header size
+            children_size += hsize
+        return children_size, children_arrays
 
-    def getTempSize(self):
-        """Returns size of all temporary children, including the temporary
-        children group."""
-        hsize = RecordHeader.rec_header_size
-        size = sum(hsize + x.getSize() for x in self.temp_refs)
-        if self.pgrd: size += hsize + self.pgrd.getSize()
-        if self.land: size += hsize + self.land.getSize()
-        return size + hsize * bool(size)
-
-    def getDistantSize(self):
-        """Returns size of all distant children, including the distant
-        children group."""
-        hsize = RecordHeader.rec_header_size
-        size = sum(hsize + x.getSize() for x in self.distant_refs)
-        return size + hsize * bool(size)
+    def _cell_children(self):
+        return [self.persistent_refs,
+                # The order is LAND -> PGRD -> temporary references
+                [*(x for x in (self.land, self.pgrd) if x), *self.temp_refs],
+                self.distant_refs]
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
-        count = 1 # CELL record, always present
-        if self.persistent_refs:
-            count += len(self.persistent_refs) + includeGroups
-        if self.temp_refs or self.pgrd or self.land:
-            count += len(self.temp_refs) + includeGroups
-            count += bool(self.pgrd) + bool(self.land)
-        if self.distant_refs:
-            count += len(self.distant_refs) + includeGroups
-        if count != 1:
+        count = sum((len(children) + includeGroups) for children in
+                     self._cell_children() if children)
+        if count:
             # CELL GRUP only exists if the CELL has at least one child
             count += includeGroups
-        return count
+        return count + 1 # CELL record, always present
 
-    def getBsb(self):
+    def getBsb(self): ##: Move to MreCell
         """Returns tesfile block and sub-block indices for cells in this group.
         For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
         bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
         cell = self.cell
         #--Interior cell
         if cell.flags.isInterior:
-            baseFid = cell.fid.short_fid & 0x00FFFFFF
+            baseFid = cell.fid.object_dex
             return baseFid % 10, baseFid % 100 // 10
         #--Exterior cell
         else:
-            x, y = cell.posX, cell.posY
-            if x is None: x = 0
-            if y is None: y = 0
+            x, y = cell.posX or 0, cell.posY or 0 # posXY can be None
             return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
 
     def dump(self,out):
         """Dumps group header and then records."""
         self.cell.getSize()
         self.cell.dump(out)
-        childrenSize = self.getChildrenSize()
-        if not childrenSize: return
+        children_size, refs_size = self._get_children_arrays()
+        if not children_size: return
         self._sort_group()
-        self._write_group_header(out, childrenSize, 6)
+        self._write_children_group(out, children_size, 6)
         # The order is persistent -> temporary -> distant
-        if self.persistent_refs:
-            self._write_group_header(out, self.getPersistentSize(), 8)
-            for record in self.persistent_refs:
-                record.dump(out)
-        if self.temp_refs or self.pgrd or self.land:
-            self._write_group_header(out, self.getTempSize(), 9)
-            # The order is LAND -> PGRD -> temporary references
-            if self.land:
-                self.land.dump(out)
-            if self.pgrd:
-                self.pgrd.dump(out)
-            for record in self.temp_refs:
-                record.dump(out)
-        if self.distant_refs:
-            self._write_group_header(out, self.getDistantSize(), 10)
-            for record in self.distant_refs:
-                record.dump(out)
+        for gsize, gtype, refs in refs_size:
+            self._write_children_group(out, gsize, gtype, *refs)
 
-    def _write_group_header(self, out, group_size, group_type):
+    def _write_children_group(self, out, group_size, group_type, *elements):
         out.write(ChildrenGrupHeader(group_size, self.cell.fid, group_type,
             self.stamp).pack_head()) # FIXME was TESIV only - self.extra??
+        for element in elements:
+            element.dump(out)
 
     #--Record filtering ----------------------------------
     def get_all_signatures(self):
-        cell_sigs = {self.cell._rec_sig}
-        cell_sigs.update(r._rec_sig for r in self.temp_refs)
-        cell_sigs.update(r._rec_sig for r in self.persistent_refs)
-        cell_sigs.update(r._rec_sig for r in self.distant_refs)
-        if self.land: cell_sigs.add(self.land._rec_sig)
-        if self.pgrd: cell_sigs.add(self.pgrd._rec_sig)
-        return cell_sigs
+        return {group_el._rec_sig for group_el in self.iter_records()}
 
     def _sort_group(self):
         """Sort temporary/persistent/distant references by FormID."""
@@ -937,9 +902,9 @@ class MobCell(MobBase):
                     mergeDiscard(src_fid)
 
     def iter_records(self):
-        single_recs = [x for x in (self.cell, self.pgrd, self.land) if x]
-        return chain(single_recs, self.persistent_refs, self.distant_refs,
-            self.temp_refs)
+        if self.cell:
+            yield self.cell
+        yield from chain(*self._cell_children())
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
@@ -1016,12 +981,12 @@ class MobCell(MobBase):
             setattr(block, list_attr, filtered_list)
 
     def __repr__(self):
-        return (u'<CELL (%r): %u persistent record(s), %u distant record(s), '
-                u'%u temporary record(s), %s, %s>') % (
-            self.cell, len(self.persistent_refs), len(self.distant_refs),
-            len(self.temp_refs),
-            u'LAND: %r' % self.land if self.land else u'no LAND',
-            u'PGRD: %r' % self.pgrd if self.pgrd else u'no PGRD')
+        pgrd_ = f'PGRD: {self.pgrd!r}' if self.pgrd else 'no PGRD'
+        land_ = f'LAND: {self.land!r}' if self.land else 'no LAND'
+        return f'<CELL ({self.cell!r}): {len(self.persistent_refs)} ' \
+               f'persistent record(s), {len(self.distant_refs)} distant ' \
+               f'record(s), {len(self.temp_refs)} temporary record(s), ' \
+               f'{land_}, {pgrd_}>'
 
 #------------------------------------------------------------------------------
 class MobCells(MobBase):
