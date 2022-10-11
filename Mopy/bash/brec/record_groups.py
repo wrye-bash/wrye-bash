@@ -1003,17 +1003,37 @@ class MobCells(MobBase):
         self.id_cellBlock: dict[utils_constants.FormId, MobCell] = {}
         super(MobCells, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def setCell(self,cell):
+    def setCell(self, cell, ins=None, children_head=None, loading=False,
+                skip_delta=False, unpack_block=None):
         """Adds a copy of the specified CELL to this CELLs block."""
-        cell_copy = cell.getTypeCopy()
-        cfid = cell_copy.fid
+        if not loading:
+            cell = cell.getTypeCopy()
+        cfid = cell.fid
         if cfid in self.id_cellBlock:
-            self.id_cellBlock[cfid].cell = cell_copy
+            if loading: raise ModError(self.inName,
+                                       f'Duplicate {cfid} record in {self}')
+            self.id_cellBlock[cfid].cell = cell
         else:
-            children_head = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
-            cellBlock = MobCell(children_head, self.loadFactory, cell_copy)
+            if children_head is None: # no infos! ins should be None
+                children_head = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+            cellBlock = MobCell(children_head, self.loadFactory, cell,
+                                ins=unpack_block and ins, do_unpack=unpack_block)
             cellBlock.setChanged()
+            if not unpack_block and skip_delta:
+                children_head.skip_blob(ins)
             self.id_cellBlock[cfid] = cellBlock
+
+    def _load_group6(self, header, cell, ins, unpackCellBlocks):
+        groupFid: utils_constants.FormId = header.label
+        if cell:
+            if groupFid != cell.fid:
+                raise ModError(self.inName, f'Cell subgroup ({groupFid}) '
+                                            f'does not match CELL {cell!r}.')
+            self.setCell(cell, ins=ins, children_head=header, loading=True,
+                         skip_delta=True, unpack_block=unpackCellBlocks)
+            return None
+        raise ModError(self.inName,
+                       f'Extra subgroup {header.groupType:d} in {self}')
 
     def remove_cell(self, cell):
         """Removes the specified cell from this block. The exact cell object
@@ -1166,57 +1186,36 @@ class MobICells(MobCells):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recCellClass = self.loadFactory.getRecClass(expType)
+        recClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
-        if not recCellClass: insSeek(endPos) # skip the whole group
+        if not recClass: insSeek(endPos) # skip the whole group
         cell = None
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'CELL')
         insAtEnd = ins.atEnd
-        selfLoadFactory = self.loadFactory
         insTell = ins.tell
-        def build_cell_block(unpack_block=False, skip_delta=False):
-            """Helper method that parses and stores a cell block for the
-            current cell."""
-            if unpack_block:
-                cellBlock = MobCell(header, selfLoadFactory, cell, ins, True)
-            else:
-                cellBlock = MobCell(header, selfLoadFactory, cell)
-                if skip_delta:
-                    insSeek(delta, 1)
-            self.id_cellBlock[cell.fid] = cellBlock
+        selfLoadFactory = self.loadFactory
         while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
             header = unpack_header(ins)
             _rsig = header.recType
             if _rsig == expType:
                 if cell:
                     # If we already have a cell lying around, finish it off
-                    build_cell_block()
-                cell = recCellClass(header, ins, do_unpack=True)
-                if insTell() > endBlockPos or insTell() > endSubblockPos:
+                    self.setCell(cell, children_head=None, loading=True)
+                cell = recClass(header, ins, do_unpack=True)
+                if (pos := insTell()) > endBlockPos or pos > endSubblockPos:
                     raise ModError(self.inName,
                                    f'Interior cell <{cell.fid:X}> {cell.eid} '
                                    f'outside of block or subblock.')
             elif _rsig == b'GRUP':
                 groupType = header.groupType
-                delta = header.blob_size()
                 if groupType == 2: # Block number
-                    endBlockPos = insTell() + delta
+                    endBlockPos = insTell() + header.blob_size()
                 elif groupType == 3: # Sub-block number
-                    endSubblockPos = insTell() + delta
+                    endSubblockPos = insTell() + header.blob_size()
                 elif groupType == 6: # Cell Children
-                    groupFid: utils_constants.FormId = header.label
-                    if cell:
-                        if groupFid != cell.fid:
-                            raise ModError(self.inName,
-                                f'Cell subgroup ({groupFid}) does not match '
-                                f'CELL <{cell.fid}> {cell.eid}.')
-                        build_cell_block(unpack_block=unpackCellBlocks,
-                                         skip_delta=True)
-                        cell = None
-                    else:
-                        raise ModError(self.inName,
-                            f'Extra subgroup {groupType:d} in CELL group.')
+                    self._load_group6(header, cell, ins, unpackCellBlocks)
+                    cell = None
                 else:
                     raise ModError(self.inName,
                         f'Unexpected subgroup {groupType:d} in CELL group.')
@@ -1226,7 +1225,7 @@ class MobICells(MobCells):
                                f'{sig_to_str(expType)} group.')
         if cell:
             # We have a CELL without children left over, finish it
-            build_cell_block()
+            self.setCell(cell, children_head=None, loading=True)
         self.setChanged()
 
     def dump(self,out):
@@ -1268,22 +1267,6 @@ class MobWorld(MobCells):
         from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
         cells = {}
-        def build_cell_block(unpack_block=False, skip_delta=False):
-            """Helper method that parses and stores a cell block for the
-            current cell."""
-            if unpack_block:
-                cellBlock = MobCell(header, selfLoadFactory, cell, ins, True)
-            else:
-                cellBlock = MobCell(header, selfLoadFactory, cell)
-                if skip_delta:
-                    header.skip_blob(ins)
-            if cell.flags1.persistent:
-                if self.worldCellBlock:
-                    raise ModError(self.inName,
-                                   f'Misplaced exterior cell {cell!r}.')
-                self.worldCellBlock = cellBlock
-            else:
-                self.id_cellBlock[cell.fid] = cellBlock
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
@@ -1300,38 +1283,25 @@ class MobWorld(MobCells):
             elif _rsig == b'CELL':
                 if cell:
                     # If we already have a cell lying around, finish it off
-                    build_cell_block()
+                    self.setCell(cell, children_head=None, loading=True)
                 cell = recClass(header, ins, do_unpack=True)
                 if isFallout: cells[cell.fid] = cell
-                if block and (
-                        insTell() > endBlockPos or insTell() > endSubblockPos):
+                if block and ((pos := insTell()) > endBlockPos or pos >
+                              endSubblockPos):
                         raise ModError(self.inName,
                             f'Exterior cell {cell!r} after block or subblock.')
             elif _rsig == b'GRUP':
-                groupFid,groupType = header.label,header.groupType
+                groupType = header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    block: (int, int) = groupFid # Grid (Y, X) - used only as bool(block)
+                    # Grid (Y, X) - used only as bool(block)
+                    block: (int, int) = header.label
                     endBlockPos = insTell() + header.blob_size()
                 elif groupType == 5: # Exterior Cell Sub-Block
-                    # we don't actually care what the sub-block is, since
-                    # we never use that information here. So below was unused:
-                    # subblock = structUnpack('2h',structPack('I',groupFid))
-                    # subblock = (subblock[1],subblock[0]) # unused var
                     endSubblockPos = insTell() + header.blob_size()
                 elif groupType == 6: # Cell Children
-                    if isFallout: cell = cells.get(groupFid,None)
-                    if cell:
-                        if groupFid != cell.fid:
-                            raise ModError(self.inName,
-                                           f'Cell subgroup ({groupFid}) '
-                                           f'does not match CELL {cell!r}.')
-                        build_cell_block(unpack_block=unpackCellBlocks,
-                                         skip_delta=True)
-                        cell = None
-                    else:
-                        raise ModError(self.inName,
-                                       'Extra cell children subgroup in '
-                                       'world children group.')
+                    if isFallout: cell = cells.get(header.label,None)
+                    self._load_group6(header, cell, ins, unpackCellBlocks)
+                    cell = None
                 else:
                     raise ModError(self.inName,
                                    f'Unexpected subgroup {groupType:d} in '
@@ -1342,8 +1312,18 @@ class MobWorld(MobCells):
                                f'world children group.')
         if cell:
             # We have a CELL without children left over, finish it
-            build_cell_block()
+            self.setCell(cell, children_head=None, loading=True)
         self.setChanged()
+
+    def setCell(self, cell, ins=None, children_head=None, loading=False,
+                skip_delta=False, unpack_block=None):
+        super().setCell(cell, ins, children_head, loading,
+                        skip_delta, unpack_block)
+        if loading and cell.flags1.persistent:
+            if self.worldCellBlock:
+                raise ModError(self.inName,
+                               f'Misplaced exterior cell {cell!r}.')
+            self.worldCellBlock = self.id_cellBlock.pop(cell.fid)
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
