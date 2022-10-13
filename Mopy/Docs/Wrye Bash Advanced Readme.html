@@ -1000,14 +1000,14 @@ tab. The directories skipped are:
         </tr>
         <tr>
             <td colspan="3" id="bainAnneal">Anneal</td>
-            <td>Installs missing files and corrects install order errors. Note: If an already installed file is changed outside of Wrye Bash control, Wrye Bash will not anneal that file. Anneal is relative to other installed packages. This is because we do not want to override user changes like cleaning plugins and the like. If you do want to override the change use
-                <a href="#bainInstallConfigured">Install Configured</a> instead. Note2: The change will be detected immediately in case of ini tweaks, mods or bsas, but on next Bash load for other files (like nifs etc). To detect the change without restarting
+            <td>Installs missing files and corrects install order errors. Note: If an already installed file is changed outside of Wrye Bash's control, Wrye Bash will not anneal that file. Anneal is relative to other installed packages. This is because we do not want to override user changes like cleaning plugins. If you do want to override those changes, use
+                <a href="#bainInstallConfigured">Install Configured</a> instead. Note 2: The change will be detected immediately in case of INI tweaks, mods or BSAs, but on next Bash load for other files (like nifs). To detect the change without restarting,
                 <a href="#bainQuickRefresh">(Quick) Refresh</a> the package.</td>
         </tr>
         <tr>
             <td colspan="3" id="bainQuickRefresh">Quick Refresh</td>
-            <td>
-                <p>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects if project skipping is on, but does not scan the Data folder but once on boot.</p> So this command is useful if:
+            <td>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects if project skipping is on, but does not scan the Data folder but once on boot.
+                <p>So this command is useful if:</p>
                 <ol type="A">
                     <li>a
                         <em>project</em> has been changed and it has
@@ -1015,8 +1015,8 @@ tab. The directories skipped are:
                         <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled</li>
                     <li>files that correspond to a package/project have changed in the game's Data directory, but the package is still marked in sync (or out of sync) erroneously</li>
                 </ol>
-                <p>Case B) is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed. This was not the case in 306, where you needed a full
-                    <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.</p>
+                Case B. is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed. This was not the case in 306, where you needed a full
+                    <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
             </td>
         </tr>
         <tr>
@@ -1086,7 +1086,7 @@ tab. The directories skipped are:
             <td colspan="2" rowspan="8" id="bainPackageMenu">Package..</td>
             <td id="bainRefresh">Refresh</td>
             <td>As
-                <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
+                <a href="#bainRefresh">Quick Refresh</a> above. Refresh will however recalculate the
                 <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items
                 <em>from scratch</em>, which is not what you usually need (for projects especially it will take much longer than for packages, cause to calculate the CRC of a project
                 <em>all the individual CRCs</em> of
@@ -1155,8 +1155,8 @@ tab. The directories skipped are:
         </tr>
         <tr>
             <td colspan="3" id="bainSkipVoices">Skip Voices</td>
-            <td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys'
-                <a href="https://www.nexusmods.com/oblivion/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.</td>
+            <td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use a silent voice extension (e.g.,
+                <a href="https://www.nexusmods.com/oblivion/mods/16622">Universal Silent Voice</a> for Oblivion) to prevent dialog subtitles from fading too rapidly.</td>
         </tr>
         <tr>
             <td colspan="3" id="bainDontRefresh">Don't Refresh</td>

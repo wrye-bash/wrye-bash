@@ -124,18 +124,19 @@ class OblivionGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            '_tejon',
+            '_tejon', # 3P: tejon's mods
             'config', # 3P: mod config files (INIs)
             'distantlod',
             'enhanced economy', # 3P: Enhanced Economy
             'facegen',
             'fonts',
+            'knights - revelation music', # 3P: KotN Revelation
             'menus',
             'obse', # 3P: OBSE
             'pluggy', # 3P: Pluggy
             'scripts',
             'shaders',
-            'streamline',
+            'streamline', # 3P: Streamline
             'trees',
         }
         keep_data_dirs = {
