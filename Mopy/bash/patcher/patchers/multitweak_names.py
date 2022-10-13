@@ -705,7 +705,7 @@ class NamesTweak_Weapons_Fo3(_ANamesTweak_Weapons):
     _example_code = u'S'
     _example_stat = 10
     _valid_weapons = set(range(0, 7))
-    _w_type_attr = u'equipment_type'
+    _w_type_attr = 'equipment_type'
     _weapon_tags = 'BESMUTL'
 
 class NamesTweak_Weapons_Tes5(_ANamesTweak_Weapons):

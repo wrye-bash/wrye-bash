@@ -92,6 +92,29 @@ class NehrimGameInfo(OblivionGameInfo):
 
     nirnroots = _(u'Vynroots')
 
+    #--------------------------------------------------------------------------
+    # NPC Checker
+    #--------------------------------------------------------------------------
+    _standard_eyes = [(None, x) for x in # None <=> game master
+                      (0x27306, 0x27308, 0x27309)]
+    default_eyes = {
+        (None, 0x224FC): _standard_eyes, # Alemanne
+        (None, 0x18D9E5): [(None, x) for x in  (
+            0x47EF, 0x18D9D9, 0x18D9DA, 0x18D9DB, 0x18D9DC, 0x18D9DD, 0x18D9DE,
+            0x18D9DF, 0x18D9E0, 0x18D9E1, 0x18D9E2)], # Half-Aeterna
+        (None, 0x224FD): _standard_eyes, # Normanne
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'VanillaNPCSkeletonPatcher',
+        'NoBloodCreaturesPatcher',
+        'QuietFeetPatcher',
+        'IrresponsibleCreaturesPatcher',
+    }
+
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         # bypass setting the patchers in super class

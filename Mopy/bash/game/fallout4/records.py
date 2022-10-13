@@ -1187,8 +1187,8 @@ class MreExpl(MelRecord):
             if len(unpacked_val) in (13, 14, 15):
                 # Form Version 97 added the inner_radius float right before the
                 # outer_radius float
-                unpacked_val = (unpacked_val[:8] + self.defaults[8:9] +
-                                unpacked_val[8:])
+                unpacked_val = (*unpacked_val[:8], float(self.defaults[8]),
+                                *unpacked_val[8:])
             return super()._pre_process_unpacked(unpacked_val)
 
     melSet = MelSet(

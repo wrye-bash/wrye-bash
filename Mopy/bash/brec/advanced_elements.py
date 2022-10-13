@@ -484,22 +484,19 @@ class MelTruncatedStruct(MelStruct):
         # truncated version
         unpacked_val = ins.unpack(target_unpacker, size_, *debug_strs)
         unpacked_val = self._pre_process_unpacked(unpacked_val)
-        # Apply any actions and then set the attributes according to the values
-        # we just unpacked
-        for attr, value, action in zip(self.attrs, unpacked_val, self.actions):
-            try:
-                if action is not None: value = action(value)
-            except TypeError: # trying to FID a FormId
-                if action is not FID or not isinstance(value, FormId):
-                    raise
-            setattr(record, attr, value)
+        # Set the attributes according to the values we just unpacked
+        for att, val in zip(self.attrs, unpacked_val):
+            setattr(record, att, val)
 
     def _pre_process_unpacked(self, unpacked_val):
         """You may override this if you need to change the unpacked value in
-        any way before it is used to assign attributes. By default, this
-        performs the actual upgrading by appending default values to
-        unpacked_val."""
-        return unpacked_val + self.defaults[len(unpacked_val):]
+        any way before it is used to assign attributes, however make sure to
+        call the parent method which applies actions to the unpacked values.
+        Don't apply the actions in overrides."""
+        return (*(val if act is None else act(val) for val, act in
+                  zip(unpacked_val, self.actions)),
+        # append default values (actions are already applied to self.defaults!)
+                *self.defaults[len(unpacked_val):])
 
     def pack_subrecord_data(self, record):
         if self._is_optional:

@@ -34,7 +34,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
-    MelRaceVoices, MelBounds, null1, null2, MelScriptVars, MelSorted, \
+    MelRaceVoices, MelBounds, null2, MelScriptVars, MelSorted, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, \
@@ -218,7 +218,7 @@ class MelEquipmentTypeFo3(MelSInt32):
         # 11: 'Stimpak',
         # 12: 'Food',
         # 13: 'Alcohol'
-        super().__init__(b'ETYP', 'equipment_type', -1)
+        super().__init__(b'ETYP', 'equipment_type')
 
 #------------------------------------------------------------------------------
 class MelItems(AMelItems):
@@ -973,8 +973,7 @@ class MreCsty(MelRecord):
             'unused3', 'p_atk_brecoil', 'p_atk_bunc', 'p_atk_normal',
             'p_atk_for', 'p_atk_back', 'p_atk_l', 'p_atk_r', 'unused4',
             'hold_timer_min', 'hold_timer_max', (_csty_flags, 'csty_flags'),
-            'unused5', 'acro_dodge', ('rush_chance', 25), 'unused6',
-            ('rush_mult', 1.0)),
+            'unused5', 'acro_dodge', 'rush_chance', 'unused6', 'rush_mult'),
         MelOptStruct(b'CSAD', ['21f'], 'dodge_fmult', 'dodge_fbase',
             'enc_sbase', 'enc_smult', 'dodge_atk_mult', 'dodge_natk_mult',
             'dodge_batk_mult', 'dodge_bnatk_mult', 'dodge_fatk_mult',
@@ -1771,7 +1770,7 @@ class MreNavm(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32(b'NVER', u'version', 11),
+        MelUInt32(b'NVER', 'version'),
         MelStruct(b'DATA', [u'I', u'5I'],(FID,'cell'),'vertexCount','triangleCount','enternalConnectionsCount','nvcaCount','doorsCount'),
         MelArray('vertices',
             MelStruct(b'NVVX', [u'3f'], 'vertexX', 'vertexY', 'vertexZ'),
@@ -2352,10 +2351,9 @@ class MreRace(MelRecord):
         MelFull(),
         MelDescription(),
         MelRelations(),
-        MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
-                    (u'skills', [0] * 14), 'unused1', 'maleHeight',
-                    'femaleHeight', 'maleWeight', 'femaleWeight',
-                    (_flags, u'flags')),
+        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
+                    'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
+                    'femaleWeight', (_flags, 'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
         MelBaseR(b'NAM2', 'unknown_marker'),
@@ -2757,7 +2755,7 @@ class MreStat(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        fnv_only(MelSInt8(b'BRUS', 'passthroughSound', -1)),
+        fnv_only(MelSInt8(b'BRUS', 'passthroughSound')),
         fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3112,7 +3110,8 @@ class MreWrld(MelRecord):
         MelFull(),
         MelFid(b'XEZN','encounterZone'),
         MelFid(b'WNAM','parent'),
-        MelOptStruct(b'PNAM', [u'B', u'B'],(pnamFlags, u'parentFlags'),('unknownff',0xff)),
+        MelOptStruct(b'PNAM', ['B', 'B'], (pnamFlags, 'parentFlags'),
+                     'unknownff'),
         MelFid(b'CNAM','climate'),
         MelFid(b'NAM2','water'),
         MelFid(b'NAM3', 'lod_water_type'),
@@ -3215,7 +3214,7 @@ class MreWthr(MelRecord):
             MelWthrColors(b'NAM0'),
         ), fnv_version=MelWthrColorsFnv(b'NAM0', 'daytimeColors')),
         MelStruct(b'FNAM', [u'6f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase(b'INAM', 'unused1', null1 * 304),
+        MelBase(b'INAM', 'unused1'),
         MelStruct(b'DATA', [u'15B'],
             'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
             'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',

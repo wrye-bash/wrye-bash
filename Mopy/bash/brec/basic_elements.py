@@ -156,13 +156,14 @@ class MelBase(Subrecord):
     organisms that need a record to go live. They do not hold any data
     themselves, they instead use the load_mel API to set host record
     attributes (from an input stream) and dumpData to dump those attributes
-    (to an output stream). All the complexity of subrecords unpacking should
-    be encapsulated here. The base class is typically used for unknown
-    elements."""
-    __slots__ = (u'attr', u'default')
+    (to an output stream). This is still WIP, as in separating de/serialization
+    and record update business logic."""
+    __slots__ = ('attr', 'set_default')
 
-    def __init__(self, mel_sig: bytes, attr: str, default=None):
-        self.mel_sig, self.attr, self.default = mel_sig, attr, default
+    def __init__(self, mel_sig: bytes, attr: str, *, set_default=None):
+        """Passing a value for set_default will result in the MelBase
+        instance dumping record.attr even if not loaded. Use sparingly!"""
+        self.mel_sig, self.attr, self.set_default = mel_sig, attr, set_default
 
     def getSlotsUsed(self):
         return self.attr,
@@ -185,7 +186,7 @@ class MelBase(Subrecord):
 
     def setDefault(self,record):
         """Sets default value for record instance."""
-        setattr(record, self.attr, self.default)
+        setattr(record, self.attr, self.set_default)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         """Read the actual data (not the headers) from ins into record
@@ -251,8 +252,8 @@ class MelNum(MelBase):
     _unpacker, packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def __init__(self, mel_sig, attr='_unused', default=None):
-        super().__init__(mel_sig, attr, default)
+    def __init__(self, mel_sig, attr='_unused', *, set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
 
     def load_bytes(self, ins, size_, *debug_strs):
         return ins.unpack(self._unpacker, size_, *debug_strs)[0]
@@ -533,9 +534,9 @@ class MelString(MelBase):
     """Represents a mod record string element."""
     encoding: str | None = None # None -> default to bolt.pluginEncoding
 
-    def __init__(self, mel_sig, attr, default=None, maxSize: int | None = None,
-            minSize: int | None = None):
-        super(MelString, self).__init__(mel_sig, attr, default)
+    def __init__(self, mel_sig, attr, maxSize: int | None = None, *,
+                 minSize: int | None = None, set_default=None):
+        super(MelString, self).__init__(mel_sig, attr, set_default=set_default)
         self.maxSize = maxSize
         self.minSize = minSize
 
@@ -561,8 +562,11 @@ class MelString(MelBase):
 class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
-    def __init__(self, mel_sig, attr, default=None, maxSize=0, encoding=None):
-        super(MelUnicode, self).__init__(mel_sig, attr, default, maxSize)
+
+    def __init__(self, mel_sig, attr, maxSize=0, *, encoding=None,
+                 set_default=None):
+        super(MelUnicode, self).__init__(mel_sig, attr, maxSize,
+                                         set_default=set_default)
         self.encoding = encoding # None == automatic detection
 
     def load_bytes(self, ins, size_, *debug_strs):
@@ -653,9 +657,7 @@ class MelStruct(MelBase):
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        for att, value, action in zip(self.attrs, self.defaults, self.actions):
-            if action is not None and action is not FID:
-                value = action(value)
+        for att, value in zip(self.attrs, self.defaults):
             setattr(record, att, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -700,11 +702,10 @@ class MelStruct(MelBase):
                     self._action_dexes.add(index)
             else:
                 el_0 = element[0]
-                attrIndex = el_0 == 0
+                attrIndex = el_0 == 0 ##: todo is this ever the case?
                 if callable(el_0):
                     if el_0 is FID:
                         formAttrs.add(element[1])
-                        deflts[index] = __zero_fid
                     actions[index] = el_0
                     attrIndex = 1
                     self._action_dexes.add(index)
@@ -718,6 +719,9 @@ class MelStruct(MelBase):
                     deflts[index] = element[-1] # else leave to 0
                 elif type(fmt_str) is int and fmt_str: # 0 for weird subclasses
                     deflts[index] = fmt_str * null1
+        for dex in self._action_dexes: # apply the actions to defaults once
+            act = actions[dex]
+            deflts[dex] = __zero_fid if act is FID else act(deflts[dex])
         return tuple(attrs), tuple(deflts), tuple(actions), formAttrs
 
     @staticmethod
@@ -738,10 +742,10 @@ class MelStruct(MelBase):
 #------------------------------------------------------------------------------
 class MelFixedString(MelStruct):
     """Subrecord that stores a string of a constant length. Just a wrapper
-    around a struct with a single FixedString element."""
-    def __init__(self, signature, attr, str_length, default=b''):
-        super(MelFixedString, self).__init__(signature, [u'%us' % str_length],
-            (FixedString(str_length, default), attr))
+    around a struct with a single FixedString element.""" ##: MelAction really
+    def __init__(self, mel_sig, attr, str_length, *, set_default=None):
+        el = (FixedString(str_length, set_default or ''), attr)
+        super().__init__(mel_sig, [f'{str_length:d}s'], el)
 
 # Simple primitive type wrappers ----------------------------------------------
 class MelFloat(MelNum):
@@ -790,10 +794,10 @@ class _MelFlags(MelNum):
     def __init__(self, mel_sig, attr, flags_type):
         super(_MelFlags, self).__init__(mel_sig, attr)
         self._flag_type = flags_type
-        self._flag_default = self._flag_type(self.default or 0)
+        self._flag_default = self._flag_type(self.set_default or 0)
 
     def setDefault(self, record):
-        setattr(record, self.attr, self._flag_type(self.default or 0))
+        setattr(record, self.attr, self._flag_type(self.set_default or 0))
 
     def load_bytes(self, ins, size_, *debug_strs):
         return self._flag_type(

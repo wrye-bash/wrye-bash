@@ -1001,19 +1001,10 @@ class MelRaceData(MelTruncatedStruct):
                 expanded_fmts.append(int(f[:-1] or 1))
         return expanded_fmts
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        try:
-            target_unpacker = self._all_unpackers[size_]
-        except KeyError:
-            raise ModSizeError(ins.inName, debug_strs,
-                               tuple(self._all_unpackers), size_)
-        unpacked = ins.unpack(target_unpacker, size_, *debug_strs)
-        unpacked = self._pre_process_unpacked(unpacked)
-        record.skills = unpacked[:14]
-        for attr, value, action in zip(self.attrs[1:], unpacked[14:],
-                                        self.actions[1:]):
-            setattr(record, attr,
-                    action(value) if action is not None else value)
+    def _pre_process_unpacked(self, unpacked_val):
+        # first 14 bytes are the list of skills
+        return super()._pre_process_unpacked(
+            (list(unpacked_val[:14]), *unpacked_val[14:]))
 
     def pack_subrecord_data(self, record):
         values = list(record.skills)

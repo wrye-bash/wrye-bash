@@ -156,7 +156,7 @@ class _MelCtda(MelUnion):
     def _build_params(func_data, prefix_elements, suffix_elements):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
-        func_elements = [
+        func_elements = [ # param1, param2, param3 are set here
             # 2 == FormID, see PatchGame.condition_function_data
             (FID, f'param{i}') if func_param == 2 else f'param{i}'
             for i, func_param in enumerate(func_data[1:], start=1)]
@@ -365,13 +365,12 @@ class MelObme(MelOptStruct):
         # Always begins with record version and OBME version - None here is on
         # purpose, to differentiate from 0 which is almost always the record
         # version in plugins using OBME
-        struct_contents = [('obme_record_version', None),
-                           'obme_version_beta', 'obme_version_minor',
-                           'obme_version_major']
+        struct_contents = [('obme_record_version', None), 'obme_version_beta',
+                           'obme_version_minor', 'obme_version_major']
         # Then comes any extra info placed in the middle
         struct_contents += extra_contents
         # Always ends with a statically sized reserved byte array
-        struct_contents += [('obme_unused', null1 * reserved_byte_count)]
+        struct_contents += ['obme_unused']
         str_fmts = ['4B', *extra_format, f'{reserved_byte_count}s']
         super().__init__(struct_sig, str_fmts, *struct_contents)
 

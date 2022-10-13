@@ -687,12 +687,11 @@ class MreCell(MelRecord):
         # but 0 is a valid value for both coordinates (duh)
         MelSkipInterior(MelOptStruct(b'XCLC', ['2i'],
                                      ('posX', None), ('posY', None))),
-        MelOptStruct(b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'2f'], u'ambientRed',
-            u'ambientGreen', u'ambientBlue', u'unused1',
-            u'directionalRed', u'directionalGreen', u'directionalBlue',
-            u'unused2', u'fogRed', u'fogGreen', u'fogBlue',
-            u'unused3', u'fogNear', u'fogFar', u'directionalXY',
-            u'directionalZ', (u'directionalFade', 1.0), u'fogClip'),
+        MelOptStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i',
+            '2f'], 'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
+            'directionalRed', 'directionalGreen', 'directionalBlue', 'unused2',
+            'fogRed', 'fogGreen', 'fogBlue', 'unused3', 'fogNear', 'fogFar',
+            'directionalXY', 'directionalZ', 'directionalFade', 'fogClip'),
         MelRegions(),
         MelUInt8(b'XCMT', u'music'),
         MelFloat(b'XCLW', u'waterHeight'),
@@ -1765,10 +1764,9 @@ class MreRace(MelRecord):
         MelDescription(),
         MelSpellsTes4(),
         MelRelations(with_gcr=False),
-        MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
-                    (u'skills', [0] * 14), 'unused1', 'maleHeight',
-                    'femaleHeight', 'maleWeight', 'femaleWeight',
-                    (_flags, u'flags')),
+        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
+                    'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
+                    'femaleWeight', (_flags, u'flags')),
         MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', [u'2I'], (FID, u'defaultHairMale'),
                      (FID, u'defaultHairFemale')),
@@ -1856,12 +1854,13 @@ class MreRefr(MelRecord):
     _lockFlags = Flags.from_names((2, u'leveledLock'))
 
     class MelRefrXloc(MelTruncatedStruct):
-        """Skips unused2, in the middle of the struct."""
+        """Skips unused2, in the middle of the struct - don't apply an action
+        to it!"""
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) == 5:
-                unpacked_val = (unpacked_val[:3] + self.defaults[3:4] +
-                                unpacked_val[3:])
-            return unpacked_val
+                unpacked_val = (*unpacked_val[:3], self.defaults[3],
+                                *unpacked_val[3:])
+            return super()._pre_process_unpacked(unpacked_val)
 
     melSet = MelSet(
         MelEdid(),
@@ -2050,7 +2049,7 @@ class MreSlgm(MelRecord):
         MelScript(),
         MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
-        MelUInt8(b'SLCP', u'capacity', 1),
+        MelUInt8(b'SLCP', 'capacity'),
     )
     __slots__ = melSet.getSlotsUsed()
 
