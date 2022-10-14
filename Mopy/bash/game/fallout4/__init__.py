@@ -115,7 +115,7 @@ class Fallout4GameInfo(PatchGame):
         }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
-            _j(u'interface', u'translations'): [u'.txt']
+            _j('interface', 'translations'): {'.txt'},
         }
         skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 

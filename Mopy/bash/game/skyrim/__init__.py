@@ -138,27 +138,27 @@ class SkyrimGameInfo(PatchGame):
             'tools', # 3P: FNIS
         }
         keep_data_dirs = {'lsdata'}
-        no_skip = (
-            # These are all in the Interface folder. Apart from the skyui_
-            # files, they are all present in vanilla.
-            u'skyui_cfg.txt',
-            u'skyui_translate.txt',
-            u'credits.txt',
-            u'credits_french.txt',
-            u'fontconfig.txt',
-            u'controlmap.txt',
-            u'gamepad.txt',
-            u'mouse.txt',
-            u'keyboard_english.txt',
-            u'keyboard_french.txt',
-            u'keyboard_german.txt',
-            u'keyboard_spanish.txt',
-            u'keyboard_italian.txt',
-            'enginefixes_preload.txt', # 3P: SSE Engine Fixes
-        )
+        no_skip = {*(_j('interface', x) for x in (
+            'controlmap.txt',
+            'credits.txt',
+            'credits_french.txt',
+            'fontconfig.txt',
+            'gamepad.txt',
+            'keyboard_english.txt',
+            'keyboard_french.txt',
+            'keyboard_german.txt',
+            'keyboard_italian.txt',
+            'keyboard_spanish.txt',
+            'mouse.txt',
+            'skyui_cfg.txt', # 3P: SkyUI
+            'skyui_translate.txt', # 3P: SkyUI
+        )),
+            # 3P: SSE Engine Fixes
+            _j('skse', 'plugins', 'enginefixes_preload.txt'),
+        }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
-            _j(u'interface', u'translations'): [u'.txt']
+            _j('interface', 'translations'): {'.txt'},
         }
         no_skip_regexes = (
             # 3P: FNIS - meshes\actors\character\animations\<mod name>\

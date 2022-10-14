@@ -401,12 +401,12 @@ class GameInfo(object):
         lod_textures_dir = _j('textures', 'lod')
         # The suffix that LOD textures used as normals have in this game
         lod_textures_normals_suffix = '_n'
-        # Literal filenames BAIN shouldn't skip
-        no_skip = ()
+        # Literal file paths BAIN shouldn't skip
+        no_skip = set()
         # Directories where specific file extensions should not be skipped
         no_skip_dirs = {
             # BashTags files are obviously not docs, so don't skip them
-            u'bashtags': [u'.txt'],
+            'bashtags': {'.txt'},
         }
         # Compiled regex patterns matching files BAIN shouldn't skip
         no_skip_regexes = ()

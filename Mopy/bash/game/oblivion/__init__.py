@@ -154,7 +154,7 @@ class OblivionGameInfo(PatchGame):
         lod_textures_dir = _j('textures', 'landscapelod', 'generated')
         lod_textures_normals_suffix = '_fn'
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
-            'enhanced economy': ['.txt'],
+            'enhanced economy': {'.txt'},
         }
         skip_bain_refresh = {
             u'tes4edit backups',

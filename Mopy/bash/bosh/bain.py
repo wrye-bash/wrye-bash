@@ -512,17 +512,16 @@ class Installer(ListInfo):
             rsplit = file_relative.rsplit(os_sep, 1)
             parent_dir, fname = ('', rsplit[0]) if len(rsplit) == 1 else rsplit
             lower_parent = parent_dir.lower()
-            lower_fname = fname.lower()
             package_root = self.fn_key.fn_body if self._valid_exts_re else \
                 self.fn_key
-            lower_root = lower_fname[:-len(fileExt)]
+            lower_root = fname.lower()[:-len(fileExt)]
             if lower_root in package_root.lower() and not self.hasReadme:
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
                 self.hasReadme = full
             if (not self.overrideSkips
                     and bass.settings['bash.installers.skipDocs']
-                    and lower_fname not in bush.game.Bain.no_skip
+                    and fileLower not in bush.game.Bain.no_skip
                     and fileExt not in bush.game.Bain.no_skip_dirs.get(
                         lower_parent, [])
                     and not any(nsr.match(fileLower) for nsr in
