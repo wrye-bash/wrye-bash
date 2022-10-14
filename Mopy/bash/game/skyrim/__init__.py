@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim."""
-
+import re
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
@@ -160,6 +160,13 @@ class SkyrimGameInfo(PatchGame):
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
         }
+        no_skip_regexes = (
+            # 3P: FNIS - meshes\actors\character\animations\<mod name>\
+            # FNIS_<mod name>_List.txt
+            re.compile(bolt.os_sep_re.join([
+                'meshes', 'actors', 'character', 'animations',
+                f'[^{bolt.os_sep_re}]+', r'fnis_.*_list\.txt'])),
+        )
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):

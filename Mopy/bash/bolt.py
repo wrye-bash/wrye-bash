@@ -254,6 +254,9 @@ def remove_newlines(s): # type: (str) -> str
     specified string."""
     return to_unix_newlines(s).replace(u'\n', u'')
 
+# The current OS's path seperator, escaped for use in regexes
+os_sep_re = re.escape(os.path.sep)
+
 def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
     """Converts an object containing bytestrings to an equivalent object that
     contains decoded versions of those bytestrings instead. Decoding is done

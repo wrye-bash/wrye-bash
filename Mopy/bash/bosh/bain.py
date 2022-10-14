@@ -50,7 +50,6 @@ from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
 from ..ini_files import OBSEIniFile
 
 os_sep = os.path.sep
-_os_sep_re = re.escape(os_sep)
 
 class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
@@ -79,8 +78,9 @@ class Installer(ListInfo):
                '.mht', '.pdf', '.css', '.xls', '.xlsx', '.ods', '.odp',
                '.ppt', '.pptx', '.md', '.rst', '.url'}
     reReadMe = re.compile(
-        f'^.*?([^{_os_sep_re}]*)(read[ _]?me|lisez[ _]?moi)([^{_os_sep_re}]*)'
-        '(' + '|'.join((f'\\{e}' for e in docExts)) + ')$', re.I)
+        f'^.*?([^{bolt.os_sep_re}]*)(read[ _]?me|lisez[ _]?moi)'
+        f'([^{bolt.os_sep_re}]*)(' +
+        '|'.join((f'\\{e}' for e in docExts)) + ')$', re.I)
     # Filename roots (i.e. filenames without extensions) that are common and
     # should be renamed by BAIN to avoid conflicts if they are used as doc
     # files (e.g. 'credits' means 'Credits.txt' etc. would be caught). May be
@@ -520,11 +520,13 @@ class Installer(ListInfo):
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
                 self.hasReadme = full
-            if not self.overrideSkips and bass.settings[
-                'bash.installers.skipDocs'] and not (
-                    lower_fname in bush.game.Bain.no_skip) and not (
-                    fileExt in bush.game.Bain.no_skip_dirs.get(
-                lower_parent, [])):
+            if (not self.overrideSkips
+                    and bass.settings['bash.installers.skipDocs']
+                    and lower_fname not in bush.game.Bain.no_skip
+                    and fileExt not in bush.game.Bain.no_skip_dirs.get(
+                        lower_parent, [])
+                    and not any(nsr.match(fileLower) for nsr in
+                                bush.game.Bain.no_skip_regexes)):
                 return None # skip
             dest = file_relative
             if bass.settings['bash.installers.rename_docs']:
