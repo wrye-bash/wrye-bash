@@ -32,14 +32,13 @@ from itertools import chain
 
 # Local
 from .constants import settingDefaults
-from .files_links import File_Redate
 from .dialogs import ExportScriptsDialog
+from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
-    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink, \
-    UIList_Hide
+    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
@@ -95,6 +94,7 @@ class Mod_FullLoad(_LoadLink):
              'selected plugins.')
     _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
+    @balt.conversation
     def Execute(self):
         bolt.deprint(MreRecord.type_class)
         dbg_infos = list(self.iselected_infos())
@@ -106,11 +106,10 @@ class Mod_FullLoad(_LoadLink):
                         progress=SubProgress(progress, i, i + 1),
                         catch_errors=False)
                 except:
-                    failed_msg = (('%s failed to verify using current record '
-                                   'definitions. The original traceback is '
-                                   'available in the '
-                                   'BashBugDump.') % dbg_inf.fn_key + '\n\n' +
-                                  traceback.format_exc())
+                    failed_msg = f'{dbg_inf.fn_key} failed to verify using ' \
+                        f'current record definitions. The original ' \
+                        f'traceback is available in the BashBugDump.\n\n' \
+                        f'{traceback.format_exc()}'
                     self._showError(failed_msg, title='Verification Failed')
                     bolt.deprint(f'Exception loading {dbg_inf.fn_key}:',
                                  traceback=True)

@@ -161,7 +161,7 @@ class GrupHeader(RecordHeader):
         block of group records, ie call this immediately after unpacking self.
         """
         # label is an int for MobDials groupType == 7
-        ins.seek(self.blob_size(), 1, u'GRUP', self.label)
+        ins.seek(self.blob_size(), 1, 'GRUP', str(self.label))
 
     def blob_size(self):
         """The size of the grup blob this header is heading."""

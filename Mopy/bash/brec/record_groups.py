@@ -60,20 +60,18 @@ class MobBase(object):
         self.numRecords = -1
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
-        if ins: self.load_rec_group(ins, do_unpack)
-
-    def load_rec_group(self, ins: ModReader, do_unpack=False):
-        """Load data from ins stream or internal data buffer."""
-        #--Read, but don't analyze.
-        if not do_unpack:
-            self.data = ins.read(self.header.blob_size(), type(self).__name__)
-        #--Analyze ins.
-        elif ins is not None:
-            self._load_rec_group(ins, ins.tell() + self.header.blob_size())
-        #--Discard raw data?
-        if do_unpack:
-            self.data = None
-            self.setChanged()
+        if ins:
+            #--Read, but don't analyze.
+            if not do_unpack:
+                self.data = ins.read(self.header.blob_size(),
+                                     type(self).__name__)
+            #--Analyze ins.
+            elif ins is not None:
+                self._load_rec_group(ins, ins.tell() + self.header.blob_size())
+            #--Discard raw data?
+            if do_unpack:
+                self.data = None
+                self.setChanged()
 
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
@@ -154,7 +152,7 @@ class MobBase(object):
         raise AbstractError(u'keepRecords not implemented')
 
     def _load_rec_group(self, ins, endPos):
-        """Loads data from input stream. Called by load_rec_group()."""
+        """Loads data from input stream. Called by __init__()."""
         raise AbstractError(u'_load_rec_group not implemented')
 
     ##: params here are not the prettiest
@@ -529,11 +527,8 @@ class MobDials(MobBase):
         """Loads data from input stream. Called by load()."""
         dial_class = self.loadFactory.getRecClass(b'DIAL')
         ins_seek = ins.seek
-        if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
         insAtEnd = ins.atEnd
-        # self.id_dialogues.clear()
-        loadFactory = self.loadFactory
         errLabel = f'{sig_to_str(expType)} Top Block'
         while not insAtEnd(endPos, errLabel):
             #--Get record info and handle it
@@ -1001,12 +996,7 @@ class MobCells(MobBase):
         # First sort by the CELL FormID, then by the block they belong to
         bsbCellBlocks = [(cb.getBsb(), cb) for _cfid, cb in
                          dict_sort(self.id_cellBlock)]
-        try:
-            bsbCellBlocks.sort(key=itemgetter(0))
-        except TypeError:
-            deprint('Failed to sort BSBs, info follows:')
-            deprint(f'bsbCellBlocks = {repr(bsbCellBlocks)}')
-            raise
+        bsbCellBlocks.sort(key=itemgetter(0))
         # Calculate total size and create block/subblock sizes dict to update
         # block GRUP headers
         totalSize = hsize = RecordHeader.rec_header_size

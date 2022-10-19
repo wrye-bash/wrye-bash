@@ -126,8 +126,7 @@ class LoadFactory(object):
 
     def getRecClass(self,type):
         """Returns class for record type or None."""
-        dflt_class = (self.keepAll and MreRecord) or None
-        return self.type_class.get(type,dflt_class)
+        return self.type_class.get(type, (self.keepAll and MreRecord) or None)
 
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
@@ -150,20 +149,19 @@ class LoadFactory(object):
             elif top_rec_type == b'CELL': return MobICells
             elif top_rec_type == b'WRLD': return MobWorlds
             else: return MobObjects
-        else:
-            return MobBase if self.keepAll else None
+        return MobBase if self.keepAll else None
 
     def __repr__(self):
         return f'<LoadFactory: load {len(self.recTypes)} types ' \
                f'({", ".join(map(sig_to_str, self.recTypes))}), ' \
-               f'{u"keep" if self.keepAll else u"discard"} others>'
+               f'{"keep" if self.keepAll else "discard"} others>'
 
-class _RecGroupDict(dict):
+class _TopGroupDict(dict):
     """dict subclass holding ModFile's collection of top groups key'd by sig"""
-    __slots__ = (u'_mod_file',)
+    __slots__ = ('_mod_file',)
 
     def __init__(self, mod_file, *args, **kwargs):
-        super(_RecGroupDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._mod_file = mod_file
 
     def __missing__(self, top_grup_sig, __rh=RecordHeader):
@@ -193,7 +191,7 @@ class ModFile(object):
                 _entering_context=True))
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
-        self.tops = _RecGroupDict(self) #--Top groups.
+        self.tops = _TopGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
@@ -223,9 +221,9 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
-                        new_top = topClass(header, self.loadFactory)
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top.load_rec_group(ins, load_fully)
+                        new_top = topClass(header, self.loadFactory, ins,
+                                           load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if top_grup_sig not in self.tops:
