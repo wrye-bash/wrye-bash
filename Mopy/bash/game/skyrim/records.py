@@ -55,7 +55,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
-    MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, \
+    MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
     MelIdleAnimationCount
 from ...exception import ModSizeError
 
@@ -1736,6 +1736,7 @@ class MreLigh(MelRecord):
                   'value', 'weight'),
         MelFloat(b'FNAM', u'fade'),
         MelSound(),
+        sse_only(MelLighLensFlare()),
     )
     __slots__ = melSet.getSlotsUsed()
 
