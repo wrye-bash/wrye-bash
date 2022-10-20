@@ -29,13 +29,11 @@ MelStruct."""
 __author__ = u'Infernio'
 
 import copy
-import operator
 from collections import OrderedDict
 from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
     MelSequential, MelNum
-from .utils_constants import FID, FormId
 from .. import exception
 from ..bolt import structs_cache, attrgetter_cache, deprint
 
@@ -1051,15 +1049,23 @@ class MelExtra(_MelWrapper):
     varying length after it."""
     def __init__(self, wrapped_mel: MelBase, *, extra_attr: str):
         super().__init__(wrapped_mel)
+        # Check if the wrapped element is static-sized and store the size if so
+        try:
+            self._wrapped_size = wrapped_mel.static_size
+        except exception.AbstractError:
+            self._wrapped_size = None
         self._extra_attr = extra_attr
 
     def getSlotsUsed(self):
         return self._extra_attr, *super().getSlotsUsed()
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        # Load everything but the unknown/junk data
+        # Load everything but the unknown/junk data - pass the static size if
+        # the component is static-sized (and hence will probably be verifying
+        # the subrecord size) or the full subrecord size if it's not
         start_pos = ins.tell()
-        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        super().load_mel(record, ins, sub_type, self._wrapped_size or size_,
+            *debug_strs)
         # Now, read the remainder of the subrecord and store it
         read_size = ins.tell() - start_pos
         setattr(record, self._extra_attr, ins.read(size_ - read_size))
