@@ -27,7 +27,7 @@ from typing import Type
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter, \
-    FidNotNullDecider
+    FidNotNullDecider, MelPartialCounter
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
@@ -35,7 +35,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
 from .utils_constants import int_unpacker, FID, null1, ZERO_FID
 from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
     structs_cache
-from ..exception import ModError, ModSizeError
+from ..exception import ModError
 
 #------------------------------------------------------------------------------
 class _MelCoed(MelOptStruct):
@@ -642,6 +642,29 @@ class MelIco2(MelIcons2):
         super().__init__(ico2_attr=ico2_attr, mic2_attr='')
 
 #------------------------------------------------------------------------------
+class MelIdleAnimations(MelSimpleArray):
+    """Handles the IDLM and PACK subrecord IDLA (Animations)."""
+    def __init__(self):
+        super().__init__('idle_animations', MelFid(b'IDLA'))
+
+#------------------------------------------------------------------------------
+class MelIdleAnimationCount(MelCounter):
+    """Handles the newer version of the IDLM and PACK subrecord IDLC (Animation
+    Count), which lacks the unused padding bytes."""
+    def __init__(self):
+        super().__init__(MelUInt8(b'IDLC', 'idle_animation_count'),
+            counts='idle_animations')
+
+#------------------------------------------------------------------------------
+class MelIdleAnimationCountOld(MelPartialCounter):
+    """Handles the older version of the IDLM and PACK subrecord IDLC (Animation
+    Count), which contained three unused padding bytes."""
+    def __init__(self):
+        super().__init__(MelTruncatedStruct(b'IDLC', ['B', '3s'],
+            'idle_animation_count', 'unused1', old_versions={'B'}),
+            counters={'idle_animation_count': 'idle_animations'}),
+
+#------------------------------------------------------------------------------
 class MelIdleData(MelStruct):
     """Handles the IDLE subrecord DATA (Data) since Skyrim."""
     _idle_flags = TrimmedFlags.from_names('idle_parent', 'idle_sequence',
@@ -682,12 +705,6 @@ class MelIdlmFlags(MelUInt8Flags):
 
     def __init__(self):
         super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
-
-#------------------------------------------------------------------------------
-class MelIdlmIdla(MelSimpleArray):
-    """Handles the IDLM subrecord IDLA (Animations)."""
-    def __init__(self):
-        super().__init__('idlm_animations', MelFid(b'IDLA'))
 
 #------------------------------------------------------------------------------
 class MelImageSpaceMod(MelFid):

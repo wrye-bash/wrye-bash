@@ -26,7 +26,7 @@ from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
-    AMreFlst, MelLString, MelMODS, AMreImad, MelRegions, MelIdlmIdla, \
+    AMreFlst, MelLString, MelMODS, AMreImad, MelRegions, MelIdleAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, MelIdleTimerSetting, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
@@ -55,7 +55,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
-    MelLandShared, MelLandMpcd
+    MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, \
+    MelIdleAnimationCount
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1399,10 +1400,9 @@ class MreIdlm(MelRecord):
         MelEdid(),
         MelBounds(),
         MelIdlmFlags(),
-        MelCounter(MelUInt8(b'IDLC', 'idlm_animation_count'),
-            counts='idlm_animations'),
+        MelIdleAnimationCount(),
         MelIdleTimerSetting(),
-        MelIdlmIdla(),
+        MelIdleAnimations(),
         MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2307,11 +2307,9 @@ class MrePack(MelRecord):
         MelConditionList(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', u'animation_flags'),
-            MelPartialCounter(MelStruct(b'IDLC', ['B', '3s'],
-                'animation_count', 'unknown1'),
-                counters={'animation_count': 'animations'}),
+            MelIdleAnimationCountOld(),
             MelIdleTimerSetting(),
-            MelSimpleArray('animations', MelFid(b'IDLA')),
+            MelIdleAnimations(),
             MelBase(b'IDLB', 'unknown1'),
         ),
         MelFid(b'CNAM', 'combatStyle',),

@@ -47,11 +47,11 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
     MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
+    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
-    MelLandMpcd
+    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1473,10 +1473,9 @@ class MreIdlm(MelRecord):
         MelBounds(),
         MelKeywords(),
         MelIdlmFlags(),
-        MelCounter(MelUInt8(b'IDLC', 'idlm_animation_count'),
-            counts='idlm_animations'),
+        MelIdleAnimationCount(),
         MelIdleTimerSetting(),
-        MelIdlmIdla(),
+        MelIdleAnimations(),
         MelFid(b'QNAM', 'unknown_qnam'),
         MelModel(),
     )

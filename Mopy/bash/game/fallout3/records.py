@@ -50,9 +50,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad,\
+    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad,\
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
-    MelLandShared
+    MelLandShared, MelIdleAnimationCountOld
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1317,11 +1317,9 @@ class MreIdlm(MelRecord):
         MelEdid(),
         MelBounds(),
         MelIdlmFlags(),
-        MelPartialCounter(MelTruncatedStruct(b'IDLC', ['B', '3s'],
-            'idlm_animation_count', 'unused1', old_versions={'B'}),
-            counters={'idlm_animation_count': 'idlm_animations'}),
+        MelIdleAnimationCountOld(),
         MelIdleTimerSetting(),
-        MelIdlmIdla(),
+        MelIdleAnimations(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2005,11 +2003,9 @@ class MrePack(MelRecord):
         MelConditionsFo3(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', 'animationFlags'),
-            MelPartialCounter(MelStruct(b'IDLC', ['B', '3s'],
-                'animation_count', 'unused1'),
-                counters={'animation_count': 'animations'}),
+            MelIdleAnimationCountOld(),
             MelIdleTimerSetting(),
-            MelSimpleArray('animations', MelFid(b'IDLA')),
+            MelIdleAnimations(),
             MelBase(b'IDLB','idlb_p'),
         ),
         MelBase(b'PKED','eatMarker'),
