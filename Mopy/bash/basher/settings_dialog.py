@@ -1231,10 +1231,11 @@ class GeneralPage(_AScrollablePage):
         self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
-            chkbx_tooltip=_(u'Remember where you left off last time and '
-                            u'scroll back down to that plugin/save/etc. on '
-                            u'startup. Can significantly slow down '
-                            u"Wrye Bash's boot process."),
+            chkbx_tooltip=_("Remember where you left off last time and "
+                            "scroll back down to that plugin/save/etc. on "
+                            "startup. May cause a moderate slowdown in "
+                            "Wrye Bash's boot process if you have a very "
+                            "large number of plugins/saves/etc."),
             checked=bass.settings[u'bash.restore_scroll_positions'])
         self._restore_scroll_checkbox.on_checked.subscribe(self._on_res_scroll)
         ##: Doesn't really belong here, but couldn't think of a better place

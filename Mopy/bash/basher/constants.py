@@ -171,7 +171,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.show_global_menu': True,
     u'bash.pluginEncoding': u'cp1252',    # Western European
     u'bash.show_internal_keys': False,
-    u'bash.restore_scroll_positions': False,
+    'bash.restore_scroll_positions': True,
     u'bash.autoSizeListColumns': 0,
     #--Colors
     u'bash.colors': {
