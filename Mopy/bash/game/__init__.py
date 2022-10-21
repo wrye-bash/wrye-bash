@@ -116,10 +116,6 @@ class GameInfo(object):
     #  HKCU\Software\Wow6432Node
     # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     registry_keys = []
-    # The AppName in the Epic Games Store manifest for this game. May contain
-    # multiple, in which case the first one that is present is used. Empty if
-    # this game is not available on the Epic Games Store
-    egs_app_names = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -167,11 +163,6 @@ class GameInfo(object):
 
     class Ws(object):
         """Information about this game on the Windows Store."""
-        # A list of directory names for different language versions that ship
-        # with this game. Each one acts as a separate game installation under
-        # the main Windows Store path. If empty, indicates that the Windows
-        # Store location is the game installtion
-        game_language_dirs = []
         # The publisher name for common games. Only needed for games that had
         # the older legacy installation method available. Can only be
         # 'Bethesda' or empty
@@ -179,6 +170,23 @@ class GameInfo(object):
         # The internal name used by the Windows Store to identify the game.
         # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
         win_store_name = ''
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Windows Store path. If empty, indicates that the main path
+        # *is* the game installation
+        ws_language_dirs = []
+
+    class Eg:
+        """Information about this game on the Epic Games Store."""
+        # The AppName in the Epic Games Store manifest for this game. May
+        # contain multiple, in which case the first one that is present is
+        # used. Empty if this game is not available on the Epic Games Store
+        egs_app_names = []
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Epic Games Store path. If empty, indicates that the main path
+        # *is* the game installation
+        egs_language_dirs = []
 
     class Ck(object):
         """Information about the official plugin editor (generally called some
@@ -558,8 +566,6 @@ class GameInfo(object):
                 for p in cls.game_detect_excludes))
 
 # Constants -------------------------------------------------------------------
-# Files shared by versions of games that are published on the Epic Games Store
-EGS_COMMON_FILES = {'EOSSDK-Win64-Shipping.dll'}
 # Files shared by versions of games that are published on GOG
 GOG_COMMON_FILES = {'Galaxy64.dll'}
 # Files shared by versions of games that are published on the Windows Store

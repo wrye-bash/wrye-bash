@@ -21,14 +21,24 @@
 #
 # =============================================================================
 """GameInfo override for the Epic Games Store version of Skyrim SE."""
-from ..egs_game import EGSMixin
 from ..skyrimse import SkyrimSEGameInfo
+from ...bolt import classproperty
 
-class EGSSkyrimSEGameInfo(EGSMixin, SkyrimSEGameInfo):
+class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
     displayName = 'Skyrim Special Edition (EGS)'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
-    egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
-                     'ac82db5035584c7f8a2c548d98c86b2c'] # SE
+
+    @classproperty
+    def game_detect_includes(cls):
+        return super().game_detect_includes | {'EOSSDK-Win64-Shipping.dll'}
+
+    @classproperty
+    def game_detect_excludes(cls):
+        return super().game_detect_excludes - {'EOSSDK-Win64-Shipping.dll'}
+
+    class Eg(SkyrimSEGameInfo.Eg):
+        egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
+                         'ac82db5035584c7f8a2c548d98c86b2c'] # SE
 
 GAME_TYPE = EGSSkyrimSEGameInfo

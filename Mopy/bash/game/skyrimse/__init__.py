@@ -22,7 +22,7 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
 from ..skyrim import SkyrimGameInfo
-from .. import EGS_COMMON_FILES, GOG_COMMON_FILES, WS_COMMON_FILES
+from .. import GOG_COMMON_FILES, WS_COMMON_FILES
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -37,8 +37,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     game_detect_includes = {'SkyrimSELauncher.exe'}
     # Files carefully chosen such that no platform has any of them in common
     # with another platform
-    game_detect_excludes = (EGS_COMMON_FILES | GOG_COMMON_FILES |
-                            WS_COMMON_FILES)
+    game_detect_excludes = (GOG_COMMON_FILES | WS_COMMON_FILES |
+                            {'EOSSDK-Win64-Shipping.dll'}) # Epic Store
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'

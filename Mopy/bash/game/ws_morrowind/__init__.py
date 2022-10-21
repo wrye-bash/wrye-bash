@@ -32,8 +32,8 @@ class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
     class Ws(MorrowindGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
-        game_language_dirs = ['Morrowind GOTY English',
-                              'Morrowind GOTY French',
-                              'Morrowind GOTY German']
+        ws_language_dirs = ['Morrowind GOTY English',
+                            'Morrowind GOTY French',
+                            'Morrowind GOTY German']
 
 GAME_TYPE = WSMorrowindGameInfo

@@ -22,7 +22,7 @@
 # =============================================================================
 """GameInfo override for the Windows Store version of Fallout 3."""
 
-from ..fallout3 import Fallout3GameInfo
+from ..fallout3 import Fallout3GameInfo, FO3_LANG_DIRS
 from ..windows_store_game import WindowsStoreMixin
 
 class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
@@ -33,10 +33,6 @@ class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
     class Ws(Fallout3GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout3'
-        game_language_dirs = ['Fallout 3 GOTY English',
-                              'Fallout 3 GOTY French',
-                              'Fallout 3 GOTY German',
-                              'Fallout 3 GOTY Italian',
-                              'Fallout 3 GOTY Spanish']
+        ws_language_dirs = FO3_LANG_DIRS
 
 GAME_TYPE = WSFallout3GameInfo

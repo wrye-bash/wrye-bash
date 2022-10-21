@@ -44,7 +44,8 @@ import win32api
 import win32com.client as win32client
 import win32gui
 
-from .common import _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _find_legendary_games
+from .common import _LegacyWinAppInfo, _LegacyWinAppVersionInfo, \
+    _find_legendary_games, _get_language_paths
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
@@ -983,9 +984,10 @@ def find_egs_games():
                 with open(egs_path_manifests.join(egs_manifest), 'r',
                         encoding='utf-8') as ins:
                     egs_manifest_data = json.load(ins)
-                egs_app_name = egs_manifest_data['AppName']
-                game_install_location = egs_manifest_data['InstallLocation']
-                found_egs_games[egs_app_name] = game_install_location
+                # The InstallLocation sometimes has mixed path separators, so
+                # make sure to normalize them!
+                found_egs_games[egs_manifest_data['AppName']] = _GPath(
+                    egs_manifest_data['InstallLocation'])
             except (json.JSONDecodeError, KeyError):
                 # Log, but move on to the other manifests
                 _deprint('Failed to parse Epic Games Store manifest file',
@@ -1037,13 +1039,8 @@ def get_ws_game_paths(submod):
     if ws_app_name := submod.Ws.win_store_name:
         all_ws_games = _find_ws_games()
         if ws_app_name in all_ws_games:
-            first_location = all_ws_games[ws_app_name]
-            if submod.Ws.game_language_dirs:
-                language_locations = [first_location.join(l)
-                                      for l in submod.Ws.game_language_dirs]
-                return [p for p in language_locations if p.is_dir()]
-            else:
-                return [first_location]
+            return _get_language_paths(submod.Ws.ws_language_dirs,
+                all_ws_games[ws_app_name])
     return []
 
 def get_personal_path():

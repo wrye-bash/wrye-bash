@@ -24,8 +24,8 @@
 import struct as _struct
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON_FILES
+from .. import GameInfo, WS_COMMON_FILES
+from ..patch_game import PatchGame
 from ... import bolt
 
 class OblivionGameInfo(PatchGame):

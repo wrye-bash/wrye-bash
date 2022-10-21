@@ -22,8 +22,6 @@
 #
 # =============================================================================
 """Module housing a GameInfo subtype allowing to build a Bashed patch."""
-import importlib
-
 from . import GameInfo
 
 class PatchGame(GameInfo):

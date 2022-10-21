@@ -24,7 +24,8 @@
 
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
+from .. import GameInfo, WS_COMMON_FILES
+from ..patch_game import PatchGame
 from ... import bolt
 
 class Fallout3GameInfo(PatchGame):
@@ -39,6 +40,7 @@ class Fallout3GameInfo(PatchGame):
     appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
     game_detect_includes = {'Fallout3.exe'}
+    game_detect_excludes = WS_COMMON_FILES | {'FalloutLauncherEpic.exe'}
     version_detect_file = u'Fallout3.exe'
     master_file = bolt.FName(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
@@ -1218,5 +1220,10 @@ class Fallout3GameInfo(PatchGame):
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
             b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})
         cls._validate_records()
+
+# Language dirs, shared by EGS and WS versions
+FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',
+                 'Fallout 3 GOTY German', 'Fallout 3 GOTY Italian',
+                 'Fallout 3 GOTY Spanish']
 
 GAME_TYPE = Fallout3GameInfo

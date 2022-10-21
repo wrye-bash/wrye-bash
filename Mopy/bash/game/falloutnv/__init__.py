@@ -23,6 +23,7 @@
 """GameInfo override for Fallout NV."""
 from copy import deepcopy
 
+from .. import WS_COMMON_FILES
 from ..fallout3 import Fallout3GameInfo
 from ... import bolt
 
@@ -37,6 +38,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
     game_detect_includes = {'FalloutNV.exe'}
+    game_detect_excludes = WS_COMMON_FILES
     version_detect_file = u'FalloutNV.exe'
     master_file = bolt.FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'

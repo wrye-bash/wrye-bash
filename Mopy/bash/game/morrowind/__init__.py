@@ -23,8 +23,8 @@
 """GameInfo override for TES III: Morrowind."""
 import struct as _struct
 
-from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON_FILES
+from .. import GameInfo, WS_COMMON_FILES
+from ..patch_game import PatchGame
 from ... import bolt
 
 class MorrowindGameInfo(PatchGame):

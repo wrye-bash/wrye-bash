@@ -108,6 +108,18 @@ class _LegacyWinAppInfo:
                 f'publisher_id={self.publisher_id}, app_name={self.app_name}, '
                 f'versions=<{len(self.versions)} version(s)>)')
 
+def _get_language_paths(language_dirs: list[str],
+        main_location: bolt.Path) -> list[bolt.Path]:
+    """Utility function that checks a list of language dirs for a game and, if
+    that list isn't empty, joins a main location path with all those dirs and
+    returns a list of all such present language paths. If the list is empty, it
+    just returns a list containing the main location path."""
+    if language_dirs:
+        language_locations = [main_location.join(l) for l in language_dirs]
+        return [p for p in language_locations if p.is_dir()]
+    else:
+        return [main_location]
+
 # API - Functions =============================================================
 def clear_read_only(filepath): # copied from bolt
     os.chmod(f'{filepath}', stat.S_IWUSR | stat.S_IWOTH)
@@ -142,25 +154,21 @@ def get_legacy_ws_game_paths(submod):
     # Select the most recently installed entry
     installed_version = app_info.get_installed_version()
     if installed_version:
-        first_location = installed_version.mutable_location
-        if submod.Ws.game_language_dirs:
-            language_locations = [first_location.join(l)
-                                  for l in submod.Ws.game_language_dirs]
-            return [p for p in language_locations if p.is_dir()]
-        else:
-            return [first_location]
+        return _get_language_paths(submod.Ws.ws_language_dirs,
+            installed_version.mutable_location)
     else:
         return []
 
 def get_egs_game_paths(submod):
     """Check the Epic Games Store manifests to find if the specified game is
     installed via the EGS and return its install path."""
-    if egs_anames := submod.egs_app_names:
+    if egs_anames := submod.Eg.egs_app_names:
         # Delayed import to pull in the right version
         from . import find_egs_games
         egs_games = find_egs_games()
         for egs_an in egs_anames:
             # Use the first AppName that's present
             if egs_an in egs_games:
-                return [egs_games[egs_an]]
+                return _get_language_paths(submod.Eg.egs_language_dirs,
+                    egs_games[egs_an])
     return []

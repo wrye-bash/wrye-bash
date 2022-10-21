@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,25 +14,29 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
 #  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Module providing a mixin class to set some common defaults for Epic Games
-Store games."""
-from . import EGS_COMMON_FILES
-from ..bolt import classproperty
+"""GameInfo override for the Epic Games Store version of Fallout 3."""
+from ..fallout3 import Fallout3GameInfo, FO3_LANG_DIRS
+from ...bolt import classproperty
 
-class EGSMixin:
-    registry_keys = []
+class EGSFallout3GameInfo(Fallout3GameInfo):
+    displayName = 'Fallout 3 (EGS)'
 
     @classproperty
     def game_detect_includes(cls):
-        return super().game_detect_includes | EGS_COMMON_FILES
+        return super().game_detect_includes | {'FalloutLauncherEpic.exe'}
 
     @classproperty
     def game_detect_excludes(cls):
-        return super().game_detect_excludes - EGS_COMMON_FILES
+        return super().game_detect_excludes - {'FalloutLauncherEpic.exe'}
+
+    class Eg(Fallout3GameInfo.Eg):
+        egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
+        egs_language_dirs = FO3_LANG_DIRS
+
+GAME_TYPE = EGSFallout3GameInfo

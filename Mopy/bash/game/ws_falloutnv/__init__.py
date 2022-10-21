@@ -33,11 +33,11 @@ class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     class Ws(FalloutNVGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
-        game_language_dirs = ['Fallout New Vegas English',
-                              'Fallout New Vegas French',
-                              'Fallout New Vegas German',
-                              'Fallout New Vegas Italian',
-                              'Fallout New Vegas Spanish']
+        ws_language_dirs = ['Fallout New Vegas English',
+                            'Fallout New Vegas French',
+                            'Fallout New Vegas German',
+                            'Fallout New Vegas Italian',
+                            'Fallout New Vegas Spanish']
 
     bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
 
