@@ -1039,8 +1039,10 @@ class UIList(wx.Panel):
         # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
         # GUI lag
         self.Freeze()
-        self._PopulateItems()
-        self.Thaw()
+        try:
+            self._PopulateItems()
+        finally:
+            self.Thaw()
 
     def _PopulateItems(self):
         self.mouseTexts.clear()
@@ -1078,14 +1080,16 @@ class UIList(wx.Panel):
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
             self.Freeze()
-            for d in to_del:
-                self.__gList.RemoveItemAt(self.GetIndex(d))
-            for upd in redraw:
-                self.PopulateItem(item=upd)
-            #--Sort
-            self.SortItems()
-            self.autosizeColumns()
-            self.Thaw()
+            try:
+                for d in to_del:
+                    self.__gList.RemoveItemAt(self.GetIndex(d))
+                for upd in redraw:
+                    self.PopulateItem(item=upd)
+                #--Sort
+                self.SortItems()
+                self.autosizeColumns()
+            finally:
+                self.Thaw()
         self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
@@ -2273,9 +2277,15 @@ class INIListCtrl(wx.ListCtrl):
         self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
         iniLine = self._get_selected_line(index)
         if iniLine != -1:
-            self._contents.EnsureVisible(iniLine)
-            scroll = iniLine - self._contents.GetScrollPos(wx.VERTICAL) - index
-            self._contents.ScrollLines(scroll)
+            self._contents.Freeze()
+            try:
+                # First calculate what we need to scroll to get to the top of
+                # the window, then add the amount we'd have to scroll to get to
+                # our target line to that
+                top_scroll = -self._contents.GetScrollPos(wx.VERTICAL)
+                self._contents.ScrollLines(top_scroll + iniLine)
+            finally:
+                self._contents.Thaw()
         event.Skip()
 
     def fit_column_to_header(self, column):

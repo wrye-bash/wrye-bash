@@ -808,8 +808,10 @@ class INITweakLineCtrl(INIListCtrl):
     def refresh_tweak_contents(self, tweakPath):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         self.Freeze()
-        self._RefreshTweakLineCtrl(tweakPath)
-        self.Thaw()
+        try:
+            self._RefreshTweakLineCtrl(tweakPath)
+        finally:
+            self.Thaw()
 
     def _RefreshTweakLineCtrl(self, tweakPath):
         # Clear the list, then populate it with the new lines
@@ -859,8 +861,10 @@ class TargetINILineCtrl(INIListCtrl):
     def refresh_ini_contents(self):
         # Make sure to freeze/thaw, all the InsertItem calls make the GUI lag
         self.Freeze()
-        self._RefreshIniContents()
-        self.Thaw()
+        try:
+            self._RefreshIniContents()
+        finally:
+            self.Thaw()
 
     def _RefreshIniContents(self):
         if bosh.iniInfos.ini.isCorrupted: return
