@@ -30,7 +30,7 @@ from zlib import decompress as zlib_decompress, error as zlib_error
 from . import bolt, bush, env, load_order
 from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
-    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
+    TopGrupHeader, MobBase, MobDials, MobICells, TopGrup, MobWorlds, \
     unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
     FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
@@ -120,15 +120,13 @@ class LoadFactory:
                 self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD'}) or (
                        topType == b'WRLD' and b'LAND' in self.recTypes)
 
-    def getTopClass(self, top_rec_type):
-        """Return top block class for top block type, or None.
-
-        :rtype: type[MobBase]"""
+    def getTopClass(self, top_rec_type) -> type[MobBase | TopGrup] | None:
+        """Return top block class for top block type, or None."""
         if top_rec_type in self.topTypes:
             if   top_rec_type == b'DIAL': return MobDials
             elif top_rec_type == b'CELL': return MobICells
             elif top_rec_type == b'WRLD': return MobWorlds
-            else: return MobObjects
+            else: return TopGrup
         return MobBase if self.keepAll else None
 
     def __repr__(self):

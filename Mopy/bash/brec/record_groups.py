@@ -36,42 +36,15 @@ from ..bolt import pack_int, structs_cache, attrgetter_cache, sig_to_str, \
     dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
-class MobBase(object):
-    """Group of records and/or subgroups. This basic implementation does not
-    support unpacking, but can report its number of records and be written."""
-
-    __slots__ = ('header', 'size', 'label', 'groupType', 'stamp',
-                 'data', 'changed', 'numRecords', 'loadFactory',
-                 'inName') ##: nice collection of forbidden names, including header -> grup_header
-
-    def __init__(self, header, loadFactory, ins=None, do_unpack=False):
-        self.header = header
-        self.size = header.size
-        if header.recType == b'GRUP':
-            self.label, self.groupType, self.stamp = (
-                header.label, header.groupType, header.stamp)
-        else: # TODO(ut) should MobBase used for *non* GRUP headers??
-            # Yes it's weird, but this is how it needs to work
-            self.label, self.groupType, self.stamp = (
-                header.flags1, header.fid, header.flags2)
-        # binary blob of the whole record group minus its GRUP header ##: rename
-        self.data = None
+class _AMobBase:
+    """Group of records and/or subgroups."""
+    def __init__(self, loadFactory, ins):
         self.changed = False
-        self.numRecords = -1
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
-        if ins:
-            #--Read, but don't analyze.
-            if not do_unpack:
-                self.data = ins.read(self.header.blob_size(),
-                                     type(self).__name__)
-            #--Analyze ins.
-            elif ins is not None:
-                self._load_rec_group(ins, ins.tell() + self.header.blob_size())
-            #--Discard raw data?
-            if do_unpack:
-                self.data = None
-                self.setChanged()
+
+    def _load_err(self, msg): ##: add ins and print more info
+        raise ModError(self.inName, msg)
 
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
@@ -87,47 +60,19 @@ class MobBase(object):
             for r in self.iter_records():
                 r.setChanged()
 
+    # Abstract methods --------------------------------------------------------
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        if self.changed: raise AbstractError
-        return self.size
+        raise AbstractError
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self (if plusSelf), unless
         there's no subrecords, in which case, it returns 0."""
-        if self.changed:
-            raise AbstractError
-        elif self.numRecords > -1: #--Cached value.
-            return self.numRecords
-        elif not self.data: #--No data >> no records, not even self.
-            self.numRecords = 0
-            return self.numRecords
-        else:
-            numSubRecords = 0
-            num_groups = 1 # the top level grup itself - not included in data
-            with FastModReader(self.inName, self.data) as ins:
-                ins_tell = ins.tell
-                ins_size = ins.size
-                while ins_tell() != ins_size:
-                    header = unpack_header(ins)
-                    if header.recType != b'GRUP':
-                        # FMR.seek doesn't have *debug_str arg so use blob_size
-                        ins.seek(header.blob_size(), 1)
-                        numSubRecords += 1
-                    else: num_groups += 1
-            self.numRecords = numSubRecords + includeGroups * num_groups
-            return self.numRecords
+        raise AbstractError
 
-    def dump(self,out):
+    def dump(self, out):
         """Dumps record header and data into output file stream."""
-        if self.changed:
-            raise AbstractError
-        if self.numRecords == -1:
-            self.getNumRecords()
-        if self.numRecords > 0:
-            self.header.size = self.size
-            out.write(self.header.pack_head())
-            out.write(self.data)
+        raise AbstractError
 
     def iter_present_records(self, include_ignored=False, rec_key='fid',
                              __attrgetters=attrgetter_cache):
@@ -137,7 +82,6 @@ class MobBase(object):
         return ((key_get(r), r) for r in self.iter_records() if not
                 r.flags1.deleted and (include_ignored or not r.flags1.ignored))
 
-    # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
         """Returns a set of all signatures contained in this block."""
         raise AbstractError('get_all_signatures not implemented')
@@ -167,35 +111,96 @@ class MobBase(object):
         :param iiSkipMerge: If True, skip merging and only perform merge
             filtering. Used by IIM mode.
         :param doFilter: If True, perform merge filtering."""
-        raise AbstractError(f'{self.label}: merge_records not implemented')
-
-    def _sort_group(self):
-        """Performs any sorting of records that has to be done in this record
-        group."""
-        raise AbstractError(u'_sort_group not implemented')
+        raise AbstractError(f'{self}: merge_records not implemented')
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         raise AbstractError('updateMasters not implemented')
 
     def updateRecords(self, srcBlock, mergeIds):
-        """Looks through all of the records in 'block', and updates any
-        records in self that exist with the data in 'block'. 'block' must be in
-        long fids format."""
-        raise AbstractError(u'updateRecords not implemented')
+        """Update the contents of records inside the BP to ones from a
+        source plugin. We never add new records into the BP here. That's
+        only done by importers (using setRecord) or by merging files (via
+        merge_records)."""
+        raise AbstractError('updateRecords not implemented')
+
+class MobBase(_AMobBase):
+    """Group of records and/or subgroups. This basic implementation does not
+    support unpacking, but can report its number of records and be dumped."""
+
+    def __init__(self, grup_head, loadFactory, ins=None, do_unpack=False):
+        super().__init__(loadFactory, ins)
+        self.header = grup_head
+        self.size = grup_head.size
+        self.label, self.groupType, self.stamp = (
+            grup_head.label, grup_head.groupType, grup_head.stamp)
+        # binary blob of the whole record group minus its GRUP header ##: rename
+        self.data = None
+        self.numRecords = -1
+        if ins:
+            #--Read, but don't analyze.
+            if not do_unpack:
+                self.data = ins.read(grup_head.blob_size(),
+                                     type(self).__name__)
+            #--Analyze ins.
+            elif ins is not None:
+                self._load_rec_group(ins, ins.tell() + grup_head.blob_size())
+            #--Discard raw data?
+            if do_unpack:
+                self.data = None
+                self.setChanged()
+
+    def getSize(self):
+        """Returns size (including size of any group headers)."""
+        if self.changed: raise AbstractError
+        return self.size
+
+    def getNumRecords(self,includeGroups=True):
+        """Returns number of records, including self (if plusSelf), unless
+        there's no subrecords, in which case, it returns 0."""
+        if self.changed:
+            raise AbstractError
+        elif self.numRecords > -1: #--Cached value.
+            return self.numRecords
+        elif not self.data: #--No data >> no records, not even self.
+            self.numRecords = 0
+            return self.numRecords
+        else:
+            numSubRecords = 0
+            num_groups = 1 # the top level grup itself - not included in data
+            with FastModReader(self.inName, self.data) as ins:
+                ins_tell = ins.tell
+                ins_size = ins.size
+                while ins_tell() != ins_size:
+                    header = unpack_header(ins)
+                    if header.recType != b'GRUP':
+                        # FMR.seek doesn't have *debug_str arg so use blob_size
+                        ins.seek(header.blob_size(), 1) # instead of skip_blob
+                        numSubRecords += 1
+                    else: num_groups += 1
+            self.numRecords = numSubRecords + includeGroups * num_groups
+            return self.numRecords
+
+    def dump(self,out):
+        """Dumps record header and data into output file stream."""
+        if self.changed:
+            raise AbstractError
+        if self.numRecords == -1:
+            self.getNumRecords()
+        if self.numRecords > 0:
+            self.header.size = self.size
+            out.write(self.header.pack_head())
+            out.write(self.data)
 
 #------------------------------------------------------------------------------
 class MobObjects(MobBase):
     """Represents a top level group consisting of one type of record only. I.e.
     all top groups except CELL, WRLD and DIAL."""
     _grup_header_type = TopGrupHeader
+    _bad_form = None # yak
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.id_records = {}
-        from .. import bush
-        # DarkPCB record
-        self._bad_form = bush.game.displayName == 'Oblivion' and \
-            bush.game.master_fid(0xA31D) or None
         super(MobObjects, self).__init__(header, loadFactory, ins, do_unpack)
 
     def get_all_signatures(self):
@@ -304,7 +309,7 @@ class MobObjects(MobBase):
         loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
-        for rid, record in block.getActiveRecords():
+        for rid, src_rec in block.getActiveRecords():
             if rid == self._bad_form: continue
             #--Include this record?
             if doFilter:
@@ -312,20 +317,20 @@ class MobObjects(MobBase):
                 # if the record has any FormIDs with masters that are on disk
                 # left. If it does not, skip the whole record (because all of
                 # its contents have been merge-filtered out).
-                record.mergeFilter(loadSet)
+                src_rec.mergeFilter(loadSet)
                 masterset = MasterSet()
-                record.updateMasters(masterset.add)
+                src_rec.updateMasters(masterset.add)
                 if not loadSetIsSuperset(masterset):
                     continue
             # We're either not Filter-tagged or we want to keep this record
-            filtered[rkey := record.group_key()] = record
+            filtered[rkey := src_rec.group_key()] = src_rec
             # If we're IIM-tagged and this is not one of the IIM-approved
             # record types, skip merging
-            if iiSkipMerge: continue
-            # We're past all hurdles - stick a copy of this record into
-            # ourselves and mark it as merged
-            mergeIdsAdd(rkey)
-            copy_to_self(record.getTypeCopy())
+            if not iiSkipMerge:
+                # We're past all hurdles - stick a copy of this record into
+                # ourselves and mark it as merged
+                mergeIdsAdd(rkey)
+                copy_to_self(src_rec.getTypeCopy())
         # Apply any merge filtering we've done above to the record block in
         # question. That way, patchers won't see the records that have been
         # filtered out here.
@@ -337,6 +342,10 @@ class MobObjects(MobBase):
     def __repr__(self):
         return (f'<{sig_to_str(self.label)} GRUP: {len(self.id_records)} '
                 f'record(s)>')
+
+class TopGrup(MobObjects):
+    """Represents a top level group with simple records. I.e. all top groups
+    except CELL, WRLD and DIAL."""
 
 #------------------------------------------------------------------------------
 ##: MobDial, MobCell and MobWorld need a base class; same with MobDials,
@@ -862,8 +871,8 @@ class MobCell(MobBase):
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
-        loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
+        loadSetIsSuperset = loadSet.issuperset
         for single_attr in (u'cell', u'pgrd', u'land'):
             # Grab the version that we're trying to merge, and check if there's
             # even one present
@@ -879,11 +888,11 @@ class MobCell(MobBase):
                         setattr(block, single_attr, None)
                         continue
                 # In IIM, skip all merging (duh)
-                if iiSkipMerge: continue
-                # We're past all hurdles - stick a copy of this record into
-                # ourselves and mark it as merged
-                mergeIdsAdd(src_rec.fid)
-                setattr(self, single_attr, src_rec.getTypeCopy())
+                if not iiSkipMerge:
+                    # We're past all hurdles - stick a copy of this record into
+                    # ourselves and mark it as merged
+                    mergeIdsAdd(src_rec.fid)
+                    setattr(self, single_attr, src_rec.getTypeCopy())
         for list_attr in (u'temp_refs', u'persistent_refs', u'distant_refs'):
             filtered_list = []
             filtered_append = filtered_list.append
@@ -1150,11 +1159,10 @@ class MobICells(MobCells):
                     self._load_group6(header, cell, ins, unpackCellBlocks)
                     cell = None
                 else:
-                    raise ModError(self.inName,
+                    self._load_err(
                         f'Unexpected subgroup {groupType:d} in CELL group.')
             else:
-                raise ModError(self.inName,
-                               f'Unexpected {sig_to_str(_rsig)} record in '
+                self._load_err(f'Unexpected {sig_to_str(_rsig)} record in '
                                f'{sig_to_str(expType)} group.')
         if cell:
             # We have a CELL without children left over, finish it
@@ -1189,8 +1197,6 @@ class MobWorld(MobCells):
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'
         cell = None
-        block = None
-        # subblock = None # unused var
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'WRLD')
         insAtEnd = ins.atEnd
@@ -1203,9 +1209,7 @@ class MobWorld(MobCells):
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
-                block = None
-            if curPos >= endSubblockPos:
-                pass # subblock = None # unused var
+                endBlockPos = 0
             #--Get record info and handle it
             header = unpack_header(ins)
             _rsig = header.recType
@@ -1219,15 +1223,13 @@ class MobWorld(MobCells):
                     self.setCell(cell, children_head=None, loading=True)
                 cell = recClass(header, ins, do_unpack=True)
                 if isFallout: cells[cell.fid] = cell
-                if block and ((pos := insTell()) > endBlockPos or pos >
+                if endBlockPos and ((pos := insTell()) > endBlockPos or pos >
                               endSubblockPos):
                     raise ModError(self.inName,
                             f'Exterior cell {cell!r} after block or subblock.')
             elif _rsig == b'GRUP':
                 groupType = header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    # Grid (Y, X) - used only as bool(block)
-                    block: (int, int) = header.label
                     endBlockPos = insTell() + header.blob_size()
                 elif groupType == 5: # Exterior Cell Sub-Block
                     endSubblockPos = insTell() + header.blob_size()
