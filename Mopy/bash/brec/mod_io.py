@@ -378,6 +378,10 @@ class ModReader(object):
     def __repr__(self):
         return f'{type(self).__name__}({self.inName})'
 
+    def rewind(self):
+        """Rewind to reread a header."""
+        self.seek(-RecordHeader.rec_header_size, 1)
+
 class FormIdReadContext(ModReader):
     """Set the global FormId structures for this plugin - needs to read the
     plugin header to read off the masters list - so it consumes the start of
