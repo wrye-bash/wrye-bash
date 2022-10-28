@@ -155,7 +155,7 @@ class PatchDialog(DialogWindow):
             patch_name = self.patchInfo.fn_key
             patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name, abort=True)
-            timer1 = time.process_time()
+            timer1 = time.time_ns()
             #--Save configs
             config = self.__config()
             self.patchInfo.set_table_prop(u'bash.patch.configs', config)
@@ -183,12 +183,15 @@ class PatchDialog(DialogWindow):
             #--Done
             progress.Destroy()
             progress = None
-            timer2 = time.process_time()
+            timer2 = time.time_ns()
             #--Readme and log
             log.setHeader(None)
             log(u'{{CSS:wtxt_sand_small.css}}')
             logValue = log.out.getvalue()
-            timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
+            # Determine the elapsed nanoseconds, convert to seconds and round
+            # to 3 decimal digits
+            delta_seconds = round((timer2 - timer1) / 1_000_000_000, 3)
+            timerString = str(timedelta(seconds=delta_seconds)).rstrip('0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.fn_body + u'.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')

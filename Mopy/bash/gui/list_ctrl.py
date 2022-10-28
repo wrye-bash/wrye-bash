@@ -100,10 +100,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Mouse is above the first item
-                    self.ScrollLines(-1)
+                    self.LineUp()
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Mouse is after the last item
-                    self.ScrollLines(1)
+                    self.LineDown()
         else:
             # Screen position if item hovering over
             pos = index - self.GetScrollPos(_wx.VERTICAL)
@@ -111,10 +111,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 # Over the first item, see if it's over the top half
                 rect = self.GetItemRect(index)
                 if y < rect.y + rect.height/2:
-                    self.ScrollLines(-1)
+                    self.LineUp()
             elif pos == self.GetCountPerPage():
                 # On last item/one that's not fully visible
-                self.ScrollLines(1)
+                self.LineDown()
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
