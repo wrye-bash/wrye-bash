@@ -48,12 +48,14 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from types import GenericAlias
 from typing import Iterable
 from urllib.parse import quote
 from zlib import crc32
 
-import chardet
+try:
+    import chardet
+except ImportError:
+    chardet = None # We will raise an error on boot in bash._import_deps
 
 # Internal
 from . import exception

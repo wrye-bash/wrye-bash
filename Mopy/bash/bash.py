@@ -154,18 +154,18 @@ def _import_deps():
         if bass.is_standalone:
             # Dependencies are always present in standalone, so this probably
             # means an MSVC redist is missing
-            deps_msg += _(u'This most likely means you are missing a certain '
-                          u'version of the Microsoft Visual C++ '
-                          u'Redistributable. Try installing the 2010 x64 '
-                          u'version.')
+            deps_msg += _('This most likely means you are missing a certain '
+                          'version of the Microsoft Visual C++ '
+                          'Redistributable. Try installing the latest x64 '
+                          'version.')
         else:
-            deps_msg += _(u'Ensure you have installed these dependencies '
-                          u'properly. Should the error still occur, check '
-                          u'your installed Microsoft Visual C++ '
-                          u'Redistributables and try installing the 2010 x64 '
-                          u'version.')
-        _show_boot_popup(_(u'The following dependencies could not be located '
-                           u'or failed to load:') + u'\n\n' + deps_msg)
+            deps_msg += _('Ensure you have installed these dependencies '
+                          'properly. Should the error still occur, check '
+                          'your installed Microsoft Visual C++ '
+                          'Redistributables and try installing the latest '
+                          'x64 version.')
+        _show_boot_popup(_('The following dependencies could not be located '
+                           'or failed to load:') + u'\n\n' + deps_msg)
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
@@ -233,18 +233,33 @@ def dump_environment(wxver=None):
     _import_wx and _import_deps."""
     # Note that we can't dump pywin32 because it doesn't contain a version
     # field in its modules
-    import chardet, lz4, yaml
+    try:
+        import chardet
+        chardet_ver = chardet.__version__
+    except ImportError:
+        chardet_ver = 'not found'
+    try:
+        import lxml
+        lxml_ver = lxml.__version__
+    except ImportError:
+        lxml_ver = 'not found (optional)'
     try:
         import fitz
         pymupdf_ver = (f'{fitz.VersionBind}; bundled MuPDF version: '
                        f'{fitz.VersionFitz}')
     except ImportError:
-        pymupdf_ver = 'not found'
+        pymupdf_ver = 'not found (optional)'
     try:
-        import lxml
-        lxml_ver = lxml.__version__
+        import lz4
+        lz4_ver = (f'{lz4.version.version}; bundled LZ4 version: '
+                   f'{lz4.library_version_string()}')
     except ImportError:
-        lxml_ver = ''
+        lz4_ver = 'not found'
+    try:
+        import yaml
+        yaml_ver = yaml.__version__
+    except ImportError:
+        yaml_ver = 'not found'
     wx_ver = wxver or 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
@@ -256,12 +271,11 @@ def dump_environment(wxver=None):
         f'{platform.processor() or u"<unknown>"}',
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
-        f' - chardet: {chardet.__version__}',
+        f' - chardet: {chardet_ver}',
         f' - lxml: {lxml_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
-        f' - python-lz4: {lz4.version.version}; bundled LZ4 version: '
-        f'{lz4.library_version_string()}',
-        f' - PyYAML: {yaml.__version__}',
+        f' - python-lz4: {lz4_ver}',
+        f' - PyYAML: {yaml_ver}',
         f' - wxPython: {wx_ver}',
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute and stdin will be None
