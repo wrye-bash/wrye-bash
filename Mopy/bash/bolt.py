@@ -430,18 +430,20 @@ class FName(str):
       keep an eye for that.
     """
     _filenames_cache: dict[str, FName] = {}
+    _hash: int # Lazily cached since it's needed so often
 
     def __new__(cls, unicode_str: None | FName | str, *args,
                 __cache=_filenames_cache, **kwargs):
-        if (typ := type(unicode_str)) is FName or unicode_str is None:
+        if type(unicode_str) is FName or unicode_str is None:
             return unicode_str
-        if unicode_str in __cache: return __cache[unicode_str]
-        if typ is not str:
-            raise ValueError(f'{unicode_str!r} type is {typ} - a str is '
-                             f'required')
-        res = __cache[unicode_str] = super(FName, cls).__new__(
-            cls, unicode_str, *args, **kwargs)
-        return res
+        try:
+            return __cache[unicode_str]
+        except KeyError:
+            if type(unicode_str) is not str:
+                raise ValueError(f'{unicode_str!r} type is '
+                                 f'{type(unicode_str)} - a str is required')
+            return __cache.setdefault(unicode_str, super().__new__(
+                cls, unicode_str, *args, **kwargs))
 
     @fast_cached_property
     def _lower(self): return super().lower()
@@ -467,7 +469,11 @@ class FName(str):
 
     #--Hash/Compare
     def __hash__(self):
-        return hash(self._lower)
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash(self._lower)
+            return self._hash
     def __eq__(self, other):
         try:
             return self._lower == other._lower # (self is other) or self...
@@ -784,8 +790,8 @@ class Path(os.PathLike):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
-                 u'_cext', u'_sbody')
+    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
+                 '_cext', '_sbody', '_hash')
 
     def __init__(self, norm_str: str):
         """Initialize with unicode - call only in GPath."""
@@ -1186,7 +1192,11 @@ class Path(os.PathLike):
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
     # directly compare to str|Path|None and will blow for anything else
     def __hash__(self):
-        return hash(self._cs)
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash(self._cs)
+            return self._hash
     def __eq__(self, other):
         try:
             return self._cs == other._cs
