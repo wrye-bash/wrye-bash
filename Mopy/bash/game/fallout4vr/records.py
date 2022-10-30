@@ -50,4 +50,3 @@ class MreTes4(AMreHeader):
         MelUInt32(b'INTV', 'unknownINTV'),
         MelUInt32(b'INCC', 'internal_cell_count'),
     )
-    __slots__ = melSet.getSlotsUsed()

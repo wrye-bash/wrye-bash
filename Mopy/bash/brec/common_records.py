@@ -49,7 +49,6 @@ from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
 class AMreWithItems(MelRecord):
     """Base class for record types that contain a list of items (see
     common_subrecords.AMelItems)."""
-    __slots__ = ()
 
     def mergeFilter(self, modSet):
         self.items = [i for i in self.items if i.item.mod_fn in modSet]
@@ -57,7 +56,6 @@ class AMreWithItems(MelRecord):
 #------------------------------------------------------------------------------
 class AMreActor(AMreWithItems):
     """Base class for Creatures and NPCs."""
-    __slots__ = ()
 
     def mergeFilter(self, modSet):
         super().mergeFilter(modSet)
@@ -247,8 +245,6 @@ class AMreHeader(MelRecord):
     @property
     def num_masters(self): return len(self.masters)
 
-    __slots__ = ()
-
 #------------------------------------------------------------------------------
 class AMreImad(MelRecord):
     """Base class for Image Space Adapters. This is perhaps the weirdest record
@@ -354,8 +350,6 @@ class AMreImad(MelRecord):
     # Doing it this way avoids PyCharm complaining about type mismatch
     special_impls[b'TNAM'] = MelColorInterpolator
     special_impls[b'NAM3'] = MelColorInterpolator
-
-    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class AMreLeveledList(MelRecord):
@@ -488,7 +482,6 @@ class MreAstp(MelRecord):
         MelString(b'FCHT', 'female_child_title'),
         MelUInt32(b'DATA', 'family_association'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreColl(MelRecord):
@@ -508,7 +501,6 @@ class MreColl(MelRecord):
         MelUInt32(b'INTV', 'interactables_count'),
         MelSorted(MelSimpleArray('collides_with', MelFid(b'CNAM'))),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDebr(MelRecord):
@@ -524,7 +516,6 @@ class MreDebr(MelRecord):
             MelNull(b'MODT'),
         ),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDlbr(MelRecord):
@@ -540,7 +531,6 @@ class MreDlbr(MelRecord):
         MelUInt32Flags(b'DNAM', 'dlbr_flags', _dlbr_flags),
         MelFid(b'SNAM', 'starting_topic'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDlvw(MelRecord):
@@ -557,7 +547,6 @@ class MreDlvw(MelRecord):
         MelBase(b'ENAM', 'unknown_enam'),
         MelBase(b'DNAM', 'unknown_dnam'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDual(MelRecord):
@@ -575,7 +564,6 @@ class MreDual(MelRecord):
             (FID, 'dual_hit_effect_art'), (FID, 'dual_impact_dataset'),
             (_inherit_scale_flags, 'inherit_scale_flags')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEyes(MelRecord):
@@ -591,7 +579,6 @@ class MreEyes(MelRecord):
         MelIcon(),
         MelUInt8Flags(b'DATA', 'flags', _eyes_flags),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFstp(MelRecord):
@@ -603,7 +590,6 @@ class MreFstp(MelRecord):
         MelImpactDataset(b'DATA'),
         MelString(b'ANAM', 'fstp_tag'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFsts(MelRecord):
@@ -616,7 +602,6 @@ class MreFsts(MelRecord):
             'count_sprinting', 'count_sneaking', 'count_swimming'),
         MelSimpleArray('footstep_sets', MelFid(b'DATA')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGlob(MelRecord):
@@ -631,7 +616,6 @@ class MreGlob(MelRecord):
         # large integers lose precision
         MelFloat(b'FLTV', 'global_value'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGmst(MelRecord):
@@ -650,4 +634,3 @@ class MreGmst(MelRecord):
             fallback=MelSInt32(b'DATA', u'value')
         ),
     )
-    __slots__ = melSet.getSlotsUsed()

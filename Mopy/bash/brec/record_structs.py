@@ -238,7 +238,16 @@ class MelSet(object):
 #------------------------------------------------------------------------------
 # Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreRecord(object):
+class RecordType(type):
+    """Metaclass that adds slots to its instances."""
+
+    def __new__(cls, name, bases, classdict):
+        slots = classdict.get('__slots__', ())
+        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
+            melSet := classdict.get('melSet', ())) else slots
+        return super(RecordType, cls).__new__(cls, name, bases, classdict)
+
+class MreRecord(metaclass=RecordType):
     """Generic Record. flags1 are game specific see comments."""
     subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
     flags1_ = bolt.Flags.from_names(
@@ -533,7 +542,6 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
-    __slots__ = ()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         if self.__class__.rec_sig != header.recType:
