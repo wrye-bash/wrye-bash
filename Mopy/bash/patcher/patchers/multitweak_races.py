@@ -435,9 +435,9 @@ class TweakRacesPatcher(MultiTweaker):
                 if tweak_type not in modFile.tops: continue
                 type_data = tweak_data[tweak_type]
                 type_data_set = set(type_data)
-                for record in modFile.tops[tweak_type].getActiveRecords():
-                    if record.fid not in type_data_set:
-                        type_data.append(record.fid)
+                for rid, record in modFile.tops[tweak_type].getActiveRecords():
+                    if rid not in type_data_set:
+                        type_data.append(rid)
         super(TweakRacesPatcher, self).scanModFile(modFile, progress)
 
     def buildPatch(self, log, progress):
@@ -445,7 +445,7 @@ class TweakRacesPatcher(MultiTweaker):
                 and b'RACE' in self.patchFile.tops):
             # Need to gather RACE data for the tweaks
             tweak_data = self.collected_tweak_data
-            for record in self.patchFile.tops[b'RACE'].getActiveRecords():
+            for _rid, record in self.patchFile.tops[b'RACE'].getActiveRecords():
                 ##: Are these checks needed for the tweak data collection?
                 # if not record.eyes:
                 #     continue  # Sheogorath. Assume is handled correctly.

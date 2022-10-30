@@ -343,7 +343,7 @@ class ModFile(object):
         hostile_recs = set()
         nonhostile_recs = set()
         if b'MGEF' in self.tops:
-            for record in self.tops[b'MGEF'].getActiveRecords():
+            for _rid, record in self.tops[b'MGEF'].getActiveRecords():
                 ##: Skip OBME records, at least for now
                 if record.obme_record_version is not None: continue
                 m_school[record.eid] = record.school

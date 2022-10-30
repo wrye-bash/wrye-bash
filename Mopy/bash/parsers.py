@@ -1090,7 +1090,7 @@ class ScriptText(_TextParser):
                 newScript.eid = eid
                 newScript.script_source = '\r\n'.join(new_lines)
                 newScript.setChanged()
-                modFile.tops[b'SCPT'].records.append(newScript)
+                modFile.tops[b'SCPT'].id_records[scriptFid] = newScript
                 added.append(eid)
         if changed or added: return changed, added
         return None

@@ -24,6 +24,8 @@
 
 from collections import Counter, defaultdict
 from itertools import chain
+from operator import attrgetter
+
 # Internal
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
@@ -101,9 +103,8 @@ class IndexingTweak(MultiTweakItem):
         for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
             index_plugin = self._mod_file_read(pf_minfs[fn_plugin])
             for index_sig in self._index_sigs:
-                id_dict = self._indexed_records[index_sig]
-                for record in index_plugin.tops[index_sig].getActiveRecords():
-                    id_dict[record.fid] = record
+                self._indexed_records[index_sig].update(
+                    index_plugin.tops[index_sig].getActiveRecords())
         super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
@@ -139,7 +140,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
             pool_record = rec_pool[curr_top].add
             poolable_tweaks = top_dict[True]
             if not poolable_tweaks: continue # likely complex type, e.g. CELL
-            for record in modFile.tops[curr_top].getActiveRecords():
+            for _rid, record in modFile.tops[curr_top].getActiveRecords():
                 for p_tweak in poolable_tweaks: # type: MultiTweakItem
                     if p_tweak.wants_record(record):
                         pool_record(record)
@@ -166,7 +167,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                                           self.patchFile)
             poolable_tweaks = top_dict[True]
             if not poolable_tweaks: continue  # likely complex type, e.g. CELL
-            for record in self.patchFile.tops[curr_top].getActiveRecords():
+            for rid, record in self.patchFile.tops[curr_top].getActiveRecords():
                 for p_tweak in poolable_tweaks:  # type: MultiTweakItem
                     # Check if this tweak can actually change the record - just
                     # relying on the check in scanModFile is *not* enough.
@@ -185,8 +186,8 @@ class MultiTweaker(AMultiTweaker,Patcher):
                             deprint(record.error_string('tweaking'),
                                     traceback=True)
                             continue
-                        keep(record.fid)
-                        tweak_counter[p_tweak][record.fid.mod_fn] += 1
+                        keep(rid)
+                        tweak_counter[p_tweak][rid.mod_fn] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
         # finishing touches (e.g. creating records for GMST tweaks), then log
         for tweak in self.enabled_tweaks:
@@ -240,7 +241,9 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                                     traceback=True)
             progress.plus()
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self, modFile, progress, *,
+                    __get_temp=attrgetter('temp_refs'),
+                    __get_pers=attrgetter('persistent_refs')):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         patchCells = self.patchFile.tops[b'CELL']
@@ -252,91 +255,51 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
             for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
-                cellImported = False
-                if cfid in patchCells.id_cellBlock:
+                if cellImported := cfid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cfid].cell = cellBlock.cell
-                    cellImported = True
-                for record in cellBlock.temp_refs:
-                    if record.base in self.old_new:
-                        if not cellImported:
-                            patchCells.setCell(cellBlock.cell)
-                            cellImported = True
-                        for newRef in patchCells.id_cellBlock[cfid].temp_refs:
-                            if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[
-                                    cfid].temp_refs.index(newRef)
-                                patchCells.id_cellBlock[cfid].temp_refs[loc] = record
-                                break
-                        else:
-                            patchCells.id_cellBlock[
-                                cfid].temp_refs.append(record)
-                for record in cellBlock.persistent_refs:
-                    if record.base in self.old_new:
-                        if not cellImported:
-                            patchCells.setCell(cellBlock.cell)
-                            cellImported = True
-                        for newRef in patchCells.id_cellBlock[cfid].persistent_refs:
-                            if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[
-                                    cfid].persistent_refs.index(newRef)
-                                patchCells.id_cellBlock[cfid].persistent_refs[loc] = record
-                                break
-                        else:
-                            patchCells.id_cellBlock[
-                                cfid].persistent_refs.append(record)
+                for get_refs in (__get_temp, __get_pers):
+                    for record in get_refs(cellBlock):
+                        if record.base in self.old_new:
+                            if not cellImported:
+                                patchCells.setCell(cellBlock.cell)
+                                cellImported = True
+                            refs = get_refs(patchCells.id_cellBlock[cfid])
+                            for loc, newRef in enumerate(refs):
+                                if newRef.fid == record.fid:
+                                    refs[loc] = record
+                                    break
+                            else:
+                                refs.append(record)
         if b'WRLD' in modFile.tops:
             for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
-                worldImported = False
-                if wfid in patchWorlds.id_worldBlocks:
+                if worldImported := (wfid in patchWorlds.id_worldBlocks):
                     patchWorlds.id_worldBlocks[wfid].world = worldBlock.world
-                    worldImported = True
                 for wcfid, cellBlock in worldBlock.id_cellBlock.items():
-                    cellImported = False
-                    if wfid in patchWorlds.id_worldBlocks and wcfid in patchWorlds.id_worldBlocks[wfid].id_cellBlock:
-                        patchWorlds.id_worldBlocks[
-                            wfid].id_cellBlock[wcfid].cell = cellBlock.cell
-                        cellImported = True
-                    for record in cellBlock.temp_refs:
-                        if record.base in self.old_new:
-                            if not worldImported:
-                                patchWorlds.setWorld(worldBlock.world)
-                                worldImported = True
-                            if not cellImported:
-                                patchWorlds.id_worldBlocks[
-                                    wfid].setCell(cellBlock.cell)
-                                cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[wfid].id_cellBlock[wcfid].temp_refs:
-                                if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                        wcfid].temp_refs.index(newRef)
-                                    patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                        wcfid].temp_refs[loc] = record
-                                    break
-                            else:
-                                patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                    wcfid].temp_refs.append(record)
-                    for record in cellBlock.persistent_refs:
-                        if record.base in self.old_new:
-                            if not worldImported:
-                                patchWorlds.setWorld(worldBlock.world)
-                                worldImported = True
-                            if not cellImported:
-                                patchWorlds.id_worldBlocks[
-                                    wfid].setCell(cellBlock.cell)
-                                cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                wcfid].persistent_refs:
-                                if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                        wcfid].persistent_refs.index(newRef)
-                                    patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                        wcfid].persistent_refs[loc] = record
-                                    break
-                            else:
-                                patchWorlds.id_worldBlocks[wfid].id_cellBlock[
-                                    wcfid].persistent_refs.append(record)
+                    if cellImported := wfid in patchWorlds.id_worldBlocks \
+                            and wcfid in (patch_world_cell :=
+                                patchWorlds.id_worldBlocks[wfid].id_cellBlock):
+                        patch_world_cell[wcfid].cell = cellBlock.cell
+                    for get_refs in (__get_temp, __get_pers):
+                        for record in get_refs(cellBlock):
+                            if record.base in self.old_new:
+                                if not worldImported:
+                                    patchWorlds.setWorld(worldBlock.world)
+                                    worldImported = True
+                                if not cellImported:
+                                    patchWorlds.id_worldBlocks[
+                                        wfid].setCell(cellBlock.cell)
+                                    cellImported = True
+                                refs = get_refs(patchWorlds.id_worldBlocks[wfid
+                                                ].id_cellBlock[wcfid])
+                                for loc, newRef in enumerate(refs):
+                                    if newRef.fid == record.fid:
+                                        refs[loc] = record
+                                        break
+                                else:
+                                    refs.append(record)
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self, log, progress, *, __get_temp=attrgetter('temp_refs'),
+                   __get_pers=attrgetter('persistent_refs')):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
         old_new = self.old_new
@@ -354,40 +317,27 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                    record.setChanged()
 ##                    keep(record.fid)
         for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
-            for record in cellBlock.temp_refs:
-                if record.base in self.old_new:
-                    record.base = swapper(record.base)
-                    count[cfid.mod_fn] += 1
-##                    record.mapFids(swapper,True)
-                    record.setChanged()
-                    keep(record.fid)
-            for record in cellBlock.persistent_refs:
-                if record.base in self.old_new:
-                    record.base = swapper(record.base)
-                    count[cfid.mod_fn] += 1
-##                    record.mapFids(swapper,True)
-                    record.setChanged()
-                    keep(record.fid)
+            for get_refs in (__get_temp, __get_pers):
+                for record in get_refs(cellBlock):
+                    if record.base in self.old_new:
+                        record.base = swapper(record.base)
+                        count[cfid.mod_fn] += 1
+                        ## record.mapFids(swapper,True)
+                        record.setChanged()
+                        keep(record.fid)
         for worldId, worldBlock in self.patchFile.tops[
             b'WRLD'].id_worldBlocks.items():
             keepWorld = False
             for cfid, cellBlock in worldBlock.id_cellBlock.items():
-                for record in cellBlock.temp_refs:
-                    if record.base in self.old_new:
-                        record.base = swapper(record.base)
-                        count[cfid.mod_fn] += 1
-##                        record.mapFids(swapper,True)
-                        record.setChanged()
-                        keep(record.fid)
-                        keepWorld = True
-                for record in cellBlock.persistent_refs:
-                    if record.base in self.old_new:
-                        record.base = swapper(record.base)
-                        count[cfid.mod_fn] += 1
-##                        record.mapFids(swapper,True)
-                        record.setChanged()
-                        keep(record.fid)
-                        keepWorld = True
+                for get_refs in (__get_temp, __get_pers):
+                    for record in get_refs(cellBlock):
+                        if record.base in self.old_new:
+                            record.base = swapper(record.base)
+                            count[cfid.mod_fn] += 1
+                            ## record.mapFids(swapper,True)
+                            record.setChanged()
+                            keep(record.fid)
+                            keepWorld = True
             if keepWorld:
                 keep(worldId)
         log.setHeader(f'= {self._patcher_name}')
