@@ -1101,7 +1101,8 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # NPC Checker
     #--------------------------------------------------------------------------
-    _standard_eyes = [(None, x) for x in  (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+    _standard_eyes = [(None, x) for x in
+                      (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
     default_eyes = {
         #--FalloutNV.esm
         # Caucasian

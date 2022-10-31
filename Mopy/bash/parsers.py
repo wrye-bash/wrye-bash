@@ -811,6 +811,8 @@ class FidReplacer(_HandleAliases):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FidReplacer, self).__init__(aliases_, called_from_patcher)
+        # simpleTypes are not defined when parsers are imported in
+        # game/oblivion/patcher/preservers.py:30
         self._parser_sigs = MreRecord.simpleTypes
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id

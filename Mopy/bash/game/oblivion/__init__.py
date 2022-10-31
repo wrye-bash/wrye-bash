@@ -555,8 +555,8 @@ class OblivionGameInfo(PatchGame):
         b'MISC': ('eid', 'weight', 'value'),
         b'SGST': ('eid', 'weight', 'value', 'uses'),
         b'SLGM': ('eid', 'weight', 'value'),
-        b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach',
-                  'enchantPoints'),
+        b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed',
+                  'reach', 'enchantPoints'),
     }
 
     #--------------------------------------------------------------------------
@@ -615,36 +615,34 @@ class OblivionGameInfo(PatchGame):
         b'CONT': ('model',),
         b'CREA': ('bodyParts', 'nift_p'),
         b'DOOR': ('model',),
-        b'EFSH': ('particle_texture', 'fill_texture', 'efsh_flags',
-                  'ms_source_blend_mode', 'ms_blend_operation',
-                  'ms_z_test_function', 'fill_color1_red', 'fill_color1_green',
-                  'fill_color1_blue', 'fill_alpha_fade_in_time',
-                  'fill_full_alpha_time', 'fill_alpha_fade_out_time',
-                  'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
-                  'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
-                  'fill_texture_animation_speed_v', 'ee_fall_off', 'ee_color_red',
-                  'ee_color_green', 'ee_color_blue', 'ee_alpha_fade_in_time',
-                  'ee_full_alpha_time', 'ee_alpha_fade_out_time',
-                  'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
-                  'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
-                  'ee_full_alpha_ratio', 'ms_dest_blend_mode',
-                  'ps_source_blend_mode', 'ps_blend_operation',
-                  'ps_z_test_function', 'ps_dest_blend_mode',
-                  'ps_particle_birth_ramp_up_time', 'ps_full_particle_birth_time',
-                  'ps_particle_birth_ramp_down_time',
-                  'ps_full_particle_birth_ratio',
-                  'ps_persistent_particle_birth_ratio', 'ps_particle_lifetime',
-                  'ps_particle_lifetime_delta', 'ps_initial_speed_along_normal',
-                  'ps_acceleration_along_normal', 'ps_initial_velocity1',
-                  'ps_initial_velocity2', 'ps_initial_velocity3',
-                  'ps_acceleration1', 'ps_acceleration2', 'ps_acceleration3',
-                  'ps_scale_key1', 'ps_scale_key2', 'ps_scale_key1_time',
-                  'ps_scale_key2_time', 'color_key1_red', 'color_key1_green',
-                  'color_key1_blue', 'color_key2_red', 'color_key2_green',
-                  'color_key2_blue', 'color_key3_red', 'color_key3_green',
-                  'color_key3_blue', 'color_key1_alpha', 'color_key2_alpha',
-                  'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-                  'color_key3_time'),
+        b'EFSH': (
+            'particle_texture', 'fill_texture', 'efsh_flags',
+            'ms_source_blend_mode', 'ms_blend_operation', 'ms_z_test_function',
+            'fill_color1_red', 'fill_color1_green', 'fill_color1_blue',
+            'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+            'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+            'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+            'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
+            'ee_fall_off', 'ee_color_red', 'ee_color_green', 'ee_color_blue',
+            'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+            'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+            'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+            'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+            'ms_dest_blend_mode', 'ps_source_blend_mode', 'ps_blend_operation',
+            'ps_z_test_function', 'ps_dest_blend_mode',
+            'ps_particle_birth_ramp_up_time', 'ps_full_particle_birth_time',
+            'ps_particle_birth_ramp_down_time', 'ps_full_particle_birth_ratio',
+            'ps_persistent_particle_birth_ratio', 'ps_particle_lifetime',
+            'ps_particle_lifetime_delta', 'ps_initial_speed_along_normal',
+            'ps_acceleration_along_normal', 'ps_initial_velocity1',
+            'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
+            'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
+            'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
+            'color_key1_red', 'color_key1_green', 'color_key1_blue',
+            'color_key2_red', 'color_key2_green', 'color_key2_blue',
+            'color_key3_red', 'color_key3_green', 'color_key3_blue',
+            'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
+            'color_key1_time', 'color_key2_time', 'color_key3_time'),
         b'EYES': ('iconPath',),
         b'FLOR': ('model',),
         b'FURN': ('model',),
@@ -780,17 +778,16 @@ class OblivionGameInfo(PatchGame):
     actor_importer_attrs = {
         b'CREA': {
             'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                            'fatigue', 'flags.biped', 'flags.essential',
-                            'flags.flies', 'flags.noBloodDecal',
-                            'flags.noBloodSpray', 'flags.noCombatInWater',
-                            'flags.noCorpseCheck', 'flags.noHead',
-                            'flags.noLeftArm', 'flags.noLowLevel',
-                            'flags.noRightArm', 'flags.noShadow', 'flags.respawn',
-                            'flags.swims', 'flags.walks', 'flags.weaponAndShield',
-                            # This flag directly impacts how the
-                            # level_offset is calculated, so use a fused
-                            # attribute to always carry them forward together
-                            ('flags.pcLevelOffset', 'level_offset')),
+                'fatigue', 'flags.biped', 'flags.essential', 'flags.flies',
+                'flags.noBloodDecal', 'flags.noBloodSpray',
+                'flags.noCombatInWater', 'flags.noCorpseCheck', 'flags.noHead',
+                'flags.noLeftArm', 'flags.noLowLevel', 'flags.noRightArm',
+                'flags.noShadow', 'flags.respawn', 'flags.swims',
+                'flags.walks', 'flags.weaponAndShield',
+                # This flag directly impacts how the level_offset is
+                # calculated, so use a fused attribute to always carry them
+                # forward together
+                ('flags.pcLevelOffset', 'level_offset')),
             'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
                               'responsibility', 'services', 'trainLevel',
                               'trainSkill'),
@@ -810,11 +807,11 @@ class OblivionGameInfo(PatchGame):
         },
         b'NPC_': {
             'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                            'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
-                            'flags.essential', 'flags.female', 'flags.noLowLevel',
-                            'flags.noPersuasion', 'flags.noRumors',
-                            'flags.respawn', 'flags.summonable',
-                            ('flags.pcLevelOffset', 'level_offset')), # See above
+                'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
+                'flags.essential', 'flags.female', 'flags.noLowLevel',
+                'flags.noPersuasion', 'flags.noRumors', 'flags.respawn',
+                'flags.summonable',
+                ('flags.pcLevelOffset', 'level_offset')), # See above
             'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
                               'responsibility', 'services', 'trainSkill',
                               'trainLevel'),
@@ -905,7 +902,8 @@ class OblivionGameInfo(PatchGame):
         b'QUST': ('full', 'stages[i].entries[i].text'),
         b'RACE': ('full', 'description'),
         b'SGST': ('full', 'effects[i].scriptEffect?.full'),
-        b'SKIL': ('description', 'apprentice', 'journeyman', 'expert', 'master'),
+        b'SKIL': ('description', 'apprentice', 'journeyman', 'expert',
+                  'master'),
         b'SLGM': ('full',),
         b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
         b'WEAP': ('full',),
@@ -1084,7 +1082,7 @@ class OblivionGameInfo(PatchGame):
                                'maleEndurance', 'malePersonality', 'maleLuck'),
             'R.Body-F': ('femaleTailModel', 'femaleUpperBodyPath',
                          'femaleLowerBodyPath', 'femaleHandPath',
-                          'femaleFootPath', 'femaleTailPath'),
+                         'femaleFootPath', 'femaleTailPath'),
             'R.Body-M': ('maleTailModel', 'maleUpperBodyPath',
                          'maleLowerBodyPath', 'maleHandPath', 'maleFootPath',
                          'maleTailPath'),
@@ -1174,10 +1172,8 @@ class OblivionGameInfo(PatchGame):
         from ... import brec
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20
-        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
-        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = _struct.Struct(
-            header_type.rec_pack_format_str).unpack
+        header_type.rec_pack_format_str = '=4sIIII'
+        header_type.header_unpack = bolt.structs_cache['=4sIIII'].unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})

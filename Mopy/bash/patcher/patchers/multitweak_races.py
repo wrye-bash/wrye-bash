@@ -281,7 +281,7 @@ class RaceTweak_AllHeadParts(IndexingTweak, CustomChoiceTweak):
                 str(record.hdpt_type) in self._chosen_parts)
 
     def tweak_record(self, record):
-        record.validRaces = self._playable_races_flst_fid
+        record.valid_races = self._playable_races_flst_fid
 
 # -----------------------------------------------------------------------------
 class RaceTweak_AllEyes(_ARUnblockTweak):

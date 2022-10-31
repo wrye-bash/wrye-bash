@@ -156,10 +156,8 @@ class NehrimGameInfo(OblivionGameInfo):
         from ... import brec
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20
-        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
-        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = _struct.Struct(
-            header_type.rec_pack_format_str).unpack
+        header_type.rec_pack_format_str = '=4sIIII'
+        header_type.header_unpack = bolt.structs_cache['=4sIIII'].unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})

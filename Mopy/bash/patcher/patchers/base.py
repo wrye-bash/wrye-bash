@@ -217,12 +217,13 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
-    _read_sigs = _parser_sigs = MreRecord.simpleTypes | (
-        {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'})
+    _read_sigs = MreRecord.simpleTypes | { # this should be initialized
+        b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
-        self._parser_sigs = self._read_sigs ##: yak due to parsers being imported early
+        # we need to override self._parser_sigs from FidReplacer.__init__
+        self._parser_sigs = self._read_sigs
         ListPatcher.__init__(self, p_name, p_file, p_sources)
 
     def _parse_line(self, csv_fields):

@@ -41,12 +41,8 @@ class RecordHeader(object):
     """Fixed size structure serving as header for the records or fencepost
     for groups of records."""
     rec_header_size = 24 # Record header size, e.g. 20 for Oblivion
-    # Record pack format, e.g. 4sIIII for Oblivion
-    # Given as a list here, where each string matches one subrecord in the
-    # header. See rec_pack_format_str below as well.
-    rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I', u'I']
-    # rec_pack_format as a format string. Use for pack_head / unpack calls.
-    rec_pack_format_str = u''.join(rec_pack_format)
+    # Record pack format as a format string. Use for pack_head / unpack calls.
+    rec_pack_format_str = '=4sIIIII'
     # precompiled unpacker for record headers
     header_unpack = structs_cache[rec_pack_format_str].unpack
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups

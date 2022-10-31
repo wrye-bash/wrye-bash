@@ -121,11 +121,6 @@ class MorrowindGameInfo(PatchGame):
     }
 
     @classmethod
-    def _dynamic_import_modules(cls, package_name):
-        """morrowind has no patcher currently - read tweaks, vanilla_files"""
-        super(PatchGame, cls)._dynamic_import_modules(package_name)
-
-    @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
         from .records import MreActi, MreAlch, MreAppa, MreArmo, MreBody, \
@@ -139,10 +134,8 @@ class MorrowindGameInfo(PatchGame):
         from ... import brec
         header_type = brec.RecordHeader
         header_type.rec_header_size = 16
-        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']
-        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = _struct.Struct(
-            header_type.rec_pack_format_str).unpack
+        header_type.rec_pack_format_str = '=4sIII'
+        header_type.header_unpack = bolt.structs_cache['=4sIII'].unpack
         from ...brec import Subrecord
         Subrecord.sub_header_fmt = u'=4sI'
         Subrecord.sub_header_unpack = _struct.Struct(
@@ -155,8 +148,7 @@ class MorrowindGameInfo(PatchGame):
             b'LIGH', b'ENCH', b'NPC_', b'ARMO', b'CLOT', b'REPA', b'ACTI',
             b'APPA', b'LOCK', b'PROB', b'INGR', b'BOOK', b'ALCH', b'LEVI',
             b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG', b'DIAL', b'INFO']
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'TES3'])
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs, b'TES3'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreActi, MreAlch, MreAppa, MreArmo, MreBody, MreBook, MreBsgn,
             MreCell, MreClas, MreClot, MreCont, MreCrea, MreDial, MreDoor,

@@ -1232,7 +1232,7 @@ class Mod_ScanDirty(ItemLink):
         log(_(u'This is a report of deleted records that were found in the '
               u'selected plugin(s).') + u'\n')
         # Change a FID to something more useful for displaying
-        def log_fids(del_title, del_fids):
+        def _log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
             mod_masters = modInfo.masterNames
             len_mas = len(mod_masters)
@@ -1253,11 +1253,11 @@ class Mod_ScanDirty(ItemLink):
             elif del_navms or del_refs or del_others:
                 full_dirty_msg = f'* __{modInfo}__:\n'
                 if del_navms:
-                    log_fids(_(u'Deleted Navmeshes'), del_navms)
+                    _log_fids(_('Deleted Navmeshes'), del_navms)
                 if del_refs:
-                    log_fids(_(u'Deleted References'), del_refs)
+                    _log_fids(_('Deleted References'), del_refs)
                 if del_others:
-                    log_fids(_(u'Deleted Base Records'), del_others)
+                    _log_fids(_('Deleted Base Records'), del_others)
                 dirty_plugins.append(full_dirty_msg)
             else:
                 clean_plugins.append(f'* __{modInfo}__')
