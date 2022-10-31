@@ -172,7 +172,6 @@ class OblivionGameInfo(PatchGame):
             'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
         canBash = True
         canEditHeader = True
-        reference_types = {b'ACHR', b'ACRE', b'REFR'}
         sort_lvsp_after_spel = True
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
@@ -1190,10 +1189,9 @@ class OblivionGameInfo(PatchGame):
             b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
             b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
         ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ROAD', b'REFR',
-                                         b'ACHR', b'ACRE', b'PGRD', b'LAND',
-                                         b'INFO'])
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
+                                         *MreCell.ref_types, b'GRUP', b'TES4',
+                                         b'ROAD', b'PGRD', b'LAND', b'INFO'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreTes4,))}
         brec.MreRecord.type_class.update(cls.mergeable_sigs)

@@ -56,7 +56,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount
+    MelIdleAnimationCount, AMreCell
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -741,9 +741,10 @@ class MreCams(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(MelRecord):
+class MreCell(AMreCell):
     """Cell."""
-    rec_sig = b'CELL'
+    ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
+                 b'PHZD', b'PMIS', b'REFR'}
     _has_duplicate_attrs = True # XWCS is an older version of XWCN
 
     CellDataFlags1 = Flags.from_names(
@@ -841,7 +842,8 @@ class MreClas(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelStruct(b'DATA', [u'4s', u'b', u'19B', u'f', u'I', u'4B'],'unknown','teaches','maximumtraininglevel',
+        MelStruct(b'DATA', [u'4s', u'b', u'19B', u'f', u'I', u'4B'],'unknown',
+                  'teaches','maximumtraininglevel',
                   'skillWeightsOneHanded','skillWeightsTwoHanded',
                   'skillWeightsArchery','skillWeightsBlock',
                   'skillWeightsSmithing','skillWeightsHeavyArmor',

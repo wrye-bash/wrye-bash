@@ -463,10 +463,6 @@ class GameInfo(object):
         max_lvl_list_size = 0
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
-        # All 'reference' types, i.e. record types that occur in CELL/WLRD
-        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
-        # PMIS, etc.)
-        reference_types = set()
         # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
         ##: Workaround, see MelSpellsTes4 for the proper solution
         sort_lvsp_after_spel = False

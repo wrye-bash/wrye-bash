@@ -467,6 +467,27 @@ class AMreLeveledList(MelRecord):
             self.mergeSources = [otherMod]
         self.setChanged(self.mergeOverLast)
 
+# Complex records -------------------------------------------------------------
+class AMreCell(MelRecord):
+    """Cell."""
+    rec_sig = b'CELL'
+    # All 'reference' types, i.e. record types that occur in CELL/WLRD groups
+    # and place some sort of thing into the cell (e.g. ACHR, REFR, PMIS, etc.)
+    ref_types = set()
+
+    def getBsb(self):
+        """Returns tesfile block and sub-block indices for cells in this group.
+        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
+        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
+        #--Interior cell
+        if self.flags.isInterior:
+            baseFid = self.fid.object_dex
+            return baseFid % 10, baseFid % 100 // 10
+        #--Exterior cell
+        else:
+            x, y = self.posX or 0, self.posY or 0  # posXY can be None
+            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
+
 #------------------------------------------------------------------------------
 # Full classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------

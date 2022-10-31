@@ -51,7 +51,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
-    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount
+    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -715,6 +715,11 @@ class MreCams(MelRecord):
             old_versions={'4I9f', '4I7f'}),
         MelImageSpaceMod(),
     )
+
+#------------------------------------------------------------------------------
+class MreCell(AMreCell): # todo: implement I guess
+    ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
+                 b'PHZD', b'PMIS', b'REFR'}
 
 #------------------------------------------------------------------------------
 class MreClas(MelRecord):

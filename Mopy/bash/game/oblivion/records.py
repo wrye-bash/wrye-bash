@@ -45,7 +45,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
-    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, MelLandShared
+    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
+    MelLandShared, AMreCell
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -653,9 +654,9 @@ class MreBsgn(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(MelRecord):
+class MreCell(AMreCell):
     """Cell."""
-    rec_sig = b'CELL'
+    ref_types = {b'ACHR', b'ACRE', b'REFR'}
 
     cellFlags = Flags.from_names(
         (0, u'isInterior'),

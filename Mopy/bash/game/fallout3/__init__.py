@@ -141,8 +141,6 @@ class Fallout3GameInfo(PatchGame):
         canBash = True
         canEditHeader = True
         generate_temp_child_onam = True
-        reference_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS',
-                           b'REFR'}
         stringsFiles = []
         validHeaderVersions = (0.85, 0.94)
 
@@ -1204,10 +1202,8 @@ class Fallout3GameInfo(PatchGame):
             b'AVIF', b'RADS', b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS',
             b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
         ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
-                                         b'INFO', b'LAND', b'NAVM', b'PGRE',
-                                         b'PMIS', b'REFR'])
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs, ## todo I added {b'PBEA'}
+            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'TES4'}
         header_type.plugin_form_version = 15
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too

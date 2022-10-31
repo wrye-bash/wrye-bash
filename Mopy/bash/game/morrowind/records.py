@@ -28,11 +28,11 @@ from collections import OrderedDict
 from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     AMreHeader, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
-    MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
-    MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, \
-    MelIcons, MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, \
-    FixedString, AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, \
-    MelLists, MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
+    MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO, \
+    MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, MelIcons, \
+    MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, FixedString, \
+    AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, MelLists, \
+    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags, AMreCell
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -366,9 +366,8 @@ class MreBsgn(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(MelRecord):
+class MreCell(AMreCell):
     """Cell."""
-    rec_sig = b'CELL'
 
     _cell_flags = Flags.from_names(
         (0, u'is_interior_cell'),

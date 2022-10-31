@@ -125,8 +125,6 @@ class Fallout4GameInfo(PatchGame):
         expanded_plugin_range = True
         extension_forces_flags = True
         max_lvl_list_size = 255
-        reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
-                           b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
         validHeaderVersions = (0.95, 1.0)
 
     patchers = {
@@ -774,10 +772,10 @@ class Fallout4GameInfo(PatchGame):
             b'ZOOM', b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN',
             b'STAG', b'NOCM', b'LENS', b'GDRY', b'OVIS',
         ]
-        header_type.valid_header_sigs = (set(header_type.top_grup_sigs) |
-            {b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',
-             b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
-             b'DIAL', b'INFO'})
+        from .records import MreCell ## todo just added for ref_types
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
+            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'DIAL', ## todo DIAL??
+                                         b'TES4'}
         header_type.plugin_form_version = 131
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to

@@ -104,7 +104,7 @@ class _TextParser(object):
         raise AbstractError(f'{type(self)} must implement _header_row')
 
     # Load plugin -------------------------------------------------------------
-    def _load_plugin(self, mod_info, keepAll=True, target_types=None,
+    def _load_plugin(self, mod_info, keepAll=False, target_types=None,
                      load_fact=None):
         """Load the specified record types in the specified ModInfo and
         return the result.
@@ -128,7 +128,8 @@ class _TextParser(object):
 
         :param modInfo: The ModInfo instance to write to.
         :return: info on number of changed records, usually per record type."""
-        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
+        modFile = self._load_plugin(modInfo, keepAll=True,
+                                    target_types=self.id_stored_data)
         changed_stats = self._changed_type()
         # We know that the loaded mod only has the tops loaded that we need
         for top_grup_sig, stored_rec_info in self.id_stored_data.items():
@@ -259,7 +260,7 @@ class _HandleAliases(CsvParser):
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
-        modFile = self._load_plugin(modInfo, keepAll=False)
+        modFile = self._load_plugin(modInfo)
         for top_grup_sig in self._parser_sigs:
             typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
@@ -353,7 +354,7 @@ class _AParser(_HandleAliases):
             master_names = load_order.get_ordered(master_names)
         for mod_name in master_names:
             if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name], keepAll=False,
+            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
                                        target_types=self._fp_types))
         # Finally, process the mod itself
         if loaded_mod.fileInfo.fn_key in self._fp_mods: return
@@ -425,8 +426,7 @@ class _AParser(_HandleAliases):
             self._current_mod = None
             return
         # Load mod_info once and for all, then execute every needed pass
-        loaded_mod = self._load_plugin(mod_info, keepAll=False,
-                                       target_types=a_types)
+        loaded_mod = self._load_plugin(mod_info, target_types=a_types)
         if self._fp_types:
             self._read_plugin_fp(loaded_mod)
         if self._sp_types:
@@ -831,7 +831,7 @@ class FidReplacer(_HandleAliases):
 
     def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
-        modFile = self._load_plugin(modInfo)
+        modFile = self._load_plugin(modInfo, keepAll=True)
         # Create filtered versions of our mappings
         masters_list = set(modFile.augmented_masters())
         filt_fids = {oldId for oldId in self.old_eid if
@@ -1046,7 +1046,7 @@ class ScriptText(_TextParser):
     def readFromMod(self, modInfo):
         """Reads scripts from specified mod."""
         eid_data = self.eid_data
-        modFile = self._load_plugin(modInfo, keepAll=False)
+        modFile = self._load_plugin(modInfo)
         with Progress(_(u'Export Scripts')) as progress:
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)

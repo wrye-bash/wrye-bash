@@ -776,20 +776,6 @@ class MobCell(MobBase):
             count += includeGroups
         return count + 1 # CELL record, always present
 
-    def getBsb(self): ##: Move to MreCell
-        """Returns tesfile block and sub-block indices for cells in this group.
-        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
-        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
-        cell = self.cell
-        #--Interior cell
-        if cell.flags.isInterior:
-            baseFid = cell.fid.object_dex
-            return baseFid % 10, baseFid % 100 // 10
-        #--Exterior cell
-        else:
-            x, y = cell.posX or 0, cell.posY or 0 # posXY can be None
-            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
-
     def dump(self,out):
         """Dumps group header and then records."""
         self.cell.getSize()
@@ -994,7 +980,7 @@ class MobCells(MobBase):
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
         # First sort by the CELL FormID, then by the block they belong to
-        bsbCellBlocks = [(cb.getBsb(), cb) for _cfid, cb in
+        bsbCellBlocks = [(cb.cell.getBsb(), cb) for _cfid, cb in
                          dict_sort(self.id_cellBlock)]
         bsbCellBlocks.sort(key=itemgetter(0))
         # Calculate total size and create block/subblock sizes dict to update
@@ -1045,7 +1031,7 @@ class MobCells(MobBase):
         count = sum(
             x.getNumRecords(includeGroups) for x in self.id_cellBlock.values())
         if count and includeGroups:
-            blocks_bsbs = {x2.getBsb() for x2 in self.id_cellBlock.values()}
+            blocks_bsbs = {x2.cell.getBsb() for x2 in self.id_cellBlock.values()}
             # 1 GRUP header for every cellBlock and one for each separate (?) subblock
             count += 1 + len(blocks_bsbs) + len({x1[0] for x1 in blocks_bsbs})
         return count

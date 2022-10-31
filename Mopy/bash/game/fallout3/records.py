@@ -50,9 +50,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad,\
+    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
-    MelLandShared, MelIdleAnimationCountOld
+    MelLandShared, MelIdleAnimationCountOld, AMreCell
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -695,9 +695,9 @@ class MreCams(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(MelRecord):
+class MreCell(AMreCell):
     """Cell."""
-    rec_sig = b'CELL'
+    ref_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS', b'REFR'} ## todo b'PBEA' was not in valid_header_sigs
 
     cellFlags = Flags.from_names(
         (0, 'isInterior'),

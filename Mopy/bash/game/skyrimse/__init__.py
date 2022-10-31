@@ -343,11 +343,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
-                                         b'LAND', b'INFO', b'NAVM',
-                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
-                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
+            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'TES4'}
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreAchr, MreCell, MreDial, MreInfo, MreNavm, MreTes4, MreWrld))}

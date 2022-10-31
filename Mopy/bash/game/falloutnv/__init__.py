@@ -504,10 +504,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK', b'DEHY', b'HUNG',
             b'SLPD', b'CELL', b'WRLD',
         ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
-                                         b'INFO', b'LAND', b'NAVM', b'PGRE',
-                                         b'PMIS', b'REFR'])
+
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs, ## todo I added {b'PBEA'}
+            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'TES4'}
         header_type.plugin_form_version = 15
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too

@@ -1207,7 +1207,7 @@ class Mod_ScanDirty(ItemLink):
                     all_extracted_data[present_minf.fn_key] = ext_data
                 scan_progress = SubProgress(progress, 0.7, 0.9)
                 scan_progress.setFull(len(all_extracted_data))
-                all_ref_types = bush.game.Esp.reference_types
+                all_ref_types = MreRecord.type_class[b'CELL'].ref_types
                 for i, (plugin_fn, ext_data) in enumerate(
                         all_extracted_data.items()):
                     scan_progress(i, (_(u'Scanning: %s') % plugin_fn))

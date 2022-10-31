@@ -117,10 +117,10 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
             b'ZOOM', b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN',
             b'STAG', b'NOCM', b'LENS', b'GDRY', b'OVIS',
         ]
-        header_type.valid_header_sigs = (set(header_type.top_grup_sigs) |
-            {b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',
-             b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
-             b'DIAL', b'INFO'})
+        from ..fallout4.records import MreCell ## todo just added for ref_types
+        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
+            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'DIAL', ## todo DIAL??
+                                         b'TES4'}
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreTes4,))}
