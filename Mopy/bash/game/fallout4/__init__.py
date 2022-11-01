@@ -722,70 +722,53 @@ class Fallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
 
+    top_groups = [
+        b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST', b'GLOB',
+        b'DMGT', b'CLAS', b'FACT', b'HDPT', b'EYES', b'RACE', b'SOUN', b'ASPC',
+        b'MGEF', b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'ARMO', b'BOOK',
+        b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT', b'SCOL', b'MSTT',
+        b'GRAS', b'TREE', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'LVLN',
+        b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'PROJ', b'HAZD', b'BNDS', b'TERM',
+        b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN', b'NAVI', b'CELL',
+        b'WRLD', b'QUST', b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO',
+        b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK',
+        b'BPTD', b'ADDN', b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT',
+        b'IPDS', b'ARMA', b'ECZN', b'LCTN', b'MESG', b'DOBJ', b'DFOB', b'LGTM',
+        b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR', b'MUST',
+        b'DLVW', b'EQUP', b'RELA', b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO',
+        b'MOVT', b'SNDR', b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+        b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP', b'ZOOM',
+        b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG', b'NOCM',
+        b'LENS', b'GDRY', b'OVIS']
+
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
-            MreDual, MreEyes, MreFstp, MreFsts, MreGlob, MreGmst
-        from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
-            MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAvif, MreBnds, \
-            MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, \
-            MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
-            MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
-            MreFlor, MreFlst, MreFurn, MreGdry, MreGras, MreHazd, MreHdpt, \
-            MreIdle, MreIdlm, MreImad, MreImgs, MreInfo, MreIngr, MreInnr, \
-            MreIpct, MreIpds, MreKeym, MreKssm, MreKywd, MreLand, \
-            MreLvli, MreLvln, MrePerk, MreTes4
-        cls.mergeable_sigs = {x.rec_sig: x for x in (
-            MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
-            MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
-            MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
-            MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts, MreFurn, MreGdry, MreGlob, MreGmst, MreGras,
-            MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr,
-            MreInnr, MreIpct, MreIpds, MreKeym, MreKssm, MreKywd,
-            MreLvli, MreLvln, MrePerk,
-        )}
-        # Setting RecordHeader class variables --------------------------------
-        from ... import brec
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
+        cls._validate_records(__name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=131):
+        from .. import brec ## todo absorb this in super._validate_records
         header_type = brec.RecordHeader
-        header_type.top_grup_sigs = [
-            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST',
-            b'GLOB', b'DMGT', b'CLAS', b'FACT', b'HDPT', b'EYES', b'RACE',
-            b'SOUN', b'ASPC', b'MGEF', b'LTEX', b'ENCH', b'SPEL', b'ACTI',
-            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
-            b'MISC', b'STAT', b'SCOL', b'MSTT', b'GRAS', b'TREE', b'FLOR',
-            b'FURN', b'WEAP', b'AMMO', b'NPC_', b'LVLN', b'KEYM', b'ALCH',
-            b'IDLM', b'NOTE', b'PROJ', b'HAZD', b'BNDS', b'TERM', b'LVLI',
-            b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN', b'NAVI', b'CELL',
-            b'WRLD', b'QUST', b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP',
-            b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS', b'IMAD',
-            b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'CAMS', b'CPTH',
-            b'VTYP', b'MATT', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'LCTN',
-            b'MESG', b'DOBJ', b'DFOB', b'LGTM', b'MUSC', b'FSTP', b'FSTS',
-            b'SMBN', b'SMQN', b'SMEN', b'DLBR', b'MUST', b'DLVW', b'EQUP',
-            b'RELA', b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT',
-            b'SNDR', b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
-            b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP',
-            b'ZOOM', b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN',
-            b'STAG', b'NOCM', b'LENS', b'GDRY', b'OVIS',
-        ]
-        from .records import MreCell ## todo just added for ref_types
-        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
-            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'DIAL', ## todo DIAL??
-                                         b'TES4'}
-        header_type.plugin_form_version = 131
+        header_type.valid_header_sigs |= {b'INFO', b'NAVM', b'LAND', b'DIAL'## todo DIAL??
+                                          }
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
         header_type.skip_form_version_upgrade = {b'DMGT'}
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-             (MreTes4, MreInfo, MreLand, ))}
-        brec.MreRecord.type_class.update(cls.mergeable_sigs)
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4'})
-        cls._validate_records()
+        # package name is fallout4 here
+        super()._validate_records(package_name, plugin_form_vers)
+        cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
+            b'ALCH', b'AMMO', b'ASPC', b'CELL', b'LAYR', b'LCRT', b'LCTN',
+            b'LENS', b'LGTM', b'LIGH', b'LSCR', b'LTEX', b'LVSP', b'MATO',
+            b'MATT', b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',
+            b'MUSC', b'MUST', b'NAVI', b'NOCM', b'NOTE', b'NPC_', b'OMOD',
+            b'OTFT', b'OVIS', b'PACK', b'PKIN', b'PROJ', b'QUST', b'RACE',
+            b'REGN', b'RELA', b'REVB', b'RFCT', b'RFGP', b'SCCO', b'SCEN',
+            b'SCOL', b'SCSN', b'SMBN', b'SMEN', b'SMQN', b'SNCT', b'SNDR',
+            b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
+            b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
+            b'WRLD', b'WTHR', b'ZOOM'}
+        brec.RecordType.simpleTypes = cls.mergeable_sigs ## todo it used to include MreInfo, MreLand
 
 GAME_TYPE = Fallout4GameInfo

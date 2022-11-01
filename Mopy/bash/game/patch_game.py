@@ -21,6 +21,8 @@
 #
 # =============================================================================
 """Module housing a GameInfo subtype allowing to build a Bashed patch."""
+import importlib
+
 from . import GameInfo
 
 class PatchGame(GameInfo):
@@ -46,6 +48,7 @@ class PatchGame(GameInfo):
     game_specific_import_patchers = {}
 
     # Record information - set in cls.init ------------------------------------
+    top_groups = [] # list of the top groups ordered as in the main esm
     # Mergeable record types
     mergeable_sigs = {}
     # Extra read classes: these record types will always be loaded, even if
@@ -248,3 +251,26 @@ class PatchGame(GameInfo):
     # The effective timescale to which the wave periods of this game's grass
     # are specified
     default_wp_timescale = 10
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=None):
+        """Performs validation on the record syntax for all decoded records.
+
+        :param plugin_form_vers: if not None set RecordHeader variable"""
+        # import the records and have the RecordType class variables updated
+        importlib.import_module('.records', package=package_name)
+        from .. import brec
+        if plugin_form_vers is not None:
+            brec.RecordHeader.plugin_form_version = plugin_form_vers
+        cell_class = brec.RecordType.sig_to_class[b'CELL']
+        brec.RecordHeader.valid_header_sigs |= {## todo add rest (LAND NAVM etc)
+            cls.Esp.plugin_header_sig, *cls.top_groups, *cell_class.ref_types}
+        for rec_sig, rec_class in list(brec.RecordType.sig_to_class.items()):
+            if issubclass(rec_class, brec.MelRecord):
+                # when emulating startup in tests, an earlier loaded game may
+                # override the rec_class in sig_to_class with a stub (for
+                # instance <class 'bash.game.fallout4.records.MreCell'>)
+                if rec_class.melSet is None:
+                    continue
+                rec_class.validate_record_syntax()
+        brec.RecordHeader.top_grup_sigs = set(cls.top_groups)

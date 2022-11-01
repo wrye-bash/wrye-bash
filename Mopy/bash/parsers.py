@@ -40,7 +40,7 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
     str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import MreRecord, MelObject, RecHeader, attr_csv_struct, null3, \
+from .brec import RecordType, MelObject, RecHeader, attr_csv_struct, null3, \
     FormId
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
@@ -209,7 +209,7 @@ class CsvParser(_TextParser):
         raise AbstractError(f'{type(self)} must implement _parse_line')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
-        return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,
+        return RecordType.sig_to_class[top_grup_sig].parse_csv_line(csv_fields,
             index_dict or self._attr_dex, reuse=index_dict is not None)
 
 class _HandleAliases(CsvParser):
@@ -518,7 +518,7 @@ class ActorFactions(_AParser):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])
         rank = int(csv_fields[7])
         if self._called_from_patcher:
-            ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
+            ret_obj = RecordType.sig_to_class[top_grup_sig].getDefault(u'factions')
             ret_obj.faction = lfid
             ret_obj.rank = rank
             aid = self._key2(csv_fields) ##: pass key2 ?
@@ -654,7 +654,7 @@ class EditorIds(_HandleAliases):
         self.questionableEidsSet = questionableEidsSet
         #--eid = eids[type][longid]
         self.old_new = {}
-        self._parser_sigs = set(MreRecord.simpleTypes) - {b'CELL'}
+        self._parser_sigs = set(RecordType.simpleTypes)
 
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
@@ -814,7 +814,7 @@ class FidReplacer(_HandleAliases):
         super(FidReplacer, self).__init__(aliases_, called_from_patcher)
         # simpleTypes are not defined when parsers are imported in
         # game/oblivion/patcher/preservers.py:30
-        self._parser_sigs = MreRecord.simpleTypes
+        self._parser_sigs = RecordType.simpleTypes
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -1085,7 +1085,7 @@ class ScriptText(_TextParser):
                 ##: #480 - Maybe move create_record to ModFile and use it?
                 scriptFid = FormId.from_object_id(
                     modFile.tes4.num_masters, modFile.tes4.getNextObject())
-                newScript = MreRecord.type_class[b'SCPT'](
+                newScript = RecordType.sig_to_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0,
                               _entering_context=True))
                 newScript.eid = eid

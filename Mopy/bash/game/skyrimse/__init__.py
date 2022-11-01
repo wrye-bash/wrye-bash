@@ -21,6 +21,8 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
+import importlib
+
 from ..skyrim import SkyrimGameInfo
 from .. import GOG_COMMON_FILES, WS_COMMON_FILES
 
@@ -282,77 +284,18 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     #--------------------------------------------------------------------------
     names_tweaks = SkyrimGameInfo.names_tweaks | {'NamesTweak_AmmoWeight'}
 
+    # Record information ------------------------------------------------------
+    top_groups = [*SkyrimGameInfo.top_groups, b'LENS', b'VOLI']
+
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
-            MreDual, MreEyes, MreFstp, MreFsts, MreGlob, MreGmst
-        from .records import MreVoli, MreLens
-        from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
-            MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
-            MreLtex, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
-            MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
-            MreRace, MreDial, MreWthr, MreWeap, MreDobj, MreDoor, MreMato, \
-            MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreStat, MreFact, \
-            MreFlor, MreWatr, MreAmmo, MreFurn, MreFlst, MreGras, MrePack, \
-            MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
-            MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
-            MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
-            MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, \
-            MreMust, MreNpc, MreOtft, MrePerk, MreProj, MreQust, MreRegn, \
-            MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
-            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
-            MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld
-        cls.mergeable_sigs = {x.rec_sig: x for x in (
-            # MreAchr, MreDial, MreInfo,
-            MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
-            MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
-            MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
-            MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj,
-            MreDoor, MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl,
-            MreEyes, MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGlob,
-            MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad,
-            MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
-            MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln,
-            MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt,
-            MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MrePerk, MreProj,
-            MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
-            MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
-            MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack, MreFact, MreRace,
-        )}
-        # Setting RecordHeader class variables --------------------------------
-        from ... import brec
-        header_type = brec.RecordHeader
-        header_type.top_grup_sigs = [
-            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
-            b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
-            b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
-            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
-            b'MISC', b'APPA', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
-            b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_',
-            b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ', b'HAZD',
-            b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
-            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK',
-            b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL',
-            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
-            b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT', b'IPDS',
-            b'ARMA', b'ECZN', b'LCTN', b'MESG', b'RGDL', b'DOBJ', b'LGTM',
-            b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR',
-            b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
-            b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
-            b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
-        header_type.valid_header_sigs = {*header_type.top_grup_sigs,
-            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'TES4'}
-        header_type.plugin_form_version = 44
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-            (MreAchr, MreCell, MreDial, MreInfo, MreNavm, MreTes4, MreWrld))}
-        brec.MreRecord.type_class.update(cls.mergeable_sigs)
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
-                                              b'DIAL', b'INFO', b'NAVM',
-                                              b'WRLD'})
-        cls._validate_records()
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=44):
+        # first import our records from skyrimse.records
+        importlib.import_module('.records', package=__name__)
+        # package name is skyrim here
+        super()._validate_records(package_name, plugin_form_vers)
 
 GAME_TYPE = SkyrimSEGameInfo

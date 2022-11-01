@@ -1154,68 +1154,36 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     default_wp_timescale = 30
 
+    top_groups = [
+        b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT', b'HAIR',
+        b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT', b'LTEX', b'ENCH',
+        b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO', b'BOOK', b'CONT', b'DOOR',
+        b'INGR', b'LIGH', b'MISC', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
+        b'TREE', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN',
+        b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'PROJ', b'LVLI', b'WTHR', b'CLMT',
+        b'COBJ', b'REGN', b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
+        b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
+        b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
+        b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC']
+
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ...brec import MreDebr, MreEyes, MreGlob, MreGmst
-        from .records import MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, \
-            MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams, \
-            MreClas, MreClmt, MreCobj, MreCont, MreCpth, MreCrea, MreCsty, \
-            MreWrld, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, \
-            MreRefr, MreFact, MreFurn, MreGras, MreHair, MreHdpt, MreTes4, \
-            MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, \
-            MreKeym, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, \
-            MreLvln, MreMesg, MreMgef, MreMicn, MreMisc, MreMstt, MreMusc, \
-            MreNote, MreNpc, MrePack, MrePerk, MreProj, MrePwat, MreQust, \
-            MreRace, MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, \
-            MreSpel, MreStat, MreTact, MreTerm, MreTree, MreTxst, MreVtyp, \
-            MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
-            MreFlst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis
-        cls.mergeable_sigs = {x.rec_sig: x for x in (
-            MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
-            MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,
-            MreCobj, MreCont, MreCpth, MreCrea, MreCsty, MreDebr, MreDobj,
-            MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, MreEyes, MreFact,
-            MreFlst, MreFurn, MreGlob, MreGras, MreHair, MreHdpt, MreIdle,
-            MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, MreKeym,
-            MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, MreLvln,
-            MreMesg, MreMgef, MreMicn, MreMisc, MreMstt, MreMusc, MreNote,
-            MreNpc, MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace,
-            MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, MreSpel,
-            MreStat, MreTact,MreTerm, MreTree, MreTxst, MreVtyp, MreWatr,
-            MreWeap, MreWthr, MreGmst,
-        )}
-        # Setting RecordHeader class variables --------------------------------
-        from ... import brec
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
+        cls._validate_records(__name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=15):
+        from .. import brec ## todo absorb this in super._validate_records
         header_type = brec.RecordHeader
-        header_type.top_grup_sigs = [
-            b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
-            b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
-            b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO',
-            b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT',
-            b'SCOL', b'MSTT', b'PWAT', b'GRAS', b'TREE', b'FURN', b'WEAP',
-            b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN', b'KEYM', b'ALCH',
-            b'IDLM', b'NOTE', b'PROJ', b'LVLI', b'WTHR', b'CLMT', b'COBJ',
-            b'REGN', b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
-            b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL',
-            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
-            b'AVIF', b'RADS', b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS',
-            b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
-        ]
-        header_type.valid_header_sigs = {*header_type.top_grup_sigs, ## todo I added {b'PBEA'}
-            *MreCell.ref_types, b'INFO', b'GRUP', b'NAVM', b'LAND', b'TES4'}
-        header_type.plugin_form_version = 15
+        header_type.valid_header_sigs |= {b'INFO', b'NAVM', b'LAND'}
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too
         header_type.skip_form_version_upgrade = {b'IMGS'}
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
-              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
-        brec.MreRecord.type_class.update(cls.mergeable_sigs)
-        brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
-            b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
-            b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})
-        cls._validate_records()
+        super()._validate_records(package_name, plugin_form_vers)
+        cls.mergeable_sigs = set(cls.top_groups) - {b'CELL', b'DIAL', b'WRLD',
+                                                    b'NAVI'}
+        brec.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
 # Language dirs, shared by EGS and WS versions
 FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',

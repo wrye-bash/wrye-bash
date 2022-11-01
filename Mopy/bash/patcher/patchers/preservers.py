@@ -33,7 +33,7 @@ from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, deprint, setattr_deep
-from ...brec import MreRecord
+from ...brec import RecordType
 from ...exception import ModSigMismatchError
 
 #------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ class APreserver(ImportPatcher):
         ##: make sure k is always bytes and drop encode below
         filtered_dict = {k.encode(u'ascii') if isinstance(k, str) else k: v
                          for k, v in parsed_sources.items()
-                         if v and k in MreRecord.type_class}
+                         if v and k in RecordType.sig_to_class}
         self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.values():
             self.id_data.update(src_data)

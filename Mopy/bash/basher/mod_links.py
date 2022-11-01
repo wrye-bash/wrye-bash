@@ -40,7 +40,7 @@ from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
-from ..brec import MreRecord
+from ..brec import RecordType
 from ..exception import AbstractError, BoltError, CancelError
 from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
@@ -92,11 +92,11 @@ class Mod_FullLoad(_LoadLink):
     _text = 'Test Record Definitions...'
     _help = ('Tests the current record definitions for this game against the '
              'selected plugins.')
-    _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
+    _load_sigs = tuple(RecordType.sig_to_class) # all available (decoded) records
 
     @balt.conversation
     def Execute(self):
-        bolt.deprint(MreRecord.type_class)
+        bolt.deprint(RecordType.sig_to_class)
         dbg_infos = list(self.iselected_infos())
         with balt.Progress() as progress:
             progress.setFull(len(dbg_infos))
@@ -1207,7 +1207,7 @@ class Mod_ScanDirty(ItemLink):
                     all_extracted_data[present_minf.fn_key] = ext_data
                 scan_progress = SubProgress(progress, 0.7, 0.9)
                 scan_progress.setFull(len(all_extracted_data))
-                all_ref_types = MreRecord.type_class[b'CELL'].ref_types
+                all_ref_types = RecordType.sig_to_class[b'CELL'].ref_types
                 for i, (plugin_fn, ext_data) in enumerate(
                         all_extracted_data.items()):
                     scan_progress(i, (_(u'Scanning: %s') % plugin_fn))

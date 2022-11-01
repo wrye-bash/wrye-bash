@@ -120,16 +120,17 @@ class MorrowindGameInfo(PatchGame):
         'tribunal.esm',
     }
 
+    top_groups = [
+        b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL', b'MGEF',
+        b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT', b'DOOR', b'MISC',
+        b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY', b'LIGH', b'ENCH', b'NPC_',
+        b'ARMO', b'CLOT', b'REPA', b'ACTI', b'APPA', b'LOCK', b'PROB', b'INGR',
+        b'BOOK', b'ALCH', b'LEVI', b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG',
+        b'DIAL', b'INFO']
+
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from .records import MreActi, MreAlch, MreAppa, MreArmo, MreBody, \
-            MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, \
-            MreDial, MreDoor, MreEnch, MreFact, MreGmst, MreGlob, MreInfo, \
-            MreIngr, MreLand, MreLevc, MreLevi, MreLigh, MreLock, MreLtex, \
-            MreMgef, MreMisc, MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, \
-            MreRepa, MreScpt, MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, \
-            MreStat, MreTes3, MreWeap
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
         # Setting RecordHeader class variables - Morrowind is special
         from ... import brec
         header_type = brec.RecordHeader
@@ -141,25 +142,12 @@ class MorrowindGameInfo(PatchGame):
         Subrecord.sub_header_unpack = _struct.Struct(
             Subrecord.sub_header_fmt).unpack
         Subrecord.sub_header_size = 8
-        header_type.top_grup_sigs = [
-            b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',
-            b'MGEF', b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT',
-            b'DOOR', b'MISC', b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY',
-            b'LIGH', b'ENCH', b'NPC_', b'ARMO', b'CLOT', b'REPA', b'ACTI',
-            b'APPA', b'LOCK', b'PROB', b'INGR', b'BOOK', b'ALCH', b'LEVI',
-            b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG', b'DIAL', b'INFO']
-        header_type.valid_header_sigs = {*header_type.top_grup_sigs, b'TES3'}
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreActi, MreAlch, MreAppa, MreArmo, MreBody, MreBook, MreBsgn,
-            MreCell, MreClas, MreClot, MreCont, MreCrea, MreDial, MreDoor,
-            MreEnch, MreFact, MreGmst, MreGlob, MreInfo, MreIngr, MreLand,
-            MreLevc, MreLevi, MreLigh, MreLock, MreLtex, MreMgef, MreMisc,
-            MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, MreRepa, MreScpt,
-            MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, MreStat, MreTes3,
-            MreWeap,
-        )}
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES3', b'CELL', b'DIAL'})
-        cls._validate_records()
+        cls._validate_records(__name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=None):
+        super()._validate_records(package_name)
+        from .. import brec
+        brec.RecordType.simpleTypes = set(cls.top_groups) - {b'CELL', b'DIAL'}
 
 GAME_TYPE = MorrowindGameInfo

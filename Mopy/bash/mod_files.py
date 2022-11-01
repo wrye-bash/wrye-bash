@@ -32,7 +32,7 @@ from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
     unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
-    FormIdWriteContext, ZERO_FID
+    FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
@@ -89,7 +89,7 @@ class LoadFactory(object):
         self.recTypes = set()
         self.topTypes = set()
         self.type_class = {}
-        recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
+        recClasses = chain(generic, (RecordType.sig_to_class[x] for x in by_sig))
         for recClass in recClasses:
             self.addClass(recClass)
 
@@ -320,7 +320,7 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rsig in RecordHeader.top_grup_sigs:
+            for rsig in bush.game.top_groups:
                 if rsig in selfTops:
                     selfTops[rsig].dump(out)
 
@@ -341,9 +341,10 @@ class ModFile(object):
         """Indexes and cache all MGEF properties and stores them for retrieval
         by the patchers. We do this once at all so we only have to iterate over
         the MGEFs once."""
-        m_school = MreRecord.type_class[b'MGEF'].mgef_school.copy()
-        m_hostiles = MreRecord.type_class[b'MGEF'].hostile_effects.copy()
-        m_names = MreRecord.type_class[b'MGEF'].mgef_name.copy()
+        mgef_class = RecordType.sig_to_class[b'MGEF']
+        m_school = mgef_class.mgef_school.copy()
+        m_hostiles = mgef_class.hostile_effects.copy()
+        m_names = mgef_class.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
         if b'MGEF' in self.tops:
@@ -452,7 +453,7 @@ class ModHeaderReader(object):
         ##: Uncomment these variables and the block below that uses them once
         # all of FO4's record classes have been written
         # The record types that can even contain EDIDs
-        #records_with_eids = MreRecord.subrec_sig_to_record_sig[b'EDID']
+        #records_with_eids = RecordType.subrec_sig_to_record_sig[b'EDID']
         # Whether or not we can skip looking for EDIDs for  the current record
         # type because it doesn't even have any
         #skip_eids = tg_label not in records_with_eids

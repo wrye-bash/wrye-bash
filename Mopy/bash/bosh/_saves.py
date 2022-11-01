@@ -34,8 +34,8 @@ from .. import bolt, bush
 from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8, dict_sort, sig_to_str
-from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, \
-    FormId, ShortFidWriteContext, FID
+from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, FormId, \
+    ShortFidWriteContext, RecordType
 from ..exception import ModError, StateError, AbstractError
 from ..mod_files import ModFile, LoadFactory
 
@@ -70,7 +70,7 @@ class SreNPC(object):
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = MreRecord.type_class[b'NPC_']._flags(self.flags)
+            self.flags = RecordType.sig_to_class[b'NPC_']._flags(self.flags)
 
         def __str__(self):
             return '\n'.join(

@@ -697,7 +697,7 @@ class MreCams(MelRecord):
 #------------------------------------------------------------------------------
 class MreCell(AMreCell):
     """Cell."""
-    ref_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS', b'REFR'} ## todo b'PBEA' was not in valid_header_sigs
+    ref_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS', b'REFR'} # TODO implement b'PBEA'
 
     cellFlags = Flags.from_names(
         (0, 'isInterior'),

@@ -239,13 +239,29 @@ class MelSet(object):
 # Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class RecordType(type):
-    """Metaclass that adds slots to its instances."""
+    """Metaclass responsible for adding slots in MreRecord type instances and
+    collecting signature and type information on class creation."""
+    # record sigs to class implementing them - collected at class creation
+    sig_to_class = {}
+    # Record types that *don't* have a complex child structure (e.g. CELL), are
+    # *not* part of such a complex structure (e.g. REFR), or are *not* the file
+    # header (TES3/TES4)
+    simpleTypes = set()
+    # Maps subrecord signatures to a set of record signatures that can contain
+    # those subrecords
+    subrec_sig_to_record_sig = defaultdict(set)
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
         classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
             melSet := classdict.get('melSet', ())) else slots
-        return super(RecordType, cls).__new__(cls, name, bases, classdict)
+        new = super(RecordType, cls).__new__(cls, name, bases, classdict)
+        if rs := getattr(new, 'rec_sig', None):
+            cls.sig_to_class[rs] = new
+            if new.melSet:
+                for sr_sig in new.melSet.loaders:
+                    RecordType.subrec_sig_to_record_sig[sr_sig].add(rs)
+        return new
 
 class MreRecord(metaclass=RecordType):
     """Generic Record. flags1 are game specific see comments."""
@@ -351,14 +367,6 @@ class MreRecord(metaclass=RecordType):
     __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
                  'changed', 'data', 'inName')
     isKeyedByEid = False
-    #--Set at end of class data definitions.
-    type_class = {}
-    # Record types that have a complex child structure (e.g. CELL), are part of
-    # such a complex structure (e.g. REFR) or are the file header (TES3/TES4)
-    simpleTypes = set()
-    # Maps subrecord signatures to a set of record signatures that can contain
-    # those subrecords
-    subrec_sig_to_record_sig = defaultdict(set)
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         self.header = header
@@ -402,7 +410,7 @@ class MreRecord(metaclass=RecordType):
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
         instance of the appropriate subclass (!)"""
-        subclass = MreRecord.type_class[self._rec_sig]
+        subclass = type(self).sig_to_class[self._rec_sig]
         myCopy = subclass(self.header)
         myCopy.data = self.data
         with ModReader(self.inName, *self.getDecompressed()) as reader:

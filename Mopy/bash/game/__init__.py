@@ -504,46 +504,30 @@ class GameInfo(object):
 
     @property
     def plugin_header_class(self):
-        return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
+        return brec.RecordType.sig_to_class[self.Esp.plugin_header_sig]
 
     @classmethod
-    def init(cls):
-        # Setting RecordHeader class variables --------------------------------
-        # Top types in order of the main ESM
-        header_type = brec.RecordHeader
-        header_type.top_grup_sigs = []
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4'])
-        # Record Types
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ()}
-        # Simple records
-        brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {b'TES4'})
-        cls._validate_records()
+    def init(cls, _package_name=None):
+        """Dynamically import modules - Record[Type] variables not yet set!
+        :param _package_name: the name of the game package to load if loading
+                              from a derived game - used internally - don't
+                              pass!"""
+        cls._dynamic_import_modules(_package_name) # this better be not None
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         """Dynamically import package modules to avoid importing them for every
         game. We need to pass the package name in for importlib to work.
-        Currently populates the GameInfo namespace with the members defined in
-        the relevant constants.py and imports default_tweaks.py and
-        vanilla_files.py."""
+        Populates the GameInfo namespace with the members defined in
+        default_tweaks.py and vanilla_files.py and also imports game
+        specific patchers. The patcher modules should not rely on records
+        being initialized."""
         tweaks_module = importlib.import_module(u'.default_tweaks',
             package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
         vf_module = importlib.import_module(u'.vanilla_files',
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
-
-    @staticmethod
-    def _validate_records():
-        """Performs validation on the record syntax for all decoded records."""
-        sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
-        for rec_class in brec.MreRecord.type_class.values():
-            if issubclass(rec_class, brec.MelRecord):
-                rec_class.validate_record_syntax()
-                for sr_sig in rec_class.melSet.loaders:
-                    sr_to_r[sr_sig].add(rec_class.rec_sig)
 
     @classmethod
     def supported_games(cls):
