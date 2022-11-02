@@ -103,7 +103,7 @@ class LoadFactory(object):
             try:
                 class_sig = recClass.rec_sig
             except AttributeError:
-                raise ValueError(f'addClass: bytes or MreRecord expected - '
+                raise ValueError(f'addClass: bytes or MelRecord expected - '
                                  f'got: {recClass!r}!')
         #--Don't replace complex class with default (MreRecord) class
         if class_sig in self.type_class and recClass == MreRecord:
@@ -197,16 +197,21 @@ class ModFile(object):
         self.topsSkipped = set() #--Types skipped
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True): # TODO: let it blow?
+             catch_errors=True, do_map_fids=True):
+        ##: track uses and decide on exception handling and setChanged behavior
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        with FormIdReadContext.from_info(self.fileInfo) as ins:
+        cont = FormIdReadContext if do_map_fids else ModReader
+        with cont.from_info(self.fileInfo) as ins:
+            if not do_map_fids: # hacky - only used for Mod_RecalcRecordCounts
+                ins.load_tes4(do_unpack_tes4=False)
             self.tes4 = ins.plugin_header
-            subProgress = self.__load_strs(do_unpack, ins, loadStrings,
-                                           progress)
+            if do_map_fids:
+                progress = self.__load_strs(do_unpack, ins, loadStrings,
+                                            progress)
             #--Raw data read
-            subProgress.setFull(ins.size)
+            progress.setFull(ins.size)
             insAtEnd = ins.atEnd
             insTell = ins.tell
             while not insAtEnd():
@@ -251,7 +256,8 @@ class ModFile(object):
                         # Useful for implementing custom error behavior, see
                         # e.g. Mod_FullLoad
                         raise
-                subProgress(insTell())
+                progress(insTell())
+        if not do_map_fids: return
         # Done reading - mark all records as changed so we'll write out any
         # changes we make to them
         for target_top in self.tops.values():
@@ -521,9 +527,9 @@ class ModHeaderReader(object):
                         if mel_sig == b'XXXX':
                             # Throw away size here (always == 0)
                             mel_size = fmr_unpack(__unpacker, 4, _rsig,
-                                                   u'XXXX.SIZE')[0]
+                                                  'XXXX.SIZE')[0]
                             mel_sig = fmr_unpack(sh_unpack, sh_size,
-                                                  _rsig, u'XXXX.TYPE')[0]
+                                                 _rsig, 'XXXX.TYPE')[0]
                         if mel_sig == b'EDID':
                             # No need to worry about newlines, these are Editor
                             # IDs and so won't contain any

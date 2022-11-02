@@ -29,11 +29,11 @@ from operator import itemgetter, attrgetter
 
 # Wrye Bash imports
 from . import utils_constants
-from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader, \
+from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
     ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
 from .utils_constants import fid_key, DUMMY_FID
-from ..bolt import pack_int, structs_cache, attrgetter_cache, deprint, \
-    sig_to_str, dict_sort
+from ..bolt import pack_int, structs_cache, attrgetter_cache, sig_to_str, \
+    dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -113,7 +113,8 @@ class MobBase(object):
                 while ins_tell() != ins_size:
                     header = unpack_header(ins)
                     if header.recType != b'GRUP':
-                        header.skip_blob(ins)
+                        # FMR.seek doesn't have *debug_str arg so use blob_size
+                        ins.seek(header.blob_size(), 1)
                         numSubRecords += 1
                     else: num_groups += 1
             self.numRecords = numSubRecords + includeGroups * num_groups

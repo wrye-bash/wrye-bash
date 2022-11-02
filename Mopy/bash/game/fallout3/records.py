@@ -1828,7 +1828,7 @@ class _MelNpcDecider(SizeDecider):
     def decide_dump(self, record):
         return len(record.attributes) + 4
 
-class MreNpc(MreActor):
+class MreNpc_(MreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 

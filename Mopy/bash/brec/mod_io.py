@@ -263,6 +263,20 @@ class ModReader(object):
         utils_constants.FORM_ID = self.form_id_type
         self.ins.close()
 
+    def load_tes4(self, do_unpack_tes4=True):
+        """Load the plugin file "header" record - generally has 'TES4'
+        signature."""
+        # Header of the plugin file "header" record
+        tes4_rec_header = unpack_header(self, _entering_context=True)
+        if (rs := tes4_rec_header.recType) != (
+                hs := bush.game.Esp.plugin_header_sig):
+            raise ModError(self.inName, f'Expected {sig_to_str(hs)}, but got '
+                                        f'{sig_to_str(rs)}')
+        self.plugin_header = bush.game.plugin_header_class(tes4_rec_header,
+            self, do_unpack=do_unpack_tes4)
+        # convert the fid of the TES4 record (and the fid of its header)
+        self.plugin_header.fid = tes4_rec_header.fid = ZERO_FID
+
     @classmethod
     def from_info(cls, mod_info):
         """Boilerplate for creating a ModReader wrapping a mod_info."""
@@ -369,16 +383,7 @@ class FormIdReadContext(ModReader):
         self.form_id_type = utils_constants.FORM_ID
         if self.form_id_type is not None:
             raise StateError(f'Already in a ModReader context')
-        # Header of the plugin file "header" record
-        tes4_rec_header = unpack_header(self, _entering_context=True)
-        if (rs := tes4_rec_header.recType) != (# generally has 'TES4' signature
-                hs := bush.game.Esp.plugin_header_sig):
-            raise ModError(self.inName, f'Expected {sig_to_str(hs)}, but got '
-                                        f'{sig_to_str(rs)}')
-        self.plugin_header = bush.game.plugin_header_class(
-            tes4_rec_header, self, do_unpack=True)
-        # convert the fid of the TES4 record (and the fid of its header)
-        self.plugin_header.fid = tes4_rec_header.fid = ZERO_FID
+        self.load_tes4()
         return self
 
 class FormIdWriteContext:
@@ -453,7 +458,7 @@ class FastModReader(BytesIO):
     """BytesIO-derived class that mimics ModReader, but runs at lightning
     speed."""
     def __init__(self, in_name, initial_bytes):
-        super(FastModReader, self).__init__(initial_bytes)
+        super().__init__(initial_bytes)
         # Mirror ModReader.inName - name of the input file
         self.inName = in_name
         # Mirror ModReader.size - size of the input file

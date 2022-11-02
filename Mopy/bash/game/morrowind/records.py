@@ -864,11 +864,11 @@ class MreMisc(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreNpc(MelRecord):
+class MreNpc_(MelRecord):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    # Names match those of MreNpc._flags in later games
+    # Names match those of MreNpc_._flags in later games
     _npc_flags = Flags.from_names(
         'female',
         'essential',

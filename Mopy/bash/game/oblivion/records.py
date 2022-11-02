@@ -1555,7 +1555,7 @@ class MreMisc(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreNpc(AMreActor):
+class MreNpc_(AMreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
