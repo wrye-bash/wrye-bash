@@ -154,7 +154,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         612:  ('PlayerInRegion', 2, 0),
         614:  ('GetChallengeCompleted', 2, 0),
         619:  ('IsAlwaysHardcore', 0, 0),
-        # Added by NVSE - up to date with xNVSE v6.2.0
+        # Added by (x)NVSE - up to date with xNVSE v6.2.9
         1024: ('GetNVSEVersion', 0, 0),
         1025: ('GetNVSERevision', 0, 0),
         1026: ('GetNVSEBeta', 0, 0),
@@ -236,6 +236,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         1475: ('GetPerkRank', 2, 2),
         1476: ('GetAltPerkRank', 2, 2),
         1541: ('GetActorFIKstatus', 0, 0),
+        1587: ('GetWeaponRegenRate', 2, 0),
+        1590: ('CallFunctionCond', 2, 1),
         # Added by nvse_plugin_ExtendedActorVariable (obsolete & unreleased)
         4352: ('GetExtendedActorVariable', 2, 0),
         4353: ('GetBaseExtendedActorVariable', 2, 0),
@@ -262,7 +264,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         4833: ('GetDistance3D', 2, 0),
         4843: ('PlayerHasKey', 0, 0),
         4897: ('ActorHasEffect', 2, 0),
-        # Added by JIP NVSE Plugin - up to date with v56.31
+        # Added by JIP NVSE Plugin - up to date with v56.76
         5637: ('GetIsPoisoned', 0, 0),
         5708: ('IsEquippedWeaponSilenced', 0, 0),
         5709: ('IsEquippedWeaponScoped', 0, 0),
@@ -284,6 +286,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         6069: ('IsInAir', 0, 0),
         6073: ('GetHasContactType', 1, 0),
         6124: ('IsSpellTargetAlt', 2, 0),
+        6167: ('IsIdlePlayingEx', 0, 0),
         6186: ('IsInCharGen', 0, 0),
         6192: ('GetWaterImmersionPerc', 0, 0),
         6204: ('IsFleeing', 0, 0),
@@ -295,6 +298,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         6361: ('GetInFactionList', 2, 0),
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
+        6426: ('IsSpellTargetList', 2, 0),
+        # Added by JohnnyGuitar NVSE - up to date with v4.85
+        8501: ('GetBaseScale', 0, 0),
+        8549: ('GetQuestFailed', 2, 0),
+        8623: ('GetLocationSpecificLoadScreensOnly', 0, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
     }
@@ -302,7 +310,6 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     del condition_function_data[1082] # IsKeyPressed, 1107 in FNV
     del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
     del condition_function_data[1166] # IsControlPressed, 1131 in FNV
-    del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
 
     #--------------------------------------------------------------------------
     # Import Names
