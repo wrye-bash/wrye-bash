@@ -30,8 +30,8 @@ from zlib import decompress as zlib_decompress, error as zlib_error
 from . import bolt, bush, env, load_order
 from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
-    TopGrupHeader, MobBase, MobDials, MobICells, TopGrup, MobWorlds, \
-    unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
+    MobBase, MobDials, MobICells, TopGrup, MobWorlds, unpack_header, \
+    FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
     FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
@@ -108,18 +108,6 @@ class LoadFactory:
             if class_sig in RecordHeader.top_grup_sigs:
                 self.topTypes.add(class_sig) # b'CELL' appears in both
 
-    def getCellTypeClass(self):
-        """Returns type_class dictionary for cell objects."""
-        return {r: self.sig_to_type[r] for r in (
-            b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD')}
-
-    def getUnpackCellBlocks(self,topType):
-        """Returns whether cell blocks should be unpacked or not. Only relevant
-        if CELL and WRLD top types are expanded."""
-        return self.keepAll or (
-                self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD'}) or (
-                       topType == b'WRLD' and b'LAND' in self.recTypes)
-
     def getTopClass(self, top_rec_type) -> type[MobBase | TopGrup] | None:
         """Return top block class for top block type, or None."""
         if top_rec_type in self.topTypes:
@@ -145,14 +133,13 @@ class _TopGroupDict(dict):
     def __missing__(self, top_grup_sig):
         """Return top block of specified topType, creating it first.
         :raise ModError"""
-        top_head = TopGrupHeader(0, top_grup_sig, 0) # raises if sig is invalid
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
                 f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
                 f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass(top_head, self._mod_file.loadFactory)
-        self[top_grup_sig].setChanged()
+        self[top_grup_sig] = topClass.empty_mob(self._mod_file.loadFactory,
+                                                top_grup_sig)
         return self[top_grup_sig]
 
 class ModFile(object):

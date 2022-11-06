@@ -356,8 +356,7 @@ class AMultiTweakItem(object):
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
-        specified record. Must be implemented by every PBash tweak that
-        supports pooling (see MultiTweakItem.supports_pooling)."""
+        specified record."""
         raise AbstractError(u'wants_record not implemented')
 
     def tweak_record(self, record):
@@ -367,8 +366,7 @@ class AMultiTweakItem(object):
         before this call. Note that there is no taking that back: right after
         this call, keep() will be called and the record will be kept as an
         override in the BP. So make sure wants_record *never* lets ITMs and
-        ITPOs through! Must be implemented by every PBash tweak that supports
-        pooling (see MultiTweakItem.supports_pooling)."""
+        ITPOs through!"""
         raise AbstractError(u'tweak_record not implemented')
 
 class ModLoader(Patcher):

@@ -277,8 +277,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
     tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
     # Probably not needed on newer games, so default-enable only on TES4
     default_enabled = bush.game.fsName == u'Oblivion'
-    supports_pooling = False
-    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
+    tweak_read_classes = b'CELL', ## # FIXME TTT b'WRLD', # WRLD is useless, but we want this
     # patcher to run in the same group as Import Cells, so we'll have to
     # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
     ##: Does this even make sense without CBash now?
@@ -293,25 +292,6 @@ class AssortedTweak_FogFix(MultiTweakItem):
 
     def tweak_record(self, record):
         record.fogNear = 0.0001
-
-    def tweak_scan_file(self, mod_file, patch_file):
-        if b'CELL' not in mod_file.tops: return
-        should_add_cell = self.wants_record
-        add_cell = patch_file.tops[b'CELL'].setCell
-        for cell_block in mod_file.tops[b'CELL'].id_cellBlock.values():
-            current_cell = cell_block.cell
-            if should_add_cell(current_cell):
-                add_cell(current_cell)
-
-    def tweak_build_patch(self, log, count, patch_file):
-        """Adds merged lists to patchfile."""
-        keep = patch_file.getKeeper()
-        for cfid, cellBlock in patch_file.tops[b'CELL'].id_cellBlock.items():
-            cell = cellBlock.cell
-            if self.wants_record(cell):
-                self.tweak_record(cell)
-                keep(cfid)
-                count[cfid.mod_fn] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):

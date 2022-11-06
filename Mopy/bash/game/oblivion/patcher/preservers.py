@@ -51,7 +51,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            for worldId, worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.items():
+            for worldId, worldBlock in srcFile.tops[b'WRLD'].id_records.items():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
@@ -60,18 +60,18 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         """Add lists from modFile."""
         if b'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.tops[b'WRLD']
-        for worldId, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
+        for worldId, worldBlock in modFile.tops[b'WRLD'].id_records.items():
             if worldBlock.road:
-                road = worldBlock.road.getTypeCopy()
-                patchWorlds.setWorld(worldBlock.world)
-                patchWorlds.id_worldBlocks[worldId].road = road
+                patch_world_block = patchWorlds.setRecord(
+                    worldBlock.master_record)
+                patch_world_block.road = worldBlock.road.getTypeCopy()
 
     def buildPatch(self,log,progress): # buildPatch3: one type
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldId, worldBlock in self.patchFile.tops[b'WRLD'].id_worldBlocks.items():
+        for worldId, worldBlock in self.patchFile.tops[b'WRLD'].id_records.items():
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
@@ -79,7 +79,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
                 worldBlock.road = newRoad
                 keep(worldId)
                 keep(newRoad.fid)
-                worldsPatched.add((worldId.mod_fn, worldBlock.world.eid))
+                worldsPatched.add((worldId.mod_fn, worldBlock.master_record.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 

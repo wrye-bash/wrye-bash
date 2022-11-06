@@ -412,39 +412,6 @@ class ImportCellsPatcher(ImportPatcher):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
-        def importCellBlockData(cellBlock):
-            """
-            Add attribute values from source mods to a temporary cache.
-            These are used to filter for required records by formID and
-            to update the attribute values taken from the master files
-            when creating cell_data.
-            """
-            if not cellBlock.cell.flags1.ignored:
-                cfid = cellBlock.cell.fid
-                # If we're in an interior, see if we have to ignore any attrs
-                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
-                                if cellBlock.cell.flags.isInterior else attrs)
-                for attr in actual_attrs:
-                    tempCellData[cfid][attr] = __attrgetters[attr](
-                        cellBlock.cell)
-        def checkMasterCellBlockData(cellBlock):
-            """
-            Add attribute values from record(s) in master file(s).
-            Only adds records where a matching formID is found in temp
-            cell data.
-            The attribute values in temp cell data are then used to
-            update these records where the value is different.
-            """
-            if not cellBlock.cell.flags1.ignored:
-                cfid = cellBlock.cell.fid
-                if cfid not in tempCellData: return
-                # If we're in an interior, see if we have to ignore any attrs
-                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
-                                if cellBlock.cell.flags.isInterior else attrs)
-                for attr in actual_attrs:
-                    master_attr = __attrgetters[attr](cellBlock.cell)
-                    if tempCellData[cfid][attr] != master_attr:
-                        cellData[cfid][attr] = tempCellData[cfid][attr]
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -463,15 +430,28 @@ class ImportCellsPatcher(ImportPatcher):
             cachedMasters[srcMod] = srcFile
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
-            if b'CELL' in srcFile.tops:
-                for cellBlock in srcFile.tops[b'CELL'].id_cellBlock.values():
-                    importCellBlockData(cellBlock)
-            if b'WRLD' in srcFile.tops:
-                for worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.values():
-                    for cellBlock in worldBlock.id_cellBlock.values():
-                        importCellBlockData(cellBlock)
-                    if worldBlock.worldCellBlock:
-                        importCellBlockData(worldBlock.worldCellBlock)
+            interior_attrs = attrs - bush.game.cell_skip_interior_attrs
+            # Add attribute values from source mods to a temporary cache. These
+            # are used to filter for required records by formID and to update
+            # the attribute values taken from the master files when creating
+            # cell_data.
+            for sig in self._read_sigs:
+                if block := srcFile.tops.get(sig):
+                    # for the WRLD block getActiveRecords will return
+                    # exterior cells and the persistent cell - previous code
+                    # did not differentiate either
+                    for cfid, cell_rec in block.getActiveRecords(b'CELL'):
+                        # If we're in an interior, see if we have to ignore
+                        # any attrs
+                        actual_attrs = interior_attrs if \
+                            cell_rec.flags.isInterior else attrs
+                        for attr in actual_attrs:
+                            tempCellData[cfid][attr] = __attrgetters[attr](
+                                cell_rec)
+            # Add attribute values from record(s) in master file(s). Only adds
+            # records where a matching formID is found in temp cell data. The
+            # attribute values in temp cell data are then used to update these
+            # records where the value is different.
             for master in srcInfo.masterNames:
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
@@ -479,15 +459,17 @@ class ImportCellsPatcher(ImportPatcher):
                 else:
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
-                if b'CELL' in masterFile.tops:
-                    for cellBlock in masterFile.tops[b'CELL'].id_cellBlock.values():
-                        checkMasterCellBlockData(cellBlock)
-                if b'WRLD' in masterFile.tops:
-                    for worldBlock in masterFile.tops[b'WRLD'].id_worldBlocks.values():
-                        for cellBlock in worldBlock.id_cellBlock.values():
-                            checkMasterCellBlockData(cellBlock)
-                        if worldBlock.worldCellBlock:
-                            checkMasterCellBlockData(worldBlock.worldCellBlock)
+                for sig in self._read_sigs:
+                    if block := masterFile.tops.get(sig):
+                        for cfid, cell_rec in block.getActiveRecords(b'CELL'):
+                            if cfid not in tempCellData: continue
+                            attrs1 = interior_attrs if \
+                                cell_rec.flags.isInterior else attrs
+                            for attr1 in attrs1:
+                                master_attr = __attrgetters[attr1](cell_rec)
+                                if tempCellData[cfid][attr1] != master_attr:
+                                    cellData[cfid][attr1] = tempCellData[cfid][
+                                        attr1]
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile0
@@ -498,24 +480,23 @@ class ImportCellsPatcher(ImportPatcher):
         patchCells = self.patchFile.tops[b'CELL']
         patchWorlds = self.patchFile.tops[b'WRLD']
         if b'CELL' in modFile.tops:
-            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
+            for cfid, cellBlock in modFile.tops[b'CELL'].id_records.items():
                 if cfid in cellData:
-                    patchCells.setCell(cellBlock.cell)
+                    patchCells.setRecord(cellBlock.master_record) # todo why only the cell and not the whole block??
         if b'WRLD' in modFile.tops:
-            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
-                patchWorlds.setWorld(worldBlock.world)
-                curr_pworld = patchWorlds.id_worldBlocks[wfid]
-                for cfid, cellBlock in worldBlock.id_cellBlock.items():
+            for wfid, worldBlock in modFile.tops[b'WRLD'].id_records.items():
+                # if curr_pworld := wfid in patchWorlds.id_records:
+                curr_pworld = patchWorlds.setRecord(worldBlock.master_record)
+                for cfid, cell_rec in worldBlock.getActiveRecords(b'CELL'):
                     if cfid in cellData:
-                        curr_pworld.setCell(cellBlock.cell)
-                pers_cell_block = worldBlock.worldCellBlock
-                if pers_cell_block and pers_cell_block.cell.fid in cellData:
-                    curr_pworld.set_persistent_cell(pers_cell_block.cell)
+                        # if not curr_pworld:
+                        # curr_pworld = patchWorlds.setRecord(worldBlock.world)
+                        curr_pworld.set_cell(cell_rec)
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
-        def handlePatchCellBlock(patchCellBlock):
+        def handlePatchCellBlock():
             """This function checks if an attribute or flag in CellData has
             a value which is different to the corresponding value in the
             bash patch file.
@@ -525,32 +506,24 @@ class ImportCellsPatcher(ImportPatcher):
             to the bash patch, and the cell is flagged as modified.
             Modified cell Blocks are kept, the other are discarded."""
             cell_modified = False
-            patch_cell = patchCellBlock.cell
-            patch_cell_fid = patch_cell.fid
-            for attr, val in cellData[patch_cell_fid].items():
+            for attr, val in cellData[cell_fid].items():
                 if val != __attrgetters[attr](patch_cell):
                     setattr_deep(patch_cell, attr, val)
                     cell_modified = True
             if cell_modified:
                 patch_cell.setChanged()
-                keep(patch_cell_fid)
+                keep(cell_fid)
             return cell_modified
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
-            if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+        for cell_fid, patch_cell in self.patchFile.tops[b'CELL'].getActiveRecords(b'CELL'):
+            if cell_fid in cellData and handlePatchCellBlock():
                 count[cell_fid.mod_fn] += 1
         for worldId, worldBlock in self.patchFile.tops[
-            b'WRLD'].id_worldBlocks.items():
+            b'WRLD'].id_records.items():
             keepWorld = False
-            for cell_fid, cellBlock in worldBlock.id_cellBlock.items():
-                if cell_fid in cellData and handlePatchCellBlock(cellBlock):
-                    count[cell_fid.mod_fn] += 1
-                    keepWorld = True
-            if worldBlock.worldCellBlock:
-                cell_fid = worldBlock.worldCellBlock.cell.fid
-                if cell_fid in cellData and handlePatchCellBlock(
-                        worldBlock.worldCellBlock):
+            for cell_fid, patch_cell in worldBlock.get_cells():
+                if cell_fid in cellData and handlePatchCellBlock():
                     count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if keepWorld:
