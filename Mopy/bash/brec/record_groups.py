@@ -224,7 +224,7 @@ class MobObjects(MobBase):
             if header.recType not in self._accepted_sigs:
                 self._load_err(f'Unexpected {header!r} record in {errLabel}.')
             grel = self._group_element(header, ins)
-            if grel is not None: self.setRecord(grel)
+            if grel is not None: self.setRecord(grel, _loading=True)
             else: header.skip_blob(ins)
         self.setChanged()
 
@@ -294,18 +294,13 @@ class MobObjects(MobBase):
         If record doesn't exist, returns None."""
         return self.id_records.get(rec_rid, None)
 
-    def setRecord(self,record):
+    def setRecord(self, record, do_copy=True, _loading=False):
         """Adds record to self.id_records."""
-        self.id_records[record.group_key()] = record
-
-    def copy_records(self, recs):
-        """Copies the specified records into this block, overwriting existing
-        records. Note that the records *must* already be in long fid format!
-
-        :type recs: list[brec.MreRecord]"""
-        copy_record = self.setRecord
-        for record in recs:
-            copy_record(record.getTypeCopy())
+        el_key = record.group_key()
+        if _loading and el_key in self.id_records:
+            self._load_err(f'Duplicate {el_key} record in {self}')
+        self.id_records[el_key] = record if _loading or not do_copy else \
+            record.getTypeCopy()
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
@@ -319,7 +314,7 @@ class MobObjects(MobBase):
         dest_rec_fids = self.id_records
         for rid, record in srcBlock.getActiveRecords():
             if rid in dest_rec_fids:
-                copy_to_self(record.getTypeCopy())
+                copy_to_self(record)
                 merge_ids_discard(rid)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
@@ -350,7 +345,7 @@ class MobObjects(MobBase):
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(rkey)
-                copy_to_self(src_rec.getTypeCopy())
+                copy_to_self(src_rec)
         # Apply any merge filtering we've done above to the record block in
         # question. That way, patchers won't see the records that have been
         # filtered out here.
@@ -692,20 +687,25 @@ class TopComplexGrup(TopGrup):
     def iter_records(self):
         return chain(*(d.iter_records() for d in self.id_records.values()))
 
-    def setRecord(self, block):
+    def setRecord(self, block, do_copy=True, _loading=False):
         """Adds the specified complex record to self, overriding an existing
-        one with the same FormID or creating a new DIAL block."""
+        one with the same FormID or creating a new complex record block."""
         if isinstance(block, MelRecord):
-            # it's a dialog (ugly but needed for _merge_records/copy_records)
-            dial = block
-            block = self._group_element(None, ins=None)
-            block.master_record = dial
+            # it's the block's master record (needed for _merge_records)
+            if not _loading and do_copy:
+                block = block.getTypeCopy()
+            master_rec = block
+            block = self._group_element(None, ins=None, **{ # the master record
+                sig_to_str(master_rec._rec_sig).lower(): master_rec})
             block.setChanged()
-        dial_fid = block.group_key()
-        if dial_fid in self.id_records:
-            self.id_records[dial_fid].master_record = block.master_record
+        grel_key = block.group_key()
+        if grel_key in self.id_records:
+            if _loading:
+                self._load_err(f'Duplicate {grel_key} record in {self}')
+            self.id_records[grel_key].master_record = block.master_record
         else:
-            self.id_records[dial_fid] = block
+            self.id_records[grel_key] = block
+        return self.id_records[grel_key] # complex records: return this back
 
     def keepRecords(self, p_keep_ids):
         for complex_rec in self.id_records.values():
@@ -732,9 +732,8 @@ class TopComplexGrup(TopGrup):
             # Check if we already have a dialogue with that FormID
             dest_dialogue = lookup_dial(src_fid)
             if was_newly_added := not dest_dialogue:
-                # We do not, add it and then look up again
-                self.setRecord(src_dialogue.dial.getTypeCopy())
-                dest_dialogue = lookup_dial(src_fid)
+                # We do not, add it and get it - will typeCopy the rec
+                dest_dialogue = self.setRecord(src_dialogue.dial)
             # Delegate merging to the (potentially newly added) child dialogue
             dest_dialogue.merge_records(src_dialogue, loadSet, mergeIds,
                 iiSkipMerge, doFilter)

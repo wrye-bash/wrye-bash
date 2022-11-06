@@ -140,7 +140,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         for rid, record in modFile.tops[b'SPEL'].getActiveRecords():
             if record.spellType == 2 and rid in id_info:
-                patchRecords.setRecord(record.getTypeCopy())
+                patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -218,10 +218,10 @@ class MorphFactionsPatcher(_ExSpecialList):
         if modFile.fileInfo.fn_key == cobl_main:
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
-                patchBlock.setRecord(record.getTypeCopy())
+                patchBlock.setRecord(record)
         for rid, record in modFile.tops[b'FACT'].getActiveRecords():
             if rid in id_info:
-                patchBlock.setRecord(record.getTypeCopy())
+                patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""

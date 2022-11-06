@@ -161,7 +161,7 @@ class _AMerger(ImportPatcher):
                     # updating it is handled by
                     # mergeModFile/update_patch_records_from_mod
                     if rid in touched and rid not in id_records:
-                        patchBlock.setRecord(record.getTypeCopy())
+                        patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         if not self.isActive: return
@@ -398,7 +398,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             for rid, record in modFile.tops[top_grup_sig].getActiveRecords():
                 if rid not in merged_deleted: continue
                 if record.aiPackages != merged_deleted[rid]['merged']:
-                    patchBlock.setRecord(record.getTypeCopy())
+                    patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -561,7 +561,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             for rid, record in modFile.tops[top_grup_sig].getActiveRecords():
                 if (rid in merged_deleted and record.spells !=
                         merged_deleted[rid]['merged']):
-                    patch_set(record.getTypeCopy())
+                    patch_set(record)
         # This plugin may override a record we're interested in and add spells
         # we then need to sort, so we have to index them here
         self._index_spells(modFile)
@@ -760,7 +760,7 @@ class _AListsMerger(ListPatcher):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 keep(list_fid)
-                patch_block.setRecord(stored_lists[list_fid])
+                patch_block.setRecord(stored_lists[list_fid], do_copy=False)
                 log(u'* ' + stored_list.eid)
                 for merge_source in stored_list.mergeSources:
                     log(u'  * ' + self.annotate_plugin(merge_source))
@@ -799,7 +799,7 @@ class _AListsMerger(ListPatcher):
                     stored_list.entries = [x for x in stored_list.entries
                                            if x.listId != empty_list]
                     stored_list.items.remove(empty_list)
-                    patch_block.setRecord(stored_list)
+                    patch_block.setRecord(stored_list, do_copy=False)
                     # If removing the empty list made this list empty too, then
                     # we should investigate it as well - could clean up even
                     # more lists
@@ -938,7 +938,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         id_records = patchBlock.id_records
         for rid, record in modFile.tops[b'RACE'].getActiveRecords():
             if rid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy())
+                patchBlock.setRecord(record)
 
     def buildPatch(self, log, progress):
         patchFile = self.patchFile

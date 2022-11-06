@@ -195,7 +195,7 @@ class PatchFile(ModFile):
         new_rec = RecordType.sig_to_class[new_rec_sig](
             RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
         self.keepIds.add(new_rec_fid)
-        self.tops[new_rec_sig].setRecord(new_rec)
+        self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
         return new_rec
 
     def new_gmst(self, gmst_eid, gmst_val):
@@ -297,7 +297,7 @@ class PatchFile(ModFile):
             shared_rec_types.discard(b'MGEF')
             add_mgef_to_patch = self.tops[b'MGEF'].setRecord
             for _rid, record in modFile.tops[b'MGEF'].getActiveRecords():
-                add_mgef_to_patch(record.getTypeCopy())
+                add_mgef_to_patch(record)
         # Update all other record types
         for block_type in shared_rec_types:
             self.tops[block_type].updateRecords(modFile.tops[block_type],

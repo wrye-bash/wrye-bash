@@ -77,7 +77,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         id_books = patch_books.id_records
         for book_rid, record in modFile.tops[b'BOOK'].getActiveRecords():
             if book_rid in _book_fids and book_rid not in id_books:
-                patch_books.setRecord(record)
+                patch_books.setRecord(record, do_copy=False)
         id_ingred = self.id_ingred
         for rid, record in modFile.tops[b'INGR'].getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
@@ -194,7 +194,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
             else:
-                patchBlock.setRecord(record.getTypeCopy())
+                patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""

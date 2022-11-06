@@ -241,7 +241,7 @@ class APreserver(ImportPatcher):
                 if rfid in copied_records or rfid not in id_data: continue
                 for attr, val in id_data[rfid].items():
                     if __attrgetters[attr](record) != val:
-                        patchBlock.setRecord(record.getTypeCopy())
+                        patchBlock.setRecord(record)
                         break
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,

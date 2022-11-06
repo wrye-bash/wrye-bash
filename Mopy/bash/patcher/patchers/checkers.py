@@ -75,7 +75,7 @@ class ContentsCheckerPatcher(Patcher):
             id_records = patchBlock.id_records
             for rid, record in modFile.tops[cont_type].getActiveRecords():
                 if rid not in id_records:
-                    pb_add_record(record.getTypeCopy())
+                    pb_add_record(record)
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
@@ -161,7 +161,7 @@ class RaceCheckerPatcher(Patcher):
             id_records = patchBlock.id_records
             for rid, record in modFile.tops[pb_sig].getActiveRecords():
                 if rid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
+                    patchBlock.setRecord(record)
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
@@ -225,7 +225,7 @@ class NpcCheckerPatcher(Patcher):
             id_records = patchBlock.id_records
             for rid, record in modFile.tops[pb_sig].getActiveRecords():
                 if rid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
+                    patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -308,7 +308,7 @@ class TimescaleCheckerPatcher(ModLoader):
             for rfid, record in modFile.tops[pb_sig].iter_present_records():
                 if rfid in id_records: continue
                 if record.wave_period == 0.0: continue # type: bolt.Rounder
-                patch_block.setRecord(record.getTypeCopy())
+                patch_block.setRecord(record)
 
     def buildPatch(self, log, progress):
         if not self.isActive: return

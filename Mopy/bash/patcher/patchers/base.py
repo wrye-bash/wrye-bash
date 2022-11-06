@@ -147,8 +147,8 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         break # Exit as soon as a tweak is interested
         # Finally, copy all pooled records in one fell swoop
         for top_grup_sig, pooled_records in rec_pool.items():
-            if pooled_records: # only copy if we could pool
-                self.patchFile.tops[top_grup_sig].copy_records(pooled_records)
+            for record in pooled_records:
+                self.patchFile.tops[top_grup_sig].setRecord(record)
 
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
