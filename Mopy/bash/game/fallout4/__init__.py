@@ -789,12 +789,10 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def _validate_records(cls, package_name, plugin_form_vers=131):
         from .. import brec
-        header_type = brec.RecordHeader
-        header_type.valid_header_sigs |= {b'DIAL'}
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
-        header_type.skip_form_version_upgrade = {b'DMGT'}
+        brec.RecordHeader.skip_form_version_upgrade = {b'DMGT'}
         # package name is fallout4 here
         super()._validate_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said

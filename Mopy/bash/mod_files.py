@@ -24,7 +24,6 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from collections import defaultdict
-from itertools import chain
 from typing import Iterable
 from zlib import decompress as zlib_decompress, error as zlib_error
 
@@ -145,19 +144,16 @@ class _TopGroupDict(dict):
         super().__init__(*args, **kwargs)
         self._mod_file = mod_file
 
-    def __missing__(self, top_grup_sig, __rh=RecordHeader):
-        """Return top block of specified topType, creating it, if necessary.
-        :raise ModError KeyError"""
-        if top_grup_sig not in __rh.top_grup_sigs:
-            raise KeyError(f'Invalid top group type: '
-                           f'{sig_to_str(top_grup_sig)}')
+    def __missing__(self, top_grup_sig):
+        """Return top block of specified topType, creating it first.
+        :raise ModError"""
+        top_head = TopGrupHeader(0, top_grup_sig, 0) # raises if sig is invalid
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
                 f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
                 f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
-                                      self._mod_file.loadFactory)
+        self[top_grup_sig] = topClass(top_head, self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
         return self[top_grup_sig]
 

@@ -51,9 +51,9 @@ class RecordHeader(object):
     pack_formats.update({x: '=4sIi3I' for x in {2, 3}})  # Interior Cell Blocks
     pack_formats.update({x: '=4sIhh3I' for x in {4, 5}}) # Exterior Cell Blocks
     # Top grup signatures for validation
-    top_grup_sigs = set()
-    #--Record Types: all recognized record types (not just the top types)
-    valid_header_sigs = set()
+    top_grup_sigs = {}
+    #--Record Types: all recognized record signatures - mirrors RecordType
+    sig_to_class = {}
     #--Plugin form version, we must pack this in the TES4 header
     plugin_form_version = 0
     # A set of record types for which to skip upgrading to the latest Form
@@ -176,8 +176,14 @@ class TopGrupHeader(GrupHeader):
     __slots__ = ()
     is_top_group_header = True
 
-    def __init__(self, grup_size=0, grup_label=b'', arg3=0, arg4=0):
-        super().__init__(grup_size, grup_label, 0, arg3, arg4)
+    def __init__(self, grup_size=0, grup_label=b'', arg3=0, arg4=0, *,
+                 ins=None):
+        try: # it is read as an int, this packs it to bytes
+            grup_label = self.top_grup_sigs[grup_label]
+            super().__init__(grup_size, grup_label, 0, arg3, arg4)
+        except KeyError:
+            raise ModError(ins and ins.inName,
+                           f'Bad Top GRUP type: {sig_to_str(grup_label)}')
 
     def _pack_args(self, __rh):
         return [__rh.pack_formats[0], b'GRUP', self.size, self.label,
@@ -215,11 +221,7 @@ def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
         #--Top Group
         grup_size, grup_label, grup_type, *rest = args
         if grup_type == 0: # groupType == 0 (Top Type)
-            # it is read as an int, this packs it to bytes
-            sig = __packer(grup_label)
-            if sig in __rh.top_grup_sigs:
-                return TopGrupHeader(grup_size, sig, *rest) # grup type omitted
-            raise ModError(ins.inName, f'Bad Top GRUP type: {sig_to_str(sig)}')
+            return TopGrupHeader(grup_size, grup_label, *rest, ins=ins)
         if grup_type in __children:
             # cell and dialog children, label is parent FID
             return ChildrenGrupHeader(grup_size, FID(grup_label), grup_type,
@@ -229,8 +231,8 @@ def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
             return ExteriorGrupHeader(grup_size, yx_coords, grup_type, *rest)
         return GrupHeader(*args)
     #--Bad type?
-    if header_sig not in __rh.valid_header_sigs:
-        raise ModError(ins.inName, f'Bad header type: '
+    if header_sig not in __rh.sig_to_class:
+        raise ModError(ins.inName, f'Bad header signature: '
                                    f'{sig_to_str(header_sig)}')
     #--Record
     return RecHeader(header_sig, *args, _entering_context=_entering_context)

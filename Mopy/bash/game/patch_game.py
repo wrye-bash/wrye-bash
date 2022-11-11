@@ -24,6 +24,8 @@
 import importlib
 
 from . import GameInfo
+from .. import bolt
+from ..bolt import structs_cache
 
 class PatchGame(GameInfo):
     """Game that supports a Bashed patch. Provides record related values used
@@ -262,25 +264,37 @@ class PatchGame(GameInfo):
     default_wp_timescale = 10
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None):
+    def _validate_records(cls, package_name, plugin_form_vers=None, *,
+                          __unp=structs_cache['I'].unpack):
         """Performs validation on the record syntax for all decoded records.
 
         :param plugin_form_vers: if not None set RecordHeader variable"""
         # import the records and have the RecordType class variables updated
         importlib.import_module('.records', package=package_name)
         from .. import brec
+        rtype, rec_head = brec.RecordType, brec.RecordHeader
         if plugin_form_vers is not None:
-            brec.RecordHeader.plugin_form_version = plugin_form_vers
-        brec.RecordHeader.valid_header_sigs |= {cls.Esp.plugin_header_sig,
-            *cls.top_groups, *brec.RecordType.nested_to_top}
-        for rec_sig, rec_class in list(brec.RecordType.sig_to_class.items()):
+            rec_head.plugin_form_version = plugin_form_vers
+        rec_head.top_grup_sigs = {k: k for k in cls.top_groups}
+        rec_head.top_grup_sigs.update((__unp(k)[0], k) for k in cls.top_groups)
+        ##: complex_groups should not be needed but added due to fo4 DIAL (?)
+        valid_header_sigs = {cls.Esp.plugin_header_sig, *cls.top_groups,
+                             *rtype.nested_to_top, *cls.complex_groups}
+        rec_head.sig_to_class = {k: v for k, v in rtype.sig_to_class.items() if
+                                 k in valid_header_sigs}
+        for rec_sig, rec_class in list(rtype.sig_to_class.items()):
             if issubclass(rec_class, brec.MelRecord):
                 # when emulating startup in tests, an earlier loaded game may
                 # override the rec_class in sig_to_class with a stub (for
                 # instance <class 'bash.game.fallout4.records.MreCell'>)
                 if rec_class.melSet is None:
+                    bolt.deprint(f'{rec_class}: no melSet')
                     continue
                 rec_class.validate_record_syntax()
-        brec.RecordHeader.top_grup_sigs = set(cls.top_groups)
+        if miss := [s for s in valid_header_sigs if
+                    s not in rtype.sig_to_class]:
+            bolt.deprint(f'Signatures {miss} lack an implementation - '
+                         f'defaulting to MreRecord')
+            rtype.sig_to_class.update(dict.fromkeys(miss, brec.MreRecord))
         # that's the case for most games so do it here and override if needed
-        brec.RecordType.simpleTypes = set(cls.top_groups) - cls.complex_groups
+        rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups
