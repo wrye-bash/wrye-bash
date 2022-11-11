@@ -1204,20 +1204,44 @@ class UIList(wx.Panel):
     def OnDClick(self, lb_dex_and_flags): pass
     def _handle_key_down(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
-    def _rename_type(self):
-        """Check if the operation is allowed and return the item type of the
-        selected labels to be renamed."""
-        to_rename = self.GetSelectedInfos()
-        return (to_rename and type(to_rename[0])) or None
+    def _check_rename_requirements(self):
+        """Check if the renaming operation is allowed and return the item type
+        of the selected labels to be renamed as well as an error to show the
+        user."""
+        sel_original = self.GetSelected()
+        sel_filtered = list(self.data_store.filter_essential(sel_original))
+        if not sel_filtered:
+            # None of the selected items may be renamed, so this whole renaming
+            # attempt is a nonstarter
+            return None, _('The selected items cannot be renamed.')
+        if (sel_original and sel_filtered and
+                sel_filtered[0] != sel_original[0]):
+            # The currently selected/detail item cannot be renamed, so we can't
+            # edit labels, which means we have to abort the renaming attempt
+            return None, _('Renaming %(first_item)s is not allowed.') % {
+                'first_item': sel_original[0]}
+        to_rename = [self.data_store[i] for i in sel_filtered]
+        if to_rename:
+            return type(to_rename[0]), ''
+        # I don't see how this would be possible, but just in case...
+        return None, _('No items selected for renaming.')
+
+    def could_rename(self):
+        """Returns True if the currently selected item(s) would allow
+        renaming."""
+        return self._check_rename_requirements()[0] is not None
+
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        rename_type = self._rename_type()
+        rename_type, rename_err = self._check_rename_requirements()
         if not rename_type:
-            # Nothing selected / rename mixed installer types / last marker
+            # We can't rename for some reason, let the user know
+            showError(self, rename_err)
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
+
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
         raise AbstractError
@@ -1298,6 +1322,11 @@ class UIList(wx.Panel):
     def GetSelectedInfos(self, selected=None):
         """Return list of infos selected (highlighted) in the interface."""
         return [self.data_store[k] for k in (selected or self.GetSelected())]
+
+    def get_selected_infos_filtered(self, selected=None):
+        """Version of GetSelectedInfos that filters out essential infos."""
+        return [self.data_store[i] for i in self.data_store.filter_essential(
+            selected or self.GetSelected())]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -2065,12 +2094,30 @@ class UIList_Delete(EnabledLink):
         with BusyCursor():
             self.window.DeleteItems(items=self.selected)
 
-class UIList_Rename(ItemLink):
+class UIList_Rename(EnabledLink):
     """Rename selected UIList item(s)."""
-    _text = _(u'Rename...')
+    _text = _('Rename...')
     _keyboard_hint = 'F2'
 
-    def Execute(self): self.window.Rename(selected=self.selected)
+    @property
+    def link_help(self):
+        if self.window.could_rename():
+            sel_filtered = list(self.window.data_store.filter_essential(
+                self.selected))
+            if len(sel_filtered) == 1:
+                return _('Renames the selected item.')
+            elif sel_filtered == self.selected:
+                return _('Renames the selected items.')
+            else:
+                return _('Renames the selected items (some of the selected '
+                         'items cannot be renamed and will be skipped).')
+        return _('The selected items cannot be renamed.')
+
+    def _enable(self):
+        return self.window.could_rename()
+
+    def Execute(self):
+        self.window.Rename(selected=self.selected)
 
 class UIList_OpenItems(EnabledLink):
     """Open specified file(s)."""

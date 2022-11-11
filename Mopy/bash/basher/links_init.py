@@ -40,7 +40,7 @@ from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
-    UIList_OpenStore, UIList_Hide, UIList_Delete
+    UIList_OpenStore, UIList_Hide, UIList_Delete, UIList_Rename
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
@@ -250,7 +250,7 @@ def InitInstallerLinks():
     if True: #--File Menu
         file_menu = MenuLink(_('File..'))
         file_menu.links.append(Installer_Open())
-        file_menu.links.append(Installer_Rename())
+        file_menu.links.append(UIList_Rename())
         file_menu.links.append(Installer_Duplicate())
         file_menu.links.append(Installer_Hide())
         file_menu.links.append(UIList_Delete())
@@ -736,7 +736,7 @@ def InitSaveLinks():
     #--SaveList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(Save_Rename())
+        file_menu.links.append(UIList_Rename())
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(UIList_Delete())
@@ -889,7 +889,7 @@ def InitScreenLinks():
     if True: #--File
         file_menu = MenuLink(_('File..'))
         file_menu.links.append(UIList_OpenItems())
-        file_menu.links.append(Screen_Rename())
+        file_menu.links.append(UIList_Rename())
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Delete())
         ScreensList.context_links.append(file_menu)

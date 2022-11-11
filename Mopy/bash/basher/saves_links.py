@@ -40,7 +40,7 @@ from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
-__all__ = [u'Saves_Profiles', u'Save_Rename', u'Save_Renumber', u'Save_Move',
+__all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
            u'Save_ActivateMasters', u'Save_DiffMasters', u'Save_Stats',
            u'Save_StatObse', u'Save_EditPCSpells', u'Save_RenamePlayer',
            u'Save_EditCreatedEnchantmentCosts', u'Save_ImportFace',
@@ -365,11 +365,6 @@ class Save_DiffMasters(EnabledLink):
                 message += u'=== ' + _(u'Added Masters') + f' ({newName}):\n* '
                 message += u'\n* '.join(load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
-
-#------------------------------------------------------------------------------
-class Save_Rename(UIList_Rename):
-    """Renames Save File."""
-    _help = _(u'Rename Save File')
 
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):

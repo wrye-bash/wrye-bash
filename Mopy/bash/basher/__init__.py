@@ -595,11 +595,15 @@ class MasterList(_ModsUIList):
         # pass event on (for label editing)
         return super(MasterList, self).OnBeginEditLabel(evt_label, uilist_ctrl)
 
-    def _rename_type(self):
+    def _check_rename_requirements(self):
         """Check if the operation is allowed and return ModInfo as the item
         type of the selected label to be renamed."""
         to_rename = self.GetSelected()
-        return (to_rename and ModInfo) or None
+        if to_rename:
+            return ModInfo, ''
+        else:
+            # I don't see how this would be possible, but just in case...
+            return None, _('No items selected for renaming.')
 
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         #--No change?
@@ -2252,7 +2256,7 @@ class SaveList(balt.UIList):
         item_edited = [self.panel.detailsPanel.displayed_item]
         to_select = set()
         to_del = set()
-        for saveInfo in self.GetSelectedInfos():
+        for saveInfo in self.get_selected_infos_filtered():
             rename_res = self.try_rename(saveInfo, root, to_select, to_del,
                                          item_edited)
             if not rename_res: break
@@ -2602,28 +2606,21 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = mouse_text
 
-    def _rename_type(self):
-        #--Only rename multiple items of the same type
-        renaming_type = super(InstallersList, self)._rename_type()
-        if renaming_type is None: return None
+    def _check_rename_requirements(self):
+        rename_type, rename_err = super()._check_rename_requirements()
+        if rename_type is None:
+            return rename_type, rename_err
+        # Only allow renaming multiple packages if they have the same type
         for item in self.GetSelectedInfos():
-            if not type(item) is renaming_type:
-                balt.showError(self, _("Wrye Bash can't rename mixed "
-                                       "package types."))
-                return None
-            #--Also, don't allow renaming the 'Last' marker
-            elif item is self.data_store[self.data_store.lastKey]:
-                balt.showError(self,
-                    _('Renaming %(last_marker)s is not allowed.') % {
-                        'last_marker': self.data_store.lastKey})
-                return None
-        return renaming_type
+            if type(item) != rename_type:
+                return None, _("Wrye Bash can't rename mixed package types.")
+        return rename_type, rename_err
 
     @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
-        selected = self.GetSelectedInfos()
+        selected = self.get_selected_infos_filtered()
         # all selected have common type! enforced in OnBeginEditLabel
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
@@ -3536,7 +3533,7 @@ class ScreensList(balt.UIList):
         if numStr is None: # allow for number only names
             balt.showError(self, root)
             return EventResult.CANCEL
-        selected = self.GetSelectedInfos()
+        selected = self.get_selected_infos_filtered()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
         digits = len(f'{(num + len(selected) - 1)}')

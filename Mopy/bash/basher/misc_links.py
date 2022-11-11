@@ -34,7 +34,7 @@ from ..gui import ImageWrapper, BusyCursor
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
-           u'Screens_JpgQualityCustom', u'Screen_Rename', u'Screen_ConvertTo',
+           'Screens_JpgQualityCustom', 'Screen_ConvertTo',
            u'Master_AllowEdit', u'Master_ClearRenames', u'SortByMenu',
            'Misc_SettingsDialog', 'Master_JumpTo', 'Misc_SaveData']
 
@@ -147,11 +147,6 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
         bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
         super().Execute()
-
-#------------------------------------------------------------------------------
-class Screen_Rename(UIList_Rename):
-    """Renames files by pattern."""
-    _help = _(u'Renames files by pattern')
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------

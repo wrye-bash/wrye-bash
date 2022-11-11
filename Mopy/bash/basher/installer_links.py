@@ -52,7 +52,7 @@ from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
            'Installer_OpenSearch', 'Installer_CaptureFomodOutput',
-           u'Installer_OpenTESA', u'Installer_Hide', u'Installer_Rename',
+           'Installer_OpenTESA', 'Installer_Hide',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
            u'Installer_OverrideSkips', u'Installer_SkipVoices',
            u'Installer_SkipRefresh', u'Installer_Wizard',
@@ -510,19 +510,6 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
         # Can't hide markers, so filter those out
         return (h for h in super()._filter_unhideable(to_hide_items)
                 if not self.idata[h].is_marker)
-
-class Installer_Rename(UIList_Rename, _InstallerLink):
-    """Renames files by pattern."""
-    _help = _(u'Rename selected installer(s).') + u'  ' + _(
-        u'All selected installers must be of the same type')
-
-    def _enable(self):
-        ##Only enable if all selected items are of the same type
-        firstItem = next(self.iselected_infos())
-        for info in self.iselected_infos():
-            if not isinstance(info, type(firstItem)):
-                return False
-        return True
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""

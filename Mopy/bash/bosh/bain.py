@@ -1883,7 +1883,6 @@ class InstallersData(DataStore):
 
     def copy_installer(self, item, destName):
         """Copies archive to new location."""
-        if item == self.lastKey: return
         apath = self.store_dir.join(item)
         apath.copyTo(self.store_dir.join(destName))
         self[destName] = installer = copy.copy(self[item])
