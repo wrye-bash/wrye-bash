@@ -43,7 +43,8 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_PluginChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
-           u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
+           'Mods_ClearManualBashTags', 'Mods_OpenLOFileMenu', 'Mods_LOUndo',
+           'Mods_LORedo']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -124,7 +125,7 @@ class Mods_LoadList(ChoiceLink):
                 balt.ListEditor.display_dialog(
                     self.window, _('Active Plugins Lists'), editorData)
         class _SaveLink(EnabledLink):
-            _text = _('Save Active Plugins List')
+            _text = _('Save Active Plugins List...')
             _help = _('Save the currently active plugins to a new active '
                       'plugins list.')
             def _enable(self): return bool(load_order.cached_active_tuple())
@@ -138,8 +139,8 @@ class Mods_LoadList(ChoiceLink):
                     return self._showError(message)
                 _self.load_lists[newItem] = list(
                     load_order.cached_active_tuple())
-        self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
-                           SeparatorLink()]
+        self.extraItems = [_All(), _None(), _Selected(), SeparatorLink(),
+                           _SaveLink(), _Edit(), SeparatorLink()]
         class _LoListLink(__Activate):
             def Execute(self):
                 """Activate mods in list."""
@@ -495,3 +496,23 @@ class Mods_OpenLOFileMenu(MultiLink):
     """Shows one or more links for opening LO management files."""
     def _links(self):
         return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
+
+#------------------------------------------------------------------------------
+class Mods_LOUndo(ItemLink):
+    """Undoes a load order or active plugins change."""
+    _text = _('Undo')
+    _help = _('Undoes a load order or active plugins change.')
+    _keyboard_hint = 'Ctrl+Z'
+
+    def Execute(self):
+        self.window.lo_undo()
+
+#------------------------------------------------------------------------------
+class Mods_LORedo(ItemLink):
+    """Redoes a load order or active plugins change."""
+    _text = _('Redo')
+    _help = _('Redoes a load order or active plugins change.')
+    _keyboard_hint = 'Ctrl+Y'
+
+    def Execute(self):
+        self.window.lo_redo()

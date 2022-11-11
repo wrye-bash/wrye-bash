@@ -1136,20 +1136,6 @@ class ModList(_ModsUIList):
 
     def _handle_key_down(self, wrapped_evt):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
-        def undo_redo_op(lo_op):
-            # Grab copies of the old LO/actives for find_first_difference
-            prev_lo = load_order.cached_lo_tuple()
-            prev_acti = load_order.cached_active_tuple()
-            if not lo_op(): return # nothing to do
-            curr_lo = load_order.cached_lo_tuple()
-            curr_acti = load_order.cached_active_tuple()
-            low_diff = load_order.find_first_difference(
-                prev_lo, prev_acti, curr_lo, curr_acti)
-            if low_diff is None: return # load orders were identical
-            # Finally, we pass to _lo_redraw_targets to take all other relevant
-            # details into account
-            self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
-                           refreshSaves=True)
         kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
@@ -1178,15 +1164,16 @@ class ModList(_ModsUIList):
                 lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop(lowest_index)
-        elif wrapped_evt.is_cmd_down and kcode == ord(u'Z'):
-            # Ctrl+Z - undo last load order or active plugins change (unless
-            # shift is also pressed, in which case it acts like Ctrl+Y)
-            undo_redo_op(self.data_store.redo_load_order
-                         if wrapped_evt.is_shift_down
-                         else self.data_store.undo_load_order)
-        elif wrapped_evt.is_cmd_down and kcode == ord(u'Y'):
+        elif wrapped_evt.is_cmd_down and kcode == ord('Z'):
+            if wrapped_evt.is_shift_down:
+                # Ctrl+Shift+Z - redo last load order or active plugins change
+                self.lo_redo()
+            else:
+                # Ctrl+Z - undo last load order or active plugins change
+                self.lo_undo()
+        elif wrapped_evt.is_cmd_down and kcode == ord('Y'):
             # Ctrl+Y - redo last load order or active plugins change
-            undo_redo_op(self.data_store.redo_load_order)
+            self.lo_redo()
         else:
             # Correctly update the highlight around selected mod
             return EventResult.CONTINUE
@@ -1245,7 +1232,7 @@ class ModList(_ModsUIList):
     def _unhide_wildcard():
         return bosh.modInfos.plugin_wildcard()
 
-    #--Helpers ---------------------------------------------
+    # Helpers -----------------------------------------------------------------
     @staticmethod
     def _lo_redraw_targets(impacted_plugins):
         """Given a set of plugins (as paths) that were impacted by a load order
@@ -1367,6 +1354,34 @@ class ModList(_ModsUIList):
                                  [checklists], liststyle=u'tree',
                                  canCancel=False)
 
+    # Undo/Redo ---------------------------------------------------------------
+    def _undo_redo_op(self, undo_or_redo):
+        """Helper for load order undo/redo operations. Handles UI refreshes."""
+        # Grab copies of the old LO/actives for find_first_difference
+        prev_lo = load_order.cached_lo_tuple()
+        prev_acti = load_order.cached_active_tuple()
+        if not undo_or_redo():
+            return # Nothing to do
+        curr_lo = load_order.cached_lo_tuple()
+        curr_acti = load_order.cached_active_tuple()
+        low_diff = load_order.find_first_difference(
+            prev_lo, prev_acti, curr_lo, curr_acti)
+        if low_diff is None:
+            return # Load orders were identical
+        # Finally, we pass to _lo_redraw_targets to take all other relevant
+        # details into account
+        self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
+                       refreshSaves=True)
+
+    def lo_undo(self):
+        """Undoes a load order change."""
+        self._undo_redo_op(load_order.undo_load_order)
+
+    def lo_redo(self):
+        """Redoes a load order change."""
+        self._undo_redo_op(load_order.redo_load_order)
+
+    # Other -------------------------------------------------------------------
     def new_bashed_patch(self):
         """Create a new Bashed Patch and refresh the GUI for it."""
         new_patch_name = bosh.modInfos.generateNextBashedPatch(
