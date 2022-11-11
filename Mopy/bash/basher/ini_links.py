@@ -25,13 +25,13 @@
 attribute points to BashFrame.iniList singleton.
 """
 from .. import bass, bosh, balt
-from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
+from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink, \
+    UIList_OpenItems
 from ..bolt import FName
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
-           u'INI_Apply', u'INI_CreateNew', u'INI_ListErrors',
-           u'INI_FileOpenOrCopy']
+           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors', 'INI_Open']
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
@@ -84,31 +84,10 @@ class INI_ListErrors(EnabledLink):
                       fixedFont=False)
 
 #------------------------------------------------------------------------------
-class INI_FileOpenOrCopy(EnabledLink):
-    """Open specified file(s) only if they aren't Bash supplied defaults."""
-    def _targets_default(self):
-        return next(self.iselected_infos()).is_default_tweak
-
-    def _enable(self):
-        first_default = self._targets_default()
-        return all(i.is_default_tweak == first_default
-                   for i in self.iselected_infos())
-
-    @property
-    def link_text(self):
-        return [_(u'Open...'), _(u'Copy...')][self._targets_default()]
-
-    @property
-    def link_help(self):
-        return  [_(u"Open the selected INI file(s) with the system's default "
-                   u"program."),
-                 _(u"Make an editable copy of the selected default "
-                   u"tweak(s).")][self._targets_default()]
-
-    def Execute(self):
-        newly_copied = [i for i in self.selected if
-                        bosh.iniInfos.open_or_copy(i)]
-        self.window.RefreshUI(redraw=newly_copied)
+class INI_Open(UIList_OpenItems):
+    """Version of UIList_OpenItems that skips default tweaks."""
+    def _filter_unopenable(self, to_open_items):
+        return self.window.data_store.filter_essential(to_open_items)
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):
@@ -160,6 +139,6 @@ class INI_CreateNew(OneItemLink):
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         fn_tweak = FName(tweak_path.stail)
-        if bosh.iniInfos.duplicate_ini(self._selected_item, fn_tweak):
+        if bosh.iniInfos.copy_tweak_from_target(self._selected_item, fn_tweak):
             ##: we need a 'to_add' param in RefreshUI
             self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)

@@ -65,8 +65,8 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_SkipDirtyCheck', u'Mod_ScanDirty', u'Mod_RemoveWorldOrphans',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
-           u'Mod_SetVersion', u'Mod_ListDependent', u'Mod_JumpToInstaller',
-           u'Mod_Move', u'Mod_RecalcRecordCounts']
+           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
+           'Mod_RecalcRecordCounts']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -768,25 +768,6 @@ class Mod_ListDependent(OneItemLink):
         text_list = log.out.getvalue()
         copy_text_to_clipboard(text_list)
         self._showLog(text_list, title=legend, fixedFont=False)
-
-class Mod_JumpToInstaller(AppendableLink, OneItemLink):
-    """Go to the installers tab and highlight the mods installer"""
-    _text = _(u'Jump to Installer')
-
-    @property
-    def link_help(self):
-        return _(u'Jump to the installer of %(filename)s if it exists. You '
-                 u'can Alt-Click on the mod to the same effect.') % {
-            u'filename': self._selected_item}
-
-    def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
-        u'bash.installers.enabled']
-
-    def _enable(self):
-        return (super()._enable() and bool( # we need a boolean here
-            self.window.get_installer(self._selected_item)))
-
-    def Execute(self): self.window.jump_to_mods_installer(self._selected_item)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -729,15 +729,11 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
-class Installer_Open(balt.UIList_OpenItems, EnabledLink):
+class Installer_Open(balt.UIList_OpenItems):
     """Open selected installer(s). Selected markers are skipped."""
-
-    def _enable(self):
-        # Can't use _NoMarkerLink since it will skip unrecognized packages
-        return not any(p.is_marker for p in self.iselected_infos())
-
-    def Execute(self):
-        self.window.OpenSelected(selected=self.selected)
+    def _filter_unopenable(self, to_open_items):
+        return (p for p in to_open_items
+                if not self.window.data_store[p].is_marker)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -1055,8 +1051,6 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
 
     def _enable(self):
         if self.selected == -1: return False
-        ##: Maybe refactor all this plugin logic (especially the renamed plugin
-        # (asterisk) handling) to a property inside a base class?
         self.target_plugin = self.window.get_espm(self.selected)
         return self.target_plugin in bosh.modInfos
 

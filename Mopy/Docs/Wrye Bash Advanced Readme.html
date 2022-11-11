@@ -209,6 +209,11 @@
         validate ModuleConfig files from FOMODs if this is installed.</li>
     <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The Doc Browser
         will be able to display PDFs if this is installed.</li>
+    <li><a href="https://pypi.org/project/requests">requests</a>: If this is
+        not installed, Nexus Mods integration will be unavailable.</li>
+    <li><a href="https://pypi.org/project/websocket-client">websocket-client</a>:
+        If this is not installed, Nexus Mods integration will be
+        unavailable.</li>
 </ul>
 
 <h2 id="bain">Installers Tab <a class="back2top" href="#contents">Back to top</a></h2>
@@ -1607,8 +1612,13 @@ tab. The directories skipped are:
                     it was installed from.</td>
             </tr>
             <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
-            <tr><td colspan="2">Jump to Installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
-                plugin has an installer. You can Alt-Click on the mod to the same effect.
+            <tr>
+                <td colspan="2">Jump to Installer</td>
+                <td>Jump to the installer of the selected plugin, if the
+                    Installers tab is enabled and not hidden and the plugin in
+                    question has an associated installer. You can Alt-Click on
+                    the plugin to the same effect.</td>
+            </tr>
             <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting</td><td>Don't ghost the selected plugins when they are inactive, even if Auto-Ghost
                 is enabled. Will unghost the selected plugins if enabled.</td></tr>
             <tr><td colspan="2">Ghost/Unghost</td><td>Manually ghost/unghost selected plugins (active ones can't

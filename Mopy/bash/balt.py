@@ -27,9 +27,9 @@ from __future__ import annotations
 # Imports ---------------------------------------------------------------------
 from . import bass # for dirs - try to avoid
 from . import bolt
-from .bolt import deprint, readme_url, Path
-from .exception import AbstractError, AccessDeniedError, BoltError, \
-    CancelError, SkipError, StateError
+from .bolt import deprint, readme_url, Path, FName
+from .exception import AbstractError, AccessDeniedError, CancelError, \
+    SkipError, StateError
 #--Python
 import time
 import threading
@@ -346,12 +346,12 @@ def askWarning(parent, message, title=_(u'Warning')):
 
 def showOk(parent, message, title=u''):
     """Shows a modal error message."""
-    if isinstance(title, bolt.Path): title = title.s
+    if isinstance(title, Path): title = title.s
     return askStyled(parent, message, title, wx.OK)
 
 def showError(parent, message, title=_(u'Error')):
     """Shows a modal error message."""
-    if isinstance(title, bolt.Path): title = title.s
+    if isinstance(title, Path): title = title.s
     return askStyled(parent, message, title, wx.OK | wx.ICON_ERROR)
 
 def showWarning(parent, message, title=_(u'Warning'), do_center=False):
@@ -371,7 +371,7 @@ class _Log(object):
         #--Sizing
         key__pos_ = self._settings_key + u'.pos'
         key__size_ = self._settings_key + u'.size'
-        if isinstance(title, bolt.Path): title = title.s
+        if isinstance(title, Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
             window = DialogWindow(parent, title, sizes_dict=_settings,
@@ -426,7 +426,7 @@ class WryeLog(_Log):
                  log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
-        if isinstance(logText, bolt.Path):
+        if isinstance(logText, Path):
             logPath = logText
         else:
             logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
@@ -961,10 +961,10 @@ class UIList(wx.Panel):
     def PopulateItem(self, itemDex=-1, item=None, target_ini_setts=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
+
         :param itemDex: the index of the item in the list - must be given if
         item is None
-        :param item: an FName or an int (Masters), the key in self.data
-        """
+        :param item: an FName or an int (Masters), the key in self.data"""
         insert = False
         gl_set_item = self.__gList._native_widget.SetItem
         allow_cols = self.allowed_cols # property, calculate once
@@ -1425,10 +1425,8 @@ class UIList(wx.Panel):
         except KeyError: pass
 
     #--Item/Index Translation -------------------------------------------------
-    def GetItem(self,index):
-        """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.FName | int
-        """
+    def GetItem(self, index) -> FName | int:
+        """Return item (key in self.data_store) for specified list index."""
         return self.__gList.FindItemAt(index)
 
     def GetIndex(self,item):
@@ -1560,7 +1558,7 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, items: Iterable[bolt.FName]):
+    def hide(self, items: Iterable[FName]):
         """Hides the items in the specified iterable."""
         hidden_ = []
         for fnkey in items:
@@ -1586,6 +1584,25 @@ class UIList(wx.Panel):
         srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
             defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    def jump_to_installer(self, uil_item: FName) -> bool:
+        """Jumps to the installer associated with the specified UIList item."""
+        fn_inst = self.get_installer(uil_item)
+        if fn_inst is None:
+            return False
+        Link.Frame.notebook.SelectPage('Installers', fn_inst)
+        return True
+
+    def get_installer(self, uil_item: FName) -> FName | None:
+        """Returns the installer associated with the specified UIList item, or
+        None if the Installers tab is not enabled, or if the Installers tab is
+        enabled but not constructed (i.e. hidden), or if the item does not have
+        an associated installer."""
+        if (not Link.Frame.iPanel or
+                not bass.settings['bash.installers.enabled']):
+            return None # Installers disabled or not initialized
+        inst_column = self.data_store.table.getColumn('installer')
+        return FName(inst_column.get(uil_item))
 
     # Global Menu -------------------------------------------------------------
     def populate_category(self, cat_label, target_category):
@@ -1659,23 +1676,23 @@ class Link(object):
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 
-    def _initData(self, window, selection):
+    def _initData(self,
+            window: UIList | wx.Panel | Button | DnDStatusBar | CheckListBox,
+            selection: list[FName | int] | int | None):
         """Initialize the Link instance data based on UI state when the
         menu is Popped up.
 
         Called from AppendToMenu - DO NOT call directly. If you need to use the
         initialized data in setting instance attributes (such as text) override
         and always _call super_ when overriding.
+
         :param window: the element the menu is being popped from (usually a
-        UIList subclass)
+            UIList subclass)
         :param selection: the selected items when the menu is appended or None.
-        In modlist/installers it's a list<Path> while in subpackage it's the
-        index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.popup_menu().
-        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
-            gui.misc_components.CheckListBox
-        :type selection: list[FName | int] | int | None
-        """
+            In modlist/installers it's a list<Path> while in subpackage it's
+            the index of the right-clicked item. In main (column header) menus
+            it's the column clicked on or the first column. Set in
+            Links.popup_menu()."""
         self.window = window
         self.selected = selection
 
@@ -1813,6 +1830,7 @@ class ItemLink(Link):
     def __Execute(self, __event):
         """Eat up wx event - code outside balt should not use it."""
         self.Execute()
+        return EventResult.FINISH
 
     def Execute(self):
         """Event: link execution."""
@@ -2055,18 +2073,40 @@ class UIList_Rename(ItemLink):
 
     def Execute(self): self.window.Rename(selected=self.selected)
 
-class UIList_OpenItems(ItemLink):
+class UIList_OpenItems(EnabledLink):
     """Open specified file(s)."""
-    _text = _(u'Open...')
+    _text = _('Open...')
     _keyboard_hint = 'Enter'
+
+    def _filter_unopenable(self, to_open_items):
+        """Filters out unopenable items from the specified iterable. Default
+        behavior is to not filter out anything."""
+        return to_open_items
 
     @property
     def link_help(self):
-        return (_("Open '%(item_to_open)s' with the system's default "
-                  "program.") % {'item_to_open': self.selected[0]}
-                if len(self.selected) == 1 else _('Open the selected files.'))
+        sel_filtered = list(self._filter_unopenable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Open '%(item_to_open)s' with the system's default "
+                         "program.") % {'item_to_open': sel_filtered[0]}
+            return _("Open the selected items with the system's default "
+                     "program.")
+        else:
+            if sel_filtered:
+                return _("Open the selected items with the system's default "
+                         "program (some of the selected items cannot be "
+                         "opened and will be skipped).")
+            return _("The selected items cannot be opened with the system's "
+                     "default program.")
 
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
+    def _enable(self):
+        # Enable if we have at least one openable file
+        return bool(list(self._filter_unopenable(self.selected)))
+
+    def Execute(self):
+        self.window.OpenSelected(
+            selected=self._filter_unopenable(self.selected))
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""

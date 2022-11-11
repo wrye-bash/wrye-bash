@@ -22,14 +22,15 @@
 # =============================================================================
 import re
 import time
-from .. import balt, bosh, bolt, exception
-from ..balt import ItemLink, ChoiceLink, OneItemLink
+
+from .. import balt, bass, bosh, bolt, exception
+from ..balt import ItemLink, ChoiceLink, OneItemLink, AppendableLink
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..localize import format_date, unformat_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
            u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
-           u'File_ListMasters', u'File_Redate']
+           'File_ListMasters', 'File_Redate', 'File_JumpToInstaller']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -149,6 +150,7 @@ class File_Duplicate(ItemLink):
                                   refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
 
+#------------------------------------------------------------------------------
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
     _text = _(u'List Masters...')
@@ -164,6 +166,7 @@ class File_ListMasters(OneItemLink):
         self._showLog(list_of_mods, title=self._selected_item,
                       fixedFont=False)
 
+#------------------------------------------------------------------------------
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
     _help = _(u'Creates a snapshot copy of the selected file(s) in a '
@@ -203,6 +206,7 @@ class File_Snapshot(ItemLink):
             #--Copy file
             self.window.data_store.copy_info(fileName, destDir, destName)
 
+#------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
     """Revert to Snapshot."""
     _text = _(u'Revert to Snapshot...')
@@ -258,6 +262,7 @@ class File_RevertToSnapshot(OneItemLink):
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
 
+#------------------------------------------------------------------------------
 class File_Backup(ItemLink):
     """Backup file."""
     _text = _(u'Backup')
@@ -267,6 +272,7 @@ class File_Backup(ItemLink):
         for fileInfo in self.iselected_infos():
             fileInfo.makeBackup(True)
 
+#------------------------------------------------------------------------------
 class _RevertBackup(OneItemLink):
 
     def __init__(self, first=False):
@@ -324,6 +330,7 @@ class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
     extraItems = [_RevertBackup(), _RevertBackup(first=True)]
 
+#------------------------------------------------------------------------------
 class File_Redate(ItemLink):
     """Move the selected files to start at a specified date."""
     _text = _(u'Redate...')
@@ -357,3 +364,25 @@ class File_Redate(ItemLink):
     def _perform_refresh(self):
         """Refreshes the data store - """
         self.window.data_store.refresh(refresh_infos=False)
+
+#------------------------------------------------------------------------------
+class File_JumpToInstaller(AppendableLink, OneItemLink):
+    """Go to the installers tab and highlight the mods installer"""
+    _text = _('Jump to Installer')
+
+    @property
+    def link_help(self):
+        return _('Jump to the installer associated with %(filename)s. You '
+                 'can Alt-Click on the file to the same effect.') % {
+            'filename': self._selected_item}
+
+    def _append(self, window):
+        return (balt.Link.Frame.iPanel and
+                bass.settings['bash.installers.enabled'])
+
+    def _enable(self):
+        return (super()._enable() and
+                self.window.get_installer(self._selected_item) is not None)
+
+    def Execute(self):
+        self.window.jump_to_installer(self._selected_item)

@@ -1560,22 +1560,58 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     </figure>
     <table id="iniMenuCommands">
         <thead>
-            <tr><th colspan="2">Tweak Context Menu
-            <tr><th>Command<th>Description
+            <tr>
+                <th colspan="3">Tweak Context Menu</th>
+            </tr>
+            <tr>
+                <th colspan="2">Command</th>
+                <th>Description</th>
+            </tr>
+        </thead>
         <tbody>
-            <tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
-            <tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
-            <tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
-                also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
-                target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
-                    Settings</a> setting.
-            <tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
-                <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
+            <tr>
+                <td rowspan="3">File..</td>
+                <td>Open...</td>
+                <td>Opens the selected INI tweak(s) with the default text
+                    editor for .ini files. Unavailable for default (hardcoded)
+                    tweaks.</td>
+            </tr>
+            <tr>
+                <td>Duplicate...</td>
+                <td>Creates a copy of the selected INI tweak.</td>
+            </tr>
             <tr>
                 <td>Delete</td>
                 <td>Deletes the selected tweak(s). Deleted tweaks are sent to
                     the Recycling Bin. Default (hardcoded) tweaks can't be
                     deleted.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="tweakApply">Apply</td>
+                <td>Applies the tweak to the current target INI file.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Create Tweak with current settings...</td>
+                <td>Creates a new tweak with the same settings as the selected
+                    INI tweak, but uses the values in the current INI
+                    file.</td>
+            </tr>
+            <tr>
+                <td colspan="2">List Errors...</td>
+                <td>Lists invalid tweaks (for instance OBSE INI tweaks are
+                    invalid if current target INI is Oblivion.ini), and also
+                    lists section headers and/or individual settings that are
+                    present in selected tweak(s) but are missing from the
+                    current target INI. These tweaks may be installed however -
+                    depending on <a href="#allowTweaksWithNewSettings">Allow
+                        Tweaks with New Settings</a> setting.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Jump to Installer</td>
+                <td>Jump to the installer of the selected INI teak, if the
+                    Installers tab is enabled and not hidden and the plugin in
+                    question has an associated installer. You can Alt-Click on
+                    the tweak to the same effect.</td>
             </tr>
         </tbody>
     </table>

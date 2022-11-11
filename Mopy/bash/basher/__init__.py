@@ -415,12 +415,14 @@ class MasterList(_ModsUIList):
     def _handle_key_up(self, wrapped_evt): pass
 
     def OnDClick(self, lb_dex_and_flags):
+        """Double click - jump to selected plugin on Mods tab."""
         if self.mouse_index is None or self.mouse_index < 0:
             return # Nothing was clicked
         sel_curr_name = self.data_store[self.mouse_index].curr_name
         if sel_curr_name not in bosh.modInfos:
             return # Master that is not installed was clicked
         balt.Link.Frame.notebook.SelectPage(u'Mods', sel_curr_name)
+        return EventResult.FINISH
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -714,14 +716,41 @@ class INIList(balt.UIList):
         if status < 0:
             item_format.back_key = u'ini.bkgd.invalid'
 
+    # Events ------------------------------------------------------------------
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
-        """Handle click on icon events
-        :param wrapped_evt:
-        """
-        ini_inf = self._get_info_clicked(lb_dex_and_flags, on_icon=True)
-        if ini_inf and self.apply_tweaks([ini_inf]):
-            self.panel.ShowPanel()
+        tweak_clicked_on_icon = self._get_info_clicked(lb_dex_and_flags,
+                                                       on_icon=True)
+        if tweak_clicked_on_icon:
+            # Left click on icon - Activate tweak
+            if self.apply_tweaks([tweak_clicked_on_icon]):
+                self.panel.ShowPanel()
+            return EventResult.FINISH
+        else:
+            tweak_clicked = self._getItemClicked(lb_dex_and_flags)
+            if wrapped_evt.is_alt_down and tweak_clicked:
+                # Alt+Left click - jump to installer
+                if self.jump_to_installer(tweak_clicked):
+                    return EventResult.FINISH
 
+    def OnDClick(self, lb_dex_and_flags):
+        """Double click - open selected tweak."""
+        tweak_clicked = self._get_info_clicked(lb_dex_and_flags)
+        if tweak_clicked and not tweak_clicked.is_default_tweak:
+            self.OpenSelected(selected=[tweak_clicked.fn_key])
+        return EventResult.FINISH
+
+    def _handle_key_down(self, wrapped_evt):
+        kcode = wrapped_evt.key_code
+        if kcode in balt.wxReturn:
+            # Enter - open selected tweaks
+            self.OpenSelected(
+                self.data_store.filter_essential(self.GetSelected()))
+        else:
+            return EventResult.CONTINUE
+        # Otherwise we'd jump to a random tweak that starts with the key code
+        return EventResult.FINISH
+
+    # INI-specific methods ----------------------------------------------------
     @classmethod
     def apply_tweaks(cls, tweak_infos, target_ini=None):
         tweak_infos_list = list(tweak_infos) # may be a generator
@@ -1089,9 +1118,9 @@ class ModList(_ModsUIList):
         if kwargs.pop(u'refreshSaves', False):
             Link.Frame.saveListRefresh(focus_list=False)
 
-    #--Events ---------------------------------------------
+    # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
-        """Handle doubleclicking a mod in the Mods List."""
+        """Double click - open selected plugin in Doc Browser."""
         modInfo = self._get_info_clicked(lb_dex_and_flags)
         if not modInfo: return
         if not Link.Frame.docBrowser:
@@ -1119,6 +1148,7 @@ class ModList(_ModsUIList):
                            refreshSaves=True)
         kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
+            # Ctrl+Up/Ctrl+Down - move plugin up/down load order
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
@@ -1144,15 +1174,17 @@ class ModList(_ModsUIList):
                 lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop(lowest_index)
-        # Ctrl+Z - Undo last load order or active plugins change
         elif wrapped_evt.is_cmd_down and kcode == ord(u'Z'):
+            # Ctrl+Z - undo last load order or active plugins change (unless
+            # shift is also pressed, in which case it acts like Ctrl+Y)
             undo_redo_op(self.data_store.redo_load_order
                          if wrapped_evt.is_shift_down
                          else self.data_store.undo_load_order)
-        # Ctrl+Y - Redo last load order or active plugins change
         elif wrapped_evt.is_cmd_down and kcode == ord(u'Y'):
+            # Ctrl+Y - redo last load order or active plugins change
             undo_redo_op(self.data_store.redo_load_order)
-        else: # correctly update the highlight around selected mod
+        else:
+            # Correctly update the highlight around selected mod
             return EventResult.CONTINUE
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
@@ -1182,12 +1214,10 @@ class ModList(_ModsUIList):
         super(ModList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
-        """Left Down: Check/uncheck mods.
-        :param wrapped_evt:
-        """
         mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags,
                                                    on_icon=True)
         if mod_clicked_on_icon:
+            # Left click on icon - (de)activate plugin
             self._toggle_active_state(mod_clicked_on_icon)
             # _handle_select no longer seems to fire for the wrong index, but
             # deselecting the others is still the better behavior here
@@ -1197,7 +1227,9 @@ class ModList(_ModsUIList):
         else:
             mod_clicked = self._getItemClicked(lb_dex_and_flags)
             if wrapped_evt.is_alt_down and mod_clicked:
-                if self.jump_to_mods_installer(mod_clicked): return
+                # Alt+Left click - jump to installer
+                if self.jump_to_installer(mod_clicked):
+                    return EventResult.FINISH
             # Pass Event onward to _handle_select
 
     def _select(self, modName):
@@ -1330,18 +1362,6 @@ class ModList(_ModsUIList):
         ListBoxes.display_dialog(self, _(u'Masters/Children affected'), msg,
                                  [checklists], liststyle=u'tree',
                                  canCancel=False)
-
-    def jump_to_mods_installer(self, modName):
-        fn_inst = self.get_installer(modName)
-        if fn_inst is None:
-            return False
-        balt.Link.Frame.notebook.SelectPage(u'Installers', fn_inst)
-        return True
-
-    def get_installer(self, modName):
-        if not balt.Link.Frame.iPanel or not bass.settings[
-            u'bash.installers.enabled']: return None
-        return FName(self.data_store.table.getColumn(u'installer').get(modName))
 
     def new_bashed_patch(self):
         """Create a new Bashed Patch and refresh the GUI for it."""
@@ -2268,7 +2288,7 @@ class SaveList(balt.UIList):
         status = save_info.getStatus()
         item_format.icon_key = status, save_info.is_save_enabled()
 
-    #--Events ---------------------------------------------
+    # Events ------------------------------------------------------------------
     @balt.conversation
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         """Disable save by changing its extension so it's not loaded by the
@@ -2782,8 +2802,8 @@ class InstallersList(balt.UIList):
     def _handle_key_down(self, wrapped_evt):
         """Char event: Reorder."""
         kcode = wrapped_evt.key_code
-        # Ctrl+Up/Ctrl+Down - Move installer up/down install order
         if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
+            # Ctrl+Up/Ctrl+Down - move installer up/down install order
             selected = self.GetSelected()
             if len(selected) < 1: return
             orderKey = partial(self._sort_keys[u'Order'], self)
@@ -2805,20 +2825,21 @@ class InstallersList(balt.UIList):
             read_files_from_clipboard_cb(
                 lambda clip_file_paths: self.OnDropFiles(
                     0, 0, clip_file_paths))
-        # Enter: Open selected installers
-        elif kcode in balt.wxReturn: self.OpenSelected()
+        elif kcode in balt.wxReturn:
+            # Enter - open selected installers
+            self.OpenSelected()
         else:
             return EventResult.CONTINUE
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
 
     def OnDClick(self, lb_dex_and_flags):
-        """Double click, open the installer."""
+        """Handle double clicks on the Installers tab."""
         inst = self._get_info_clicked(lb_dex_and_flags)
         if not inst: return
         if inst.is_marker:
-            # Double click on a Marker, select all items below
-            # it in install order, up to the next Marker
+            # Double click on a marker - select all items below it in install
+            # order, up to the next marker
             sorted_ = self._SortItems(col=u'Order', sortSpecial=False)
             new = []
             for nextItem in sorted_[inst.order + 1:]:
@@ -2829,6 +2850,7 @@ class InstallersList(balt.UIList):
                 self.SelectItemsNoCallback(new)
                 self.SelectItem((new[-1])) # show details for the last one
         else:
+            # Double click on a package - open the package
             self.OpenSelected(selected=[inst.fn_key])
 
     def _handle_key_up(self, wrapped_evt):
@@ -3228,6 +3250,7 @@ class InstallersDetails(_SashDetailsPanel):
         selected_name = self.get_espm(selected_index)
         if selected_name not in bosh.modInfos: return
         balt.Link.Frame.notebook.SelectPage(u'Mods', selected_name)
+        return EventResult.FINISH
 
     def set_subpackage_checkmarks(self, checked):
         """Checks or unchecks all subpackage checkmarks and propagates that
@@ -3497,9 +3520,9 @@ class ScreensList(balt.UIList):
         (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
     ])
 
-    #--Events ---------------------------------------------
+    # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
-        """Double click a screenshot"""
+        """Double click - open selected screenshot."""
         hitItem = self._getItemClicked(lb_dex_and_flags)
         if hitItem:
             self.OpenSelected(selected=[hitItem])
@@ -3832,6 +3855,11 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         return menu
 
     def SelectPage(self, page_title, item):
+        """Jumps to the specified item on the specified tab.
+
+        Note: If you call this from inside an event handler, be sure to return
+        EventResult.FINISH, otherwise a later OS handler may steal focus onto
+        the now-invisible tab."""
         ind = 0
         for title, enabled in settings[u'bash.tabs.order'].items():
             if title == page_title:
@@ -4140,7 +4168,7 @@ class BashFrame(WindowFrame):
         """Sets status bar info field."""
         self.statusBar.SetStatusText(infoTxt, 1)
 
-    #--Events ---------------------------------------------
+    # Events ------------------------------------------------------------------
     @balt.conversation
     def RefreshData(self, evt_active=True, booting=False):
         """Refresh all data - window activation event callback, called also

@@ -411,12 +411,18 @@ def InitINILinks():
     INIList.column_links.append(Misc_SaveData())
     INIList.column_links.append(Misc_SettingsDialog())
     #--Item menu
+    if True: #--File Menu
+        file_menu = MenuLink(_('File..'))
+        file_menu.links.append(INI_Open())
+        file_menu.links.append(File_Duplicate())
+        file_menu.links.append(UIList_Delete())
+        INIList.context_links.append(file_menu)
+    INIList.context_links.append(SeparatorLink())
     INIList.context_links.append(INI_Apply())
     INIList.context_links.append(INI_CreateNew())
     INIList.context_links.append(INI_ListErrors())
     INIList.context_links.append(SeparatorLink())
-    INIList.context_links.append(INI_FileOpenOrCopy())
-    INIList.context_links.append(UIList_Delete())
+    INIList.context_links.append(File_JumpToInstaller())
     # INIList: Global Links
     # File Menu
     file_menu = INIList.global_links[_('File')]
@@ -514,7 +520,7 @@ def InitModLinks():
     ModList.context_links.append(SeparatorLink())
     ModList.context_links.append(Mod_Move())
     ModList.context_links.append(Mod_ShowReadme())
-    ModList.context_links.append(Mod_JumpToInstaller())
+    ModList.context_links.append(File_JumpToInstaller())
     if True: #--Info
         info_menu = MenuLink(_('Info..'))
         if bush.game.allTags:

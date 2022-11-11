@@ -1525,6 +1525,39 @@ class TableFileInfos(DataStore):
         self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
         return super(TableFileInfos, self).rename_operation(member_info, newName)
 
+    #--Copy
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
+                  save_lo_cache=False):
+        """Copies member file to destDir. Will overwrite! Will update
+        internal self.data for the file if copied inside self.info_dir but the
+        client is responsible for calling the final refresh of the data store.
+        See usages.
+
+        :param save_lo_cache: ModInfos only save the mod infos load order cache
+        :param set_mtime: if None self[fileName].mtime is copied to destination
+        """
+        destDir.makedirs()
+        if not destName: destName = fileName
+        src_info = self[fileName]
+        if destDir == self.store_dir and destName in self:
+            destPath = self[destName].abs_path
+        else:
+            destPath = destDir.join(destName)
+        self._do_copy(src_info, destPath)
+        if destDir == self.store_dir:
+            # TODO(ut) : pass the info in and load_cache=False
+            self.new_info(destName, notify_bain=True)
+            self.table.copyRow(fileName, destName)
+            if set_mtime is not None:
+                self[destName].setmtime(set_mtime) # correctly update table
+        return set_mtime
+
+    def _do_copy(self, cp_file_info, cp_dest_path):
+        """Performs the actual copy operation, copying the file represented by
+        the specified FileInfo to the specified destination path."""
+        # Will set the destination's mtime to the source's mtime
+        cp_file_info.abs_path.copyTo(cp_dest_path)
+
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
 
@@ -1619,33 +1652,6 @@ class FileInfos(TableFileInfos):
         destPath = destDir.join(fileName)
         srcPath.moveTo(destPath)
 
-    #--Copy
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies member file to destDir. Will overwrite! Will update
-        internal self.data for the file if copied inside self.info_dir but the
-        client is responsible for calling the final refresh of the data store.
-        See usages.
-
-        :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].mtime is copied to destination
-        """
-        destDir.makedirs()
-        if not destName: destName = fileName
-        srcPath = self[fileName].getPath()
-        if destDir == self.store_dir and destName in self:
-            destPath = self[destName].getPath()
-        else:
-            destPath = destDir.join(destName)
-        srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
-        if destDir == self.store_dir:
-            # TODO(ut) : pass the info in and load_cache=False
-            self.new_info(destName, notify_bain=True)
-            self.table.copyRow(fileName, destName)
-            if set_mtime is not None:
-                self[destName].setmtime(set_mtime) # correctly update table
-        return set_mtime
-
 #------------------------------------------------------------------------------
 class INIInfo(IniFile, AINIInfo):
 
@@ -1728,8 +1734,7 @@ class INIInfos(TableFileInfos):
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super(INIInfos, self).__init__(dirs[u'ini_tweaks'],
-                                       factory=ini_info_factory)
+        super().__init__(dirs['ini_tweaks'], factory=ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -1890,22 +1895,15 @@ class INIInfos(TableFileInfos):
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
 
-    def open_or_copy(self, tweak):
-        info = self[tweak] # type: INIInfo
-        if info.is_default_tweak:
-            self._copy_to_new_tweak(info, tweak)
-            return True # refresh
-        else:
-            info.abs_path.start()
-            return False
-
-    def _copy_to_new_tweak(self, info, new_tweak):
-        with open(self.store_dir.join(new_tweak), u'wb') as ini_file:
+    def _copy_to_new_tweak(self, info, fn_new_tweak: FName):
+        """Duplicate tweak into fn_new_teak."""
+        with open(self.store_dir.join(fn_new_tweak), 'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
-        return self.new_info(new_tweak, notify_bain=True)
+        return self.new_info(fn_new_tweak, notify_bain=True)
 
-    def duplicate_ini(self, tweak, fn_new_tweak):
-        """Duplicate tweak into new_tweak, copying current target settings"""
+    def copy_tweak_from_target(self, tweak, fn_new_tweak: FName):
+        """Duplicate tweak into fn_new_teak, but with the settings that are
+        currently written in the target INI."""
         if not fn_new_tweak: return False
         dup_info = self._copy_to_new_tweak(self[tweak], fn_new_tweak)
         # Now edit it with the values from the target INI
@@ -1922,6 +1920,14 @@ class INIInfos(TableFileInfos):
                 sett: val[0] for sett, val in v.items()}
         dup_info.saveSettings(new_tweak_settings)
         return True
+
+    # FileInfos stuff ---------------------------------------------------------
+    def _do_copy(self, cp_file_info, cp_dest_path):
+        if cp_file_info.is_default_tweak:
+            # Default tweak, so the file doesn't actually exist
+            self._copy_to_new_tweak(cp_file_info, FName(cp_dest_path.stail))
+        else:
+            super()._do_copy(cp_file_info, cp_dest_path)
 
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
