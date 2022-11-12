@@ -687,9 +687,8 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         return single_item and not self._selected_info.is_marker
 
     def Execute(self):
-        info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
-        info_dir.makedirs()
-        achlist = info_dir.join(self._selected_info.fn_key + u'.achlist')
+        out_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
+        achlist = out_dir.join(f'{self._selected_info.fn_key}.achlist')
         ##: Windows-1252 is a guess. The CK is able to decode non-ASCII
         # characters encoded with it correctly, at the very least (UTF-8/UTF-16
         # both fail), but the encoding might depend on the game language?

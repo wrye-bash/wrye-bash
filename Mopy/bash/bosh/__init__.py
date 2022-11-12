@@ -191,10 +191,6 @@ class FileInfo(AFile, ListInfo):
         self.extras = {}
         super(FileInfo, self).__init__(g_path, load_cache)
 
-    @property
-    def info_dir(self):
-        return self.abs_path.head
-
     def _reset_masters(self):
         #--Master Names/Order
         self.masterNames = tuple(self._get_masters())
@@ -352,21 +348,6 @@ class FileInfo(AFile, ListInfo):
     @property
     def snapshot_dir(self):
         return self.get_store().bash_dir.join(u'Snapshots')
-
-    def validate_name(self, name_str, check_store=True):
-        # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % {
-                'bad_name_str': name_str,
-                'expected_ext': self.fn_key.fn_ext}, None
-        #--Else file exists?
-        if check_store and self.info_dir.join(name_str).exists():
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return self.__class__.validate_filename_str(name_str)
 
     def get_rename_paths(self, newName):
         old_new_paths = super(FileInfo, self).get_rename_paths(newName)
@@ -1724,6 +1705,10 @@ class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
 class DefaultIniInfo(DefaultIniFile, AINIInfo):
     is_default_tweak = True
+
+    @property
+    def info_dir(self):
+        return dirs['ini_tweaks']
 
 # noinspection PyUnusedLocal
 def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):

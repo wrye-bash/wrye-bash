@@ -1684,6 +1684,25 @@ class ListInfo:
     def set_table_prop(self, prop, val):
         return self.get_store().table.setItem(self.fn_key, prop, val)
 
+    def validate_name(self, name_str, check_store=True):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            return _('%(bad_name_str)s: Incorrect file extension (must be '
+                     '%(expected_ext)s).') % {
+                'bad_name_str': name_str,
+                'expected_ext': self.fn_key.fn_ext}, None
+        #--Else file exists?
+        if check_store and self.info_dir.join(name_str).exists():
+            return _('File %(bad_name_str)s already exists.') % {
+                'bad_name_str': name_str}, None
+        return self.__class__.validate_filename_str(name_str)
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
+
     def __str__(self):
         """Alias for self.ci_key."""
         return self.fn_key
