@@ -51,7 +51,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     class DropFileOrList(_wx.DropTarget):
 
         def __init__(self, window, dndFiles, dndList):
-            _wx.DropTarget.__init__(self)
+            super().__init__()
             self.window = window
             self.data_object = _wx.DataObjectComposite()
             self.dataFile = _wx.FileDataObject()                 # Accept files
@@ -66,14 +66,14 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 if dtype == _wx.DF_FILENAME:
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
-                    return _wx.DragResult.DragCopy
+                    return _wx.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
                     _data = pickle.loads(self.dataList.GetData().tobytes(),
                                          encoding='bytes')
                     self.window._OnDropList(x, y, _data)
-                    return _wx.DragResult.DragCopy
-            return _wx.DragResult.DragNone
+                    return _wx.DragCopy
+            return _wx.DragNone
 
         def OnDragOver(self, x, y, dragResult):
             self.window.OnDragging(x,y,dragResult)

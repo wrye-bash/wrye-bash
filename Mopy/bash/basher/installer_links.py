@@ -1050,9 +1050,9 @@ class Installer_Espm_List(_Installer_Details_Link):
 
 class Installer_Espm_JumpToMod(_Installer_Details_Link):
     """Jumps to a plugin in the Mods tab, if it is installed."""
-    _text = _(u'Jump to Mod')
-    _help = _(u'Jumps to this plugin in the Mods tab. You can double-click on '
-              u'the plugin to the same effect.')
+    _text = _('Jump to Plugin')
+    _help = _('Jumps to this plugin on the Mods tab. You can double-click on '
+              'this plugin to the same effect.')
 
     def _enable(self):
         if self.selected == -1: return False
