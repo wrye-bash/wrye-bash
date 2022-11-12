@@ -23,16 +23,20 @@
 """A popup is a small dialog that asks the user for a single piece of
 information, e.g. a string, a number or just confirmation."""
 
+import datetime
+
 import wx as _wx
 
-from .base_components import _AComponent
-from .buttons import Button, CancelButton, DeselectAllButton, SelectAllButton
+from .base_components import _AComponent, Color
+from .buttons import Button, CancelButton, DeselectAllButton, \
+    SelectAllButton, OkButton
 from .checkables import CheckBox
 from .functions import staticBitmap # yuck
-from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VLayout
-from .misc_components import HorizontalLine
+from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VLayout, \
+    VBoxedLayout
+from .misc_components import HorizontalLine, DatePicker, TimePicker
 from .multi_choices import CheckListBox
-from .text_components import Label, SearchBar, TextAlignment
+from .text_components import Label, SearchBar, TextAlignment, TextField
 from .top_level_windows import DialogWindow
 from ..bolt import dict_sort
 from ..bolt import GPath ##: remove this it's for file dialogs
@@ -45,7 +49,7 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
     _def_size = _min_size = (450, 175)
 
     def __init__(self, parent, message, sizes_dict):
-        super(CopyOrMovePopup, self).__init__(parent, sizes_dict=sizes_dict)
+        super().__init__(parent, sizes_dict=sizes_dict)
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
         move_button = Button(self, btn_label=_(u'Move'))
@@ -73,7 +77,7 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
     def show_modal(self):
         """Return the choice the user made (either the string 'MOVE' or the
         string 'COPY') and whether that choice should be remembered."""
-        result = super(CopyOrMovePopup, self).show_modal()
+        result = super().show_modal()
         return result and self._ret_action, self._gCheckBox.is_checked
 
 class _TransientPopup(_AComponent):
@@ -84,8 +88,7 @@ class _TransientPopup(_AComponent):
     def __init__(self, parent):
         # Note: the style (second parameter) may not be passed as a keyword
         # argument to this wx class for whatever reason
-        super(_TransientPopup, self).__init__(
-            parent, _wx.BORDER_SIMPLE | _wx.PU_CONTAINS_CONTROLS)
+        super().__init__(parent, _wx.BORDER_SIMPLE | _wx.PU_CONTAINS_CONTROLS)
 
     def show_popup(self, popup_pos): # type: (tuple) -> None
         """Shows this popup at the specified position on the screen."""
@@ -110,7 +113,7 @@ class MultiChoicePopup(_TransientPopup):
             All' button (optional).
         :param ra_btn_tooltip: A tooltip to show when hovering over the 'Remove
             All' button (optional)."""
-        super(MultiChoicePopup, self).__init__(parent)
+        super().__init__(parent)
         self._all_choices = dict(dict_sort(all_choices))
         choice_search = SearchBar(self)
         choice_search.on_text_changed.subscribe(self._search_choices)
@@ -235,3 +238,85 @@ class DirOpen(_FileDialog):
         # we call _FileDialog parent in mro so we need to stringify defaultPath
         super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
                                           style=st)
+
+# Date and Time ---------------------------------------------------------------
+class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?
+    """Dialog for choosing a date and time."""
+    title = _('Choose a date and time')
+    _def_size = (270, 360)
+
+    def __init__(self, parent, warning_color: Color):
+        super().__init__(parent)
+        self._warning_color = warning_color
+        self._date_picker = DatePicker(self)
+        # We need to turn this into a POSIX timestamp later
+        self._date_picker.set_posix_range()
+        self._date_picker.on_picker_changed.subscribe(self._handle_picker)
+        self._time_picker = TimePicker(self)
+        self._time_picker.on_picker_changed.subscribe(self._handle_picker)
+        self._manual_entry = TextField(self)
+        self._manual_entry.on_text_changed.subscribe(self._handle_manual)
+        # Call this once to set the initial text in the manual entry field
+        self._handle_picker()
+        self._manual_layout = VBoxedLayout(self, _('Manual (valid)'),
+            item_expand=True, items=[self._manual_entry])
+        self._ok_button = OkButton(self)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            VBoxedLayout(self, _('Date'), items=[
+                (self._date_picker, LayoutOptions(h_align=CENTER)),
+            ]),
+            VBoxedLayout(self, _('Time'), items=[
+                (self._time_picker, LayoutOptions(h_align=CENTER)),
+            ]),
+            self._manual_layout,
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(item_expand=True, items=[
+                Stretch(),
+                self._ok_button,
+                CancelButton(self),
+            ]),
+        ]).apply_to(self)
+
+    def _handle_picker(self):
+        """Internal callback that updates the manual entry field whenever a
+        picker is used."""
+        with self._manual_entry.on_text_changed.pause_subscription(
+                self._handle_manual): # Avoid getting into a loop
+            picker_datetime = datetime.datetime.combine(
+                self._date_picker.get_date(), self._time_picker.get_time())
+            self._manual_entry.text_content = picker_datetime.strftime('%c')
+
+    def _handle_manual(self, new_manual_dt_str):
+        """Internal callback that updates the pickers whenever the manual entry
+        field has been edited to contain a valid date and time."""
+        try:
+            # This will raise ValueError if the format does not match
+            new_datetime = datetime.datetime.strptime(new_manual_dt_str, '%c')
+            # This will raise OSError if the datetime cannot be turned into a
+            # POSIX timestamp
+            new_datetime.timestamp()
+        except (OSError, ValueError):
+            # User entered an incorrect date and time, let them know and
+            # prevent accepting the dialog
+            self._manual_layout.set_title(_('Manual (invalid)'))
+            self._manual_layout.set_title_color(self._warning_color)
+            self._ok_button.enabled = False
+            return
+        # User entered a correct date and time, allow accepting the dialog
+        # again
+        self._manual_layout.set_title(_('Manual (valid)'))
+        self._manual_layout.reset_title_color()
+        self._ok_button.enabled = True
+        # Pausing picker subscription here is not currently necessary, but may
+        # become necessary in the future, so stay sharp
+        self._date_picker.set_date(new_datetime.date())
+        self._time_picker.set_time(new_datetime.time())
+
+    def show_modal(self) -> tuple[bool, float]:
+        """Return whether the OK button or Cancel button was pressed and the
+        final chosen date and time as a float timestamp."""
+        result = super().show_modal()
+        manual_datetime = datetime.datetime.strptime(
+            self._manual_entry.text_content, '%c')
+        return result, manual_datetime.timestamp()

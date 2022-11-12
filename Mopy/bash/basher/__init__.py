@@ -73,7 +73,7 @@ from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
-from ..localize import format_date, unformat_date
+from ..localize import format_date
 
 startupinfo = bolt.startupinfo
 
@@ -1741,7 +1741,7 @@ class ModDetails(_ModsSavesDetails):
         modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = unformat_date(modifiedStr)
+            newTimeTup = time.strptime(modifiedStr)
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,
@@ -1856,8 +1856,7 @@ class ModDetails(_ModsSavesDetails):
                                     detail_item=detail_item)
 
     def _set_date(self, modInfo):
-        newTimeTup = unformat_date(self.modifiedStr)
-        modInfo.setmtime(time.mktime(newTimeTup))
+        modInfo.setmtime(time.mktime(time.strptime(self.modifiedStr)))
 
     #--Bash Tags
     ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the

@@ -341,7 +341,7 @@ def dump_translator(out_path, lang):
 
 #------------------------------------------------------------------------------
 # Formatting
-def format_date(secs): # type: (float) -> str
+def format_date(secs: float) -> str:
     """Convert time to string formatted to to locale's default date/time.
 
     :param secs: Formats the specified number of seconds into a string."""
@@ -351,18 +351,3 @@ def format_date(secs): # type: (float) -> str
         # local time in windows can't handle negative values
         local = time.gmtime(secs)
     return time.strftime(u'%c', local)
-
-# PY3: Probably drop in py3?
-def unformat_date(date_str):
-    """Basically a wrapper around time.strptime. Exists to get around bug in
-    strptime for Japanese locale.
-
-    :type date_str: str"""
-    try:
-        return time.strptime(date_str, u'%c')
-    except ValueError:
-        if bass.active_locale.startswith(u'ja_'):
-            date_str = re.sub('^([0-9]{4})/([1-9])', r'\1/0\2', date_str)
-            return time.strptime(date_str, u'%c')
-        else:
-            raise

@@ -134,7 +134,7 @@ class EventResult(Enum):
     events that clearly state so in their documentation may be canceled, all
     others will raise a RuntimeError instead."""
 
-class _EHPauseSubcription(object):
+class _EHPauseSubscription:
     """Helper for EventHandler.pause_subscription."""
     def __init__(self, event_handler, listener):
         self._event_handler = event_handler
@@ -222,7 +222,7 @@ class EventHandler(object):
            for use with a context manager (with statement).
 
            :param listener: The listener to unsubscribe."""
-        return _EHPauseSubcription(self, listener)
+        return _EHPauseSubscription(self, listener)
 
     def _update_wx_binding(self):
         """Creates or removes a wx binding if necessary. If we have listeners

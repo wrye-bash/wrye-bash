@@ -25,11 +25,14 @@ classes accumulate in here, feel free to break them out into a module."""
 
 __author__ = u'nycz, Infernio, Utumno'
 
+import datetime
 import re
-import wx as _wx
-from wx.grid import Grid
 from collections import defaultdict
 from itertools import chain
+
+import wx as _wx
+import wx.adv as _adv
+from wx.grid import Grid
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
@@ -341,6 +344,73 @@ class Table(WithCharEvents):
                 # Skip any that would go out of bounds
                 if int(row_label) - 1 < self._native_widget.GetNumberRows():
                     self.set_cell_value(col_label, row_label, target_val)
+
+# Date and Time ---------------------------------------------------------------
+class DatePicker(_AComponent):
+    """Component that lets users pick a date.
+
+    Events:
+     - on_picker_changed(): Posted when the date in this picker is changed."""
+    _native_widget: _adv.CalendarCtrl
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.on_picker_changed = self._evt_handler(
+            _adv.EVT_CALENDAR_SEL_CHANGED)
+
+    def get_date(self) -> datetime.date:
+        """Returns the chosen date as a datetime.date object."""
+        as_datetime = datetime.datetime.strptime(
+            self._native_widget.GetDate().Format('%c'), '%c')
+        return as_datetime.date()
+
+    def set_date(self, new_date: datetime.date):
+        """Sets the currently selected date in this date picker to the
+        specified datetime.date object."""
+        self._native_widget.SetDate(self._py_date_to_wx(new_date))
+
+    def set_date_range(self, *, lower_limit: datetime.date | None = None,
+            upper_limit: datetime.date | None = None):
+        """Sets the range of dates from which dates may be selected in this
+        date picker. If one of the limits is None, indicates that no limit in
+        that direction should exist."""
+        self._native_widget.SetDateRange(self._py_date_to_wx(lower_limit),
+            self._py_date_to_wx(upper_limit))
+
+    def set_posix_range(self):
+        """Sets a lower limit on valid dates of 1/1/1970. That way a POSIX
+        timestamp can always be calculated for dates selected from this date
+        picker."""
+        self.set_date_range(lower_limit=datetime.date(1970, 1, 1))
+
+    def _py_date_to_wx(self, py_date):
+        """Helper for converting a Python datetime.date to a wx.DateTime."""
+        if py_date is None:
+            return _wx.DefaultDateTime
+        # https://github.com/wxWidgets/Phoenix/issues/2300
+        return _wx.DateTime.FromDMY(
+            py_date.day, py_date.month - 1, py_date.year)
+
+class TimePicker(_AComponent):
+    """Component that lets users pick a time.
+
+    Events:
+     - on_picker_changed(): Posted when the time in this picker is changed."""
+    _native_widget: _adv.TimePickerCtrl
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.on_picker_changed = self._evt_handler(_adv.EVT_TIME_CHANGED)
+
+    def get_time(self) -> datetime.time:
+        """Returns the chosen time as a datetime.time object."""
+        return datetime.time(*self._native_widget.GetTime())
+
+    def set_time(self, new_time: datetime.time):
+        """Sets the currently selected time in this time picker to the
+        specified datetime.time object."""
+        self._native_widget.SetTime(new_time.hour, new_time.minute,
+            new_time.second)
 
 # Other -----------------------------------------------------------------------
 class GlobalMenu(_AComponent):

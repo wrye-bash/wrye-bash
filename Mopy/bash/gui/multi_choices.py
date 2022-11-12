@@ -39,7 +39,7 @@ class DropDown(_AComponent):
 
     Events:
      - on_combo_select(selected_label: str): Posted when an item on the list is
-     selected. The parameter is the new value of selection."""
+       selected. The parameter is the new value of selection."""
     _native_widget: _wx.ComboBox
 
     def __init__(self, parent, value, choices, auto_tooltip=True):
@@ -102,7 +102,7 @@ class ColorPicker(_AComponent):
 
     Events:
      - on_color_picker_evt(selected_label: bytes): Posted when the button is
-     clicked."""
+       clicked."""
     _native_widget: _wx.ColourPickerCtrl
 
     def __init__(self, parent, color=None):

@@ -169,7 +169,7 @@ class _ALayout(object):
 
 class _ALineLayout(_ALayout):
     """Abstract base class for one-dimensional layouts."""
-    _is_vertical = False
+    _is_vertical: bool
 
     def __init__(self, sizer, spacing=0, item_weight=0, items=(), **kwargs):
         """Initiate the layout - in addition to _ALayout arguments, that you
@@ -180,7 +180,7 @@ class _ALineLayout(_ALayout):
         :param items: Items or (item, options) pairs to add directly.
         """
         self.spacing = spacing
-        super(_ALineLayout, self).__init__(sizer, **kwargs)
+        super().__init__(sizer, **kwargs)
         self._default_item_loptions.weight = item_weight
         for item in items:
             self.add(item)
@@ -222,35 +222,51 @@ class _ALineLayout(_ALayout):
         self._sizer.Replace(_res_parent(old_component),
                             _res_parent(new_component))
 
-class HLayout(_ALineLayout):
-    """A simple horizontal layout."""
-    def __init__(self, *args, **kwargs):
-        super(HLayout, self).__init__(_wx.BoxSizer(_wx.HORIZONTAL), *args,
-                                      **kwargs)
+class _ASimpleLayout(_ALineLayout):
+    def __init__(self, **kwargs):
+        sl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
+        super().__init__(_wx.BoxSizer(sl_orientation), **kwargs)
 
-class VLayout(_ALineLayout):
+class HLayout(_ASimpleLayout):
+    """A simple horizontal layout."""
+    _is_vertical = False
+
+class VLayout(_ASimpleLayout):
     """A simple vertical layout."""
     _is_vertical = True
 
-    def __init__(self, *args, **kwargs):
-        super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
-                                      **kwargs)
+class _ABoxedLayout(_ALineLayout):
+    """Base class for layouts with a border and an optional title."""
+    def __init__(self, parent, title='', **kwargs):
+        self._static_box = _wx.StaticBox(_res_parent(parent), label=title)
+        bl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
+        super().__init__(_wx.StaticBoxSizer(self._static_box, bl_orientation),
+            **kwargs)
 
-class HBoxedLayout(_ALineLayout):
+    def set_title(self, new_title_text: str):
+        """Changes this layout's title to the specified string."""
+        if self._static_box.GetLabel() != new_title_text:
+            self._static_box.SetLabel(new_title_text)
+
+    def set_title_color(self, new_color):
+        """Changes the foreground color of this layout's title to the specified
+        color. See gui.Color."""
+        self._static_box.SetForegroundColour(new_color.to_rgba_tuple())
+        self._static_box.Refresh()
+
+    def reset_title_color(self):
+        """Resets the foreground color of this layout's title to the default
+        one."""
+        self._static_box.SetForegroundColour(_wx.NullColour)
+        self._static_box.Refresh()
+
+class HBoxedLayout(_ABoxedLayout):
     """A horizontal layout with a border around it and an optional title."""
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
-            label=title), _wx.HORIZONTAL)
-        super(HBoxedLayout, self).__init__(sizer, **kwargs)
+    _is_vertical = False
 
-class VBoxedLayout(_ALineLayout):
+class VBoxedLayout(_ABoxedLayout):
     """A vertical layout with a border around it and an optional title."""
     _is_vertical = True
-
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
-            label=title), _wx.VERTICAL)
-        super(VBoxedLayout, self).__init__(sizer, **kwargs)
 
 class GridLayout(_ALayout):
     """A flexible grid layout.

@@ -21,12 +21,11 @@
 #
 # =============================================================================
 import re
-import time
 
 from .. import balt, bass, bosh, bolt, exception
 from ..balt import ItemLink, ChoiceLink, OneItemLink, AppendableLink
-from ..gui import BusyCursor, copy_text_to_clipboard
-from ..localize import format_date, unformat_date
+from ..gui import BusyCursor, copy_text_to_clipboard, DateAndTimeDialog
+from ..localize import format_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
            u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
@@ -338,20 +337,13 @@ class File_Redate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        # Ask user for revised time and parse it
-        new_time_input = self._askText(
-            _(u'Redate selected file(s) starting at...'),
-            title=_(u'Redate Files'), default=format_date(time.time()))
-        if not new_time_input: return
-        try:
-            new_time = time.mktime(unformat_date(new_time_input))
-        except ValueError:
-            self._showError(_(u'Unrecognized date: ') + new_time_input)
-            return
+        user_ok, user_timestamp = DateAndTimeDialog.display_dialog(
+            self.window, warning_color=balt.colors['default.warn'])
+        if not user_ok: return
         # Perform the redate process and refresh
         for to_redate in self._infos_to_redate():
-            to_redate.setmtime(new_time)
-            new_time += 60
+            to_redate.setmtime(user_timestamp)
+            user_timestamp += 60.0
         self._perform_refresh()
         self.window.RefreshUI(refreshSaves=True)
 
