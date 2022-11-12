@@ -116,14 +116,8 @@ class File_Duplicate(ItemLink):
         pairs = [*self.iselected_pairs()]
         last = len(pairs) - 1
         for dex, (to_duplicate, fileInfo) in enumerate(pairs):
-            #--Mod with resources? Warn on rename if file has bsa and/or dialog
-            msg = fileInfo.ask_resources_ok(
-                bsa_and_blocking_msg=self._bsa_and_blocking_msg,
-                bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-            if msg and not self._askWarning(msg,
-                    title=_('Duplicate %(target_file_name)s') % {
-                        'target_file_name': fileInfo}): continue
-            #--Continue copy
+            if self._disallow_copy(fileInfo):
+                continue # We can't copy this one for some reason, skip
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
@@ -149,6 +143,11 @@ class File_Duplicate(ItemLink):
             self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
                                   refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
+
+    def _disallow_copy(self, fileInfo):
+        """Method for checking if fileInfo may not be copied for some reason.
+        Default behavior is to allow all copies."""
+        return False
 
 #------------------------------------------------------------------------------
 class File_ListMasters(OneItemLink):

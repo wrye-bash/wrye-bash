@@ -505,7 +505,7 @@ def InitModLinks():
         ModList.context_links.append(dev_tools_menu)
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(File_Duplicate())
+        file_menu.links.append(Mod_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(Mod_Redate())
         file_menu.links.append(UIList_Delete())

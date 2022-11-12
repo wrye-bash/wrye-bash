@@ -359,9 +359,6 @@ class FileInfo(AFile, ListInfo):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
-    def ask_resources_ok(self, bsa_and_blocking_msg, bsa_msg, blocking_msg):
-        return u''
-
 #------------------------------------------------------------------------------
 reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 

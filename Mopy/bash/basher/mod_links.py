@@ -33,7 +33,7 @@ from itertools import chain
 # Local
 from .constants import settingDefaults
 from .dialogs import ExportScriptsDialog
-from .files_links import File_Redate
+from .files_links import File_Redate, File_Duplicate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
@@ -66,7 +66,7 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
-           'Mod_RecalcRecordCounts']
+           'Mod_RecalcRecordCounts', 'Mod_Duplicate']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -2287,3 +2287,16 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         msg = (f'{eid}:   {oldFull} >> {newFull}' for
                eid, (oldFull, newFull) in dict_sort(changes))
         self._showLog('\n'.join(msg), title=_('Objects Renamed'))
+
+#------------------------------------------------------------------------------
+class Mod_Duplicate(File_Duplicate):
+    """Version of File_Duplicate that checks for BSAs and plugin-name-specific
+    directories."""
+    def _disallow_copy(self, fileInfo):
+        #--Mod with resources? Warn on rename if file has bsa and/or dialog
+        msg = fileInfo.ask_resources_ok(
+            bsa_and_blocking_msg=self._bsa_and_blocking_msg,
+            bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
+        return msg and not self._askWarning(msg,
+                title=_('Duplicate %(target_file_name)s') % {
+                    'target_file_name': fileInfo})
