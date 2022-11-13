@@ -1140,8 +1140,8 @@ class MelReflectedRefractedBy(MelSorted):
 
     def __init__(self):
         super().__init__(MelGroups('reflectedRefractedBy',
-            MelStruct(b'XPWR', ['2I'], (FID, 'waterReference'),
-                (self._watertypeFlags, 'waterFlags')),
+            MelTruncatedStruct(b'XPWR', ['2I'], (FID, 'waterReference'),
+                (self._watertypeFlags, 'waterFlags'), old_versions={'I'}),
         ), sort_by_attrs='waterReference')
 
 #------------------------------------------------------------------------------

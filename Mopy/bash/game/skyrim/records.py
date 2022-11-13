@@ -215,8 +215,8 @@ class MelLinkedReferences(MelSorted):
     def __init__(self):
         super(MelLinkedReferences, self).__init__(
             MelGroups(u'linked_references',
-                MelStruct(b'XLKR', [u'2I'], (FID, u'keyword_ref'),
-                          (FID, u'linked_ref')),
+                MelTruncatedStruct(b'XLKR', ['2I'], (FID, 'keyword_ref'),
+                    (FID, 'linked_ref'), old_versions={'I'}),
             ), sort_by_attrs='keyword_ref')
 
 #------------------------------------------------------------------------------
@@ -3028,8 +3028,9 @@ class MreRefr(MelRecord):
         MelReflectedRefractedBy(),
         MelSorted(MelFids('litWaters', MelFid(b'XLTW'))),
         MelFid(b'XEMI', 'emittance'),
-        MelOptStruct(b'XLIG', [u'4f', u'4s'], u'fov90Delta', u'fadeDelta',
-            u'end_distance_cap', u'shadowDepthBias', u'unknown2'),
+        MelTruncatedStruct(b'XLIG', ['4f', '4s'], 'fov90Delta', 'fadeDelta',
+            'end_distance_cap', 'shadowDepthBias', 'unknown2',
+            old_versions={'4f'}, is_optional=True),
         MelOptStruct(b'XALP', [u'B', u'B'],'cutoffAlpha','baseAlpha',),
         MelOptStruct(b'XTEL', [u'I', u'6f', u'I'],(FID,'destinationFid'),'destinationPosX',
                      'destinationPosY','destinationPosZ','destinationRotX',
