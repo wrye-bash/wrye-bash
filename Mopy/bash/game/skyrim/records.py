@@ -1638,7 +1638,7 @@ class MreLvli(AMreLeveledList):
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
     )
@@ -1671,7 +1671,7 @@ class MreLvsp(AMreLeveledList):
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelLLItems(with_coed=False),
     )
 

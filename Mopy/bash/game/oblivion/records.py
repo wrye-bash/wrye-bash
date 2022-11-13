@@ -460,7 +460,7 @@ class MreLeveledList(AMreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelLevListLvld(),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelScript(), # LVLC only
         MelFid(b'TNAM','template'),
         MelLLItems(),

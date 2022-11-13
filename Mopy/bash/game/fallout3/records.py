@@ -308,9 +308,9 @@ class MreLeveledList(AMreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelLevListLvld(b'LVLD', u'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', u'glob'),
+        MelLevListLvld(b'LVLD', 'chanceNone'),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
+        MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelModel(),
     )

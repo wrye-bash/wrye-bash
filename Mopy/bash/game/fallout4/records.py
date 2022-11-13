@@ -1900,6 +1900,20 @@ class MreLvln(AMreLeveledList):
     )
 
 #------------------------------------------------------------------------------
+class MreLvsp(AMreLeveledList):
+    """Leveled Spell."""
+    rec_sig = b'LVSP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
+        MelLLItems(),
+    )
+
+#------------------------------------------------------------------------------
 class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
