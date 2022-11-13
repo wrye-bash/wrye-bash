@@ -474,6 +474,7 @@ class AMreCell(MelRecord):
     # All 'reference' types, i.e. record types that occur in CELL/WLRD groups
     # and place some sort of thing into the cell (e.g. ACHR, REFR, PMIS, etc.)
     ref_types = set()
+    interior_temp_extra = set()
 
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
@@ -487,6 +488,22 @@ class AMreCell(MelRecord):
         else:
             x, y = self.posX or 0, self.posY or 0  # posXY can be None
             return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {*cls.ref_types, *cls.interior_temp_extra}
+
+class AMreWrld(MelRecord):
+    """Worldspace."""
+    rec_sig = b'WRLD'
+    ref_types = set() # same as AMreCell
+    exterior_temp_extra = [] # exterior cell temp cell references
+    wrld_children_extra = [] # record sigs that appear in wrld children grup
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {*cls.ref_types, *cls.exterior_temp_extra,
+                *cls.wrld_children_extra}
 
 #------------------------------------------------------------------------------
 # Full classes ----------------------------------------------------------------

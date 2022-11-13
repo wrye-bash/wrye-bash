@@ -144,10 +144,4 @@ class MorrowindGameInfo(PatchGame):
         Subrecord.sub_header_size = 8
         cls._validate_records(__name__)
 
-    @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None):
-        super()._validate_records(package_name)
-        from .. import brec
-        brec.RecordType.simpleTypes = set(cls.top_groups) - {b'CELL', b'DIAL'}
-
 GAME_TYPE = MorrowindGameInfo

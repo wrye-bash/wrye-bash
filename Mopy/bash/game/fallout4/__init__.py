@@ -748,10 +748,9 @@ class Fallout4GameInfo(PatchGame):
 
     @classmethod
     def _validate_records(cls, package_name, plugin_form_vers=131):
-        from .. import brec ## todo absorb this in super._validate_records
+        from .. import brec
         header_type = brec.RecordHeader
-        header_type.valid_header_sigs |= {b'INFO', b'NAVM', b'LAND', b'DIAL'## todo DIAL??
-                                          }
+        header_type.valid_header_sigs |= {b'DIAL'}
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
@@ -769,6 +768,6 @@ class Fallout4GameInfo(PatchGame):
             b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
-        brec.RecordType.simpleTypes = cls.mergeable_sigs ## todo it used to include MreInfo, MreLand
+        brec.RecordType.simpleTypes = cls.mergeable_sigs
 
 GAME_TYPE = Fallout4GameInfo

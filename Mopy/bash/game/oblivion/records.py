@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
-    MelLandShared, AMreCell
+    MelLandShared, AMreCell, AMreWrld
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -657,6 +657,7 @@ class MreBsgn(MelRecord):
 class MreCell(AMreCell):
     """Cell."""
     ref_types = {b'ACHR', b'ACRE', b'REFR'}
+    interior_temp_extra = [b'PGRD']
 
     cellFlags = Flags.from_names(
         (0, u'isInterior'),
@@ -875,6 +876,10 @@ class MreCsty(MelRecord):
 class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
     melSet = MelSet(
         MelEdid(),
@@ -2167,11 +2172,14 @@ class MreWeap(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreWrld(MelRecord):
+class MreWrld(AMreWrld):
     """Worldspace."""
-    rec_sig = b'WRLD'
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'PGRD']
+    wrld_children_extra = [b'ROAD', b'CELL'] # CELL for the persistent block
 
-    _flags = Flags.from_names('smallWorld','noFastTravel','oblivionWorldspace',None,'noLODWater')
+    _flags = Flags.from_names('smallWorld', 'noFastTravel',
+                              'oblivionWorldspace', None, 'noLODWater')
 
     melSet = MelSet(
         MelEdid(),

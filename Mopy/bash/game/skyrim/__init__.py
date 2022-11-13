@@ -1402,14 +1402,12 @@ class SkyrimGameInfo(PatchGame):
 
     @classmethod
     def _validate_records(cls, package_name, plugin_form_vers=43):
-        from .. import brec ## todo absorb this in super._validate_records
-        header_type = brec.RecordHeader
-        header_type.valid_header_sigs |= {b'INFO', b'NAVM', b'LAND'}
         # package name is skyrim here
         super()._validate_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {
             b'RGDL', b'SCPT', b'CELL', b'SCEN', b'SCOL', b'HAIR', b'CLDC',
             b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
+        from .. import brec
         brec.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
 GAME_TYPE = SkyrimGameInfo

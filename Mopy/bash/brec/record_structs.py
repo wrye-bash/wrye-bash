@@ -250,17 +250,21 @@ class RecordType(type):
     # Maps subrecord signatures to a set of record signatures that can contain
     # those subrecords
     subrec_sig_to_record_sig = defaultdict(set)
+    # nested record types mapped to top record type they belong to
+    nested_to_top = defaultdict(set)
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
         classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
             melSet := classdict.get('melSet', ())) else slots
         new = super(RecordType, cls).__new__(cls, name, bases, classdict)
-        if rs := getattr(new, 'rec_sig', None):
-            cls.sig_to_class[rs] = new
+        if rsig := getattr(new, 'rec_sig', None):
+            cls.sig_to_class[rsig] = new
             if new.melSet:
                 for sr_sig in new.melSet.loaders:
-                    RecordType.subrec_sig_to_record_sig[sr_sig].add(rs)
+                    RecordType.subrec_sig_to_record_sig[sr_sig].add(rsig)
+            for sig in new.nested_records_sigs():
+                RecordType.nested_to_top[sig].add(rsig)
         return new
 
 class MreRecord(metaclass=RecordType):
@@ -367,6 +371,10 @@ class MreRecord(metaclass=RecordType):
     __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
                  'changed', 'data', 'inName')
     isKeyedByEid = False
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return set()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         self.header = header

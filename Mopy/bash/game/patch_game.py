@@ -262,9 +262,8 @@ class PatchGame(GameInfo):
         from .. import brec
         if plugin_form_vers is not None:
             brec.RecordHeader.plugin_form_version = plugin_form_vers
-        cell_class = brec.RecordType.sig_to_class[b'CELL']
-        brec.RecordHeader.valid_header_sigs |= {## todo add rest (LAND NAVM etc)
-            cls.Esp.plugin_header_sig, *cls.top_groups, *cell_class.ref_types}
+        brec.RecordHeader.valid_header_sigs |= {cls.Esp.plugin_header_sig,
+            *cls.top_groups, *brec.RecordType.nested_to_top}
         for rec_sig, rec_class in list(brec.RecordType.sig_to_class.items()):
             if issubclass(rec_class, brec.MelRecord):
                 # when emulating startup in tests, an earlier loaded game may
@@ -274,3 +273,6 @@ class PatchGame(GameInfo):
                     continue
                 rec_class.validate_record_syntax()
         brec.RecordHeader.top_grup_sigs = set(cls.top_groups)
+        # that's the case for most games so do it here and override if needed
+        brec.RecordType.simpleTypes = set(cls.top_groups) - {b'CELL', b'WRLD',
+                                                             b'DIAL'}

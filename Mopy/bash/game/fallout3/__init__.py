@@ -1174,12 +1174,10 @@ class Fallout3GameInfo(PatchGame):
 
     @classmethod
     def _validate_records(cls, package_name, plugin_form_vers=15):
-        from .. import brec ## todo absorb this in super._validate_records
-        header_type = brec.RecordHeader
-        header_type.valid_header_sigs |= {b'INFO', b'NAVM', b'LAND'}
+        from .. import brec
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too
-        header_type.skip_form_version_upgrade = {b'IMGS'}
+        brec.RecordHeader.skip_form_version_upgrade = {b'IMGS'}
         super()._validate_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {b'CELL', b'DIAL', b'WRLD',
                                                     b'NAVI'}

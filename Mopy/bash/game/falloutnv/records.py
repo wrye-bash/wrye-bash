@@ -211,6 +211,10 @@ class MreDial(MelRecord):
 
     _DialFlags = Flags.from_names('rumors', 'toplevel')
 
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
+
     melSet = MelSet(
         MelEdid(),
         # Handle broken records that have INFC/INFX without a preceding QSTI

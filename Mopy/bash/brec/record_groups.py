@@ -203,7 +203,7 @@ class MobObjects(MobBase):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recClass = self.loadFactory.getRecClass(expType)
+        recClass = self.loadFactory.sig_to_type[expType]
         insAtEnd = ins.atEnd
         errLabel = f'{(exp_str := sig_to_str(expType))} Top Block'
         while not insAtEnd(endPos,errLabel):
@@ -349,7 +349,7 @@ class MobDial(MobObjects):
         super(MobDial, self).__init__(header, loadFactory, ins, do_unpack)
 
     def _load_rec_group(self, ins, endPos):
-        info_class = self.loadFactory.getRecClass(b'INFO')
+        info_class = self.loadFactory.sig_to_type[b'INFO']
         if not info_class:
             self.header.skip_blob(ins) # DIAL already read, skip all INFOs
         ins_at_end = ins.atEnd
@@ -525,7 +525,7 @@ class MobDials(MobBase):
 
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
-        dial_class = self.loadFactory.getRecClass(b'DIAL')
+        dial_class = self.loadFactory.sig_to_type[b'DIAL']
         ins_seek = ins.seek
         expType = self.label
         insAtEnd = ins.atEnd
@@ -1117,7 +1117,7 @@ class MobICells(MobCells):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recClass = self.loadFactory.getRecClass(expType)
+        recClass = self.loadFactory.sig_to_type[expType]
         insSeek = ins.seek
         if not recClass: insSeek(endPos) # skip the whole group
         cell = None
@@ -1443,7 +1443,7 @@ class MobWorlds(MobBase):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recWrldClass = self.loadFactory.getRecClass(expType)
+        recWrldClass = self.loadFactory.sig_to_type[expType]
         insSeek = ins.seek
         if not recWrldClass: insSeek(endPos) # skip the whole group
         world = None

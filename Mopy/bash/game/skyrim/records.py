@@ -56,7 +56,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount, AMreCell
+    MelIdleAnimationCount, AMreCell, AMreWrld
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -745,6 +745,7 @@ class MreCell(AMreCell):
     """Cell."""
     ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
                  b'PHZD', b'PMIS', b'REFR'}
+    interior_temp_extra = [b'NAVM']
     _has_duplicate_attrs = True # XWCS is an older version of XWCN
 
     CellDataFlags1 = Flags.from_names(
@@ -970,6 +971,10 @@ class MreDial(MelRecord):
     rec_sig = b'DIAL'
 
     DialTopicFlags = Flags.from_names('doAllBeforeRepeating')
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
     melSet = MelSet(
         MelEdid(),
@@ -3525,8 +3530,7 @@ class MreWatr(MelRecord):
 
     WatrTypeFlags = Flags.from_names('causesDamage')
 
-    # Struct elements shared by DNAM in SLE and SSE
-    _dnam_common = [
+    _dnam_common = [ # Struct elements shared by DNAM in SLE and SSE
         'unknown1', 'unknown2', 'unknown3', 'unknown4',
         'specularPropertiesSunSpecularPower',
         'waterPropertiesReflectivityAmount', 'waterPropertiesFresnelAmount',
@@ -3583,12 +3587,12 @@ class MreWatr(MelRecord):
         MelFid(b'INAM','imageSpace',),
         MelUInt16(b'DATA', 'damagePerSecond'),
         if_sse(
-            le_version=MelStruct(b'DNAM', [u'7f', u'4s', u'2f', u'3B', u's', u'3B', u's', u'3B', u's', u'4s', u'43f'],
+            le_version=MelStruct(b'DNAM',
+              ['7f', '4s', '2f', '3B', 's', '3B', 's', '3B', 's', '4s', '43f'],
                                  *_dnam_common),
             se_version=MelTruncatedStruct(b'DNAM',
-                [u'7f', u'4s', u'2f', u'3B', u's', u'3B', u's', u'3B', u's',
-                 u'4s', u'44f'],
-                *(_dnam_common + ['noisePropertiesFlowmapScale']),
+              ['7f', '4s', '2f', '3B', 's', '3B', 's', '3B', 's', '4s', '44f'],
+                *(*_dnam_common, 'noisePropertiesFlowmapScale'),
                 old_versions={'7f4s2f3Bs3Bs3Bs4s43f'}),
         ),
         MelBase(b'GNAM','unused2'),
@@ -3723,9 +3727,12 @@ class MreWoop(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreWrld(MelRecord):
+class MreWrld(AMreWrld):
     """Worldspace."""
-    rec_sig = b'WRLD'
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'NAVM']
+    wrld_children_extra = [b'CELL'] # CELL for the persistent block
+
 
     WrldFlags2 = Flags.from_names(
         (0, 'smallWorld'),

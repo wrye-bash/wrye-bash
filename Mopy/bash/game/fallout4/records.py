@@ -717,9 +717,10 @@ class MreCams(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(AMreCell): # todo: implement I guess
+class MreCell(AMreCell):
     ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
                  b'PHZD', b'PMIS', b'REFR'}
+    interior_temp_extra = [b'NAVM']
 
 #------------------------------------------------------------------------------
 class MreClas(MelRecord):

@@ -21,7 +21,6 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct as _struct
 from os.path import join as _j
 
 from .. import GameInfo, WS_COMMON_FILES
@@ -1171,13 +1170,9 @@ class OblivionGameInfo(PatchGame):
 
     @classmethod
     def _validate_records(cls, package_name, plugin_form_vers=None):
-        from .. import brec ## todo absorb extra_sigs in super._validate_records
-        extra_sigs = {b'ROAD', b'PGRD', b'LAND', b'INFO'}
-        brec.RecordHeader.valid_header_sigs |= extra_sigs
+        from .. import brec
         super()._validate_records(package_name) # package name is oblivion here
-        brec.RecordType.simpleTypes = set(cls.top_groups) - {b'CELL', b'WRLD',
-                                                             b'DIAL'}
-        cls.mergeable_sigs = {*cls.top_groups, *extra_sigs,
-                              *brec.RecordType.sig_to_class[b'CELL'].ref_types}
+        # in Oblivion we get them all except the TES4 record
+        cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
 
 GAME_TYPE = OblivionGameInfo

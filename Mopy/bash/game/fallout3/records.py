@@ -34,11 +34,11 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
-    MelRaceVoices, MelBounds, null2, MelScriptVars, MelSorted, \
-    MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
-    MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, \
-    MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
+    MelRaceVoices, MelBounds, null2, MelScriptVars, MelSorted, MelSequential, \
+    MelTruncatedStruct, PartialLoadDecider, MelReadOnly, MelSkipInterior, \
+    MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
+    MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, MelRef3D, \
+    MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
@@ -52,7 +52,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
-    MelLandShared, MelIdleAnimationCountOld, AMreCell
+    MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -697,7 +697,8 @@ class MreCams(MelRecord):
 #------------------------------------------------------------------------------
 class MreCell(AMreCell):
     """Cell."""
-    ref_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS', b'REFR'} # TODO implement b'PBEA'
+    ref_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS', b'REFR'}
+    interior_temp_extra = [b'NAVM']
 
     cellFlags = Flags.from_names(
         (0, 'isInterior'),
@@ -972,6 +973,10 @@ class MreDial(MelRecord):
     rec_sig = b'DIAL'
 
     _DialFlags = Flags.from_names('rumors', 'toplevel')
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
     melSet = MelSet(
         MelEdid(),
@@ -2996,9 +3001,11 @@ class MreWeap(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreWrld(MelRecord):
+class MreWrld(AMreWrld):
     """Worldspace."""
-    rec_sig = b'WRLD'
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'NAVM']
+    wrld_children_extra = [b'CELL']
 
     _flags = Flags.from_names('smallWorld', 'noFastTravel',
                               'oblivionWorldspace', None, 'noLODWater',

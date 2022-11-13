@@ -282,9 +282,8 @@ class PatchFile(ModFile):
             loads will load that record type too so that we can update the
             merged records according to load order."""
             if merged_sig not in self.loadFactory.recTypes:
-                merged_class = self.mergeFactory.type_class[merged_sig]
-                self.readFactory.addClass(merged_class)
-                self.loadFactory.addClass(merged_class)
+                self.readFactory.add_class(merged_sig)
+                self.loadFactory.add_class(merged_sig)
         for top_grup_sig,block in modFile.tops.items():
             for s in block.get_all_signatures():
                 add_to_factories(s)

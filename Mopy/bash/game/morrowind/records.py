@@ -368,6 +368,7 @@ class MreBsgn(MelRecord):
 #------------------------------------------------------------------------------
 class MreCell(AMreCell):
     """Cell."""
+    # TODO ref_types and co?
 
     _cell_flags = Flags.from_names(
         (0, u'is_interior_cell'),
