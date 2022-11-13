@@ -123,6 +123,7 @@ class SkyrimGameInfo(PatchGame):
             'interface',
             'lodsettings',
             'mapmarkers', # 3P: Common Marker Addon Project
+            'mapweathers', # 3P: Unique Map Weather
             'mcm', # 3P: MCM Helper
             'mlq', # 3P: Lawbringer
             'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
