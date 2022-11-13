@@ -57,7 +57,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
     MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
-    MelDalc, gen_ambient_lighting
+    MelDalc, gen_ambient_lighting, MelLighFade
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1556,21 +1556,20 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    LighTypeFlags = Flags.from_names(
-        (0, 'dynamic'),
-        (1, 'canbeCarried'),
-        (2, 'negative'),
-        (3, 'flicker'),
-        (4, 'unknown'),
-        (5, 'offByDefault'),
-        (6, 'flickerSlow'),
-        (7, 'pulse'),
-        (8, 'pulseSlow'),
-        (9, 'spotLight'),
-        (10, 'shadowSpotlight'),
-        (11, 'shadowHemisphere'),
-        (12, 'shadowOmnidirectional'),
-        (13, 'portalstrict'),
+    _light_flags = Flags.from_names(
+        (0,  'light_dynamic'),
+        (1,  'light_can_take'),
+        (2,  'light_negative'),
+        (3,  'light_flickers'),
+        (5,  'light_off_by_default'),
+        (6,  'light_flickers_slow'),
+        (7,  'light_pulses'),
+        (8,  'light_pulses_slow'),
+        (9,  'light_spot_light'),
+        (10, 'light_shadow_spotlight'),
+        (11, 'light_shadow_hemisphere'),
+        (12, 'light_shadow_omnidirectional'),
+        (13, 'light_portal_strict'),
     )
 
     melSet = MelSet(
@@ -1581,13 +1580,13 @@ class MreLigh(MelRecord):
         MelDestructible(),
         MelFull(),
         MelIcons(),
-        # fe = 'Flicker Effect'
-        MelStruct(b'DATA', ['i', 'I', '4B', 'I', '6f', 'I', 'f'], 'duration',
-                  'radius', 'red', 'green', 'blue', 'unknown',
-                  (LighTypeFlags, 'flags'), 'falloff', 'fov', 'nearClip',
-                  'fePeriod', 'feIntensityAmplitude', 'feMovementAmplitude',
-                  'value', 'weight'),
-        MelFloat(b'FNAM', u'fade'),
+        MelStruct(b'DATA', ['i', 'I', '4B', 'I', '6f', 'I', 'f'],
+            'duration', 'light_radius', *gen_color('light_color'),
+            (_light_flags, 'light_flags'), 'light_falloff', 'light_fov',
+            'light_near_clip', 'light_fe_period', # fe = 'Flicker Effect'
+            'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
+            'value', 'weight'),
+        MelLighFade(),
         MelSound(),
         sse_only(MelLighLensFlare()),
     )
@@ -1886,7 +1885,7 @@ class MreMust(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUInt32(b'CNAM', 'trackType'),
-        MelFloat(b'FLTV', 'duration'),
+        MelFloat(b'FLTV', 'track_duration'),
         MelUInt32(b'DNAM', 'fadeOut'),
         MelString(b'ANAM','trackFilename'),
         MelString(b'BNAM','finaleFilename'),

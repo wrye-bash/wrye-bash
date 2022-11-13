@@ -971,10 +971,16 @@ class MelLensShared(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelLighFade(MelFloat):
+    """Handles the LIGH subrecord FNAM (Fade)."""
+    def __init__(self):
+        super().__init__(b'FNAM', 'light_fade')
+
+#------------------------------------------------------------------------------
 class MelLighLensFlare(MelFid):
     """Handles the LIGH subrecord LNAM (Lens Flare)."""
     def __init__(self):
-        super().__init__(b'LNAM', 'lens_flare')
+        super().__init__(b'LNAM', 'light_lens_flare')
 
 #------------------------------------------------------------------------------
 class MelLscrLocations(MelSorted):

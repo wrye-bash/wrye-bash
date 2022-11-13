@@ -53,7 +53,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
     MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
     MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
-    gen_color3, MelDalc
+    gen_color3, MelDalc, MelLighFade, MelLighLensFlare
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -159,6 +159,12 @@ class MelFtyp(MelFid):
     """Handles the common FTYP (Forced Loc Ref Type) subrecord."""
     def __init__(self):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
+
+#------------------------------------------------------------------------------
+class MelGodRays(MelFid):
+    """Handles the common WGDR (God Rays) subrecord."""
+    def __init__(self):
+        super().__init__(b'WGDR', 'god_rays')
 
 #------------------------------------------------------------------------------
 class MelItems(AMelItems):
@@ -1751,7 +1757,57 @@ class MreLgtm(MelRecord):
                 '3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
             }),
         MelDalc(),
-        MelFid(b'WGDR', 'lgtm_god_rays'),
+        MelGodRays(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light."""
+    rec_sig = b'LIGH'
+
+    _light_flags = Flags.from_names(
+        (1,  'light_can_take'),
+        (3,  'light_flickers'),
+        (5,  'light_off_by_default'),
+        (7,  'light_pulses'),
+        (10, 'light_shadow_spotlight'),
+        (11, 'light_shadow_hemisphere'),
+        (12, 'light_shadow_omnidirectional'),
+        (14, 'light_nonshadow_spotlight'),
+        (15, 'light_non_specular'),
+        (16, 'light_attenuation_only'),
+        (17, 'light_nonshadow_box'),
+        (18, 'light_ignore_roughness'),
+        (19, 'light_no_rim_lighting'),
+        (20, 'light_ambient_only'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelModel(),
+        MelKeywords(),
+        MelDestructible(),
+        MelProperties(),
+        MelFull(),
+        MelIcons(),
+        MelTruncatedStruct(b'DATA', ['i', 'I', '3B', 's', 'I', '10f', 'I',
+                                     'f'], 'duration', 'light_radius',
+            *gen_color('light_color'), (_light_flags, 'light_flags'),
+            'light_falloff', 'light_fov', 'light_near_clip',
+            'light_fe_period', # fe = 'Flicker Effect'
+            'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
+            'light_constant', 'light_scalar', 'light_exponent',
+            'light_god_rays_near_clip', 'value', 'weight', old_versions={
+                'iI3BsI10fI', 'iI3BsI8f',
+            }),
+        MelLighFade(),
+        MelString(b'NAM0', 'light_gobo'),
+        MelLighLensFlare(),
+        MelGodRays(),
+        MelSound(),
     )
 
 #------------------------------------------------------------------------------

@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
-    gen_color3
+    gen_color3, MelLighFade
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1477,8 +1477,18 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _flags = Flags.from_names('dynamic','canTake','negative','flickers','unk1',
-        'offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow')
+    _light_flags = Flags.from_names(
+        (0,  'light_dynamic'),
+        (1,  'light_can_take'),
+        (2,  'light_negative'),
+        (3,  'light_flickers'),
+        (5,  'light_off_by_default'),
+        (6,  'light_flickers_slow'),
+        (7,  'light_pulses'),
+        (8,  'light_pulses_slow'),
+        (9,  'light_spot_light'),
+        (10, 'light_shadow_spotlight'),
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -1488,10 +1498,11 @@ class MreLigh(MelRecord):
         MelDestructible(),
         MelFull(),
         MelIcons(),
-        MelStruct(b'DATA', [u'i', u'I', u'3B', u's', u'I', u'2f', u'I', u'f'],'duration','radius','red','green','blue',
-                  'unused1',(_flags, u'flags'),'falloff','fov','value',
-                  'weight'),
-        MelFloat(b'FNAM', u'fade'),
+        MelStruct(b'DATA', ['i', 'I', '3B', 's', 'I', '2f', 'I', 'f'],
+            'duration', 'light_radius', *gen_color('light_color'),
+            (_light_flags, 'light_flags'), 'light_falloff', 'light_fov',
+            'value', 'weight'),
+        MelLighFade(),
         MelSound(),
     )
 

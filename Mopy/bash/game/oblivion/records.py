@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
-    MelLandShared, AMreCell, AMreWrld, gen_color
+    MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1127,9 +1127,18 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _flags = Flags.from_names(
-        'dynamic', 'canTake', 'negative', 'flickers', 'unk1', 'offByDefault',
-        'flickerSlow', 'pulse', 'pulseSlow', 'spotLight', 'spotShadow')
+    _light_flags = Flags.from_names(
+        (0,  'light_dynamic'),
+        (1,  'light_can_take'),
+        (2,  'light_negative'),
+        (3,  'light_flickers'),
+        (5,  'light_off_by_default'),
+        (6,  'light_flickers_slow'),
+        (7,  'light_pulses'),
+        (8,  'light_pulses_slow'),
+        (9,  'light_spot_light'),
+        (10, 'light_shadow_spotlight'),
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -1137,12 +1146,12 @@ class MreLigh(MelRecord):
         MelScript(),
         MelFull(),
         MelIcon(),
-        MelTruncatedStruct(b'DATA',
-            [u'i', u'I', u'3B', u's', u'I', u'f', u'f', u'I', u'f'],
-            'duration', 'radius', 'red', 'green', 'blue', 'unused1',
-            (_flags, u'flags'), 'falloff', 'fov', 'value', 'weight',
+        MelTruncatedStruct(b'DATA', ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I',
+                                     'f'], 'duration', 'light_radius',
+            *gen_color('light_color'), (_light_flags, 'light_flags'),
+            'light_falloff', 'light_fov', 'value', 'weight',
             old_versions={'iI3BsI2f'}),
-        MelFloat(b'FNAM', u'fade'),
+        MelLighFade(),
         MelSound(),
     )
 

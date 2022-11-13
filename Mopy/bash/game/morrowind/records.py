@@ -734,27 +734,20 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _light_flags = Flags.from_names(
-        u'dynamic', # Bad names to match the other games (for tweaks)
-        u'canTake',
-        u'negative',
-        u'flickers',
-        u'light_fire',
-        u'offByDefault',
-        u'flickerSlow',
-        u'pulse',
-        u'pulseSlow',
-    )
+    _light_flags = Flags.from_names('light_dynamic', 'light_can_take',
+        'light_negative', 'light_flickers', 'light_fire',
+        'light_off_by_default', 'light_flickers_slow', 'light_pulses',
+        'light_pulses_slow')
 
     melSet = MelSet(
         MelMWId(),
         MelModel(),
         MelFullTes3(),
         MelIconTes3(),
-        MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'light_weight',
-            'light_value', 'light_time', 'light_radius',
-            *gen_color('light_color'), (_light_flags, 'light_flags')),
-        MelString(b'SNAM', u'sound_name'),
+        MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'weight', 'value',
+            'duration', 'light_radius', *gen_color('light_color'),
+            (_light_flags, 'light_flags')),
+        MelString(b'SNAM', 'sound_name'),
         MelScriptId(),
     )
 
