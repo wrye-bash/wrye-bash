@@ -53,7 +53,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
     MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
     MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
-    gen_color3, MelDalc, MelLighFade, MelLighLensFlare
+    gen_color3, MelDalc, MelLighFade, MelLighLensFlare, MelLscrCameraPath, \
+    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -177,6 +178,20 @@ class MelLLItems(AMelLLItems):
         super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
             'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
             'unused2'))
+
+#------------------------------------------------------------------------------
+class MelLlkc(MelSorted):
+    """Handles the common LLKC (Filter Keyword Chances) subrecord."""
+    def __init__(self):
+        super().__init__(MelArray('filter_keyword_chances',
+            MelStruct(b'LLKC', ['2I'], (FID, 'llkc_keyword'), 'llkc_chance'),
+        ), sort_by_attrs='llkc_keyword')
+
+#------------------------------------------------------------------------------
+class MelLLMaxCount(MelUInt8):
+    """Handles the common LVLM (Max Count) subrecord."""
+    def __init__(self):
+        super().__init__(b'LVLM', 'lvl_max_count')
 
 #------------------------------------------------------------------------------
 class MelLocation(MelUnion):
@@ -1811,26 +1826,56 @@ class MreLigh(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreLscr(MelRecord):
+    """Load Screen."""
+    rec_sig = b'LSCR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelDescription(),
+        MelConditionList(),
+        MelLscrNif(),
+        MelFid(b'TNAM', 'lscr_transform'),
+        MelLscrRotation(),
+        MelStruct(b'ZNAM', ['2f'], 'lscr_zoom_min', 'lscr_zoom_max'),
+        MelLscrCameraPath(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLtex(MelRecord):
+    """Landscape Texture."""
+    rec_sig = b'LTEX'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'TNAM', 'ltex_texture_set'),
+        MelFid(b'MNAM', 'ltex_material_type'),
+        MelStruct(b'HNAM', ['2B'], 'hd_friction',
+            'hd_restitution'), # hd = 'Havok Data'
+        MelLtexSnam(),
+        MelLtexGrasses(),
+    )
+
+#------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
-    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
-                      'epicLootChance', 'overrideName')
+    top_copy_attrs = ('chanceNone', 'lvl_max_count', 'glob',
+                      'filter_keyword_chances', 'epic_loot_chance',
+                      'lvli_override_name')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
-        MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
-        ),
-        MelFid(b'LVSG', 'epicLootChance'),
-        MelLString(b'ONAM', 'overrideName')
+        MelLlkc(),
+        MelFid(b'LVSG', 'epic_loot_chance'),
+        MelLString(b'ONAM', 'lvli_override_name')
     )
 
 #------------------------------------------------------------------------------
@@ -1838,22 +1883,20 @@ class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
-    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
-                      'model', 'modt_p')
+    top_copy_attrs = ('chanceNone', 'lvl_max_count', 'glob',
+                      'filter_keyword_chances', 'lvln_model', 'lvln_modt_p')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
-        MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
-        ),
-        MelString(b'MODL','model'),
-        MelBase(b'MODT','modt_p'),
+        MelLlkc(),
+        MelString(b'MODL', 'lvln_model'),
+        MelBase(b'MODT', 'lvln_modt_p'),
     )
 
 #------------------------------------------------------------------------------

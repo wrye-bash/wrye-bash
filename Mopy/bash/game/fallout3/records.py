@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
-    gen_color3, MelLighFade
+    gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1518,7 +1518,7 @@ class MreLscr(MelRecord):
         # Marked as an unused byte array in FO3Edit, but has the exact same
         # size so just treat it the same as TES4/FNV
         MelLscrLocations(),
-        fnv_only(MelFid(b'WMI1', 'loadScreenType')),
+        fnv_only(MelFid(b'WMI1', 'lscr_type')),
     )
 
 #------------------------------------------------------------------------------
@@ -1529,10 +1529,11 @@ class MreLtex(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelFid(b'TNAM', 'texture'),
-        MelOptStruct(b'HNAM', [u'3B'],'materialType','friction','restitution'),
-        MelUInt8(b'SNAM', 'specular'),
-        MelSorted(MelFids('grass', MelFid(b'GNAM'))),
+        MelFid(b'TNAM', 'ltex_texture'),
+        MelOptStruct(b'HNAM', ['3B'], 'hd_material_type', 'hd_friction',
+            'hd_restitution'), # hd = 'Havok Data'
+        MelLtexSnam(),
+        MelLtexGrasses(),
     )
 
 #------------------------------------------------------------------------------

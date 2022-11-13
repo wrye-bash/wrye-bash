@@ -983,13 +983,45 @@ class MelLighLensFlare(MelFid):
         super().__init__(b'LNAM', 'light_lens_flare')
 
 #------------------------------------------------------------------------------
+class MelLscrCameraPath(MelString):
+    """Handles the LSCR subrecord MOD2 (Camera Path)."""
+    def __init__(self):
+        super().__init__(b'MOD2', 'lscr_camera_path')
+
+#------------------------------------------------------------------------------
 class MelLscrLocations(MelSorted):
     """Handles the LSCR subrecord LNAM (Locations)."""
     def __init__(self):
-        super().__init__(MelGroups('locations',
-            MelStruct(b'LNAM', ['2I', '2h'], (FID, 'direct'),
-                (FID, 'indirect'), 'gridy', 'gridx'),
-        ), sort_by_attrs=('direct', 'indirect', 'gridy', 'gridx'))
+        super().__init__(MelGroups('lscr_locations',
+            MelStruct(b'LNAM', ['2I', '2h'], (FID, 'll_direct'),
+                (FID, 'll_indirect'), 'll_grid_y', 'll_grid_x'),
+        ), sort_by_attrs=('ll_direct', 'll_indirect', 'll_grid_y',
+                          'll_grid_x'))
+
+#------------------------------------------------------------------------------
+class MelLscrNif(MelFid):
+    """Handles the LSCR subrecord NNAM (Loading Screen NIF)."""
+    def __init__(self):
+        super().__init__(b'NNAM', 'lscr_nif')
+
+#------------------------------------------------------------------------------
+class MelLscrRotation(MelStruct):
+    """Handles the LSCR subrecord ONAM (Rotation)."""
+    def __init__(self):
+        super().__init__(b'ONAM', ['2h'], 'lscr_rotation_min',
+            'lscr_rotation_max')
+
+#------------------------------------------------------------------------------
+class MelLtexGrasses(MelSorted):
+    """Handles the LTEX subrecord GNAM (Grasses)."""
+    def __init__(self):
+        super().__init__(MelFids('ltex_grasses', MelFid(b'GNAM')))
+
+#------------------------------------------------------------------------------
+class MelLtexSnam(MelUInt8):
+    """Handles the LTEX subrecord SNAM (Texture Specular Exponent)."""
+    def __init__(self):
+        super().__init__(b'SNAM', 'texture_specular_exponent')
 
 #------------------------------------------------------------------------------
 class MelMapMarker(MelGroup):

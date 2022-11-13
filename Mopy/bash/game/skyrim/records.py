@@ -57,7 +57,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
     MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
-    MelDalc, gen_ambient_lighting, MelLighFade
+    MelDalc, gen_ambient_lighting, MelLighFade, MelLscrCameraPath, \
+    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1601,12 +1602,14 @@ class MreLscr(MelRecord):
         MelIcons(),
         MelDescription(),
         MelConditionList(),
-        MelFid(b'NNAM','loadingScreenNIF'),
-        MelFloat(b'SNAM', 'initialScale'),
-        MelStruct(b'RNAM', [u'3h'],'rotGridY','rotGridX','rotGridZ',),
-        MelStruct(b'ONAM', [u'2h'],'rotOffsetMin','rotOffsetMax',),
-        MelStruct(b'XNAM', [u'3f'],'transGridY','transGridX','transGridZ',),
-        MelString(b'MOD2','cameraPath'),
+        MelLscrNif(),
+        MelFloat(b'SNAM', 'lscr_initial_scale'),
+        MelStruct(b'RNAM', ['3h'], 'lscr_rotation_grid_y',
+            'lscr_rotation_grid_x', 'lscr_rotation_grid_z'),
+        MelLscrRotation(),
+        MelStruct(b'XNAM', ['3f'], 'lscr_translation_grid_y',
+            'lscr_translation_grid_x', 'lscr_translation_grid_z'),
+        MelLscrCameraPath(),
     )
 
 #------------------------------------------------------------------------------
@@ -1614,16 +1617,15 @@ class MreLtex(MelRecord):
     """Landscape Texture."""
     rec_sig = b'LTEX'
 
-    _SnowFlags = Flags.from_names('considered_snow')
-
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'TNAM','textureSet',),
-        MelFid(b'MNAM','materialType',),
-        MelStruct(b'HNAM', [u'2B'], 'friction', 'restitution',),
-        MelUInt8(b'SNAM', 'textureSpecularExponent'),
-        MelSorted(MelFids('grasses', MelFid(b'GNAM'))),
-        sse_only(MelUInt32Flags(b'INAM', u'snow_flags', _SnowFlags))
+        MelFid(b'TNAM', 'ltex_texture_set'),
+        MelFid(b'MNAM', 'ltex_material_type'),
+        MelStruct(b'HNAM', ['2B'], 'hd_friction',
+            'hd_restitution'), # hd = 'Havok Data'
+        MelLtexSnam(),
+        MelLtexGrasses(),
+        sse_only(MelUInt32(b'INAM', 'considered_snow')),
     )
 
 #------------------------------------------------------------------------------
@@ -1645,17 +1647,17 @@ class MreLvli(AMreLeveledList):
 class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
-    top_copy_attrs = ('chanceNone', 'model', 'modt_p')
+    top_copy_attrs = ('chanceNone', 'lvln_model', 'lvln_modt_p')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
-        MelString(b'MODL','model'),
-        MelBase(b'MODT','modt_p'),
+        MelString(b'MODL', 'lvln_model'),
+        MelBase(b'MODT', 'lvln_modt_p'),
     )
 
 #------------------------------------------------------------------------------
@@ -1679,7 +1681,6 @@ class MreMato(MelRecord):
     rec_sig = b'MATO'
 
     _MatoTypeFlags = Flags.from_names('singlePass')
-    _SnowFlags = Flags.from_names('considered_snow')
 
     melSet = MelSet(
         MelEdid(),
@@ -1700,8 +1701,7 @@ class MreMato(MelRecord):
                 'projectionVectorY', 'projectionVectorZ', 'normalDampener',
                 'singlePassColorRed', 'singlePassColorGreen',
                 'singlePassColorBlue', (_MatoTypeFlags, 'single_pass_flags'),
-                (_SnowFlags, 'snow_flags'), 'unused1',
-                old_versions={u'7f', u'11fI'}),
+                'considered_snow', 'unused1', old_versions={'7f', '11fI'}),
         ),
     )
 
@@ -3331,8 +3331,6 @@ class MreStat(MelRecord):
     """Static."""
     rec_sig = b'STAT'
 
-    _SnowFlags = Flags.from_names('considered_Snow')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -3342,7 +3340,7 @@ class MreStat(MelRecord):
                                  (FID, 'material')),
             se_version=MelTruncatedStruct(
                 b'DNAM', [u'f', u'I', u'B', u'3s'], 'maxAngle30to120',
-                (FID, 'material'), (_SnowFlags, 'snow_flags'), 'unused1',
+                (FID, 'material'), 'considered_snow', 'unused1',
                 old_versions={'fI'}),
         ),
         # Contains null-terminated mesh filename followed by random data

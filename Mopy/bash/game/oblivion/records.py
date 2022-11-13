@@ -46,7 +46,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
-    MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade
+    MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade, MelLtexSnam, \
+    MelLtexGrasses
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1172,31 +1173,13 @@ class MreLtex(MelRecord):
     """Landscape Texture."""
     rec_sig = b'LTEX'
 
-    _flags = Flags.from_names(
-        ( 0,'stone'),
-        ( 1,'cloth'),
-        ( 2,'dirt'),
-        ( 3,'glass'),
-        ( 4,'grass'),
-        ( 5,'metal'),
-        ( 6,'organic'),
-        ( 7,'skin'),
-        ( 8,'water'),
-        ( 9,'wood'),
-        (10,'heavyStone'),
-        (11,'heavyMetal'),
-        (12,'heavyWood'),
-        (13,'chain'),
-        (14,'snow')
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelOptStruct(b'HNAM', [u'3B'], (_flags, 'flags'), 'friction',
-                     'restitution'), ##: flags are actually an enum....
-        MelUInt8(b'SNAM', 'specular'),
-        MelSorted(MelFids('grass', MelFid(b'GNAM'))),
+        MelOptStruct(b'HNAM', ['3B'], 'hd_material_type', 'hd_friction',
+                     'hd_restitution'), # hd = 'Havok Data'
+        MelLtexSnam(),
+        MelLtexGrasses(),
     )
 
 #------------------------------------------------------------------------------

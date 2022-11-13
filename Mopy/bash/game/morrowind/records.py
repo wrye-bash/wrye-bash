@@ -773,8 +773,8 @@ class MreLtex(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelUInt32(b'INTV', u'landscape_index'),
-        MelString(b'DATA', u'landscape_texture_name'),
+        MelUInt32(b'INTV', 'ltex_index'),
+        MelString(b'DATA', 'ltex_texture_name'),
     )
 
 #------------------------------------------------------------------------------
