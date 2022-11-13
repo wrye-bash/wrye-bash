@@ -53,7 +53,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
     MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
     MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
-    gen_color3
+    gen_color3, MelDalc
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1721,6 +1721,38 @@ class MreLens(MelRecord):
     melSet = MelSet(
         MelLensShared(),
     ).with_distributor(lens_distributor)
+
+#------------------------------------------------------------------------------
+class MreLgtm(MelRecord):
+    """Lighting Template."""
+    rec_sig = b'LGTM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelTruncatedStruct(b'DATA',
+            ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '32s', '3B',
+             's', '3f', '4s', '2f', '3B', 's', '3B', 's', '7f'],
+            *gen_color('lgtm_ambient_color'),
+            *gen_color('lgtm_directional_color'),
+            *gen_color('lgtm_fog_color_near'), 'lgtm_fog_near',
+            'lgtm_fog_far', 'lgtm_directional_rotation_xy',
+            'lgtm_directional_rotation_z', 'lgtm_directional_fade',
+            'lgtm_fog_clip_distance', 'lgtm_fog_power',
+            'lgtm_unused1', *gen_color('lgtm_fog_color_far'),
+            'lgtm_fog_max', 'lgtm_light_fade_distances_start',
+            'lgtm_light_fade_distances_end', 'lgtm_unused2',
+            'lgtm_near_height_mid', 'lgtm_near_height_range',
+            *gen_color('lgtm_fog_color_high_near'),
+            *gen_color('lgtm_fog_color_high_far'), 'lgtm_high_density_scale',
+            'lgtm_fog_near_scale', 'lgtm_fog_far_scale',
+            'lgtm_fog_high_near_scale', 'lgtm_fog_high_far_scale',
+            'lgtm_far_height_mid', 'lgtm_far_height_range', old_versions={
+                '3Bs3Bs3Bs2f2i3f32s3Bs3f4s2f3Bs3Bs5f',
+                '3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+            }),
+        MelDalc(),
+        MelFid(b'WGDR', 'lgtm_god_rays'),
+    )
 
 #------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):

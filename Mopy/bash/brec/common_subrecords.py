@@ -33,7 +33,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
 from .utils_constants import int_unpacker, FID, null1, ZERO_FID, gen_color, \
-    gen_color3
+    gen_color3, gen_ambient_lighting
 from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
     structs_cache
 from ..exception import ModError
@@ -347,6 +347,14 @@ class MelCpthShared(MelSequential):
             MelUInt8(b'DATA', 'camera_zoom'),
             MelFids('camera_shots', MelFid(b'SNAM')),
         ),
+
+#------------------------------------------------------------------------------
+class MelDalc(MelTruncatedStruct):
+    """Handles the common DALC (Directional Ambient Lighting Colors)
+    subrecord."""
+    def __init__(self):
+        super().__init__(b'DALC', ['28B', 'f'],
+            *gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
 
 #------------------------------------------------------------------------------
 class MelDebrData(MelStruct):

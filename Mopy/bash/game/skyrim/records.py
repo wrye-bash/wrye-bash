@@ -21,10 +21,8 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
-from itertools import chain
-
 from ... import bush
-from ...bolt import Flags, structs_cache, TrimmedFlags, sig_to_str
+from ...bolt import Flags, TrimmedFlags, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
@@ -58,8 +56,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color
-from ...exception import ModSizeError
+    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
+    MelDalc, gen_ambient_lighting
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -78,17 +76,6 @@ def sse_only(sse_obj):
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
-#------------------------------------------------------------------------------
-def _gen_ambient_lighting(attr_prefix):
-    """Helper method for generating a ton of repetitive attributes that are
-    shared between a couple record types."""
-    color_types = [f'directional_{t}' for t in (
-        'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
-    color_types.append('specular')
-    color_iters = chain.from_iterable(gen_color(d) for d in color_types)
-    ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
-    return ambient_lighting + [f'{attr_prefix}_ac_scale']
-
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
@@ -160,13 +147,6 @@ class MelAttacks(MelSorted):
                        u'recovery_time', u'stamina_mult'),
              MelString(b'ATKE', u'attack_event'),
         ), sort_by_attrs='attack_chance')
-
-#------------------------------------------------------------------------------
-class MelDalc(MelTruncatedStruct):
-    """Handles the common DALC subrecord."""
-    def __init__(self):
-        super().__init__(b'DALC', ['28B', 'f'],
-            *_gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -1554,39 +1534,20 @@ class MreLgtm(MelRecord):
     """Lighting Template."""
     rec_sig = b'LGTM'
 
-    class MelLgtmData(MelStruct):
-        """Older format skips 8 bytes in the middle and has the same unpacked
-        length, so we can't use MelTruncatedStruct."""
-        def load_mel(self, record, ins, sub_type, size_, *debug_strs,
-                __unpacker=structs_cache['3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
-            if size_ == 92:
-                super().load_mel(record, ins, sub_type, size_, *debug_strs)
-                return
-            elif size_ == 84:
-                unpacked_val = ins.unpack(__unpacker, size_, *debug_strs)
-                # Pad it with 8 null bytes in the middle
-                unpacked_val = (*unpacked_val[:19],
-                    unpacked_val[19] + null4 * 2, *unpacked_val[20:])
-                for attr, value, action in zip(self.attrs, unpacked_val,
-                                               self.actions):
-                    if action is not None: value = action(value)
-                    setattr(record, attr, value)
-            else:
-                raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)
-
     melSet = MelSet(
         MelEdid(),
-        MelLgtmData(b'DATA',
+        MelTruncatedStruct(b'DATA',
             ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '28B', 'f',
              '3B', 's', '3f', '4s'], *gen_color('lgtm_ambient_color'),
             *gen_color('lgtm_directional_color'),
             *gen_color('lgtm_fog_color_near'), 'lgtm_fog_near',
             'lgtm_fog_far', 'lgtm_directional_rotation_xy',
             'lgtm_directional_rotation_z', 'lgtm_directional_fade',
-            'lgtm_fog_clip_dist', 'lgtm_fog_power',
-            *_gen_ambient_lighting('lgtm'), *gen_color('lgtm_fog_color_far_'),
+            'lgtm_fog_clip_distance', 'lgtm_fog_power',
+            *gen_ambient_lighting('lgtm'), *gen_color('lgtm_fog_color_far'),
             'lgtm_fog_max', 'lgtm_light_fade_distances_start',
-            'lgtm_light_fade_distances_end', 'lgtm_unknown_data'),
+            'lgtm_light_fade_distances_end', 'lgtm_unknown_data',
+            old_versions={'3Bs3Bs3Bs2f2i3f28Bf', '3Bs3Bs3Bs2f2i3f24B'}),
         MelDalc(),
     )
 

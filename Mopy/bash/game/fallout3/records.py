@@ -1469,7 +1469,7 @@ class MreLgtm(MelRecord):
             *gen_color('lgtm_directional_color'), *gen_color('lgtm_fog_color'),
             'lgtm_fog_near', 'lgtm_fog_far', 'lgtm_directional_rotation_xy',
             'lgtm_directional_rotation_z', 'lgtm_directional_fade',
-            'lgtm_fog_clip_dist', 'lgtm_fog_power'),
+            'lgtm_fog_clip_distance', 'lgtm_fog_power'),
     )
 
 #------------------------------------------------------------------------------
