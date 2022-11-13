@@ -98,6 +98,9 @@ class Mod_FullLoad(_LoadLink):
     _help = ('Tests the current record definitions for this game against the '
              'selected plugins.')
     _load_sigs = tuple(RecordType.sig_to_class) # all available (decoded) records
+    if bush.game.fsName == 'Fallout4':
+        # FIXME(inf) Temp HACK to make Test Record Definitions work in FO4
+        _load_sigs = tuple(set(RecordType.sig_to_class) - {b'CELL', b'QUST', b'WRLD'})
 
     @balt.conversation
     def Execute(self):
