@@ -904,7 +904,8 @@ class _TempRefs(_CellRefs):
     _children_grup_type = 9
     @fast_cached_property
     def _accepted_sigs(self):
-        return {*RecordType.sig_to_class[b'CELL'].ref_types, b'PGRD'}
+        cell_class = RecordType.sig_to_class[b'CELL']
+        return {*cell_class.ref_types, *cell_class.interior_temp_extra}
 class _DistRefs(_CellRefs):
     _children_grup_type = 10
 
@@ -919,7 +920,8 @@ class _CellChildren(_Nested, _ChildrenGrup):
     @fast_cached_property
     def _accepted_sigs(self):
         # needed in childrenGrup ## TODO define statically in _validate_records
-        return {*RecordType.sig_to_class[b'CELL'].ref_types, b'PGRD'}
+        cell_class = RecordType.sig_to_class[b'CELL']
+        return {*cell_class.ref_types, *cell_class.interior_temp_extra}
 
     # todo do_unpack handling (and rename -> data -> _grup_blob)
     def __init__(self, grup_head, loadFactory, ins=None, do_unpack=False,
@@ -1155,7 +1157,8 @@ class MobICells(MobCells, TopComplexGrup):
 class _WrldTempRefs(_TempRefs):
     @fast_cached_property
     def _accepted_sigs(self):
-        return {*RecordType.sig_to_class[b'CELL'].ref_types, b'PGRD', b'LAND'}
+        wrld_class = RecordType.sig_to_class[b'WRLD']
+        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
 
 class _ExtCellChildren(_CellChildren):
     _top_type = b'CELL' # these are part of an WRLD record
@@ -1163,7 +1166,8 @@ class _ExtCellChildren(_CellChildren):
                          (_PersRefs, _WrldTempRefs, _DistRefs)}
     @fast_cached_property
     def _accepted_sigs(self):
-        return {*RecordType.sig_to_class[b'CELL'].ref_types, b'PGRD', b'LAND'}
+        wrld_class = RecordType.sig_to_class[b'WRLD']
+        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
 
 class _ExtCell(MobCell):
     _mob_objects_type = {6: _ExtCellChildren}
@@ -1231,8 +1235,9 @@ class _WorldChildren(_CellChildren):
 
     @fast_cached_property
     def _accepted_sigs(self):
-        return {*RecordType.sig_to_class[b'CELL'].ref_types, b'PGRD', b'LAND',
-                *self._extra_records}
+        wrld_class = RecordType.sig_to_class[b'WRLD']
+        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra,
+                *wrld_class.wrld_children_extra}
 
     def _load_mobs(self, gt, header, ins, master_rec):
         try:
