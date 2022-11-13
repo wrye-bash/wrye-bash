@@ -306,3 +306,28 @@ class UnknownListener(GuiError):
 class ListenerBound(GuiError):
     """Trying to bind a listener that is already subscribed to this event
     handler."""
+
+# Nexus API errors ------------------------------------------------------------
+class LimitReachedError(Exception):
+    """Exception raised when the request rate limit has been reached."""
+    def __init__(self):
+        super().__init__('You have reached your request limit. Please wait '
+                         'one hour before trying again.')
+
+class RequestError(Exception):
+    """Exception raised when a request returns an error code."""
+    def __init__(self, status_code, msg):
+        self.status_code = status_code
+        self.orig_msg = msg
+        super().__init__(f'Status Code {status_code} - {msg}')
+
+class EndorsementError(Exception):
+    """Base class for endorsement/disendorsement errors."""
+
+class EndorsedWithoutDownloadError(EndorsementError):
+    """Exception raised when a mod is endorsed or disendorsed without having
+    been downloaded first."""
+
+class EndorsedTooSoonError(EndorsementError):
+    """Exception raised when a mod is endorsed or disendorsed without enough
+    time having elapsed since it was downloaded."""
