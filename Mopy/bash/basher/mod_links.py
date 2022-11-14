@@ -329,12 +329,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.sort()
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
-        changed= []
-        for fileName in list(colGroup):
-            if colGroup[fileName] == oldName:
+        renamed = []
+        for fileName, val in colGroup.items():
+            if val == oldName:
                 colGroup[fileName] = newName
-                changed.append(fileName)
-        self._refresh(redraw=changed)
+                renamed.append(fileName)
+        self._refresh(redraw=renamed)
         #--Done
         return newName
 
@@ -343,12 +343,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
-        changed= []
-        for fileName in list(colGroup):
-            if colGroup[fileName] == item:
+        deletd = []
+        for fileName, val in list(colGroup.items()):
+            if val == item:
                 del colGroup[fileName]
-                changed.append(fileName)
-        self._refresh(redraw=changed)
+                deletd.append(fileName)
+        self._refresh(redraw=deletd)
         #--Done
         return True
 
@@ -457,12 +457,12 @@ class _ModGroups(CsvParser):
         """Exports mod groups to modInfos."""
         mod_group = self.mod_group
         column = bosh.modInfos.table.getColumn(u'group')
-        changed = 0
+        changed_count = 0
         for mod in (mods or bosh.modInfos.table):
             if mod in mod_group and column.get(mod) != mod_group[mod]:
                 column[mod] = mod_group[mod]
-                changed += 1
-        return changed
+                changed_count += 1
+        return changed_count
 
     def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
@@ -528,11 +528,11 @@ class _Mod_Groups_Import(ItemLink):
         #--Import
         modGroups = _ModGroups()
         modGroups.read_csv(textPath)
-        changed = modGroups.writeToModInfos(self.selected)
+        changed_count = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
         self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
         self._showOk(_(u'Imported %d mod/groups (%d changed).') % (
-            len(modGroups.mod_group), changed), _(u'Import Groups'))
+            len(modGroups.mod_group), changed_count), _(u'Import Groups'))
 
 class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
@@ -805,15 +805,15 @@ class _GhostLink(ItemLink):
     def Execute(self):
         """Loop selected files applying allow ghosting settings and
         (un)ghosting as needed."""
-        changed = []
+        ghost_changed = []
         set_allow = self.__class__.setAllow
         to_ghost = self.__class__.toGhost
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(to_ghost(fileName)) != oldGhost:
-                changed.append(fileName)
-        self.window.RefreshUI(redraw=changed, refreshSaves=False)
+                ghost_changed.append(fileName)
+        self.window.RefreshUI(redraw=ghost_changed, refreshSaves=False)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, _help = _(u'Allow Ghosting'), _(u'Allow Ghosting for selected mods')
@@ -1492,7 +1492,7 @@ class _Esm_Esl_Flip(EnabledLink):
             bosh.modInfos.rescanMergeable(self.selected, bolt.Progress())
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
-                changed={p.abs_path for p in self.iselected_infos()})
+                altered={p.abs_path for p in self.iselected_infos()})
             # We need to RefreshUI all higher-loading plugins than the lowest
             # plugin that was affected to update the Indices column
             lowest_selected = min(self.selected,
@@ -1657,7 +1657,7 @@ class Mod_Fids_Replace(OneItemLink):
         return FidReplacer()
 
     def Execute(self):
-        if not self._askContinue(self.message, u'bash.formIds.replace.continue',
+        if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
@@ -1673,13 +1673,13 @@ class Mod_Fids_Replace(OneItemLink):
             replacer = self._parser()
             progress(0.1, _(u'Reading') + f' {textPath.stail}.')
             replacer.read_csv(textPath)
-            progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
-            changed = replacer.updateMod(self._selected_info)
+            progress(0.2, _(u'Applying to') + f' {self._selected_item}.')
+            fids_changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
         #--Log
-        if not changed: self._showOk(_(u'No changes required.'))
-        else:
-            self._showLog(changed, title=_(u'Objects Changed'), asDialog=True)
+        if not fids_changed: self._showOk(_(u'No changes required.'))
+        else: self._showLog(fids_changed, title=_(u'Objects Changed'),
+                            asDialog=True)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1793,9 +1793,9 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
                 srcInfo = bosh.ModInfo(textPath)
                 parser.readFromMod(srcInfo)
             progress(0.2, _(u'Applying to') + f' {self._selected_item}.')
-            changed = parser.writeToMod(self._selected_info)
+            changes = parser.writeToMod(self._selected_info)
             progress(1.0, _(u'Done.'))
-        return changed
+        return changes
 
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
                  lg_icons=Link._default_icons):
@@ -1803,14 +1803,14 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             title=title or self.__class__.progressTitle, asDialog=asDialog,
             fixedFont=fixedFont, lg_icons=lg_icons)
 
-    def _log(self, changed, fileName):
-        self._showLog(u'* %03d  %s\n' % (changed, fileName))
+    def _log(self, changes, fileName):
+        self._showLog(f'* {changes:03d}  {fileName}\n')
 
-    def show_change_log(self, changed, fileName):
-        if not changed:
+    def show_change_log(self, changes, fileName): ##: implement for Scripts
+        if not changes:
             self._showOk(self.__class__.noChange, self.__class__.progressTitle)
         else:
-            self._log(changed, fileName)
+            self._log(changes, fileName)
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -1831,9 +1831,9 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             self._showError(csv_err)
             return
         #--Import
-        changed = self._import(ext, textPath)
+        changes = self._import(ext, textPath)
         #--Log
-        self.show_change_log(changed, self._selected_item)
+        self.show_change_log(changes, self._selected_item)
 
     def _askContinueImport(self):
         return self._askContinue(self.__class__.continueInfo,
@@ -1934,10 +1934,10 @@ class Mod_Factions_Import(_Mod_Import_Link):
     noChange = _(u'No relevant faction ranks to import.')
     _parser_class = ActorFactions
 
-    def _log(self, changed, fileName):
-        log_out = ((u'* %s : %03d  %s\n' % (grp_name, v, fileName)) for
-                   grp_name, v in sorted(changed.items()))
-        self._showLog(u''.join(log_out))
+    def _log(self, changes, fileName):
+        log_out = (f'* {grp_name} : {v:03d}  {fileName}' for
+                   grp_name, v in sorted(changes.items()))
+        self._showLog('\n'.join(log_out))
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText
@@ -1993,48 +1993,33 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     def Execute(self):
         if not self._askContinueImport(): return
         defaultPath = bass.dirs[u'patches'].join(
-            u'%s Exported Scripts' % self._selected_item)
+            f'{self._selected_item} Exported Scripts')
         if not defaultPath.exists():
             defaultPath = bass.dirs[u'patches']
         textDir = self._askDirectory(
             message=_(u'Choose directory to import scripts from'),
             defaultPath=defaultPath)
         if not textDir: return
-        message = (_(u"Import scripts that don't exist in the esp as new"
-                     u' scripts?') + u'\n' +
-                   _(u'(If not they will just be skipped).')
-                   )
-        makeNew = self._askYes(message, _(u'Import Scripts'),
-                               questionIcon=True)
-        scriptText = self._parser() # type: ScriptText
+        message = _("Import scripts that don't exist in the esp as new"
+            ' scripts?') + '\n' + _('(If not they will just be skipped).')
+        makeNew = self._askYes(message, _('Import Scripts'), questionIcon=True)
+        scriptText: ScriptText = self._parser()
         with balt.Progress(_(u'Import Scripts')) as progress:
             scriptText.read_script_folder(textDir, progress)
-        changed, added = scriptText.writeToMod(self._selected_info, makeNew)
+        altered, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
-        if not (len(changed) or len(added)):
+        if not (altered or added):
             self._showOk(_(u'No changed or new scripts to import.'),
                          _(u'Import Scripts'))
             return
-        if changed:
-            changedScripts = (_(u'Imported %d changed scripts from %s:') +
-                              u'\n%s') % (
-                len(changed), textDir, u'*' + u'\n*'.join(sorted(changed)))
-        else:
-            changedScripts = u''
-        if added:
-            addedScripts = (_(u'Imported %d new scripts from %s:')
-                            + u'\n%s') % (
-                len(added), textDir, u'*' + u'\n*'.join(sorted(added)))
-        else:
-            addedScripts = u''
-        report = None
-        if changed and added:
-            report = changedScripts + u'\n\n' + addedScripts
-        elif changed:
-            report = changedScripts
-        elif added:
-            report = addedScripts
-        self._showLog(report, title=_(u'Import Scripts'))
+        log_msg = []
+        for msg, scripts in (
+                (_('Imported %d changed scripts from %s:'), altered),
+                (_('Imported %d new scripts from %s:'), added)):
+            if scripts:
+                log_msg.append(msg % (len(scripts), textDir) + (
+                        '\n*%s' % '\n*'.join(sorted(scripts))))
+        self._showLog('\n\n'.join(log_msg), title=_('Import Scripts'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemStats
@@ -2064,10 +2049,10 @@ class Mod_Stats_Import(_Mod_Import_Link):
     noChange = _(u'No relevant stats to import.')
     _parser_class = ItemStats
 
-    def _log(self, changed, fileName):
-        msg = (u'* %03d  %s\n' % (count, modName) for modName, count in
-               dict_sort(changed))
-        self._showLog(u''.join(msg))
+    def _log(self, changes, fileName):
+        msg = (f'* {count:03d}  {modName}' for modName, count in
+               dict_sort(changes))
+        self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices
@@ -2097,10 +2082,10 @@ class Mod_Prices_Import(_Mod_Import_Link):
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
     _parser_class = ItemPrices
 
-    def _log(self, changed, fileName):
-        msg = (_(u'Imported Prices:') + u'\n* %s: %d\n' % (modName, count) for
-               modName, count in dict_sort(changed))
-        self._showLog(u''.join(msg))
+    def _log(self, changes, fileName):
+        msg = (_('Imported Prices:') + f'\n* {modName}: {count:d}' for
+               modName, count in dict_sort(changes))
+        self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import SigilStoneDetails
@@ -2131,10 +2116,10 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Sigil Stone details to import.')
     _parser_class = SigilStoneDetails
 
-    def _log(self, changed, fname):
-        msg = [(_(u'Imported Sigil Stone details to mod %s:') + u'\n') % fname]
-        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
-        self._showLog(u''.join(msg))
+    def _log(self, changes, fileName):
+        msg = [_('Imported Sigil Stone details to mod %s:') % fileName]
+        msg.extend(f'* {eid}' for eid in sorted(changes))
+        self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords
@@ -2180,10 +2165,10 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     noChange = _(u'No relevant Spell details to import.')
     _do_what = _(u'Import flags and effects?')
 
-    def _log(self, changed, fileName):
-        msg = [(_(u'Imported Spell details to mod %s:') + u'\n') % fileName]
-        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
-        self._showLog(u''.join(msg))
+    def _log(self, changes, fileName):
+        msg = [_('Imported Spell details to mod %s:') % fileName]
+        msg.extend(f'* {eid}' for eid in sorted(changes))
+        self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import IngredientDetails
@@ -2213,10 +2198,10 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Ingredient details to import.')
     _parser_class = IngredientDetails
 
-    def _log(self, changed, fname):
-        msg = [(_(u'Imported Ingredient details to mod %s:') + u'\n') % fname]
-        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
-        self._showLog(u''.join(msg))
+    def _log(self, changes, fileName):
+        msg = [_('Imported Ingredient details to mod %s:') % fileName]
+        msg.extend(f'* {eid}' for eid in sorted(changes))
+        self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import EditorIds
@@ -2264,30 +2249,29 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 progress(0.1, _(u'Reading') + f' {textPath.stail}.')
                 editorIds.read_csv(textPath)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
-                changed = editorIds.writeToMod(self._selected_info)
+                changes = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u'Done.'))
             #--Log
-            if not changed:
+            if not changes:
                 self._showOk(self.__class__.noChange)
             else:
-                buff = io.StringIO()
-                format_ = u"%s'%s' >> '%s'\n"
-                for old,new in sorted(changed):
-                    if new in questionableEidsSet:
-                        prefix = u'* '
-                    else:
-                        prefix = u''
-                    buff.write(format_ % (prefix,old,new))
+                buff = []
+                for old,new in sorted(changes):
+                    prefix = '* ' if new in questionableEidsSet else ''
+                    buff.append(f"{prefix}'{old}' >> '{new}'")
                 if questionableEidsSet:
-                    buff.write(u'\n* '+_(u'These editor ids begin with numbers and may therefore cause the script compiler to generate unexpected results')+u'\n')
+                    buff.append('\n* ' + _('These editor ids begin with '
+                        'numbers and may therefore cause the script compiler '
+                        'to generate unexpected results'))
                 if badEidsList:
-                    buff.write(u'\n'+_(u'The following EIDs are malformed and were not imported:')+u'\n')
+                    buff.append('\n' + _('The following EIDs are malformed '
+                                         'and were not imported:'))
                     for badEid in badEidsList:
-                        buff.write(u"  '%s'\n" % badEid)
-                log_text = buff.getvalue()
+                        buff.append(f"  '{badEid}'")
+                log_text = '\n'.join(buff)
                 self._showLog(log_text, title=_(u'Objects Changed'))
         except BoltError as e:
-            self._showWarning(u'%r' % e)
+            self._showWarning(f'{e!r}')
 
 #------------------------------------------------------------------------------
 from ..parsers import FullNames
@@ -2319,7 +2303,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     def _parser(self):
         return FullNames()
 
-    def _log(self, changed, fileName):
-        msg = (u'%s:   %s >> %s\n' % (eid, oldFull, newFull) for
-               eid, (oldFull, newFull) in dict_sort(changed))
-        self._showLog(u''.join(msg), title=_(u'Objects Renamed'))
+    def _log(self, changes, fileName):
+        msg = (f'{eid}:   {oldFull} >> {newFull}' for
+               eid, (oldFull, newFull) in dict_sort(changes))
+        self._showLog('\n'.join(msg), title=_('Objects Renamed'))

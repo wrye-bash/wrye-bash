@@ -846,12 +846,12 @@ class INIGame(LoGame):
                     self._mk_ini(move_ini), ini_key))
                 return True
             return False
-        changed = False
+        swapped = False
         if self._handles_actives:
-            changed = _do_swap(self._cached_ini_actives, self.ini_key_actives)
+            swapped = _do_swap(self._cached_ini_actives, self.ini_key_actives)
         if self._handles_lo:
-            changed |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        return super().swap(old_dir, new_dir) or changed
+            swapped |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
+        return super().swap(old_dir, new_dir) or swapped
 
     def get_acti_file(self):
         if self._handles_actives:

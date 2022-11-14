@@ -408,11 +408,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         for top_grup_sig in self._read_sigs:
             for rid, record in self.patchFile.tops[top_grup_sig].id_records.items():
                 if rid not in merged_deleted: continue
-                changed = False
                 if record.aiPackages != merged_deleted[rid][u'merged']:
                     record.aiPackages = merged_deleted[rid][u'merged']
-                    changed = True
-                if changed:
                     keep(rid)
                     mod_count[rid.mod_fn] += 1
         self.id_merged_deleted.clear()

@@ -482,11 +482,11 @@ class SaveFile(object):
         rec_type_map = bush.game.save_rec_types
         #--Fids log
         log.setHeader(_(u'Fids'))
-        log(u'  Refed\tChanged\tMI    Mod Name')
+        log('  Refed\tChanged\tMI    Mod Name')
         log(f'  {lostRefs:d}\t\t     Lost Refs (Fid == 0)')
-        for modIndex, (irefed,changed) in enumerate(zip(idHist, changeHisto)):
-            if irefed or changed:
-                log(f'  {irefed:d}\t{changed:d}\t{modIndex:02X}   '
+        for modIndex, (irefed, changes) in enumerate(zip(idHist, changeHisto)):
+            if irefed or changes:
+                log(f'  {irefed:d}\t{changes:d}\t{modIndex:02X}   '
                     f'{getMaster(modIndex)}')
         #--Lost Changes
         if lostChanges:

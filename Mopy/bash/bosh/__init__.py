@@ -664,8 +664,8 @@ class ModInfo(FileInfo):
         old_ghost = self.isGhost
         self._refresh_ghost_state(itsa_ghost=itsa_ghost)
         # mark updated if ghost state changed but only reread header if needed
-        changed = super(ModInfo, self).do_update(raise_on_error)
-        return changed or self.isGhost != old_ghost
+        did_change = super(ModInfo, self).do_update(raise_on_error)
+        return did_change or self.isGhost != old_ghost
 
     @FileInfo.abs_path.getter
     def abs_path(self):
@@ -1636,7 +1636,7 @@ class TableFileInfos(DataStore):
         if owner is not None:
             info.set_table_prop('installer', f'{owner}')
         if notify_bain:
-            self._notify_bain(changed={info.abs_path})
+            self._notify_bain(altered={info.abs_path})
         return info
 
     def _list_store_dir(self): # performance intensive
@@ -1684,16 +1684,12 @@ class TableFileInfos(DataStore):
         self._notify_bain(deleted=paths_to_keys)
         return list(paths_to_keys.values())
 
-    def _notify_bain(self, deleted=frozenset(), changed=frozenset(),
-                     renamed={}):
-        """Note that all of these parameters need to be absolute paths!
-
-        :type deleted: set[bolt.Path]
-        :type changed: set[bolt.Path]
-        :type renamed: dict[Path, Path]"""
+    def _notify_bain(self, deleted: set[Path] = frozenset(),
+        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
+        """Note that all of these parameters need to be absolute paths!"""
         if self.__class__._bain_notify:
             from .bain import InstallersData
-            InstallersData.notify_external(deleted=deleted, changed=changed,
+            InstallersData.notify_external(deleted=deleted, altered=altered,
                                            renamed=renamed)
 
     def _additional_deletes(self, fileInfo, toDelete): pass
@@ -1760,7 +1756,7 @@ class FileInfos(TableFileInfos):
         self.delete_refresh(_deleted_, None, check_existence=False,
                             _in_refresh=True)
         if _updated:
-            self._notify_bain(changed={self[n].abs_path for n in _updated})
+            self._notify_bain(altered={self[n].abs_path for n in _updated})
         change = bool(_added) or bool(_updated) or bool(_deleted_)
         if not change: return change
         return _added, _updated, _deleted_
@@ -1977,7 +1973,7 @@ class INIInfos(TableFileInfos):
                 _updated.add(k)
                 default_info.reset_status()
         if _updated:
-            self._notify_bain(changed={self[n].abs_path for n in _updated})
+            self._notify_bain(altered={self[n].abs_path for n in _updated})
         return _added, _deleted_, _updated
 
     def _missing_default_inis(self):
@@ -1988,14 +1984,13 @@ class INIInfos(TableFileInfos):
         _added = _deleted_ = _updated = set()
         if refresh_infos:
             _added, _deleted_, _updated = self._refresh_ini_tweaks()
-        changed = refresh_target and (
-                self.ini.updated or self.ini.do_update())
-        if changed: # reset the status of all infos and let RefreshUI set it
+        change = refresh_target and (self.ini.updated or self.ini.do_update())
+        if change: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.values(): ini_info.reset_status()
-        change = bool(_added) or bool(_updated) or bool(_deleted_) or changed
+        change = bool(_added) or bool(_updated) or bool(_deleted_) or change
         if not change: return change
-        return _added, _updated, _deleted_, changed
+        return _added, _updated, _deleted_, change
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
@@ -2452,7 +2447,7 @@ class ModInfos(FileInfos):
         :param force: set to True only in Mods_AutoGhost, so if fired when
         toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
-        changed = []
+        flipped = []
         toGhost = bass.settings[u'bash.mods.autoGhost']
         if force or toGhost:
             allowGhosting = self.table.getColumn(u'allowGhosting')
@@ -2462,8 +2457,8 @@ class ModInfos(FileInfos):
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
                 if newGhost != oldGhost:
-                    changed.append(mod)
-        return changed
+                    flipped.append(mod)
+        return flipped
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -3509,9 +3504,9 @@ class BSAInfos(FileInfos):
             def get_store(cls): return bsaInfos
 
             def do_update(self, raise_on_error=False, itsa_ghost=None):
-                changed = super(BSAInfo, self).do_update(raise_on_error)
+                did_change = super(BSAInfo, self).do_update(raise_on_error)
                 self._reset_bsa_mtime()
-                return changed
+                return did_change
 
             def readHeader(self):  # just reset the cache
                 self._assets = self.__class__._assets

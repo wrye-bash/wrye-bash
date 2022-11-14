@@ -403,7 +403,6 @@ class PCFaces(object):
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face
-            #print face.pcName, face.race, face.hair, face.eye, face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3
         return faces
 
     @staticmethod

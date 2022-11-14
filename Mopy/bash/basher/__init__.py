@@ -1251,16 +1251,17 @@ class ModList(_ModsUIList):
         for act in active:
             if act in touched: continue # already deactivated
             try:
-                changed = self.data_store.lo_deactivate(act, doSave=False)
-                if not changed:
+                deactivated = self.data_store.lo_deactivate(act, doSave=False)
+                if not deactivated:
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act)
                     continue
-                touched |= changed
-                if len(changed) > (act in changed): # deactivated dependents
-                    changed = [x for x in changed if x != act]
+                touched |= deactivated
+                if len(deactivated) > (act in deactivated):
+                    # deactivated dependents
+                    deactivated = [x for x in deactivated if x != act]
                     changes[self.__deactivated_key][act] = \
-                        load_order.get_ordered(changed)
+                        load_order.get_ordered(deactivated)
             except BoltError as e:
                 balt.showError(self, f'{e}')
         # Activate ?

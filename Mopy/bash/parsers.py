@@ -129,7 +129,7 @@ class _TextParser(object):
         :param modInfo: The ModInfo instance to write to.
         :return: info on number of changed records, usually per record type."""
         modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
-        changed = self._changed_type()
+        changed_stats = self._changed_type()
         # We know that the loaded mod only has the tops loaded that we need
         for top_grup_sig, stored_rec_info in self.id_stored_data.items():
             rec_block = modFile.tops.get(top_grup_sig, None)
@@ -137,21 +137,22 @@ class _TextParser(object):
             if not stored_rec_info or not rec_block: continue
             for rfid, record in rec_block.iter_present_records():
                 self._check_write_record(rfid, record, stored_rec_info,
-                                         changed)
-        changed = self._additional_processing(changed, modFile)
+                                         changed_stats)
+        changed_stats = self._additional_processing(changed_stats, modFile)
         # Check if we've actually changed something, otherwise skip saving
-        if changed: modFile.safeSave()
-        return changed
+        if changed_stats: modFile.safeSave()
+        return changed_stats
 
-    def _additional_processing(self, changed, modFile):
-        return changed
+    def _additional_processing(self, changed_stats, modFile):
+        return changed_stats
 
-    def _check_write_record(self, rfid, record, stored_rec_info, changed):
+    def _check_write_record(self, rfid, record, stored_rec_info,
+                            changed_stats):
         """Check if we have stored data for this record usually based on its
         fid."""
         stored_data = stored_rec_info.get(rfid)
         if stored_data:
-            self._write_record(record, stored_data, changed)
+            self._write_record(record, stored_data, changed_stats)
 
 class CsvParser(_TextParser):
     _csv_header = ()
@@ -445,7 +446,7 @@ class _AParser(_HandleAliases):
         raise AbstractError(u'_write_record_2 not implemented')
 
     _changed_type = Counter
-    def _write_record(self, record, new_data, changed):
+    def _write_record(self, record, new_data, changed_stats):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
 
@@ -457,7 +458,7 @@ class _AParser(_HandleAliases):
             # It's different, ask the parser to write it out
             self._write_record_2(record, new_data, cur_data)
             record.setChanged()
-            changed[record.rec_sig] += 1
+            changed_stats[record.rec_sig] += 1
 
     # Other API
     @property
@@ -578,13 +579,13 @@ class ActorLevels(_HandleAliases):
             # pretend we are a normal parser
             real = self.id_stored_data
             self.id_stored_data = {b'NPC_': id_levels}
-            changed = super(ActorLevels, self).writeToMod(modInfo)
+            changed_stats = super().writeToMod(modInfo)
             self.id_stored_data = real
-            return changed
+            return changed_stats
         return 0
 
     _changed_type = list
-    def _write_record(self, record, levels, changed, __getter=itemgetter(
+    def _write_record(self, record, levels, changed_stats, __getter=itemgetter(
             u'level_offset', u'calcMin', u'calcMax')):
         level_offset, calcMin, calcMax = __getter(levels)
         if ((record.level_offset,record.calcMin,record.calcMax) != (
@@ -592,10 +593,10 @@ class ActorLevels(_HandleAliases):
             (record.level_offset,record.calcMin,record.calcMax) = (
                 level_offset,calcMin,calcMax)
             record.setChanged()
-            changed.append(record.fid)
+            changed_stats.append(record.fid)
 
-    def _additional_processing(self, changed, modFile):
-        return len(changed)
+    def _additional_processing(self, changed_stats, modFile):
+        return len(changed_stats)
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         attr_dex = super(ActorLevels, self)._update_from_csv(b'NPC_', csv_fields)
@@ -658,25 +659,25 @@ class EditorIds(_HandleAliases):
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
 
-    def _additional_processing(self, changed, modFile):
+    def _additional_processing(self, changed_stats, modFile):
         #--Update scripts
         old_new = dict(self.old_new)
-        old_new.update({oldEid.lower(): newEid for oldEid, newEid in changed})
-        changed.extend(self.changeScripts(modFile,old_new))
-        return changed
+        old_new.update({oldEid.lower(): newEid for oldEid, newEid in changed_stats})
+        changed_stats.extend(self.changeScripts(modFile, old_new))
+        return changed_stats
 
     _changed_type = list
-    def _write_record(self, record, newEid, changed):
+    def _write_record(self, record, newEid, changed_stats):
         oldEid = record.eid
         if oldEid and newEid != oldEid:
             record.eid = newEid
             record.setChanged()
-            changed.append((oldEid, newEid))
+            changed_stats.append((oldEid, newEid))
 
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
-        changed = []
-        if not old_new: return changed
+        changed_stats = []
+        if not old_new: return changed_stats
         reWord = re.compile(r'\w+')
         def subWord(match):
             word = match.group(0)
@@ -695,7 +696,7 @@ class EditorIds(_HandleAliases):
                 # len(script_rec.eid))) # unused - bug ?
                 script_rec.script_source = newText
                 script_rec.setChanged()
-                changed.append((_(u'Script'), reid))
+                changed_stats.append((_('Script'), reid))
         #--Quest Scripts
         qust_recs = modFile.tops[b'QUST'].iter_present_records(rec_key=u'eid')
         for reid, quest in sorted(qust_recs, key=itemgetter(0)): # sort by eid
@@ -709,10 +710,10 @@ class EditorIds(_HandleAliases):
                         entry.script_source = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_(u'Quest'), reid))
+                changed_stats.append((_('Quest'), reid))
                 quest.setChanged()
         #--Done
-        return changed
+        return changed_stats
 
     def _parse_line(self, csv_fields):
         top_grup_sig, longid = super(EditorIds, self)._parse_line(csv_fields)
@@ -867,7 +868,7 @@ class FidReplacer(_HandleAliases):
                     new_eid_filtered[old_new_filtered[oldId]])
                    for oldId, count in old_count.items()]
         entries.sort(key=itemgetter(1))
-        return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
+        return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
 
 #------------------------------------------------------------------------------
 class FullNames(_HandleAliases):
@@ -896,13 +897,13 @@ class FullNames(_HandleAliases):
         if not rec_data['full']: # No FULL -> skip this record
             del id_data[record.fid]
 
-    def _write_record(self, record, di, changed):
+    def _write_record(self, record, di, changed_stats):
         old_full = record.full
         new_full = di['full']
         if new_full != old_full:
             record.full = new_full
             record.setChanged()
-            changed[di['eid']] = (old_full, new_full)
+            changed_stats[di['eid']] = (old_full, new_full)
 
     def _row_out(self, lfid, stored_data, top_grup):
         return ('"%s",%s,"%s","%s"\n' % (
@@ -930,7 +931,7 @@ class ItemStats(_HandleAliases):
         id_data[record.fid].update((a, __attrgetters[a](record)) for a in atts)
 
     _changed_type = Counter #--changed[modName] = numChanged
-    def _write_record(self, record, itemStats, changed,
+    def _write_record(self, record, itemStats, changed_stats,
                       __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
         change = False
@@ -943,7 +944,7 @@ class ItemStats(_HandleAliases):
                 setattr(record, stat_key, n_stat)
         if change:
             record.setChanged()
-            changed[record.fid[0]] += 1
+            changed_stats[record.fid[0]] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -1058,28 +1059,26 @@ class ScriptText(_TextParser):
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
         self.makeNew = makeNew
-        changed = super(ScriptText, self).writeToMod(modInfo)
-        if changed is None:
-            return [], []
-        return changed
+        changed_stats = super(ScriptText, self).writeToMod(modInfo)
+        return ([], []) if changed_stats is None else changed_stats
 
-    def _check_write_record(self, _rfid, record, eid_data, changed):
+    def _check_write_record(self, rfid, record, eid_data, changed_stats):
         # the keys are eids here!
         eid = record.eid
         data_ = eid_data.get(eid,None)
         if data_:
-            self._write_record(record, data_, changed)
+            self._write_record(record, data_, changed_stats)
 
-    def _write_record(self, record, data_, changed):
+    def _write_record(self, record, data_, changed_stats):
         new_lines, longid = data_
         old_lines = record.script_source.splitlines()
         if old_lines != new_lines:
             record.script_source = '\r\n'.join(new_lines)
             record.setChanged()
-            changed.append(record.eid)
+            changed_stats.append(record.eid)
         del self.eid_data[record.eid]
 
-    def _additional_processing(self, changed, modFile):
+    def _additional_processing(self, changed_stats, modFile):
         added = []
         if self.makeNew and self.eid_data:
             for eid, (new_lines, _longid) in self.eid_data.items():
@@ -1094,7 +1093,7 @@ class ScriptText(_TextParser):
                 newScript.setChanged()
                 modFile.tops[b'SCPT'].id_records[scriptFid] = newScript
                 added.append(eid)
-        if changed or added: return changed, added
+        if changed_stats or added: return changed_stats, added
         return None
 
     def read_script_folder(self, textPath, progress):
@@ -1142,12 +1141,12 @@ class ItemPrices(_HandleAliases):
         self._parser_sigs = set(bush.game.pricesTypes)
 
     _changed_type = Counter
-    def _write_record(self, record, stats, changed):
+    def _write_record(self, record, stats, changed_stats):
         """Writes stats to specified record."""
         value = stats[u'value']
         if record.value != value:
             record.value = value
-            changed[record.fid[0]] += 1
+            changed_stats[record.fid[0]] += 1
             record.setChanged()
 
     def _row_out(self, lfid, stored_data, top_grup,
@@ -1189,7 +1188,7 @@ class _UsesEffectsMixin(_HandleAliases):
                                self._attr_serializer}
 
     _changed_type = list
-    def _write_record(self, record, newStats, changed,
+    def _write_record(self, record, newStats, changed_stats,
                       __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
         imported = False
@@ -1207,7 +1206,7 @@ class _UsesEffectsMixin(_HandleAliases):
                 imported = True
                 setattr_deep(record, att, val)
         if imported:
-            changed.append(old_eid)
+            changed_stats.append(old_eid)
             record.setChanged()
 
     def _row_out(self, lfid, stored_data, top_grup):

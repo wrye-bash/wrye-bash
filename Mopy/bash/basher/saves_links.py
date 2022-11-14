@@ -409,7 +409,7 @@ class Save_Renumber(EnabledLink):
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
     def __init__(self, parent, saveFile, types_set):
-        self.changed = False
+        self._changed = False
         self.saveFile = saveFile
         name_nameRecords = self.name_nameRecords = {}
         self.enchantments = {}
@@ -483,15 +483,15 @@ class Save_EditCreatedData(balt.ListEditorData):
             return False
         #--Rename
         self.name_nameRecords[newName] = self.name_nameRecords.pop(oldName)
-        self.changed = True
+        self._changed = True
         return newName
 
     def save(self):
         """Handles save button."""
-        if not self.changed:
+        if not self._changed:
             balt.showOk(self.parent,_(u'No changes made.'))
         else:
-            self.changed = False #--Allows graceful effort if close fails.
+            self._changed = False #--Allows graceful effort if close fails.
             count = 0
             with ShortFidWriteContext(): # needed for the getSize below
                 for newName,(oldName,recs) in self.name_nameRecords.items():

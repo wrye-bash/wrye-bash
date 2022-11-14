@@ -159,7 +159,7 @@ class Installer(ListInfo):
         if recalculate_all_crcs:
             pending.update(new_sizeCrcDate)
             pending_size += sum(x[0] for x in new_sizeCrcDate.values())
-        changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
+        changes = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
         Installer.calc_crcs(pending, pending_size, rootName,
                             new_sizeCrcDate, progress)
@@ -167,7 +167,7 @@ class Installer(ListInfo):
         old_sizeCrcDate.clear()
         for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.items():
             old_sizeCrcDate[rpFile] = (siz, crc, date)
-        return changed
+        return changes
 
     @staticmethod
     def calc_crcs(pending, pending_size, rootName, new_sizeCrcDate, progress):
@@ -1803,7 +1803,7 @@ class InstallersData(DataStore):
         if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
-        changed = not self.loaded and self.__load(progress)
+        changes = not self.loaded and self.__load(progress)
         #--Last marker
         if self.lastKey not in self:
             self[self.lastKey] = InstallerMarker(self.lastKey)
@@ -1811,17 +1811,17 @@ class InstallersData(DataStore):
             with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
         if u'D' in what:
-            changed |= self._refresh_from_data_dir(progress, fullRefresh)
-        if u'I' in what: changed |= self._refreshInstallers(
+            changes |= self._refresh_from_data_dir(progress, fullRefresh)
+        if u'I' in what: changes |= self._refreshInstallers(
             progress, fullRefresh, refresh_info, deleted, pending, projects)
-        if u'O' in what or changed: changed |= self.refreshOrder()
-        if u'N' in what or changed: changed |= self.refreshNorm()
-        if u'S' in what or changed: changed |= self.refreshInstallersStatus()
-        if u'C' in what or changed: changed |= \
+        if u'O' in what or changes: changes |= self.refreshOrder()
+        if u'N' in what or changes: changes |= self.refreshNorm()
+        if u'S' in what or changes: changes |= self.refreshInstallersStatus()
+        if u'C' in what or changes: changes |= \
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
-        if changed: self.hasChanged = True
-        return changed
+        if changes: self.hasChanged = True
+        return changes
 
     def __load(self, progress):
         progress = progress or bolt.Progress()
@@ -1964,7 +1964,6 @@ class InstallersData(DataStore):
                 *top_level_items(bass.dirs[u'installers']), fullRefresh)
         elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
-        changed = refresh_info.refresh_needed()
         for del_item in refresh_info.deleted:
             self.pop(del_item)
         pending, projects = refresh_info.pending, refresh_info.projects
@@ -1975,10 +1974,10 @@ class InstallersData(DataStore):
             progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
-                progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
+                progress(index, _('Scanning Packages...') + f'\n{package}')
                 inst_type.refresh_installer(package, self, progress,
                     _index=index, _fullRefresh=fullRefresh)
-        return changed
+        return refresh_info.refresh_needed()
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -2105,12 +2104,12 @@ class InstallersData(DataStore):
                 break
         else:
             inOrder += pending
-        changed = False
+        change = False
         for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
                 installer.order = order
-                changed = True
-        return changed
+                change = True
+        return change
 
     def refreshNorm(self):
         """Populate self.ci_underrides_sizeCrc with all underridden files."""
@@ -2133,10 +2132,10 @@ class InstallersData(DataStore):
 
     def refreshInstallersStatus(self):
         """Refresh installer status."""
-        changed = False
+        change = False
         for installer in self.values():
-            changed |= installer.refreshStatus(self)
-        return changed
+            change |= installer.refreshStatus(self)
+        return change
 
     def _refresh_from_data_dir(self, progress=None, recalculate_all_crcs=False):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
@@ -2168,13 +2167,12 @@ class InstallersData(DataStore):
             for empty in emptyDirs:
                 try: empty.removedirs()
                 except OSError: pass
-        changed = Installer.final_update(new_sizeCrcDate,
-                                         self.data_sizeCrcDate, pending,
-                                         pending_size, progress,
-                                         recalculate_all_crcs, dirname)
+        change = Installer.final_update(new_sizeCrcDate, self.data_sizeCrcDate,
+                                        pending, pending_size, progress,
+                                        recalculate_all_crcs, dirname)
         self.update_for_overridden_skips(progress=progress) #after final_update
         #--Done
-        return changed
+        return change
 
     def _process_data_dir(self, dirDirsFiles, progress):
         """Construct dictionaries mapping the paths in dirDirsFiles to
@@ -2317,23 +2315,21 @@ class InstallersData(DataStore):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
     @staticmethod
-    def notify_external(changed=frozenset(), deleted=frozenset(),
-                        renamed=None):
+    def notify_external(altered: set[Path] = frozenset(),
+                        deleted: set[Path] = frozenset(),
+                        renamed: dict[Path, Path] = None):
         """Notifies BAIN of changes in the Data folder done by something other
         than BAIN.
 
-        :param changed: A set of file paths that have changed.
-        :type deleted: set[bolt.Path]
+        :param altered: A set of file paths that have changed.
         :param deleted: A set of file paths that have been deleted.
-        :type changed: set[bolt.Path]
         :param renamed: A dict of file paths that were renamed. Maps old file
             paths to new ones. Currently, only updates tracked changed/deleted
-            paths.
-        :type renamed: dict[Path, Path]"""
+            paths."""
         if renamed is None: renamed = {}
         ext_updated = InstallersData._externally_updated
         ext_deleted = InstallersData._externally_deleted
-        ext_updated.update(changed)
+        ext_updated.update(altered)
         ext_deleted.update(deleted)
         for renamed_old, renamed_new in renamed.items():
             for ext_tracker in (ext_updated, ext_deleted):
@@ -2342,7 +2338,7 @@ class InstallersData(DataStore):
                     ext_tracker.add(renamed_new)
 
     def refreshTracked(self):
-        deleted, changed = set(InstallersData._externally_deleted), set(
+        deleted, altered = set(InstallersData._externally_deleted), set(
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
@@ -2351,9 +2347,9 @@ class InstallersData(DataStore):
                 InstallersData._miscTrackedFiles.pop(abspath, None)
                 deleted.add(abspath)
             elif tracked.do_update():
-                changed.add(abspath)
+                altered.add(abspath)
         do_refresh = False
-        for apath in changed | deleted:
+        for apath in altered | deleted:
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs[u'mods'])

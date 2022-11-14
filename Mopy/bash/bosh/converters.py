@@ -91,7 +91,7 @@ class ConvertersData(DataDict):
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
                      if self.validConverterName(bcf_arch)] # few files
-        if changed := fullRefresh: # clear all data structures
+        if change := fullRefresh: # clear all data structures
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
@@ -110,7 +110,7 @@ class ConvertersData(DataDict):
                     self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
                                                          size_mtime[1])
                     if crc_changed:
-                        changed = True  # added or changed - we must re-add it
+                        change = True  # added or changed - we must re-add it
                         pending.add(bcfPath)
                         continue
                 newData[crc] = self.bcfCRC_converter[crc] # should be unique
@@ -118,7 +118,7 @@ class ConvertersData(DataDict):
             # Remove any converters that no longer exist
             for bcfPath in list(self.bcfPath_sizeCrcDate):
                 if bcfPath not in present_bcfs:
-                    changed = True
+                    change = True
                     self.removeConverter(bcfPath)
             old_new = set(newData.values())
             self.__prune_srcCRC(
@@ -144,8 +144,8 @@ class ConvertersData(DataDict):
                         bcfPath.moveTo(cor_dir.join(bcfPath.tail))
                         del self.bcfPath_sizeCrcDate[bcfPath]
                         continue
-                    changed |= self.addConverter(converter, update_cache=False)
-        return changed
+                    change |= self.addConverter(converter, update_cache=False)
+        return change
 
     def addConverter(self, converter: InstallerConverter, update_cache=True):
         """Links the new converter to installers"""

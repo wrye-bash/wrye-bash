@@ -205,12 +205,12 @@ class MorphFactionsPatcher(_ExSpecialList):
     _read_sigs = (b'FACT',)
     _key2_getter = itemgetter(0, 1)
 
-    def _pLog(self, log, changed):
+    def _pLog(self, log, changes_dict):
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
-        for mod in load_order.get_ordered(changed):
-            log(u'* %s: %d' % (mod, changed[mod]))
+        for mod in load_order.get_ordered(changes_dict):
+            log(f'* {mod}: {changes_dict[mod]:d}')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         # type: # (list[str]) -> tuple[object] | None
@@ -253,7 +253,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
-        changed = Counter()
+        changes_counts = Counter()
         mFactable = []
         for rid, record in modFile.tops[b'FACT'].getActiveRecords():
             if rid not in id_info: continue
@@ -280,7 +280,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                         dds_ = f'generic{rank.rank_level or 0:02d}.dds'
                         rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
                 keep(rid)
-                changed[rid.mod_fn] += 1
+                changes_counts[rid.mod_fn] += 1
         #--MFact record
         record = modFile.tops[b'FACT'].getRecord(mFactLong)
         if record:
@@ -292,4 +292,4 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relation.mod = 10
                 relations.append(relation)
             keep(record.fid)
-        self._pLog(log, changed)
+        self._pLog(log, changes_counts)
