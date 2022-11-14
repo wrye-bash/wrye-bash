@@ -26,7 +26,7 @@ this file involve conditional loading and are much less commonly used. Relies
 on some of the elements defined in basic_elements, e.g. MelBase, MelObject and
 MelStruct."""
 
-__author__ = u'Infernio'
+__author__ = 'Infernio'
 
 import copy
 from collections import OrderedDict
@@ -34,8 +34,8 @@ from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
     MelSequential, MelNum
-from .. import exception
 from ..bolt import structs_cache, attrgetter_cache, deprint
+from ..exception import AbstractError, ModSizeError, ArgumentError
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -127,7 +127,7 @@ class _MelDistributor(MelNull):
                                 f'{type(seq_entry)})')
                 elif re_type != str:
                     # This isn't a simple scope, mixed scope, sequence or
-                    # target, so it's something invaliud
+                    # target, so it's something invalid
                     self._raise_syntax_error(
                         f'Only simple scopes, mixed scopes, sequences and '
                         f'targets may occur as values (offending type: '
@@ -284,8 +284,8 @@ class _MelDistributor(MelNull):
                 # Calculate the new loader state - contains signatures for all
                 # remaining scopes we haven't backtracked through yet plus the
                 # one we just backtrackd into
-                record._loader_state = [x[0] for x
-                                        in descent_tracker] + [prev_sig]
+                record._loader_state = [*(x[0] for x in descent_tracker),
+                                        prev_sig]
                 self._apply_mapping(prev_scope[sub_type], record, ins,
                                     sub_type, size_, *debug_strs)
                 return
@@ -316,7 +316,7 @@ class MelArray(MelBase):
             before the repeating element."""
         try:
             self._element_size = element.static_size
-        except exception.AbstractError:
+        except AbstractError:
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'have a static size')
         if len(element.signatures) != 1:
@@ -344,7 +344,7 @@ class MelArray(MelBase):
         self._prelude_has_fids = False
         try:
             self._prelude_size = prelude.static_size if prelude else 0
-        except exception.AbstractError:
+        except AbstractError:
             raise SyntaxError(u'MelArray preludes must have a static size')
 
     def getSlotsUsed(self):
@@ -476,8 +476,8 @@ class MelTruncatedStruct(MelStruct):
         try:
             target_unpacker = self._all_unpackers[size_]
         except KeyError:
-            raise exception.ModSizeError(
-                ins.inName, debug_strs, tuple(self._all_unpackers), size_)
+            raise ModSizeError(ins.inName, debug_strs,
+                               tuple(self._all_unpackers), size_)
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
         unpacked_val = ins.unpack(target_unpacker, size_, *debug_strs)
@@ -521,7 +521,7 @@ class MelTruncatedStruct(MelStruct):
     def static_size(self):
         # We behave just like a regular struct if we don't have any old formats
         if len(self._all_unpackers) != 1:
-            raise exception.AbstractError()
+            raise AbstractError()
         return super(MelTruncatedStruct, self).static_size
 
 #------------------------------------------------------------------------------
@@ -577,7 +577,7 @@ class ADecider(object):
         :type rec_size: int
         :return: Any value this decider deems fitting for the parameters it is
             given."""
-        raise exception.AbstractError()
+        raise AbstractError()
 
     def decide_dump(self, record):
         """Called during dumpData.
@@ -586,7 +586,7 @@ class ADecider(object):
         :return: Any value this decider deems fitting for the parameters it is
             given."""
         if self.can_decide_at_dump:
-            raise exception.AbstractError()
+            raise AbstractError()
 
 class ACommonDecider(ADecider):
     """Abstract class for deciders that can decide at both load and dump-time,
@@ -602,7 +602,7 @@ class ACommonDecider(ADecider):
 
     def _decide_common(self, record):
         """Performs the actual decisions for both loading and dumping."""
-        raise exception.AbstractError()
+        raise AbstractError()
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function
@@ -720,7 +720,7 @@ class PartialLoadDecider(ADecider):
 
     def decide_dump(self, record):
         if not self.can_decide_at_dump:
-            raise exception.AbstractError()
+            raise AbstractError()
         # We can simply delegate here without doing anything else, since the
         # record has to have been loaded since then
         return self._decider.decide_dump(record)
@@ -813,7 +813,7 @@ class MelUnion(MelBase):
         :type fallback: MelBase"""
         # Decide on the decider
         if not isinstance(decider, ADecider):
-            raise exception.ArgumentError('decider must be an ADecider')
+            raise ArgumentError('decider must be an ADecider')
         self.decider = decider
         # Preprocess the element mapping to split tuples
         processed_mapping = {}
@@ -846,7 +846,7 @@ class MelUnion(MelBase):
         :return: The matching record element to use."""
         element = self.element_mapping.get(decider_ret, self.fallback)
         if not element:
-            raise exception.ArgumentError(
+            raise ArgumentError(
                 f'Specified element mapping did not handle a decider return '
                 f'value ({decider_ret!r}) and there is no fallback')
         return element
@@ -947,7 +947,7 @@ class MelUnion(MelBase):
             all_elements.append(self.fallback)
         first_size = all_elements[0].static_size # pick arbitrary element size
         if any(element.static_size != first_size for element in all_elements):
-            raise exception.AbstractError() # The sizes are not all identical
+            raise AbstractError() # The sizes are not all identical
         return first_size
 
 #------------------------------------------------------------------------------
@@ -1052,7 +1052,7 @@ class MelExtra(_MelWrapper):
         # Check if the wrapped element is static-sized and store the size if so
         try:
             self._wrapped_size = wrapped_mel.static_size
-        except exception.AbstractError:
+        except AbstractError:
             self._wrapped_size = None
         self._extra_attr = extra_attr
 

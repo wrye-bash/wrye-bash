@@ -22,7 +22,7 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from ... import bush
-from ...bolt import Flags, structs_cache, TrimmedFlags
+from ...bolt import Flags, structs_cache, TrimmedFlags, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
@@ -197,17 +197,21 @@ class MelIdleHandler(MelGroup):
         super(MelIdleHandler, self).__init__(attr,
             MelBase(self._attr_lookup[attr], attr + u'_marker'),
             MelFid(b'INAM', u'idle_anim'),
-            # The next four are leftovers from earlier CK versions
-            MelBase(b'SCHR', u'unused1'),
-            MelBase(b'SCTX', u'unused2'),
-            MelBase(b'QNAM', u'unused3'),
-            MelBase(b'TNAM', u'unused4'),
+            *_leftovers,
             MelTopicData(u'idle_topic_data'),
         )
 
 #------------------------------------------------------------------------------
 class MelItems(AMelItems):
     """Handles the COCT/CNTO/COED subrecords defining items."""
+
+#------------------------------------------------------------------------------
+_leftovers = [MelBase(s, f'unused_{sig_to_str(s).lower()}') for s in
+              [b'SCHR', b'SCDA', b'SCTX', b'QNAM', b'SCRO']]
+class _MelLeftovers(MelGroup):
+    """Leftovers from earlier CK versions."""
+    def __init__(self, att):
+        super().__init__(att, *_leftovers)
 
 #------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
@@ -279,8 +283,7 @@ class MelSpellCounter(MelCounter):
     """Handles the SPCT (Spell Counter) subrecord. To be used in combination
     with MelSpells."""
     def __init__(self):
-        super(MelSpellCounter, self).__init__(
-            MelUInt32(b'SPCT', u'spell_count'), counts=u'spells')
+        super().__init__(MelUInt32(b'SPCT', 'spell_count'), counts='spells')
 
 #------------------------------------------------------------------------------
 class MelSpit(MelStruct):
@@ -308,12 +311,12 @@ class MelTopicData(MelGroups):
     def __init__(self, attr):
         MelGroups.__init__(self, attr,
             MelUnion({
-                0: MelStruct(b'PDTO', [u'2I'], u'data_type',
-                    (FID, u'topic_ref')),
-                1: MelStruct(b'PDTO', [u'I', u'4s'], u'data_type', u'topic_subtype'),
+                0: MelStruct(b'PDTO', ['2I'], 'data_type', (FID, 'topic_ref')),
+                1: MelStruct(b'PDTO', ['I', '4s'], 'data_type',
+                             'topic_subtype'),
             }, decider=PartialLoadDecider(
-                loader=MelUInt32(b'PDTO', u'data_type'),
-                decider=AttrValDecider(u'data_type'))),
+                loader=MelUInt32(b'PDTO', 'data_type'),
+                decider=AttrValDecider('data_type'))),
         )
 
 #------------------------------------------------------------------------------
@@ -389,11 +392,7 @@ class MreAchr(MelRecord):
         MelFloat(b'XPRD', u'idle_time'),
         MelBase(b'XPPA', u'patrol_script_marker'),
         MelFid(b'INAM', u'ref_idle'),
-        MelBase(b'SCHR', u'unused_schr'),
-        MelBase(b'SCDA', u'unused_scda'),
-        MelBase(b'SCTX', u'unused_sctx'),
-        MelBase(b'QNAM', u'unused_qnam'),
-        MelBase(b'SCRO', u'unused_scro'),
+        *_leftovers,
         MelTopicData(u'topic_data'),
         MelFid(b'TNAM', u'ref_topic'),
         MelSInt32(b'XLCM', u'level_modifier'),
@@ -1433,8 +1432,7 @@ class MreInfo(MelRecord):
         MelInfoResponsesFo3(),
         MelConditionList(),
         MelGroups('ck_left_overs',
-            MelBase(b'SCHR', 'left_over_unknown1'),
-            MelFid(b'QNAM', 'left_over_unknown2'),
+            *_leftovers,
             MelBaseR(b'NEXT', 'left_over_marker'),
         ),
         MelLString(b'RNAM', 'info_prompt'),
@@ -2392,13 +2390,13 @@ class MrePack(MelRecord):
             }),
         },
         b'POBA': {
-            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_begin',
+            b'INAM|SCHR|SCDA|SCTX|QNAM|TNAM|PDTO': 'on_begin',
         },
         b'POEA': {
-            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_end',
+            b'INAM|SCHR|SCDA|SCTX|QNAM|TNAM|PDTO': 'on_end',
         },
         b'POCA': {
-            b'INAM|SCHR|SCTX|QNAM|TNAM|PDTO': u'on_change',
+            b'INAM|SCHR|SCDA|SCTX|QNAM|TNAM|PDTO': 'on_change',
         },
     })
     __slots__ = melSet.getSlotsUsed()
@@ -2588,9 +2586,7 @@ class MreQust(MelRecord):
                 MelConditionList(),
                 MelLString(b'CNAM', 'log_entry_text'),
                 MelFid(b'NAM0', 'nextQuest'),
-                MelBase(b'SCHR', 'unusedSCHR'),
-                MelBase(b'SCTX', 'unusedSCTX'),
-                MelBase(b'QNAM', 'unusedQNAM'),
+                *_leftovers,
             ),
         ), sort_by_attrs='index'),
         MelGroups('objectives',
@@ -3070,8 +3066,7 @@ class MreRefr(MelRecord):
             MelFloat(b'XPRD', 'idleTime'),
             MelBase(b'XPPA','patrolScriptMarker'),
             MelFid(b'INAM', 'idle'),
-            MelBase(b'SCHR','schr_p',),
-            MelBase(b'SCTX','sctx_p',),
+            *_leftovers,
             MelTopicData('topic_data'),
         ),
         MelActionFlags(),
@@ -3245,21 +3240,9 @@ class MreScen(MelRecord):
             MelNull(b'NEXT'),
             MelConditionList('completionConditions',),
             # The next three are all leftovers
-            MelGroup(u'unused1',
-                MelBase(b'SCHR','schr_p'),
-                MelBase(b'SCDA','scda_p'),
-                MelBase(b'SCTX','sctx_p'),
-                MelBase(b'QNAM','qnam_p'),
-                MelBase(b'SCRO','scro_p'),
-            ),
+            _MelLeftovers('unused1'),
             MelNull(b'NEXT'),
-            MelGroup(u'unused2',
-                MelBase(b'SCHR','schr_p'),
-                MelBase(b'SCDA','scda_p'),
-                MelBase(b'SCTX','sctx_p'),
-                MelBase(b'QNAM','qnam_p'),
-                MelBase(b'SCRO','scro_p'),
-            ),
+            _MelLeftovers('unused2'),
             MelUInt32(b'WNAM', 'editorWidth'),
             MelNull(b'HNAM'),
         ),
@@ -3285,31 +3268,13 @@ class MreScen(MelRecord):
             MelFloat(b'DMIN', 'loopingMin'),
             MelUInt32(b'DEMO', 'emotionType'),
             MelUInt32(b'DEVA', 'emotionValue'),
-            MelGroup('unused', # leftover
-                MelBase(b'SCHR','schr_p'),
-                MelBase(b'SCDA','scda_p'),
-                MelBase(b'SCTX','sctx_p'),
-                MelBase(b'QNAM','qnam_p'),
-                MelBase(b'SCRO','scro_p'),
-            ),
+            _MelLeftovers('unused'),
             MelNull(b'ANAM'),
         ),
         # The next three are all leftovers
-        MelGroup(u'unused1',
-            MelBase(b'SCHR','schr_p'),
-            MelBase(b'SCDA','scda_p'),
-            MelBase(b'SCTX','sctx_p'),
-            MelBase(b'QNAM','qnam_p'),
-            MelBase(b'SCRO','scro_p'),
-        ),
+        _MelLeftovers('unused1'),
         MelNull(b'NEXT'),
-        MelGroup(u'unused2',
-            MelBase(b'SCHR','schr_p'),
-            MelBase(b'SCDA','scda_p'),
-            MelBase(b'SCTX','sctx_p'),
-            MelBase(b'QNAM','qnam_p'),
-            MelBase(b'SCRO','scro_p'),
-        ),
+        _MelLeftovers('unused2'),
         MelFid(b'PNAM','quest',),
         MelUInt32(b'INAM', 'lastActionIndex'),
         MelBase(b'VNAM','vnam_p'),

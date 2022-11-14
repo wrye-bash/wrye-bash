@@ -58,9 +58,8 @@ class SkipError(CancelError):
 class FileError(BoltError):
     """An error that occurred while handling a file."""
     def __init__(self, in_name, message):
-        ## type: (Union[Path, str], str) -> None
         super(FileError, self).__init__(message)
-        self._in_name = (in_name and '%s' % in_name) or 'Unknown File'
+        self._in_name = (in_name and f'{in_name}') or 'Unknown File'
 
     def __str__(self):
         return f'{self._in_name}: {self.message}'
