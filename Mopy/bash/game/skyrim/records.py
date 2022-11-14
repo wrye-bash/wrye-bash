@@ -1473,8 +1473,9 @@ class MreImgs(MelRecord):
             'hdr_sky_scale', 'hdr_eye_adapt_strength'),
         MelImgsCinematic(),
         MelImgsTint(),
-        MelStruct(b'DNAM', ['3f', '2s', 'H'], 'dof_strength', 'dof_distance',
-            'dof_range', 'dof_unknown', 'dof_sky_blur_radius'),
+        MelTruncatedStruct(b'DNAM', ['3f', '2s', 'H'], 'dof_strength',
+                           'dof_distance', 'dof_range', 'dof_unknown',
+                           'dof_sky_blur_radius', old_versions={'3f'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
