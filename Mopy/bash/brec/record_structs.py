@@ -238,7 +238,36 @@ class MelSet(object):
 #------------------------------------------------------------------------------
 # Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreRecord(object):
+class RecordType(type):
+    """Metaclass responsible for adding slots in MreRecord type instances and
+    collecting signature and type information on class creation."""
+    # record sigs to class implementing them - collected at class creation
+    sig_to_class = {}
+    # Record types that *don't* have a complex child structure (e.g. CELL), are
+    # *not* part of such a complex structure (e.g. REFR), or are *not* the file
+    # header (TES3/TES4)
+    simpleTypes = set()
+    # Maps subrecord signatures to a set of record signatures that can contain
+    # those subrecords
+    subrec_sig_to_record_sig = defaultdict(set)
+    # nested record types mapped to top record type they belong to
+    nested_to_top = defaultdict(set)
+
+    def __new__(cls, name, bases, classdict):
+        slots = classdict.get('__slots__', ())
+        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
+            melSet := classdict.get('melSet', ())) else slots
+        new = super(RecordType, cls).__new__(cls, name, bases, classdict)
+        if rsig := getattr(new, 'rec_sig', None):
+            cls.sig_to_class[rsig] = new
+            if new.melSet:
+                for sr_sig in new.melSet.loaders:
+                    RecordType.subrec_sig_to_record_sig[sr_sig].add(rsig)
+            for sig in new.nested_records_sigs():
+                RecordType.nested_to_top[sig].add(rsig)
+        return new
+
+class MreRecord(metaclass=RecordType):
     """Generic Record. flags1 are game specific see comments."""
     subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
     flags1_ = bolt.Flags.from_names(
@@ -342,14 +371,10 @@ class MreRecord(object):
     __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
                  'changed', 'data', 'inName')
     isKeyedByEid = False
-    #--Set at end of class data definitions.
-    type_class = {}
-    # Record types that have a complex child structure (e.g. CELL), are part of
-    # such a complex structure (e.g. REFR) or are the file header (TES3/TES4)
-    simpleTypes = set()
-    # Maps subrecord signatures to a set of record signatures that can contain
-    # those subrecords
-    subrec_sig_to_record_sig = defaultdict(set)
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return set()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         self.header = header
@@ -393,7 +418,7 @@ class MreRecord(object):
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
         instance of the appropriate subclass (!)"""
-        subclass = MreRecord.type_class[self._rec_sig]
+        subclass = type(self).sig_to_class[self._rec_sig]
         myCopy = subclass(self.header)
         myCopy.data = self.data
         with ModReader(self.inName, *self.getDecompressed()) as reader:
@@ -533,7 +558,6 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
-    __slots__ = ()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         if self.__class__.rec_sig != header.recType:

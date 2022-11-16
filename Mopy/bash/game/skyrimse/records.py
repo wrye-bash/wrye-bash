@@ -54,7 +54,6 @@ class MreLens(MelRecord):
             b'DNAM': u'lensFlareSprites',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreVoli(MelRecord):
@@ -76,4 +75,3 @@ class MreVoli(MelRecord):
         MelFloat(b'MNAM', 'phaseFunctionScattering'),
         MelFloat(b'NNAM', 'samplingRepartitionRangeFactor'),
     )
-    __slots__ = melSet.getSlotsUsed()

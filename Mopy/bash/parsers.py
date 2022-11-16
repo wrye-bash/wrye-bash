@@ -40,7 +40,7 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
     str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import MreRecord, MelObject, RecHeader, attr_csv_struct, null3, \
+from .brec import RecordType, MelObject, RecHeader, attr_csv_struct, null3, \
     FormId
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
@@ -104,7 +104,7 @@ class _TextParser(object):
         raise AbstractError(f'{type(self)} must implement _header_row')
 
     # Load plugin -------------------------------------------------------------
-    def _load_plugin(self, mod_info, keepAll=True, target_types=None,
+    def _load_plugin(self, mod_info, keepAll=False, target_types=None,
                      load_fact=None):
         """Load the specified record types in the specified ModInfo and
         return the result.
@@ -128,7 +128,8 @@ class _TextParser(object):
 
         :param modInfo: The ModInfo instance to write to.
         :return: info on number of changed records, usually per record type."""
-        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
+        modFile = self._load_plugin(modInfo, keepAll=True,
+                                    target_types=self.id_stored_data)
         changed_stats = self._changed_type()
         # We know that the loaded mod only has the tops loaded that we need
         for top_grup_sig, stored_rec_info in self.id_stored_data.items():
@@ -208,7 +209,7 @@ class CsvParser(_TextParser):
         raise AbstractError(f'{type(self)} must implement _parse_line')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
-        return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,
+        return RecordType.sig_to_class[top_grup_sig].parse_csv_line(csv_fields,
             index_dict or self._attr_dex, reuse=index_dict is not None)
 
 class _HandleAliases(CsvParser):
@@ -259,7 +260,7 @@ class _HandleAliases(CsvParser):
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
-        modFile = self._load_plugin(modInfo, keepAll=False)
+        modFile = self._load_plugin(modInfo)
         for top_grup_sig in self._parser_sigs:
             typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
@@ -353,7 +354,7 @@ class _AParser(_HandleAliases):
             master_names = load_order.get_ordered(master_names)
         for mod_name in master_names:
             if mod_name in self._fp_mods: continue
-            _fp_loop(self._load_plugin(bosh.modInfos[mod_name], keepAll=False,
+            _fp_loop(self._load_plugin(bosh.modInfos[mod_name],
                                        target_types=self._fp_types))
         # Finally, process the mod itself
         if loaded_mod.fileInfo.fn_key in self._fp_mods: return
@@ -425,8 +426,7 @@ class _AParser(_HandleAliases):
             self._current_mod = None
             return
         # Load mod_info once and for all, then execute every needed pass
-        loaded_mod = self._load_plugin(mod_info, keepAll=False,
-                                       target_types=a_types)
+        loaded_mod = self._load_plugin(mod_info, target_types=a_types)
         if self._fp_types:
             self._read_plugin_fp(loaded_mod)
         if self._sp_types:
@@ -518,7 +518,7 @@ class ActorFactions(_AParser):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])
         rank = int(csv_fields[7])
         if self._called_from_patcher:
-            ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
+            ret_obj = RecordType.sig_to_class[top_grup_sig].getDefault(u'factions')
             ret_obj.faction = lfid
             ret_obj.rank = rank
             aid = self._key2(csv_fields) ##: pass key2 ?
@@ -654,7 +654,7 @@ class EditorIds(_HandleAliases):
         self.questionableEidsSet = questionableEidsSet
         #--eid = eids[type][longid]
         self.old_new = {}
-        self._parser_sigs = set(MreRecord.simpleTypes) - {b'CELL'}
+        self._parser_sigs = set(RecordType.simpleTypes)
 
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
@@ -814,7 +814,7 @@ class FidReplacer(_HandleAliases):
         super(FidReplacer, self).__init__(aliases_, called_from_patcher)
         # simpleTypes are not defined when parsers are imported in
         # game/oblivion/patcher/preservers.py:30
-        self._parser_sigs = MreRecord.simpleTypes
+        self._parser_sigs = RecordType.simpleTypes
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -831,7 +831,7 @@ class FidReplacer(_HandleAliases):
 
     def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
-        modFile = self._load_plugin(modInfo)
+        modFile = self._load_plugin(modInfo, keepAll=True)
         # Create filtered versions of our mappings
         masters_list = set(modFile.augmented_masters())
         filt_fids = {oldId for oldId in self.old_eid if
@@ -1046,7 +1046,7 @@ class ScriptText(_TextParser):
     def readFromMod(self, modInfo):
         """Reads scripts from specified mod."""
         eid_data = self.eid_data
-        modFile = self._load_plugin(modInfo, keepAll=False)
+        modFile = self._load_plugin(modInfo)
         with Progress(_(u'Export Scripts')) as progress:
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
@@ -1085,7 +1085,7 @@ class ScriptText(_TextParser):
                 ##: #480 - Maybe move create_record to ModFile and use it?
                 scriptFid = FormId.from_object_id(
                     modFile.tes4.num_masters, modFile.tes4.getNextObject())
-                newScript = MreRecord.type_class[b'SCPT'](
+                newScript = RecordType.sig_to_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0,
                               _entering_context=True))
                 newScript.eid = eid

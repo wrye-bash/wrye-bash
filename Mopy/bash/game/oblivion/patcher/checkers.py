@@ -28,7 +28,7 @@ from itertools import chain
 
 from ._shared import cobl_main, ExSpecial
 from .... import bush
-from ....brec import MreRecord, FormId
+from ....brec import FormId, RecordType
 from ....patcher.base import ModLoader, Patcher
 
 # Cobl Catalogs ---------------------------------------------------------------
@@ -95,7 +95,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         attr_or_skill = f"({_('Attribute')}|{_('Skill')})"
         for mgef in alt_names:
             alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
-        actorEffects = MreRecord.type_class[b'MGEF'].generic_av_effects
+        actorEffects = RecordType.sig_to_class[b'MGEF'].generic_av_effects
         from ..records import actor_values
         keep = self.patchFile.getKeeper()
         patch_books = self.patchFile.tops[b'BOOK']

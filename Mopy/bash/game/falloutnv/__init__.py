@@ -448,78 +448,28 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                 preservers.ImportWeaponModificationsPatcher,
         }
 
+    top_groups = [
+        b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT', b'HAIR',
+        b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT', b'LTEX', b'ENCH',
+        b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO', b'BOOK', b'CONT', b'DOOR',
+        b'INGR', b'LIGH', b'MISC', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
+        b'TREE', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN',
+        b'KEYM', b'ALCH', b'IDLM', b'NOTE', b'COBJ', b'PROJ', b'LVLI', b'WTHR',
+        b'CLMT', b'REGN', b'NAVI', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
+        b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS', b'IMAD',
+        b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS', b'CAMS', b'CPTH',
+        b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ',
+        b'LGTM', b'MUSC', b'IMOD', b'REPU', b'RCPE', b'RCCT', b'CHIP', b'CSNO',
+        b'LSCT', b'MSET', b'ALOC', b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK',
+        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD']
+
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ...brec import MreDebr, MreEyes, MreGlob, MreGmst
-        from .records import MreTes4, MreAloc, MreAmef, MreCcrd, MreCdck, \
-            MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
-            MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd
-        from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
-            MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
-            MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \
-            MreCrea, MreWeap, MreDoor, MreEczn, MreEfsh, MreExpl, MreTact, \
-            MreFurn, MreGras, MreHair, MreIdlm, MreImgs, MreIngr, MreRace, \
-            MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, \
-            MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
-            MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
-            MreWrld, MreAlch, MreActi, MreAmmo, MreArma, MreArmo, MreAspc, \
-            MreCont, MreAchr, MreAcre, MreCell, MreCsty, MreDobj, MreEnch, \
-            MreFact, MreFlst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
-            MreLigh, MreLscr, MreMisc, MreMusc, MrePgre, MrePmis, MreProj, \
-            MreRefr, MreRegn, MreSoun, MreStat, MreWthr
-        cls.mergeable_sigs = {x.rec_sig: x for x in (
-            MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
-            MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
-            MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
-            MreCobj, MreCont, MreCpth, MreCrea, MreCsno, MreCsty, MreDebr,
-            MreDehy, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl,
-            MreEyes, MreFact, MreFlst, MreFurn, MreGlob, MreGras, MreHair,
-            MreHdpt, MreHung, MreIdle, MreIdlm, MreImad, MreImgs, MreImod,
-            MreIngr, MreIpct, MreIpds, MreKeym, MreLgtm, MreLigh, MreLscr,
-            MreLsct, MreLtex, MreLvlc, MreLvli, MreLvln, MreMesg, MreMgef,
-            MreMicn, MreMisc, MreMset, MreMstt, MreMusc, MreNote, MreNpc,
-            MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace, MreRads,
-            MreRcct, MreRcpe, MreRegn, MreRepu, MreRgdl, MreScol, MreScpt,
-            MreSlpd, MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree,
-            MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
-        )}
-        # Setting RecordHeader class variables --------------------------------
-        from ... import brec
-        header_type = brec.RecordHeader
-        header_type.top_grup_sigs = [
-            b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
-            b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
-            b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT', b'TERM', b'ARMO',
-            b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT',
-            b'SCOL', b'MSTT', b'PWAT', b'GRAS', b'TREE', b'FURN', b'WEAP',
-            b'AMMO', b'NPC_', b'CREA', b'LVLC', b'LVLN', b'KEYM', b'ALCH',
-            b'IDLM', b'NOTE', b'COBJ', b'PROJ', b'LVLI', b'WTHR', b'CLMT',
-            b'REGN', b'NAVI', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
-            b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS',
-            b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
-            b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN',
-            b'MESG', b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'IMOD', b'REPU',
-            b'RCPE', b'RCCT', b'CHIP', b'CSNO', b'LSCT', b'MSET', b'ALOC',
-            b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK', b'DEHY', b'HUNG',
-            b'SLPD', b'CELL', b'WRLD',
-        ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ACHR', b'ACRE',
-                                         b'INFO', b'LAND', b'NAVM', b'PGRE',
-                                         b'PMIS', b'REFR'])
-        header_type.plugin_form_version = 15
-        # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
-        # version too
-        header_type.skip_form_version_upgrade = {b'IMGS'}
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-            (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
-             MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
-        brec.MreRecord.type_class.update(cls.mergeable_sigs)
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {
-            b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
-            b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})
-        cls._validate_records()
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=None):
+        # import our records from falloutnv.records as it imports fallout3 ones
+        super()._validate_records(__name__)
 
 GAME_TYPE = FalloutNVGameInfo

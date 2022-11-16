@@ -28,7 +28,7 @@ from ._saves import SreNPC, SaveFile
 from .. import bush
 from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
     pack_byte, structs_cache
-from ..brec import MreRecord, RecHeader, null2, int_unpacker, FormId
+from ..brec import RecHeader, null2, int_unpacker, FormId, RecordType
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
@@ -443,7 +443,7 @@ class PCFaces(object):
             eid = eidForm % count
         #--NPC
         npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
-        npc = MreRecord.type_class[b'NPC_'](
+        npc = RecordType.sig_to_class[b'NPC_'](
             RecHeader(b'NPC_', 0, 0x40000, npcid, 0, _entering_context=True))
         npc.eid = eid
         npc.full = face.pcName

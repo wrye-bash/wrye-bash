@@ -32,16 +32,15 @@ from itertools import chain
 
 # Local
 from .constants import settingDefaults
-from .files_links import File_Redate
 from .dialogs import ExportScriptsDialog
+from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
-    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink, \
-    UIList_Hide
+    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
-from ..brec import MreRecord
+from ..brec import RecordType
 from ..exception import AbstractError, BoltError, CancelError
 from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
@@ -93,10 +92,11 @@ class Mod_FullLoad(_LoadLink):
     _text = 'Test Record Definitions...'
     _help = ('Tests the current record definitions for this game against the '
              'selected plugins.')
-    _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
+    _load_sigs = tuple(RecordType.sig_to_class) # all available (decoded) records
 
+    @balt.conversation
     def Execute(self):
-        bolt.deprint(MreRecord.type_class)
+        bolt.deprint(RecordType.sig_to_class)
         dbg_infos = list(self.iselected_infos())
         with balt.Progress() as progress:
             progress.setFull(len(dbg_infos))
@@ -106,11 +106,10 @@ class Mod_FullLoad(_LoadLink):
                         progress=SubProgress(progress, i, i + 1),
                         catch_errors=False)
                 except:
-                    failed_msg = (('%s failed to verify using current record '
-                                   'definitions. The original traceback is '
-                                   'available in the '
-                                   'BashBugDump.') % dbg_inf.fn_key + '\n\n' +
-                                  traceback.format_exc())
+                    failed_msg = f'{dbg_inf.fn_key} failed to verify using ' \
+                        f'current record definitions. The original ' \
+                        f'traceback is available in the BashBugDump.\n\n' \
+                        f'{traceback.format_exc()}'
                     self._showError(failed_msg, title='Verification Failed')
                     bolt.deprint(f'Exception loading {dbg_inf.fn_key}:',
                                  traceback=True)
@@ -1208,7 +1207,7 @@ class Mod_ScanDirty(ItemLink):
                     all_extracted_data[present_minf.fn_key] = ext_data
                 scan_progress = SubProgress(progress, 0.7, 0.9)
                 scan_progress.setFull(len(all_extracted_data))
-                all_ref_types = bush.game.Esp.reference_types
+                all_ref_types = RecordType.sig_to_class[b'CELL'].ref_types
                 for i, (plugin_fn, ext_data) in enumerate(
                         all_extracted_data.items()):
                     scan_progress(i, (_(u'Scanning: %s') % plugin_fn))

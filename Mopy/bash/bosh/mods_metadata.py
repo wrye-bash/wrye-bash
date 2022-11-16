@@ -27,7 +27,7 @@ from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import dict_sort, structs_cache, SubProgress, sig_to_str
 from ..brec import ModReader, SubrecordBlob, RecordHeader, unpack_header, \
-    ShortFidWriteContext
+    ShortFidWriteContext, RecordType
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 
@@ -253,7 +253,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             # information such as deleted records and overrides
             scan_progress = SubProgress(progress, 0.7, 0.9)
             scan_progress.setFull(len(all_extracted_data))
-            all_ref_types = bush.game.Esp.reference_types
+            all_ref_types = RecordType.sig_to_class[b'CELL'].ref_types
             # Temporary place to collect (eid, sig, plugin)-lists
             all_record_versions: dict[int, list] = defaultdict(list)
             # Whether or not the game uses SSE's form version (44)

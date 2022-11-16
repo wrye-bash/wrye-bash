@@ -21,7 +21,6 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct as _struct
 from os.path import join as _j
 
 from .. import GameInfo, WS_COMMON_FILES
@@ -172,7 +171,6 @@ class OblivionGameInfo(PatchGame):
             'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
         canBash = True
         canEditHeader = True
-        reference_types = {b'ACHR', b'ACRE', b'REFR'}
         sort_lvsp_after_spel = True
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
@@ -1129,6 +1127,16 @@ class OblivionGameInfo(PatchGame):
     # default_wp_timescale at 30 for Nehrim too
     default_wp_timescale = 30
 
+    # Records info
+    top_groups = [
+        b'GMST', b'GLOB', b'CLAS', b'FACT', b'HAIR', b'EYES', b'RACE', b'SOUN',
+        b'SKIL', b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'BSGN', b'ACTI',
+        b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT', b'DOOR', b'INGR', b'LIGH',
+        b'MISC', b'STAT', b'GRAS', b'TREE', b'FLOR', b'FURN', b'WEAP', b'AMMO',
+        b'NPC_', b'CREA', b'LVLC', b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST',
+        b'LVLI', b'WTHR', b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST',
+        b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH']
+
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
@@ -1143,29 +1151,8 @@ class OblivionGameInfo(PatchGame):
             u'ImportRoads': preservers.ImportRoadsPatcher, }
 
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ...brec import MreEyes, MreGlob, MreGmst
-        from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
-            MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
-            MreDoor, MreEfsh, MreEnch, MrePgrd, MreFact, MreFlor, MreFurn, \
-            MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
-            MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, \
-            MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
-            MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
-            MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-            MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, MreLand
-        cls.mergeable_sigs = {x.rec_sig: x for x in (
-            MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
-            MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
-            MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
-            MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
-            MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace,
-            MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
-            MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
-            MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
-            MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
-        )}
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
         cls.readClasses = (b'MGEF', b'SCPT')
         cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
@@ -1179,27 +1166,13 @@ class OblivionGameInfo(PatchGame):
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
         header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
         header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
-        # Similar to other games
-        header_type.top_grup_sigs = [
-            b'GMST', b'GLOB', b'CLAS', b'FACT', b'HAIR', b'EYES', b'RACE',
-            b'SOUN', b'SKIL', b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL',
-            b'BSGN', b'ACTI', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
-            b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT', b'GRAS', b'TREE',
-            b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC',
-            b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST', b'LVLI', b'WTHR',
-            b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
-            b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
-        ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ROAD', b'REFR',
-                                         b'ACHR', b'ACRE', b'PGRD', b'LAND',
-                                         b'INFO'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
-            (MreTes4,))}
-        brec.MreRecord.type_class.update(cls.mergeable_sigs)
-        brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
-            b'TES4', b'ACHR', b'ACRE', b'REFR', b'CELL', b'PGRD', b'ROAD',
-            b'LAND', b'WRLD', b'INFO', b'DIAL'})
-        cls._validate_records()
+        cls._validate_records(__name__)
+
+    @classmethod
+    def _validate_records(cls, package_name, plugin_form_vers=None):
+        from .. import brec
+        super()._validate_records(package_name) # package name is oblivion here
+        # in Oblivion we get them all except the TES4 record
+        cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
 
 GAME_TYPE = OblivionGameInfo

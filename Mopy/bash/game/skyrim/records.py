@@ -56,7 +56,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
     MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount
+    MelIdleAnimationCount, AMreCell, AMreWrld
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -364,7 +364,6 @@ class MreTes4(AMreHeader):
         MelBase(b'INTV', 'unknownINTV'),
         MelBase(b'INCC', 'unknownINCC'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAact(MelRecord):
@@ -375,7 +374,6 @@ class MreAact(MelRecord):
         MelEdid(),
         MelColorO(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAchr(MelRecord):
@@ -422,7 +420,6 @@ class MreAchr(MelRecord):
         MelRefScale(),
         MelRef3D(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
@@ -445,7 +442,6 @@ class MreActi(MelRecord):
         MelActiFlags(),
         MelInteractionKeyword(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAddn(MelRecord):
@@ -460,7 +456,6 @@ class MreAddn(MelRecord):
         MelSound(),
         MelAddnDnam(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAlch(MelRecord):
@@ -482,7 +477,6 @@ class MreAlch(MelRecord):
         MelAlchEnit(),
         MelEffects(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
@@ -513,7 +507,6 @@ class MreAmmo(MelRecord):
         # MelShortName here unfortunately
         MelString(b'ONAM', 'short_name'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
@@ -525,7 +518,6 @@ class MreAnio(MelRecord):
         MelModel(),
         MelUnloadEvent(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
@@ -545,7 +537,6 @@ class MreAppa(MelRecord):
         MelDescription(),
         MelValueWeight(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
@@ -558,7 +549,6 @@ class MreArma(MelRecord):
         MelRace(),
         MelArmaShared(MelModel),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
@@ -591,7 +581,6 @@ class MreArmo(MelRecord):
         MelSInt32(b'DNAM', 'armorRating'),
         MelTemplateArmor(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
@@ -604,7 +593,6 @@ class MreArto(MelRecord):
         MelModel(),
         MelArtType(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
@@ -618,7 +606,6 @@ class MreAspc(MelRecord):
         MelAspcRdat(),
         MelAspcBnam(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAvif(MelRecord):
@@ -652,7 +639,6 @@ class MreAvif(MelRecord):
             b'CNAM': 'perk_tree',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreBook(MelRecord):
@@ -688,7 +674,6 @@ class MreBook(MelRecord):
         MelInventoryArt(),
         MelBookDescription(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreBptd(MelRecord):
@@ -734,7 +719,6 @@ class MreBptd(MelRecord):
             MelNull(b'NAM5'),
         ), sort_by_attrs='part_node'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCams(MelRecord):
@@ -755,12 +739,13 @@ class MreCams(MelRecord):
             'near_target_distance', old_versions={'4I6f'}),
         MelImageSpaceMod(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCell(MelRecord):
+class MreCell(AMreCell):
     """Cell."""
-    rec_sig = b'CELL'
+    ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
+                 b'PHZD', b'PMIS', b'REFR'}
+    interior_temp_extra = [b'NAVM']
     _has_duplicate_attrs = True # XWCS is an older version of XWCN
 
     CellDataFlags1 = Flags.from_names(
@@ -847,7 +832,6 @@ class MreCell(MelRecord):
         MelFid(b'XCMO','music',),
         MelFid(b'XCIM','imageSpace',),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreClas(MelRecord):
@@ -859,7 +843,8 @@ class MreClas(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelStruct(b'DATA', [u'4s', u'b', u'19B', u'f', u'I', u'4B'],'unknown','teaches','maximumtraininglevel',
+        MelStruct(b'DATA', [u'4s', u'b', u'19B', u'f', u'I', u'4B'],'unknown',
+                  'teaches','maximumtraininglevel',
                   'skillWeightsOneHanded','skillWeightsTwoHanded',
                   'skillWeightsArchery','skillWeightsBlock',
                   'skillWeightsSmithing','skillWeightsHeavyArmor',
@@ -873,7 +858,6 @@ class MreClas(MelRecord):
                   'attributeWeightsHealth','attributeWeightsMagicka',
                   'attributeWeightsStamina','attributeWeightsUnknown',),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreClfm(MelRecord):
@@ -886,7 +870,6 @@ class MreClfm(MelRecord):
         MelColorO(),
         MelUInt32(b'FNAM', 'playable'), # actually a bool, stored as uint32
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreClmt(MelRecord):
@@ -900,7 +883,6 @@ class MreClmt(MelRecord):
         MelModel(),
         MelClmtTiming(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCobj(AMreWithItems):
@@ -915,7 +897,6 @@ class MreCobj(AMreWithItems):
         MelCobjOutput(),
         MelUInt16(b'NAM1', 'created_object_count'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCont(AMreWithItems):
@@ -934,7 +915,6 @@ class MreCont(AMreWithItems):
         MelSound(),
         MelSoundClose(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCpth(MelRecord):
@@ -946,7 +926,6 @@ class MreCpth(MelRecord):
         MelConditionList(),
         MelCpthShared(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCsty(MelRecord):
@@ -985,7 +964,6 @@ class MreCsty(MelRecord):
             'flight_flying_attack_chance', old_versions={'5f'}),
         MelUInt32Flags(b'DATA', 'csty_flags', _csty_flags),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDial(MelRecord):
@@ -993,6 +971,10 @@ class MreDial(MelRecord):
     rec_sig = b'DIAL'
 
     DialTopicFlags = Flags.from_names('doAllBeforeRepeating')
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
     melSet = MelSet(
         MelEdid(),
@@ -1005,7 +987,6 @@ class MreDial(MelRecord):
         MelFixedString(b'SNAM', 'subtypeName', 4),
         MelUInt32(b'TIFC', u'info_count'), # Updated in MobDial.dump
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDobj(MelRecord):
@@ -1020,7 +1001,6 @@ class MreDobj(MelRecord):
                 (FID, 'default_object_fid')),
         ), sort_by_attrs='default_object_use'), extra_attr='unknown_dnam'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDoor(MelRecord):
@@ -1040,7 +1020,6 @@ class MreDoor(MelRecord):
         MelDoorFlags(),
         MelRandomTeleports(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEczn(MelRecord):
@@ -1057,7 +1036,6 @@ class MreEczn(MelRecord):
             'eczn_minimum_level', (_eczn_flags, 'eczn_flags'),
             'eczn_max_level', old_versions={'2I'}),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEfsh(MelRecord):
@@ -1148,7 +1126,6 @@ class MreEfsh(MelRecord):
                 '4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',
             }),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEnch(MelRecord):
@@ -1171,7 +1148,6 @@ class MreEnch(MelRecord):
             (FID, 'worn_restrictions'), old_versions={'i2Ii2IfI'}),
         MelEffects(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreEqup(MelRecord):
@@ -1183,7 +1159,6 @@ class MreEqup(MelRecord):
         MelEqupPnam(),
         MelUInt32(b'DATA', 'use_all_parents'), # actually a bool
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreExpl(MelRecord):
@@ -1216,7 +1191,6 @@ class MreExpl(MelRecord):
             (_expl_flags, 'expl_flags'), 'expl_sound_level',
             old_versions={'6I5fI', '6I5f', '6I4f'}),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFact(MelRecord):
@@ -1240,7 +1214,6 @@ class MreFact(MelRecord):
         MelLocation(b'PLVD'),
         MelConditions(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFlor(MelRecord):
@@ -1262,7 +1235,6 @@ class MreFlor(MelRecord):
         MelSound(),
         MelSeasons(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFlst(AMreFlst):
@@ -1271,7 +1243,6 @@ class MreFlst(AMreFlst):
         MelEdid(),
         MelFlstFids(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreFurn(MelRecord):
@@ -1324,7 +1295,6 @@ class MreFurn(MelRecord):
         MelFid(b'NAM1', 'associated_spell'),
         MelFurnMarkerData(with_marker_keyword=True),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -1337,7 +1307,6 @@ class MreGras(MelRecord):
         MelModel(),
         MelGrasData(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreHazd(MelRecord):
@@ -1360,7 +1329,6 @@ class MreHazd(MelRecord):
             (FID, 'hazd_light'), (FID, 'hazd_impact_dataset'),
             (FID, 'hazd_sound')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreHdpt(MelRecord):
@@ -1373,7 +1341,6 @@ class MreHdpt(MelRecord):
         MelModel(),
         MelHdptShared(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIdle(MelRecord):
@@ -1388,7 +1355,6 @@ class MreIdle(MelRecord):
         MelIdleRelatedAnims(),
         MelIdleData(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIdlm(MelRecord):
@@ -1404,7 +1370,6 @@ class MreIdlm(MelRecord):
         MelIdleAnimations(),
         MelModel(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreInfo(MelRecord):
@@ -1440,7 +1405,6 @@ class MreInfo(MelRecord):
         MelFid(b'TWAT', 'walk_away_topic'),
         MelFid(b'ONAM', 'audio_output_override'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreImad(AMreImad): # see AMreImad for details
@@ -1457,7 +1421,6 @@ class MreImad(AMreImad): # see AMreImad for details
             counters=AMreImad.dnam_counter_mapping),
         *[AMreImad.special_impls[s](s, a) for s, a in AMreImad.imad_sig_attr],
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreImgs(MelRecord):
@@ -1477,7 +1440,6 @@ class MreImgs(MelRecord):
                            'dof_distance', 'dof_range', 'dof_unknown',
                            'dof_sky_blur_radius', old_versions={'3f'}),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIngr(MelRecord):
@@ -1498,7 +1460,6 @@ class MreIngr(MelRecord):
         MelIngrEnit(),
         MelEffects(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIpct(MelRecord):
@@ -1517,7 +1478,6 @@ class MreIpct(MelRecord):
         MelIpctSounds(),
         MelIpctHazard(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreIpds(MelRecord):
@@ -1528,7 +1488,6 @@ class MreIpds(MelRecord):
         MelEdid(),
         MelIpdsPnam(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreKeym(MelRecord):
@@ -1547,7 +1506,6 @@ class MreKeym(MelRecord):
         MelKeywords(),
         MelValueWeight(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreKywd(MelRecord):
@@ -1558,7 +1516,6 @@ class MreKywd(MelRecord):
         MelEdid(),
         MelColorO(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
@@ -1569,7 +1526,6 @@ class MreLand(MelRecord):
         MelLandShared(),
         MelLandMpcd(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLcrt(MelRecord):
@@ -1580,7 +1536,6 @@ class MreLcrt(MelRecord):
         MelEdid(),
         MelColorO(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLctn(MelRecord):
@@ -1654,7 +1609,6 @@ class MreLctn(MelRecord):
         MelFid(b'NAM0','horseMarkerRef',),
         MelColorO(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLgtm(MelRecord):
@@ -1695,7 +1649,6 @@ class MreLgtm(MelRecord):
             'lightFaceStart', 'lightFadeEnd', 'unknownData2'),
         MelDalc(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLigh(MelRecord):
@@ -1737,7 +1690,6 @@ class MreLigh(MelRecord):
         MelSound(),
         sse_only(MelLighLensFlare()),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLscr(MelRecord):
@@ -1756,7 +1708,6 @@ class MreLscr(MelRecord):
         MelStruct(b'XNAM', [u'3f'],'transGridY','transGridX','transGridZ',),
         MelString(b'MOD2','cameraPath'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLtex(MelRecord):
@@ -1774,7 +1725,6 @@ class MreLtex(MelRecord):
         MelSorted(MelFids('grasses', MelFid(b'GNAM'))),
         sse_only(MelUInt32Flags(b'INAM', u'snow_flags', _SnowFlags))
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
@@ -1790,7 +1740,6 @@ class MreLvli(AMreLeveledList):
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvln(AMreLeveledList):
@@ -1808,7 +1757,6 @@ class MreLvln(AMreLeveledList):
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvsp(AMreLeveledList):
@@ -1824,7 +1772,6 @@ class MreLvsp(AMreLeveledList):
         MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelLLItems(with_coed=False),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMato(MelRecord):
@@ -1857,7 +1804,6 @@ class MreMato(MelRecord):
                 old_versions={u'7f', u'11fI'}),
         ),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMatt(MelRecord):
@@ -1875,7 +1821,6 @@ class MreMatt(MelRecord):
         MelUInt32Flags(b'FNAM', u'flags', MattTypeFlags),
         MelImpactDataset(b'HNAM'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMesg(MelRecord):
@@ -1897,7 +1842,6 @@ class MreMesg(MelRecord):
             MelConditionList(),
         ),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMgef(MelRecord):
@@ -1959,7 +1903,6 @@ class MreMgef(MelRecord):
         MelLString(b'DNAM', u'magic_item_description'),
         MelConditionList(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
@@ -1978,7 +1921,6 @@ class MreMisc(MelRecord):
         MelKeywords(),
         MelValueWeight(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMovt(MelRecord):
@@ -1994,7 +1936,6 @@ class MreMovt(MelRecord):
                            'rotateWhileMovingRun', old_versions={'10f'}),
         MelOptStruct(b'INAM', [u'3f'],'directional','movementSpeed','rotationSpeed'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMstt(MelRecord):
@@ -2012,7 +1953,6 @@ class MreMstt(MelRecord):
         MelUInt8Flags(b'DATA', u'flags', MsttTypeFlags),
         MelSound(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMusc(MelRecord):
@@ -2036,7 +1976,6 @@ class MreMusc(MelRecord):
         MelFloat(b'WNAM', 'fadeDuration'),
         MelSimpleArray('musicTracks', MelFid(b'TNAM')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMust(MelRecord):
@@ -2057,7 +1996,6 @@ class MreMust(MelRecord):
         MelConditions(),
         MelSimpleArray('tracks', MelFid(b'SNAM')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Not Mergable - FormIDs unaccounted for
@@ -2074,7 +2012,6 @@ class MreNavi(MelRecord):
         MelBase(b'NVPP','preferredPathing',),
         MelSimpleArray('navigationMesh', MelFid(b'NVSI')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Not mergeable due to the way this record is linked to NAVI records
@@ -2089,7 +2026,6 @@ class MreNavm(MelRecord):
         MelBase(b'PNAM', 'unknownPNAM'),
         MelBase(b'NNAM', 'unknownNNAM'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreNpc_(AMreActor):
@@ -2230,7 +2166,6 @@ class MreNpc_(AMreActor):
             MelSInt16(b'TIAS', u'preset'),
         ), sort_by_attrs='tint_item'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreOtft(MelRecord):
@@ -2241,7 +2176,6 @@ class MreOtft(MelRecord):
         MelEdid(),
         MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
     )
-    __slots__ = melSet.getSlotsUsed()
 
     def mergeFilter(self, modSet):
         self.items = [i for i in self.items if i.mod_fn in modSet]
@@ -2400,7 +2334,6 @@ class MrePack(MelRecord):
             b'INAM|SCHR|SCDA|SCTX|QNAM|TNAM|PDTO': 'on_change',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MrePerk(MelRecord):
@@ -2462,7 +2395,6 @@ class MrePerk(MelRecord):
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
     ).with_distributor(perk_distributor)
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreProj(MelRecord):
@@ -2512,7 +2444,6 @@ class MreProj(MelRecord):
         ),
         MelUInt32(b'VNAM', 'soundLevel',),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Needs testing should be mergable
@@ -2675,7 +2606,6 @@ class MreQust(MelRecord):
             b'NNAM': u'description',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class _MelTintMasks(MelGroups):
@@ -2973,7 +2903,6 @@ class MreRace(MelRecord):
             }),
         }),
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Needs Updating
@@ -3079,7 +3008,6 @@ class MreRefr(MelRecord):
         MelXlod(),
         MelRef3D(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRegn(MelRecord):
@@ -3140,7 +3068,6 @@ class MreRegn(MelRecord):
             ), sort_by_attrs='weather')),
         ), sort_by_attrs='entryType'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRela(MelRecord):
@@ -3163,7 +3090,6 @@ class MreRela(MelRecord):
         MelStruct(b'DATA', [u'2I', u'H', u's', u'B', u'I'],(FID,'parent'),(FID,'child'),'rankType',
                   'unknown',(RelationshipFlags, u'relaFlags'),(FID,'associationType'),),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRevb(MelRecord):
@@ -3177,7 +3103,6 @@ class MreRevb(MelRecord):
                   'reflectDelayMS','reverbDelayMS','diffusion','density',
                   'unknown',),
         )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRfct(MelRecord):
@@ -3195,7 +3120,6 @@ class MreRfct(MelRecord):
         MelStruct(b'DATA', [u'3I'], (FID, u'rfct_art'), (FID, u'rfct_shader'),
             (RfctTypeFlags, u'rfct_flags')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreScen(MelRecord):
@@ -3281,7 +3205,6 @@ class MreScen(MelRecord):
         MelBase(b'VNAM','vnam_p'),
         MelConditionList(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreScrl(MelRecord):
@@ -3303,7 +3226,6 @@ class MreScrl(MelRecord):
         MelSpit(),
         MelEffects(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreShou(MelRecord):
@@ -3320,7 +3242,6 @@ class MreShou(MelRecord):
                       u'recoveryTime'),
         ),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSlgm(MelRecord):
@@ -3341,7 +3262,6 @@ class MreSlgm(MelRecord):
         MelUInt8(b'SLCP', 'capacity'),
         MelFid(b'NAM0','linkedTo'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSmbn(MelRecord):
@@ -3356,7 +3276,6 @@ class MreSmbn(MelRecord):
         MelSMFlags(),
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSmen(MelRecord):
@@ -3372,7 +3291,6 @@ class MreSmen(MelRecord):
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
         MelUInt32(b'ENAM', u'sm_type'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSmqn(MelRecord):
@@ -3394,7 +3312,6 @@ class MreSmqn(MelRecord):
             MelFloat(b'RNAM', u'hours_until_reset'),
         )
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSnct(MelRecord):
@@ -3412,7 +3329,6 @@ class MreSnct(MelRecord):
         MelUInt16(b'VNAM', 'staticVolumeMultiplier'),
         MelUInt16(b'UNAM', 'defaultMenuValue'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSndr(MelRecord):
@@ -3436,7 +3352,6 @@ class MreSndr(MelRecord):
             'pct_frequency_variance', 'descriptor_priority', 'db_variance',
             'staticAtten'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSopm(MelRecord):
@@ -3462,7 +3377,6 @@ class MreSopm(MelRecord):
             u'minDistance', u'maxDistance', u'curve1', u'curve2', u'curve3',
             u'curve4', u'curve5', u'unknown3'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSoun(MelRecord):
@@ -3476,7 +3390,6 @@ class MreSoun(MelRecord):
         MelBase(b'SNDD','soundDataUnused'), # leftover
         MelFid(b'SDSC','soundDescriptor'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSpel(MelRecord):
@@ -3494,7 +3407,6 @@ class MreSpel(MelRecord):
         MelSpit(),
         MelEffects(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSpgd(MelRecord):
@@ -3513,7 +3425,6 @@ class MreSpgd(MelRecord):
             'boxSize', 'particleDensity', old_versions={'7f3I'}),
         MelIcon(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreStat(MelRecord):
@@ -3539,7 +3450,6 @@ class MreStat(MelRecord):
         MelBase(b'MNAM', 'distantLOD'),
         MelBase(b'ENAM', 'unknownENAM'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreTact(MelRecord):
@@ -3559,7 +3469,6 @@ class MreTact(MelRecord):
         MelActiFlags(),
         MelFid(b'VNAM', 'voiceType'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreTree(MelRecord):
@@ -3581,7 +3490,6 @@ class MreTree(MelRecord):
                   u'side_frequency', u'leaf_flexibility', u'leaf_amplitude',
                   u'leaf_frequency'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreTxst(MelRecord):
@@ -3602,7 +3510,6 @@ class MreTxst(MelRecord):
         MelDecalData(),
         MelTxstFlags()
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreVtyp(MelRecord):
@@ -3615,7 +3522,6 @@ class MreVtyp(MelRecord):
         MelEdid(),
         MelUInt8Flags(b'DNAM', u'flags', VtypTypeFlags),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWatr(MelRecord):
@@ -3624,8 +3530,7 @@ class MreWatr(MelRecord):
 
     WatrTypeFlags = Flags.from_names('causesDamage')
 
-    # Struct elements shared by DNAM in SLE and SSE
-    _dnam_common = [
+    _dnam_common = [ # Struct elements shared by DNAM in SLE and SSE
         'unknown1', 'unknown2', 'unknown3', 'unknown4',
         'specularPropertiesSunSpecularPower',
         'waterPropertiesReflectivityAmount', 'waterPropertiesFresnelAmount',
@@ -3682,12 +3587,12 @@ class MreWatr(MelRecord):
         MelFid(b'INAM','imageSpace',),
         MelUInt16(b'DATA', 'damagePerSecond'),
         if_sse(
-            le_version=MelStruct(b'DNAM', [u'7f', u'4s', u'2f', u'3B', u's', u'3B', u's', u'3B', u's', u'4s', u'43f'],
+            le_version=MelStruct(b'DNAM',
+              ['7f', '4s', '2f', '3B', 's', '3B', 's', '3B', 's', '4s', '43f'],
                                  *_dnam_common),
             se_version=MelTruncatedStruct(b'DNAM',
-                [u'7f', u'4s', u'2f', u'3B', u's', u'3B', u's', u'3B', u's',
-                 u'4s', u'44f'],
-                *(_dnam_common + ['noisePropertiesFlowmapScale']),
+              ['7f', '4s', '2f', '3B', 's', '3B', 's', '3B', 's', '4s', '44f'],
+                *(*_dnam_common, 'noisePropertiesFlowmapScale'),
                 old_versions={'7f4s2f3Bs3Bs3Bs4s43f'}),
         ),
         MelBase(b'GNAM','unused2'),
@@ -3700,7 +3605,6 @@ class MreWatr(MelRecord):
         MelString(b'NAM4', 'noiseTextureLayer3'),
         sse_only(MelString(b'NAM5', 'flowNormalsNoiseTexture')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWeap(MelRecord):
@@ -3810,7 +3714,6 @@ class MreWeap(MelRecord):
         MelUInt32(b'VNAM', 'detectionSoundLevel'),
         MelFid(b'CNAM','template',),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreWoop(MelRecord):
@@ -3822,12 +3725,14 @@ class MreWoop(MelRecord):
         MelFull(),
         MelLString(b'TNAM','translation'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreWrld(MelRecord):
+class MreWrld(AMreWrld):
     """Worldspace."""
-    rec_sig = b'WRLD'
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'NAVM']
+    wrld_children_extra = [b'CELL'] # CELL for the persistent block
+
 
     WrldFlags2 = Flags.from_names(
         (0, 'smallWorld'),
@@ -3898,7 +3803,6 @@ class MreWrld(MelRecord):
         MelString(b'XWEM','waterEnvironmentMapunused'),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Many Things Marked MelBase that need updated
@@ -4034,4 +3938,3 @@ class MreWthr(MelRecord):
         MelModel(b'MODL', 'aurora'),
         sse_only(MelFid(b'GNAM', 'sunGlareLensFlare')),
     )
-    __slots__ = melSet.getSlotsUsed()

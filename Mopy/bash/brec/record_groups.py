@@ -60,20 +60,18 @@ class MobBase(object):
         self.numRecords = -1
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
-        if ins: self.load_rec_group(ins, do_unpack)
-
-    def load_rec_group(self, ins: ModReader, do_unpack=False):
-        """Load data from ins stream or internal data buffer."""
-        #--Read, but don't analyze.
-        if not do_unpack:
-            self.data = ins.read(self.header.blob_size(), type(self).__name__)
-        #--Analyze ins.
-        elif ins is not None:
-            self._load_rec_group(ins, ins.tell() + self.header.blob_size())
-        #--Discard raw data?
-        if do_unpack:
-            self.data = None
-            self.setChanged()
+        if ins:
+            #--Read, but don't analyze.
+            if not do_unpack:
+                self.data = ins.read(self.header.blob_size(),
+                                     type(self).__name__)
+            #--Analyze ins.
+            elif ins is not None:
+                self._load_rec_group(ins, ins.tell() + self.header.blob_size())
+            #--Discard raw data?
+            if do_unpack:
+                self.data = None
+                self.setChanged()
 
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
@@ -154,7 +152,7 @@ class MobBase(object):
         raise AbstractError(u'keepRecords not implemented')
 
     def _load_rec_group(self, ins, endPos):
-        """Loads data from input stream. Called by load_rec_group()."""
+        """Loads data from input stream. Called by __init__()."""
         raise AbstractError(u'_load_rec_group not implemented')
 
     ##: params here are not the prettiest
@@ -205,7 +203,7 @@ class MobObjects(MobBase):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recClass = self.loadFactory.getRecClass(expType)
+        recClass = self.loadFactory.sig_to_type[expType]
         insAtEnd = ins.atEnd
         errLabel = f'{(exp_str := sig_to_str(expType))} Top Block'
         while not insAtEnd(endPos,errLabel):
@@ -351,7 +349,7 @@ class MobDial(MobObjects):
         super(MobDial, self).__init__(header, loadFactory, ins, do_unpack)
 
     def _load_rec_group(self, ins, endPos):
-        info_class = self.loadFactory.getRecClass(b'INFO')
+        info_class = self.loadFactory.sig_to_type[b'INFO']
         if not info_class:
             self.header.skip_blob(ins) # DIAL already read, skip all INFOs
         ins_at_end = ins.atEnd
@@ -527,13 +525,10 @@ class MobDials(MobBase):
 
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
-        dial_class = self.loadFactory.getRecClass(b'DIAL')
+        dial_class = self.loadFactory.sig_to_type[b'DIAL']
         ins_seek = ins.seek
-        if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
         insAtEnd = ins.atEnd
-        # self.id_dialogues.clear()
-        loadFactory = self.loadFactory
         errLabel = f'{sig_to_str(expType)} Top Block'
         while not insAtEnd(endPos, errLabel):
             #--Get record info and handle it
@@ -781,20 +776,6 @@ class MobCell(MobBase):
             count += includeGroups
         return count + 1 # CELL record, always present
 
-    def getBsb(self): ##: Move to MreCell
-        """Returns tesfile block and sub-block indices for cells in this group.
-        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
-        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
-        cell = self.cell
-        #--Interior cell
-        if cell.flags.isInterior:
-            baseFid = cell.fid.object_dex
-            return baseFid % 10, baseFid % 100 // 10
-        #--Exterior cell
-        else:
-            x, y = cell.posX or 0, cell.posY or 0 # posXY can be None
-            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
-
     def dump(self,out):
         """Dumps group header and then records."""
         self.cell.getSize()
@@ -999,14 +980,9 @@ class MobCells(MobBase):
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
         # First sort by the CELL FormID, then by the block they belong to
-        bsbCellBlocks = [(cb.getBsb(), cb) for _cfid, cb in
+        bsbCellBlocks = [(cb.cell.getBsb(), cb) for _cfid, cb in
                          dict_sort(self.id_cellBlock)]
-        try:
-            bsbCellBlocks.sort(key=itemgetter(0))
-        except TypeError:
-            deprint('Failed to sort BSBs, info follows:')
-            deprint(f'bsbCellBlocks = {repr(bsbCellBlocks)}')
-            raise
+        bsbCellBlocks.sort(key=itemgetter(0))
         # Calculate total size and create block/subblock sizes dict to update
         # block GRUP headers
         totalSize = hsize = RecordHeader.rec_header_size
@@ -1055,7 +1031,7 @@ class MobCells(MobBase):
         count = sum(
             x.getNumRecords(includeGroups) for x in self.id_cellBlock.values())
         if count and includeGroups:
-            blocks_bsbs = {x2.getBsb() for x2 in self.id_cellBlock.values()}
+            blocks_bsbs = {x2.cell.getBsb() for x2 in self.id_cellBlock.values()}
             # 1 GRUP header for every cellBlock and one for each separate (?) subblock
             count += 1 + len(blocks_bsbs) + len({x1[0] for x1 in blocks_bsbs})
         return count
@@ -1141,7 +1117,7 @@ class MobICells(MobCells):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recClass = self.loadFactory.getRecClass(expType)
+        recClass = self.loadFactory.sig_to_type[expType]
         insSeek = ins.seek
         if not recClass: insSeek(endPos) # skip the whole group
         cell = None
@@ -1467,7 +1443,7 @@ class MobWorlds(MobBase):
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
         expType = self.label
-        recWrldClass = self.loadFactory.getRecClass(expType)
+        recWrldClass = self.loadFactory.sig_to_type[expType]
         insSeek = ins.seek
         if not recWrldClass: insSeek(endPos) # skip the whole group
         world = None

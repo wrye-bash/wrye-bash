@@ -29,7 +29,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
 from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
-from ..brec import MreRecord, RecHeader, FormId
+from ..brec import MreRecord, RecHeader, FormId, RecordType
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -190,7 +190,7 @@ class PatchFile(ModFile):
         if new_rec_fid is None:
             new_rec_fid = FormId.from_tuple(
                 (self.fileInfo.fn_key, self.tes4.getNextObject()))
-        new_rec = MreRecord.type_class[new_rec_sig](
+        new_rec = RecordType.sig_to_class[new_rec_sig](
             RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
         self.keepIds.add(new_rec_fid)
         self.tops[new_rec_sig].setRecord(new_rec)
@@ -282,9 +282,8 @@ class PatchFile(ModFile):
             loads will load that record type too so that we can update the
             merged records according to load order."""
             if merged_sig not in self.loadFactory.recTypes:
-                merged_class = self.mergeFactory.type_class[merged_sig]
-                self.readFactory.addClass(merged_class)
-                self.loadFactory.addClass(merged_class)
+                self.readFactory.add_class(merged_sig)
+                self.loadFactory.add_class(merged_sig)
         for top_grup_sig,block in modFile.tops.items():
             for s in block.get_all_signatures():
                 add_to_factories(s)

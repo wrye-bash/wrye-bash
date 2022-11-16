@@ -25,6 +25,7 @@ through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from collections import defaultdict
 from itertools import chain
+from typing import Iterable
 from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
@@ -32,7 +33,7 @@ from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
     unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
-    FormIdWriteContext, ZERO_FID
+    FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
@@ -75,63 +76,42 @@ class MasterMap(object):
         else:
             raise MasterMapError(inIndex)
 
-class LoadFactory(object):
-    """Factory for mod representation objects."""
-    def __init__(self, keepAll, *, by_sig=(), generic=()):
+class LoadFactory:
+    """Encapsulate info on which record type we use to load which record
+    signature."""
+    def __init__(self, keepAll, *, by_sig: Iterable[bytes] = (),
+                 generic: Iterable[bytes] = ()):
         """Pass a collection of signatures to load - either by their
         respective type or using generic MreRecord.
-        :param by_sig: pass an iterable of top group signatures to load
-        :type by_sig: Iterable[bytes]
-        :param generic: top group signatures to load as generic MreRecord
-        :type generic: Iterable[bytes]
-        """
+        :param by_sig: pass an iterable of top group signatures to unpack
+        :param generic: top group signatures to load as generic MreRecord"""
         self.keepAll = keepAll
         self.recTypes = set()
         self.topTypes = set()
-        self.type_class = {}
-        recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
-        for recClass in recClasses:
-            self.addClass(recClass)
+        self.sig_to_type = defaultdict(lambda: MreRecord if keepAll else None)
+        # no generic classes if we keep all (we return MreRecord anyway)
+        self.add_class(*by_sig, generic=() if keepAll else generic)
 
-    def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
-            b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
-        """Adds specified class."""
-        if isinstance(recClass, bytes):
-            class_sig = recClass
-            recClass = MreRecord
-        else:
-            try:
-                class_sig = recClass.rec_sig
-            except AttributeError:
-                raise ValueError(f'addClass: bytes or MelRecord expected - '
-                                 f'got: {recClass!r}!')
+    def add_class(self, *by_sig, generic: Iterable[bytes] = ()):
+        """Adds specified record types - see __init__."""
         #--Don't replace complex class with default (MreRecord) class
-        if class_sig in self.type_class and recClass == MreRecord:
-            return
-        self.recTypes.add(class_sig)
-        self.type_class[class_sig] = recClass
+        if generic:
+            self.sig_to_type = {**dict.fromkeys(generic, MreRecord),
+                                **self.sig_to_type}
+        if by_sig:
+            self.sig_to_type.update(
+                (k, RecordType.sig_to_class[k]) for k in by_sig)
+        self.recTypes.update(all_sigs := (*by_sig, *generic))
         #--Top type
-        if class_sig in __cell_rec_sigs:
-            self.topTypes.add(b'CELL')
-            self.topTypes.add(b'WRLD')
-            if self.keepAll:
-                for cell_rec_sig in __cell_rec_sigs:
-                    if cell_rec_sig not in self.type_class:
-                        self.type_class[cell_rec_sig] = MreRecord
-        ##: apart from this and cell stuff above set(type_class) == topTypes
-        elif class_sig == b'INFO':
-            self.topTypes.add(b'DIAL')
-        else:
-            self.topTypes.add(class_sig)
-
-    def getRecClass(self,type):
-        """Returns class for record type or None."""
-        dflt_class = (self.keepAll and MreRecord) or None
-        return self.type_class.get(type,dflt_class)
+        for class_sig in all_sigs:
+            if class_sig in RecordType.nested_to_top:
+                self.topTypes.update(RecordType.nested_to_top[class_sig])
+            else:
+                self.topTypes.add(class_sig)
 
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
-        return {r: self.getRecClass(r) for r in (
+        return {r: self.sig_to_type[r] for r in (
             b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD')}
 
     def getUnpackCellBlocks(self,topType):
@@ -150,20 +130,19 @@ class LoadFactory(object):
             elif top_rec_type == b'CELL': return MobICells
             elif top_rec_type == b'WRLD': return MobWorlds
             else: return MobObjects
-        else:
-            return MobBase if self.keepAll else None
+        return MobBase if self.keepAll else None
 
     def __repr__(self):
         return f'<LoadFactory: load {len(self.recTypes)} types ' \
                f'({", ".join(map(sig_to_str, self.recTypes))}), ' \
-               f'{u"keep" if self.keepAll else u"discard"} others>'
+               f'{"keep" if self.keepAll else "discard"} others>'
 
-class _RecGroupDict(dict):
+class _TopGroupDict(dict):
     """dict subclass holding ModFile's collection of top groups key'd by sig"""
-    __slots__ = (u'_mod_file',)
+    __slots__ = ('_mod_file',)
 
     def __init__(self, mod_file, *args, **kwargs):
-        super(_RecGroupDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._mod_file = mod_file
 
     def __missing__(self, top_grup_sig, __rh=RecordHeader):
@@ -193,7 +172,7 @@ class ModFile(object):
                 _entering_context=True))
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
-        self.tops = _RecGroupDict(self) #--Top groups.
+        self.tops = _TopGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
@@ -223,9 +202,9 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
-                        new_top = topClass(header, self.loadFactory)
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top.load_rec_group(ins, load_fully)
+                        new_top = topClass(header, self.loadFactory, ins,
+                                           load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if top_grup_sig not in self.tops:
@@ -322,7 +301,7 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rsig in RecordHeader.top_grup_sigs:
+            for rsig in bush.game.top_groups:
                 if rsig in selfTops:
                     selfTops[rsig].dump(out)
 
@@ -343,9 +322,10 @@ class ModFile(object):
         """Indexes and cache all MGEF properties and stores them for retrieval
         by the patchers. We do this once at all so we only have to iterate over
         the MGEFs once."""
-        m_school = MreRecord.type_class[b'MGEF'].mgef_school.copy()
-        m_hostiles = MreRecord.type_class[b'MGEF'].hostile_effects.copy()
-        m_names = MreRecord.type_class[b'MGEF'].mgef_name.copy()
+        mgef_class = RecordType.sig_to_class[b'MGEF']
+        m_school = mgef_class.mgef_school.copy()
+        m_hostiles = mgef_class.hostile_effects.copy()
+        m_names = mgef_class.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
         if b'MGEF' in self.tops:
@@ -454,7 +434,7 @@ class ModHeaderReader(object):
         ##: Uncomment these variables and the block below that uses them once
         # all of FO4's record classes have been written
         # The record types that can even contain EDIDs
-        #records_with_eids = MreRecord.subrec_sig_to_record_sig[b'EDID']
+        #records_with_eids = RecordType.subrec_sig_to_record_sig[b'EDID']
         # Whether or not we can skip looking for EDIDs for  the current record
         # type because it doesn't even have any
         #skip_eids = tg_label not in records_with_eids

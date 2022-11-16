@@ -31,7 +31,7 @@ from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
 from ...bolt import deprint
-from ...brec import MreRecord
+from ...brec import RecordType
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
 from ...parsers import FidReplacer
@@ -217,7 +217,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
-    _read_sigs = MreRecord.simpleTypes | { # this should be initialized
+    _read_sigs = RecordType.simpleTypes | { # this better be initialized
         b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
 
     def __init__(self, p_name, p_file, p_sources):
