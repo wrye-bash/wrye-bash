@@ -53,7 +53,7 @@ class RecordHeader(object):
     # Top grup signatures for validation
     top_grup_sigs = {}
     #--Record Types: all recognized record signatures - mirrors RecordType
-    sig_to_class = {}
+    valid_record_sigs = set()
     #--Plugin form version, we must pack this in the TES4 header
     plugin_form_version = 0
     # A set of record types for which to skip upgrading to the latest Form
@@ -73,7 +73,7 @@ class RecHeader(RecordHeader):
     __slots__ = ('flags1', 'fid', 'flags2')
 
     def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0,
-                 _entering_context=False):
+                 _entering_context=False, *, ins=None):
         """Fixed size structure defining next record.
 
         :param recType: signature of record -TES4, GMST, KYWD, etc
@@ -82,6 +82,9 @@ class RecHeader(RecordHeader):
         :param arg2: Record FormID, TES4 records have FormID of 0
         :param arg3: Record possible version control in CK
         :param arg4: 2h, form_version, unknown"""
+        if recType not in self.valid_record_sigs:
+            raise ModError(ins and ins.inName,
+                           f'Bad header signature: {sig_to_str(recType)}')
         self.recType = recType
         self.size = size
         self.flags1 = arg1
@@ -236,12 +239,9 @@ def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
             yx_coords = __unpacker(__packer(grup_label)) # type: (int, int)
             return ExteriorGrupHeader(grup_size, yx_coords, grup_type, *rest)
         return GrupHeader(*args)
-    #--Bad type?
-    if header_sig not in __rh.sig_to_class:
-        raise ModError(ins.inName, f'Bad header signature: '
-                                   f'{sig_to_str(header_sig)}')
     #--Record
-    return RecHeader(header_sig, *args, _entering_context=_entering_context)
+    return RecHeader(header_sig, *args, _entering_context=_entering_context,
+                     ins=ins)
 
 #------------------------------------------------------------------------------
 # Low-level reading/writing ---------------------------------------------------

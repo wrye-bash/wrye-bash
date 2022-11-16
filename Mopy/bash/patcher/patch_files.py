@@ -282,7 +282,7 @@ class PatchFile(ModFile):
             # loads will load that record type too so that we can update the
             # merged records according to load order
             for s in block.get_all_signatures():
-                if s not in self.loadFactory.recTypes:
+                if s not in self.loadFactory.sig_to_type:
                     self.readFactory.add_class(s)
                     self.loadFactory.add_class(s)
             iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
