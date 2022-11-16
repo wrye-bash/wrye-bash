@@ -33,10 +33,8 @@ from itertools import chain
 from . import MelRecord
 from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
     ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
-from .record_structs import RecordType
 from .utils_constants import DUMMY_FID, group_types, FormId
-from ..bolt import attrgetter_cache, sig_to_str, dict_sort, \
-    fast_cached_property
+from ..bolt import attrgetter_cache, sig_to_str, dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class _AMobBase:
@@ -201,7 +199,7 @@ class MobObjects(MobBase):
     """Represents a group consisting of the record types specified in
     _accepted_sigs."""
     _bad_form = None # yak
-    _accepted_sigs = {b'OVERRIDE'} # overriden via properties must be static
+    _accepted_sigs = {b'OVERRIDE'} # set in PatchGame._import_records
     _grup_header_type: type[GrupHeader] | None = None
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
@@ -900,20 +898,15 @@ class MobDials(TopComplexGrup):
         return super().getSize()
 
 #------------------------------------------------------------------------------
-class _CellRefs(_ChildrenGrup):
-    """Cell reference children groups."""
-    @fast_cached_property
-    def _accepted_sigs(self): return RecordType.sig_to_class[b'CELL'].ref_types
+class CellRefs(_ChildrenGrup):
+    """Cell reference children groups - _accepted_sigs set in
+     _import_records."""
 
-class _PersRefs(_CellRefs):
+class _PersRefs(CellRefs):
     _children_grup_type = 8
-class _TempRefs(_CellRefs):
+class TempRefs(CellRefs):
     _children_grup_type = 9
-    @fast_cached_property
-    def _accepted_sigs(self):
-        cell_class = RecordType.sig_to_class[b'CELL']
-        return {*cell_class.ref_types, *cell_class.interior_temp_extra}
-class _DistRefs(_CellRefs):
+class _DistRefs(CellRefs):
     _children_grup_type = 10
 
 class _CellChildren(_Nested, _ChildrenGrup):
@@ -921,14 +914,9 @@ class _CellChildren(_Nested, _ChildrenGrup):
     instead of a MobObjects."""
     _top_type = b'CELL'
     _mob_objects_type = {cl._children_grup_type: cl for cl in
-                         (_PersRefs, _TempRefs, _DistRefs)}
-    _mob_objects: dict[int, _CellRefs]
+                         (_PersRefs, TempRefs, _DistRefs)}
+    _mob_objects: dict[int, CellRefs]
     _children_grup_type = 6
-    @fast_cached_property
-    def _accepted_sigs(self):
-        # needed in childrenGrup ## TODO define statically in _validate_records
-        cell_class = RecordType.sig_to_class[b'CELL']
-        return {*cell_class.ref_types, *cell_class.interior_temp_extra}
 
     # todo do_unpack handling (and rename -> data -> _grup_blob)
     def __init__(self, grup_head, loadFactory, ins=None, do_unpack=False,
@@ -1161,20 +1149,14 @@ class MobICells(MobCells, TopComplexGrup):
         return (count + RecordHeader.rec_header_size) if count else 0
 
 #------------------------------------------------------------------------------
-class _WrldTempRefs(_TempRefs):
-    @fast_cached_property
-    def _accepted_sigs(self):
-        wrld_class = RecordType.sig_to_class[b'WRLD']
-        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
+class WrldTempRefs(TempRefs):
+    """Temp references for wrld exterior cells may differ from interior ones.
+    """
 
 class _ExtCellChildren(_CellChildren):
     _top_type = b'CELL' # these are part of an WRLD record
     _mob_objects_type = {cl._children_grup_type: cl for cl in
-                         (_PersRefs, _WrldTempRefs, _DistRefs)}
-    @fast_cached_property
-    def _accepted_sigs(self):
-        wrld_class = RecordType.sig_to_class[b'WRLD']
-        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
+                         (_PersRefs, _DistRefs, WrldTempRefs)}
 
 class _ExtCell(MobCell):
     _mob_objects_type = {6: _ExtCellChildren}
@@ -1230,7 +1212,7 @@ class _ExteriorCells(MobCells):
 class _PersistentCell(MobCell):
     _marker_groups = {0, 4} # we get a group 4 of exterior cells right after
 
-class _WorldChildren(_CellChildren):
+class WorldChildren(_CellChildren):
     ##: rename to e.g. persistent_block, this is the cell block that houses all
     # persistent objects in the worldspace
     _extra_records = {b'ROAD': 'road', b'CELL': 'worldCellBlock'}
@@ -1239,12 +1221,6 @@ class _WorldChildren(_CellChildren):
     _mob_objects: dict[int, _ExteriorCells]
     worldCellBlock: _PersistentCell
     _children_grup_type = 1
-
-    @fast_cached_property
-    def _accepted_sigs(self):
-        wrld_class = RecordType.sig_to_class[b'WRLD']
-        return {*wrld_class.ref_types, *wrld_class.exterior_temp_extra,
-                *wrld_class.wrld_children_extra}
 
     def _load_mobs(self, gt, header, ins, master_rec):
         try:
@@ -1367,8 +1343,8 @@ class MobWorld(_ComplexRec):
     _extra_records = {b'WRLD': 'wrld'}
     _top_type = b'WRLD'
     _grp_key = 1
-    _mob_objects_type = {_grp_key: _WorldChildren}
-    _mob_objects: dict[int, _WorldChildren]
+    _mob_objects_type = {_grp_key: WorldChildren}
+    _mob_objects: dict[int, WorldChildren]
 
     def _load_mobs(self, gt, header, ins, master_rec):
         if gt == self._grp_key: # if != 1 let it blow with a KeyError

@@ -261,12 +261,11 @@ class PatchGame(GameInfo):
     default_wp_timescale = 10
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None, *,
-                          __unp=structs_cache['I'].unpack):
-        """Performs validation on the record syntax for all decoded records.
-
+    def _import_records(cls, package_name, plugin_form_vers=None, *,
+                        __unp=structs_cache['I'].unpack):
+        """Import the records, perform validation on the record syntax for
+        all decoded records and have the RecordType class variables updated.
         :param plugin_form_vers: if not None set RecordHeader variable"""
-        # import the records and have the RecordType class variables updated
         importlib.import_module('.records', package=package_name)
         from .. import brec
         rtype, rec_head = brec.RecordType, brec.RecordHeader
@@ -296,3 +295,15 @@ class PatchGame(GameInfo):
         rec_head.sig_to_class = rtype.sig_to_class
         # that's the case for most games so do it here and override if needed
         rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups
+        # set GRUP class variables
+        mobs = brec.record_groups
+        cell_class = rtype.sig_to_class[b'CELL']
+        mobs.CellRefs._accepted_sigs = cell_class.ref_types
+        mobs.TempRefs._accepted_sigs = mobs._CellChildren._accepted_sigs = {
+            *cell_class.ref_types, *cell_class.interior_temp_extra}
+        wrld_class = rtype.sig_to_class[b'WRLD']
+        wrld_cell = {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
+        mobs.WrldTempRefs._accepted_sigs = \
+            mobs._ExtCellChildren._accepted_sigs = wrld_cell
+        mobs.WorldChildren._accepted_sigs = {*wrld_cell,
+                                             *wrld_class.wrld_children_extra}

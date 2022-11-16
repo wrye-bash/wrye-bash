@@ -1174,14 +1174,14 @@ class OblivionGameInfo(PatchGame):
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
         header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
         header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
-        cls._validate_records(__name__)
+        cls._import_records(__name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None):
+    def _import_records(cls, package_name, plugin_form_vers=None):
         from .. import brec
         # DarkPCB record
         brec.TopGrup._bad_form = cls.master_fid(0xA31D)
-        super()._validate_records(package_name) # package name is oblivion here
+        super()._import_records(package_name) # package name is oblivion here
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
 
