@@ -383,8 +383,8 @@ class _ChildrenGrup(MobObjects):
 _EOF = -1 # endPos is at the end of file - used for non-headed groups
 class _Nested(_AMobBase):
     """A nested grup of records with some optional records[ in front]."""
-    # sig -> attr - these records should appear at most once except if required
-    _extra_records: dict[bytes, str] = {}
+    # signatures of 'stray' records - appear at most once except if required
+    _extra_records: tuple[bytes] = ()
     # we need to know the top type this group belongs to for _load_rec_group
     _top_type = None
     _mob_objects_type: dict[int, type[_ChildrenGrup]] = {}
@@ -392,8 +392,8 @@ class _Nested(_AMobBase):
     _marker_groups = {0} # when we hit a top group loading is over
 
     def __init__(self, loadFactory, ins=None, end_pos=None, **kwargs):
-        for att in self._extra_records.values():
-            setattr(self, att, kwargs.get(att, None))
+        self._stray_recs = {sig: kwargs.get(sig_to_str(sig).lower(), None) for
+                            sig in self._extra_records}
         self._mob_objects = {}
         if ins: ins.rewind()
         self._end_pos = end_pos or _EOF # we don't know the size in advance
@@ -410,7 +410,8 @@ class _Nested(_AMobBase):
                 self._mob_objects[gt] = mob_type.empty_mob(*args)
 
     def getSize(self):
-        return sum(chg.getSize() for chg in chain(self._stray_recs().values(),
+        recs = (r for r in self._stray_recs.values() if r)
+        return sum(chg.getSize() for chg in chain(recs,
                                                   self._mob_objects.values()))
 
     def getNumRecords(self,includeGroups=True):
@@ -423,17 +424,17 @@ class _Nested(_AMobBase):
         return {i._rec_sig for i in self.iter_records()}
 
     def iter_records(self):
-        return chain(iter(self._stray_recs().values()),
+        return chain((r for r in self._stray_recs.values() if r),
                      *(v.iter_records() for v in self._mob_objects.values()))
 
     def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
         mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
-        for single_attr in self._extra_records.values():
+        for rsig in self._stray_recs:
             # Grab the version that we're trying to merge, and check if there's
             # even one present
-            src_rec = getattr(src_block, single_attr)
+            src_rec = src_block._stray_recs[rsig]
             if src_rec and not src_rec.flags1.ignored:
                 # If we're Filter-tagged, perform merge filtering first
                 if doFilter:
@@ -442,35 +443,36 @@ class _Nested(_AMobBase):
                     src_rec.updateMasters(masterset.add)
                     if not loadSetIsSuperset(masterset):
                         # Filtered out, discard this record and skip to next
-                        setattr(src_block, single_attr, None)
+                        src_block._stray_recs[rsig] = None
                         continue
                 # In IIM, skip all merging (duh)
                 if not iiSkipMerge:
                     # We're past all hurdles - stick a copy of this record into
                     # ourselves and mark it as merged
-                    self._validate(single_attr, src_rec)
+                    self._validate(rsig, src_rec)
                     mergeIdsAdd(src_rec.fid)
-                    setattr(self, single_attr, src_rec.getTypeCopy())
+                    self._stray_recs[rsig] = src_rec.getTypeCopy()
         for gt, block_mob in src_block._mob_objects.items():
             self._mob_objects[gt].merge_records(block_mob, loadSet, mergeIds,
                                                 iiSkipMerge, doFilter)
 
-    def _validate(self, single_attr, src_rec): pass ## todo just for WRLD...?
+    def _validate(self, sig, src_rec): pass ## todo just for WRLD...?
 
     def updateRecords(self, srcBlock, mergeIds):
-        for chg in self._mob_objects.values():
-            chg.updateRecords(srcBlock, mergeIds)
-        for att in srcBlock._extra_records.values():
-            if (rec := getattr(srcBlock, att)) and not rec.flags1.ignored:
-                setattr(self, att, rec.getTypeCopy())
+        for gt, chg in self._mob_objects.items():
+            chg.updateRecords(srcBlock._mob_objects[gt], mergeIds)
+        for sig, rec in srcBlock._stray_recs.items():
+            if rec and not rec.flags1.ignored:
+                self._validate(sig, rec)
+                self._stray_recs[sig] = rec.getTypeCopy()
                 mergeIds.discard(rec.fid)
 
     def keepRecords(self, p_keep_ids):
         for chg in self._mob_objects.values():
             chg.keepRecords(p_keep_ids)
-        for att in self._extra_records.values():
-            if (rec := getattr(self, att)) and rec.group_key() not in p_keep_ids:
-                setattr(self, att, None)
+        for rsig, rec in self._stray_recs.items():
+            if rec and rec.group_key() not in p_keep_ids:
+                self._stray_recs[rsig] = None
 
     def _load_rec_group(self, ins, endPos, master_rec=None):
         """Loads data from input stream. Called by load()."""
@@ -481,14 +483,13 @@ class _Nested(_AMobBase):
             #--Get record info and handle it
             header = unpack_header(ins)
             if (head_sig := header.recType) in self._extra_records:
-                rec_name = self._extra_records[head_sig]
-                if getattr(self, rec_name) is not None:
+                if self._stray_recs[head_sig] is not None:
                     if head_sig == self._top_type: # next record
                         ins.rewind()
                         break
-                    self._load_err(f'Duplicate {rec_name}')
+                    self._load_err(f'Duplicate {self._stray_recs[head_sig]!r}')
                 grel = self._group_element(header, ins)
-                if grel: setattr(self, rec_name, grel)
+                if grel: self._stray_recs[head_sig] = grel
                 else: header.skip_blob(ins)
             elif head_sig == b'GRUP':
                 if (gt := header.groupType) in self._marker_groups:
@@ -516,14 +517,10 @@ class _Nested(_AMobBase):
                                                         do_unpack=do_unpack)
 
     def dump(self, out):
-        for r in self._stray_recs().values():
-            r.dump(out)
+        for r in self._stray_recs.values():
+            if r: r.dump(out)
         for m in self._mob_objects.values():
-            m.dump(out)
-
-    def _stray_recs(self):
-        return {att: rec for att in self._extra_records.values() if
-                (rec := getattr(self, att, None))}
+            m.dump(out) # won't dump if empty
 
 def _process_rec(sig, after=True, target=None):
     """Hack to do some processing before or after calling super method omitting
@@ -537,7 +534,7 @@ def _process_rec(sig, after=True, target=None):
                 if not meth(self, *args, **kwargs): # don't call super
                     return
             target_ = self if target is None else args[target]
-            old = getattr(target_, '_extra_records')
+            old = getattr(target_, '_stray_recs')
             recs = dict(old)
             try:
                 del old[self._top_type if sig is None else sig]
@@ -547,7 +544,7 @@ def _process_rec(sig, after=True, target=None):
                                    (f := t.__dict__.get(meth.__name__))][1]
                 parent_function(self, *args, **kwargs)
             finally:
-                setattr(target_, '_extra_records', {**recs, **old})
+                setattr(target_, '_stray_recs', {**recs, **old})
             # Now execute the logic for the excluded record
             if after: meth(self, *args, **kwargs)
         return _call_super
@@ -560,11 +557,11 @@ class _ComplexRec(_Nested):
     @property
     def master_record(self):
         """The master CELL, WRLD or DIAL record."""
-        return getattr(self, self._extra_records[self._top_type])
+        return self._stray_recs[self._top_type]
 
     @master_record.setter
     def master_record(self, rec):
-        setattr(self, self._extra_records[self._top_type], rec)
+        self._stray_recs[self._top_type] = rec
 
     def group_key(self): return self.master_record.group_key()
 
@@ -592,8 +589,7 @@ class _ComplexRec(_Nested):
                 global _orphans_skipped
                 _orphans_skipped += 1
                 return
-            self._load_err(f'Missing {self._extra_records[self._top_type]} '
-                           f'from {self}')
+            self._load_err(f'{self}: Missing {self._top_type} master record')
         recClass = self.loadFactory.sig_to_type[hsig]
         self.master_record = recClass(header, ins, do_unpack=True)
         if _loaded_world_records is not None:
@@ -654,13 +650,13 @@ class _ComplexRec(_Nested):
             return True
 
     def __str__(self):
-        return f'{sig_to_str(self._top_type)} Record'
-        ## self.master_record.fid blows as record is None on loading
-        ## AttributeError: 'NoneType' object has no attribute 'fid'
+        mr = mr.fid if (mr := self.master_record) else \
+            "master record not loaded"
+        return f'{sig_to_str(self._top_type)} Record [{mr}]'
 
     def __repr__(self):
-        rec_children = f'{self._mob_objects!r}' if any(
-            self._mob_objects.values()) else "No children"
+        rec_children = [f'{mob!r}' for mob in self._mob_objects.values()]
+        rec_children = rec_children or 'No children'
         return f'<{self}: {self.master_record!r}: {rec_children}>'
 
 class TopGrup(MobObjects):
@@ -802,7 +798,7 @@ class TopComplexGrup(TopGrup):
 #------------------------------------------------------------------------------
 class MobDial(_ComplexRec):
     """A single DIAL with INFO children."""
-    _extra_records = {b'DIAL': 'dial'}
+    _extra_records = b'DIAL',
     _top_type = b'DIAL'
 
     class _DialChildren(_ChildrenGrup):
@@ -914,7 +910,7 @@ class _CellChildren(_Nested, _ChildrenGrup):
     instead of a MobObjects."""
     _top_type = b'CELL'
     _mob_objects_type = {cl._children_grup_type: cl for cl in
-                         (_PersRefs, TempRefs, _DistRefs)}
+                         (_PersRefs, _DistRefs, TempRefs)}
     _mob_objects: dict[int, CellRefs]
     _children_grup_type = 6
 
@@ -922,8 +918,7 @@ class _CellChildren(_Nested, _ChildrenGrup):
     def __init__(self, grup_head, loadFactory, ins=None, do_unpack=False,
                  master_rec=None):
         # Initialize the _Nested attributes that _load_rec_group relies on
-        for att in self._extra_records.values():
-            setattr(self, att, None)
+        self._stray_recs = {sig: None for sig in self._extra_records}
         # _mob_objects is now a dict as we have multiple children
         self._mob_objects = {}
         # then load as a MobBase to handle the header and specify endPos
@@ -943,61 +938,32 @@ class _CellChildren(_Nested, _ChildrenGrup):
             nrecs += 1 # 1 for the group 6 header
         return nrecs
 
-    def iter_records(self):
-        recs = (rec for att in self._extra_records.values() if
-                (rec := getattr(self, att)))
-        mo = lambda gt: self._mob_objects[gt].iter_records()
-        return chain(mo(8), recs, mo(9), mo(10))
-
     def __bool__(self): return any(self.iter_records())
 
     def dump(self,out):
-        # TODO(ut) validate order
-        extra_recs = (getattr(self, att) for att in
-                      self._extra_records.values())
-        mget = self._mob_objects.get # for wrapping don't remove inline :P
-        subs = [m for m in (mget(8), *extra_recs, mget(10), mget(9)) if m]
-        if subs:
+        if self:
             self._write_header(out)
-            for sub in subs:
-                sub.dump(out)
-
-    def updateRecords(self, srcBlock, mergeIds):
-        for gt, chg in self._mob_objects.items():
-            chg.updateRecords(srcBlock._mob_objects[gt], mergeIds)
-        for att in srcBlock._extra_records.values():
-            todo_why_we_check = getattr(self, att) # todo why_we_check
-            if todo_why_we_check and (record := getattr(srcBlock, att)):
-                self._validate(att, record)
-                if not record.flags1.ignored:
-                    setattr(self, att, record.getTypeCopy())
-                    mergeIds.discard(record.fid)
+            super().dump(out)
 
     def __repr__(self):
         s = []
-        for att in self._mob_objects.values():
-            if att: s.append(f'{att!r}')
-        for k, att in self._extra_records.items():
-            k = sig_to_str(k)
-            s.append(f'{k}: {rec!r}' if (
-                rec := getattr(self, att)) else f"no '{att}'")
+        for sig in self._extra_records:
+            if rec := self._stray_recs[sig]:
+                s.append(f'{sig_to_str(sig)}: {rec!r}')
+        for gt in self._mob_objects.values():
+            if gt: s.append(f'{gt!r}')
         children = ', '.join(s) if s else 'No children'
         return f'<{self}: {self._accepted_sigs}: {children}'
 
 class MobCell(_ComplexRec):
     """Represents cell block structure -- including the cell and all
     subrecords."""
-    _extra_records = {b'CELL': 'cell'}
+    _extra_records = b'CELL',
     _top_type = b'CELL'
     _mob_objects_type = {6: _CellChildren}
     _mob_objects: dict[int, _CellChildren]
     block_types = 2, 3
     _marker_groups = {0, *block_types}
-
-    def dump(self,out):
-        for k,v in self._extra_records.items():
-            if rec := getattr(self, v, None): rec.dump(out)
-        self._mob_objects[6].dump(out)
 
     # Old API ##: we should eliminate this
     @property
@@ -1213,13 +1179,10 @@ class _PersistentCell(MobCell):
     _marker_groups = {0, 4} # we get a group 4 of exterior cells right after
 
 class WorldChildren(_CellChildren):
-    ##: rename to e.g. persistent_block, this is the cell block that houses all
-    # persistent objects in the worldspace
-    _extra_records = {b'ROAD': 'road', b'CELL': 'worldCellBlock'}
+    _extra_records = (b'ROAD', b'CELL') ## todo SET in _validate_recs
     _top_type = b'WRLD'
     _mob_objects_type = {4: _ExteriorCells} # we hit a 4 type block
     _mob_objects: dict[int, _ExteriorCells]
-    worldCellBlock: _PersistentCell
     _children_grup_type = 1
 
     def _load_mobs(self, gt, header, ins, master_rec):
@@ -1240,66 +1203,66 @@ class WorldChildren(_CellChildren):
         else: rec = super()._group_element(header, ins, do_unpack)
         return rec
 
-    ##: special cases below are too special
-    def _not_dummy(self): ## FIXME do we need this?
-        return (pcell := self.worldCellBlock) and (
-            pcell if pcell.master_record else None)
-
+    # WorldChildren is special as its CELL extra_record is a group not a record
     def iter_records(self):
-        if self.road:
-            yield self.road
-        pcell = self._not_dummy()
-        cell_recs = pcell.iter_records() if pcell else ()
-        yield from chain(cell_recs, self._mob_objects[4].iter_records())
+        if self._stray_recs[b'CELL']:
+            recs = chain(*(recs for sig, r in self._stray_recs.items() if r and
+                (recs := r.iter_records() if sig == b'CELL' else [r])))
+            yield from chain(recs, self._mob_objects[4].iter_records())
+        else:
+            yield from super().iter_records()
 
     def getNumRecords(self,includeGroups=True):
-        nrecs = 1 if self.road else 0
-        nrecs += self._mob_objects[4].getNumRecords(includeGroups)
-        if pcell := self._not_dummy():
-            nrecs += pcell.getNumRecords(includeGroups)
-        if includeGroups and nrecs: # no records => no top or nested groups
-            nrecs += 1 # 1 for the group 6 header
+        if nrecs := (self._stray_recs[b'CELL'] or 0):
+            nrecs = nrecs.getNumRecords(includeGroups)
+        recs = self._stray_recs
+        try:
+            del recs[b'CELL']
+            num_recs = super().getNumRecords(includeGroups)
+            if not num_recs and nrecs: # we only have a persistent cell
+                nrecs += includeGroups # add the WorldChildren grup 6 header
+            nrecs += num_recs
+        finally:
+            self._stray_recs = recs
         return nrecs
 
     @_process_rec(b'CELL', target=0)
     def updateRecords(self, srcBlock, mergeIds):
-        # FIXME update recs for worldCellBlock - correct?
-        if pcell := self._not_dummy():
-            if src_cell := srcBlock._not_dummy():
+        if src_cell := srcBlock._stray_recs[b'CELL']:
+            if pcell := self._stray_recs[b'CELL']:
                 pcell.updateRecords(src_cell, mergeIds)
 
     @_process_rec(b'CELL')
     def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet  # YUCK
-        # mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
-        if src_cell := src_block._not_dummy():
+        if src_cell := src_block._stray_recs[b'CELL']:
             # If we don't have a world cell block yet, make a new one to merge
             # the source's world cell block into
-            if was_newly_added := not self.worldCellBlock:
-                self.worldCellBlock = _PersistentCell(self.loadFactory, None,
-                                                      cell=None)
+            if was_newly_added := not self._stray_recs[b'CELL']:
+                self._stray_recs[b'CELL'] = _PersistentCell(self.loadFactory, None,
+                                                            cell=src_cell)
             # Delegate merging to the (potentially newly added) block
-            self.worldCellBlock.merge_records(src_cell, loadSet,
-                                              mergeIds, iiSkipMerge, doFilter)
+            self._stray_recs[b'CELL'].merge_records(src_cell, loadSet,
+                mergeIds, iiSkipMerge, doFilter)
             # In IIM, skip all merging - note that we need to remove the world
             # cell block again if it was newly added in IIM mode.
             if iiSkipMerge:
                 if was_newly_added:
-                    self.worldCellBlock = None
+                    self._stray_recs[b'CELL'] = None
             elif doFilter:
                 # If we're Filter-tagged, check if the world cell block got
                 # filtered out
                 masterset = MasterSet()
-                self.worldCellBlock.updateMasters(masterset.add)
+                self._stray_recs[b'CELL'].updateMasters(masterset.add)
                 if not loadSetIsSuperset(masterset):
                     # The cell block got filtered out. If it was newly added,
                     # we need to remove it from this block again.
                     if was_newly_added:
-                        self.worldCellBlock = None
+                        self._stray_recs[b'CELL'] = None
 
-    def _validate(self, single_attr, src_rec):
-        dest_rec = getattr(self, single_attr)
+    def _validate(self, sig, src_rec):
+        dest_rec = self._stray_recs[sig]
         ##: This may be wrong, check if ROAD behaves like PGRD/LAND
         if dest_rec and dest_rec.fid != src_rec.fid:
             raise ModFidMismatchError(self.inName, dest_rec.rec_str,
@@ -1307,10 +1270,10 @@ class WorldChildren(_CellChildren):
 
     @_process_rec(b'CELL', after=False)
     def keepRecords(self, p_keep_ids):
-        if pcell := self._not_dummy():
+        if pcell := self._stray_recs[b'CELL']:
             pcell.keepRecords(p_keep_ids)
             if pcell.master_record.fid not in p_keep_ids:
-                self.worldCellBlock = None
+                self._stray_recs[b'CELL'] = None
         return True # keepRecords for the rest of WRLD children
 
     def set_cell(self, cell_rec):
@@ -1319,28 +1282,18 @@ class WorldChildren(_CellChildren):
         exist in this world."""
         if cell_rec.flags.isInterior:
             cell_copy = cell_rec.getTypeCopy()
-            if self.worldCellBlock:
-                self.worldCellBlock.master_record = cell_copy
+            if self._stray_recs[b'CELL']:
+                self._stray_recs[b'CELL'].master_record = cell_copy
             else:
                 new_pers_block = _PersistentCell(self.loadFactory, None,
                                                  cell=cell_copy)
                 new_pers_block.setChanged()
-                self.worldCellBlock = new_pers_block
+                self._stray_recs[b'CELL'] = new_pers_block
         else: # exterior cell - will copy it - previous behavior
             self._mob_objects[4].setRecord(cell_rec) #, do_copy=False?
 
-    def dump(self, out):
-        # TODO(ut) validate order
-        extra_recs = (getattr(self, att) for att in
-                      self._extra_records.values())
-        subs = [m for m in (*extra_recs, self._mob_objects[4]) if m]
-        if subs:
-            self._write_header(out)
-            for sub in subs:
-                sub.dump(out)
-
 class MobWorld(_ComplexRec):
-    _extra_records = {b'WRLD': 'wrld'}
+    _extra_records = b'WRLD',
     _top_type = b'WRLD'
     _grp_key = 1
     _mob_objects_type = {_grp_key: WorldChildren}
@@ -1370,6 +1323,14 @@ class MobWorld(_ComplexRec):
     @property
     def ext_cells(self):
         return self._mob_objects[self._grp_key]._mob_objects[4]
+
+    @property
+    def road(self):
+        return self._mob_objects[self._grp_key]._stray_recs[b'ROAD']
+
+    @road.setter
+    def road(self, val):
+        self._mob_objects[self._grp_key]._stray_recs[b'ROAD'] = val
 
 #------------------------------------------------------------------------------
 # In a scenario where we have [wrld_rec1, wrld_rec2, wrld_children1,
