@@ -3050,7 +3050,7 @@ class InstallersDetails(_SashDetailsPanel):
         inst = self.file_info
         if inst and self.gComments.modified:
             inst.comments = self.gComments.text_content
-            self._idata.setChanged()
+            self._idata.hasChanged = True
 
     def SetFile(self, fileName=_same_file):
         """Refreshes detail view associated with data from item."""

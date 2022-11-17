@@ -128,8 +128,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
                        ', '.join(sorted(dependent)) + '.')
     return False if reasons else True
 
-def _join_sigs(sigs):
-    return ', '.join(map(sig_to_str, sorted(sigs)))
+def _join_sigs(rec_sigs):
+    return ', '.join(map(sig_to_str, sorted(rec_sigs)))
 
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and

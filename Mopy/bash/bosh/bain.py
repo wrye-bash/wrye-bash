@@ -1789,10 +1789,6 @@ class InstallersData(DataStore):
             order = self[self.lastKey].order
         self.moveArchives([marker_name], order)
 
-    def setChanged(self,hasChanged=True):
-        """Mark as having changed."""
-        self.hasChanged = hasChanged
-
     def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
 
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
@@ -2375,7 +2371,7 @@ class InstallersData(DataStore):
             installer.order = newPos + index
         for index, installer in enumerate(old_ordered[newPos:]):
             installer.order = newPos + len(new_ordered) + index
-        self.setChanged()
+        self.hasChanged = True
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):

@@ -2207,7 +2207,7 @@ class ModInfos(FileInfos):
          the set_load_order methods, or guard refresh (which only *gets* load
          order) with load_order.Unlock.
         """
-        hasChanged = deleted = False
+        change = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
             change = FileInfos.refresh(self, booting=booting)
@@ -2216,29 +2216,29 @@ class ModInfos(FileInfos):
                 # If any plugins have been added, updated or deleted, we need
                 # to recalculate dependents
                 self._recalc_dependents()
-            hasChanged = bool(change)
+            change = bool(change)
         # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not bush.game.using_txt_file
         lo_changed = self.refreshLoadOrder(
-            forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
+            forceRefresh=change or _modTimesChange, forceActive=deleted)
         self._refresh_bash_tags()
         # if active did not change, we must perform the refreshes below
         if lo_changed < 2: # in case ini files were deleted or modified
             self._refresh_mod_inis()
-        if lo_changed < 2 and hasChanged:
+        if lo_changed < 2 and change:
             self._refreshBadNames()
             self._reset_info_sets()
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
-            hasChanged += self._refreshMissingStrings()
+            change |= self._refreshMissingStrings()
         self._setOblivionVersions()
         oldMergeable = set(self.mergeable)
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self)
         if scanList:
             self.rescanMergeable(scanList)
-        hasChanged += bool(scanList or difMergeable)
-        return bool(hasChanged) or lo_changed
+        change |= bool(scanList or difMergeable)
+        return bool(change) or lo_changed
 
     _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):

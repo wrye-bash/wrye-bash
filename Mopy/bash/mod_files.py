@@ -195,15 +195,15 @@ class ModFile(object):
             insTell = ins.tell
             while not insAtEnd():
                 #--Get record info and handle it
-                header = unpack_header(ins)
-                if not header.is_top_group_header:
+                g_head = unpack_header(ins)
+                if not g_head.is_top_group_header:
                     raise ModError(self.fileInfo.fn_key, u'Improperly grouped file.')
-                top_grup_sig = header.label
+                top_grup_sig = g_head.label
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top = topClass(header, self.loadFactory, ins,
+                        new_top = topClass(g_head, self.loadFactory, ins,
                                            load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
@@ -226,7 +226,7 @@ class ModFile(object):
                                 set(), set(), False, False)
                     else:
                         self.topsSkipped.add(top_grup_sig)
-                        header.skip_blob(ins)
+                        g_head.skip_blob(ins)
                 except:
                     if catch_errors:
                         deprint(f'Error in {self.fileInfo}', traceback=True)
@@ -273,7 +273,7 @@ class ModFile(object):
         if self.fileInfo.mtime is not None: # fileInfo created before the file
             filePath.temp.mtime = self.fileInfo.mtime
         # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
-        # permissions dialog is displayed (should display file in use)
+        #  permissions dialog is displayed (should display file in use)
         env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!
         self.fileInfo.extras.clear()
 
@@ -390,18 +390,18 @@ class ModHeaderReader(object):
             ins_at_end = ins.atEnd
             try:
                 while not ins_at_end():
-                    header = unpack_header(ins)
+                    next_header = unpack_header(ins)
                     # Skip GRUPs themselves, only process their records
-                    header_rec_sig = header.recType
+                    header_rec_sig = next_header.recType
                     if header_rec_sig != b'GRUP':
-                        header_fid = header.fid
+                        header_fid = next_header.fid
                         if (header_fid.mod_dex >= num_masters and
                                 header_fid.object_dex > 0xFFF):
                             return False # FormID out of range
-                        header.skip_blob(ins)
+                        next_header.skip_blob(ins)
             except (OSError, struct_error) as e:
-                raise ModError(ins.inName, u'Error scanning %s, file read '
-                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
+                raise ModError(ins.inName, f"Error scanning {mod_info}, file "
+                    f"read pos: {ins.tell():d}\nCaused by: '{e!r}'")
         return True
 
     @staticmethod
@@ -449,12 +449,12 @@ class ModHeaderReader(object):
             while ins_tell() != ins_size:
                 # Unpack the headers - these can be either GRUPs or regular
                 # records
-                header = unpack_header(ins)
-                _rsig = header.recType
+                next_header = unpack_header(ins)
+                _rsig = next_header.recType
                 if _rsig == b'GRUP':
                     # Nothing special to do for non-top GRUPs
-                    if not header.is_top_group_header: continue
-                    tg_label = header.label
+                    if not next_header.is_top_group_header: continue
+                    tg_label = next_header.label
                     progress(ins_tell() / minf_size,
                              f'{main_progress_msg}\n{sig_to_str(tg_label)}')
                     records = group_records[tg_label]
@@ -463,14 +463,14 @@ class ModHeaderReader(object):
                 #     # This record type has no EDIDs, skip directly to the next
                 #     # record (can't use skip_blob because that passes
                 #     # debug_strs to seek()...)
-                #     records[header.fid] = (header, u'')
-                #     ins_seek(ins_tell() + header.blob_size())
+                #     records[next_header.fid] = (next_header, '')
+                #     ins_seek(ins_tell() + next_header.blob_size())
                 else:
                     # This is a regular record, look for the EDID subrecord
                     eid = u''
-                    blob_siz = header.blob_size()
+                    blob_siz = next_header.blob_size()
                     next_record = ins_tell() + blob_siz
-                    if header.flags1 & 0x00040000: # 'compressed' flag
+                    if next_header.flags1 & 0x00040000: # 'compressed' flag
                         size_check = __unpacker(ins_read(4))[0]
                         try:
                             new_rec_data = zlib_decompress(ins_read(
@@ -518,7 +518,7 @@ class ModHeaderReader(object):
                             break
                         else:
                             fmr_seek(mel_size, 1)
-                    records[header.fid] = (header, eid)
+                    records[next_header.fid] = (next_header, eid)
                     ins_seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig] # skip TES4 record
         return group_records
@@ -537,27 +537,27 @@ class ModHeaderReader(object):
             ins_at_end = ins.atEnd
             try:
                 while not ins_at_end():
-                    header = unpack_header(ins)
-                    header_rec_sig = header.recType
+                    next_header = unpack_header(ins)
+                    header_rec_sig = next_header.recType
                     if header_rec_sig == b'GRUP':
-                        header_group_type = header.groupType
+                        header_group_type = next_header.groupType
                         # Skip all top-level GRUPs we're not interested in
                         # (group type == 0) and all persistent children and
                         # dialog topics (group type == 7 or 8, respectively).
-                        if ((header.is_top_group_header and
-                             header.label not in interested_sigs)
+                        if ((next_header.is_top_group_header and
+                             next_header.label not in interested_sigs)
                                 or header_group_type in (7, 8)):
                             # Note that GRUP sizes include their own header
                             # size, so we need to subtract that
-                            header.skip_blob(ins)
+                            next_header.skip_blob(ins)
                     elif header_rec_sig in tops_to_skip:
                         # Skip TES4, CELL and WRLD to get to their contents
-                        header.skip_blob(ins)
+                        next_header.skip_blob(ins)
                     else:
                         # We must be in a temp CELL children group, store the
                         # header and skip the record body
-                        ret_headers.append(header)
-                        header.skip_blob(ins)
+                        ret_headers.append(next_header)
+                        next_header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 msg = f'Error scanning {mod_info}, file read pos: {ins.tell()}'
                 raise ModError(ins.inName, msg) from e

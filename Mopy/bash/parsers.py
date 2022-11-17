@@ -558,14 +558,14 @@ class ActorLevels(_HandleAliases):
         """Imports actor level data from the specified mod and its masters."""
         from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
-        loadFactory = self._load_factory(keepAll=False)
+        load_f = self._load_factory(keepAll=False)
         for modName in (*modInfo.masterNames, modInfo.fn_key):
             if modName in gotLevels: continue
             modFile = self._load_plugin(bosh.modInfos[modName],
-                                        load_fact=loadFactory)
+                                        load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
-                items = zip((u'eid', u'flags.pcLevelOffset', u'level_offset',
-                          u'calcMin', u'calcMax'), (record.eid,
+                items = zip(('eid', 'flags.pcLevelOffset', 'level_offset',
+                             'calcMin', 'calcMax'), (record.eid,
                          bool(record.flags.pcLevelOffset), record.level_offset,
                          record.calcMin, record.calcMax))
                 mod_id_levels[modName][rfid] = dict(items)
@@ -599,13 +599,13 @@ class ActorLevels(_HandleAliases):
         return len(changed_stats)
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
-        attr_dex = super(ActorLevels, self)._update_from_csv(b'NPC_', csv_fields)
+        attr_dex = super()._update_from_csv(b'NPC_', csv_fields)
         attr_dex[u'flags.pcLevelOffset'] = True
         return attr_dex
 
     def _key1(self, csv_fields: list[str]) -> str:
-        source = csv_fields[0]
-        if source.lower() in self._skip_mods: raise ValueError # exit _parse_line
+        if (source := csv_fields[0]).lower() in self._skip_mods:
+            raise ValueError # exit _parse_line
         return source
 
     def _key2(self, csv_fields):
@@ -1036,8 +1036,8 @@ class ScriptText(_TextParser):
     def _header_row(self, out):
         # __win_line_sep: scripts line separator - or so we trust
         _scpt_lines, longid, eid = self._writing_state
-        header = '\n;'.join((f'{longid[0]}', f'0x{longid[1]:06X}', eid))
-        out.write(f';{header}\n')
+        comment = '\n;'.join((f'{longid[0]}', f'0x{longid[1]:06X}', eid))
+        out.write(f';{comment}\n')
 
     def _write_rows(self, out):
         scpt_lines, _longid, _eid = self._writing_state
