@@ -188,6 +188,7 @@ class MobBase(object):
 class MobObjects(MobBase):
     """Represents a top level group consisting of one type of record only. I.e.
     all top groups except CELL, WRLD and DIAL."""
+    _grup_header_type = TopGrupHeader
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.id_records = {}
@@ -233,21 +234,22 @@ class MobObjects(MobBase):
         if not self.changed:
             return self.size
         else:
+            if not self.id_records: return 0
             hsize = RecordHeader.rec_header_size
-            return hsize + sum(
-                (hsize + r.getSize()) for r in self.id_records.values())
+            recs_size = sum((hsize + r.getSize()) for r in self.id_records.values())
+            return hsize + recs_size # add hsize for the GRUP header
 
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(TopGrupHeader(self.size, self.label,
+            out.write(self._grup_header_type(self.size, self.label,
                                     ##: self.header.pack_head() ?
                                     self.stamp).pack_head())
             out.write(self.data)
         else:
-            size = self.getSize()
-            if size == RecordHeader.rec_header_size: return
-            out.write(TopGrupHeader(size, self.label, self.stamp).pack_head())
+            if not self.id_records: return
+            out.write(self._grup_header_type(self.getSize(), self.label,
+                                             self.stamp).pack_head())
             self._sort_group()
             for record in self.id_records.values():
                 record.dump(out)
@@ -563,6 +565,7 @@ class MobDials(MobBase):
 
     def getSize(self):
         """Returns size of records plus group and record headers."""
+        if not self.id_dialogues: return 0
         hsize = RecordHeader.rec_header_size
         for dialogue in self.id_dialogues.values():
             # Resynchronize the stamps (##: unsure if needed)
@@ -582,9 +585,8 @@ class MobDials(MobBase):
             out.write(self.header.pack_head())
             out.write(self.data)
         else:
-            dial_size = self.getSize()
-            if dial_size == RecordHeader.rec_header_size: return
-            out.write(TopGrupHeader(dial_size, self.label,
+            if not self.id_dialogues: return
+            out.write(TopGrupHeader(self.getSize(), self.label,
                                     self.stamp).pack_head())
             self._sort_group()
             for dialogue in self.id_dialogues.values():

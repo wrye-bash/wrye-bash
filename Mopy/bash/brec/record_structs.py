@@ -529,9 +529,8 @@ class MreRecord(metaclass=RecordType):
                 f'Data undefined: {self.rec_str} {self.fid}')
         #--Update the header so it 'packs' correctly
         self.header.size = self.size
-        if self._rec_sig != b'GRUP':
-            self.header.flags1 = self.flags1
-            self.header.fid = self.fid
+        self.header.flags1 = self.flags1
+        self.header.fid = self.fid
         out.write(self.header.pack_head())
         if self.size > 0: out.write(self.data)
 
