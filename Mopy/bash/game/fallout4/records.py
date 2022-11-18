@@ -51,7 +51,10 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
     MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
     MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
-    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell
+    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
+    MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
+    gen_color3, MelDalc, MelLighFade, MelLighLensFlare, MelLscrCameraPath, \
+    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -126,26 +129,6 @@ class MelBod2(MelUInt32Flags):
         super().__init__(b'BOD2', 'biped_flags', self._bp_flags)
 
 #------------------------------------------------------------------------------
-class MelBoneData(MelGroups):
-    """Handles the bone data subrecord complex."""
-    def __init__(self):
-        super().__init__('bone_data',
-            MelUInt32(b'BSMP', 'bone_scale_gender'),
-            MelGroups('bone_weight_scales',
-                MelString(b'BSMB', 'bone_name'),
-                # In the latest version of xEdit's source code, the decoding
-                # for this particular part is much more complex - would
-                # probably have to require custom code to handle (custom
-                # handler for duplicate signatures inside a single MelGroups,
-                # plus conditional loading to read one subrecord ahead and
-                # check its size). This works fine and is *way* simpler, so not
-                # going to bother.
-                MelSimpleArray('weight_scale_values', MelFloat(b'BSMS')),
-                MelUInt32(b'BMMP', 'bone_modifies_gender'),
-            ),
-        )
-
-#------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
     """Represents a collection of destruction-related subrecords."""
     _dest_header_flags = Flags.from_names('vats_targetable',
@@ -179,6 +162,12 @@ class MelFtyp(MelFid):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
+class MelGodRays(MelFid):
+    """Handles the common WGDR (God Rays) subrecord."""
+    def __init__(self):
+        super().__init__(b'WGDR', 'god_rays')
+
+#------------------------------------------------------------------------------
 class MelItems(AMelItems):
     """Handles the COCT/CNTO/COED subrecords defining items."""
 
@@ -189,6 +178,20 @@ class MelLLItems(AMelLLItems):
         super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
             'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
             'unused2'))
+
+#------------------------------------------------------------------------------
+class MelLlkc(MelSorted):
+    """Handles the common LLKC (Filter Keyword Chances) subrecord."""
+    def __init__(self):
+        super().__init__(MelArray('filter_keyword_chances',
+            MelStruct(b'LLKC', ['2I'], (FID, 'llkc_keyword'), 'llkc_chance'),
+        ), sort_by_attrs='llkc_keyword')
+
+#------------------------------------------------------------------------------
+class MelLLMaxCount(MelUInt8):
+    """Handles the common LVLM (Max Count) subrecord."""
+    def __init__(self):
+        super().__init__(b'LVLM', 'lvl_max_count')
 
 #------------------------------------------------------------------------------
 class MelLocation(MelUnion):
@@ -253,7 +256,7 @@ class MelProperties(MelSorted):
         super().__init__(MelArray('properties',
             MelStruct(b'PRPS', ['I', 'f'], (FID, 'prop_actor_value'),
                 'prop_value'),
-        ))
+        ), sort_by_attrs='prop_actor_value')
 
 #------------------------------------------------------------------------------
 class MelResistances(MelSorted):
@@ -405,6 +408,7 @@ class MreAlch(MelRecord):
         MelSoundCrafting(),
         MelDestructible(),
         MelDescription(),
+        MelWeight(),
         MelAlchEnit(),
         MelLString(b'DNAM', 'addiction_name'),
         MelEffects(),
@@ -448,6 +452,10 @@ class MreAmmo(MelRecord):
         MelStruct(b'DNAM', ['I', 'B', '3s', 'f', 'I'], (FID, 'projectile'),
             (_ammo_flags, 'flags'), 'unused_dnam', 'damage', 'health'),
         MelShortName(),
+        MelString(b'NAM1', 'casing_model'),
+        # Ignore texture hashes - they're only an optimization, plenty of
+        # records in Skyrim.esm are missing them
+        MelNull(b'NAM2'),
     )
 
 #------------------------------------------------------------------------------
@@ -483,7 +491,14 @@ class MreArma(MelRecord):
         MelBod2(),
         MelRace(),
         MelArmaShared(MelModel),
-        MelBoneData(),
+        MelGroups('bone_data',
+            MelUInt32(b'BSMP', 'bone_scale_gender'),
+            MelGroups('bone_weight_scales',
+                MelString(b'BSMB', 'bone_name'),
+                MelStruct(b'BSMS', ['3f'], 'weight_scale_value_x',
+                    'weight_scale_value_y', 'weight_scale_value_z'),
+            ),
+        )
     )
 
 #------------------------------------------------------------------------------
@@ -600,8 +615,7 @@ class MreBnds(MelRecord):
         MelBounds(),
         MelStruct(b'DNAM', ['f', '2H', '5f'],'default_num_tiles',
             'default_num_slices', 'default_num_tiles_relative_to_length',
-            'default_red', 'default_green', 'default_blue', 'wind_sensibility',
-            'wind_flexibility'),
+            *gen_color3('default'), 'wind_sensibility', 'wind_flexibility'),
         MelFid(b'TNAM', 'spline_texture'),
     )
 
@@ -1015,47 +1029,43 @@ class MreEfsh(MelRecord):
             True: MelStruct(b'DNAM',
                 ['3I', '3B', 's', '9f', '3B', 's', '8f', 'I', '4f', 'I', '3B',
                  's', '3B', 's', 's', '6f', 'I', '2f'], 'ms_source_blend_mode',
-                'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
-                'fill_color1_green', 'fill_color1_blue', 'unused1',
-                'fill_alpha_fade_in_time', 'fill_full_alpha_time',
-                'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
-                'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
-                'fill_texture_animation_speed_u',
+                'ms_blend_operation', 'ms_z_test_function',
+                *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+                'fill_full_alpha_time', 'fill_alpha_fade_out_time',
+                'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
+                'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
                 'fill_texture_animation_speed_v', 'ee_fall_off',
-                'ee_color_red', 'ee_color_green', 'ee_color_blue', 'unused2',
-                'ee_alpha_fade_in_time', 'ee_full_alpha_time',
-                'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
-                'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
-                'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
-                'ms_dest_blend_mode', 'holes_start_time', 'holes_end_time',
-                'holes_start_value', 'holes_end_value', (FID, 'sound_ambient'),
-                'fill_color2_red', 'fill_color2_green', 'fill_color2_blue',
-                'unused7', 'fill_color3_red', 'fill_color3_green',
-                'fill_color3_blue', 'unused8', 'unknown1', 'fill_color1_scale',
-                'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
-                'fill_color2_time', 'fill_color3_time',
-                (_efsh_flags, 'efsh_flags'), 'fill_texture_scale_u',
-                'fill_texture_scale_v'),
+                *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+                'ee_full_alpha_time', 'ee_alpha_fade_out_time',
+                'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
+                'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
+                'ee_full_alpha_ratio', 'ms_dest_blend_mode',
+                'holes_start_time', 'holes_end_time', 'holes_start_value',
+                'holes_end_value', (FID, 'sound_ambient'),
+                *gen_color('fill_color2'), *gen_color('fill_color3'),
+                'unknown1', 'fill_color1_scale', 'fill_color2_scale',
+                'fill_color3_scale', 'fill_color1_time', 'fill_color2_time',
+                'fill_color3_time', (_efsh_flags, 'efsh_flags'),
+                'fill_texture_scale_u', 'fill_texture_scale_v'),
             False: MelStruct(b'DNAM',
                 ['s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f',
                  '3B', 's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's',
                  'f', '2I', '6f', 'I', '3B', 's', '3B', 's', '9f', '8I', '2f',
                  '2s'], 'unknown1', 'ms_source_blend_mode',
-                'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
-                'fill_color1_green', 'fill_color1_blue', 'unused1',
-                'fill_alpha_fade_in_time', 'fill_full_alpha_time',
-                'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
-                'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
-                'fill_texture_animation_speed_u',
+                'ms_blend_operation', 'ms_z_test_function',
+                *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+                'fill_full_alpha_time', 'fill_alpha_fade_out_time',
+                'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
+                'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
                 'fill_texture_animation_speed_v', 'ee_fall_off',
-                'ee_color_red', 'ee_color_green', 'ee_color_blue', 'unused2',
-                'ee_alpha_fade_in_time', 'ee_full_alpha_time',
-                'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
-                'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
-                'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
-                'ms_dest_blend_mode', 'ps_source_blend_mode',
-                'ps_blend_operation', 'ps_z_test_function',
-                'ps_dest_blend_mode', 'ps_particle_birth_ramp_up_time',
+                *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+                'ee_full_alpha_time', 'ee_alpha_fade_out_time',
+                'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
+                'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
+                'ee_full_alpha_ratio', 'ms_dest_blend_mode',
+                'ps_source_blend_mode', 'ps_blend_operation',
+                'ps_z_test_function', 'ps_dest_blend_mode',
+                'ps_particle_birth_ramp_up_time',
                 'ps_full_particle_birth_time',
                 'ps_particle_birth_ramp_down_time',
                 'ps_full_particle_birth_ratio', 'ps_persistent_particle_count',
@@ -1065,26 +1075,21 @@ class MreEfsh(MelRecord):
                 'ps_initial_velocity2', 'ps_initial_velocity3',
                 'ps_acceleration1', 'ps_acceleration2', 'ps_acceleration3',
                 'ps_scale_key1', 'ps_scale_key2', 'ps_scale_key1_time',
-                'ps_scale_key2_time', 'color_key1_red', 'color_key1_green',
-                'color_key1_blue', 'unused3', 'color_key2_red',
-                'color_key2_green', 'color_key2_blue', 'unused4',
-                'color_key3_red', 'color_key3_green', 'color_key3_blue',
-                'unused5', 'color_key1_alpha', 'color_key2_alpha',
-                'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-                'color_key3_time', 'ps_initial_speed_along_normal_delta',
-                'ps_initial_rotation', 'ps_initial_rotation_delta',
-                'ps_rotation_speed', 'ps_rotation_speed_delta',
-                (FID, 'addon_models'), 'holes_start_time', 'holes_end_time',
-                'holes_start_value', 'holes_end_value', 'ee_width',
-                'edge_color_red', 'edge_color_green', 'edge_color_blue',
-                'unused6', 'explosion_wind_speed', 'texture_count_u',
-                'texture_count_v', 'addon_models_fade_in_time',
-                'addon_models_fade_out_time', 'addon_models_scale_start',
-                'addon_models_scale_end', 'addon_models_scale_in_time',
-                'addon_models_scale_out_time', (FID, 'sound_ambient'),
-                'fill_color2_red', 'fill_color2_green', 'fill_color2_blue',
-                'unused7', 'fill_color3_red', 'fill_color3_green',
-                'fill_color3_blue', 'unused8', 'fill_color1_scale',
+                'ps_scale_key2_time', *gen_color('color_key1'),
+                *gen_color('color_key2'), *gen_color('color_key3'),
+                'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
+                'color_key1_time', 'color_key2_time', 'color_key3_time',
+                'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
+                'ps_initial_rotation_delta', 'ps_rotation_speed',
+                'ps_rotation_speed_delta', (FID, 'addon_models'),
+                'holes_start_time', 'holes_end_time', 'holes_start_value',
+                'holes_end_value', 'ee_width', *gen_color('edge_color'),
+                'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
+                'addon_models_fade_in_time', 'addon_models_fade_out_time',
+                'addon_models_scale_start', 'addon_models_scale_end',
+                'addon_models_scale_in_time', 'addon_models_scale_out_time',
+                (FID, 'sound_ambient'), *gen_color('fill_color2'),
+                *gen_color('fill_color3'), 'fill_color1_scale',
                 'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
                 'fill_color2_time', 'fill_color3_time', 'color_scale',
                 'birth_position_offset', 'birth_position_offset_range_delta',
@@ -1352,12 +1357,10 @@ class MreGdry(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', ['15f'], 'back_color_red', 'back_color_green',
-            'back_color_blue', 'forward_color_red', 'forward_color_green',
-            'forward_color_blue', 'godray_intensity', 'air_color_scale',
-            'back_color_scale', 'forward_color_scale', 'back_phase',
-            'air_color_red', 'air_color_green', 'air_color_blue',
-            'forward_phase'),
+        MelStruct(b'DATA', ['15f'], *gen_color3('back_color'),
+            *gen_color3('forward_color'), 'godray_intensity',
+            'air_color_scale', 'back_color_scale', 'forward_color_scale',
+            'back_phase', *gen_color3('air_color'), 'forward_phase'),
     )
 
 #------------------------------------------------------------------------------
@@ -1481,8 +1484,7 @@ class MreImgs(MelRecord):
             'enam_hdr_sunlight_scale', 'enam_hdr_sky_scale',
             'enam_cinematic_saturation', 'enam_cinematic_brightness',
             'enam_cinematic_contrast', 'enam_tint_amount',
-            'enam_tint_color_red', 'enam_tint_color_green',
-            'enam_tint_color_blue'),
+            *gen_color3('enam_tint_color')),
         MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed', 'hdr_tonemap_e',
             'hdr_bloom_threshold', 'hdr_bloom_scale', 'hdr_auto_exposure_max',
             'hdr_auto_exposure_min', 'hdr_sunlight_scale', 'hdr_sky_scale',
@@ -1692,7 +1694,7 @@ class MreKywd(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
-    """Land."""
+    """Landscape."""
     rec_sig = b'LAND'
 
     melSet = MelSet(
@@ -1701,26 +1703,179 @@ class MreLand(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreLayr(MelRecord):
+    """Layer."""
+    rec_sig = b'LAYR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'PNAM', 'layr_parent'),
+    )
+
+#------------------------------------------------------------------------------
+class MreLcrt(MelRecord):
+    """Location Reference Type."""
+    rec_sig = b'LCRT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelColorO(),
+        MelBase(b'TNAM', 'unknown_tnam'),
+    )
+
+#------------------------------------------------------------------------------
+class MreLctn(MelRecord):
+    """Location."""
+    rec_sig = b'LCTN'
+
+    melSet = MelSet(
+        MelLctnShared(),
+        MelFloat(b'ANAM', 'actor_fade_mult'),
+        MelColorO(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLens(MelRecord):
+    """Lens Flare."""
+    rec_sig = b'LENS'
+
+    melSet = MelSet(
+        MelLensShared(),
+    ).with_distributor(lens_distributor)
+
+#------------------------------------------------------------------------------
+class MreLgtm(MelRecord):
+    """Lighting Template."""
+    rec_sig = b'LGTM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelTruncatedStruct(b'DATA',
+            ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '32s', '3B',
+             's', '3f', '4s', '2f', '3B', 's', '3B', 's', '7f'],
+            *gen_color('lgtm_ambient_color'),
+            *gen_color('lgtm_directional_color'),
+            *gen_color('lgtm_fog_color_near'), 'lgtm_fog_near',
+            'lgtm_fog_far', 'lgtm_directional_rotation_xy',
+            'lgtm_directional_rotation_z', 'lgtm_directional_fade',
+            'lgtm_fog_clip_distance', 'lgtm_fog_power',
+            'lgtm_unused1', *gen_color('lgtm_fog_color_far'),
+            'lgtm_fog_max', 'lgtm_light_fade_distances_start',
+            'lgtm_light_fade_distances_end', 'lgtm_unused2',
+            'lgtm_near_height_mid', 'lgtm_near_height_range',
+            *gen_color('lgtm_fog_color_high_near'),
+            *gen_color('lgtm_fog_color_high_far'), 'lgtm_high_density_scale',
+            'lgtm_fog_near_scale', 'lgtm_fog_far_scale',
+            'lgtm_fog_high_near_scale', 'lgtm_fog_high_far_scale',
+            'lgtm_far_height_mid', 'lgtm_far_height_range', old_versions={
+                '3Bs3Bs3Bs2f2i3f32s3Bs3f4s2f3Bs3Bs5f',
+                '3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+            }),
+        MelDalc(),
+        MelGodRays(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light."""
+    rec_sig = b'LIGH'
+
+    _light_flags = Flags.from_names(
+        (1,  'light_can_take'),
+        (3,  'light_flickers'),
+        (5,  'light_off_by_default'),
+        (7,  'light_pulses'),
+        (10, 'light_shadow_spotlight'),
+        (11, 'light_shadow_hemisphere'),
+        (12, 'light_shadow_omnidirectional'),
+        (14, 'light_nonshadow_spotlight'),
+        (15, 'light_non_specular'),
+        (16, 'light_attenuation_only'),
+        (17, 'light_nonshadow_box'),
+        (18, 'light_ignore_roughness'),
+        (19, 'light_no_rim_lighting'),
+        (20, 'light_ambient_only'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelModel(),
+        MelKeywords(),
+        MelDestructible(),
+        MelProperties(),
+        MelFull(),
+        MelIcons(),
+        MelTruncatedStruct(b'DATA', ['i', 'I', '3B', 's', 'I', '10f', 'I',
+                                     'f'], 'duration', 'light_radius',
+            *gen_color('light_color'), (_light_flags, 'light_flags'),
+            'light_falloff', 'light_fov', 'light_near_clip',
+            'light_fe_period', # fe = 'Flicker Effect'
+            'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
+            'light_constant', 'light_scalar', 'light_exponent',
+            'light_god_rays_near_clip', 'value', 'weight', old_versions={
+                'iI3BsI10fI', 'iI3BsI8f',
+            }),
+        MelLighFade(),
+        MelString(b'NAM0', 'light_gobo'),
+        MelLighLensFlare(),
+        MelGodRays(),
+        MelSound(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLscr(MelRecord):
+    """Load Screen."""
+    rec_sig = b'LSCR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelDescription(),
+        MelConditionList(),
+        MelLscrNif(),
+        MelFid(b'TNAM', 'lscr_transform'),
+        MelLscrRotation(),
+        MelStruct(b'ZNAM', ['2f'], 'lscr_zoom_min', 'lscr_zoom_max'),
+        MelLscrCameraPath(),
+    )
+
+#------------------------------------------------------------------------------
+class MreLtex(MelRecord):
+    """Landscape Texture."""
+    rec_sig = b'LTEX'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'TNAM', 'ltex_texture_set'),
+        MelFid(b'MNAM', 'ltex_material_type'),
+        MelStruct(b'HNAM', ['2B'], 'hd_friction',
+            'hd_restitution'), # hd = 'Havok Data'
+        MelLtexSnam(),
+        MelLtexGrasses(),
+    )
+
+#------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
-    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
-                      'epicLootChance', 'overrideName')
+    top_copy_attrs = ('chanceNone', 'lvl_max_count', 'glob',
+                      'filter_keyword_chances', 'epic_loot_chance',
+                      'lvli_override_name')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
-        MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
-        ),
-        MelFid(b'LVSG', 'epicLootChance'),
-        MelLString(b'ONAM', 'overrideName')
+        MelLlkc(),
+        MelFid(b'LVSG', 'epic_loot_chance'),
+        MelLString(b'ONAM', 'lvli_override_name')
     )
 
 #------------------------------------------------------------------------------
@@ -1728,22 +1883,34 @@ class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
-    top_copy_attrs = ('chanceNone', 'maxCount', 'glob', 'filterKeywordChances',
-                      'model', 'modt_p')
+    top_copy_attrs = ('chanceNone', 'lvl_max_count', 'glob',
+                      'filter_keyword_chances', 'lvln_model', 'lvln_modt_p')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
-        MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
-        ),
-        MelString(b'MODL','model'),
-        MelBase(b'MODT','modt_p'),
+        MelLlkc(),
+        MelString(b'MODL', 'lvln_model'),
+        MelBase(b'MODT', 'lvln_modt_p'),
+    )
+
+#------------------------------------------------------------------------------
+class MreLvsp(AMreLeveledList):
+    """Leveled Spell."""
+    rec_sig = b'LVSP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelLLMaxCount(),
+        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
+        MelLLItems(),
     )
 
 #------------------------------------------------------------------------------

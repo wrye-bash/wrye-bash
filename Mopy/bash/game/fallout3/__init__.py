@@ -548,7 +548,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC',b'LVLI',b'LVLN')
+    listTypes = (b'LVLC', b'LVLI', b'LVLN')
 
     #--------------------------------------------------------------------------
     # Import Names
@@ -727,10 +727,12 @@ class Fallout3GameInfo(PatchGame):
                   'decal_min_width', 'decal_max_width', 'decal_min_height',
                   'decal_max_height', 'decal_depth', 'decal_shininess',
                   'decal_parallax_scale', 'decal_parallax_passes',
-                  'decal_flags', 'decal_red', 'decal_green', 'decal_blue'),
+                  'decal_flags', 'decal_color_red', 'decal_color_green',
+                  'decal_color_blue'),
         b'KEYM': ('iconPath', 'smallIconPath', 'model'),
-        b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue',
-                  'flags', 'falloff', 'fov', 'fade'),
+        b'LIGH': ('iconPath', 'model', 'light_radius', 'light_color_red',
+                  'light_color_green', 'light_color_blue', 'light_flags',
+                  'light_falloff', 'light_fov', 'light_fade'),
         b'LSCR': ('iconPath',),
         b'MGEF': ('iconPath', 'model'),
         b'MICN': ('iconPath', 'smallIconPath'),
@@ -752,8 +754,8 @@ class Fallout3GameInfo(PatchGame):
                   'decal_min_width', 'decal_max_width', 'decal_min_height',
                   'decal_max_height', 'decal_depth', 'decal_shininess',
                   'decal_parallax_scale', 'decal_parallax_passes',
-                  'decal_flags', 'decal_red', 'decal_green', 'decal_blue',
-                  'txst_flags'),
+                  'decal_flags', 'decal_color_red', 'decal_color_green',
+                  'decal_color_blue', 'txst_flags'),
         b'WEAP': ('iconPath', 'smallIconPath', 'model', 'shellCasingModel',
                   'scopeModel', 'worldModel', 'animationType', 'gripAnimation',
                   'reloadAnimation'),

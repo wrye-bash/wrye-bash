@@ -22,9 +22,8 @@
 # =============================================================================
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
-from ...bolt import Flags
-from ...brec import MelRecord, MelGroups, MelStruct, MelString, MelSet, \
-    MelFloat, MelUInt32, MelCounter, MelEdid
+from ...brec import MelRecord, MelSet, MelFloat, MelEdid, MelLensShared, \
+    lens_distributor
 
 #------------------------------------------------------------------------------
 # Added in SSE ----------------------------------------------------------------
@@ -33,27 +32,9 @@ class MreLens(MelRecord):
     """Lens Flare."""
     rec_sig = b'LENS'
 
-    LensFlareFlags = Flags.from_names('rotates', 'shrinksWhenOccluded')
-
     melSet = MelSet(
-        MelEdid(),
-        MelFloat(b'CNAM', 'colorInfluence'),
-        MelFloat(b'DNAM', 'fadeDistanceRadiusScale'),
-        MelCounter(MelUInt32(b'LFSP', 'sprite_count'),
-                   counts='lensFlareSprites'),
-        MelGroups('lensFlareSprites',
-            MelString(b'DNAM','spriteID'),
-            MelString(b'FNAM','texture'),
-            MelStruct(b'LFSD', ['8f', 'I'], 'tintRed', 'tintGreen', 'tintBlue',
-                'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, 'lensFlags')),
-        )
-    ).with_distributor({
-        b'DNAM': u'fadeDistanceRadiusScale',
-        b'LFSP': {
-            b'DNAM': u'lensFlareSprites',
-        },
-    })
+        MelLensShared(sprites_are_sorted=False),
+    ).with_distributor(lens_distributor)
 
 #------------------------------------------------------------------------------
 class MreVoli(MelRecord):

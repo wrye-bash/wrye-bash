@@ -32,7 +32,8 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
-from .utils_constants import int_unpacker, FID, null1, ZERO_FID
+from .utils_constants import int_unpacker, FID, null1, ZERO_FID, gen_color, \
+    gen_color3, gen_ambient_lighting
 from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
     structs_cache
 from ..exception import ModError
@@ -348,6 +349,14 @@ class MelCpthShared(MelSequential):
         ),
 
 #------------------------------------------------------------------------------
+class MelDalc(MelTruncatedStruct):
+    """Handles the common DALC (Directional Ambient Lighting Colors)
+    subrecord."""
+    def __init__(self):
+        super().__init__(b'DALC', ['28B', 'f'],
+            *gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
+
+#------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
     """Handles the DEBR subrecord DATA (Data)."""
     _debr_flags = Flags.from_names('has_collision_data', 'collision')
@@ -389,8 +398,8 @@ class MelDecalData(MelOptStruct):
             'decal_min_width', 'decal_max_width', 'decal_min_height',
             'decal_max_height', 'decal_depth', 'decal_shininess',
             'decal_parallax_scale', 'decal_parallax_passes',
-            (self._decal_flags, 'decal_flags'), 'decal_unused1', 'decal_red',
-            'decal_green', 'decal_blue', 'decal_unused2')
+            (self._decal_flags, 'decal_flags'), 'decal_unused1',
+            *gen_color('decal_color'))
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
@@ -723,8 +732,8 @@ class MelImgsCinematic(MelStruct):
 class MelImgsTint(MelStruct):
     """Handles the IMGS subrecord TNAM (Tint)."""
     def __init__(self):
-        super().__init__(b'TNAM', ['4f'], 'tint_amount', 'tint_color_red',
-            'tint_color_green', 'tint_color_blue')
+        super().__init__(b'TNAM', ['4f'], 'tint_amount',
+            *gen_color3('tint_color'))
 
 #------------------------------------------------------------------------------
 class MelImpactDataset(MelFid):
@@ -865,19 +874,154 @@ class MelLandShared(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelLctnShared(MelSequential):
+    """Handles the LCTN subrecords shared between Skyrim and FO4."""
+    def __init__(self):
+        super().__init__(
+            MelEdid(),
+            MelArray('actor_cell_persistent_reference',
+                MelStruct(b'ACPR', ['2I', '2h'], (FID, 'acpr_actor'),
+                    (FID, 'acpr_location'), 'acpr_grid_x', 'acpr_grid_y'),
+            ),
+            MelArray('location_cell_persistent_reference',
+                MelStruct(b'LCPR', ['2I', '2h'], (FID, 'lcpr_actor'),
+                    (FID, 'lcpr_location'), 'lcpr_grid_x', 'lcpr_grid_y'),
+            ),
+            MelSimpleArray('reference_cell_persistent_reference',
+                MelFid(b'RCPR')),
+            MelArray('actor_cell_unique',
+                MelStruct(b'ACUN', ['3I'], (FID, 'acun_actor'),
+                    (FID, 'acun_ref'), (FID, 'acun_location')),
+            ),
+            MelArray('location_cell_unique',
+                MelStruct(b'LCUN', ['3I'], (FID, 'lcun_actor'),
+                    (FID, 'lcun_ref'), (FID, 'lcun_location')),
+            ),
+            MelSimpleArray('reference_cell_unique', MelFid(b'RCUN')),
+            MelArray('actor_cell_static_reference',
+                MelStruct(b'ACSR', ['3I', '2h'], (FID, 'acsr_loc_ref_type'),
+                    (FID, 'acsr_marker'), (FID, 'acsr_location'),
+                    'acsr_grid_x', 'acsr_grid_y'),
+            ),
+            MelArray('location_cell_static_reference',
+                MelStruct(b'LCSR', ['3I', '2h'], (FID, 'lcsr_loc_ref_type'),
+                    (FID, 'lcsr_marker'), (FID, 'lcsr_location'),
+                    'lcsr_grid_x', 'lcsr_grid_y'),
+            ),
+            MelSimpleArray('reference_cell_static_reference', MelFid(b'RCSR')),
+            MelGroups('actor_cell_encounter_cell',
+                MelArray('acec_coordinates',
+                    MelStruct(b'ACEC', ['2h'], 'acec_grid_x', 'acec_grid_y'),
+                    prelude=MelFid(b'ACEC', 'acec_location'),
+                ),
+            ),
+            MelGroups('location_cell_encounter_cell',
+                MelArray('lcec_coordinates',
+                    MelStruct(b'LCEC', ['2h'], 'lcec_grid_x', 'lcec_grid_y'),
+                    prelude=MelFid(b'LCEC', 'lcec_location'),
+                ),
+            ),
+            MelGroups('reference_cell_encounter_cell',
+                MelArray('rcec_coordinates',
+                    MelStruct(b'RCEC', ['2h'], 'rcec_grid_x', 'rcec_grid_y'),
+                    prelude=MelFid(b'RCEC', 'rcec_location'),
+                ),
+            ),
+            MelSimpleArray('actor_cell_marker_reference', MelFid(b'ACID')),
+            MelSimpleArray('location_cell_marker_reference', MelFid(b'LCID')),
+            MelArray('actor_cell_enable_point',
+                MelStruct(b'ACEP', ['2I', '2h'], (FID, 'acep_actor'),
+                    (FID, 'acep_ref'), 'acep_grid_x', 'acep_grid_y'),
+            ),
+            MelArray('location_cell_enable_point',
+                MelStruct(b'LCEP', ['2I', '2h'], (FID, 'lcep_actor'),
+                    (FID, 'lcep_ref'), 'lcep_grid_x', 'lcep_grid_y'),
+            ),
+            MelFull(),
+            MelKeywords(),
+            MelFid(b'PNAM', 'parent_location'),
+            MelFid(b'NAM1', 'lctn_music'),
+            MelFid(b'FNAM', 'unreported_crime_faction'),
+            MelFid(b'MNAM', 'world_location_marker_ref'),
+            MelFloat(b'RNAM', 'world_location_radius'),
+        )
+
+#------------------------------------------------------------------------------
+class MelLensShared(MelSequential):
+    """Handles the LENS subrecords shared between Skyrim and FO4."""
+    _lfs_flags = Flags.from_names('lfs_rotates', 'lfs_shrinks_when_occluded')
+
+    def __init__(self, *, sprites_are_sorted=True):
+        lfs_element = MelGroups('lens_flare_sprites',
+            MelString(b'DNAM', 'lfs_sprite_id'),
+            MelString(b'FNAM', 'lfs_texture'),
+            MelStruct(b'LFSD', ['8f', 'I'], *gen_color3('lfs_tint'),
+                'lfs_width', 'lfs_height', 'lfs_position', 'lfs_angular_fade',
+                'lfs_opacity', (self._lfs_flags, 'lfs_flags')),
+            )
+        if sprites_are_sorted:
+            lfs_element = MelSorted(lfs_element, sort_by_attrs='lfs_sprite_id')
+        super().__init__(
+            MelEdid(),
+            MelFloat(b'CNAM', 'color_influence'),
+            MelFloat(b'DNAM', 'fade_distance_radius_scale'),
+            MelCounter(MelUInt32(b'LFSP', 'sprite_count'),
+                counts='lens_flare_sprites'),
+            lfs_element,
+        )
+
+#------------------------------------------------------------------------------
+class MelLighFade(MelFloat):
+    """Handles the LIGH subrecord FNAM (Fade)."""
+    def __init__(self):
+        super().__init__(b'FNAM', 'light_fade')
+
+#------------------------------------------------------------------------------
 class MelLighLensFlare(MelFid):
     """Handles the LIGH subrecord LNAM (Lens Flare)."""
     def __init__(self):
-        super().__init__(b'LNAM', 'lens_flare')
+        super().__init__(b'LNAM', 'light_lens_flare')
+
+#------------------------------------------------------------------------------
+class MelLscrCameraPath(MelString):
+    """Handles the LSCR subrecord MOD2 (Camera Path)."""
+    def __init__(self):
+        super().__init__(b'MOD2', 'lscr_camera_path')
 
 #------------------------------------------------------------------------------
 class MelLscrLocations(MelSorted):
     """Handles the LSCR subrecord LNAM (Locations)."""
     def __init__(self):
-        super().__init__(MelGroups('locations',
-            MelStruct(b'LNAM', ['2I', '2h'], (FID, 'direct'),
-                (FID, 'indirect'), 'gridy', 'gridx'),
-        ), sort_by_attrs=('direct', 'indirect', 'gridy', 'gridx'))
+        super().__init__(MelGroups('lscr_locations',
+            MelStruct(b'LNAM', ['2I', '2h'], (FID, 'll_direct'),
+                (FID, 'll_indirect'), 'll_grid_y', 'll_grid_x'),
+        ), sort_by_attrs=('ll_direct', 'll_indirect', 'll_grid_y',
+                          'll_grid_x'))
+
+#------------------------------------------------------------------------------
+class MelLscrNif(MelFid):
+    """Handles the LSCR subrecord NNAM (Loading Screen NIF)."""
+    def __init__(self):
+        super().__init__(b'NNAM', 'lscr_nif')
+
+#------------------------------------------------------------------------------
+class MelLscrRotation(MelStruct):
+    """Handles the LSCR subrecord ONAM (Rotation)."""
+    def __init__(self):
+        super().__init__(b'ONAM', ['2h'], 'lscr_rotation_min',
+            'lscr_rotation_max')
+
+#------------------------------------------------------------------------------
+class MelLtexGrasses(MelSorted):
+    """Handles the LTEX subrecord GNAM (Grasses)."""
+    def __init__(self):
+        super().__init__(MelFids('ltex_grasses', MelFid(b'GNAM')))
+
+#------------------------------------------------------------------------------
+class MelLtexSnam(MelUInt8):
+    """Handles the LTEX subrecord SNAM (Texture Specular Exponent)."""
+    def __init__(self):
+        super().__init__(b'SNAM', 'texture_specular_exponent')
 
 #------------------------------------------------------------------------------
 class MelMapMarker(MelGroup):

@@ -517,7 +517,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC',b'LVLI',b'LVSP',)
+    listTypes = (b'LVLC', b'LVLI', b'LVSP')
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -648,8 +648,9 @@ class OblivionGameInfo(PatchGame):
         b'HAIR': ('iconPath', 'model'),
         b'INGR': ('iconPath', 'model'),
         b'KEYM': ('iconPath', 'model'),
-        b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue',
-                  'flags', 'falloff', 'fov', 'fade'),
+        b'LIGH': ('iconPath', 'model', 'light_radius', 'light_color_red',
+                  'light_color_green', 'light_color_blue', 'light_flags',
+                  'light_falloff', 'light_fov', 'light_fade'),
         b'LSCR': ('iconPath',),
         b'LTEX': ('iconPath',),
         b'MGEF': ('iconPath', 'model'),
@@ -872,7 +873,7 @@ class OblivionGameInfo(PatchGame):
     }
     body_part_codes = ('ARGHTCCPBS', 'ABGHINOPSL')
     text_replacer_rpaths = {
-        b'ALCH': ('full', 'effects[i].scriptEffect?.full'),
+        b'ALCH': ('full', 'effects[*].scriptEffect?.full'),
         b'AMMO': ('full',),
         b'APPA': ('full',),
         b'ARMO': ('full',),
@@ -883,27 +884,27 @@ class OblivionGameInfo(PatchGame):
         b'CONT': ('full',),
         b'CREA': ('full',),
         b'DOOR': ('full',),
-        b'ENCH': ('full', 'effects[i].scriptEffect?.full',),
+        b'ENCH': ('full', 'effects[*].scriptEffect?.full',),
         b'EYES': ('full',),
         b'FACT': ('full',), ##: maybe add male_title/female_title?
         b'FLOR': ('full',),
         b'FURN': ('full',),
         b'GMST': ('value',),
         b'HAIR': ('full',),
-        b'INGR': ('full', 'effects[i].scriptEffect?.full'),
+        b'INGR': ('full', 'effects[*].scriptEffect?.full'),
         b'KEYM': ('full',),
         b'LIGH': ('full',),
         b'LSCR': ('description',),
         b'MGEF': ('full', 'description'),
         b'MISC': ('full',),
         b'NPC_': ('full',),
-        b'QUST': ('full', 'stages[i].entries[i].text'),
+        b'QUST': ('full', 'stages[*].entries[*].text'),
         b'RACE': ('full', 'description'),
-        b'SGST': ('full', 'effects[i].scriptEffect?.full'),
+        b'SGST': ('full', 'effects[*].scriptEffect?.full'),
         b'SKIL': ('description', 'apprentice', 'journeyman', 'expert',
                   'master'),
         b'SLGM': ('full',),
-        b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
+        b'SPEL': ('full', 'effects[*].scriptEffect?.full'),
         b'WEAP': ('full',),
     }
     gold_attrs = lambda _self_ignore: {

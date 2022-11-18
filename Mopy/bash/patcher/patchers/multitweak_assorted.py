@@ -328,13 +328,19 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
     tweak_key = u'NoLightFlicker'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Lights Unflickered: %(total_changed)d')
-    _flicker_flags = 0x000001C8 # (flickers, flickerSlow, pulse, pulseSlow)
+    _interested_flags = ('light_flickers', 'light_flickers_slow',
+                         'light_pulses', 'light_pulses_slow')
 
     def wants_record(self, record):
-        return int(record.flags & self._flicker_flags)
+        return any(getattr(record.light_flags, f_attr)
+                   for f_attr in self._interested_flags)
 
     def tweak_record(self, record):
-        record.flags &= ~self._flicker_flags
+        for f_attr in self._interested_flags:
+            setattr(record.light_flags, f_attr, False)
+
+class AssortedTweak_NoLightFlicker_Fo4(AssortedTweak_NoLightFlicker):
+    _interested_flags = ('light_flickers', 'light_pulses')
 
 #------------------------------------------------------------------------------
 class _AWeightTweak(CustomChoiceTweak):
@@ -651,7 +657,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
 
     def wants_record(self, record):
         rsig = record._rec_sig
-        if (rsig == b'LIGH' and not record.flags.canTake or
+        if (rsig == b'LIGH' and not record.light_flags.light_can_take or
                 rsig == b'QUST' and not record.stages or
                 rsig in (b'ARMO', b'CLOT') and
                 self._is_nonplayable(record)): return False
@@ -783,7 +789,7 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class AssortedTweak_LightFadeValueFix(MultiTweakItem):
-    """Remove light flickering for low end machines."""
+    """Fix lights with missing fade value."""
     tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Fade Value Fix')
     tweak_tip = _(u'Sets Light Fade values to default of 1.0 if not set.')
@@ -792,10 +798,10 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
     tweak_log_msg = _(u'Lights With Fade Values Added: %(total_changed)d')
 
     def wants_record(self, record):
-        return record.fade is None
+        return record.light_fade is None
 
     def tweak_record(self, record):
-        record.fade = 1.0
+        record.light_fade = 1.0
 
 #------------------------------------------------------------------------------
 class AssortedTweak_TextlessLSCRs(MultiTweakItem):

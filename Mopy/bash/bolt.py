@@ -760,8 +760,7 @@ class Path(os.PathLike):
     invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I) # \\ needed
 
     @staticmethod
-    def getNorm(str_or_path):
-        # type: (str|bytes|Path) -> str
+    def getNorm(str_or_path: str | bytes | Path) -> str:
         """Return the normpath for specified basename/Path object."""
         if isinstance(str_or_path, Path): return str_or_path._s
         elif not str_or_path: return u'' # and not maybe b''
@@ -788,8 +787,7 @@ class Path(os.PathLike):
     __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
                  u'_cext', u'_sbody')
 
-    def __init__(self, norm_str):
-        # type: (str) -> None
+    def __init__(self, norm_str: str):
         """Initialize with unicode - call only in GPath."""
         self._s = norm_str # path must be normalized
         self._cs = norm_str.lower()
@@ -2012,8 +2010,8 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self, table, column):
-        self._table = table # type: DataTable
+    def __init__(self, table: DataTable, column: str):
+        self._table = table
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
@@ -2064,9 +2062,9 @@ class DataTable(DataDict):
     Rows are the first index ('fileName') and columns are the second index
     ('propName')."""
 
-    def __init__(self,dictFile):
+    def __init__(self, dictFile: PickleDict):
         """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile # type: PickleDict
+        self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
         self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
@@ -2525,15 +2523,14 @@ def build_esub(esub_str):
     return final_impl
 
 #------------------------------------------------------------------------------
-# no re.U, we want our record attrs to be ASCII
+# We want record attributes to be ASCII
 _valid_rpath_attr = re.compile(r'^[^\d\W]\w*\Z', re.ASCII)
 
 class _ARP_Subpath(object):
     """Abstract base class for all subpaths of a larger record path."""
-    __slots__ = (u'_subpath_attr', u'_next_subpath',)
+    __slots__ = ('_subpath_attr', '_next_subpath',)
 
-    def __init__(self, sub_rpath, rest_rpath):
-        # type: (str, str) -> None
+    def __init__(self, sub_rpath: str, rest_rpath: str):
         if not _valid_rpath_attr.match(sub_rpath):
             raise SyntaxError(f"'{sub_rpath}' is not a valid subpath. "
                               f"Your record path likely contains a typo.")
@@ -2545,10 +2542,10 @@ class _ARP_Subpath(object):
 
     # See RecPath for documentation of these methods
     def rp_eval(self, record) -> list:
-        raise exception.AbstractError(u'rp_eval not implemented')
+        raise exception.AbstractError('rp_eval not implemented')
 
     def rp_map(self, record, func, *args) -> None:
-        raise exception.AbstractError(u'rp_map not implemented')
+        raise exception.AbstractError('rp_map not implemented')
 
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
@@ -2589,9 +2586,9 @@ class _RP_IteratedSubpath(_ARP_Subpath):
     that holds a list of (Mel) objects. A record path can't resolve to more
     than one value unless it involves at least one of these."""
     def __init__(self, sub_rpath, rest_rpath):
-        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
-                                             u'iterated subpath.')
-        super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
+        if not rest_rpath: raise SyntaxError('A RecPath may not end with an '
+                                             'iterated subpath.')
+        super().__init__(sub_rpath, rest_rpath)
 
     def rp_eval(self, record) -> Iterable:
         eval_next = self._next_subpath.rp_eval
@@ -2603,25 +2600,25 @@ class _RP_IteratedSubpath(_ARP_Subpath):
             map_next(rec_element, func, *args)
 
     def __repr__(self):
-        return f'{self._subpath_attr}[i].{self._next_subpath!r}'
+        return f'{self._subpath_attr}[*].{self._next_subpath!r}'
 
 class _RP_OptionalSubpath(_RP_Subpath):
     """An optional part of a record path. If it doesn't exist, mapping and
     evaluating will simply not continue past this part."""
     def __init__(self, sub_rpath, rest_rpath):
-        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
-                                             u'optional subpath.')
-        super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
+        if not rest_rpath: raise SyntaxError('A RecPath may not end with an '
+                                             'optional subpath.')
+        super().__init__(sub_rpath, rest_rpath)
 
     def rp_eval(self, record) -> Iterable:
         try:
-            return super(_RP_OptionalSubpath, self).rp_eval(record)
+            return super().rp_eval(record)
         except AttributeError:
             return [] # Attribute did not exist, rest of the path evals to []
 
     def rp_map(self, record, func, *args) -> None:
         try:
-            super(_RP_OptionalSubpath, self).rp_map(record, func, *args)
+            super().rp_map(record, func, *args)
         except AttributeError:
             pass # Attribute did not exist, can't map any further
 
@@ -2637,9 +2634,9 @@ class RecPath(object):
     overview of syntax and usage. Curent implementation supports paths to
     record attributes of type str, using None to signal the absence of the
     attribute."""
-    __slots__ = (u'_root_subpath',)
+    __slots__ = ('_root_subpath',)
 
-    def __init__(self, rpath_str): # type: (str) -> None
+    def __init__(self, rpath_str: str):
         self._root_subpath = _parse_rpath(rpath_str)
 
     def rp_eval(self, record) -> Iterable:
@@ -2658,16 +2655,16 @@ class RecPath(object):
     def __repr__(self):
         return repr(self._root_subpath)
 
-def _parse_rpath(rpath_str): # type: (str) -> _ARP_Subpath
+def _parse_rpath(rpath_str: str) -> _ARP_Subpath | None:
     """Parses the given unicode string as an RPath subpath."""
     if not rpath_str: return None
-    sub_rpath, rest_rpath = (rpath_str.split(u'.', 1) if u'.' in rpath_str
+    sub_rpath, rest_rpath = (rpath_str.split('.', 1) if '.' in rpath_str
                              else (rpath_str, None))
     # Iterated subpath
-    if sub_rpath.endswith(u'[i]'):
+    if sub_rpath.endswith('[*]'):
         return _RP_IteratedSubpath(sub_rpath[:-3], rest_rpath)
     # Optional subpath
-    elif sub_rpath.endswith(u'?'):
+    elif sub_rpath.endswith('?'):
         return _RP_OptionalSubpath(sub_rpath[:-1], rest_rpath)
     else:
         return (_RP_Subpath if rest_rpath else

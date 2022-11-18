@@ -25,6 +25,7 @@ almost all other parts of brec."""
 from __future__ import annotations
 
 import sys
+from itertools import chain
 from typing import Callable, Type
 
 from .. import bolt
@@ -353,11 +354,40 @@ group_types = {0: u'Top', 1: u'World Children', 2: u'Interior Cell Block',
                9: u'Cell Temporary Children',
                10: u'Cell Visible Distant Children/Quest Children'}
 
+# Helpers ---------------------------------------------------------------------
 def get_structs(struct_format):
     """Create a struct and return bound unpack, pack and size methods in a
     tuple."""
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
+
+def gen_color(color_attr_pfx: str) -> list[str]:
+    """Helper method for generating red/green/blue/unused color attributes."""
+    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue',
+                                              'unused')]
+
+def gen_color3(color_attr_pfx: str) -> list[str]:
+    """Helper method for generating red/green/blue color attributes."""
+    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
+
+def gen_ambient_lighting(attr_prefix):
+    """Helper method for generating a ton of repetitive attributes that are
+    shared between a couple record types (wbAmbientColors in xEdit)."""
+    color_types = [f'directional_{t}' for t in (
+        'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
+    color_types.append('specular')
+    color_iters = chain.from_iterable(gen_color(d) for d in color_types)
+    ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
+    return ambient_lighting + [f'{attr_prefix}_ac_scale']
+
+# Distributors ----------------------------------------------------------------
+# Shared distributor for LENS records
+lens_distributor = {
+    b'DNAM': 'fade_distance_radius_scale',
+    b'LFSP': {
+        b'DNAM': 'lens_flare_sprites',
+    },
+}
 
 # Shared distributor for PERK records
 perk_distributor = {

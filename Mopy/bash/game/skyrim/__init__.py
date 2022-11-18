@@ -705,7 +705,7 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP',)
+    listTypes = (b'LVLI', b'LVLN', b'LVSP')
 
     #--------------------------------------------------------------------------
     # Import Names
@@ -915,12 +915,14 @@ class SkyrimGameInfo(PatchGame):
                   'impact_result', 'decal_min_width', 'decal_max_width',
                   'decal_min_height', 'decal_max_height', 'decal_depth',
                   'decal_shininess', 'decal_parallax_scale',
-                  'decal_parallax_passes', 'decal_flags', 'decal_red',
-                  'decal_green', 'decal_blue'),
+                  'decal_parallax_passes', 'decal_flags', 'decal_color_red',
+                  'decal_color_green', 'decal_color_blue'),
         b'KEYM': ('iconPath', 'model'),
-        b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue',
-                  'flags', 'falloff', 'fov', 'nearClip', 'fePeriod',
-                  'feIntensityAmplitude', 'feMovementAmplitude', 'fade'),
+        b'LIGH': ('iconPath', 'model', 'light_radius', 'light_color_red',
+                  'light_color_green', 'light_color_blue', 'light_flags',
+                  'light_falloff', 'light_fov', 'light_near_clip',
+                  'light_fe_period', 'light_fe_intensity_amplitude',
+                  'light_fe_movement_amplitude', 'light_fade'),
         b'LSCR': ('iconPath',),
         b'MGEF': ('dual_casting_scale',),
         b'MISC': ('iconPath', 'model'),
@@ -937,8 +939,8 @@ class SkyrimGameInfo(PatchGame):
                   'backlight_mask_specular_texture', 'decal_min_width',
                   'decal_max_width', 'decal_min_height', 'decal_max_height',
                   'decal_depth', 'decal_shininess', 'decal_parallax_scale',
-                  'decal_parallax_passes', 'decal_flags', 'decal_red',
-                  'decal_green', 'decal_blue', 'txst_flags'),
+                  'decal_parallax_passes', 'decal_flags', 'decal_color_red',
+                  'decal_color_green', 'decal_color_blue', 'txst_flags'),
         b'WEAP': ('model', 'model2', 'iconPath'),
         b'WTHR': ('wthrAmbientColors',),
     }
@@ -1170,7 +1172,7 @@ class SkyrimGameInfo(PatchGame):
         b'ENCH': ('full',),
         b'EXPL': ('full',),
         b'EYES': ('full',),
-        b'FACT': ('full', 'ranks[i].male_title', 'ranks[i].female_title'),
+        b'FACT': ('full', 'ranks[*].male_title', 'ranks[*].female_title'),
         b'FLOR': ('full', 'activate_text_override'),
         b'FURN': ('full',),
         b'GMST': ('value',),
@@ -1181,7 +1183,7 @@ class SkyrimGameInfo(PatchGame):
         b'LCTN': ('full',),
         b'LIGH': ('full',),
         b'LSCR': ('description',),
-        b'MESG': ('full', 'description', 'menu_buttons[i].button_text'),
+        b'MESG': ('full', 'description', 'menu_buttons[*].button_text'),
         b'MGEF': ('full', 'magic_item_description'),
         b'MISC': ('full',),
         b'MSTT': ('full',),
@@ -1189,8 +1191,8 @@ class SkyrimGameInfo(PatchGame):
         b'PERK': ('full', 'description'),
         b'PROJ': ('full',),
         b'QUST': ('full', 'description',
-                  'stages[i].log_entries[i].log_entry_text',
-                  'objectives[i].display_text'),
+                  'stages[*].log_entries[*].log_entry_text',
+                  'objectives[*].display_text'),
         b'RACE': ('full', 'description'),
         b'SCRL': ('full', 'description'),
         b'SHOU': ('full', 'description'),

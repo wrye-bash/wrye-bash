@@ -151,14 +151,18 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
+        self._sort_elements = []
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
+            if element.needs_sorting():
+                self._sort_elements.append(element)
         for sig_candidate in self.loaders:
-            if len(sig_candidate) != 4 or not isinstance(sig_candidate, bytes):
-                raise SyntaxError(f"Invalid signature '{sig_candidate}': "
-                    f"Signatures must be bytestrings and 4 bytes in length.")
+            if not isinstance(sig_candidate, bytes) or len(sig_candidate) != 4:
+                raise SyntaxError(f"Invalid signature '{sig_candidate!r}': "
+                                  f"Signatures must be bytestrings and 4 "
+                                  f"bytes in length.")
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances
@@ -215,6 +219,11 @@ class MelSet(object):
         """Maps fids of subelements."""
         for element in self.formElements:
             element.mapFids(record, mapper, save_fids)
+
+    def sort_subrecords(self, record):
+        """Sorts all subrecords of the specified record that need sorting."""
+        for element in self._sort_elements:
+            element.sort_subrecord(record)
 
     def with_distributor(self, distributor_config):
         # type: (dict) -> MelSet
@@ -482,6 +491,7 @@ class MreRecord(metaclass=RecordType):
         if not self.changed: return self.size
         #--Pack data and return size.
         out = io.BytesIO()
+        self._sort_subrecords()
         self.dumpData(out)
         self.data = out.getvalue()
         if self.flags1.compressed:
@@ -500,6 +510,10 @@ class MreRecord(metaclass=RecordType):
                                        f' {self.rec_str} {self.fid}]')
         for subrecord in self.iterate_subrecords():
             subrecord.packSub(out, subrecord.mel_data)
+
+    def _sort_subrecords(self):
+        """Sorts all subrecords of this record that need sorting. Default
+        implementation does nothing."""
 
     @property
     def rec_str(self):
@@ -612,6 +626,8 @@ class MelRecord(MreRecord):
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error
+        # Sort once we're done - sorting during loading is obviously a bad idea
+        self._sort_subrecords()
 
     def error_string(self, op, file_offset=None, sub_size=None, sub_type=None):
         """Return a human-readable description of this record to use in error
@@ -629,8 +645,13 @@ class MelRecord(MreRecord):
         self.__class__.melSet.dumpData(self,out)
 
     def mapFids(self, mapper, save_fids):
-        """Applies mapper to fids of sub-elements. Will replace fid with mapped value if save == True."""
+        """Applies mapper to fids of sub-elements. Will replace fid with mapped
+        value if save == True."""
         self.__class__.melSet.mapFids(self, mapper, save_fids)
+
+    def _sort_subrecords(self):
+        """Sorts all subrecords of this record that need sorting."""
+        self.__class__.melSet.sort_subrecords(self)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""

@@ -32,7 +32,8 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, MelIcons, \
     MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, FixedString, \
     AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, MelLists, \
-    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags, AMreCell
+    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags, AMreCell, \
+    gen_color, gen_color3
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -384,10 +385,9 @@ class MreCell(AMreCell):
         MelString(b'RGNN', u'region_name'),
         MelColorO(b'NAM5'),
         MelFloat(b'WHGT', u'water_height'),
-        MelOptStruct(b'AMBI', [u'12B', u'f'], u'ambient_red', u'ambient_blue',
-            u'ambient_green', u'unused_alpha1', u'sunlight_red',
-            u'sunlight_blue', u'sunlight_green', u'unused_alpha2', u'fog_red',
-            u'fog_blue', u'fog_green', u'unused_alpha3', u'fog_density'),
+        MelOptStruct(b'AMBI', ['12B', 'f'], *gen_color('ambi_ambient'),
+            *gen_color('ambi_sunlight'), *gen_color('ambi_fog'),
+            'fog_density'),
         MelGroups(u'moved_references',
             MelUInt32(b'MVRF', u'reference_id'),
             MelString(b'CNAM', u'new_interior_cell'),
@@ -734,27 +734,20 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _light_flags = Flags.from_names(
-        u'dynamic', # Bad names to match the other games (for tweaks)
-        u'canTake',
-        u'negative',
-        u'flickers',
-        u'light_fire',
-        u'offByDefault',
-        u'flickerSlow',
-        u'pulse',
-        u'pulseSlow',
-    )
+    _light_flags = Flags.from_names('light_dynamic', 'light_can_take',
+        'light_negative', 'light_flickers', 'light_fire',
+        'light_off_by_default', 'light_flickers_slow', 'light_pulses',
+        'light_pulses_slow')
 
     melSet = MelSet(
         MelMWId(),
         MelModel(),
         MelFullTes3(),
         MelIconTes3(),
-        MelStruct(b'LHDT', [u'f', u'I', u'i', u'I', u'4B', u'I'], u'light_weight', u'light_value',
-                  u'light_time', u'light_radius', u'light_red', u'light_green',
-                  u'light_blue', u'unused_alpha', (_light_flags, u'flags')),
-        MelString(b'SNAM', u'sound_name'),
+        MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'weight', 'value',
+            'duration', 'light_radius', *gen_color('light_color'),
+            (_light_flags, 'light_flags')),
+        MelString(b'SNAM', 'sound_name'),
         MelScriptId(),
     )
 
@@ -780,8 +773,8 @@ class MreLtex(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelUInt32(b'INTV', u'landscape_index'),
-        MelString(b'DATA', u'landscape_texture_name'),
+        MelUInt32(b'INTV', 'ltex_index'),
+        MelString(b'DATA', 'ltex_texture_name'),
     )
 
 #------------------------------------------------------------------------------
@@ -802,9 +795,9 @@ class MreMgef(MelRecord):
     # implicity all over our codebase still)
     melSet = MelSet(
         MelUInt32(b'INDX', u'mgef_index'),
-        MelStruct(b'MEDT', [u'I', u'f', u'4I', u'3f'], u'school', u'base_cost',
-            (_mgef_flags, u'flags'), u'mgef_red', u'mgef_green', u'mgef_blue',
-            u'speed_x', u'size_x', u'size_cap'),
+        MelStruct(b'MEDT', ['I', 'f', '4I', '3f'], 'school', 'base_cost',
+            (_mgef_flags, 'flags'), *gen_color3('mgef'), 'speed_x', 'size_x',
+            'size_cap'),
         MelIconTes3(),
         MelString(b'PTEX', u'particle_texture'),
         MelString(b'BSND', u'boltSound'),
