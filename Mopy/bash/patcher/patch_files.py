@@ -243,15 +243,7 @@ class PatchFile(ModFile):
                 continue
             try:
                 #--Error checks
-                if b'WRLD' in modFile.tops and modFile.tops[b'WRLD'].orphansSkipped:
-                    self.worldOrphanMods.append(modName)
-                # TODO adapt for other games
-                if bush.game.fsName == 'Oblivion' and b'SCPT' in \
-                        modFile.tops and modName != bush.game.master_file:
-                    gls = modFile.tops[b'SCPT'].getRecord(
-                        bush.game.master_fid(0x00025811))
-                    if gls and gls.compiled_size == 4 and gls.last_index == 0:
-                        self.compiledAllMods.append(modName)
+                bush.game.check_loaded_mod(self, modFile)
                 pstate = index+0.5
                 if is_merged:
                     # If the plugin is to be merged, merge it
@@ -345,6 +337,6 @@ class PatchFile(ModFile):
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
                 self.tes4.nextObject <= 0xFFF):
             self.tes4.flags1.eslFile = True
-            self.tes4.description += '\n' + _('This patch has been '
-                                              'automatically ESL-flagged to '
-                                              'save a load order slot.')
+            msg = '\n' + _('This patch has been automatically ESL-flagged to '
+                           'save a load order slot.')
+            self.tes4.description += msg

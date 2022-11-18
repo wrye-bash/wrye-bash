@@ -1702,10 +1702,10 @@ def get_cosave_types(game_fsName, parse_save_path, cosave_tag,
     ACosave.parse_save_path = parse_save_path
     cosave_types = [xSECosave]
     # Handle game-specific special cases
-    if game_fsName == u'Oblivion':
+    if game_fsName == 'Oblivion':
         xSECosave._pluggy_signature = 0x2330
         cosave_types.append(PluggyCosave)
     # Games >= Skyrim have 0 as the xSE signature
     xSECosave._xse_signature = 0x1400 if game_fsName in (
-        u'Oblivion', u'Fallout3', u'FalloutNV') else 0x0
+        'Oblivion', 'Fallout3', 'FalloutNV') else 0x0
     return cosave_types

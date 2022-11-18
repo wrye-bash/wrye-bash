@@ -36,7 +36,7 @@ from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
     MelString, MelSequential, MelUInt32, MelFid, MelGroup, MelObject, \
     MelOptStruct, MelBaseR, MelUnorderedGroups
 from .common_subrecords import MelFull
-from .utils_constants import get_structs, FID, null1, ZERO_FID
+from .utils_constants import get_structs, FID, ZERO_FID
 from .. import bolt
 from ..bolt import pack_int, pack_byte, attrgetter_cache, Flags, struct_pack, \
     struct_unpack, unpack_str16, pack_short, pack_int_signed, pack_float

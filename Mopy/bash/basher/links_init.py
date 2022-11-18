@@ -45,6 +45,8 @@ from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
 
+_is_oblivion = bush.game.fsName == 'Oblivion'
+
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
@@ -571,7 +573,7 @@ def InitModLinks():
                 cleanMenu.links.append(SeparatorLink())
                 cleanMenu.links.append(Mod_ScanDirty())
                 cleanMenu.links.append(Mod_RemoveWorldOrphans())
-                if bush.game.fsName == 'Oblivion':
+                if _is_oblivion:
                     cleanMenu.links.append(Mod_FogFixer())
                 plugin_menu.links.append(cleanMenu)
         ModList.context_links.append(plugin_menu)
@@ -593,7 +595,7 @@ def InitModLinks():
                 # exportMenu.links.append(Mod_Scripts_Export())
                 # exportMenu.links.append(Mod_SpellRecords_Export())
                 exportMenu.links.append(Mod_Stats_Export())
-            elif bush.game.fsName == 'Oblivion':
+            elif _is_oblivion:
                 exportMenu.links.append(Mod_IngredientDetails_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_ActorLevels_Export())
@@ -621,7 +623,7 @@ def InitModLinks():
                 # importMenu.links.append(SeparatorLink())
                 # importMenu.links.append(Mod_Face_Import())
                 # importMenu.links.append(Mod_Fids_Replace())
-            elif bush.game.fsName == 'Oblivion':
+            elif _is_oblivion:
                 importMenu.links.append(Mod_IngredientDetails_Import())
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_ActorLevels_Import())
@@ -634,7 +636,7 @@ def InitModLinks():
                 importMenu.links.append(Mod_Face_Import())
                 importMenu.links.append(Mod_Fids_Replace())
         advanced_menu.links.append(importMenu)
-        if bush.game.fsName == 'Oblivion':
+        if _is_oblivion:
             advanced_menu.links.append(SeparatorLink())
             advanced_menu.links.append(Mod_DecompileAll())
             advanced_menu.links.append(Mod_SetVersion())
@@ -657,7 +659,7 @@ def InitModLinks():
     am_submenu = MenuLink(_('Active Plugins..'))
     am_submenu.append(Mods_LoadList())
     edit_menu.append(am_submenu)
-    if bush.game.fsName == 'Oblivion':
+    if _is_oblivion:
         edit_menu.append(SeparatorLink())
         versions_menu = MenuLink('Oblivion.esm..')
         versions_menu.links.append(Mods_OblivionVersion('1.1'))
@@ -791,7 +793,7 @@ def InitSaveLinks():
     file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = SaveList.global_links[_('Edit')]
-    if bush.game.fsName == 'Oblivion':
+    if _is_oblivion:
         versions_menu = MenuLink('Oblivion.esm..')
         versions_menu.links.append(Mods_OblivionVersion('1.1',
             setProfile=True))

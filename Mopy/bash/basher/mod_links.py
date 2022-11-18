@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
@@ -607,7 +606,7 @@ class Mod_Details(OneItemLink):
                 recs.sort(key=lambda r: r[1].lower())
                 for f, e in recs:
                     buff.append(f'  {f} {e}')
-                buff.append(u'') # an empty line
+                buff.append('') # an empty line
             self._showLog('\n'.join(buff), title=self._selected_item,
                           fixedFont=True)
 
@@ -2236,7 +2235,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 self._showOk(self.__class__.noChange)
             else:
                 buff = []
-                for old,new in sorted(changes):
+                for old, new in sorted(changes):
                     prefix = '* ' if new in questionableEidsSet else ''
                     buff.append(f"{prefix}'{old}' >> '{new}'")
                 if questionableEidsSet:
@@ -2249,7 +2248,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                     for badEid in badEidsList:
                         buff.append(f"  '{badEid}'")
                 log_text = '\n'.join(buff)
-                self._showLog(log_text, title=_(u'Objects Changed'))
+                self._showLog(f'{log_text}\n', title=_('Objects Changed'))
         except BoltError as e:
             self._showWarning(f'{e!r}')
 

@@ -33,10 +33,17 @@ class PatchGame(GameInfo):
     too specific (and often big) data structures - however the exact constants
     included here is still WIP."""
 
+    @classmethod
+    def check_loaded_mod(cls, patch_file, modFile):
+        """Perform some game specific validation on a loaded modFile and update
+        PatchFile instance variables."""
+        if b'WRLD' in modFile.tops and modFile.tops[b'WRLD'].orphansSkipped:
+            patch_file.worldOrphanMods.append(modFile.fileInfo.fn_key)
+
     # Bash Tags supported by this game. List only tags that aren't used by
     # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
     # dynamically added in gui_patchers.
-    allTags = {u'Deactivate', u'Filter', u'MustBeActiveIfImported'}
+    allTags = {'Deactivate', 'Filter', 'MustBeActiveIfImported'}
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
     # name, see gui_patchers.py for their definitions).
@@ -222,7 +229,7 @@ class PatchGame(GameInfo):
     nonplayable_biped_flags = set()
     # The record attribute and flag name needed to find out if a piece of armor
     # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
-    not_playable_flag = (u'flags1', u'isNotPlayable')
+    not_playable_flag = ('flags1', 'isNotPlayable')
     # Tuple containing the name of the attribute and the value it has to be set
     # to in order for a weapon to count as a staff for reweighing purposes
     staff_condition = ()
@@ -230,7 +237,7 @@ class PatchGame(GameInfo):
     # static attenuation tweaks. SNDR on newer games, SOUN on older games.
     static_attenuation_rec_type = b'SNDR'
     # Localized version of 'Nirnroots' in Tamriel, 'Vynroots' in Vyn
-    nirnroots = _(u'Nirnroots')
+    nirnroots = _('Nirnroots')
 
     #--------------------------------------------------------------------------
     # Import Races

@@ -61,6 +61,15 @@ class OblivionGameInfo(PatchGame):
     has_standalone_pluggy = True
     check_legacy_paths = True
 
+    @classmethod
+    def check_loaded_mod(cls, patch_file, modFile):
+        ##: Could we adapt this for FO3/FNV?
+        mod_fn_key = modFile.fileInfo.fn_key
+        if b'SCPT' in modFile.tops and mod_fn_key != cls.master_file:
+            gls = modFile.tops[b'SCPT'].getRecord(cls.master_fid(0x00025811))
+            if gls and gls.compiled_size == 4 and gls.last_index == 0:
+                patch_file.compiledAllMods.append(mod_fn_key)
+
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
