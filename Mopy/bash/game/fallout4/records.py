@@ -55,7 +55,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
     gen_color3, MelDalc, MelLighFade, MelLighLensFlare, MelLscrCameraPath, \
     MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLGlobal, \
-    MelLLChanceNone
+    MelLLChanceNone, MelMatoPropertyData, MelMattShared
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1916,6 +1916,37 @@ class MreLvsp(AMreLeveledList):
         MelLLMaxCount(),
         MelLLFlags(),
         MelLLItems(with_coed=False),
+    )
+
+#------------------------------------------------------------------------------
+class MreMato(MelRecord):
+    """Material Object."""
+    rec_sig = b'MATO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelMatoPropertyData(),
+        MelTruncatedStruct(b'DATA', ['11f', 'I'], 'falloff_scale',
+            'falloff_bias', 'noise_uv_scale', 'material_uv_scale',
+            'projection_vector_x', 'projection_vector_y',
+            'projection_vector_z', 'normal_dampener',
+            *gen_color3('single_pass_color'), 'is_single_pass',
+            old_versions={'8f', '7f'}),
+    )
+
+#------------------------------------------------------------------------------
+class MreMatt(MelRecord):
+    """Material Type."""
+    rec_sig = b'MATT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelMattShared(),
+        MelString(b'ANAM', 'breakable_fx'),
+        # Ignore texture hashes - they're only an optimization, plenty of
+        # records in Skyrim.esm are missing them
+        MelNull(b'MODT'),
     )
 
 #------------------------------------------------------------------------------

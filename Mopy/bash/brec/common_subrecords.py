@@ -1092,6 +1092,33 @@ class MelMapMarker(MelGroup):
         super().__init__('map_marker', *group_elems)
 
 #------------------------------------------------------------------------------
+class MelMatoPropertyData(MelGroups):
+    """Handles the MATO subrecord DNAM (Property Data)."""
+    def __init__(self):
+        super().__init__('property_data',
+            MelBase(b'DNAM', 'data_entry'),
+        )
+
+#------------------------------------------------------------------------------
+class MelMattShared(MelSequential):
+    """Implements the MATT subrecords PNAM, MNAM, CNAM, BNAM, FNAM and HNAM."""
+    _matt_flags = Flags.from_names(
+        'stair_material',
+        'arrows_stick',
+        'can_tunnel', # since FO4
+    )
+
+    def __init__(self):
+        super().__init__(
+            MelFid(b'PNAM', 'matt_material_parent'),
+            MelString(b'MNAM', 'matt_material_name'),
+            MelStruct(b'CNAM', ['3f'], *gen_color3('havok_display_color')),
+            MelFloat(b'BNAM', 'matt_buoyancy'),
+            MelUInt32Flags(b'FNAM', 'matt_flags', self._matt_flags),
+            MelImpactDataset(b'HNAM'),
+        )
+
+#------------------------------------------------------------------------------
 class MelMdob(MelFid):
     """Represents the common Menu Display Object subrecord."""
     def __init__(self):
