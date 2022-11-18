@@ -32,7 +32,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, FixedString, \
     AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags, AMreCell, \
-    gen_color, gen_color3
+    gen_color, gen_color3, MelLLFlagsTes3, MelLLChanceNoneTes3
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -158,6 +158,19 @@ class MelItems(MelGroups):
         )
 
 #------------------------------------------------------------------------------
+class MelLLItemsTes3(MelSequential):
+    """Handles the leveled list INDX/INAM/INTV subrecords."""
+    def __init__(self, *, item_sig: bytes):
+        super().__init__(
+            MelCounter(MelUInt32(b'INDX', 'entry_count'), counts='entries'),
+            # Bad names to mirror the other games (needed by AMreLeveledList)
+            MelGroups('entries',
+                MelString(item_sig, 'listId'),
+                MelUInt16(b'INTV', 'level'),
+            ),
+        )
+
+#------------------------------------------------------------------------------
 class MelReference(MelSequential):
     """Defines a single 'reference', which is Morrowind's version of REFRs in
     later games."""
@@ -206,28 +219,6 @@ class MelSpellsTes3(MelGroups):
     """Handles NPCS, Morrowind's version of SPLO."""
     def __init__(self):
         super().__init__('spells', MelFixedString(b'NPCS', 'spell_id', 32))
-
-#------------------------------------------------------------------------------
-class MreLeveledList(AMreLeveledList):
-    """Base class for LEVC and LEVI."""
-    _lvl_flags = Flags.from_names(
-        u'calcFromAllLevels',
-        u'calcForEachItem', # LEVI only, but will be ignored for LEVC so fine
-    )
-    top_copy_attrs = ('chanceNone',)
-    entry_copy_attrs = ('listId', 'level') # no count
-
-    # Bad names to mirror the other games (needed by AMreLeveledList)
-    melSet = MelSet(
-        MelMWId(),
-        MelUInt32Flags(b'DATA', u'flags', _lvl_flags),
-        MelUInt8(b'NNAM', u'chanceNone'),
-        MelCounter(MelUInt32(b'INDX', u'entry_count'), counts=u'entries'),
-        MelGroups(u'entries',
-            MelString(b'INAM', u'listId'),
-            MelUInt16(b'INTV', u'level'),
-        ),
-    )
 
 #------------------------------------------------------------------------------
 # Shared (plugins + saves) record classes -------------------------------------
@@ -719,14 +710,32 @@ class MreLand(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLevc(MreLeveledList):
+class MreLevc(AMreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LEVC'
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId')
+
+    melSet = MelSet(
+        MelMWId(),
+        MelLLFlagsTes3(),
+        MelLLChanceNoneTes3(),
+        MelLLItemsTes3(item_sig=b'CNAM'),
+    )
 
 #------------------------------------------------------------------------------
-class MreLevi(MreLeveledList):
+class MreLevi(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LEVI'
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId')
+
+    melSet = MelSet(
+        MelMWId(),
+        MelLLFlagsTes3(),
+        MelLLChanceNoneTes3(),
+        MelLLItemsTes3(item_sig=b'INAM'),
+    )
 
 #------------------------------------------------------------------------------
 class MreLigh(MelRecord):

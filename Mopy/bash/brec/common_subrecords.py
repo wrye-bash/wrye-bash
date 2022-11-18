@@ -42,12 +42,13 @@ from ..exception import ModError
 class _MelCoed(MelOptStruct):
     """Handles the COED (Owner Data) subrecord used for inventory items and
     leveled lists since FO3."""
-    ##: Needs custom unpacker to look at FormID type of owner.  If owner is an
-    # NPC then it is followed by a FormID.  If owner is a faction then it is
-    # followed by an signed integer or '=Iif' instead of '=IIf' - see #282
+    ##: Needs custom unpacker to look at FormID type of owner. If item_owner is
+    # an NPC then it is followed by a FormID. If item_owner is a faction then
+    # it is followed by an signed integer or '=Iif' instead of '=IIf' - see
+    # #282
     def __init__(self):
-        super().__init__(b'COED', ['2I', 'f'], (FID, 'owner'),
-            (FID, 'glob'), 'itemCondition')
+        super().__init__(b'COED', ['2I', 'f'], (FID, 'item_owner'),
+            (FID, 'item_global'), 'item_condition')
 
 #------------------------------------------------------------------------------
 class AMelItems(MelSequential):
@@ -59,7 +60,7 @@ class AMelItems(MelSequential):
         items_sort_attrs = ('item', 'count')
         if with_coed:
             items_elements.append(_MelCoed())
-            items_sort_attrs += ('itemCondition', 'owner', 'glob')
+            items_sort_attrs += ('item_condition', 'item_owner', 'item_global')
         final_elements = [MelSorted(MelGroups('items', *items_elements),
             sort_by_attrs=items_sort_attrs)]
         if with_counter:
@@ -77,7 +78,7 @@ class AMelLLItems(MelSequential):
         lvl_sort_attrs = ('level', 'listId', 'count')
         if with_coed:
             lvl_elements.append(_MelCoed())
-            lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
+            lvl_sort_attrs += ('item_condition', 'item_owner', 'item_global')
         final_elements = [MelSorted(MelGroups('entries', *lvl_elements),
             sort_by_attrs=lvl_sort_attrs)]
         if with_counter:
@@ -981,6 +982,54 @@ class MelLighLensFlare(MelFid):
     """Handles the LIGH subrecord LNAM (Lens Flare)."""
     def __init__(self):
         super().__init__(b'LNAM', 'light_lens_flare')
+
+#------------------------------------------------------------------------------
+class MelLLChanceNone(MelUInt8):
+    """Handles the leveled list subrecord LVLD (Chance None)."""
+    _cn_sig = b'LVLD'
+
+    def __init__(self):
+        super().__init__(self._cn_sig, 'lvl_chance_none')
+
+class MelLLChanceNoneTes3(MelLLChanceNone):
+    """Morrowind version - different subrecord signature."""
+    _cn_sig = b'NNAM'
+
+class MelLLChanceNoneTes4(MelLLChanceNone):
+    """Oblivion-to-FNV version - special interaction with LVLF."""
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.lvl_chance_none > 127:
+            record.flags.calc_from_all_levels = True
+            record.lvl_chance_none &= 127
+
+#------------------------------------------------------------------------------
+class _AMelLLFlags:
+    """Base class for leveled list flags subrecords."""
+    _lvl_flags = Flags.from_names(
+        'calc_from_all_levels',
+        'calc_for_each_item',
+        'use_all_items', # since Oblivion
+        'special_loot', # Skyrim only
+    )
+    _flags_sig: bytes
+
+    def __init__(self):
+        super().__init__(self._flags_sig, 'flags', self._lvl_flags)
+
+class MelLLFlags(_AMelLLFlags, MelUInt8Flags):
+    """Handles the leveled list subrecord LVLF (Flags)."""
+    _flags_sig = b'LVLF'
+
+class MelLLFlagsTes3(_AMelLLFlags, MelUInt32Flags):
+    """Handles the leveled list subrecord DATA (Flags)."""
+    _flags_sig = b'DATA'
+
+#------------------------------------------------------------------------------
+class MelLLGlobal(MelFid):
+    """Handles the leveled list subrecord LVLG (Global)."""
+    def __init__(self):
+        super().__init__(b'LVLG', 'lvl_global')
 
 #------------------------------------------------------------------------------
 class MelLscrCameraPath(MelString):

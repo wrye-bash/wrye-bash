@@ -58,7 +58,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
     MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
     MelDalc, gen_ambient_lighting, MelLighFade, MelLscrCameraPath, \
-    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam
+    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
+    MelLLChanceNone, MelLLGlobal
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1632,14 +1633,16 @@ class MreLtex(MelRecord):
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    top_copy_attrs = ('chanceNone', 'glob')
+    _top_copy_attrs = ('lvl_chance_none', 'lvl_global')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', 'glob'),
+        MelLLChanceNone(),
+        MelLLFlags(),
+        MelLLGlobal(),
         MelLLItems(),
     )
 
@@ -1647,31 +1650,32 @@ class MreLvli(AMreLeveledList):
 class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
-    top_copy_attrs = ('chanceNone', 'lvln_model', 'lvln_modt_p')
+    _top_copy_attrs = ('lvl_chance_none', 'lvl_global', 'model')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', 'glob'),
+        MelLLChanceNone(),
+        MelLLFlags(),
+        MelLLGlobal(),
         MelLLItems(),
-        MelString(b'MODL', 'lvln_model'),
-        MelBase(b'MODT', 'lvln_modt_p'),
+        MelModel(),
     )
 
 #------------------------------------------------------------------------------
 class MreLvsp(AMreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
-
-    top_copy_attrs = ('chanceNone',)
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId', 'count')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
+        MelLLChanceNone(),
+        MelLLFlags(),
         MelLLItems(with_coed=False),
     )
 
