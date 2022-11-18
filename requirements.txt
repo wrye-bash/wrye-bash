@@ -1,5 +1,5 @@
 # Runtime, required -----------------------------------------------------------
-chardet==5.0.0
+chardet==5.1.0
 lz4==4.0.2
 pywin32==305; sys_platform == 'win32'
 PyYAML==6.0
@@ -15,6 +15,6 @@ websocket-client==1.4.2
 # Compile/Build-time ----------------------------------------------------------
 pygit2==1.11.1
 pyfiglet==0.8.post1
-pyinstaller==5.6.2
+pyinstaller==5.7.0
 pytest==7.2.0
 tomli==2.0.1

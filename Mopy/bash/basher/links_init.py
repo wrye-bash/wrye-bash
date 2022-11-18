@@ -84,8 +84,8 @@ def InitStatusBar():
         TESCS_Button(
             bass.dirs['app'].join(bush.game.Ck.exe),
             imageList(bush.game.Ck.image_name),
-            ' '.join((_('Launch'), bush.game.Ck.ck_abbrev)),
-            ' '.join((_('Launch'), bush.game.Ck.ck_abbrev, '%(app_version)s')),
+            ' '.join((_('Launch'), bush.game.Ck.long_name)),
+            ' '.join((_('Launch'), bush.game.Ck.long_name, '%(app_version)s')),
             bush.game.Ck.se_args))
     BashStatusBar.buttons.append( #OBMM
         app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),

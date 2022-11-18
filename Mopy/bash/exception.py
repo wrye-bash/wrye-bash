@@ -189,10 +189,10 @@ class BSADecompressionSizeError(BSAError):
             f'expected {expected_size}, but got {actual_size}')
 
 class BSAFlagError(BSAError):
-    def __init__(self, in_name, message, flag):
+    def __init__(self, in_name, message, bsa_flag):
         # type: (str, str, int) -> None
         super(BSAFlagError, self).__init__(in_name,
-            f'{message} (flag {flag}) unset')
+            f'{message} (flag {bsa_flag}) unset')
 
 # Cosave exceptions -----------------------------------------------------------
 class CosaveError(FileError):

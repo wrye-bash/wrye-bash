@@ -549,8 +549,8 @@ class ListEditor(DialogWindow):
                 new_button = Button(self, btn_label)
                 new_button.on_clicked.subscribe(btn_callback)
                 return new_button
-            new_buttons = [_btn(defLabel, func) for flag, defLabel, func
-                           in buttonSet if flag]
+            new_buttons = [_btn(defLabel, func) for def_flag, defLabel, func
+                           in buttonSet if def_flag]
             buttons = VLayout(spacing=4, items=new_buttons)
         else:
             buttons = None

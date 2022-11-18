@@ -35,8 +35,8 @@ def test_getbestencoding():
     assert getbestencoding(b'\xe8\xad\xa6\xe5\x91\x8a')[0] == u'utf8'
     assert getbestencoding(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd'
                            b'\xd0\xb8\xd0\xb5')[0] == u'utf8'
-    # chardet not confident enough to say - this is Windows-932
-    assert getbestencoding(b'\x8cx\x8d\x90')[0] == None
+    # Since chardet 5.1.0 wrongly detected as MacRoman - this is Windows-932
+    assert getbestencoding(b'\x8cx\x8d\x90')[0] == 'MacRoman'
     # Wrong - this is GBK, not ISO-8859-1!
     assert getbestencoding(b'\xbe\xaf\xb8\xe6')[0] == u'ISO-8859-1'
     # Since chardet 5.0, detected correctly as Windows-1251 - before 5.0 it got
