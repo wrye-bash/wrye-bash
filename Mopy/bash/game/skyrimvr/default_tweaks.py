@@ -20,5 +20,5 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
+# noinspection PyUnresolvedReferences
 from ..skyrimse.default_tweaks import *

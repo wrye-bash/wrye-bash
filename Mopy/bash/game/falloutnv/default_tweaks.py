@@ -20,5 +20,5 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-# TODO(inf) FNV-specific tweaks?
+# noinspection PyUnresolvedReferences
 from ..fallout3.default_tweaks import default_tweaks

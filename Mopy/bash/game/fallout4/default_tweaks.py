@@ -20,105 +20,92 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
-
 default_tweaks = {
-    u'Modding, Enabled [Fallout4].ini': OrderedDict(
-        [(u'Archive', OrderedDict(
-            [(u'bInvalidateOlderFiles', u'1'),
-             (u'sResourceDataDirsFinal', u'')]))]),
-    u'Modding, Disabled ~Default [Fallout4].ini': OrderedDict(
-        [(u'Archive', OrderedDict(
-            [(u'bInvalidateOlderFiles', u'0'),
-             (u'sResourceDataDirsFinal', u'STRINGS\\')]))]),
-    u'Always Run, Disabled [Fallout4Prefs].ini': OrderedDict(
-        [(u'Controls', OrderedDict([(u'bAlwaysRunByDefault', u'0')]))]),
-    u'Always Run, Enabled ~Default [Fallout4Prefs].ini': OrderedDict(
-        [(u'Controls', OrderedDict([(u'bAlwaysRunByDefault', u'1')]))]),
-    u'Colour HUD, Buff [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'180'), (u'iHUDColorR', u'238'),
-                (u'iHUDColorB', u'34')]))]),
-    u'Colour HUD, Coral [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'114'), (u'iHUDColorR', u'255'),
-                (u'iHUDColorB', u'86')]))]),
-    u'Colour HUD, Cream [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'230'), (u'iHUDColorR', u'238'),
-                (u'iHUDColorB', u'133')]))]),
-    u'Colour HUD, Green ~Default [Fallout4Prefs].ini': OrderedDict([(
-        u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'255'), (u'iHUDColorR', u'18'),
-             (u'iHUDColorB', u'21')]))]),
-    u'Colour HUD, Mauve [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'58'), (u'iHUDColorR', u'178'),
-                (u'iHUDColorB', u'238')]))]),
-    u'Colour HUD, Red [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'0'), (u'iHUDColorR', u'205'),
-                (u'iHUDColorB', u'0')]))]),
-    u'Colour HUD, SeaGreen [Fallout4Prefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict(
-            [(u'iHUDColorG', u'178'), (u'iHUDColorR', u'32'),
-                (u'iHUDColorB', u'170')]))]),
-    u'Colour PipBoy, Buff [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.0900'),
-            (u'fPipboyEffectColorR', u'0.8840'),
-            (u'fPipboyEffectColorG', u'0.6940')]))]),
-    u'Colour PipBoy, Coral [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.3397'),
-                                  (u'fPipboyEffectColorR', u'0.8314'),
-                                  (u'fPipboyEffectColorG', u'0.4071')]))]),
-    u'Colour PipBoy, Cream [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.4867'),
-            (u'fPipboyEffectColorR', u'0.8771'),
-            (u'fPipboyEffectColorG', u'0.8412')]))]),
-    u'Colour PipBoy, Green ~Default [Fallout4Prefs].ini': OrderedDict([(
-        u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.0900'),
-                                (u'fPipboyEffectColorR', u'0.0800'),
-                                (u'fPipboyEffectColorG', u'1.0000')]))]),
-    u'Colour PipBoy, Mauve [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.8579'),
-            (u'fPipboyEffectColorR', u'0.6534'),
-            (u'fPipboyEffectColorG', u'0.1853')]))]),
-    u'Colour PipBoy, Red [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.0349'),
-            (u'fPipboyEffectColorR', u'0.6436'),
-            (u'fPipboyEffectColorG', u'0.0359')]))]),
-    u'Colour PipBoy, SeaGreen [Fallout4Prefs].ini': OrderedDict(
-        [(u'Pipboy', OrderedDict([(u'fPipboyEffectColorB', u'0.5983'),
-            (u'fPipboyEffectColorR', u'0.0973'),
-            (u'fPipboyEffectColorG', u'0.6185')]))]),
-    u'DebugLog, Disabled ~Default [Fallout4].ini': OrderedDict([(
-        u'Papyrus', OrderedDict(
-            [(u'bEnableLogging', u'0'), (u'bLoadDebugInformation', u'0'),
-             (u'bEnableTrace', u'0')]))]),
-    u'DebugLog, Enabled  [Fallout4].ini': OrderedDict(
-        [(u'Papyrus', OrderedDict(
-            [(u'bEnableLogging', u'1'), (u'bLoadDebugInformation', u'1'),
-                (u'bEnableTrace', u'1')]))]),
-    u'Depth Of Field, Off [Fallout4Prefs].ini': OrderedDict(
-        [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'0')]))]),
-    u'Depth Of Field, On ~Default [Fallout4Prefs].ini': OrderedDict(
-        [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'1')]))]),
-    u'Max Particles, 3000 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Particles', OrderedDict([(u'iMaxDesired', u'3000')]))]),
-    u'Max Particles, 4000 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Particles', OrderedDict([(u'iMaxDesired', u'4000')]))]),
-    u'Max Particles, 5000 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Particles', OrderedDict([(u'iMaxDesired', u'5000')]))]),
-    u'Max Particles, 6000 ~Default [Fallout4Prefs].ini': OrderedDict(
-        [(u'Particles', OrderedDict([(u'iMaxDesired', u'6000')]))]),
-    u'Max Particles, 7000 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Particles', OrderedDict([(u'iMaxDesired', u'7000')]))]),
-    u'ShadowMap, res 1024 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Display', OrderedDict([(u'iShadowMapResolution', u'1024')]))]),
-    u'ShadowMap, res 2048 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Display', OrderedDict([(u'iShadowMapResolution', u'2048')]))]),
-    u'ShadowMap, res 4096 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Display', OrderedDict([(u'iShadowMapResolution', u'4096')]))]),
-    u'ShadowMap, res 512 [Fallout4Prefs].ini': OrderedDict(
-        [(u'Display', OrderedDict([(u'iShadowMapResolution', u'512')]))]),
+    'Modding, Enabled [Fallout4].ini': {
+        'Archive': {'bInvalidateOlderFiles': '1',
+                    'sResourceDataDirsFinal': ''}},
+    'Modding, Disabled ~Default [Fallout4].ini': {
+        'Archive': {'bInvalidateOlderFiles': '0',
+                    'sResourceDataDirsFinal': 'STRINGS\\'}},
+    'Always Run, Disabled [Fallout4Prefs].ini': {
+        'Controls': {'bAlwaysRunByDefault': '0'}},
+    'Always Run, Enabled ~Default [Fallout4Prefs].ini': {
+        'Controls': {'bAlwaysRunByDefault': '1'}},
+    'Colour HUD, Buff [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '180', 'iHUDColorR': '238',
+                      'iHUDColorB': '34'}},
+    'Colour HUD, Coral [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '114', 'iHUDColorR': '255',
+                      'iHUDColorB': '86'}},
+    'Colour HUD, Cream [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '230', 'iHUDColorR': '238',
+                      'iHUDColorB': '133'}},
+    'Colour HUD, Green ~Default [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '255', 'iHUDColorR': '18',
+                      'iHUDColorB': '21'}},
+    'Colour HUD, Mauve [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '58', 'iHUDColorR': '178',
+                      'iHUDColorB': '238'}},
+    'Colour HUD, Red [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '0', 'iHUDColorR': '205',
+                      'iHUDColorB': '0'}},
+    'Colour HUD, SeaGreen [Fallout4Prefs].ini': {
+        'Interface': {'iHUDColorG': '178', 'iHUDColorR': '32',
+                      'iHUDColorB': '170'}},
+    'Colour PipBoy, Buff [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.0900',
+                   'fPipboyEffectColorR': '0.8840',
+                   'fPipboyEffectColorG': '0.6940'}},
+    'Colour PipBoy, Coral [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.3397',
+                   'fPipboyEffectColorR': '0.8314',
+                   'fPipboyEffectColorG': '0.4071'}},
+    'Colour PipBoy, Cream [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.4867',
+                   'fPipboyEffectColorR': '0.8771',
+                   'fPipboyEffectColorG': '0.8412'}},
+    'Colour PipBoy, Green ~Default [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.0900',
+                   'fPipboyEffectColorR': '0.0800',
+                   'fPipboyEffectColorG': '1.0000'}},
+    'Colour PipBoy, Mauve [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.8579',
+                   'fPipboyEffectColorR': '0.6534',
+                   'fPipboyEffectColorG': '0.1853'}},
+    'Colour PipBoy, Red [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.0349',
+                   'fPipboyEffectColorR': '0.6436',
+                   'fPipboyEffectColorG': '0.0359'}},
+    'Colour PipBoy, SeaGreen [Fallout4Prefs].ini': {
+        'Pipboy': {'fPipboyEffectColorB': '0.5983',
+                   'fPipboyEffectColorR': '0.0973',
+                   'fPipboyEffectColorG': '0.6185'}},
+    'DebugLog, Disabled ~Default [Fallout4].ini': {
+        'Papyrus': {'bEnableLogging': '0', 'bLoadDebugInformation': '0',
+                    'bEnableTrace': '0'}},
+    'DebugLog, Enabled  [Fallout4].ini': {
+        'Papyrus': {'bEnableLogging': '1', 'bLoadDebugInformation': '1',
+                    'bEnableTrace': '1'}},
+    'Depth Of Field, Off [Fallout4Prefs].ini': {
+        'Imagespace': {'bDoDepthOfField': '0'}},
+    'Depth Of Field, On ~Default [Fallout4Prefs].ini': {
+        'Imagespace': {'bDoDepthOfField': '1'}},
+    'Max Particles, 3000 [Fallout4Prefs].ini': {
+        'Particles': {'iMaxDesired': '3000'}},
+    'Max Particles, 4000 [Fallout4Prefs].ini': {
+        'Particles': {'iMaxDesired': '4000'}},
+    'Max Particles, 5000 [Fallout4Prefs].ini': {
+        'Particles': {'iMaxDesired': '5000'}},
+    'Max Particles, 6000 ~Default [Fallout4Prefs].ini': {
+        'Particles': {'iMaxDesired': '6000'}},
+    'Max Particles, 7000 [Fallout4Prefs].ini': {
+        'Particles': {'iMaxDesired': '7000'}},
+    'ShadowMap, res 1024 [Fallout4Prefs].ini': {
+        'Display': {'iShadowMapResolution': '1024'}},
+    'ShadowMap, res 2048 [Fallout4Prefs].ini': {
+        'Display': {'iShadowMapResolution': '2048'}},
+    'ShadowMap, res 4096 [Fallout4Prefs].ini': {
+        'Display': {'iShadowMapResolution': '4096'}},
+    'ShadowMap, res 512 [Fallout4Prefs].ini': {
+        'Display': {'iShadowMapResolution': '512'}},
 }

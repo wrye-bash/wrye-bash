@@ -20,5 +20,5 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-from ..oblivion.default_tweaks import *
+# noinspection PyUnresolvedReferences
+from ..oblivion.default_tweaks import default_tweaks
