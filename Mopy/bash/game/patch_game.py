@@ -56,6 +56,8 @@ class PatchGame(GameInfo):
 
     # Record information - set in cls.init ------------------------------------
     top_groups = [] # list of the top groups ordered as in the main esm
+    # those records have nested record groups
+    complex_groups = {b'CELL', b'WRLD', b'DIAL'}
     # Mergeable record types
     mergeable_sigs = {}
     # Extra read classes: these record types will always be loaded, even if
@@ -281,5 +283,4 @@ class PatchGame(GameInfo):
                 rec_class.validate_record_syntax()
         brec.RecordHeader.top_grup_sigs = set(cls.top_groups)
         # that's the case for most games so do it here and override if needed
-        brec.RecordType.simpleTypes = set(cls.top_groups) - {b'CELL', b'WRLD',
-                                                             b'DIAL'}
+        brec.RecordType.simpleTypes = set(cls.top_groups) - cls.complex_groups

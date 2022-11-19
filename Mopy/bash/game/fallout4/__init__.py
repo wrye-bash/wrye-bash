@@ -779,6 +779,7 @@ class Fallout4GameInfo(PatchGame):
         b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP', b'ZOOM',
         b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG', b'NOCM',
         b'LENS', b'GDRY', b'OVIS']
+    complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
     @classmethod
     def init(cls, _package_name=None):

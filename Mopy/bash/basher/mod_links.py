@@ -592,15 +592,13 @@ class Mod_Details(OneItemLink):
             sel_info_data = ModHeaderReader.extract_mod_data(
                 self._selected_info, SubProgress(progress, 0.1, 0.7))
             buff = []
-            complex_groups = {b'CELL', b'WRLD', b'DIAL'}
-            if bush.game.fsName in ('Fallout4', 'Fallout4VR'):
-                complex_groups.add(b'QUST')
-            progress(0.7, _(u'Sorting records.'))
+            complex_groups = bush.game.complex_groups
+            progress(0.7, _('Sorting records.'))
             for group, group_records in dict_sort(sel_info_data):
                 buff.append(sig_to_str(group))
                 if group in complex_groups:
-                    buff.append(u'  %s\n' % _(u'(Details not provided for '
-                                               u'this record type.)'))
+                    buff.append('  %s\n' % _('(Details not provided for this '
+                                             'record type.)'))
                     continue
                 recs = [(f, e) for f, (_h, e) in group_records.items()]
                 recs.sort(key=lambda r: r[1].lower())
