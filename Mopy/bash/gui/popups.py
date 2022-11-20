@@ -313,10 +313,10 @@ class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?
         self._date_picker.set_date(new_datetime.date())
         self._time_picker.set_time(new_datetime.time())
 
-    def show_modal(self) -> tuple[bool, float]:
+    def show_modal(self) -> tuple[bool, datetime.datetime]:
         """Return whether the OK button or Cancel button was pressed and the
-        final chosen date and time as a float timestamp."""
+        final chosen date and time as a datetime.datetime object."""
         result = super().show_modal()
         manual_datetime = datetime.datetime.strptime(
             self._manual_entry.text_content, '%c')
-        return result, manual_datetime.timestamp()
+        return result, manual_datetime

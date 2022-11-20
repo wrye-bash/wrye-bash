@@ -337,10 +337,11 @@ class File_Redate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        user_ok, user_timestamp = DateAndTimeDialog.display_dialog(
+        user_ok, user_datetime = DateAndTimeDialog.display_dialog(
             self.window, warning_color=balt.colors['default.warn'])
         if not user_ok: return
         # Perform the redate process and refresh
+        user_timestamp = user_datetime.timestamp()
         for to_redate in self._infos_to_redate():
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0

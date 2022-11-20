@@ -215,7 +215,7 @@ class ImageButton(Button):
 class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
     """Base class for ImageButtons that come with a standard wx-supplied
     image."""
-    _wx_icon_key = 'OVERRIDE'
+    _wx_icon_key: str
 
     def __init__(self, parent, **kwargs):
         super(_StdImageButton, self).__init__(parent, **kwargs)

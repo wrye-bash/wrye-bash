@@ -89,7 +89,7 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
     GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
     MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen
+    get_shift_down, FileOpen, ImageButton, DateAndTimeDialog
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -1590,7 +1590,6 @@ class ModDetails(_ModsSavesDetails):
         top, bottom = self.left, self.right
         #--Data
         self.modInfo = None
-        textWidth = 200
         #--Version
         self.version = Label(top, u'v0.00')
         #--Author
@@ -1606,6 +1605,11 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
+        calendar_button = ImageButton(top,
+            ImageWrapper(bass.dirs['images'].join(
+                'calendar16.png')).get_bitmap(), exact_fit=True,
+            btn_tooltip=_('Change this value using an interactive dialog.'))
+        calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
         self._max_desc_len = bush.game.Esp.max_desc_length
         # Same note about max_length applies here too
@@ -1637,9 +1641,12 @@ class ModDetails(_ModsSavesDetails):
             self._author_label,
             self.gAuthor,
             Label(top, _(u'Modified:')),
-            self.modified_txt,
+            HLayout(item_expand=True, items=[
+                (self.modified_txt, LayoutOptions(weight=1)),
+                calendar_button,
+            ]),
             self._desc_label,
-            (self._desc_area, LayoutOptions(expand=True, weight=1))
+            (self._desc_area, LayoutOptions(weight=1))
         ]).apply_to(top)
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(item_expand=True, items=[
@@ -1736,6 +1743,12 @@ class ModDetails(_ModsSavesDetails):
             self.authorStr = authorStr
             self.SetEdited()
 
+    def _apply_modified_timestamp(self, fmt_timestamp):
+        """Shared code for _on_modified_finished and _on_calendar_clicked."""
+        self.modifiedStr = fmt_timestamp
+        self.modified_txt.text_content = fmt_timestamp
+        self.SetEdited()
+
     def _on_modified_finished(self):
         if not self.modInfo: return
         modifiedStr = self.modified_txt.text_content
@@ -1745,15 +1758,11 @@ class ModDetails(_ModsSavesDetails):
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,
-                _('Unrecognized date: %(unrecognized_date)s') % {
-                    'unrecognized_data': modifiedStr})
+                _('Invalid date "%(unrecognized_date)s", formatting is likely '
+                  'incorrect.') % {'unrecognized_date': modifiedStr})
             self.modified_txt.text_content = self.modifiedStr
             return
-        #--Normalize format
-        modifiedStr = time.strftime(u'%c', newTimeTup)
-        self.modifiedStr = modifiedStr
-        self.modified_txt.text_content = modifiedStr #--Normalize format
-        self.SetEdited()
+        self._apply_modified_timestamp(time.strftime('%c', newTimeTup))
 
     def _on_desc_finished(self):
         if not self.modInfo: return
@@ -1761,6 +1770,14 @@ class ModDetails(_ModsSavesDetails):
         if new_desc != self.descriptionStr:
             self.descriptionStr = new_desc
             self.SetEdited()
+
+    def _on_calendar_clicked(self):
+        """Internal callback that handles showing the date and time dialog and
+        processing its result."""
+        user_ok, user_datetime = DateAndTimeDialog.display_dialog(
+            self, warning_color=balt.colors['default.warn'])
+        if user_ok:
+            self._apply_modified_timestamp(user_datetime.strftime('%c'))
 
     _bsa_and_blocking_msg = _(
         'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
