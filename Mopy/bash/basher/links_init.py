@@ -83,13 +83,13 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
             bass.dirs['app'].join(bush.game.Ck.exe),
-            imageList(bush.game.Ck.image_name),
+            imageList(f'tools/{bush.game.Ck.image_name}'),
             ' '.join((_('Launch'), bush.game.Ck.long_name)),
             ' '.join((_('Launch'), bush.game.Ck.long_name, '%(app_version)s')),
             bush.game.Ck.se_args))
     BashStatusBar.buttons.append( #OBMM
         app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),
-                           imageList(u'obmm%s.png'), _(u"Launch OBMM"),
+                           imageList('tools/obmm%s.png'), _('Launch OBMM'),
                            uid=u'OBMM'))
     # Just an _App_Button whose path is in bass.tooldirs
     Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
@@ -124,11 +124,11 @@ def InitStatusBar():
             uid='TES4LODGen'))
     if bush.game.boss_game_name:
         BashStatusBar.buttons.append( #BOSS
-            App_BOSS(bass.tooldirs['boss'], imageList('boss%s.png'),
+            App_BOSS(bass.tooldirs['boss'], imageList('tools/boss%s.png'),
                 _('Launch BOSS'), uid='BOSS'))
     if bush.game.loot_game_name:
         BashStatusBar.buttons.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], imageList('loot%s.png'),
+            App_LOOT(bass.tooldirs['LOOT'], imageList('tools/loot%s.png'),
                 _('Launch LOOT'), uid='LOOT'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons

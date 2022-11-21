@@ -61,10 +61,10 @@ class Resources(object):
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
     red_bundle = ImageBundle()
-    red_bundle.Add(bass.dirs[u'images'].join(u'bash_32-2.ico'))
+    red_bundle.Add(bass.dirs['images'].join('bash_icons_red.ico'))
     Resources.bashRed = red_bundle.GetIconBundle()
     blue_bundle = ImageBundle()
-    blue_bundle.Add(bass.dirs[u'images'].join(u'bash_blue.svg-2.ico'))
+    blue_bundle.Add(bass.dirs['images'].join('bash_icons_blue.ico'))
     Resources.bashBlue = blue_bundle.GetIconBundle()
 
 # Settings --------------------------------------------------------------------

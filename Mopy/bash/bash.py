@@ -639,11 +639,12 @@ class _AppReturnCode(object):
     def set(self, value): self.value = value
 
 def _select_game_popup(game_infos):
+    import wx.svg as _svg
     from .balt import Resources
     from .gui import Label, TextAlignment, WindowFrame, VLayout, \
         ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
         HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown, \
-        CENTER
+        CENTER, scaled
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     class SelectGamePopup(WindowFrame):
@@ -670,9 +671,12 @@ def _select_game_popup(game_infos):
             self._game_path = TextField(self, editable=False)
             quit_button = QuitButton(self)
             quit_button.on_clicked.subscribe(self._handle_quit)
-            launch_img = bass.dirs[u'images'].join(u'bash_32_2.png').s
-            self._launch_button = ImageButton(self, _wx.Bitmap(launch_img),
-                                              btn_label=_(u'Launch'))
+            ##: Ugh, duplicates ImageWrapper logic - see ##: above
+            launch_img = _svg.SVGimage.CreateFromFile(
+                bass.dirs['images'].join('bash.svg').s)
+            self._launch_button = ImageButton(self,
+                launch_img.ConvertToScaledBitmap((scaled(32), scaled(32))),
+                btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
             # Start out with an empty search and the alphabetically first game
             # selected

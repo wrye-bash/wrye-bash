@@ -131,7 +131,7 @@ h2 .back2top, h3 .back2top {
 }
 #header {
   background-color: rgba(154, 205, 50, 1);
-  background-image: url("../../bash/images/bash_head.png");
+  background-image: url("../../bash/images/bash.svg");
   background-position: 0.75rem 0.75rem;	/* 12px 12px */
   background-repeat: no-repeat;
   background-size: 1.875rem 2.0625rem;	/* 30px 33px */

@@ -614,7 +614,7 @@ misc_tools = (
     (u'MediaMonkey', imageList(u'tools/mediamonkey%s.png'),
         _(u'Launch MediaMonkey')),
     (u'NPP', imageList(u'tools/notepad++%s.png'), _(u'Launch Notepad++')),
-    (u'Steam', imageList(u'steam%s.png'), _(u'Launch Steam')),
+    ('Steam', imageList('tools/steam%s.png'), _('Launch Steam')),
     (u'EVGAPrecision', imageList(u'tools/evgaprecision%s.png'),
         _(u'Launch EVGA Precision')),
     (u'WinMerge', imageList(u'tools/winmerge%s.png'), _(u'Launch WinMerge')),
