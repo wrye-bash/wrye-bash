@@ -470,7 +470,8 @@ class ImageWrapper:
         '.tga': _wx.BITMAP_TYPE_TGA,
     }
 
-    def __init__(self, filename, imageType=None, iconSize=16):
+    def __init__(self, filename, imageType=None, iconSize=16,
+            invert_svg=False):
         self._img_path = filename.s # must be a bolt.Path
         try:
             self._img_type = imageType or self.img_types[filename.cext]
@@ -478,6 +479,7 @@ class ImageWrapper:
             deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY
         self._is_svg = filename.cext == '.svg'
+        self._invert_svg = invert_svg
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -498,7 +500,13 @@ class ImageWrapper:
                             self.iconSize, self.iconSize,
                             _wx.IMAGE_QUALITY_BICUBIC))
             elif self._is_svg:
-                svg_img = _svg.SVGimage.CreateFromFile(self._img_path)
+                with open(self._img_path, 'rb') as ins:
+                    svg_data = ins.read()
+                # If we should invert this SVG, simply replace the 'fill with
+                # black' with a 'fill with white'
+                if self._invert_svg:
+                    svg_data = svg_data.replace(b'fill="#000"', b'fill="#FFF"')
+                svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
                 svg_size = scaled(self.iconSize)
                 self.bitmap = svg_img.ConvertToScaledBitmap(
                     (svg_size, svg_size))

@@ -4586,9 +4586,19 @@ def InitImages():
         colors[color_key] = Color(*color_val)
     #--Images
     imgDirJn = bass.dirs[u'images'].join
+    should_reverse = bass.settings['bash.use_reverse_icons']
     def _png(fname): return ImageWrapper(imgDirJn(fname))
-    def _svg(fname, px_sz):
-        return ImageWrapper(imgDirJn(fname), iconSize=px_sz)
+    def _svg(fname, bm_px_size, reversible=False):
+        """Creates an SVG wrapper.
+
+        :param fname: The SVG's filename, relative to bash/images.
+        :param bm_px_size: The size of the resulting bitmap, in
+            device-independent pixels (DIP).
+        :param reversible: True if the SVG is reversible, which means it's
+            entirely black and has 'fill="#000"' styles that can be changed to
+            'fill="#FFF"' ones to perform the inversion."""
+        return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size,
+            invert_svg=reversible and should_reverse)
     # PNGs --------------------------------------------------------------------
     # Help button(s)
     images[u'help.16'] = _png(u'help16.png')
@@ -4628,16 +4638,16 @@ def InitImages():
     images[u'modchecker.32'] = _png(u'modchecker32.png')
     # SVGs --------------------------------------------------------------------
     # Up/Down arrows for UIList columns
-    images['arrow.up.16'] = _svg('arrow_up.svg', 16)
-    images['arrow.down.16'] = _svg('arrow_down.svg', 16)
+    images['arrow.up.16'] = _svg('arrow_up.svg', 16, reversible=True)
+    images['arrow.down.16'] = _svg('arrow_down.svg', 16, reversible=True)
     # Modification time button
-    images['calendar.16'] = _svg('calendar.svg', 16)
+    images['calendar.16'] = _svg('calendar.svg', 16, reversible=True)
     # DocumentViewer
-    images['back.16'] = _svg('back.svg', 16)
-    images['forward.16'] = _svg('forward.svg', 16)
-    images['reload.16'] = _svg('reload.svg', 16)
+    images['back.16'] = _svg('back.svg', 16, reversible=True)
+    images['forward.16'] = _svg('forward.svg', 16, reversible=True)
+    images['reload.16'] = _svg('reload.svg', 16, reversible=True)
     # Checkmark/Cross
-    images['checkmark.16'] = _svg('checkmark.svg', 16)
-    images['error_cross.16'] = _svg('error_cross.svg', 16)
+    images['checkmark.16'] = _svg('checkmark.svg', 16, reversible=True)
+    images['error_cross.16'] = _svg('error_cross.svg', 16, reversible=True)
 
 from .links_init import InitLinks
