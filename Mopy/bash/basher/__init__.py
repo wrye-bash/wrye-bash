@@ -87,9 +87,9 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
     WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
-    GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
+    GlobalMenu, CopyOrMovePopup, ListBox, PureImageButton, CENTER, \
     MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen, ImageButton, DateAndTimeDialog
+    get_shift_down, FileOpen, DateAndTimeDialog
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -1605,8 +1605,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
-        calendar_button = ImageButton(top, balt.load_svg_bitmap('calendar'),
-            exact_fit=True,
+        calendar_button = PureImageButton(top,
+            balt.images['calendar.16'].get_bitmap(),
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
@@ -1620,15 +1620,14 @@ class ModDetails(_ModsSavesDetails):
         self._set_desc_label('')
         #--Bash tags
         ##: Come up with a better solution for this
-        class _ExClickableImage(WithMouseEvents, ClickableImage):
+        class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
-        self._add_tag_btn = _ExClickableImage(self._bottom_low_panel,
-            'ART_PLUS', no_border=False,
-            btn_tooltip=_(u'Add bash tags to this plugin.'))
+        self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
+            'ART_PLUS', btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
-        self._rem_tag_btn = ClickableImage(self._bottom_low_panel,
-            'ART_MINUS', no_border=False,
-            btn_tooltip=_(u'Remove the selected tag(s) from this plugin.'))
+        self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
+            'ART_MINUS', btn_tooltip=_('Remove the selected tag(s) from this '
+                                       'plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
@@ -4588,15 +4587,17 @@ def InitImages():
     #--Images
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))
-    #--Standard
+    def _svg(fname, px_sz):
+        return ImageWrapper(imgDirJn(fname), iconSize=px_sz)
+    # PNGs --------------------------------------------------------------------
     # Up/Down arrows for UIList columns
     images[u'arrow.up'] = _png(u'arrow_up.png')
     images[u'arrow.down'] = _png(u'arrow_down.png')
-    #--Misc
+    # Help button(s)
     images[u'help.16'] = _png(u'help16.png')
     images[u'help.24'] = _png(u'help24.png')
     images[u'help.32'] = _png(u'help32.png')
-    #--ColorChecks
+    # Checkboxes
     images[u'checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images[u'checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
     images[u'checkbox.red.x.24'] = _png(u'checkbox_red_x_24.png')
@@ -4616,15 +4617,27 @@ def InitImages():
     images[u'checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
     images[u'checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
     images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    #--DocBrowser
+    # Doc Browser
     images[u'doc.16'] = _png(u'docbrowser16.png')
     images[u'doc.24'] = _png(u'docbrowser24.png')
     images[u'doc.32'] = _png(u'docbrowser32.png')
+    # Settings button
     images[u'settingsbutton.16'] = _png(u'settingsbutton16.png')
     images[u'settingsbutton.24'] = _png(u'settingsbutton24.png')
     images[u'settingsbutton.32'] = _png(u'settingsbutton32.png')
+    # Plugin Checker
     images[u'modchecker.16'] = _png(u'modchecker16.png')
     images[u'modchecker.24'] = _png(u'modchecker24.png')
     images[u'modchecker.32'] = _png(u'modchecker32.png')
+    # SVGs --------------------------------------------------------------------
+    # Modification time button
+    images['calendar.16'] = _svg('calendar.svg', 16)
+    # DocumentViewer
+    images['back.16'] = _svg('back.svg', 16)
+    images['forward.16'] = _svg('forward.svg', 16)
+    images['reload.16'] = _svg('reload.svg', 16)
+    # Checkmark/Cross
+    images['checkmark.16'] = _svg('checkmark.svg', 16)
+    images['error_cross.16'] = _svg('error_cross.svg', 16)
 
 from .links_init import InitLinks

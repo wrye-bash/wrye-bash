@@ -33,7 +33,8 @@ from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar
+    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar, \
+    VerticalLine
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -96,8 +97,7 @@ class DocBrowser(WindowFrame):
                                               'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = DocumentViewer(main_window,
-            balt.load_svg_bitmap('reload'))
+        self._doc_ctrl = DocumentViewer(main_window, balt.get_dv_bitmaps())
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -111,7 +111,14 @@ class DocBrowser(WindowFrame):
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
-            HLayout(item_expand=True, items=self._buttons),
+            HLayout(item_expand=True, items=[
+                self._edit_box,
+                Spacer(6), VerticalLine(main_window), Spacer(6),
+                self._set_btn, self._forget_btn, self._rename_btn,
+                self._open_btn,
+                Spacer(6), VerticalLine(main_window), Spacer(6),
+                self._prev_btn, self._next_btn, self._reload_btn,
+            ]),
             self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3)),
         ]).apply_to(main_window)
         VLayout(item_expand=1, item_border=4, item_weight=1, items=[
@@ -374,7 +381,7 @@ class PluginChecker(WindowFrame):
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = DocumentViewer(self, balt.load_svg_bitmap('reload'))
+        self._html_ctrl = DocumentViewer(self, balt.get_dv_bitmaps())
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
@@ -416,8 +423,9 @@ class PluginChecker(WindowFrame):
                 self._controls[_VERSION]
             ]),
             HLayout(spacing=4, items=[
-                self._controls[_LOAD_PLUGINS], Stretch(), self._controls[_UPDATE],
-                self._controls[_COPY_TEXT], back_btn, forward_btn, reload_btn
+                self._controls[_LOAD_PLUGINS], Stretch(),
+                self._controls[_UPDATE], self._controls[_COPY_TEXT],
+                back_btn, forward_btn, reload_btn
             ])
         ]).apply_to(self)
         self.CheckMods()

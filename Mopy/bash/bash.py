@@ -444,8 +444,9 @@ def _main(opts, wx_locale, wxver):
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
-    basher.InitLinks()
+    # Status bar buttons are initialized in InitLinks and use images
     basher.InitImages()
+    basher.InitLinks()
     #--Start application
     bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages

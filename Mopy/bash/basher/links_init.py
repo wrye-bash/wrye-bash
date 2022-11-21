@@ -39,7 +39,7 @@ from .mods_links import *
 from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
-from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, load_svg_image, \
+from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, images, \
     UIList_OpenStore, UIList_Hide, UIList_Delete, UIList_Rename
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
@@ -156,7 +156,7 @@ def InitStatusBar():
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [load_svg_image('error_cross')] * 3
+    badIcons = [images['error_cross.16'].get_bitmap()] * 3
     def iconList(fileName):
         return [ImageWrapper(fileName, ImageWrapper.img_types['.ico'], x) for x
                 in (16, 24, 32)]

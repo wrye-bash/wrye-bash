@@ -30,7 +30,7 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .balt import ItemLink, Links, load_svg_bitmap
+from .balt import ItemLink, Links, images
 from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
@@ -420,7 +420,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [load_svg_bitmap('error_cross'), load_svg_bitmap('checkmark')]
+        bmps = [images[i].get_bitmap() for i in (
+            'error_cross.16', 'checkmark.16')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),

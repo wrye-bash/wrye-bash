@@ -174,18 +174,10 @@ class ColorChecks(ImageList):
             else: shortKey = u'red.off'
         return self.indices[shortKey]
 
-def load_svg_image(image_rel, pixel_size=16):
-    """Loads a Wrye Bash-provided SVG with the specified relative name
-    (e.g. checkmark.svg would be passed as just 'checkmark'). Pixel size
-    defaults to 16. Reverse-color icons are used automatically based on WB
-    settings."""
-    ##: rev_addon = '_r' if bass.settings['bash.use_reverse_icons'] else ''
-    return ImageWrapper(bass.dirs['images'].join(image_rel + '.svg'),
-        iconSize=pixel_size)
-
-def load_svg_bitmap(image_rel, pixel_size=16):
-    """Same as load_svg_image, but returns the bitmap."""
-    return load_svg_image(image_rel, pixel_size).get_bitmap()
+def get_dv_bitmaps():
+    """Returns the bitmaps needed for DocumentViewer."""
+    return tuple(images[i].get_bitmap() for i in (
+        'back.16', 'forward.16', 'reload.16'))
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -446,8 +438,7 @@ class WryeLog(_Log):
             bolt.convert_wtext_to_html(logPath, logText, css_dir)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = DocumentViewer(self.window,
-            load_svg_bitmap('reload'))
+        self._html_ctrl = DocumentViewer(self.window, get_dv_bitmaps())
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window)
