@@ -12,3 +12,6 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+
+All SVG files from fontawesome.com have been edited via Inkscape to add padding to make them square.
+This is necessary so that wxPython/nanosvg rasterizes them correctly at higher resolutions.
