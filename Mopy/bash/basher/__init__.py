@@ -4646,13 +4646,18 @@ def InitImages():
     # DocumentViewer
     images['back.16'] = _svg('back.svg', 16, reversible=True)
     images['forward.16'] = _svg('forward.svg', 16, reversible=True)
+    # DocumentViewer and Restart
     images['reload.16'] = _svg('reload.svg', 16, reversible=True)
+    images['reload.24'] = _svg('reload.svg', 24, reversible=True)
+    images['reload.32'] = _svg('reload.svg', 32, reversible=True)
     # Checkmark/Cross
     images['checkmark.16'] = _svg('checkmark.svg', 16, reversible=True)
     images['error_cross.16'] = _svg('error_cross.svg', 16, reversible=True)
     # Minus/Plus for the Bash Tags popup
     images['minus.16'] = _svg('minus.svg', 16, reversible=True)
     images['plus.16'] = _svg('plus.svg', 16, reversible=True)
+    # Warning icon in various GUIs
+    images['warning.32'] = _svg('warning.svg', 32)
     # SVGs - Tools ------------------------------------------------------------
     images['loot.16'] = _svg('tools/loot.svg', 16)
     images['loot.24'] = _svg('tools/loot.svg', 24)

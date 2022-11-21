@@ -30,14 +30,13 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .balt import ItemLink, Links, images
+from .balt import ItemLink, Links, images, staticBitmap
 from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, PictureWithCursor, WizardDialog, WizardPage, \
-    staticBitmap
+    ListBox, CheckListBox, PictureWithCursor, WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")

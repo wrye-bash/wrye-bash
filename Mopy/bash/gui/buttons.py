@@ -210,21 +210,6 @@ class ImageButton(Button):
         # Changing bitmap may change the 'best size', so resize it
         self._native_widget.SetInitialSize()
 
-class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
-    """Base class for ImageButtons that come with a standard wx-supplied
-    image."""
-    _wx_icon_key: str
-
-    def __init__(self, parent, **kwargs):
-        super(_StdImageButton, self).__init__(parent, **kwargs)
-        ##: maybe rescale to self._native_widget.FromDIP(self._dip_size)) ?
-        self.image = bass.wx_bitmap[self._wx_icon_key]
-
-class QuitButton(_StdImageButton, CancelButton):
-    """Similar to CancelButton, also has a standard image shown on it."""
-    _default_label =_(u'Quit')
-    _wx_icon_key = 'ART_ERROR'
-
 class PureImageButton(ImageButton):
     """An image that acts like a button. Has no text, but does have a border.
 

@@ -16,8 +16,14 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `plus.svg` is from https://fontawesome.com/icons/plus?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `quit.svg` is from https://fontawesome.com/icons/circle-xmark?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
+  It has been recolored orange.
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
+  It has been recolored with a yellow gradient and the center has been filled black.
 
 All the files listed above have been edited via Inkscape to add padding to make them square.
 This is necessary so that wxPython/nanosvg rasterizes them correctly at higher resolutions.

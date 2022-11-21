@@ -44,8 +44,8 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave, DirOpen, scaled
+    bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, FileSave, \
+    DirOpen, scaled
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -178,6 +178,12 @@ def get_dv_bitmaps():
     """Returns the bitmaps needed for DocumentViewer."""
     return tuple(images[i].get_bitmap() for i in (
         'back.16', 'forward.16', 'reload.16'))
+
+# TODO(inf) de-wx! Actually, don't - absorb via better API
+def staticBitmap(parent, bitmap=None):
+    """Tailored to current usages - IAW: do not use."""
+    return wx.StaticBitmap(_AComponent._resolve(parent),
+        bitmap=images['warning.32'].get_bitmap() if bitmap is None else bitmap)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------

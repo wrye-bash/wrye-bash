@@ -781,11 +781,7 @@ class App_Settings(StatusBar_Button):
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u'Restart')
-
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        iconSize = bass.settings[u'bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(window,
-            bass.wx_bitmap[('ART_UNDO', iconSize)], onRClick)
+    imageKey = 'reload.%s'
 
     def Execute(self): Link.Frame.Restart()
 
