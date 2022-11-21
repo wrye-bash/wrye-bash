@@ -661,6 +661,7 @@
         Delete "${Path}\Mopy\bash\images\arrow_up.png"
         Delete "${Path}\Mopy\bash\images\calendar*.png"
         Delete "${Path}\Mopy\bash\images\checkmark_*.png"
+        Delete "${Path}\Mopy\bash\images\docbrowser*.png"
         Delete "${Path}\Mopy\bash\images\error_cross_*.png"
         Delete "${Path}\Mopy\bash\images\help*.png"
         Delete "${Path}\Mopy\bash\images\icon_licenses.txt"

@@ -4621,10 +4621,6 @@ def InitImages():
     images[u'checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
     images[u'checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
     images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    # Doc Browser
-    images[u'doc.16'] = _png(u'docbrowser16.png')
-    images[u'doc.24'] = _png(u'docbrowser24.png')
-    images[u'doc.32'] = _png(u'docbrowser32.png')
     # SVGs --------------------------------------------------------------------
     # Up/Down arrows for UIList columns
     images['arrow.up.16'] = _svg('arrow_up.svg', 16, reversible=True)
@@ -4655,11 +4651,12 @@ def InitImages():
     images['help.24'] = _svg('help.svg', 24, reversible=True)
     images['help.32'] = _svg('help.svg', 32, reversible=True)
     # Plugin Checker
-    images['plugin_checker.16'] = _svg('plugin_checker.svg', 16,
-        reversible=True)
-    images['plugin_checker.24'] = _svg('plugin_checker.svg', 24,
-        reversible=True)
-    images['plugin_checker.32'] = _svg('plugin_checker.svg', 32,
-        reversible=True)
+    images['plugin_checker.16'] = _svg('checklist.svg', 16, reversible=True)
+    images['plugin_checker.24'] = _svg('checklist.svg', 24, reversible=True)
+    images['plugin_checker.32'] = _svg('checklist.svg', 32, reversible=True)
+    # Doc Browser
+    images['doc_browser.16'] = _svg('book.svg', 16, reversible=True)
+    images['doc_browser.24'] = _svg('book.svg', 24, reversible=True)
+    images['doc_browser.32'] = _svg('book.svg', 32, reversible=True)
 
 from .links_init import InitLinks

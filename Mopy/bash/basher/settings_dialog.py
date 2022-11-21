@@ -669,7 +669,7 @@ class MiscAppearancePage(_AFixedPage):
         self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
         self._reverse_icons_checkbox = CheckBox(self, _('Reverse Icon Colors'),
             chkbx_tooltip=_('Replace black icons used by Wrye Bash with white '
-                            'ones. Useful if you are using a dark theme that '
+                            'ones. Useful if you are using an OS theme that '
                             'makes those icons hard to see.'),
             checked=bass.settings['bash.use_reverse_icons'])
         self._reverse_icons_checkbox.on_checked.subscribe(self._on_rev_icons)
@@ -1605,6 +1605,7 @@ _page_descriptions = {
 _page_anchors = defaultdict(lambda: u'settings', {
     _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
     _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _('Appearance') + '/' + _('Miscellaneous'): 'settings-appearance-misc',
     _(u'Appearance') + u'/' + _(u'Status Bar'):
         u'settings-appearance-status-bar',
     _(u'Backups'): u'settings-backups',

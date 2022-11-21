@@ -49,8 +49,8 @@ class TestLocalize:
             # call the wx API that blows
             assert _wx.ArtProvider.GetBitmap(_wx.ART_PLUS, size=(16, 16))
             assert _wx.ArtProvider.GetBitmap(_wx.ART_MINUS, size=(16, 16))
-            assert _wx.Bitmap(_pj(_img_folder, 'reload16.png'),
-                              _wx.BITMAP_TYPE_PNG)
+            assert _wx.Bitmap(_pj(_img_folder, 'people', 'wryeavi.jpg'),
+                              _wx.BITMAP_TYPE_JPEG)
             assert time.strptime('2006-01-01', '%Y-%m-%d')
             # assert time.strptime('2006-01-01', '%c')
             print(f'******* Tested {loc=} *******')

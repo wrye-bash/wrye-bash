@@ -608,12 +608,12 @@ class TESCS_Button(_ExeButton):
         cse_path = bass.dirs['mods'].join('obse', 'plugins',
             'Construction Set Extender.dll')
         if cse_path.exists():
-            version = cse_path.strippedVersion
-            if version != (0,):
-                version = '.'.join([f'{x}' for x in version])
-            else:
-                version = ''
-            tip_ += f' + CSE {version}'
+            cse_version = ''
+            if bass.settings['bash.statusbar.showversion']:
+                cse_ver = cse_path.strippedVersion
+                if cse_ver != (0,):
+                    cse_version = ' ' + '.'.join([f'{x}' for x in cse_ver])
+            tip_ += f' + CSE{cse_version}'
         return tip_
 
     def _app_button_execute(self):
@@ -756,7 +756,7 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    imageKey = 'doc.%s'
+    imageKey = 'doc_browser.%s'
     _tip = _('Doc Browser')
 
     def Execute(self):

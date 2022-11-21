@@ -41,7 +41,7 @@ This is necessary so that wxPython/nanosvg rasterizes them correctly at higher r
 
 ## SVG Repo
 
-- `plugin_checker.svg` is from https://www.svgrepo.com/svg/11307/task-list,
+- `checklist.svg` is from https://www.svgrepo.com/svg/11307/task-list,
   licensed under the CC0 license: https://creativecommons.org/publicdomain/zero/1.0/
 
 ## Mono Icons
