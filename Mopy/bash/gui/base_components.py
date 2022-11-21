@@ -496,14 +496,19 @@ class ImageWrapper:
                     self.bitmap = _wx.Bitmap(
                         self.bitmap.ConvertToImage().Scale(
                             self.iconSize, self.iconSize,
-                            _wx.IMAGE_QUALITY_HIGH))
+                            _wx.IMAGE_QUALITY_BICUBIC))
             elif self._is_svg:
                 svg_img = _svg.SVGimage.CreateFromFile(self._img_path)
                 svg_size = scaled(self.iconSize)
                 self.bitmap = svg_img.ConvertToScaledBitmap(
                     (svg_size, svg_size))
             else:
-                self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
+                bm_img = _wx.Image(self._img_path, self._img_type)
+                wanted_size = scaled(self.iconSize)
+                if bm_img.GetWidth() != wanted_size:
+                    bm_img.Rescale(wanted_size, wanted_size,
+                        _wx.IMAGE_QUALITY_BICUBIC)
+                self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
 
     def GetIcon(self):

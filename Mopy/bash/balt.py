@@ -45,7 +45,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
     staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave, DirOpen
+    FileSave, DirOpen, scaled
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -104,9 +104,9 @@ class ImageList(object):
 
     Allows ImageList to be specified before wx.App is initialized.
     Provides access to ImageList integers through imageList[key]."""
-    def __init__(self,width,height):
-        self.width = width
-        self.height = height
+    def __init__(self, il_width, il_height):
+        self.width = scaled(il_width)
+        self.height = scaled(il_height)
         self.images = []
         self.indices = {}
         self.imageList = None
@@ -129,7 +129,7 @@ class ImageList(object):
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
     def __init__(self):
-        ImageList.__init__(self, 16, 16)
+        super().__init__(16, 16)
         if not (im_dir := Path.getcwd().join('bash', 'images')).exists(): ##: CI Hack
             im_dir = Path.getcwd().join('Mopy', 'bash', 'images')
         for state in (u'on', u'off', u'inc', u'imp'):
@@ -139,7 +139,7 @@ class ColorChecks(ImageList):
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img,
-                    ImageWrapper.img_types['.png'])
+                    iconSize=16)
                 self.images.append((shortKey, image))
 
     def Get(self,status,on):
@@ -887,8 +887,8 @@ class UIList(PanelWin):
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         checkboxesIL = self._icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
-        self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
+        self.sm_up = checkboxesIL.Add(images['arrow.up.16'].get_bitmap())
+        self.sm_dn = checkboxesIL.Add(images['arrow.down.16'].get_bitmap())
         self.__gList._native_widget.SetImageList(checkboxesIL,
                                                  wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:

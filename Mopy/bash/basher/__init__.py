@@ -4590,9 +4590,6 @@ def InitImages():
     def _svg(fname, px_sz):
         return ImageWrapper(imgDirJn(fname), iconSize=px_sz)
     # PNGs --------------------------------------------------------------------
-    # Up/Down arrows for UIList columns
-    images[u'arrow.up'] = _png(u'arrow_up.png')
-    images[u'arrow.down'] = _png(u'arrow_down.png')
     # Help button(s)
     images[u'help.16'] = _png(u'help16.png')
     images[u'help.24'] = _png(u'help24.png')
@@ -4630,6 +4627,9 @@ def InitImages():
     images[u'modchecker.24'] = _png(u'modchecker24.png')
     images[u'modchecker.32'] = _png(u'modchecker32.png')
     # SVGs --------------------------------------------------------------------
+    # Up/Down arrows for UIList columns
+    images['arrow.up.16'] = _svg('arrow_up.svg', 16)
+    images['arrow.down.16'] = _svg('arrow_down.svg', 16)
     # Modification time button
     images['calendar.16'] = _svg('calendar.svg', 16)
     # DocumentViewer
