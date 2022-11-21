@@ -12,6 +12,10 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `error_cross.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `minus.svg` is from https://fontawesome.com/icons/minus?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `plus.svg` is from https://fontawesome.com/icons/plus?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 

@@ -339,9 +339,9 @@ class _AComponent:
 
     def to_absolute_position(self,
             relative_pos: tuple[int, int]) -> tuple[int, int]:
-        """Converts the specified position that is relative to the center of
-        this component into absolute coordinates, i.e. relative to the top left
-        of the screen."""
+        """Converts a position that is relative to the center of this component
+        into absolute coordinates, i.e. relative to the top left of the
+        screen."""
         return tuple(self._native_widget.ClientToScreen(relative_pos))
 
     def to_relative_position(self,

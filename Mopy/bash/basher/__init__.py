@@ -1623,11 +1623,12 @@ class ModDetails(_ModsSavesDetails):
         class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
-            'ART_PLUS', btn_tooltip=_('Add bash tags to this plugin.'))
+            balt.images['plus.16'].get_bitmap(),
+            btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
-            'ART_MINUS', btn_tooltip=_('Remove the selected tag(s) from this '
-                                       'plugin.'))
+            balt.images['minus.16'].get_bitmap(),
+            btn_tooltip=_('Remove the selected tag(s) from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
@@ -4649,5 +4650,8 @@ def InitImages():
     # Checkmark/Cross
     images['checkmark.16'] = _svg('checkmark.svg', 16, reversible=True)
     images['error_cross.16'] = _svg('error_cross.svg', 16, reversible=True)
+    # Minus/Plus for the Bash Tags popup
+    images['minus.16'] = _svg('minus.svg', 16, reversible=True)
+    images['plus.16'] = _svg('plus.svg', 16, reversible=True)
 
 from .links_init import InitLinks
