@@ -19,6 +19,9 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
 - `quit.svg` is from https://fontawesome.com/icons/circle-xmark?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
   It has been recolored orange.
+- `red_x.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+  It has been recolored red and scaled up.
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic,

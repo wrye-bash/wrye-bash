@@ -436,6 +436,8 @@ if bush.game.has_esl: # Enable Index columns by default for ESL games
 #------------------------------------------------------------------------------
 imDirJn = bass.dirs[u'images'].join
 def _png(fname): return ImageWrapper(imDirJn(fname))
+def _svg(fname, bm_px_size):
+    return ImageWrapper(imDirJn(fname), iconSize=bm_px_size)
 
 #--Image lists
 installercons = ImageList(16,16)
@@ -497,7 +499,7 @@ installercons.images.extend({
     u'on.orange.dir.wiz': _png(u'diamond_orange_inc_wiz.png'),
     u'on.yellow.dir.wiz': _png(u'diamond_yellow_inc_wiz.png'),
     #--Broken
-    u'corrupt':   _png(u'red_x.png'),
+    'corrupt': _svg('red_x.svg', 16),
 }.items())
 
 #--Buttons
