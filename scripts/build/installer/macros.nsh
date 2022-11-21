@@ -656,6 +656,12 @@
         ; As of 310, lzma.exe and pngcrush.exe are gone
         Delete "${Path}\Mopy\bash\compiled\lzma.exe"
         Delete "${Path}\Mopy\bash\compiled\pngcrush.exe"
+        ; As of 311, some image files got replaced with SVGs
+        Delete "${Path}\Mopy\bash\images\calendar*.png"
+        Delete "${Path}\Mopy\bash\images\checkmark_*.png"
+        Delete "${Path}\Mopy\bash\images\error_cross_*.png"
+        Delete "${Path}\Mopy\bash\images\icon_licenses.txt"
+        Delete "${Path}\Mopy\bash\images\reload*.png"
     !macroend
 
 

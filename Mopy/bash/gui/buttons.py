@@ -181,9 +181,7 @@ class NextButton(Button):
 class ImageButton(Button):
     """A button that display an image alongside its label.
 
-    See Button for documentation on button events. Note: this implementation
-    locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
-    """
+    See Button for documentation on button events."""
     def __init__(self, parent, image_id=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.

@@ -53,7 +53,6 @@ from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
-from .. import bass ##: drop this
 from ..bolt import decoder, deprint
 from ..exception import StateError
 
@@ -212,7 +211,7 @@ class DocumentViewer(_AComponent):
     """A viewer for a variety of document types. Can display webpages, text and
     PDFs."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, reload_ico):
         """Creates a new DocumentViewer with the specified parent.
 
         :param parent: The object that this HTML display belongs to. May be a
@@ -221,8 +220,6 @@ class DocumentViewer(_AComponent):
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
-        reload_ico = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
-                                _wx.BITMAP_TYPE_PNG)
         if web_viewer_available():
             # We can render HTML, create the WebViewer and use its buttons
             self._html_ctrl = WebViewer(self, reload_ico, parent)

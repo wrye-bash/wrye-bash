@@ -167,12 +167,14 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.backupPath': None,
     u'bash.frameMax': False, # True if maximized
     u'bash.page': 1,
-    u'bash.useAltName': True,
     u'bash.show_global_menu': True,
     u'bash.pluginEncoding': u'cp1252',    # Western European
     u'bash.show_internal_keys': False,
     'bash.restore_scroll_positions': True,
     u'bash.autoSizeListColumns': 0,
+    #--Appearance
+    'bash.useAltName': True,
+    'bash.use_reverse_icons': False,
     #--Colors
     u'bash.colors': {
         #--Common Colors

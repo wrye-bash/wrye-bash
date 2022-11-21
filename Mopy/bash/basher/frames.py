@@ -96,7 +96,8 @@ class DocBrowser(WindowFrame):
                                               'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = DocumentViewer(main_window)
+        self._doc_ctrl = DocumentViewer(main_window,
+            balt.load_svg_bitmap('reload'))
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -373,7 +374,7 @@ class PluginChecker(WindowFrame):
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = DocumentViewer(self)
+        self._html_ctrl = DocumentViewer(self, balt.load_svg_bitmap('reload'))
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}

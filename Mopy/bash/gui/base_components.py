@@ -30,8 +30,10 @@ import functools
 import os
 import platform
 import textwrap
-import wx as _wx
 from typing import get_type_hints
+
+import wx as _wx
+import wx.svg as _svg
 
 from .events import EventHandler, null_processor
 from ..bolt import deprint
@@ -42,7 +44,10 @@ from ..exception import ArgumentError
 def _csf() -> float:
     """Returns the content scale factor (CSF) needed for high DPI displays."""
     if platform.system() != 'Darwin': ##: Linux? os_name == 'nt' if so
-        return _wx.Window().GetContentScaleFactor()
+        ##: This should really be GetContentScaleFactor(), but that always
+        # returns 1.0 for me (on wxPython 4.2.0), so use a workaround
+        scaled_size = _wx.Window().FromDIP((16, 16))
+        return scaled_size[0] / 16
     else:
         return 1.0 # Everything scales automatically on macOS
 
@@ -460,6 +465,7 @@ class ImageWrapper:
         '.jpeg': _wx.BITMAP_TYPE_JPEG,
         '.jpg': _wx.BITMAP_TYPE_JPEG,
         '.png': _wx.BITMAP_TYPE_PNG,
+        '.svg': None, # Special handling needed, see _is_svg
         '.tif': _wx.BITMAP_TYPE_TIF,
         '.tga': _wx.BITMAP_TYPE_TGA,
     }
@@ -471,6 +477,7 @@ class ImageWrapper:
         except KeyError:
             deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY
+        self._is_svg = filename.cext == '.svg'
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -490,6 +497,11 @@ class ImageWrapper:
                         self.bitmap.ConvertToImage().Scale(
                             self.iconSize, self.iconSize,
                             _wx.IMAGE_QUALITY_HIGH))
+            elif self._is_svg:
+                svg_img = _svg.SVGimage.CreateFromFile(self._img_path)
+                svg_size = scaled(self.iconSize)
+                self.bitmap = svg_img.ConvertToScaledBitmap(
+                    (svg_size, svg_size))
             else:
                 self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
         return self.bitmap

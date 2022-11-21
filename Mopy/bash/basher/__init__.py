@@ -1605,9 +1605,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
-        calendar_button = ImageButton(top,
-            ImageWrapper(bass.dirs['images'].join(
-                'calendar16.png')).get_bitmap(), exact_fit=True,
+        calendar_button = ImageButton(top, balt.load_svg_bitmap('calendar'),
+            exact_fit=True,
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description

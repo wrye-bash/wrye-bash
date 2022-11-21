@@ -30,14 +30,14 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .balt import ItemLink, Links
+from .balt import ItemLink, Links, load_svg_bitmap
 from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
-    WizardPage, staticBitmap
+    ListBox, CheckListBox, PictureWithCursor, WizardDialog, WizardPage, \
+    staticBitmap
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -420,8 +420,7 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [ImageWrapper(bass.dirs['images'].join(x)).get_bitmap() for x in
-                (u'error_cross_24.png', u'checkmark_24.png')]
+        bmps = [load_svg_bitmap('error_cross'), load_svg_bitmap('checkmark')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
