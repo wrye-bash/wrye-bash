@@ -4601,10 +4601,6 @@ def InitImages():
         return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size,
             invert_svg=reversible and should_reverse)
     # PNGs --------------------------------------------------------------------
-    # Help button(s)
-    images[u'help.16'] = _png(u'help16.png')
-    images[u'help.24'] = _png(u'help24.png')
-    images[u'help.32'] = _png(u'help32.png')
     # Checkboxes
     images[u'checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images[u'checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
@@ -4629,14 +4625,6 @@ def InitImages():
     images[u'doc.16'] = _png(u'docbrowser16.png')
     images[u'doc.24'] = _png(u'docbrowser24.png')
     images[u'doc.32'] = _png(u'docbrowser32.png')
-    # Settings button
-    images[u'settingsbutton.16'] = _png(u'settingsbutton16.png')
-    images[u'settingsbutton.24'] = _png(u'settingsbutton24.png')
-    images[u'settingsbutton.32'] = _png(u'settingsbutton32.png')
-    # Plugin Checker
-    images[u'modchecker.16'] = _png(u'modchecker16.png')
-    images[u'modchecker.24'] = _png(u'modchecker24.png')
-    images[u'modchecker.32'] = _png(u'modchecker32.png')
     # SVGs --------------------------------------------------------------------
     # Up/Down arrows for UIList columns
     images['arrow.up.16'] = _svg('arrow_up.svg', 16, reversible=True)
@@ -4658,6 +4646,21 @@ def InitImages():
     images['plus.16'] = _svg('plus.svg', 16, reversible=True)
     # Warning icon in various GUIs
     images['warning.32'] = _svg('warning.svg', 32)
+    # Settings button
+    images['settings_button.16'] = _svg('gear.svg', 16, reversible=True)
+    images['settings_button.24'] = _svg('gear.svg', 24, reversible=True)
+    images['settings_button.32'] = _svg('gear.svg', 32, reversible=True)
+    # Help button(s)
+    images['help.16'] = _svg('help.svg', 16, reversible=True)
+    images['help.24'] = _svg('help.svg', 24, reversible=True)
+    images['help.32'] = _svg('help.svg', 32, reversible=True)
+    # Plugin Checker
+    images['plugin_checker.16'] = _svg('plugin_checker.svg', 16,
+        reversible=True)
+    images['plugin_checker.24'] = _svg('plugin_checker.svg', 24,
+        reversible=True)
+    images['plugin_checker.32'] = _svg('plugin_checker.svg', 32,
+        reversible=True)
     # SVGs - Tools ------------------------------------------------------------
     images['loot.16'] = _svg('tools/loot.svg', 16)
     images['loot.24'] = _svg('tools/loot.svg', 24)

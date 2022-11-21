@@ -1,4 +1,5 @@
-Some of the icons packaged with Wrye Bash are released / used under other licenses:
+Some of the icons packaged with Wrye Bash are released / used under other licenses.
+All files listed below have been modified to optimize the SVGs.
 
 ## Font Awesome
 
@@ -12,6 +13,10 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `error_cross.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `gear.svg` is from https://fontawesome.com/icons/gear?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `help.svg` is from https://fontawesome.com/icons/circle-question?s=solid&f=classic,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `minus.svg` is from https://fontawesome.com/icons/minus?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 - `plus.svg` is from https://fontawesome.com/icons/plus?s=solid&f=classic,
@@ -24,19 +29,27 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
   It has been recolored red and scaled up.
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `tools/steam.svg` is from https://fontawesome.com/icons/steam?s=&f=brands,
+  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+  A gradient matching Steam's logo colors has been added to it.
 - `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic,
   licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
   It has been recolored with a yellow gradient and the center has been filled black.
 
-All the files listed above have been edited via Inkscape to add padding to make them square.
+All the files listed above have also been edited via Inkscape to add padding to make them square.
 This is necessary so that wxPython/nanosvg rasterizes them correctly at higher resolutions.
+
+## SVG Repo
+
+- `plugin_checker.svg` is from https://www.svgrepo.com/svg/11307/task-list,
+  licensed under the CC0 license: https://creativecommons.org/publicdomain/zero/1.0/
 
 ## Mono Icons
 
 - `arrow_down.svg` and `arrow_up.svg` are from https://icons.mono.company/,
   licensed under the MIT license (see below).
 
-Modifications have been made to change the fill color and optimize the SVG.
+Modifications have been made to change the fill color.
 
 A copy of the original license follows:
 
@@ -56,8 +69,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 - `tools/loot.svg` is from https://github.com/loot/loot,
   licensed under the GPLv3 (see below).
-
-Modifications have been made to optimize the SVG.
 
 A copy of the original license follows:
 

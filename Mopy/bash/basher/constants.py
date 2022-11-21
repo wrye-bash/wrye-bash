@@ -505,6 +505,8 @@ installercons.images.extend({
 #--Buttons
 def imageList(template):
     return [ImageWrapper(imDirJn(template % x)) for x in (16, 24, 32)]
+def svg_list(svg_fname):
+    return [_svg(svg_fname, p) for p in (16, 24, 32)]
 
 # TODO(65): game handling refactoring - some of the buttons are game specific
 toolbar_buttons = (
@@ -616,7 +618,7 @@ misc_tools = (
     (u'MediaMonkey', imageList(u'tools/mediamonkey%s.png'),
         _(u'Launch MediaMonkey')),
     (u'NPP', imageList(u'tools/notepad++%s.png'), _(u'Launch Notepad++')),
-    ('Steam', imageList('tools/steam%s.png'), _('Launch Steam')),
+    ('Steam', svg_list('tools/steam.svg'), _('Launch Steam')),
     (u'EVGAPrecision', imageList(u'tools/evgaprecision%s.png'),
         _(u'Launch EVGA Precision')),
     (u'WinMerge', imageList(u'tools/winmerge%s.png'), _(u'Launch WinMerge')),

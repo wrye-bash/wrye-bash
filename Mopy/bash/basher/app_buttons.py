@@ -768,7 +768,7 @@ class App_DocBrowser(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
     """Show settings dialog."""
-    imageKey, _tip = u'settingsbutton.%s', _(u'Settings')
+    imageKey, _tip = 'settings_button.%s', _('Settings')
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         return super(App_Settings, self).GetBitmapButton(
@@ -789,7 +789,7 @@ class App_Restart(StatusBar_Button):
 class App_PluginChecker(StatusBar_Button):
     """Show plugin checker."""
     _tip = _(u'Plugin Checker')
-    imageKey = u'modchecker.%s'
+    imageKey = 'plugin_checker.%s'
 
     def Execute(self):
         PluginChecker.create_or_raise()
