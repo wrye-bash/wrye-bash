@@ -662,6 +662,26 @@
         Delete "${Path}\Mopy\bash\images\error_cross_*.png"
         Delete "${Path}\Mopy\bash\images\icon_licenses.txt"
         Delete "${Path}\Mopy\bash\images\reload*.png"
+        ; As of 311, some unused image files got deleted
+        Delete "${Path}\Mopy\bash\images\brick*.png"
+        Delete "${Path}\Mopy\bash\images\bug*.png"
+        Delete "${Path}\Mopy\bash\images\database_connect*.png"
+        Delete "${Path}\Mopy\bash\images\devsettings32.png"
+        Delete "${Path}\Mopy\bash\images\doc_on.png"
+        Delete "${Path}\Mopy\bash\images\dos.png"
+        Delete "${Path}\Mopy\bash\images\errormarker*.png"
+        Delete "${Path}\Mopy\bash\images\exclamation.png"
+        Delete "${Path}\Mopy\bash\images\group_gear*.png"
+        Delete "${Path}\Mopy\bash\images\page_find*.png"
+        Delete "${Path}\Mopy\bash\images\pickle*.png"
+        Delete "${Path}\Mopy\bash\images\prompt*.png"
+        Delete "${Path}\Mopy\bash\images\save_off.png"
+        Delete "${Path}\Mopy\bash\images\save_on.png"
+        Delete "${Path}\Mopy\bash\images\settings16.png"
+        Delete "${Path}\Mopy\bash\images\table_error*.png"
+        Delete "${Path}\Mopy\bash\images\wrye_monkey_32.png"
+        Delete "${Path}\Mopy\bash\images\wrye_monkey_87.png"
+        Delete "${Path}\Mopy\bash\images\zoom_on.png"
     !macroend
 
 

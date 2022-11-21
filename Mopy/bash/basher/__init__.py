@@ -4589,8 +4589,6 @@ def InitImages():
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))
     #--Standard
-    images[u'save.on'] = _png(u'save_on.png')
-    images[u'save.off'] = _png(u'save_off.png')
     # Up/Down arrows for UIList columns
     images[u'arrow.up'] = _png(u'arrow_up.png')
     images[u'arrow.down'] = _png(u'arrow_down.png')
@@ -4628,8 +4626,5 @@ def InitImages():
     images[u'modchecker.16'] = _png(u'modchecker16.png')
     images[u'modchecker.24'] = _png(u'modchecker24.png')
     images[u'modchecker.32'] = _png(u'modchecker32.png')
-    images[u'pickle.16'] = _png(u'pickle16.png')
-    images[u'pickle.24'] = _png(u'pickle24.png')
-    images[u'pickle.32'] = _png(u'pickle32.png')
 
 from .links_init import InitLinks
