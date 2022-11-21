@@ -4661,9 +4661,5 @@ def InitImages():
         reversible=True)
     images['plugin_checker.32'] = _svg('plugin_checker.svg', 32,
         reversible=True)
-    # SVGs - Tools ------------------------------------------------------------
-    images['loot.16'] = _svg('tools/loot.svg', 16)
-    images['loot.24'] = _svg('tools/loot.svg', 24)
-    images['loot.32'] = _svg('tools/loot.svg', 32)
 
 from .links_init import InitLinks

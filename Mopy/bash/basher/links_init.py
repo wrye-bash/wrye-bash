@@ -50,23 +50,24 @@ _is_oblivion = bush.game.fsName == 'Oblivion'
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
-    def imageList(template):
+    def _png_list(template):
         return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
                 (16, 24, 32)]
-    def balt_image_list(template):
-        return [images[f'{template}.{p}'] for p in (16, 24, 32)]
+    def _svg_list(svg_fname):
+        return [ImageWrapper(bass.dirs['images'].join(svg_fname), i) for i in
+                (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs[u'OblivionBookCreatorPath'],
                   bass.inisettings[u'OblivionBookCreatorJavaArg']),
-                 imageList(u'tools/oblivionbookcreator%s.png'),
+                 _png_list('tools/oblivionbookcreator%s.png'),
                  _(u'Launch Oblivion Book Creator'),
                  {'uid': u'OblivionBookCreator'}),
                 ((bass.tooldirs[u'Tes4GeckoPath'],
                   bass.inisettings[u'Tes4GeckoJavaArg']),
-                 imageList(u'tools/tes4gecko%s.png'),
+                 _png_list('tools/tes4gecko%s.png'),
                  _(u'Launch Tes4Gecko'), {'uid': u'Tes4Gecko'}),
                 ((bass.tooldirs[u'Tes5GeckoPath']),
-                imageList(u'tools/tesvgecko%s.png'),
+                _png_list('tools/tesvgecko%s.png'),
                 _(u'Launch TesVGecko'), {'uid': u'TesVGecko'}),
         )
     #--Bash Status/LinkBar
@@ -79,19 +80,19 @@ def InitStatusBar():
         Game_Button(
             bass.dirs['app'].join(bush.game.launch_exe),
             bass.dirs['app'].join(bush.game.version_detect_file),
-            imageList(bush.game.game_icon),
+            _png_list(bush.game.game_icon),
             ' '.join((_('Launch'), bush.game.displayName)),
             ' '.join((_('Launch'), bush.game.displayName, '%(app_version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
             bass.dirs['app'].join(bush.game.Ck.exe),
-            imageList(f'tools/{bush.game.Ck.image_name}'),
+            _png_list(f'tools/{bush.game.Ck.image_name}'),
             ' '.join((_('Launch'), bush.game.Ck.long_name)),
             ' '.join((_('Launch'), bush.game.Ck.long_name, '%(app_version)s')),
             bush.game.Ck.se_args))
     BashStatusBar.buttons.append( #OBMM
         app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),
-                           imageList('tools/obmm%s.png'), _('Launch OBMM'),
+                           _png_list('tools/obmm%s.png'), _('Launch OBMM'),
                            uid=u'OBMM'))
     # Just an _App_Button whose path is in bass.tooldirs
     Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
@@ -103,34 +104,34 @@ def InitStatusBar():
         BashStatusBar.buttons.append(app_button_factory(*tb2[:-1], **tb2[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
-            imageList('tools/tes4view%s.png'), _('Launch TES4View'),
+            _png_list('tools/tes4view%s.png'), _('Launch TES4View'),
             uid='TES4View'))
     for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
         xe_name = game_class.Xe.full_name
         BashStatusBar.buttons.append(App_xEdit(
             (bass.tooldirs[f'{xe_name}Path'],
              '-%s -edit' % xe_name[:-4]), # chop off edit
-            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
+            _png_list('tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
             uid=xe_name))
     BashStatusBar.buttons.append(  #TesVGecko
         app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
-                           imageList(u'tools/tesvgecko%s.png'),
+                           _png_list('tools/tesvgecko%s.png'),
                            _(u"Launch TesVGecko"), uid=u'TesVGecko'))
     BashStatusBar.buttons.append(  #Tes4Trans
         App_xEdit((bass.tooldirs['Tes4TransPath'], '-TES4 -translate'),
-            imageList('tools/tes4trans%s.png'), _('Launch TES4Trans'),
+            _png_list('tools/tes4trans%s.png'), _('Launch TES4Trans'),
             uid='TES4Trans'))
     BashStatusBar.buttons.append(  #Tes4LODGen
         App_xEdit((bass.tooldirs['Tes4LodGenPath'], '-TES4 -lodgen'),
-            imageList('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
+            _png_list('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
             uid='TES4LODGen'))
     if bush.game.boss_game_name:
         BashStatusBar.buttons.append( #BOSS
-            App_BOSS(bass.tooldirs['boss'], imageList('tools/boss%s.png'),
+            App_BOSS(bass.tooldirs['boss'], _png_list('tools/boss%s.png'),
                 _('Launch BOSS'), uid='BOSS'))
     if bush.game.loot_game_name:
         BashStatusBar.buttons.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], balt_image_list('loot'),
+            App_LOOT(bass.tooldirs['LOOT'], _svg_list('loot.svg'),
                 _('Launch LOOT'), uid='LOOT'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
@@ -138,13 +139,13 @@ def InitStatusBar():
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             app_button_factory((bass.tooldirs[u'SoftimageModTool'], u'-mod'),
-                               imageList(u'tools/softimagemodtool%s.png'),
+                               _png_list('tools/softimagemodtool%s.png'),
                                _(u"Launch Softimage Mod Tool"),
                                uid=u'SoftimageModTool'))
     if bass.inisettings[u'ShowModelingToolLaunchers'] \
             or bass.inisettings[u'ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
-            Tooldir_Button(u'NifskopePath', imageList(u'tools/nifskope%s.png'),
+            Tooldir_Button(u'NifskopePath', _png_list('tools/nifskope%s.png'),
                 _(u'Launch Nifskope')))
     if bass.inisettings[u'ShowTextureToolLaunchers']:
         from .constants import texture_tool_buttons
