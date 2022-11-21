@@ -53,6 +53,8 @@ def InitStatusBar():
     def imageList(template):
         return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
                 (16, 24, 32)]
+    def balt_image_list(template):
+        return [images[f'{template}.{p}'] for p in (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs[u'OblivionBookCreatorPath'],
                   bass.inisettings[u'OblivionBookCreatorJavaArg']),
@@ -128,7 +130,7 @@ def InitStatusBar():
                 _('Launch BOSS'), uid='BOSS'))
     if bush.game.loot_game_name:
         BashStatusBar.buttons.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], imageList('tools/loot%s.png'),
+            App_LOOT(bass.tooldirs['LOOT'], balt_image_list('loot'),
                 _('Launch LOOT'), uid='LOOT'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons

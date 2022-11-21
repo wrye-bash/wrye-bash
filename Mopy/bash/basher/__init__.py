@@ -4653,5 +4653,9 @@ def InitImages():
     # Minus/Plus for the Bash Tags popup
     images['minus.16'] = _svg('minus.svg', 16, reversible=True)
     images['plus.16'] = _svg('plus.svg', 16, reversible=True)
+    # SVGs - Tools ------------------------------------------------------------
+    images['loot.16'] = _svg('tools/loot.svg', 16)
+    images['loot.24'] = _svg('tools/loot.svg', 24)
+    images['loot.32'] = _svg('tools/loot.svg', 32)
 
 from .links_init import InitLinks
