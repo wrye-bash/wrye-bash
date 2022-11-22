@@ -106,8 +106,8 @@ class LoadFactory:
         for class_sig in all_sigs:
             if class_sig in RecordType.nested_to_top:
                 self.topTypes.update(RecordType.nested_to_top[class_sig])
-            else:
-                self.topTypes.add(class_sig)
+            if class_sig in RecordHeader.top_grup_sigs:
+                self.topTypes.add(class_sig) # b'CELL' appears in both
 
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
