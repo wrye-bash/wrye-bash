@@ -658,9 +658,9 @@ def _select_game_popup(game_infos):
             self._game_to_paths = {g.displayName: ps for g, ps
                                   in game_infos.items()}
             self._game_to_info = {g.displayName: g for g in game_infos}
+            gi_join = bass.dirs['images'].join('games').join
             self._game_to_bitmap = {
-                g.displayName: ImageWrapper(
-                    bass.dirs['images'].join(g.game_icon % 32),
+                g.displayName: ImageWrapper(gi_join(g.game_icon % 32),
                     iconSize=32).get_bitmap() for g in game_infos}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self, hint=_('Search Games'))
