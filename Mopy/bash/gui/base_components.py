@@ -470,7 +470,7 @@ class ImageWrapper:
         '.tga': _wx.BITMAP_TYPE_TGA,
     }
 
-    def __init__(self, filename, imageType=None, iconSize=16,
+    def __init__(self, filename, imageType=None, iconSize=-1,
             invert_svg=False):
         self._img_path = filename.s # must be a bolt.Path
         try:
@@ -479,6 +479,9 @@ class ImageWrapper:
             deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY
         self._is_svg = filename.cext == '.svg'
+        if self._is_svg and iconSize == -1:
+            raise ArgumentError('You must specify iconSize to '
+                                'rasterize an SVG to a bitmap!')
         self._invert_svg = invert_svg
         self.bitmap = None
         self.icon = None
@@ -494,11 +497,12 @@ class ImageWrapper:
                 self.bitmap = _wx.Bitmap(w, h)
                 self.bitmap.CopyFromIcon(self.icon)
                 # Hack - when user scales windows display icon may need scaling
-                if w != self.iconSize or h != self.iconSize: # rescale !
+                if (self.iconSize != -1 and w != self.iconSize or
+                    h != self.iconSize): # rescale !
                     self.bitmap = _wx.Bitmap(
                         self.bitmap.ConvertToImage().Scale(
                             self.iconSize, self.iconSize,
-                            _wx.IMAGE_QUALITY_BICUBIC))
+                            _wx.IMAGE_QUALITY_HIGH))
             elif self._is_svg:
                 with open(self._img_path, 'rb') as ins:
                     svg_data = ins.read()
@@ -512,10 +516,11 @@ class ImageWrapper:
                     (svg_size, svg_size))
             else:
                 bm_img = _wx.Image(self._img_path, self._img_type)
-                wanted_size = scaled(self.iconSize)
-                if bm_img.GetWidth() != wanted_size:
-                    bm_img.Rescale(wanted_size, wanted_size,
-                        _wx.IMAGE_QUALITY_BICUBIC)
+                if self.iconSize != -1:
+                    wanted_size = scaled(self.iconSize)
+                    if bm_img.GetWidth() != wanted_size:
+                        bm_img.Rescale(wanted_size, wanted_size,
+                            _wx.IMAGE_QUALITY_HIGH)
                 self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
 

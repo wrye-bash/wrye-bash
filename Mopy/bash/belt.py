@@ -1366,10 +1366,12 @@ class WryeParser(ScriptParser.Parser):
             imageJoin = bass.dirs[u'installers'].join(self._path).join
         for i in images_:
             # Try looking inside the package first, then look if it's using one
-            # of the images packaged with Wrye Bash (from Mopy/bash/images)
+            # of the images packaged with Wrye Bash (from
+            # Mopy/bash/images/Wizard Images)
             wiz_img_path = imageJoin(i)
-            if not wiz_img_path.is_file():
-                std_img_path = bass.dirs[u'images'].join(i)
+            if (i.lower().startswith('wizard images') and
+                    not wiz_img_path.is_file()):
+                std_img_path = bass.dirs['images'].join(i)
                 if std_img_path.is_file():
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
