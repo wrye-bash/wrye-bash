@@ -63,6 +63,7 @@ class OblivionGameInfo(PatchGame):
 
     @classmethod
     def check_loaded_mod(cls, patch_file, modFile):
+        super().check_loaded_mod(patch_file, modFile)
         ##: Could we adapt this for FO3/FNV?
         mod_fn_key = modFile.fileInfo.fn_key
         if b'SCPT' in modFile.tops and mod_fn_key != cls.master_file:

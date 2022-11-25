@@ -280,8 +280,6 @@ class PatchGame(GameInfo):
         ##: complex_groups should not be needed but added due to fo4 DIAL (?)
         valid_header_sigs = {cls.Esp.plugin_header_sig, *cls.top_groups,
                              *rtype.nested_to_top, *cls.complex_groups}
-        rec_head.sig_to_class = {k: v for k, v in rtype.sig_to_class.items() if
-                                 k in valid_header_sigs}
         for rec_sig, rec_class in list(rtype.sig_to_class.items()):
             if issubclass(rec_class, brec.MelRecord):
                 # when emulating startup in tests, an earlier loaded game may
@@ -296,5 +294,8 @@ class PatchGame(GameInfo):
             bolt.deprint(f'Signatures {miss} lack an implementation - '
                          f'defaulting to MreRecord')
             rtype.sig_to_class.update(dict.fromkeys(miss, brec.MreRecord))
+        rtype.sig_to_class = {k: v for k, v in rtype.sig_to_class.items() if
+                              k in valid_header_sigs}
+        rec_head.sig_to_class = rtype.sig_to_class
         # that's the case for most games so do it here and override if needed
         rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups

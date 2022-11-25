@@ -40,28 +40,20 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
     str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import RecordType, MelObject, RecHeader, attr_csv_struct, null3, \
-    FormId
+from .brec import RecordType, RecHeader, attr_csv_struct, null3, FormId
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
 ##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
-# backwards compatiblity code. See TrustedBinariesPage._import_lists, we could
+# backwards compatibility code. See TrustedBinariesPage._import_lists, we could
 # break that out into a bolt tool for reading an 'optional-BOM UTF-8' file
 
 # Utils
-def _key_sort(di, keys_dex=(), values_key='', by_value=False):
+def _key_sort(di, fid_eid=False, values_key=(), by_value=False):
     """Adapted to current uses - values_key is eid or eid and some numerical
-    field, keys_dex must index a long id key (mod key that compares in
-    lowercase, number)."""
-    if isinstance(values_key, str):
-        values_key = [values_key] if values_key else []
-    if keys_dex and values_key:
-        key_f = lambda k: (*(k[x] for x in keys_dex), *(
-            (di[k].get(v) or '').lower() if v == 'eid' else di[k][v]
-        for v in values_key))
-    elif keys_dex:
-        key_f = itemgetter(keys_dex)
+    field, fid_eid if True will sort by the FormId.mod_fn key then by eid."""
+    if fid_eid: # values_key is eid here
+        key_f = lambda k: (k.mod_fn, di[k].get('eid', '').lower())
     elif values_key:
         key_f = lambda k: tuple(
             (di[k].get(v) or '').lower() if v == 'eid' else di[k][v] for v in
@@ -69,9 +61,9 @@ def _key_sort(di, keys_dex=(), values_key='', by_value=False):
     elif by_value:
         key_f = lambda k: di[k].lower()
     else:
-        raise ValueError('One of keys_dex, values_key, by_value must be set')
-    for k in sorted(di, key=key_f):
-        yield k, di[k]
+        raise ValueError('One of fid_eid, values_key, by_value must be set')
+    for fid_key in sorted(di, key=key_f):
+        yield fid_key, di[fid_key]
 
 def _fid_str(fid_tuple):
     return f'"{fid_tuple.mod_fn}","0x{fid_tuple.object_dex:06X}"'
@@ -530,10 +522,9 @@ class ActorFactions(_AParser):
     def _row_out(self, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
-        return '\n'.join([
-            '"%s","%s",%s,"%s",%s,"%s"' % (top_grup, actorEid, _fid_str(aid),
-                                           fac_eid, _fid_str(faction), rank)
-            for faction, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
+        return '\n'.join([f'"{top_grup}","{actorEid}",{_fid_str(aid)},'
+                          f'"{fac_eid}",{_fid_str(faction)},"{rank}"' for
+            faction, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
@@ -546,7 +537,7 @@ class ActorLevels(_HandleAliases):
     _parser_sigs = [b'NPC_']
     _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
     _key2_getter = itemgetter(2, 3)
-    _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
+    _row_sorter = partial(_key_sort, fid_eid=True)
     _id_data_type = DefaultFNDict
 
     def __init__(self, aliases_=None, called_from_patcher=False):
@@ -624,8 +615,8 @@ class ActorLevels(_HandleAliases):
         """Export NPC level data to specified text file."""
         eid, isOffset, offset, calcMin, calcMax = __getter(di)
         if isOffset:
-            out = '"%s","%s",%s,"%d","%d","%d"' % (
-                fn_mod, eid, _fid_str(longfid), offset, calcMin, calcMax)
+            out = f'"{fn_mod}","{eid}",{_fid_str(longfid)},"{offset:d}",' \
+                  f'"{calcMin:d}","{calcMax:d}"'
             oldLevels = obId_levels.get(longfid, None)
             if oldLevels:
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
@@ -640,8 +631,7 @@ class ActorLevels(_HandleAliases):
 class EditorIds(_HandleAliases):
     """Editor ids for records, with functions for importing/exporting
     from/to mod/text file: id_stored_data[top_grup_sig][longid] = eid"""
-    _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
-                   _(u'Editor Id'))
+    _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _attr_dex = {u'eid': 3}
@@ -878,7 +868,7 @@ class FullNames(_HandleAliases):
                    _(u'Editor Id'), _(u'Name'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
-    _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
+    _row_sorter = partial(_key_sort, fid_eid=True)
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
@@ -915,7 +905,7 @@ class ItemStats(_HandleAliases):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
     _nested_type = lambda: defaultdict(dict)
-    _row_sorter = partial(_key_sort, keys_dex=(0, 1), values_key='eid')
+    _row_sorter = partial(_key_sort, fid_eid=True)
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
@@ -1158,7 +1148,7 @@ class ItemPrices(_HandleAliases):
 class _UsesEffectsMixin(_HandleAliases):
     """Mixin class to support reading/writing effect data to/from csv files"""
     _key2_getter = itemgetter(0, 1)
-    _row_sorter = partial(_key_sort, values_key='eid')
+    _row_sorter = partial(_key_sort, values_key=['eid'])
 
     def __init__(self, aliases_, atts, called_from_patcher=False):
         super(_UsesEffectsMixin, self).__init__(aliases_, called_from_patcher)
