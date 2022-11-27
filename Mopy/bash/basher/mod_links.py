@@ -26,7 +26,7 @@ points to BashFrame.modList singleton."""
 import copy
 import io
 import traceback
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from itertools import chain
 
 # Local
@@ -536,9 +536,8 @@ class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
 
     def __init__(self):
-        self.extraButtons = OrderedDict([
-            (_(u'Refresh'), self._doRefresh), (_(u'Sync'), self._doSync),
-            (_(u'Reset'), self._doReset)] )
+        self.extraButtons = {_('Refresh'): self._doRefresh,
+            _('Sync'): self._doSync, _('Reset'): self._doReset}
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
@@ -1159,7 +1158,7 @@ class Mod_ScanDirty(ItemLink):
 
     def Execute(self):
         """Handle execution"""
-        all_present_minfs = list(self.iselected_infos())
+        all_present_minfs = dict(self.iselected_pairs())
         # This part of the method shares a lot of code with
         # mods_metadata.checkMods, but we can't deduplicate because the
         # performance hit to checkMods would be too great :(
@@ -1175,14 +1174,15 @@ class Mod_ScanDirty(ItemLink):
                 progress.setFull(len(all_present_minfs))
                 load_progress = SubProgress(progress, 0, 0.7)
                 load_progress.setFull(len(all_present_minfs))
-                all_extracted_data = OrderedDict() # PY3: dict?
-                for i, present_minf in enumerate(all_present_minfs):
-                    if present_minf.fn_key == game_master_name:
+                all_extracted_data = {}
+                for i, (fn, present_minf) in enumerate(
+                        all_present_minfs.items()):
+                    if fn == game_master_name:
                         continue # The game master can't have deleted records
                     mod_progress = SubProgress(load_progress, i, i + 1)
                     ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                                 mod_progress)
-                    all_extracted_data[present_minf.fn_key] = ext_data
+                    all_extracted_data[fn] = ext_data
                 scan_progress = SubProgress(progress, 0.7, 0.9)
                 scan_progress.setFull(len(all_extracted_data))
                 all_ref_types = RecordType.sig_to_class[b'CELL'].ref_types
@@ -1220,8 +1220,7 @@ class Mod_ScanDirty(ItemLink):
         dirty_plugins = []
         clean_plugins = []
         skipped_plugins = []
-        for i, modInfo in enumerate(all_present_minfs):
-            plugin_fn = modInfo.fn_key
+        for i, (plugin_fn, modInfo) in enumerate(all_present_minfs.items()):
             del_navms = all_deleted_navms[plugin_fn]
             del_refs = all_deleted_refs[plugin_fn]
             del_others = all_deleted_others[plugin_fn]

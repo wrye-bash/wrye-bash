@@ -23,7 +23,6 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-from collections import OrderedDict
 
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags, struct_calcsize
@@ -1759,8 +1758,7 @@ class MreNote(MelRecord):
 #------------------------------------------------------------------------------
 class _MelNpcData(MelLists):
     """Convert npc stats into health, attributes."""
-    _attr_indexes = OrderedDict(
-        [(u'health', 0), (u'attributes', slice(1, None))])
+    _attr_indexes = {'health': 0, 'attributes': slice(1, None)}
 
     def __init__(self, struct_formats):
         super(_MelNpcData, self).__init__(b'DATA', struct_formats, u'health',
@@ -1796,8 +1794,8 @@ class MreNpc_(MreActor):
 
     class MelNpcDnam(MelLists):
         """Convert npc stats into skills."""
-        _attr_indexes = OrderedDict(
-            [(u'skillValues', slice(14)), (u'skillOffsets', slice(14, None))])
+        _attr_indexes = {'skillValues': slice(14),
+                         'skillOffsets': slice(14, None)}
 
     melSet = MelSet(
         MelEdid(),

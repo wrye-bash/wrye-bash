@@ -21,7 +21,7 @@
 #
 # =============================================================================
 import io
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
@@ -121,7 +121,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_plugins = set(full_lo)
-    all_present_minfs = [modInfos[x] for x in full_lo]
+    all_present_minfs = {x: modInfos[x] for x in full_lo}
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
@@ -165,8 +165,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
     should_deactivate = []
     should_activate = []
-    for p_minf in all_present_minfs:
-        plugin_fn = p_minf.fn_key
+    for plugin_fn, p_minf in all_present_minfs.items():
         p_active = plugin_fn in all_active_plugins
         p_imported = plugin_fn in modInfos.imported
         p_tags = p_minf.getBashTags()
@@ -180,8 +179,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     cannot_scan_overrides = set()
     p_missing_masters = set()
     p_delinquent_masters = set()
-    for p in all_present_minfs:
-        p_fn_key = p.fn_key
+    for p_fn_key, p in all_present_minfs.items():
         if p_fn_key in all_active_plugins:
             for p_master in p.masterNames:
                 if p_master not in all_present_plugins:
@@ -216,7 +214,8 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
     scan_for_cleaning = set()
-    dirty_msgs = [(m.fn_key, m.getDirtyMessage()) for m in all_present_minfs]
+    dirty_msgs = [(k, m.getDirtyMessage()) for k, m in
+                  all_present_minfs.items()]
     for x, y in dirty_msgs:
         if y[0]:
             cleaning_messages[x] = y[1]
@@ -243,12 +242,12 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                                      parent=mc_parent, abort=True)
             load_progress = SubProgress(progress, 0, 0.7)
             load_progress.setFull(len(all_present_minfs))
-            all_extracted_data = OrderedDict() # PY3: dict?
-            for i, present_minf in enumerate(all_present_minfs):
+            all_extracted_data = {}
+            for i, (k, present_minf) in enumerate(all_present_minfs.items()):
                 mod_progress = SubProgress(load_progress, i, i + 1)
                 ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                             mod_progress)
-                all_extracted_data[present_minf.fn_key] = ext_data
+                all_extracted_data[k] = ext_data
             # Run over all plugin data once for efficiency, collecing
             # information such as deleted records and overrides
             scan_progress = SubProgress(progress, 0.7, 0.9)

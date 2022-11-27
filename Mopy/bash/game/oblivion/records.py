@@ -23,7 +23,6 @@
 """This module contains the oblivion record classes."""
 import io
 import re
-from collections import OrderedDict
 
 from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
     int_or_none, str_to_sig, sig_to_str
@@ -1526,9 +1525,9 @@ class MreNpc_(AMreActor):
 
     class MelNpcData(MelLists):
         """Convert npc stats into skills, health, attributes."""
-        _attr_indexes = OrderedDict( # 21 skills and 7 attributes
-            [(u'skills', slice(21)), (u'health', 21), (u'unused2', 22),
-             (u'attributes', slice(23, None))])
+        # 21 skills and 7 attributes
+        _attr_indexes = {'skills': slice(21), 'health': 21, 'unused2': 22,
+                         'attributes': slice(23, None)}
 
     melSet = MelSet(
         MelEdid(),

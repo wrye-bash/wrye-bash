@@ -21,7 +21,6 @@
 #
 # =============================================================================
 
-import collections
 import io
 import lzma
 import re
@@ -113,7 +112,7 @@ class OmodFile(object):
     def getOmodContents(self):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
-        filesizes = collections.OrderedDict()
+        filesizes = {}
         reFileSize = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+'
                                 r'[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+'
                                 r'([0-9]+)\s+[0-9]*\s+(.+?)$')

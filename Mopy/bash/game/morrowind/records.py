@@ -23,7 +23,6 @@
 """This module contains the Morrowind record classes. Also contains records
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
-from collections import OrderedDict
 
 from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
@@ -842,13 +841,11 @@ class MreNpc_(MelRecord):
 
     class MelNpcData(MelLists):
         """Converts attributes and skills into lists."""
-        _attr_indexes = OrderedDict([
-            (u'npc_level', 0), (u'attributes', slice(1, 9)),
-            (u'skills', slice(9, 36)), (u'unknown2', 36), (u'npc_health', 38),
-            (u'npc_spell_points', 39), (u'npc_fatigue', 40),
-            (u'npc_disposition', 41), (u'npc_reputation', 42),
-            (u'npc_rank', 43), (u'unknown3', 44), (u'npc_gold', 45),
-        ])
+        _attr_indexes = {
+            'npc_level': 0, 'attributes': slice(1, 9), 'skills': slice(9, 36),
+            'unknown2': 36, 'npc_health': 38, 'npc_spell_points': 39,
+            'npc_fatigue': 40, 'npc_disposition': 41, 'npc_reputation': 42,
+            'npc_rank': 43, 'unknown3': 44, 'npc_gold': 45}
 
     class NpcDataDecider(SizeDecider):
         """At load time we can decide based on the subrecord size, but at dump

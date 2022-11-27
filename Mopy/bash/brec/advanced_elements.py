@@ -29,7 +29,6 @@ MelStruct."""
 __author__ = 'Infernio'
 
 import copy
-from collections import OrderedDict
 from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
@@ -529,7 +528,7 @@ class MelLists(MelStruct):
     """Convenience subclass to collect unpacked attributes to lists.
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
-    _attr_indexes = OrderedDict() # type: OrderedDict[str, slice | int]
+    _attr_indexes: dict[str, slice | int] = {}
 
     def __init__(self, mel_sig, struct_formats, *elements):
         if len(struct_formats) != len(elements):
