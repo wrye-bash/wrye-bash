@@ -33,7 +33,6 @@ import copy
 import io
 import sys
 import zlib
-from collections import OrderedDict
 from functools import partial
 
 import lz4.block
@@ -65,7 +64,7 @@ class SaveFileHeader(object):
                  u'masters', u'_save_info', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
-    unpackers = OrderedDict()
+    _unpackers = {}
 
     def __init__(self, save_inf, load_image=False, ins=None):
         self._save_info = save_inf
@@ -92,7 +91,7 @@ class SaveFileHeader(object):
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
-        for attr, (__pack, _unpack) in self.__class__.unpackers.items():
+        for attr, (__pack, _unpack) in self.__class__._unpackers.items():
             setattr(self, attr, _unpack(ins))
         self.load_image_data(ins, load_image)
         self._load_masters(ins)
@@ -204,23 +203,23 @@ class OblivionSaveHeader(SaveFileHeader):
 
     ##: exe_time and gameTime are SYSTEMTIME structs, as described here:
     # https://docs.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-systemtime
-    unpackers = OrderedDict([
-        ('major_version',  (pack_byte, unpack_byte)),
-        ('minor_version',  (pack_byte, unpack_byte)),
-        ('exe_time',       (_pack_string, _unpack_fstr16)),
-        ('header_version', (pack_int, unpack_int)),
-        ('header_size',    (pack_int, unpack_int)),
-        ('saveNum',        (pack_int, unpack_int)),
-        ('pcName',         (_pack_str8_1, unpack_str8)),
-        ('pcLevel',        (pack_short, unpack_short)),
-        ('pcLocation',     (_pack_str8_1, unpack_str8)),
-        ('gameDays',       (pack_float, unpack_float)),
-        ('gameTicks',      (pack_int, unpack_int)),
-        ('gameTime',       (_pack_string, _unpack_fstr16)),
-        ('ssSize',         (pack_int, unpack_int)),
-        ('ssWidth',        (pack_int, unpack_int)),
-        ('ssHeight',       (pack_int, unpack_int)),
-    ])
+    _unpackers = {
+        'major_version':  (pack_byte, unpack_byte),
+        'minor_version':  (pack_byte, unpack_byte),
+        'exe_time':       (_pack_string, _unpack_fstr16),
+        'header_version': (pack_int, unpack_int),
+        'header_size':    (pack_int, unpack_int),
+        'saveNum':        (pack_int, unpack_int),
+        'pcName':         (_pack_str8_1, unpack_str8),
+        'pcLevel':        (pack_short, unpack_short),
+        'pcLocation':     (_pack_str8_1, unpack_str8),
+        'gameDays':       (pack_float, unpack_float),
+        'gameTicks':      (pack_int, unpack_int),
+        'gameTime':       (_pack_string, _unpack_fstr16),
+        'ssSize':         (pack_int, unpack_int),
+        'ssWidth':        (pack_int, unpack_int),
+        'ssHeight':       (pack_int, unpack_int),
+    }
 
     def _write_masters(self, ins, out):
         #--Skip old masters
@@ -244,7 +243,7 @@ class OblivionSaveHeader(SaveFileHeader):
     def dump_header(self, out):
         out.write(self.__class__.save_magic)
         var_fields_size = 0
-        for attr, (_pack, __unpack) in self.unpackers.items():
+        for attr, (_pack, __unpack) in self._unpackers.items():
             ret = _pack(out, getattr(self, attr))
             if ret is not None:
                 var_fields_size += ret
@@ -256,7 +255,7 @@ class OblivionSaveHeader(SaveFileHeader):
         self.header_size = var_fields_size + 42 + len(self.ssData)
         self._mastersStart = out.tell()
         out.seek(34)
-        self.unpackers[u'header_size'][0](out, self.header_size)
+        self._unpackers['header_size'][0](out, self.header_size)
         out.seek(self._mastersStart)
         out.write(self.ssData)
         self.__write_masters_ob(out)
@@ -272,22 +271,22 @@ class SkyrimSaveHeader(SaveFileHeader):
                  u'_compressType', u'_sse_start', u'has_esl_masters',
                  'masters_regular', 'masters_esl')
 
-    unpackers = OrderedDict([
-        ('header_size', (00, unpack_int)),
-        ('version',     (00, unpack_int)),
-        ('saveNumber',  (00, unpack_int)),
-        ('pcName',      (00, unpack_str16)),
-        ('pcLevel',     (00, unpack_int)),
-        ('pcLocation',  (00, unpack_str16)),
-        ('gameDate',    (00, unpack_str16)),
-        ('raceEid',     (00, unpack_str16)), # pcRace
-        ('pcSex',       (00, unpack_short)),
-        ('pcExp',       (00, unpack_float)),
-        ('pcLvlExp',    (00, unpack_float)),
-        ('filetime',    (00, _unpack_fstr8)),
-        ('ssWidth',     (00, unpack_int)),
-        ('ssHeight',    (00, unpack_int)),
-    ])
+    _unpackers = {
+        'header_size': (00, unpack_int),
+        'version':     (00, unpack_int),
+        'saveNumber':  (00, unpack_int),
+        'pcName':      (00, unpack_str16),
+        'pcLevel':     (00, unpack_int),
+        'pcLocation':  (00, unpack_str16),
+        'gameDate':    (00, unpack_str16),
+        'raceEid':     (00, unpack_str16), # pcRace
+        'pcSex':       (00, unpack_short),
+        'pcExp':       (00, unpack_float),
+        'pcLvlExp':    (00, unpack_float),
+        'filetime':    (00, _unpack_fstr8),
+        'ssWidth':     (00, unpack_int),
+        'ssHeight':    (00, unpack_int),
+    }
 
     def __is_sse(self): return self.version == 12
 
@@ -592,19 +591,19 @@ class FalloutNVSaveHeader(SaveFileHeader):
     __slots__ = (u'language', u'save_number', u'pcNick', u'version',
                  u'gameDate')
     _masters_unknown_byte = 0x1B
-    unpackers = OrderedDict([
-        (u'header_size', (00, unpack_int)),
-        (u'version',     (00, unpack_str_int_delim)),
-        (u'language',    (00, lambda ins: unpack_many(ins, u'64sc')[0])),
-        (u'ssWidth',     (00, unpack_str_int_delim)),
-        (u'ssHeight',    (00, unpack_str_int_delim)),
-        (u'save_number', (00, unpack_str_int_delim)),
-        (u'pcName',      (00, unpack_str16_delim)),
-        (u'pcNick',      (00, unpack_str16_delim)),
-        (u'pcLevel',     (00, unpack_str_int_delim)),
-        (u'pcLocation',  (00, unpack_str16_delim)),
-        (u'gameDate',    (00, unpack_str16_delim)),
-    ])
+    _unpackers = {
+        'header_size': (00, unpack_int),
+        'version':     (00, unpack_str_int_delim),
+        'language':    (00, lambda ins: unpack_many(ins, '64sc')[0]),
+        'ssWidth':     (00, unpack_str_int_delim),
+        'ssHeight':    (00, unpack_str_int_delim),
+        'save_number': (00, unpack_str_int_delim),
+        'pcName':      (00, unpack_str16_delim),
+        'pcNick':      (00, unpack_str16_delim),
+        'pcLevel':     (00, unpack_str_int_delim),
+        'pcLocation':  (00, unpack_str16_delim),
+        'gameDate':    (00, unpack_str16_delim),
+    }
 
     def _load_masters(self, ins):
         self._mastersStart = ins.tell()
@@ -665,8 +664,8 @@ class Fallout3SaveHeader(FalloutNVSaveHeader):
     save_magic = b'FO3SAVEGAME'
     __slots__ = ()
     _masters_unknown_byte = 0x15
-    unpackers = copy.copy(FalloutNVSaveHeader.unpackers)
-    del unpackers[u'language']
+    _unpackers = copy.copy(FalloutNVSaveHeader._unpackers)
+    del _unpackers['language']
 
 class MorrowindSaveHeader(SaveFileHeader):
     """Morrowind saves are identical in format to record definitions.

@@ -33,7 +33,6 @@ from .exception import AbstractError, AccessDeniedError, CancelError, \
 #--Python
 import time
 import threading
-from collections import OrderedDict
 from functools import partial, wraps
 from typing import Iterable
 #--wx
@@ -856,7 +855,7 @@ class UIList(wx.Panel):
     _sort_keys = {} # sort_keys[col] provides the sort key for this col
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
-    labels = OrderedDict()
+    labels = {}
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()

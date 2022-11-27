@@ -346,17 +346,17 @@ class MasterList(_ModsUIList):
     _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels
-    labels = OrderedDict([
-        (u'File',          lambda self, mi: bosh.modInfos.masterWithVersion(
-            self.data_store[mi].curr_name)),
-        ('Num',           lambda self, mi: f'{mi:02X}'),
-        (u'Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
-            self.data_store[mi].curr_name)),
-        ('Indices', lambda self, mi: self._save_lo_hex_string[
-            self.data_store[mi].curr_name]),
-        ('Current Index', lambda self, mi: bosh.modInfos.real_index_strings[
-            self.data_store[mi].curr_name]),
-    ])
+    labels = {
+        'File': lambda self, mi: bosh.modInfos.masterWithVersion(
+            self.data_store[mi].curr_name),
+        'Num': lambda self, mi: f'{mi:02X}',
+        'Current Order': lambda self, mi: bosh.modInfos.hexIndexString(
+            self.data_store[mi].curr_name),
+        'Indices': lambda self, mi: self._save_lo_hex_string[
+            self.data_store[mi].curr_name],
+        'Current Index': lambda self, mi: bosh.modInfos.real_index_strings[
+            self.data_store[mi].curr_name],
+    }
     # True if we should highlight masters whose stored size does not match the
     # size of the plugin on disk
     _do_size_checks = False
@@ -639,11 +639,11 @@ class INIList(balt.UIList):
             items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
     _extra_sortings = [_sortValidFirst]
     #--Labels
-    labels = OrderedDict([
-        (u'File',      lambda self, p: p),
-        (u'Installer', lambda self, p: self.data_store[p].get_table_prop(
-            u'installer', u'')),
-    ])
+    labels = {
+        'File': lambda self, p: p,
+        'Installer': lambda self, p: self.data_store[p].get_table_prop(
+            'installer', ''),
+    }
     _target_ini = True # pass the target_ini settings on PopulateItem
 
     @property
@@ -940,23 +940,23 @@ class ModList(_ModsUIList):
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False
     #--Labels
-    labels = OrderedDict([
-        (u'File',       lambda self, p:self.data_store.masterWithVersion(p)),
-        (u'Load Order', lambda self, p: self.data_store.hexIndexString(p)),
-        (u'Indices',    lambda self, p:self.data_store[p].real_index_string()),
-        (u'Rating',     lambda self, p: self.data_store[p].get_table_prop(
-                            u'rating', u'')),
-        (u'Group',      lambda self, p: self.data_store[p].get_table_prop(
-                            u'group', u'')),
-        (u'Installer',  lambda self, p: self.data_store[p].get_table_prop(
-                            u'installer', u'')),
-        (u'Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',       lambda self, p: round_size(self.data_store[p].fsize)),
-        (u'Author',     lambda self, p: self.data_store[p].header.author if
-                                       self.data_store[p].header else u'-'),
-        (u'CRC',        lambda self, p: self.data_store[p].crc_string()),
-        (u'Mod Status', lambda self, p: self.data_store[p].txt_status()),
-    ])
+    labels = {
+        'File': lambda self, p: self.data_store.masterWithVersion(p),
+        'Load Order': lambda self, p: self.data_store.hexIndexString(p),
+        'Indices': lambda self, p: self.data_store[p].real_index_string(),
+        'Rating': lambda self, p: self.data_store[p].get_table_prop('rating',
+                                                                    ''),
+        'Group': lambda self, p: self.data_store[p].get_table_prop('group',
+                                                                   ''),
+        'Installer': lambda self, p: self.data_store[p].get_table_prop(
+            'installer', ''),
+        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Size': lambda self, p: round_size(self.data_store[p].fsize),
+        'Author': lambda self, p: self.data_store[p].header.author if
+        self.data_store[p].header else '-',
+        'CRC': lambda self, p: self.data_store[p].crc_string(),
+        'Mod Status': lambda self, p: self.data_store[p].txt_status(),
+    }
     _copy_paths = True
 
     #-- Drag and Drop-----------------------------------------------------
@@ -2230,16 +2230,15 @@ class SaveList(balt.UIList):
         if not saveInfo.header: return u'-'
         playMinutes = saveInfo.header.gameTicks // 60000
         return f'{playMinutes // 60}:{playMinutes % 60:02d}'
-    labels = OrderedDict([
-        (u'File',     lambda self, p: p),
-        (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
-        (u'PlayTime', lambda self, p: self._playTime(self.data_store[p])),
-        (u'Player',   lambda self, p: self._headInfo(self.data_store[p],
-                                                     u'pcName')),
-        (u'Cell',     lambda self, p: self._headInfo(self.data_store[p],
-                                                     u'pcLocation')),
-    ])
+    labels = {
+        'File':     lambda self, p: p,
+        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
+        'PlayTime': lambda self, p: self._playTime(self.data_store[p]),
+        'Player': lambda self, p: self._headInfo(self.data_store[p], 'pcName'),
+        'Cell':     lambda self, p: self._headInfo(self.data_store[p],
+                                                   'pcLocation'),
+    }
 
     @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
@@ -2555,14 +2554,14 @@ class InstallersList(balt.UIList):
             items.sort(key=lambda x: not self.data_store[x].is_project)
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
-    labels = OrderedDict([
-        ('Package',  lambda self, p: p),
-        ('Order',    lambda self, p: f'{self.data_store[p].order}'),
-        ('Modified', lambda self, p: format_date(self.data_store[p].modified)),
-        ('Size',     lambda self, p: self.data_store[p].size_string()),
-        ('Files',    lambda self, p: self.data_store[p].number_string(
-            self.data_store[p].num_of_files)),
-    ])
+    labels = {
+        'Package':  lambda self, p: p,
+        'Order':    lambda self, p: f'{self.data_store[p].order}',
+        'Modified': lambda self, p: format_date(self.data_store[p].modified),
+        'Size':     lambda self, p: self.data_store[p].size_string(),
+        'Files':    lambda self, p: self.data_store[p].number_string(
+            self.data_store[p].num_of_files),
+    }
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, [u'Order']
     #--GUI
@@ -3512,13 +3511,13 @@ class ScreensList(balt.UIList):
     _sort_keys = {u'File'    : None,
                   u'Modified': lambda self, a: self.data_store[a].mtime,
                   u'Size'    : lambda self, a: self.data_store[a].fsize,
-                 }
+    }
     #--Labels
-    labels = OrderedDict([
-        (u'File',     lambda self, p: p),
-        (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
-    ])
+    labels ={
+        'File':     lambda self, p: p,
+        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
+    }
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
@@ -3634,16 +3633,16 @@ class BSAList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _sort_keys = {u'File'    : None,
-                  u'Modified': lambda self, a: self.data_store[a].mtime,
-                  u'Size'    : lambda self, a: self.data_store[a].fsize,
-                 }
+    _sort_keys = {'File'    : None,
+                  'Modified': lambda self, a: self.data_store[a].mtime,
+                  'Size'    : lambda self, a: self.data_store[a].fsize,
+    }
     #--Labels
-    labels = OrderedDict([
-        (u'File',     lambda self, p: p),
-        (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
-    ])
+    labels = {
+        'File':     lambda self, p: p,
+        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Size':     lambda self, p: round_size(self.data_store[p].fsize),
+    }
 
 #------------------------------------------------------------------------------
 class BSADetails(_EditableMixinOnFileInfos, SashPanel):
@@ -3783,13 +3782,10 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     # default tabs order and default enabled state, keys as in tabInfo
-    _tabs_enabled_ordered = OrderedDict(((u'Installers', True),
-                                        (u'Mods', True),
-                                        (u'Saves', True),
-                                        (u'INI Edits', True),
-                                        (u'Screenshots', True),
-                                        # (u'BSAs', False),
-                                       ))
+    _tabs_enabled_ordered = {'Installers': True, 'Mods': True, 'Saves': True,
+                             'INI Edits': True, 'Screenshots': True,
+                            # ('BSAs', False),
+    }
 
     @staticmethod
     def _tabOrder():
