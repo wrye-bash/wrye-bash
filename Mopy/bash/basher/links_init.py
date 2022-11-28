@@ -474,16 +474,8 @@ def InitModLinks():
         lo_menu.links.append(SeparatorLink())
         lo_menu.links.append(Mods_OpenLOFileMenu())
         ModList.column_links.append(lo_menu)
+    ModList.column_links.append(Mods_OblivionEsmMenu())
     ModList.column_links.append(SeparatorLink())
-    if bush.game.displayName == 'Oblivion': #--Versions
-        versionsMenu = MenuLink('Oblivion.esm..')
-        versionsMenu.links.append(Mods_OblivionVersion('1.1'))
-        versionsMenu.links.append(Mods_OblivionVersion('1.1b'))
-        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI'))
-        versionsMenu.links.append(Mods_OblivionVersion('SI'))
-        versionsMenu.links.append(Mods_OblivionVersion('GBR SI'))
-        ModList.column_links.append(versionsMenu)
-        ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_ListMods())
     if bush.game.allTags:
         ModList.column_links.append(Mods_ListBashTags())
@@ -668,15 +660,7 @@ def InitModLinks():
     lo_submenu.links.append(SeparatorLink())
     lo_submenu.links.append(Mods_OpenLOFileMenu())
     edit_menu.append(lo_submenu)
-    if _is_oblivion:
-        edit_menu.append(SeparatorLink())
-        versions_menu = MenuLink('Oblivion.esm..')
-        versions_menu.links.append(Mods_OblivionVersion('1.1'))
-        versions_menu.links.append(Mods_OblivionVersion('1.1b'))
-        versions_menu.links.append(Mods_OblivionVersion('GOTY non-SI'))
-        versions_menu.links.append(Mods_OblivionVersion('SI'))
-        versions_menu.links.append(Mods_OblivionVersion('GBR SI'))
-        edit_menu.append(versions_menu)
+    edit_menu.append(Mods_OblivionEsmMenu())
     if bush.game.allTags:
         edit_menu.append(SeparatorLink())
         edit_menu.append(Mods_ExportBashTags())
@@ -725,20 +709,7 @@ def InitSaveLinks():
         subDirMenu = MenuLink(_('Profile..'))
         subDirMenu.links.append(Saves_Profiles())
         SaveList.column_links.append(subDirMenu)
-    if bush.game.displayName == 'Oblivion': #--Versions
-        SaveList.column_links.append(SeparatorLink())
-        versionsMenu = MenuLink('Oblivion.esm..')
-        versionsMenu.links.append(Mods_OblivionVersion('1.1',
-            setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion('1.1b',
-            setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI',
-            setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion('SI',
-            setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion('GBR SI',
-            setProfile=True))
-        SaveList.column_links.append(versionsMenu)
+    SaveList.column_links.append(Mods_OblivionEsmMenu(set_profile=True))
     SaveList.column_links.append(SeparatorLink())
     SaveList.column_links.append(Misc_SaveData())
     SaveList.column_links.append(Misc_SettingsDialog())
@@ -802,22 +773,10 @@ def InitSaveLinks():
     file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = SaveList.global_links[_('Edit')]
-    if _is_oblivion:
-        versions_menu = MenuLink('Oblivion.esm..')
-        versions_menu.links.append(Mods_OblivionVersion('1.1',
-            setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion('1.1b',
-            setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion('GOTY non-SI',
-            setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion('SI',
-            setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion('GBR SI',
-            setProfile=True))
-        edit_menu.append(versions_menu)
     profile_menu = MenuLink(_('Profile..'))
     profile_menu.append(Saves_Profiles())
     edit_menu.append(profile_menu)
+    edit_menu.append(Mods_OblivionEsmMenu(set_profile=True))
     # View Menu
     view_menu = SaveList.global_links[_('View')]
     view_menu.append(SortByMenu())

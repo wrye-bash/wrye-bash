@@ -23,21 +23,20 @@
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
-import re
 from .dialogs import CreateNewPlugin
 from .frames import PluginChecker
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link, MultiLink
-from ..bolt import FName, dict_sort
+    SeparatorLink, Link, MultiLink, AppendableLink, MenuLink
+from ..bolt import FName, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
     get_ctrl_down
 from ..parsers import CsvParser
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
-           u'Mods_OblivionVersion', u'Mods_CreateBlankBashedPatch',
+           'Mods_OblivionEsmMenu', 'Mods_CreateBlankBashedPatch',
            u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
            u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
@@ -79,8 +78,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
 class Mods_LoadList(ChoiceLink):
     """Add active mods list links."""
-    __uninitialized = {}
-    loadListsDict = __uninitialized
+    loadListsDict = {}
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
@@ -153,19 +151,16 @@ class Mods_LoadList(ChoiceLink):
                     'list_name': self._text}
         self.__class__.choiceLinkType = _LoListLink
 
-    @property
+    @fast_cached_property
     def load_lists(self):
         """Get the load lists, since those come from BashLoadOrders.dat we must
         wait for this being initialized in ModInfos.__init__"""
-        if self.__class__.loadListsDict is self.__class__.__uninitialized:
-            loadListData = load_order.get_active_mods_lists()
-            loadListData[u'Vanilla'] = [
-                FName(x) for x in bush.game.bethDataFiles if x.endswith(
-                    u'.esm') # but avoid activating modding esms for oblivion
-                and (not re.match(bosh.reOblivion.pattern, x, re.I)
-                     or x == u'oblivion.esm')]
-            self.__class__.loadListsDict = loadListData
-        return self.__class__.loadListsDict
+        active_lists = load_order.get_active_mods_lists()
+        active_lists['Vanilla'] = [FName(x) for x in bush.game.bethDataFiles if
+            x.endswith('.esm') # but avoid activating modding esms for oblivion
+            and x not in bush.game.modding_esm_size]
+        self.__class__.loadListsDict = active_lists
+        return active_lists
 
     @property
     def _choices(self):
@@ -196,14 +191,17 @@ class Mods_SelectedFirst(CheckLink):
         self.window.SortItems()
 
 # "Oblivion.esm" submenu ------------------------------------------------------
-class Mods_OblivionVersion(CheckLink, EnabledLink):
-    """Specify/set Oblivion version."""
-    _help = _(u'Specify/set Oblivion version')
-
+class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
+    """Single link for setting an Oblivion.esm version."""
     def __init__(self, version_key, setProfile=False):
-        super(Mods_OblivionVersion, self).__init__()
+        super().__init__()
         self._version_key = self._text = version_key
         self.setProfile = setProfile
+
+    @property
+    def link_help(self):
+        return _('Set Oblivion.esm version to %(ob_ver)s.') % {
+            'ob_ver': self._text}
 
     def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
@@ -220,6 +218,28 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
+
+class _Mods_OblivionVersionMenu(MenuLink):
+    """The actual Oblivion.esm switching menu."""
+    _text = 'Oblivion.esm..'
+
+    def __init__(self, set_profile):
+        super().__init__()
+        for esm_version in bush.game.size_esm_version.values():
+            self.append(_Mods_SetOblivionVersion(esm_version, set_profile))
+
+class Mods_OblivionEsmMenu(AppendableLink, MultiLink):
+    """MultiLink that adds a SeparatorLink and the Oblivion.esm switching menu
+    if the current game is Oblivion."""
+    def __init__(self, *, set_profile=False):
+        super().__init__()
+        self._set_profile = set_profile
+
+    def _append(self, window):
+        return bush.game.fsName == 'Oblivion'
+
+    def _links(self):
+        return [SeparatorLink(), _Mods_OblivionVersionMenu(self._set_profile)]
 
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):

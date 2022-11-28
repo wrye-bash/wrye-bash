@@ -60,9 +60,6 @@ from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
-reOblivion = re.compile(r'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|'
-                        r'_GOTY non-SI|_GBR SI)\.esm$', re.U)
-
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
@@ -933,7 +930,8 @@ class ModInfo(FileInfo):
         return True, _(u'Contains dirty edits, needs cleaning.')
 
     def match_oblivion_re(self):
-        return reOblivion.match(self.fn_key)
+        return self.fn_key in bush.game.modding_esm_size or \
+               self.fn_key == 'Oblivion.esm'
 
     def get_rename_paths(self, newName):
         old_new_paths = super(ModInfo, self).get_rename_paths(newName)
@@ -2011,13 +2009,6 @@ class ModInfos(FileInfos):
         self.__calculate = object()
         self._reset_info_sets()
         #--Oblivion version
-        self.version_voSize = {
-            u'1.1':        247388848, #--Standard
-            u'1.1b':       247388894, # Arthmoor has this size.
-            u'GOTY non-SI':247388812, # GOTY version
-            u'SI':         277504985, # Shivering Isles 1.2
-            u'GBR SI':     260961973} # GBR Main File Patch
-        self.size_voVersion = {y:x for x, y in self.version_voSize.items()}
         self.voCurrent = None
         self.voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
@@ -2155,7 +2146,7 @@ class ModInfos(FileInfos):
             f'{load_order.cached_active_index(mod):02X}'
 
     def masterWithVersion(self, master_name):
-        if master_name == u'Oblivion.esm' and self.voCurrent:
+        if master_name == 'Oblivion.esm' and self.voCurrent:
             master_name += f' [{self.voCurrent}]'
         return master_name
 
@@ -2230,7 +2221,7 @@ class ModInfos(FileInfos):
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
-        self._setOblivionVersions()
+        self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
         oldMergeable = set(self.mergeable)
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self)
@@ -3017,17 +3008,6 @@ class ModInfos(FileInfos):
             return 0
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _setOblivionVersions(self):
-        """Set current (and available) master game esm(s) - Oblivion only."""
-        if bush.game.fsName != u'Oblivion': return
-        self.voAvailable.clear()
-        for ckey,info in self.items():
-            if reOblivion.match(ckey) and info.fsize in self.size_voVersion:
-                self.voAvailable.add(self.size_voVersion[info.fsize])
-        if _master_esm := self.get(self._master_esm):
-            self.voCurrent = self.size_voVersion.get(_master_esm.fsize, None)
-        else: self.voCurrent = None # just in case
-
     def _retry(self, old, new):  ##: we should check *before* writing the patch
         msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
         msg += '\n\n' + _('The file is in use by another process such as '
@@ -3037,27 +3017,23 @@ class ModInfos(FileInfos):
         msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
         return balt.askYes(self, msg, _('File in use'))
 
-    def _get_version_paths(self, newVersion):
+    def setOblivionVersion(self, newVersion):
+        """Swaps Oblivion.esm to specified version."""
         baseName = self._master_esm # Oblivion.esm, say it's currently SI one
-        newSize = self.version_voSize[newVersion]
+        # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
+        newName = FName(f'{(fnb := baseName.fn_body)}_{newVersion}.esm')
+        newSize = bush.game.modding_esm_size[newName]
         oldSize = self[baseName].fsize
-        if newSize == oldSize: return None, None
-        if oldSize not in self.size_voVersion:
-            raise StateError(u"Can't match current main ESM to known version.")
-        oldName = FName( # Oblivion_SI.esm: we will rename Oblivion.esm to this
-            f'{baseName.fn_body}_{self.size_voVersion[oldSize]}.esm')
+        if newSize == oldSize: return
+        current_version = bush.game.size_esm_version[oldSize]
+        try: # for instance: Oblivion_SI.esm, we rename Oblivion.esm to this
+            oldName = FName(f'{fnb}_{current_version}.esm')
+        except KeyError:
+            raise StateError("Can't match current main ESM to known version.")
         if self.store_dir.join(oldName).exists():
             raise StateError(f"Can't swap: {oldName} already exists.")
-        newName = FName(f'{baseName.fn_body}_{newVersion}.esm')
         if newName not in self:
             raise StateError(f"Can't swap: {newName} doesn't exist.")
-        return newName, oldName
-
-    def setOblivionVersion(self,newVersion):
-        """Swaps Oblivion.esm to to specified version."""
-        # if new version is u'1.1' then newName is FName(Oblivion_1.1.esm)
-        newName, oldName = self._get_version_paths(newVersion)
-        if newName is None: return
         newInfo = self[newName]
         #--Rename
         baseInfo = self[self._master_esm]
@@ -3065,7 +3041,7 @@ class ModInfos(FileInfos):
         new_info_time = newInfo.mtime
         is_master_active = load_order.cached_is_active(self._master_esm)
         is_new_info_active = load_order.cached_is_active(newName)
-        # can't use ModInfos rename cause it will mess up the load order
+        # can't use ModInfos rename because it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
         while True:
             try:
@@ -3109,6 +3085,8 @@ class ModInfos(FileInfos):
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all() # sets ghost as needed iff autoGhost is True
         self.voCurrent = newVersion
+        self.voAvailable.add(current_version)
+        self.voAvailable.remove(newVersion)
 
     def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
         """Save current plugins into arcSaves directory, load plugins from

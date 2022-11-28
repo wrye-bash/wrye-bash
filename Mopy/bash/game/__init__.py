@@ -30,6 +30,7 @@ from os.path import join as _j
 from typing import Type
 
 from .. import brec, bolt
+from ..bolt import fast_cached_property, FNDict
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
@@ -505,6 +506,35 @@ class GameInfo(object):
     @property
     def plugin_header_class(self):
         return brec.RecordType.sig_to_class[self.Esp.plugin_header_sig]
+
+    @fast_cached_property
+    def modding_esm_size(self):
+        if self.displayName != 'Oblivion': # hack to avoid a bunch of overrides
+            return FNDict()
+        b, e = self.master_file.rsplit('.', 1)
+        return FNDict({
+            f'{b}_1.1.{e}':         247388848, #--Standard
+            f'{b}_1.1b.{e}':        247388894, # Arthmoor has this size.
+            f'{b}_GOTY non-SI.{e}': 247388812, # GOTY version
+            f'{b}_SI.{e}':          277504985, # Shivering Isles 1.2
+            f'{b}_GBR SI.{e}':      260961973, # GBR Main File Patch
+        })
+
+    @fast_cached_property
+    def size_esm_version(self):
+        return {y: x.split('_', 1)[1].rsplit('.', 1)[0] for x, y in
+                self.modding_esm_size.items()}
+
+    def modding_esms(self, mod_infos):
+        """Set current (and available) master game esm(s) - Oblivion only."""
+        if not self.modding_esm_size: return set(), None
+        version_strs, current_esm = set(), None
+        for modding_esm, esm_size in self.modding_esm_size.items():
+            if (info := mod_infos.get(modding_esm)) and info.fsize == esm_size:
+                version_strs.add(self.size_esm_version[esm_size])
+        if _master_esm := mod_infos.get(self.master_file):
+            current_esm = self.size_esm_version.get(_master_esm.fsize, None)
+        return version_strs, current_esm
 
     @classmethod
     def init(cls, _package_name=None):

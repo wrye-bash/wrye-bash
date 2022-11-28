@@ -647,8 +647,8 @@ def _getUrl(installer):
 class _NotObLink(EnabledLink):
 
     def _enable(self):
-        return len(self.selected) != 1 or ( # disable on solo Oblivion.esm
-            not self._first_selected().match_oblivion_re())
+        return not all( # disable on Oblivion (modding) esms
+            x.match_oblivion_re() for x in self.iselected_infos())
 
 class Mod_CreateLOOTReport(_NotObLink):
     """Creates a basic LOOT masterlist entry with URL and tags."""

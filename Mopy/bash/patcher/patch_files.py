@@ -29,7 +29,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
 from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
-from ..brec import MreRecord, RecHeader, FormId, RecordType
+from ..brec import RecHeader, FormId, RecordType
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -164,10 +164,8 @@ class PatchFile(ModFile):
         # checking for files to include in patch, investigate
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude moding esms (those tend to be huge)
-        b, e = bush.game.master_file.fn_body, bush.game.master_file.fn_ext
-        excluded = {FName(f'{b}_{ver}{e}') for ver in
-                    p_file_minfos.voAvailable}
-        self.all_plugins = [k for k in self.all_plugins if k not in excluded]
+        self.all_plugins = [k for k in self.all_plugins if
+                            k not in bush.game.modding_esm_size]
         loadMods = [m for m in self.all_plugins
                     if load_order.cached_is_active(m)]
         if not loadMods:
