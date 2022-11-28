@@ -235,7 +235,7 @@ class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
     listData = None
     _status_str = 'OVERRIDE: %(status_num)d'
-    _ui_list_type = None # type: type
+    _ui_list_type: type[balt.UIList] = None
 
     def __init__(self, parent, isVertical=True):
         super(SashUIListPanel, self).__init__(parent, isVertical)
@@ -2811,7 +2811,7 @@ class InstallersList(balt.UIList):
                     filenames.extend(converters)
                     try:
                         (env.shellMove if action == 'MOVE' else env.shellCopy)(
-                            filenames, filesTo, parent=self)
+                            filenames, filesTo, parent=self._native_widget)
                     except (CancelError,SkipError):
                         pass
         self.panel.frameActivated = True

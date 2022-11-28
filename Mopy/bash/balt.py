@@ -826,7 +826,7 @@ def conversation(func):
                     Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
-class UIList(wx.Panel):
+class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
     column_links = None # A list of all links to show in the column menu
@@ -863,7 +863,7 @@ class UIList(wx.Panel):
     _copy_paths = False # enable the Ctrl+C shortcut
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
-        wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
+        super().__init__(parent, wants_chars=True, no_border=False)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
         #--Settings key
@@ -1037,35 +1037,29 @@ class UIList(wx.Panel):
         """Sort items and populate entire list."""
         # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
         # GUI lag
-        self.Freeze()
-        try:
-            self._PopulateItems()
-        finally:
-            self.Thaw()
-
-    def _PopulateItems(self):
-        self.mouseTexts.clear()
-        items = set(self.data_store)
-        if self.__class__._target_ini:
-            # hack for avoiding the syscall in get_ci_settings
-            target_setts = self.data_store.ini.get_ci_settings()
-        else:
-            target_setts = None
-        #--Update existing items.
-        index = 0
-        while index < self.item_count:
-            item = self.GetItem(index)
-            if item not in items: self.__gList.RemoveItemAt(index)
+        with self.pause_drawing():
+            self.mouseTexts.clear()
+            items = set(self.data_store)
+            if self.__class__._target_ini:
+                # hack for avoiding the syscall in get_ci_settings
+                t_setts = self.data_store.ini.get_ci_settings()
             else:
-                self.PopulateItem(itemDex=index, target_ini_setts=target_setts)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.PopulateItem(item=item, target_ini_setts=target_setts)
-        #--Sort
-        self.SortItems()
-        self.autosizeColumns()
+                t_setts = None
+            #--Update existing items.
+            index = 0
+            while index < self.item_count:
+                item = self.GetItem(index)
+                if item not in items: self.__gList.RemoveItemAt(index)
+                else:
+                    self.PopulateItem(itemDex=index, target_ini_setts=t_setts)
+                    items.remove(item)
+                    index += 1
+            #--Add remaining new items
+            for item in items:
+                self.PopulateItem(item=item, target_ini_setts=t_setts)
+            #--Sort
+            self.SortItems()
+            self.autosizeColumns()
 
     __all = ()
     _same_item = object()
@@ -1078,8 +1072,7 @@ class UIList(wx.Panel):
         else:  #--Iterable
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
-            self.Freeze()
-            try:
+            with self.pause_drawing():
                 for d in to_del:
                     self.__gList.RemoveItemAt(self.GetIndex(d))
                 for upd in redraw:
@@ -1087,8 +1080,6 @@ class UIList(wx.Panel):
                 #--Sort
                 self.SortItems()
                 self.autosizeColumns()
-            finally:
-                self.Thaw()
         self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()

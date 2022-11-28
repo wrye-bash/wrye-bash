@@ -223,9 +223,10 @@ class StartupDialog(DialogWindow):
 class PanelWin(_AComponent):
     _native_widget: _wx.Panel
 
-    def __init__(self, parent, no_border=True):
-        super(PanelWin, self).__init__(
-            parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
+    def __init__(self, parent, no_border=True, wants_chars=False):
+        super().__init__(parent,
+            style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER) | (
+                        wants_chars and _wx.WANTS_CHARS))
 
 class Splitter(_AComponent):
     _native_widget: _wx.SplitterWindow
