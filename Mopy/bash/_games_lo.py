@@ -28,11 +28,11 @@ load_order.py."""
 # number, e.g. 5 older versions)
 from __future__ import annotations
 
-__author__ = u'Utumno'
+__author__ = 'Utumno'
 
 import re
 import time
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 # Local
 from . import bass, bolt, env, exception
@@ -740,9 +740,8 @@ class INIGame(LoGame):
         # different case
         cached_ini.remove_section(ini_key[1])
         # Now, write out the changed values - no backup here
-        section_contents = OrderedDict()
-        for i, lo_mod in enumerate(mod_list):
-            section_contents[ini_key[2] % {u'lo_idx': i}] = lo_mod
+        section_contents = {ini_key[2] % {'lo_idx': i}: lo_mod for i, lo_mod in
+                            enumerate(mod_list)}
         cached_ini.saveSettings({ini_key[1]: section_contents})
 
     # Backups

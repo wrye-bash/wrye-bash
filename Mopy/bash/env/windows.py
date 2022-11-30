@@ -146,8 +146,8 @@ def _subEnv(match):
     # then raise BoltError(...) from None
     env_val = os.environ.get(env_var, None)
     if not env_val:
-        raise BoltError(u"Can't find user directories in windows registry."
-            u'\n>> See "If Bash Won\'t Start" in bash docs for help.')
+        raise BoltError("Can't find user directories in windows registry.\n>> "
+                        'See "If Bash Won\'t Start" in bash docs for help.')
     return env_val
 
 def _getShellPath(folderKey):

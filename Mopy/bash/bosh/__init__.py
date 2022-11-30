@@ -68,13 +68,13 @@ empty_path = GPath(u'') # evaluates to False in boolean expressions
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Singletons
-gameInis = None    # type: tuple[GameIni | IniFile]
-oblivionIni = None # type: GameIni
-modInfos  = None   # type: ModInfos
-saveInfos = None   # type: SaveInfos
-iniInfos = None    # type: INIInfos
-bsaInfos = None    # type: BSAInfos
-screen_infos = None # type: ScreenInfos
+gameInis: tuple[GameIni | IniFile] | None = None
+oblivionIni: GameIni | None = None
+modInfos: ModInfos | None = None
+saveInfos: SaveInfos | None = None
+iniInfos: INIInfos | None = None
+bsaInfos: BSAInfos | None = None
+screen_infos: ScreenInfos | None = None
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -783,20 +783,19 @@ class ModInfo(FileInfo):
                 if not extract:
                     break
             else:
-                msg = ('This plugin is localized, but the following strings '
-                       'files seem to be missing:\n%s' % u'\n'.join(
-                    f' - {e}' for e in extract))
+                msg = [f'This plugin is localized, but the following strings '
+                       f'files seem to be missing:']
+                msg.extend(f' - {e}' for e in extract)
                 if potential_bsas:
-                    msg += (u'\nThe following BSAs were scanned (based on '
-                            u'name and INI settings), but none of them '
-                            u'contain the missing files:\n%s' % u'\n'.join(
-                        f' - {bsa_inf}' for bsa_inf in potential_bsas))
+                    msg.append('The following BSAs were scanned (based on '
+                               'name and INI settings), but none of them '
+                               'contain the missing files:')
+                    msg.extend(f' - {bsa_inf}' for bsa_inf in potential_bsas)
                 else:
-                    msg += (u'\nNo BSAs were found that could contain the '
-                            u'missing strings - this is bad, validate your '
-                            u'game installation and double-check your INI '
-                            u'settings')
-                raise ModError(self.fn_key, msg)
+                    msg.append('No BSAs were found that could contain the '
+                        'missing strings - this is bad, validate your game '
+                        'installation and double-check your INI settings')
+                raise ModError(self.fn_key, '\n'.join(msg))
             for bsa_inf, assets in bsa_assets.items():
                 out_path = dirs[u'bsaCache'].join(bsa_inf.fn_key)
                 try:
@@ -2919,9 +2918,8 @@ class ModInfos(FileInfos):
 
     @staticmethod
     def plugin_wildcard(file_str=_(u'Mod Files')):
-        join_star = u';*'.join(bush.game.espm_extensions)
-        return bush.game.displayName + u' ' + file_str + u' (*' + join_star \
-               + u')|*' + join_star
+        joinstar = ';*'.join(bush.game.espm_extensions)
+        return f'{bush.game.displayName} {file_str} (*{joinstar})|*{joinstar}'
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
@@ -3031,17 +3029,13 @@ class ModInfos(FileInfos):
         else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):  ##: we should check *before* writing the patch
-        return balt.askYes(
-            self, (_(u'Bash encountered an error when renaming %(old)s to '
-                    u'%(new)s.') + u'\n\n' +
-                   _(u'The file is in use by another process such as '
-                     u'%(xedit_name)s.') + u'\n' +
-                   _(u'Please close the other program that is accessing '
-                     u'%(new)s.') + u'\n\n' +
-                   _(u'Try again?')) % {
-                u'xedit_name': bush.game.Xe.full_name, u'old': old,
-                u'new': new},
-        _(u'File in use'))
+        msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
+        msg += '\n\n' + _('The file is in use by another process such as '
+                          '%(xedit_name)s.') + '\n'
+        msg += _('Please close the other program that is accessing %(new)s.')
+        msg += '\n\n' + _('Try again?')
+        msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
+        return balt.askYes(self, msg, _('File in use'))
 
     def _get_version_paths(self, newVersion):
         baseName = self._master_esm # Oblivion.esm, say it's currently SI one
@@ -3061,7 +3055,7 @@ class ModInfos(FileInfos):
 
     def setOblivionVersion(self,newVersion):
         """Swaps Oblivion.esm to to specified version."""
-        # if new version is u'1.1' then newName is Path(Oblivion_1.1.esm)
+        # if new version is u'1.1' then newName is FName(Oblivion_1.1.esm)
         newName, oldName = self._get_version_paths(newVersion)
         if newName is None: return
         newInfo = self[newName]
@@ -3368,7 +3362,7 @@ class BSAInfos(FileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
-            _valid_exts_re = r'(\.' + bush.game.Bsa.bsa_extension[1:] + ')'
+            _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
             def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed

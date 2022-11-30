@@ -93,11 +93,11 @@ class BSA_ListContents(ItemLink):
               u'clipboard.')
 
     def Execute(self):
-        full_text = u'=== Selected BSA Contents:'
-        full_text += u'\n[spoiler]'
+        full_text = ['=== Selected BSA Contents:', '[spoiler]']
         for bsa_inf in self.iselected_infos():
-            full_text += f'\n\n* {bsa_inf.fn_key}:\n'
-            full_text += u'\n'.join(sorted(bsa_inf.assets))
-        full_text += u'\n[/spoiler]'
+            full_text.append(f'\n* {bsa_inf.fn_key}:')
+            full_text.extend(sorted(bsa_inf.assets))
+        full_text.append('[/spoiler]')
+        full_text = '\n'.join(full_text)
         copy_text_to_clipboard(full_text)
-        self._showLog(full_text, _(u'BSA Contents'))
+        self._showLog(full_text, _('BSA Contents'))

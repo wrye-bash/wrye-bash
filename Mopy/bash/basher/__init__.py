@@ -2312,8 +2312,8 @@ class SaveList(balt.UIList):
     @staticmethod
     def _unhide_wildcard():
         starred = f'*{bush.game.Ess.ext};*.bak'
-        return bush.game.displayName + u' ' + _(
-            u'Save files') + u' (' + starred + u')|' + starred
+        return f'{bush.game.displayName} ' + _(
+            'Save files') + f' ({starred})|{starred}'
 
     #--Populate Item
     def set_item_format(self, fileName, item_format, target_ini_setts):
@@ -2701,8 +2701,8 @@ class InstallersList(balt.UIList):
     @staticmethod
     def _unhide_wildcard():
         starred = ';'.join(f'*{e}' for e in archives.readExts)
-        return  f'{bush.game.displayName} {_("Mod Archives")} ' \
-                f'({starred})|{starred}'
+        return f'{bush.game.displayName} {_("Mod Archives")} ' \
+               f'({starred})|{starred}'
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):

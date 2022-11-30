@@ -171,9 +171,8 @@ class BSACompressionError(BSAError):
             f'{orig_error!r}')
 
 class BSADecodingError(BSAError):
-    def __init__(self, in_name, message): # type: (str, str) -> None
-        super(BSADecodingError, self).__init__(
-            in_name, f'Undecodable string {message!r}')
+    def __init__(self, in_name: str, message: bytes | list[bytes]):
+        super().__init__(in_name, f'Undecodable string(s) {message}')
 
 class BSADecompressionError(BSAError):
     def __init__(self, in_name, compression_type, orig_error):
