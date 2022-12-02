@@ -1203,8 +1203,6 @@ class MobWorld(MobCells):
         cellGet = cellType_class.get
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
-        from .. import bush
-        isFallout = bush.game.fsName != u'Oblivion'
         cells = {}
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
@@ -1222,7 +1220,7 @@ class MobWorld(MobCells):
                     # If we already have a cell lying around, finish it off
                     self.setCell(cell, children_head=None, loading=True)
                 cell = recClass(header, ins, do_unpack=True)
-                if isFallout: cells[cell.fid] = cell
+                cells[cell.fid] = cell
                 if endBlockPos and ((pos := insTell()) > endBlockPos or pos >
                               endSubblockPos):
                     raise ModError(self.inName,
@@ -1234,7 +1232,7 @@ class MobWorld(MobCells):
                 elif groupType == 5: # Exterior Cell Sub-Block
                     endSubblockPos = insTell() + header.blob_size()
                 elif groupType == 6: # Cell Children
-                    if isFallout: cell = cells.get(header.label,None)
+                    cell = cells.get(header.label,None)
                     self._load_group6(header, cell, ins, unpackCellBlocks)
                     cell = None
                 else:
@@ -1453,8 +1451,6 @@ class MobWorlds(MobBase):
         world = None
         insAtEnd = ins.atEnd
         selfLoadFactory = self.loadFactory
-        from .. import bush
-        isFallout = bush.game.fsName != u'Oblivion'
         worlds = {}
         header = None
         while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
@@ -1470,17 +1466,15 @@ class MobWorlds(MobBase):
                     # no children to read - just finish this WRLD
                     self.setWorld(world)
                 world = recWrldClass(header, ins, do_unpack=True)
-                if isFallout: worlds[world.fid] = world
+                worlds[world.fid] = world
             elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
                     raise ModError(ins.inName,
                                    f'Unexpected subgroup {groupType:d} in '
                                    f'WRLD group.')
-                if isFallout: world = worlds.get(groupFid,None)
+                world = worlds.get(groupFid,None)
                 if not world:
-                    #raise ModError(ins.inName,'Extra subgroup %d in WRLD
-                    # group.' % groupType)
                     #--Orphaned world records. Skip over.
                     header.skip_blob(ins)
                     self.orphansSkipped += 1
