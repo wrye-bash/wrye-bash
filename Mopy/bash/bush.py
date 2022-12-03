@@ -95,26 +95,28 @@ def _supportedGames(skip_ws_games=False):
                 # PyInstaller's iter_modules gives us an __init__.py file with
                 # ispkg=True, skip it
                 continue
-            game_type = module_container.GAME_TYPE
-            _allGames[game_type.displayName] = game_type
+            gtype = module_container.GAME_TYPE
+            game_types = gtype if isinstance(gtype, dict) else {
+                gtype.displayName: gtype}
+            _allGames.update(game_types)
         except (ImportError, AttributeError):
             deprint(f'Error in game support module {modname}', traceback=True)
             continue
         # Get this game's install path(s)
-        gt_display_name = game_type.displayName
-        registry_paths = get_registry_game_paths(game_type)
-        if registry_paths:
-            _registry_games[gt_display_name] = registry_paths
-        ws_legacy_paths = get_legacy_ws_game_paths(game_type)
-        if ws_legacy_paths:
-            _ws_legacy_games[gt_display_name] = ws_legacy_paths
-        if not skip_ws_games:
-            ws_paths = get_ws_game_paths(game_type)
-            if ws_paths:
-                _ws_games[gt_display_name] = ws_paths
-        egs_paths = get_egs_game_paths(game_type)
-        if egs_paths:
-            _egs_games[gt_display_name] = egs_paths
+        for gt_display_name, game_type in game_types.items():
+            registry_paths = get_registry_game_paths(game_type)
+            if registry_paths:
+                _registry_games[gt_display_name] = registry_paths
+            ws_legacy_paths = get_legacy_ws_game_paths(game_type)
+            if ws_legacy_paths:
+                _ws_legacy_games[gt_display_name] = ws_legacy_paths
+            if not skip_ws_games:
+                ws_paths = get_ws_game_paths(game_type)
+                if ws_paths:
+                    _ws_games[gt_display_name] = ws_paths
+            egs_paths = get_egs_game_paths(game_type)
+            if egs_paths:
+                _egs_games[gt_display_name] = egs_paths
         del module
     # Dump out info about all games that we *could* launch, but wrap it
     msg = ['The following games are supported by this version of Wrye Bash:']

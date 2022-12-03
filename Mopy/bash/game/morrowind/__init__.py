@@ -25,6 +25,7 @@ import struct as _struct
 
 from .. import GameInfo, WS_COMMON_FILES
 from ..patch_game import PatchGame
+from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class MorrowindGameInfo(PatchGame):
@@ -144,4 +145,17 @@ class MorrowindGameInfo(PatchGame):
         Subrecord.sub_header_size = 8
         cls._validate_records(__name__)
 
-GAME_TYPE = MorrowindGameInfo
+class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
+    """GameInfo override for the Windows Store version of Morrowind."""
+    displayName = 'Morrowind (WS)'
+    # Morrowind does not use the personal folders, so no my_games_name etc.
+
+    class Ws(MorrowindGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
+        ws_language_dirs = ['Morrowind GOTY English',
+                            'Morrowind GOTY French',
+                            'Morrowind GOTY German']
+
+GAME_TYPE = {g.displayName: g for g in
+             (MorrowindGameInfo, WSMorrowindGameInfo)}

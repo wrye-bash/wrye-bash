@@ -26,6 +26,7 @@ from os.path import join as _j
 
 from .. import GameInfo, WS_COMMON_FILES
 from ..patch_game import PatchGame
+from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class Fallout4GameInfo(PatchGame):
@@ -807,4 +808,14 @@ class Fallout4GameInfo(PatchGame):
             b'WRLD', b'WTHR', b'ZOOM'}
         brec.RecordType.simpleTypes = cls.mergeable_sigs
 
-GAME_TYPE = Fallout4GameInfo
+class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
+    """GameInfo override for the Windows Store version of Fallout 4."""
+    displayName = 'Fallout 4 (WS)'
+    my_games_name = 'Fallout4 MS'
+    appdata_name = 'Fallout4 MS'
+
+    class Ws(Fallout4GameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.Fallout4-PC'
+
+GAME_TYPE = {g.displayName: g for g in (Fallout4GameInfo, WSFallout4GameInfo)}

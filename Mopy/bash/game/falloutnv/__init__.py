@@ -25,6 +25,7 @@ from copy import deepcopy
 
 from .. import WS_COMMON_FILES
 from ..fallout3 import Fallout3GameInfo
+from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class FalloutNVGameInfo(Fallout3GameInfo):
@@ -472,4 +473,22 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         # import our records from falloutnv.records as it imports fallout3 ones
         super()._validate_records(__name__)
 
-GAME_TYPE = FalloutNVGameInfo
+class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
+    """GameInfo override for the Windows Store version of Fallout NV."""
+    displayName = 'Fallout New Vegas (WS)'
+    # `appdata_name` and `my_games_name` use the original locations, unlike
+    # newer Windows Store games.
+
+    class Ws(FalloutNVGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
+        ws_language_dirs = ['Fallout New Vegas English',
+                            'Fallout New Vegas French',
+                            'Fallout New Vegas German',
+                            'Fallout New Vegas Italian',
+                            'Fallout New Vegas Spanish']
+
+    bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
+
+GAME_TYPE = {g.displayName: g for g in
+             (FalloutNVGameInfo, WSFalloutNVGameInfo)}

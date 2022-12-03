@@ -27,7 +27,6 @@ and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
 from itertools import chain
 from os.path import join as _j
-from typing import Type
 
 from .. import brec, bolt
 from ..bolt import fast_cached_property, FNDict
@@ -582,4 +581,4 @@ GOG_COMMON_FILES = {'Galaxy64.dll'}
 WS_COMMON_FILES = {'appxmanifest.xml'}
 
 # The GameInfo-derived type used for this game
-GAME_TYPE: Type[GameInfo]
+GAME_TYPE: type[GameInfo] | dict[str, type[GameInfo]]

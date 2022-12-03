@@ -25,6 +25,7 @@ from os.path import join as _j
 
 from .. import GameInfo, WS_COMMON_FILES
 from ..patch_game import PatchGame
+from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class OblivionGameInfo(PatchGame):
@@ -1186,4 +1187,20 @@ class OblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
 
-GAME_TYPE = OblivionGameInfo
+class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
+    """GameInfo override for the Windows Store version of Oblivion."""
+    displayName = 'Oblivion (WS)'
+    # `appdata_name` and `my_games_name` use the original locations, unlike
+    # newer Windows Store games.
+    check_legacy_paths = False
+
+    class Ws(OblivionGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.TESOblivion-PC'
+        ws_language_dirs = ['Oblivion GOTY English',
+                            'Oblivion GOTY French',
+                            'Oblivion GOTY German',
+                            'Oblivion GOTY Italian',
+                            'Oblivion GOTY Spanish']
+
+GAME_TYPE = {g.displayName: g for g in (OblivionGameInfo, WSOblivionGameInfo)}

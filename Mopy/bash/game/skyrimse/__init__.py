@@ -23,8 +23,11 @@
 """GameInfo override for TES V: Skyrim Special Edition."""
 import importlib
 
+from ..gog_game import GOGMixin
 from ..skyrim import SkyrimGameInfo
 from .. import GOG_COMMON_FILES, WS_COMMON_FILES
+from ..windows_store_game import WindowsStoreMixin
+from ...bolt import classproperty
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -298,4 +301,40 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # package name is skyrim here
         super()._validate_records(package_name, plugin_form_vers)
 
-GAME_TYPE = SkyrimSEGameInfo
+class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
+    """GameInfo override for the Windows Store version of Skyrim SE."""
+    displayName = 'Skyrim Special Edition (WS)'
+    my_games_name = 'Skyrim Special Edition MS'
+    appdata_name = 'Skyrim Special Edition MS'
+
+    class Ws(SkyrimSEGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
+
+class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
+    displayName = 'Skyrim Special Edition (EGS)'
+    my_games_name = 'Skyrim Special Edition EPIC'
+    appdata_name = 'Skyrim Special Edition EPIC'
+
+    @classproperty
+    def game_detect_includes(cls):
+        return super().game_detect_includes | {'EOSSDK-Win64-Shipping.dll'}
+
+    @classproperty
+    def game_detect_excludes(cls):
+        return super().game_detect_excludes - {'EOSSDK-Win64-Shipping.dll'}
+
+    class Eg(SkyrimSEGameInfo.Eg):
+        egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
+                         'ac82db5035584c7f8a2c548d98c86b2c'] # SE
+
+class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
+    displayName = 'Skyrim Special Edition (GOG)'
+    my_games_name = 'Skyrim Special Edition GOG'
+    appdata_name = 'Skyrim Special Edition GOG'
+    registry_keys = [(r'GOG.com\Games\1711230643', 'path'),
+                     (r'GOG.com\Games\1162721350', 'path')]
+
+GAME_TYPE = {g.displayName: g for g in (
+    SkyrimSEGameInfo, WSSkyrimSEGameInfo, GOGSkyrimSEGameInfo,
+    EGSSkyrimSEGameInfo)}
