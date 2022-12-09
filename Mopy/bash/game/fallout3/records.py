@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
     gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
-    MelLLChanceNoneTes4, MelLLGlobal
+    MelLLChanceNone, MelLLGlobal
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1523,7 +1523,7 @@ class MreLvlc(AMreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLItems(),
         MelModel(),
@@ -1540,7 +1540,7 @@ class MreLvli(AMreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLGlobal(),
         MelLLItems(),
@@ -1557,7 +1557,7 @@ class MreLvln(AMreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLItems(),
         MelModel(),

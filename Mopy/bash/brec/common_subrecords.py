@@ -995,14 +995,6 @@ class MelLLChanceNoneTes3(MelLLChanceNone):
     """Morrowind version - different subrecord signature."""
     _cn_sig = b'NNAM'
 
-class MelLLChanceNoneTes4(MelLLChanceNone):
-    """Oblivion-to-FNV version - special interaction with LVLF."""
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        super().load_mel(record, ins, sub_type, size_, *debug_strs)
-        if record.lvl_chance_none > 127:
-            record.flags.calc_from_all_levels = True
-            record.lvl_chance_none &= 127
-
 #------------------------------------------------------------------------------
 class _AMelLLFlags:
     """Base class for leveled list flags subrecords."""

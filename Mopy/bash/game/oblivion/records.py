@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
     MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade, MelLtexSnam, \
-    MelLtexGrasses, MelLLFlags, MelLLChanceNoneTes4
+    MelLtexGrasses, MelLLFlags, MelLLChanceNone
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -163,6 +163,19 @@ class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
     masters (see #282 and #577 for two issues that need this as well)."""
     def __init__(self):
         super().__init__('spells', MelFid(b'SPLO'))
+
+#------------------------------------------------------------------------------
+class _AMreLeveledListTes4(AMreLeveledList):
+    """The leveled list subrecords LVLD and LVLF require special handling in
+    Oblivion. This has to be done after all subrecords are loaded, since those
+    two subrecords can be out of order in some plugins.
+
+    See also wbLVLAfterLoad in xEdit's wbDefinitionsTES4.pas."""
+    def loadData(self, ins, endPos, *, file_offset=0):
+        super().loadData(ins, endPos, file_offset=file_offset)
+        if self.lvl_chance_none >= 128:
+            self.flags.calc_from_all_levels = True
+            self.lvl_chance_none -= 128
 
 #------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
@@ -1155,7 +1168,7 @@ class MreLtex(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLvlc(AMreLeveledList):
+class MreLvlc(_AMreLeveledListTes4):
     """Leveled Creature."""
     rec_sig = b'LVLC'
     _top_copy_attrs = ('lvl_chance_none', 'script_fid', 'creature_template')
@@ -1163,7 +1176,7 @@ class MreLvlc(AMreLeveledList):
 
     melSet = MelSet(
         MelEdid(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLItems(),
         MelScript(),
@@ -1171,7 +1184,7 @@ class MreLvlc(AMreLeveledList):
     )
 
 #------------------------------------------------------------------------------
-class MreLvli(AMreLeveledList):
+class MreLvli(_AMreLeveledListTes4):
     """Leveled Item."""
     rec_sig = b'LVLI'
     _top_copy_attrs = ('lvl_chance_none',)
@@ -1179,14 +1192,14 @@ class MreLvli(AMreLeveledList):
 
     melSet = MelSet(
         MelEdid(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLItems(),
         MelNull(b'DATA'),
     )
 
 #------------------------------------------------------------------------------
-class MreLvsp(AMreLeveledList):
+class MreLvsp(_AMreLeveledListTes4):
     """Leveled Spell."""
     rec_sig = b'LVSP'
     _top_copy_attrs = ('lvl_chance_none',)
@@ -1194,7 +1207,7 @@ class MreLvsp(AMreLeveledList):
 
     melSet = MelSet(
         MelEdid(),
-        MelLLChanceNoneTes4(),
+        MelLLChanceNone(),
         MelLLFlags(),
         MelLLItems(),
     )
