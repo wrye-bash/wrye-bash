@@ -1901,9 +1901,11 @@ class MenuLink(Link):
     def _enable_menu(self):
         """Disable ourselves if none of our children are visible."""
         for l in self.links:
-            if isinstance(l, SeparatorLink):
+            if isinstance(l, (SeparatorLink, MultiLink)):
                 # SeparatorLinks are not interactable links, so there is no
-                # need to worry about their enabled status
+                # need to worry about their enabled status. MultiLinks are
+                # virtual - they don't actually exist and only append other
+                # links
                 continue
             if isinstance(l, AppendableLink):
                 # This is an AppendableLink, skip if it's not appended

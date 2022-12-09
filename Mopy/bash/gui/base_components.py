@@ -22,8 +22,9 @@
 # =============================================================================
 """This module houses parts of the GUI code that form the basis for the
 more specialized parts (e.g. _AComponent)."""
+from __future__ import annotations
 
-__author__ = u'nycz, Infernio'
+__author__ = 'nycz, Infernio'
 
 import functools
 import os
@@ -38,28 +39,28 @@ from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
 @functools.cache
-def _csf():
+def _csf() -> float:
     """Returns the content scale factor (CSF) needed for high DPI displays."""
-    if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so
+    if platform.system() != 'Darwin': ##: Linux? os_name == 'nt' if so
         return _wx.Window().GetContentScaleFactor()
     else:
         return 1.0 # Everything scales automatically on macOS
 
-def scaled(unscaled_size):
+def scaled(unscaled_size: int | float):
     scaled = unscaled_size * _csf()
     if isinstance(unscaled_size, int):
         scaled = int(scaled)
     return scaled
 
-def wrapped_tooltip(tooltip_text, wrap_width=50):
+def wrapped_tooltip(tooltip_text: str, wrap_width: int = 50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
     return _wx.ToolTip(tooltip_text)
 
-class Color(object):
+class Color:
     """A simple RGB(A) color class used to avoid having to return wx.Colour
     objects."""
-    def __init__(self, red: int, green: int, blue: int, alpha=255):
+    def __init__(self, red: int, green: int, blue: int, alpha: int = 255):
         """Creates a new color object with the specified color properties.
         Note that all color components must be in the range [0-255] (inclusive
         on both ends), otherwise a RuntimeException is raised.
@@ -71,29 +72,30 @@ class Color(object):
                       255."""
         for color in (red, green, blue, alpha):
             if color < 0 or color > 255:
-                raise RuntimeError(u'All color components must be in range '
-                                   u'0-255.')
+                raise RuntimeError('All color components must be in range '
+                                   '0-255.')
         self.red, self.green, self.blue, self.alpha = red, green, blue, alpha
 
-    def to_rgba_tuple(self): # type: () -> (int, int, int, int)
+    def to_rgba_tuple(self) -> tuple[int, int, int, int]:
         """Converts this Color object into a four-int RGBA tuple."""
         return self.red, self.green, self.blue, self.alpha
 
-    def to_rgb_tuple(self): # type: () -> (int, int, int)
+    def to_rgb_tuple(self) -> tuple[int, int, int]:
         """Converts this Color object into a three-int RGB tuple."""
         return self.red, self.green, self.blue
 
     def __eq__(self, other):
-        return (isinstance(other, Color) and other.red == self.red
-                and self.green == other.green and self.blue == other.blue
-                and self.alpha == other.alpha)
+        if not isinstance(other, Color):
+            return NotImplemented
+        return (self.red == other.red and self.green == other.green and
+                self.blue == other.blue and self.alpha == other.alpha)
 
     def __repr__(self):
         return f'Color(red={self.red}, green={self.green}, ' \
                f'blue={self.blue}, alpha={self.alpha})'
 
     @classmethod
-    def from_wx(cls, color): # type: (_wx.Colour) -> Color
+    def from_wx(cls, color: _wx.Colour) -> Color:
         """Creates a new Color object by copying the color properties from the
         specified wx.Colour object.
 
@@ -101,17 +103,19 @@ class Color(object):
         :return: A Color object representing the same color."""
         return cls(color.Red(), color.Green(), color.Blue(), color.Alpha())
 
-class _ACFrozen(object):
+class _ACFrozen:
     """Helper for _AComponent.pause_drawing."""
     def __init__(self, wx_parent):
         self._wx_parent = wx_parent
+
     def __enter__(self):
         self._wx_parent.Freeze()
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._wx_parent.Thaw()
 
 # Base Elements ---------------------------------------------------------------
-class _AComponent(object):
+class _AComponent:
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over."""
     _native_widget: _wx.Window
@@ -148,20 +152,20 @@ class _AComponent(object):
             raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
                                f"object.")
 
-    def get_component_name(self): # type: () -> str
+    def get_component_name(self) -> str:
         """Returns the name of this component.
 
         :return: This component's name."""
         return self._native_widget.GetName()
 
-    def set_component_name(self, new_ctrl_name): # type: (str) -> None
+    def set_component_name(self, new_ctrl_name: str):
         """Sets the name of this component to the specified name.
 
         :param new_ctrl_name: The string to change this component's name to."""
         self._native_widget.SetName(new_ctrl_name)
 
     @property
-    def visible(self): # type: () -> bool
+    def visible(self) -> bool:
         """Returns True if this component is currently visible, i.e. if the
         user can see it in the GUI.
 
@@ -169,14 +173,14 @@ class _AComponent(object):
         return self._native_widget.IsShown()
 
     @visible.setter
-    def visible(self, is_visible): # type: (bool) -> None
+    def visible(self, is_visible: bool):
         """Shows or hides this component based on the specified parameter.
 
         :param is_visible: Whether or not to show this component."""
         self._native_widget.Show(is_visible)
 
     @property
-    def enabled(self): # type: () -> bool
+    def enabled(self) -> bool:
         """Returns True if this component is currently enabled, i.e. if the
         user can interact with it. Disabled widgets are typically styled in
         some way to indicate this fact to the user (e.g. greyed out).
@@ -185,22 +189,22 @@ class _AComponent(object):
         return self._native_widget.IsEnabled()
 
     @enabled.setter
-    def enabled(self, is_enabled): # type: (bool) -> None
+    def enabled(self, is_enabled: bool):
         """Enables or disables this component based on the specified parameter.
 
         :param is_enabled: Whether or not to enable this component."""
         self._native_widget.Enable(is_enabled)
 
     @property
-    def tooltip(self): # type: () -> str
+    def tooltip(self) -> str:
         """Returns the current contents of this component's tooltip. If no
         tooltip is set, returns an empty string.
 
         :return: This component's tooltip."""
-        return self._native_widget.GetToolTipText() or u''
+        return self._native_widget.GetToolTipText() or ''
 
     @tooltip.setter
-    def tooltip(self, new_tooltip): # type: (str) -> None
+    def tooltip(self, new_tooltip: str):
         """Sets the tooltip of this component to the specified string. If the
         string is empty or None, the tooltip is simply removed.
 
@@ -210,13 +214,13 @@ class _AComponent(object):
         else:
             self._native_widget.SetToolTip(wrapped_tooltip(new_tooltip))
 
-    def get_background_color(self): # type: () -> Color
+    def get_background_color(self) -> Color:
         """Returns the background color of this component as a tuple.
 
         :return: The background color of this component."""
         return Color.from_wx(self._native_widget.GetBackgroundColour())
 
-    def set_background_color(self, new_color): # type: (Color) -> None
+    def set_background_color(self, new_color: Color):
         """Changes the background color of this component to the specified
         color. See gui.Color.
 
@@ -226,11 +230,12 @@ class _AComponent(object):
 
     def reset_background_color(self):
         """Resets the background color of this component to the default one."""
-        if _wx.Platform == '__WXMAC__': return ##: check what we need to do on linux
+        if _wx.Platform == '__WXMAC__':
+            return ##: check what we need to do on linux
         self._native_widget.SetBackgroundColour(_wx.NullColour)
         self._native_widget.Refresh()
 
-    def set_foreground_color(self, new_color): # type: (Color) -> None
+    def set_foreground_color(self, new_color: Color):
         """Changes the foreground color of this component to the specified
         color. See gui.Color.
 
@@ -244,7 +249,7 @@ class _AComponent(object):
         self._native_widget.Refresh()
 
     @property
-    def component_position(self):
+    def component_position(self) -> tuple[int, int]:
         """Returns the X and Y position of this component as a tuple.
 
         :return: A tuple containing the X and Y position of this this component
@@ -253,7 +258,7 @@ class _AComponent(object):
         return curr_pos.x, curr_pos.y
 
     @component_position.setter
-    def component_position(self, new_position): # type: (tuple) -> None
+    def component_position(self, new_position: tuple[int, int]):
         """Changes the X and Y position of this component to the specified
         values.
 
@@ -261,7 +266,7 @@ class _AComponent(object):
         self._native_widget.Move(new_position)
 
     @property
-    def component_size(self):
+    def component_size(self) -> tuple[int, int]:
         """Returns the width and height of this component as a tuple.
 
         :return: A tuple containing the width and height in device-independent
@@ -270,7 +275,7 @@ class _AComponent(object):
         return curr_size.width, curr_size.height
 
     @component_size.setter
-    def component_size(self, new_size): # type: (tuple) -> None
+    def component_size(self, new_size: tuple[int, int]):
         """Changes the width and height of this component to the specified
         values.
 
@@ -278,7 +283,7 @@ class _AComponent(object):
             device-independent pixels (DIP)."""
         self._native_widget.SetSize(self._native_widget.FromDIP(new_size))
 
-    def scaled_size(self):
+    def scaled_size(self) -> tuple[int, int]:
         """Returns the actual width and height in physical pixels that this
         component takes up. For most use cases, you will want component_size
         instead.
@@ -288,7 +293,7 @@ class _AComponent(object):
         curr_size = self._native_widget.GetSize()
         return curr_size.width, curr_size.height
 
-    def set_min_size(self, width, height): # type: (int, int) -> None
+    def set_min_size(self, width: int, height: int):
         """Sets the minimum size of this component to the specified width and
         height in device-independent pixels (DIP)."""
         self._native_widget.SetMinSize(self._native_widget.FromDIP(
@@ -322,18 +327,20 @@ class _AComponent(object):
         be resized/moved/otherwise updated to account for that."""
         self._native_widget.Layout()
 
-    def pause_drawing(self):
+    def pause_drawing(self) -> _ACFrozen:
         """To be used via Python's 'with' statement. Pauses all visual updates
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
-    def to_absolute_position(self, relative_pos): # type: (tuple) -> tuple
+    def to_absolute_position(self,
+            relative_pos: tuple[int, int]) -> tuple[int, int]:
         """Converts the specified position that is relative to the center of
         this component into absolute coordinates, i.e. relative to the top left
         of the screen."""
         return tuple(self._native_widget.ClientToScreen(relative_pos))
 
-    def to_relative_position(self, absolute_pos): # type: (tuple) -> tuple
+    def to_relative_position(self,
+            absolute_pos: tuple[int, int]) -> tuple[int, int]:
         """The inverse of to_absolute_position."""
         return tuple(self._native_widget.ScreenToClient(absolute_pos))
 
@@ -358,9 +365,9 @@ class WithMouseEvents(_AComponent):
     bind_motion = bind_mouse_leaving = False
     bind_middle_up = False
 
-    class _WrapMouseEvt(object):
-        def __init__(self, mouse_evt):
-            self.__mouse_evt = mouse_evt # type: _wx.MouseEvent
+    class _WrapMouseEvt:
+        def __init__(self, mouse_evt: _wx.MouseEvent):
+            self.__mouse_evt = mouse_evt
 
         @property
         def is_moving(self):
@@ -379,7 +386,7 @@ class WithMouseEvents(_AComponent):
             return self.__mouse_evt.AltDown()
 
     def __init__(self, *args, **kwargs):
-        super(WithMouseEvents, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         lb_hit_test = lambda event: [ # HitTest may return an int or a tuple...
             self._native_widget.HitTest(event.GetPosition())]
         if self.__class__.bind_lclick_double:
@@ -417,9 +424,9 @@ class WithCharEvents(_AComponent):
       - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): Posted when
         a key is starting to be released. OS handlers for this key have run if
         they weren't overriden by an on_key_down subscription."""
-    class _WrapKeyEvt(object):
-        def __init__(self, mouse_evt):
-            self.__key_evt = mouse_evt # type: _wx.KeyEvent
+    class _WrapKeyEvt:
+        def __init__(self, mouse_evt: _wx.KeyEvent):
+            self.__key_evt = mouse_evt
 
         @property
         def key_code(self):
@@ -438,12 +445,12 @@ class WithCharEvents(_AComponent):
             return self.key_code == _wx.WXK_SPACE
 
     def __init__(self, *args, **kwargs):
-        super(WithCharEvents, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         wrap_processor = lambda event: [self._WrapKeyEvt(event)]
         self.on_key_down = self._evt_handler(_wx.EVT_KEY_DOWN, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
-class ImageWrapper(object):
+class ImageWrapper:
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
@@ -467,7 +474,7 @@ class ImageWrapper(object):
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
-        if not os.path.exists(self._img_path.split(u';')[0]):
+        if not os.path.exists(self._img_path.split(';')[0]):
             raise ArgumentError(f'Missing resource file: {filename}.')
 
     def get_bitmap(self):
