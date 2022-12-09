@@ -797,8 +797,7 @@ class Fallout4GameInfo(PatchGame):
         super()._validate_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL',
-            b'LVSP', b'MATO',
-            b'MATT', b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',
+            b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',
             b'MUSC', b'MUST', b'NAVI', b'NOCM', b'NOTE', b'NPC_', b'OMOD',
             b'OTFT', b'OVIS', b'PACK', b'PKIN', b'PROJ', b'QUST', b'RACE',
             b'REGN', b'RELA', b'REVB', b'RFCT', b'RFGP', b'SCCO', b'SCEN',

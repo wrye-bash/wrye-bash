@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
     MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade, MelLtexSnam, \
-    MelLtexGrasses
+    MelLtexGrasses, MelLLFlags, MelLLChanceNoneTes4
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -126,18 +126,6 @@ class MelItems(AMelItems):
         super().__init__(with_coed=False, with_counter=False)
 
 #------------------------------------------------------------------------------
-class MelLevListLvld(MelUInt8):
-    """Subclass to handle chanceNone and flags.calcFromAllLevels."""
-    def __init__(self):
-        super(MelLevListLvld, self).__init__(b'LVLD', u'chanceNone')
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        super(MelLevListLvld, self).load_mel(record, ins, sub_type, size_,
-                                             *debug_strs)
-        if record.chanceNone > 127:
-            record.flags.calcFromAllLevels = True
-            record.chanceNone &= 127
-
 ##: Old format might be h2sI instead, which would retire this whole class
 class MelLevListLvlo(MelTruncatedStruct):
     """Older format skips unused1, which is in the middle of the record."""
@@ -450,21 +438,6 @@ class MreHasEffects(object):
             if not is_effect_hostile:
                 return False
         return True
-
-#------------------------------------------------------------------------------
-class MreLeveledList(AMreLeveledList):
-    """Leveled item/creature/spell list."""
-    top_copy_attrs = ('script_fid', 'template', 'chanceNone',)
-
-    melSet = MelSet(
-        MelEdid(),
-        MelLevListLvld(),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelScript(), # LVLC only
-        MelFid(b'TNAM','template'),
-        MelLLItems(),
-        MelNull(b'DATA'),
-    )
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -1182,19 +1155,49 @@ class MreLtex(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLvlc(MreLeveledList):
+class MreLvlc(AMreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LVLC'
+    _top_copy_attrs = ('lvl_chance_none', 'script_fid', 'creature_template')
+    _entry_copy_attrs = ('level', 'listId', 'count')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLItems(),
+        MelScript(),
+        MelFid(b'TNAM', 'creature_template'),
+    )
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
+class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId', 'count')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLItems(),
+        MelNull(b'DATA'),
+    )
 
 #------------------------------------------------------------------------------
-class MreLvsp(MreLeveledList):
+class MreLvsp(AMreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId', 'count')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLItems(),
+    )
 
 #------------------------------------------------------------------------------
 class MreMgef(MelRecord):

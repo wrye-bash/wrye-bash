@@ -52,7 +52,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
-    gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam
+    gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
+    MelLLChanceNoneTes4, MelLLGlobal
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -226,14 +227,6 @@ class MelItems(AMelItems):
         super().__init__(with_counter=False)
 
 #------------------------------------------------------------------------------
-class MelLevListLvld(MelUInt8):
-    """Subclass to support alternate format."""
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        super().load_mel(record, ins, sub_type, size_, *debug_strs)
-        if record.chanceNone > 127:
-            record.flags.calcFromAllLevels = True
-            record.chanceNone &= 127
-
 ##: Old format might be h2sI instead, which would retire this whole class
 class MelLevListLvlo(MelTruncatedStruct):
     """Older format skips unused1, which is in the middle of the record."""
@@ -297,22 +290,6 @@ class MelSoundRandomLooping(MelFid):
     FNV."""
     def __init__(self):
         super().__init__(b'RNAM', 'sound_random_looping')
-
-#------------------------------------------------------------------------------
-class MreLeveledList(AMreLeveledList):
-    """Leveled item/creature/spell list.."""
-    top_copy_attrs = ('chanceNone', 'glob')
-    entry_copy_attrs = ('listId', 'level', 'count', 'owner', 'itemCondition')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelLevListLvld(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', 'glob'),
-        MelLLItems(),
-        MelModel(),
-    )
 
 #------------------------------------------------------------------------------
 # Fallout3 Records ------------------------------------------------------------
@@ -1536,19 +1513,55 @@ class MreLtex(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLvlc(MreLeveledList):
+class MreLvlc(AMreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LVLC'
+    _top_copy_attrs = ('lvl_chance_none', 'model')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLItems(),
+        MelModel(),
+    )
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
+class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
+    _top_copy_attrs = ('lvl_chance_none', 'lvl_global')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLGlobal(),
+        MelLLItems(),
+    )
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledList):
+class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
+    _top_copy_attrs = ('lvl_chance_none', 'model')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelLLChanceNoneTes4(),
+        MelLLFlags(),
+        MelLLItems(),
+        MelModel(),
+    )
 
 #------------------------------------------------------------------------------
 class MreMesg(MelRecord):

@@ -58,7 +58,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
     MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
     MelDalc, gen_ambient_lighting, MelLighFade, MelLscrCameraPath, \
-    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam
+    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
+    MelLLChanceNone, MelLLGlobal, MelMatoPropertyData, gen_color3, \
+    MelMattShared
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1625,21 +1627,23 @@ class MreLtex(MelRecord):
             'hd_restitution'), # hd = 'Havok Data'
         MelLtexSnam(),
         MelLtexGrasses(),
-        sse_only(MelUInt32(b'INAM', 'considered_snow')),
+        sse_only(MelUInt32(b'INAM', 'is_considered_snow')),
     )
 
 #------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    top_copy_attrs = ('chanceNone', 'glob')
+    _top_copy_attrs = ('lvl_chance_none', 'lvl_global')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', 'glob'),
+        MelLLChanceNone(),
+        MelLLFlags(),
+        MelLLGlobal(),
         MelLLItems(),
     )
 
@@ -1647,31 +1651,32 @@ class MreLvli(AMreLeveledList):
 class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
-    top_copy_attrs = ('chanceNone', 'lvln_model', 'lvln_modt_p')
+    _top_copy_attrs = ('lvl_chance_none', 'lvl_global', 'model')
+    _entry_copy_attrs = ('level', 'listId', 'count', 'item_owner',
+                         'item_global', 'item_condition')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
-        MelFid(b'LVLG', 'glob'),
+        MelLLChanceNone(),
+        MelLLFlags(),
+        MelLLGlobal(),
         MelLLItems(),
-        MelString(b'MODL', 'lvln_model'),
-        MelBase(b'MODT', 'lvln_modt_p'),
+        MelModel(),
     )
 
 #------------------------------------------------------------------------------
 class MreLvsp(AMreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
-
-    top_copy_attrs = ('chanceNone',)
+    _top_copy_attrs = ('lvl_chance_none',)
+    _entry_copy_attrs = ('level', 'listId', 'count')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', 'flags', AMreLeveledList._flags),
+        MelLLChanceNone(),
+        MelLLFlags(),
         MelLLItems(with_coed=False),
     )
 
@@ -1680,28 +1685,24 @@ class MreMato(MelRecord):
     """Material Object."""
     rec_sig = b'MATO'
 
-    _MatoTypeFlags = Flags.from_names('singlePass')
-
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelGroups('property_data',
-            MelBase(b'DNAM', 'data_entry'),
-        ),
+        MelMatoPropertyData(),
         if_sse(
-            le_version=MelTruncatedStruct(
-                b'DATA', [u'11f', u'I'], 'falloffScale', 'falloffBias', 'noiseUVScale',
-                'materialUVScale', 'projectionVectorX', 'projectionVectorY',
-                'projectionVectorZ', 'normalDampener', 'singlePassColorRed',
-                'singlePassColorGreen', 'singlePassColorBlue',
-                (_MatoTypeFlags, 'single_pass_flags'), old_versions={'7f'}),
-            se_version=MelTruncatedStruct(
-                b'DATA', [u'11f', u'I', u'B', u'3s'], 'falloffScale', 'falloffBias',
-                'noiseUVScale', 'materialUVScale', 'projectionVectorX',
-                'projectionVectorY', 'projectionVectorZ', 'normalDampener',
-                'singlePassColorRed', 'singlePassColorGreen',
-                'singlePassColorBlue', (_MatoTypeFlags, 'single_pass_flags'),
-                'considered_snow', 'unused1', old_versions={'7f', '11fI'}),
+            le_version=MelTruncatedStruct(b'DATA', ['11f', 'I'],
+                'falloff_scale', 'falloff_bias', 'noise_uv_scale',
+                'material_uv_scale', 'projection_vector_x',
+                'projection_vector_y', 'projection_vector_z',
+                'normal_dampener', *gen_color3('single_pass_color'),
+                'is_single_pass', old_versions={'7f'}),
+            se_version=MelTruncatedStruct(b'DATA', ['11f', 'I', 'B', '3s'],
+                'falloff_scale', 'falloff_bias', 'noise_uv_scale',
+                'material_uv_scale', 'projection_vector_x',
+                'projection_vector_y', 'projection_vector_z',
+                'normal_dampener', *gen_color3('single_pass_color'),
+                'is_single_pass', 'is_considered_snow', 'unused1',
+                old_versions={'7f', '11fI'}),
         ),
     )
 
@@ -1710,16 +1711,9 @@ class MreMatt(MelRecord):
     """Material Type."""
     rec_sig = b'MATT'
 
-    MattTypeFlags = Flags.from_names('stairMaterial', 'arrowsStick')
-
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'PNAM', 'materialParent',),
-        MelString(b'MNAM','materialName'),
-        MelStruct(b'CNAM', [u'3f'], 'red', 'green', 'blue'),
-        MelFloat(b'BNAM', 'buoyancy'),
-        MelUInt32Flags(b'FNAM', u'flags', MattTypeFlags),
-        MelImpactDataset(b'HNAM'),
+        MelMattShared(),
     )
 
 #------------------------------------------------------------------------------
@@ -3340,7 +3334,7 @@ class MreStat(MelRecord):
                                  (FID, 'material')),
             se_version=MelTruncatedStruct(
                 b'DNAM', [u'f', u'I', u'B', u'3s'], 'maxAngle30to120',
-                (FID, 'material'), 'considered_snow', 'unused1',
+                (FID, 'material'), 'is_considered_snow', 'unused1',
                 old_versions={'fI'}),
         ),
         # Contains null-terminated mesh filename followed by random data

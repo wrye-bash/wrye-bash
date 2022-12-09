@@ -357,21 +357,16 @@ class AMreLeveledList(MelRecord):
 
     It uses the following attributes:
     Class attributes:
-        top_copy_attrs -> List of attributes to modify by copying when merging
-        entry_copy_attrs -> List of attributes to modify by copying for each
-                            list entry when merging
+        _top_copy_attrs -> List of attributes to modify by copying when merging
+        _entry_copy_attrs -> List of attributes to modify by copying for each
+                             list entry when merging
     Instance attributes:
-        entries -> List of items, with the following attributes:
-            listId
-            level
-            count
-            chanceNone
-            flags"""
-    _flags = bolt.Flags.from_names(u'calcFromAllLevels', u'calcForEachItem',
-                                   u'useAllSpells', u'specialLoot')
-    top_copy_attrs = ()
-    # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
-    entry_copy_attrs = ('listId', 'level', 'count')
+        entries -> List of items. Each must have at least 'listId' and
+                   otherwise must have all the attributes defined in
+                   _entry_copy_attrs.
+        flags -> Flags field. See MelLLFlags."""
+    _top_copy_attrs: tuple[str, ...]
+    _entry_copy_attrs: tuple[str, ...]
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
                 # + ['flags', 'entries'] # define those in the subclasses
@@ -394,11 +389,11 @@ class AMreLeveledList(MelRecord):
         defined."""
         #--Relevel or not?
         if other.re_records:
-            for attr in self.__class__.top_copy_attrs:
+            for attr in self.__class__._top_copy_attrs:
                 setattr(self, attr, getattr(other, attr))
             self.flags = other.flags() # Flags copy!
         else:
-            for attr in self.__class__.top_copy_attrs:
+            for attr in self.__class__._top_copy_attrs:
                 otherAttr = getattr(other, attr)
                 if otherAttr is not None:
                     setattr(self, attr, otherAttr)
@@ -429,7 +424,7 @@ class AMreLeveledList(MelRecord):
                          u'to %u, you will have to fix this manually!' %
                          (otherMod, self, max_lvl_size, max_lvl_size))
             self.entries = self.entries[:max_lvl_size]
-        entry_copy_attrs_key = attrgetter(*self.__class__.entry_copy_attrs)
+        entry_copy_attrs_key = attrgetter(*self.__class__._entry_copy_attrs)
         if newItems:
             self.items |= newItems
             self.entries.sort(key=entry_copy_attrs_key)
@@ -439,7 +434,7 @@ class AMreLeveledList(MelRecord):
             self.mergeOverLast = True
         else:
             # Check copy-attributes first, break if they are different
-            for attr in self.__class__.top_copy_attrs:
+            for attr in self.__class__._top_copy_attrs:
                 if getattr(self, attr) != getattr(other, attr):
                     self.mergeOverLast = True
                     break
@@ -448,7 +443,7 @@ class AMreLeveledList(MelRecord):
                 otherlist = other.entries
                 otherlist.sort(key=entry_copy_attrs_key)
                 for selfEntry, otherEntry in zip(self.entries, otherlist):
-                    for attr in self.__class__.entry_copy_attrs:
+                    for attr in self.__class__._entry_copy_attrs:
                         if getattr(selfEntry, attr) != getattr(
                                 otherEntry, attr):
                             break
