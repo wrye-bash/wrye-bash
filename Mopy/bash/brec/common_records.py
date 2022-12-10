@@ -253,14 +253,21 @@ class AMreImad(MelRecord):
     counters programmatically."""
     rec_sig = b'IMAD'
 
-    imad_dof_flags = Flags.from_names(
-        'mode_front',
-        'mode_back',
-        'no_sky',
-        'blur_radius_bit_2',
-        'blur_radius_bit_1',
-        'blur_radius_bit_0',
-    )
+    class imad_dof_flags(Flags):
+        mode_front: bool
+        mode_back: bool
+        no_sky: bool
+        blur_radius_bit_2: bool
+        blur_radius_bit_1: bool
+        blur_radius_bit_0: bool
+
+        @property
+        def blur_radius(self) -> int:
+            return self._field & 0b111
+
+        @blur_radius.setter
+        def blur_radius(self, new_radius: int) -> None:
+            self._field = (self._field & ~0b111) | (new_radius & 0b111)
 
     dnam_attrs1 = (
         'eye_adapt_speed_mult', 'eye_adapt_speed_add',
@@ -521,8 +528,10 @@ class MreColl(MelRecord):
     """Collision Layer."""
     rec_sig = b'COLL'
 
-    _coll_flags = Flags.from_names('trigger_volume', 'sensor',
-        'navmesh_obstacle')
+    class _coll_flags(Flags):
+        trigger_volume: bool
+        sensor: bool
+        navmesh_obstacle: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -555,7 +564,10 @@ class MreDlbr(MelRecord):
     """Dialog Branch."""
     rec_sig = b'DLBR'
 
-    _dlbr_flags = Flags.from_names('top_level', 'blocking', 'exclusive')
+    class _dlbr_flags(Flags):
+        top_level: bool
+        blocking: bool
+        exclusive: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -586,8 +598,10 @@ class MreDual(MelRecord):
     """Dual Cast Data."""
     rec_sig = b'DUAL'
 
-    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
-        'projectile_scale', 'explosion_scale')
+    class _inherit_scale_flags(Flags):
+        hit_effect_art_scale: bool
+        projectile_scale: bool
+        explosion_scale: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -603,8 +617,10 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    # not_male and not_female exist since FO3
-    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
+    class _eyes_flags(Flags):
+        playable: bool
+        not_male: bool # since FO3
+        not_female: bool # since FO3
 
     melSet = MelSet(
         MelEdid(),

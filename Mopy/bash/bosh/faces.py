@@ -36,9 +36,17 @@ _player_fid = FormId.from_object_id(0, 0x7)
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags.from_names('pcf_name', 'race', 'gender', 'hair', 'eye',
-                                 'iclass', 'stats', 'factions', 'modifiers',
-                                 'spells')
+    class pcf_flags(Flags):
+        pcf_name: bool
+        race: bool
+        gender: bool
+        hair: bool
+        eye: bool
+        iclass: bool
+        stats: bool
+        factions: bool
+        modifiers: bool
+        spells: bool
 
     class PCFace(object):
         """Represents a face."""

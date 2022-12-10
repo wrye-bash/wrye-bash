@@ -84,11 +84,15 @@ class _MelCtda(MelUnion):
     amounts to a decision tree using MelUnions."""
     # 0 = Unknown/Ignored, 1 = Int, 2 = FormID, 3 = Float
     _param_types = {0: '4s', 1: 'i', 2: 'I', 3: 'f'}
-    # This is technically a lot more complex (the highest three bits also
-    # encode the comparison operator), but we only care about use_global, so we
-    # can treat the rest as unknown flags and just carry them forward
-    _ctda_type_flags = Flags.from_names('do_or', 'use_aliases', 'use_global',
-        'use_packa_data', 'swap_subject_and_target')
+    class _ctda_type_flags(Flags):
+        # This is technically a lot more complex (the highest three bits also
+        # encode the comparison operator), but we only care about use_global, so we
+        # can treat the rest as unknown flags and just carry them forward
+        do_or: bool
+        use_aliases: bool
+        use_global: bool
+        use_packa_data: bool
+        swap_subject_and_target: bool
 
     def __init__(self, ctda_sub_sig=b'CTDA',
             suffix_fmt: list[str] | None = None,
@@ -407,7 +411,8 @@ class MelEffectsTes4(MelSequential):
     which is why it's so complex. The challenge is that we basically have to
     redirect every procedure to one of two lists of elements, depending on
     whether an 'OBME' subrecord exists or not."""
-    se_flags = Flags.from_names('hostile')
+    class se_flags(Flags):
+        hostile: bool
 
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
@@ -1549,7 +1554,9 @@ class _VmadHandlerINFO(_AVmadHandlerV6Mixin, _AFixedContainer):
         'fragment_flags':          get_structs('B'),
         'file_name':               'str16',
     }
-    _flags_mapper = Flags.from_names('on_begin', 'on_end')
+    class _flags_mapper(Flags):
+        on_begin: bool
+        on_end: bool
     _flags_to_children = {
         'on_begin': 'begin_frag',
         'on_end':   'end_frag',
@@ -1571,7 +1578,10 @@ class _VmadHandlerPACK(_AVmadHandlerV6Mixin, _AFixedContainer):
         'fragment_flags':          get_structs('B'),
         'file_name':               'str16',
     }
-    _flags_mapper = Flags.from_names('on_begin', 'on_end', 'on_change')
+    class _flags_mapper(Flags):
+        on_begin: bool
+        on_end: bool
+        on_change: bool
     _flags_to_children = {
         'on_begin':  'begin_frag',
         'on_end':    'end_frag',
@@ -1672,7 +1682,9 @@ class _VmadHandlerSCEN(_AVmadHandlerV6Mixin, _AFixedContainer):
         'fragment_flags':          get_structs('B'),
         'file_name':               'str16',
     }
-    _flags_mapper = Flags.from_names('on_begin', 'on_end')
+    class _flags_mapper(Flags):
+        on_begin: bool
+        on_end: bool
     _flags_to_children = {
         'on_begin': 'begin_frag',
         'on_end':   'end_frag',

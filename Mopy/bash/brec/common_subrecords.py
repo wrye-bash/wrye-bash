@@ -34,7 +34,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelStrings, MelUInt8, MelUInt16Flags
 from .utils_constants import int_unpacker, FID, null1, ZERO_FID, gen_color, \
     gen_color3, gen_ambient_lighting
-from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
+from ..bolt import Flags, flag, encode, struct_pack, dict_sort, TrimmedFlags, \
     structs_cache
 from ..exception import ModError
 
@@ -90,11 +90,10 @@ class AMelLLItems(MelSequential):
 class MelActiFlags(MelUInt16Flags):
     """Handles the ACTI subrecord FNAM (Flags). Note that this subrecord is
     inherited by a couple other records too."""
-    _acti_flags = Flags.from_names(
-        (0, 'no_displacement'),
-        (1, 'ignored_by_sandbox'),
-        (4, 'is_a_radio'), # Introduced in FO4
-    )
+    class _acti_flags(Flags):
+        no_displacement: bool = flag(0)
+        ignored_by_sandbox: bool = flag(1)
+        is_a_radio: bool = flag(4) # Introduced in FO4
 
     def __init__(self):
         super().__init__(b'FNAM', 'acti_flags', self._acti_flags)
@@ -102,8 +101,11 @@ class MelActiFlags(MelUInt16Flags):
 #------------------------------------------------------------------------------
 class MelActionFlags(MelUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
-    _act_flags = Flags.from_names('act_use_default', 'act_activate',
-                                  'act_open', 'act_open_by_default')
+    class _act_flags(Flags):
+        act_use_default: bool
+        act_activate: bool
+        act_open: bool
+        act_open_by_default: bool
 
     def __init__(self):
         super().__init__(b'XACT', 'action_flags', self._act_flags)
@@ -118,7 +120,8 @@ class MelActionFlags(MelUInt32Flags):
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
-    _ap_flags = TrimmedFlags.from_names('parent_activate_only')
+    class _ap_flags(TrimmedFlags):
+        parent_activate_only: bool
 
     def __init__(self):
         super().__init__('activate_parents',
@@ -154,12 +157,11 @@ class MelAddnDnam(MelStruct):
 #------------------------------------------------------------------------------
 class MelAlchEnit(MelStruct):
     """Handles the ALCH subrecord ENIT (Effect Data) since Skyrim."""
-    _enit_flags = Flags.from_names(
-        (0,  'alch_no_auto_calc'),
-        (1,  'alch_is_food'),
-        (16, 'medicine'),
-        (17, 'poison'),
-    )
+    class _enit_flags(Flags):
+        alch_no_auto_calc: bool = flag(0)
+        alch_is_food: bool = flag(1)
+        medicine: bool = flag(16)
+        poison: bool = flag(17)
 
     def __init__(self):
         super().__init__(b'ENIT', ['i', '2I', 'f', 'I'], 'value',
@@ -176,14 +178,15 @@ class MelAnimations(MelSorted): ##: case insensitive
 class MelArmaShared(MelSequential):
     """Handles the ARMA subrecords DNAM, MOD2-MOD5, NAM0-NAM3, MODL, SNDD and
     ONAM."""
-    _weigth_slider_flags = Flags.from_names((1, 'slider_enabled'))
+    class _weight_slider_flags(Flags):
+        slider_enabled: bool = flag(1)
 
     def __init__(self, mel_model: Type[MelBase]):
         super().__init__(
             MelStruct(b'DNAM', ['4B', '2s', 'B', 's', 'f'],
                 'male_priority', 'female_priority',
-                (self._weigth_slider_flags, 'slider_flags_m'),
-                (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
+                (self._weight_slider_flags, 'slider_flags_m'),
+                (self._weight_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
                 'detection_sound_value', 'unknown_dnam2', 'weapon_adjust'),
             mel_model(b'MOD2', 'male_model'),
             mel_model(b'MOD3', 'female_model'),
@@ -331,8 +334,10 @@ class MelColorO(MelOptStruct):
 class MelContData(MelStruct):
     """Handles the CONT subrecord DATA (Data)."""
     # Flags 1 & 3 introduced in Skyrim, treat as unknown for earlier games
-    _cont_flags = Flags.from_names('allow_sounds_when_animation',
-        'cont_respawns', 'show_owner')
+    class _cont_flags(Flags):
+        allow_sounds_when_animation: bool
+        cont_respawns: bool
+        show_owner: bool
 
     def __init__(self):
         super().__init__(b'DATA', ['B', 'f'], (self._cont_flags, 'cont_flags'),
@@ -347,7 +352,7 @@ class MelCpthShared(MelSequential):
             MelSimpleArray('related_camera_paths', MelFid(b'ANAM')),
             MelUInt8(b'DATA', 'camera_zoom'),
             MelFids('camera_shots', MelFid(b'SNAM')),
-        ),
+        )
 
 #------------------------------------------------------------------------------
 class MelDalc(MelTruncatedStruct):
@@ -360,7 +365,9 @@ class MelDalc(MelTruncatedStruct):
 #------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
     """Handles the DEBR subrecord DATA (Data)."""
-    _debr_flags = Flags.from_names('has_collision_data', 'collision')
+    class _debr_flags(Flags):
+        has_collision_data: bool
+        collision: bool
 
     def __init__(self):
         # Format doesn't matter, struct.Struct('') works! ##: MelStructured
@@ -387,12 +394,11 @@ class MelDebrData(MelStruct):
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
     """Handles the common DODT (Decal Data) subrecord."""
-    _decal_flags = TrimmedFlags.from_names(
-        'parallax',
-        'alpha_blending',
-        'alpha_testing',
-        'no_subtextures', # since Skyrim
-    )
+    class _decal_flags(TrimmedFlags):
+        parallax: bool
+        alpha_blending: bool
+        alpha_testing: bool
+        no_subtextures: bool # since Skyrim
 
     def __init__(self):
         super().__init__(b'DODT', ['7f', 'B', 'B', '2s', '3B', 's'],
@@ -410,15 +416,14 @@ class MelDescription(MelLString):
 
 #------------------------------------------------------------------------------
 class MelDoorFlags(MelUInt8Flags):
-    _door_flags = Flags.from_names(
-        'oblivion_gate' # Oblivion only
-        'automatic',
-        'hidden',
-        'minimal_use',
-        'sliding_door', # since FO3
-        'do_not_open_in_combat_search', # since Skyrim
-        'no_to_text', # since FO4
-    )
+    class _door_flags(Flags):
+        oblivion_gate: bool # Oblivion only
+        automatic: bool
+        hidden: bool
+        minimal_use: bool
+        sliding_door: bool # since FO3
+        do_not_open_in_combat_search: bool # since Skyrim
+        no_to_text: bool # since FO4
 
     def __init__(self):
         super().__init__(b'FNAM', 'door_flags', self._door_flags)
@@ -434,7 +439,9 @@ class MelEnableParent(MelOptStruct):
     """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
     # The pop_in flag doesn't technically exist for all XESP subrecords, but it
     # will just be ignored for those where it doesn't exist, so no problem.
-    _parent_flags = Flags.from_names('opposite_parent', 'pop_in')
+    class _parent_flags(Flags):
+        opposite_parent: bool
+        pop_in: bool
 
     def __init__(self):
         super().__init__(b'XESP', ['I', 'B', '3s'], (FID, 'ep_reference'),
@@ -461,24 +468,23 @@ class MelEqupPnam(MelSimpleArray):
 #------------------------------------------------------------------------------
 class MelFactFlags(MelUInt32Flags):
     """Handles the FACT subrecord DATA (Flags) since Skyrim."""
-    _fact_flags = Flags.from_names(
-        ( 0, 'hidden_from_pc'),
-        ( 1, 'special_combat'),
-        ( 6, 'track_crime'),
-        ( 7, 'ignore_crimes_murder'),
-        ( 8, 'ignore_crimes_assault'),
-        ( 9, 'ignore_crimes_stealing'),
-        (10, 'ignore_crimes_trespass'),
-        (11, 'do_not_report_crimes_against_members'),
-        (12, 'crime_gold_use_defaults'),
-        (13, 'ignore_crimes_pickpocket'),
-        (14, 'allow_sell'), # also called 'vendor'
-        (15, 'can_be_owner'),
-        (16, 'ignore_crimes_werewolf'),
-    )
+    class _fact_flags(Flags):
+        hidden_from_pc: bool = flag(0)
+        special_combat: bool = flag(1)
+        track_crime: bool = flag(6)
+        ignore_crimes_murder: bool = flag(7)
+        ignore_crimes_assault: bool = flag(8)
+        ignore_crimes_stealing: bool = flag(9)
+        ignore_crimes_trespass: bool = flag(10)
+        do_not_report_crimes_against_members: bool = flag(11)
+        crime_gold_use_defaults: bool = flag(12)
+        ignore_crimes_pickpocket: bool = flag(13)
+        allow_sell: bool = flag(14) # also called 'vendor'
+        can_be_owner: bool = flag(15)
+        ignore_crimes_werewolf: bool = flag(16)
 
     def __init__(self):
-        super().__init__(b'DATA', 'fact_flags', self._fact_flags),
+        super().__init__(b'DATA', 'fact_flags', self._fact_flags)
 
 #------------------------------------------------------------------------------
 class MelFactFids(MelSequential):
@@ -545,8 +551,12 @@ class MelFull(MelLString):
 class MelFurnMarkerData(MelSequential):
     """Handles the FURN subrecords ENAM, NAM0, FNMK (Skyrim only), FNPR and
     XMRK."""
-    _entry_points = Flags.from_names('entry_point_front', 'entry_point_behind',
-        'entry_point_right', 'entry_point_left', 'entry_point_up')
+    class _entry_points(Flags):
+        entry_point_front: bool
+        entry_point_behind: bool
+        entry_point_right: bool
+        entry_point_left: bool
+        entry_point_up: bool
 
     def __init__(self, *, with_marker_keyword=False):
         marker_elements = [
@@ -569,8 +579,10 @@ class MelFurnMarkerData(MelSequential):
 #------------------------------------------------------------------------------
 class MelGrasData(MelStruct):
     """Handles the GRAS subrecord DATA (Data)."""
-    _gras_flags = Flags.from_names('vertex_lighting', 'uniform_scaling',
-        'fit_to_slope')
+    class _gras_flags(Flags):
+        vertex_lighting: bool
+        uniform_scaling: bool
+        fit_to_slope: bool
 
     def __init__(self):
         super().__init__(b'DATA', ['3B', 's', 'H', '2s', 'I', '4f', 'B', '3s'],
@@ -583,8 +595,11 @@ class MelGrasData(MelStruct):
 #------------------------------------------------------------------------------
 class MelHairFlags(MelUInt8Flags):
     """Handles the HAIR subrecord DATA (Flags)."""
-    _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',
-        'hair_fixed')
+    class _hair_flags(Flags):
+        playable: bool
+        not_male: bool
+        not_female: bool
+        hair_fixed: bool
 
     def __init__(self):
         super().__init__(b'DATA', 'flags', self._hair_flags)
@@ -593,14 +608,13 @@ class MelHairFlags(MelUInt8Flags):
 class MelHdptShared(MelSequential):
     """Handles the HDPT subrecords DATA, PNAM, HNAM, NAM0, NAM1, TNAM, CNAM and
     RNAM."""
-    _hdpt_flags = Flags.from_names(
-        'playable',
-        'not_female',
-        'not_male',
-        'is_extra_part',
-        'use_solid_tint',
-        'uses_body_texture', # since FO4
-    )
+    class _hdpt_flags(Flags):
+        playable: bool
+        not_female: bool
+        not_male: bool
+        is_extra_part: bool
+        use_solid_tint: bool
+        uses_body_texture: bool # since FO4
 
     def __init__(self):
         super().__init__(
@@ -672,18 +686,21 @@ class MelIdleAnimationCountOld(MelPartialCounter):
     def __init__(self):
         super().__init__(MelTruncatedStruct(b'IDLC', ['B', '3s'],
             'idle_animation_count', 'unused1', old_versions={'B'}),
-            counters={'idle_animation_count': 'idle_animations'}),
+            counters={'idle_animation_count': 'idle_animations'})
 
 #------------------------------------------------------------------------------
 class MelIdleData(MelStruct):
     """Handles the IDLE subrecord DATA (Data) since Skyrim."""
-    _idle_flags = TrimmedFlags.from_names('idle_parent', 'idle_sequence',
-        'no_attacking', 'idle_blocking')
+    class _idle_flags(TrimmedFlags):
+        idle_parent: bool
+        idle_sequence: bool
+        no_attacking: bool
+        idle_blocking: bool
 
     def __init__(self):
         super().__init__(b'DATA', ['4B', 'H'], 'looping_min', 'looping_max',
             (self._idle_flags, 'idle_flags'), 'animation_group_section',
-            'replay_delay'),
+            'replay_delay')
 
 #------------------------------------------------------------------------------
 class MelIdleEnam(MelString):
@@ -707,11 +724,10 @@ class MelIdleTimerSetting(MelFloat):
 #------------------------------------------------------------------------------
 class MelIdlmFlags(MelUInt8Flags):
     """Handles the IDLM subrecord IDLF (Flags)."""
-    _idlm_flags = Flags.from_names(
-        (0, 'run_in_sequence'),
-        (2, 'do_once'),
-        (4, 'ignored_by_sandbox'), # since Skyrim
-    )
+    class _idlm_flags(Flags):
+        run_in_sequence: bool = flag(0)
+        do_once: bool = flag(2)
+        ignored_by_sandbox: bool = flag(4) # since Skyrim
 
     def __init__(self):
         super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
@@ -768,11 +784,10 @@ class MelIngredient(MelFid):
 #------------------------------------------------------------------------------
 class MelIngrEnit(MelStruct):
     """Handles the INGR subrecord ENIT (Effect Data)."""
-    _enit_flags = Flags.from_names(
-        (0, 'ingr_no_auto_calc'),
-        (1, 'food_item'),
-        (8, 'references_persist'),
-    )
+    class _enit_flags(Flags):
+        ingr_no_auto_calc: bool = flag(0)
+        food_item: bool = flag(1)
+        references_persist: bool = flag(8)
 
     def __init__(self):
         super().__init__(b'ENIT', ['i', 'I'], 'ingredient_value',
@@ -843,12 +858,11 @@ class MelLandMpcd(MelGroups):
 #------------------------------------------------------------------------------
 class MelLandShared(MelSequential):
     """Handles the LAND subrecords shared by all games."""
-    _land_flags = Flags.from_names(
-        (0,  'has_vertex_normals_height_map'),
-        (1,  'has_vertex_colors'),
-        (2,  'has_layers'),
-        (10, 'has_mpcd'), # since Skyrim
-    )
+    class _land_flags(Flags):
+        has_vertex_normals_height_map: bool = flag(0)
+        has_vertex_colors: bool = flag(1)
+        has_layers: bool = flag(2)
+        has_mpcd: bool = flag(10) # since Skyrim
 
     def __init__(self):
         super().__init__(
@@ -950,7 +964,9 @@ class MelLctnShared(MelSequential):
 #------------------------------------------------------------------------------
 class MelLensShared(MelSequential):
     """Handles the LENS subrecords shared between Skyrim and FO4."""
-    _lfs_flags = Flags.from_names('lfs_rotates', 'lfs_shrinks_when_occluded')
+    class _lfs_flags(Flags):
+        lfs_rotates: bool
+        lfs_shrinks_when_occluded: bool
 
     def __init__(self, *, sprites_are_sorted=True):
         lfs_element = MelGroups('lens_flare_sprites',
@@ -998,12 +1014,11 @@ class MelLLChanceNoneTes3(MelLLChanceNone):
 #------------------------------------------------------------------------------
 class _AMelLLFlags:
     """Base class for leveled list flags subrecords."""
-    _lvl_flags = Flags.from_names(
-        'calc_from_all_levels',
-        'calc_for_each_item',
-        'use_all_items', # since Oblivion
-        'special_loot', # Skyrim only
-    )
+    class _lvl_flags(Flags):
+        calc_from_all_levels: bool
+        calc_for_each_item: bool
+        use_all_items: bool # since Oblivion
+        special_loot: bool # Skyrim only
     _flags_sig: bytes
 
     def __init__(self):
@@ -1069,8 +1084,10 @@ class MelMapMarker(MelGroup):
     """Map marker struct for a reference record (REFR, ACHR, etc.). Also
     supports the WMI1 subrecord from FNV."""
     # Same idea as above - show_all_hidden is FO3+, but that's no problem.
-    _marker_flags = Flags.from_names('visible', 'can_travel_to',
-                                     'show_all_hidden')
+    class _marker_flags(Flags):
+        visible: bool
+        can_travel_to: bool
+        show_all_hidden: bool
 
     def __init__(self, *, with_reputation=False):
         group_elems = [
@@ -1094,11 +1111,10 @@ class MelMatoPropertyData(MelGroups):
 #------------------------------------------------------------------------------
 class MelMattShared(MelSequential):
     """Implements the MATT subrecords PNAM, MNAM, CNAM, BNAM, FNAM and HNAM."""
-    _matt_flags = Flags.from_names(
-        'stair_material',
-        'arrows_stick',
-        'can_tunnel', # since FO4
-    )
+    class _matt_flags(Flags):
+        stair_material: bool
+        arrows_stick: bool
+        can_tunnel: bool # since FO4
 
     def __init__(self):
         super().__init__(
@@ -1348,7 +1364,9 @@ class MelReferences(MelGroups):
 #------------------------------------------------------------------------------
 class MelReflectedRefractedBy(MelSorted):
     """Reflected/Refracted By for a reference record (REFR, ACHR, etc.)."""
-    _watertypeFlags = Flags.from_names('reflection', 'refraction')
+    class _watertypeFlags(Flags):
+        reflection: bool
+        refraction: bool
 
     def __init__(self):
         super().__init__(MelGroups('reflectedRefractedBy',
@@ -1488,11 +1506,10 @@ class MelTemplateArmor(MelFid):
 #------------------------------------------------------------------------------
 class MelTxstFlags(MelUInt16Flags):
     """Handles the TXST subrecord DNAM (Flags)."""
-    _txst_flags = Flags.from_names(
-        'no_specular_map',
-        'facegen_textures', # since Skyrim
-        'has_model_space_normal_map', # since Skyrim
-    )
+    class _txst_flags(Flags):
+        no_specular_map: bool
+        facegen_textures: bool # since Skyrim
+        has_model_space_normal_map: bool # since Skyrim
 
     def __init__(self):
         super().__init__(b'DNAM', 'txst_flags', self._txst_flags)
@@ -1572,6 +1589,11 @@ class _SpellFlags(Flags):
         if index == 1:
             setter(self, 3, value)
 
-SpellFlags = _SpellFlags.from_names('noAutoCalc','immuneToSilence',
-    'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
-    'disallowAbsorbReflect', 'touchExplodesWOTarget')
+class SpellFlags(_SpellFlags):
+    noAutoCalc: bool
+    immuneToSilence: bool
+    startSpell: bool
+    ignoreLOS: bool = flag(4)
+    scriptEffectAlwaysApplies: bool = flag(5)
+    disallowAbsorbReflect: bool = flag(6)
+    touchExplodesWOTarget: bool = flag(7)
