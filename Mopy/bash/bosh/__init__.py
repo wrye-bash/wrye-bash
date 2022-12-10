@@ -771,7 +771,7 @@ class ModInfo(FileInfo):
             for bsa_info in potential_bsas:
                 try:
                     found_assets = bsa_info.has_assets(extract)
-                except (BSAError, OverflowError):
+                except BSAError:
                     deprint(f'Failed to parse {bsa_info}', traceback=True)
                     continue
                 if not found_assets: continue
@@ -863,7 +863,7 @@ class ModInfo(FileInfo):
                 try:
                     if bsa_info.has_assets((assetPath,)):
                         break # found
-                except (BSAError, OverflowError):
+                except BSAError:
                     deprint(f'Failed to parse {bsa_info}', traceback=True)
                     continue
             else: # not found

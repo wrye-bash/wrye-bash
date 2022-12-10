@@ -2423,11 +2423,9 @@ class StringTable(dict):
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
             with open(path, u'rb') as ins:
-                insSeek = ins.seek
-                insTell = ins.tell
-                insSeek(0,os.SEEK_END)
-                eof = insTell()
-                insSeek(0)
+                ins.seek(0, os.SEEK_END)
+                eof = ins.tell()
+                ins.seek(0)
                 if eof < 8:
                     deprint(f"Warning: Strings file '{path}' file size "
                             f"({eof}) is less than 8 bytes.  8 bytes are "
@@ -2448,8 +2446,8 @@ class StringTable(dict):
                     try:
                         progress(x)
                         id_,offset = unpack_many(ins, u'=2I')
-                        pos = insTell()
-                        insSeek(stringsStart+offset)
+                        pos = ins.tell()
+                        ins.seek(stringsStart + offset)
                         if formatted:
                             value = unpack_str32(ins) # TODO(ut): unpack_str32_null
                             # seems needed, strings are null terminated
@@ -2457,15 +2455,15 @@ class StringTable(dict):
                         else:
                             value = readCString(ins, path) #drops the null byte
                         try:
-                            value = str(value, u'utf-8')
+                            value = value.decode('utf-8')
                         except UnicodeDecodeError:
-                            value = str(value,backupEncoding)
-                        insSeek(pos)
+                            value = value.decode(backupEncoding)
+                        ins.seek(pos)
                         self[id_] = value
                     except:
                         deprint('\n'.join(
                             ['Error reading string file:', f'id: {id_}',
-                             f'offset: {offset}', f'filePos: {insTell()}']))
+                             f'offset: {offset}', f'filePos: {ins.tell()}']))
                         raise
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)

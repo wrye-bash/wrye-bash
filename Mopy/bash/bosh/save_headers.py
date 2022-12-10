@@ -81,7 +81,7 @@ class SaveFileHeader(object):
             else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, struct_error, OverflowError) as e:
+        except (OSError, struct_error) as e:
             err_msg = f'Failed to read {self._save_info.abs_path}'
             deprint(err_msg, traceback=True)
             raise SaveHeaderError(err_msg) from e
