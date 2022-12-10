@@ -471,7 +471,7 @@ class ImageWrapper:
     }
 
     def __init__(self, filename, imageType=None, iconSize=-1,
-            invert_svg=False):
+            invertible_svg=False):
         self._img_path = filename.s # must be a bolt.Path
         try:
             self._img_type = imageType or self.img_types[filename.cext]
@@ -482,15 +482,15 @@ class ImageWrapper:
         if self._is_svg and iconSize == -1:
             raise ArgumentError('You must specify iconSize to '
                                 'rasterize an SVG to a bitmap!')
-        self._invert_svg = invert_svg
+        self._invertible_svg = invertible_svg
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
         if not os.path.exists(self._img_path.split(';')[0]):
             raise ArgumentError(f'Missing resource file: {filename}.')
 
-    def get_bitmap(self):
-        if not self.bitmap:
+    def get_bitmap(self, force_reload=False):
+        if not self.bitmap or force_reload:
             if self._img_type == _wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
                 w, h = self.icon.GetWidth(), self.icon.GetHeight()
@@ -506,10 +506,9 @@ class ImageWrapper:
             elif self._is_svg:
                 with open(self._img_path, 'rb') as ins:
                     svg_data = ins.read()
-                # If we should invert this SVG, simply replace the 'fill with
-                # black' with a 'fill with white'
-                if self._invert_svg:
-                    svg_data = svg_data.replace(b'fill="#000"', b'fill="#FFF"')
+                if b'var(--invert)' in svg_data:
+                    svg_data = svg_data.replace(b'var(--invert)',
+                        b'#FFF' if self._should_invert_svg() else b'#000')
                 svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
                 svg_size = scaled(self.iconSize)
                 self.bitmap = svg_img.ConvertToScaledBitmap(
@@ -523,6 +522,10 @@ class ImageWrapper:
                             _wx.IMAGE_QUALITY_HIGH)
                 self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
+
+    def _should_invert_svg(self):
+        from .. import bass
+        return self._invertible_svg and bass.settings['bash.use_reverse_icons']
 
     def GetIcon(self):
         if not self.icon:

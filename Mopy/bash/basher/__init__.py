@@ -4587,19 +4587,19 @@ def InitImages():
         colors[color_key] = Color(*color_val)
     #--Images
     imgDirJn = bass.dirs[u'images'].join
-    should_reverse = bass.settings['bash.use_reverse_icons']
     def _png(fname): return ImageWrapper(imgDirJn(fname))
-    def _svg(fname, bm_px_size, reversible=False):
+    def _svg(fname, bm_px_size, invertible=False):
         """Creates an SVG wrapper.
 
         :param fname: The SVG's filename, relative to bash/images.
         :param bm_px_size: The size of the resulting bitmap, in
             device-independent pixels (DIP).
-        :param reversible: True if the SVG is reversible, which means it's
-            entirely black and has 'fill="#000"' styles that can be changed to
-            'fill="#FFF"' ones to perform the inversion."""
+        :param invertible: True if the SVG is invertible, which means it's
+            entirely black and has 'var(--invert)' usages that can be
+            changed to '#FFF' or '#000', depending on whether we want to invert
+            or not."""
         return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size,
-            invert_svg=reversible and should_reverse)
+            invertible_svg=invertible)
     # PNGs --------------------------------------------------------------------
     # Checkboxes
     images[u'checkbox.red.x'] = _png(u'checkbox_red_x.png')
@@ -4623,40 +4623,40 @@ def InitImages():
     images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
     # SVGs --------------------------------------------------------------------
     # Up/Down arrows for UIList columns
-    images['arrow.up.16'] = _svg('arrow_up.svg', 16, reversible=True)
-    images['arrow.down.16'] = _svg('arrow_down.svg', 16, reversible=True)
+    images['arrow.up.16'] = _svg('arrow_up.svg', 16, invertible=True)
+    images['arrow.down.16'] = _svg('arrow_down.svg', 16, invertible=True)
     # Modification time button
-    images['calendar.16'] = _svg('calendar.svg', 16, reversible=True)
+    images['calendar.16'] = _svg('calendar.svg', 16, invertible=True)
     # DocumentViewer
-    images['back.16'] = _svg('back.svg', 16, reversible=True)
-    images['forward.16'] = _svg('forward.svg', 16, reversible=True)
+    images['back.16'] = _svg('back.svg', 16, invertible=True)
+    images['forward.16'] = _svg('forward.svg', 16, invertible=True)
     # DocumentViewer and Restart
-    images['reload.16'] = _svg('reload.svg', 16, reversible=True)
-    images['reload.24'] = _svg('reload.svg', 24, reversible=True)
-    images['reload.32'] = _svg('reload.svg', 32, reversible=True)
+    images['reload.16'] = _svg('reload.svg', 16, invertible=True)
+    images['reload.24'] = _svg('reload.svg', 24, invertible=True)
+    images['reload.32'] = _svg('reload.svg', 32, invertible=True)
     # Checkmark/Cross
-    images['checkmark.16'] = _svg('checkmark.svg', 16, reversible=True)
-    images['error_cross.16'] = _svg('error_cross.svg', 16, reversible=True)
+    images['checkmark.16'] = _svg('checkmark.svg', 16, invertible=True)
+    images['error_cross.16'] = _svg('error_cross.svg', 16, invertible=True)
     # Minus/Plus for the Bash Tags popup
-    images['minus.16'] = _svg('minus.svg', 16, reversible=True)
-    images['plus.16'] = _svg('plus.svg', 16, reversible=True)
+    images['minus.16'] = _svg('minus.svg', 16, invertible=True)
+    images['plus.16'] = _svg('plus.svg', 16, invertible=True)
     # Warning icon in various GUIs
     images['warning.32'] = _svg('warning.svg', 32)
     # Settings button
-    images['settings_button.16'] = _svg('gear.svg', 16, reversible=True)
-    images['settings_button.24'] = _svg('gear.svg', 24, reversible=True)
-    images['settings_button.32'] = _svg('gear.svg', 32, reversible=True)
+    images['settings_button.16'] = _svg('gear.svg', 16, invertible=True)
+    images['settings_button.24'] = _svg('gear.svg', 24, invertible=True)
+    images['settings_button.32'] = _svg('gear.svg', 32, invertible=True)
     # Help button(s)
-    images['help.16'] = _svg('help.svg', 16, reversible=True)
-    images['help.24'] = _svg('help.svg', 24, reversible=True)
-    images['help.32'] = _svg('help.svg', 32, reversible=True)
+    images['help.16'] = _svg('help.svg', 16, invertible=True)
+    images['help.24'] = _svg('help.svg', 24, invertible=True)
+    images['help.32'] = _svg('help.svg', 32, invertible=True)
     # Plugin Checker
-    images['plugin_checker.16'] = _svg('checklist.svg', 16, reversible=True)
-    images['plugin_checker.24'] = _svg('checklist.svg', 24, reversible=True)
-    images['plugin_checker.32'] = _svg('checklist.svg', 32, reversible=True)
+    images['plugin_checker.16'] = _svg('checklist.svg', 16, invertible=True)
+    images['plugin_checker.24'] = _svg('checklist.svg', 24, invertible=True)
+    images['plugin_checker.32'] = _svg('checklist.svg', 32, invertible=True)
     # Doc Browser
-    images['doc_browser.16'] = _svg('book.svg', 16, reversible=True)
-    images['doc_browser.24'] = _svg('book.svg', 24, reversible=True)
-    images['doc_browser.32'] = _svg('book.svg', 32, reversible=True)
+    images['doc_browser.16'] = _svg('book.svg', 16, invertible=True)
+    images['doc_browser.24'] = _svg('book.svg', 24, invertible=True)
+    images['doc_browser.32'] = _svg('book.svg', 32, invertible=True)
 
 from .links_init import InitLinks
