@@ -23,7 +23,6 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
-from ..balt import ImageList
 from ..gui import ImageWrapper, DEFAULT_POSITION
 
 # Color Descriptions ----------------------------------------------------------
@@ -437,69 +436,6 @@ imDirJn = bass.dirs['images'].join
 def _png(fname): return ImageWrapper(imDirJn(fname))
 def _svg(fname, bm_px_size):
     return ImageWrapper(imDirJn(fname), iconSize=bm_px_size)
-
-#--Image lists
-installercons = ImageList(16,16)
-installercons.images.extend({
-    #--Off/Archive
-    'off.green':  _png('checkbox_green_off.png'),
-    'off.grey':   _png('checkbox_grey_off.png'),
-    'off.red':    _png('checkbox_red_off.png'),
-    'off.white':  _png('checkbox_white_off.png'),
-    'off.orange': _png('checkbox_orange_off.png'),
-    'off.yellow': _png('checkbox_yellow_off.png'),
-    #--Off/Archive - Wizard
-    'off.green.wiz':    _png('checkbox_green_off_wiz.png'),
-    #grey
-    'off.red.wiz':      _png('checkbox_red_off_wiz.png'),
-    'off.white.wiz':    _png('checkbox_white_off_wiz.png'),
-    'off.orange.wiz':   _png('checkbox_orange_off_wiz.png'),
-    'off.yellow.wiz':   _png('checkbox_yellow_off_wiz.png'),
-    #--On/Archive
-    'on.green':  _png('checkbox_green_inc.png'),
-    'on.grey':   _png('checkbox_grey_inc.png'),
-    'on.red':    _png('checkbox_red_inc.png'),
-    'on.white':  _png('checkbox_white_inc.png'),
-    'on.orange': _png('checkbox_orange_inc.png'),
-    'on.yellow': _png('checkbox_yellow_inc.png'),
-    #--On/Archive - Wizard
-    'on.green.wiz':  _png('checkbox_green_inc_wiz.png'),
-    #grey
-    'on.red.wiz':    _png('checkbox_red_inc_wiz.png'),
-    'on.white.wiz':  _png('checkbox_white_inc_wiz.png'),
-    'on.orange.wiz': _png('checkbox_orange_inc_wiz.png'),
-    'on.yellow.wiz': _png('checkbox_yellow_inc_wiz.png'),
-    #--Off/Directory
-    'off.green.dir':  _png('diamond_green_off.png'),
-    'off.grey.dir':   _png('diamond_grey_off.png'),
-    'off.red.dir':    _png('diamond_red_off.png'),
-    'off.white.dir':  _png('diamond_white_off.png'),
-    'off.orange.dir': _png('diamond_orange_off.png'),
-    'off.yellow.dir': _png('diamond_yellow_off.png'),
-    #--Off/Directory - Wizard
-    'off.green.dir.wiz':  _png('diamond_green_off_wiz.png'),
-    #grey
-    'off.red.dir.wiz':    _png('diamond_red_off_wiz.png'),
-    'off.white.dir.wiz':  _png('diamond_white_off_wiz.png'),
-    'off.orange.dir.wiz': _png('diamond_orange_off_wiz.png'),
-    'off.yellow.dir.wiz': _png('diamond_yellow_off_wiz.png'),
-    #--On/Directory
-    'on.green.dir':  _png('diamond_green_inc.png'),
-    'on.grey.dir':   _png('diamond_grey_inc.png'),
-    'on.red.dir':    _png('diamond_red_inc.png'),
-    'on.white.dir':  _png('diamond_white_inc.png'),
-    'on.orange.dir': _png('diamond_orange_inc.png'),
-    'on.yellow.dir': _png('diamond_yellow_inc.png'),
-    #--On/Directory - Wizard
-    'on.green.dir.wiz':  _png('diamond_green_inc_wiz.png'),
-    #grey
-    'on.red.dir.wiz':    _png('diamond_red_inc_wiz.png'),
-    'on.white.dir.wiz':  _png('diamond_white_off_wiz.png'),
-    'on.orange.dir.wiz': _png('diamond_orange_inc_wiz.png'),
-    'on.yellow.dir.wiz': _png('diamond_yellow_inc_wiz.png'),
-    #--Broken
-    'corrupt': _svg('red_x.svg', 16),
-}.items())
 
 #--Buttons
 def _png_list(template):

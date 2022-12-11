@@ -81,7 +81,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, Resources, \
     AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, NotebookPanel, \
-    images, colors, Links, ItemLink
+    images, colors, Links, ItemLink, InstallerColorChecks
 
 from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
@@ -92,7 +92,7 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     get_shift_down, FileOpen, DateAndTimeDialog
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults, installercons
+from .constants import colorInfo, settingDefaults
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -2564,7 +2564,7 @@ class InstallersList(balt.UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
-    _icons = installercons
+    _icons = InstallerColorChecks()
     _sunkenBorder = False
     _shellUI = True
     _editLabels = _copy_paths = True

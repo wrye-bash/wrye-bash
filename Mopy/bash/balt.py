@@ -174,6 +174,72 @@ class ColorChecks(ImageList):
             else: shortKey = u'red.off'
         return self.indices[shortKey]
 
+class InstallerColorChecks(ImageList):
+    def __init__(self):
+        super().__init__(16, 16)
+        imDirJn = bass.dirs['images'].join
+        def _icc(fname): return ImageWrapper(imDirJn(fname), iconSize=16)
+        self.images.extend({
+            #--Off/Archive
+            'off.green':  _icc('checkbox_green_off.png'),
+            'off.grey':   _icc('checkbox_grey_off.png'),
+            'off.red':    _icc('checkbox_red_off.png'),
+            'off.white':  _icc('checkbox_white_off.png'),
+            'off.orange': _icc('checkbox_orange_off.png'),
+            'off.yellow': _icc('checkbox_yellow_off.png'),
+            #--Off/Archive - Wizard
+            'off.green.wiz':    _icc('checkbox_green_off_wiz.png'),
+            #grey
+            'off.red.wiz':      _icc('checkbox_red_off_wiz.png'),
+            'off.white.wiz':    _icc('checkbox_white_off_wiz.png'),
+            'off.orange.wiz':   _icc('checkbox_orange_off_wiz.png'),
+            'off.yellow.wiz':   _icc('checkbox_yellow_off_wiz.png'),
+            #--On/Archive
+            'on.green':  _icc('checkbox_green_inc.png'),
+            'on.grey':   _icc('checkbox_grey_inc.png'),
+            'on.red':    _icc('checkbox_red_inc.png'),
+            'on.white':  _icc('checkbox_white_inc.png'),
+            'on.orange': _icc('checkbox_orange_inc.png'),
+            'on.yellow': _icc('checkbox_yellow_inc.png'),
+            #--On/Archive - Wizard
+            'on.green.wiz':  _icc('checkbox_green_inc_wiz.png'),
+            #grey
+            'on.red.wiz':    _icc('checkbox_red_inc_wiz.png'),
+            'on.white.wiz':  _icc('checkbox_white_inc_wiz.png'),
+            'on.orange.wiz': _icc('checkbox_orange_inc_wiz.png'),
+            'on.yellow.wiz': _icc('checkbox_yellow_inc_wiz.png'),
+            #--Off/Directory
+            'off.green.dir':  _icc('diamond_green_off.png'),
+            'off.grey.dir':   _icc('diamond_grey_off.png'),
+            'off.red.dir':    _icc('diamond_red_off.png'),
+            'off.white.dir':  _icc('diamond_white_off.png'),
+            'off.orange.dir': _icc('diamond_orange_off.png'),
+            'off.yellow.dir': _icc('diamond_yellow_off.png'),
+            #--Off/Directory - Wizard
+            'off.green.dir.wiz':  _icc('diamond_green_off_wiz.png'),
+            #grey
+            'off.red.dir.wiz':    _icc('diamond_red_off_wiz.png'),
+            'off.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'off.orange.dir.wiz': _icc('diamond_orange_off_wiz.png'),
+            'off.yellow.dir.wiz': _icc('diamond_yellow_off_wiz.png'),
+            #--On/Directory
+            'on.green.dir':  _icc('diamond_green_inc.png'),
+            'on.grey.dir':   _icc('diamond_grey_inc.png'),
+            'on.red.dir':    _icc('diamond_red_inc.png'),
+            'on.white.dir':  _icc('diamond_white_inc.png'),
+            'on.orange.dir': _icc('diamond_orange_inc.png'),
+            'on.yellow.dir': _icc('diamond_yellow_inc.png'),
+            #--On/Directory - Wizard
+            'on.green.dir.wiz':  _icc('diamond_green_inc_wiz.png'),
+            #grey
+            'on.red.dir.wiz':    _icc('diamond_red_inc_wiz.png'),
+            'on.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'on.orange.dir.wiz': _icc('diamond_orange_inc_wiz.png'),
+            'on.yellow.dir.wiz': _icc('diamond_yellow_inc_wiz.png'),
+            #--Broken
+            'corrupt': _icc('red_x.svg'),
+        }.items())
+
 def get_dv_bitmaps():
     """Returns the bitmaps needed for DocumentViewer."""
     return tuple(images[i].get_bitmap() for i in (
