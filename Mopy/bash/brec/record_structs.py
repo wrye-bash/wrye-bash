@@ -209,6 +209,8 @@ class MelSet(object):
                     u'eid': (record.eid + u' ') if getattr(record, u'eid',
                                                            None) else u'',
                 })
+                bolt.deprint('element:', element)
+                bolt.deprint('record flags:', getattr(record, 'flags1', None))
                 for attr in record.__slots__:
                     attr1 = getattr(record, attr, None)
                     if attr1 is not None:

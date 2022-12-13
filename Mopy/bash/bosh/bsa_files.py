@@ -445,6 +445,9 @@ class BSAFolder(object):
         self.folder_record = folder_record
         self.folder_assets = {} # keep files order
 
+class BSAOblivionFolder(BSAFolder):
+    folder_assets: dict[str, BSAOblivionFileRecord]
+
 class Ba2Folder(object):
 
     def __init__(self):
@@ -639,7 +642,7 @@ class BSA(ABsa):
 
     def _load_bsa_light(self):
         folder_records = [] # we need those to parse the folder names
-        folder_path_record: dict[str, _BsaHashedRecord] = {}
+        folder_path_record: dict[str, BSAFolderRecord] = {}
         rs = self.file_record_type.total_record_size()
         def _discard_file_records(bsa_file, folder_name, folder_record,
                 __rs=rs):
@@ -905,6 +908,8 @@ class MorrowindBsa(ABsa):
 class OblivionBsa(BSA):
     bsa_header: OblivionBsaHeader
     file_record_type = BSAOblivionFileRecord
+    _folder_type = BSAOblivionFolder
+    bsa_folders: defaultdict[str, _folder_type] # for proper typing
     # A dictionary mapping file extensions to hash components. Used by Oblivion
     # when hashing file names for its BSAs.
     _bsa_ext_lookup = defaultdict(int, [('.kf', 0x80),

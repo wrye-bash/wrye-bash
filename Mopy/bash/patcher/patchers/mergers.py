@@ -86,13 +86,14 @@ class _AMerger(ImportPatcher):
         # set loadFactory attribute to be used by _mod_file_read
         self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
         progress.setFull(len(self.srcs))
+        minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
-            srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._mod_file_read(minfs[srcMod])
             for block in self._wanted_subrecord:
                 if block not in srcFile.tops: continue
                 self._present_sigs.add(block)
                 for rid, _record in srcFile.tops[block].getActiveRecords():
+                    if rid.mod_fn not in minfs: continue # or break filter mods
                     self.touched.add(rid)
             progress.plus()
         self.isActive = bool(self._present_sigs)
