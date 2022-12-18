@@ -440,7 +440,7 @@ class ImportCellsPatcher(ImportPatcher):
                     # for the WRLD block getActiveRecords will return
                     # exterior cells and the persistent cell - previous code
                     # did not differentiate either
-                    for cfid, cell_rec in block.getActiveRecords(b'CELL'):
+                    for cfid, cell_rec in block.iter_present_records(b'CELL'):
                         # If we're in an interior, see if we have to ignore
                         # any attrs
                         actual_attrs = interior_attrs if \
@@ -461,7 +461,8 @@ class ImportCellsPatcher(ImportPatcher):
                     cachedMasters[master] = masterFile
                 for sig in self._read_sigs:
                     if block := masterFile.tops.get(sig):
-                        for cfid, cell_rec in block.getActiveRecords(b'CELL'):
+                        for cfid, cell_rec in block.iter_present_records(
+                                b'CELL'):
                             if cfid not in tempCellData: continue
                             attrs1 = interior_attrs if \
                                 cell_rec.flags.isInterior else attrs
@@ -480,14 +481,16 @@ class ImportCellsPatcher(ImportPatcher):
         patchCells = self.patchFile.tops[b'CELL']
         patchWorlds = self.patchFile.tops[b'WRLD']
         if b'CELL' in modFile.tops:
-            for cfid, cellBlock in modFile.tops[b'CELL'].id_records.items():
+            for cfid, cell_rec in modFile.tops[b'CELL'].iter_present_records(
+                    b'CELL'):
                 if cfid in cellData:
-                    patchCells.setRecord(cellBlock.master_record) # todo why only the cell and not the whole block??
+                    patchCells.setRecord(cell_rec) # todo why only the cell and not the whole block??
         if b'WRLD' in modFile.tops:
             for wfid, worldBlock in modFile.tops[b'WRLD'].id_records.items():
+                if worldBlock.should_skip(): continue
                 # if curr_pworld := wfid in patchWorlds.id_records:
                 curr_pworld = patchWorlds.setRecord(worldBlock.master_record)
-                for cfid, cell_rec in worldBlock.getActiveRecords(b'CELL'):
+                for cfid, cell_rec in worldBlock.iter_present_records(b'CELL'):
                     if cfid in cellData:
                         # if not curr_pworld:
                         # curr_pworld = patchWorlds.setRecord(worldBlock.world)

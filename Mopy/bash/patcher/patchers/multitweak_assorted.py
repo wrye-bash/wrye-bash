@@ -152,7 +152,7 @@ class _APlayableTweak(MultiTweakItem):
         return record.biped_flags.any_body_flag_set
 
     @staticmethod
-    def _should_skip(test_str):
+    def _playable_skip(test_str):
         """Small helper method for wants_record, checks if the specified string
         (either from a FULL or EDID subrecord) indicates that the record it
         comes from should remain nonplayable."""
@@ -167,10 +167,10 @@ class _APlayableTweak(MultiTweakItem):
                 getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
-        if clothing_eid and self._should_skip(clothing_eid.lower()):
+        if clothing_eid and self._playable_skip(clothing_eid.lower()):
             return False
         clothing_name = record.full
-        return clothing_name and not self._should_skip(clothing_name.lower())
+        return clothing_name and not self._playable_skip(clothing_name.lower())
 
     def tweak_record(self, record):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
@@ -288,7 +288,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
             fog_val = getattr(record, fog_attr)
             if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
                 return False
-        return True
+        return not record.should_skip()
 
     def tweak_record(self, record):
         record.fogNear = 0.0001

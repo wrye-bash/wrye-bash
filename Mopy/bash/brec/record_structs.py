@@ -336,6 +336,11 @@ class MreRecord(metaclass=RecordType):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
+    def should_skip(self):
+        """Returns True if this record should be skipped by most processing,
+        i.e. if it is ignored or deleted."""
+        return self.flags1.ignored or self.flags1.deleted
+
     def group_key(self): ##: we need an MreRecord mixin - too many ifs
         """Return a key for indexing the record on the parent (MobObjects)
         grup."""

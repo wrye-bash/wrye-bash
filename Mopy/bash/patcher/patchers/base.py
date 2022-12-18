@@ -82,7 +82,7 @@ class IndexingTweak(MultiTweakItem):
             index_plugin = self._mod_file_read(pf_minfs[fn_plugin])
             for index_sig in self._index_sigs:
                 self._indexed_records[index_sig].update(
-                    index_plugin.tops[index_sig].getActiveRecords())
+                    index_plugin.tops[index_sig].iter_present_records())
         super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
@@ -237,7 +237,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
         patchCells = self.patchFile.tops[b'CELL']
         patchWorlds = self.patchFile.tops[b'WRLD']
 ##        for top_grup_sig in MreRecord.simpleTypes:
-##            for record in modFile.tops[top_grup_sig].getActiveRecords():
+##            for record in modFile.tops[top_grup_sig].iter_present_records():
 ##                record = record.getTypeCopy(mapper)
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
@@ -286,7 +286,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
         def swapper(oldId):
             return old_new.get(oldId, oldId)
 ##        for type in MreRecord.simpleTypes:
-##            for record in self.patchFile.tops[type].getActiveRecords():
+##            for record in self.patchFile.tops[type].iter_present_records():
 ##                if record.fid in self.old_new:
 ##                    record.fid = old_new.get(record.fid, record.fid)
 ##                    count.increment(record.fid[0])

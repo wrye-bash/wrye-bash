@@ -85,13 +85,14 @@ class _AMobBase:
         """Dumps record header and data into output file stream."""
         raise AbstractError
 
-    def iter_present_records(self, include_ignored=False, rec_key='fid',
-                             __attrgetters=attrgetter_cache):
+    def iter_present_records(self, rec_sig=None, *, include_ignored=False,
+                             rec_key='fid', __attrgetters=attrgetter_cache):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""
         key_get = __attrgetters[rec_key]
         return ((key_get(r), r) for r in self.iter_records() if not
-                r.flags1.deleted and (include_ignored or not r.flags1.ignored))
+                r.flags1.deleted and (include_ignored or not r.flags1.ignored)
+                and (not rec_sig or r._rec_sig == rec_sig))
 
     def get_all_signatures(self):
         """Returns a set of all signatures actually contained in this block."""
@@ -568,6 +569,12 @@ class _ComplexRec(_Nested):
         setattr(self, self._extra_records[self._top_type], rec)
 
     def group_key(self): return self.master_record.group_key()
+
+    def should_skip(self):
+        """Returns True if this complex record should be skipped by most
+        processing, i.e. if its master record is ignored or deleted."""
+        return self.master_record.flags1.ignored or \
+            self.master_record.flags1.deleted
 
     def _set_mob_objects(self, head_label=None):
         super()._set_mob_objects(self.master_record and self.master_record.group_key())
