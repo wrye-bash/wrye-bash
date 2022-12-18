@@ -23,6 +23,7 @@
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
+from ...bolt import flag
 from ...brec import AMreHeader, MelSet, MelStruct, MelBase, MelFid, \
     MelSimpleArray, MelNull, MelGroups, MelUInt32
 
@@ -32,6 +33,10 @@ class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
+
+    class HeaderFlags(AMreHeader.HeaderFlags):
+        localized: bool = flag(7)
+        esl_flag: bool = flag(9)
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 0.95), u'numRecords',

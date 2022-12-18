@@ -27,13 +27,14 @@ import copy
 import io
 import zlib
 from collections import defaultdict
+from typing import Any
 
 from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
-from ..bolt import decoder, struct_pack, sig_to_str
+from ..bolt import decoder, flag, struct_pack, sig_to_str
 from ..bolt import float_or_none, int_or_zero, str_or_none
 
 def _str_to_bool(value, __falsy=frozenset(
@@ -279,109 +280,37 @@ class RecordType(type):
         return new
 
 class MreRecord(metaclass=RecordType):
-    """Generic Record. flags1 are game specific see comments."""
+    """See the Wrye Bash wiki for information on all possible flags:
+    https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Record-Header-Flags
+    """
     subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
-    flags1_ = bolt.Flags.from_names(
-        # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
-        ( 0,'esm'), # {0x00000001}
-        # {Sky}, {FNV} 0x00000004 ARMO: Not playable
-        ( 2,'isNotPlayable'), # {0x00000004}
-        # {FNV} 0x00000010 ????: Form initialized (Runtime only)
-        ( 4,'formInitialized'), # {0x00000010}
-        ( 5,'deleted'), # {0x00000020}
-        # {Sky}, {FNV} 0x00000040 ACTI: Has Tree LOD
-        # {Sky}, {FNV} 0x00000040 REGN: Border Region
-        # {Sky}, {FNV} 0x00000040 STAT: Has Tree LOD
-        # {Sky}, {FNV} 0x00000040 REFR: Hidden From Local Map
-        # {TES4} 0x00000040 ????:  Actor Value
-        # Constant HiddenFromLocalMap BorderRegion HasTreeLOD ActorValue
-        ( 6,'borderRegion'), # {0x00000040}
-        # {Sky} 0x00000080 TES4: Localized
-        # {Sky}, {FNV} 0x00000080 PHZD: Turn Off Fire
-        # {Sky} 0x00000080 SHOU: Treat Spells as Powers
-        # {Sky}, {FNV} 0x00000080 STAT: Add-on LOD Object
-        # {TES4} 0x00000080 ????:  Actor Value
-        # Localized IsPerch AddOnLODObject TurnOffFire TreatSpellsAsPowers  ActorValue
-        ( 7,'turnFireOff'), # {0x00000080}
-        ( 7,'hasStrings'), # {0x00000080}
-        # {Sky}, {FNV} 0x00000100 ACTI: Must Update Anims
-        # {Sky}, {FNV} 0x00000100 REFR: Inaccessible
-        # {Sky}, {FNV} 0x00000100 REFR for LIGH: Doesn't light water
-        # MustUpdateAnims Inaccessible DoesntLightWater
-        ( 8,'inaccessible'), # {0x00000100}
-        # {Sky}, {FNV} 0x00000200 ACTI: Local Map - Turns Flag Off, therefore it is Hidden
-        # {Sky}, {FNV} 0x00000200 REFR: MotionBlurCastsShadows
-        # HiddenFromLocalMap StartsDead MotionBlur CastsShadows
-        ( 9,'castsShadows'), # {0x00000200}
-        # New Flag for FO4 and SSE used in .esl files
-        ( 9, 'eslFile'), # {0x00000200}
-        # {Sky}, {FNV} 0x00000400 LSCR: Displays in Main Menu
-        # PersistentReference QuestItem DisplaysInMainMenu
-        (10,'questItem'), # {0x00000400}
-        (10,'persistent'), # {0x00000400}
-        (11,'initiallyDisabled'), # {0x00000800}
-        (12,'ignored'), # {0x00001000}
-        # {FNV} 0x00002000 ????: No Voice Filter
-        (13,'noVoiceFilter'), # {0x00002000}
-        # {FNV} 0x00004000 STAT: Cannot Save (Runtime only) Ignore VC info
-        (14,'cannotSave'), # {0x00004000}
-        # {Sky}, {FNV} 0x00008000 STAT: Has Distant LOD
-        (15,'visibleWhenDistant'), # {0x00008000}
-        # {Sky}, {FNV} 0x00010000 ACTI: Random Animation Start
-        # {Sky}, {FNV} 0x00010000 REFR light: Never fades
-        # {FNV} 0x00010000 REFR High Priority LOD
-        # RandomAnimationStart NeverFades HighPriorityLOD
-        (16,'randomAnimationStart'), # {0x00010000}
-        # {Sky}, {FNV} 0x00020000 ACTI: Dangerous
-        # {Sky}, {FNV} 0x00020000 REFR light: Doesn't light landscape
-        # {Sky} 0x00020000 SLGM: Can hold NPC's soul
-        # {Sky}, {FNV} 0x00020000 STAT: Use High-Detail LOD Texture
-        # {FNV} 0x00020000 STAT: Radio Station (Talking Activator)
-        # {FNV} 0x00020000 STAT: Off limits (Interior cell)
-        # Dangerous OffLimits DoesntLightLandscape HighDetailLOD CanHoldNPC RadioStation
-        (17,'dangerous'), # {0x00020000}
-        (18,'compressed'), # {0x00040000}
-        # {Sky}, {FNV} 0x00080000 STAT: Has Currents
-        # {FNV} 0x00080000 STAT: Platform Specific Texture
-        # {FNV} 0x00080000 STAT: Dead
-        # CantWait HasCurrents PlatformSpecificTexture Dead
-        (19,'cantWait'), # {0x00080000}
-        # {Sky}, {FNV} 0x00100000 ACTI: Ignore Object Interaction
-        (20,'ignoreObjectInteraction'), # {0x00100000}
-        # {???} 0x00200000 ????: Used in Memory Changed Form
-        # {Sky}, {FNV} 0x00800000 ACTI: Is Marker
-        (23,'isMarker'), # {0x00800000}
-        # {FNV} 0x01000000 ????: Destructible (Runtime only)
-        (24,'destructible'), # {0x01000000} {FNV}
-        # {Sky}, {FNV} 0x02000000 ACTI: Obstacle
-        # {Sky}, {FNV} 0x02000000 REFR: No AI Acquire
-        (25,'obstacle'), # {0x02000000}
-        # {Sky}, {FNV} 0x04000000 ACTI: Filter
-        (26,'navMeshFilter'), # {0x04000000}
-        # {Sky}, {FNV} 0x08000000 ACTI: Bounding Box
-        # NavMesh BoundingBox
-        (27,'boundingBox'), # {0x08000000}
-        # {Sky}, {FNV} 0x10000000 STAT: Show in World Map
-        # {FNV} 0x10000000 STAT: Reflected by Auto Water
-        # {FNV} 0x10000000 STAT: Non-Pipboy
-        # MustExitToTalk ShowInWorldMap NonPipboy',
-        (28,'nonPipboy'), # {0x10000000}
-        # {Sky}, {FNV} 0x20000000 ACTI: Child Can Use
-        # {Sky}, {FNV} 0x20000000 REFR: Don't Havok Settle
-        # {FNV} 0x20000000 REFR: Refracted by Auto Water
-        # ChildCanUse DontHavokSettle RefractedbyAutoWater
-        (29,'refractedbyAutoWater'), # {0x20000000}
-        # {Sky}, {FNV} 0x40000000 ACTI: GROUND
-        # {Sky}, {FNV} 0x40000000 REFR: NoRespawn
-        # NavMeshGround NoRespawn
-        (30,'noRespawn'), # {0x40000000}
-        # {Sky}, {FNV} 0x80000000 REFR: MultiBound
-        # MultiBound
-        (31,'multiBound'), # {0x80000000}
-    )
+
+    class HeaderFlags(bolt.Flags):
+        """Common flags to all (most) record types, based on Oblivion flags.
+        NOTE: Use explicit indices here and in subclasses, otherwise the order
+        can be messed up (due to type hints being saved in dicts which are
+        ordered by insertion order, not update order).
+        """
+        deleted: bool = flag(5)
+        quest_item: bool = flag(10)             # types??
+        initially_disabled: bool = flag(11)     # REFR/??
+        ignored: bool = flag(12)
+        compressed: bool = flag(18)
+
     __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
                  'changed', 'data', 'inName')
     isKeyedByEid = False
+
+    # instance attributes
+    header: Any     # type: RecHeader
+    _rec_sig: bytes
+    fid: utils_constants.FormId
+    flags1: HeaderFlags
+    size: int
+    flags2: Any     # track down actual type
+    changed: bool
+    data: bytes | None
+    inName: str | None
 
     @classmethod
     def nested_records_sigs(cls):
@@ -391,7 +320,8 @@ class MreRecord(metaclass=RecordType):
         self.header = header
         self._rec_sig = header.recType
         self.fid = header.fid # type: utils_constants.FormId
-        self.flags1 = MreRecord.flags1_(header.flags1)
+        flags1_class = RecordType.sig_to_class[self._rec_sig].HeaderFlags
+        self.flags1 = flags1_class(header.flags1)
         self.size = header.size
         self.flags2 = header.flags2
         self.changed = False
@@ -623,14 +553,14 @@ class MelRecord(MreRecord):
                         f'{sig_to_str(sub_type)}'
             file_offset += ins.tell()
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
-                                           sub_type))
+                                           sub_type, self.flags1))
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error
         # Sort once we're done - sorting during loading is obviously a bad idea
         self._sort_subrecords()
 
-    def error_string(self, op, file_offset=None, sub_size=None, sub_type=None):
+    def error_string(self, op, file_offset=None, sub_size=None, sub_type=None, header_flags=None):
         """Return a human-readable description of this record to use in error
         messages."""
         msg = f'Error {op} {self.rec_str} record and/or subrecord: ' \
@@ -638,7 +568,8 @@ class MelRecord(MreRecord):
         if file_offset is None:
             return msg
         li = [msg, f'subrecord = {sig_to_str(sub_type)}',
-              f'subrecord size = {sub_size}', f'file pos = {file_offset}']
+              f'subrecord size = {sub_size}', f'file pos = {file_offset}',
+              f'header flags = {header_flags}']
         return '\n  '.join(li)
 
     def dumpData(self,out):

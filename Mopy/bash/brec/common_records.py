@@ -40,8 +40,26 @@ from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
-from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
+from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, flag, \
     remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
+
+# Common record header flags.  Implemented as mixin classes, so the flag names
+# can be added to existing Flags superclasses
+class NotPlayableFlag:
+    not_playable: bool = flag(2)
+
+class VWDFlag:
+    """Mixin class to use with bolt.Flags for the common Visible When Distant
+    flag.
+    """
+    has_distant_lod: bool = flag(15)    # aka Visible when distant
+
+class NavMeshFlags:
+    """Common NavMesh related header flags, always show up together."""
+    # These show up in FO3+
+    navmesh_filter: bool = flag(26)
+    navmesh_bounding_box: bool = flag(27)
+    navmesh_ground: bool = flag(30)
 
 #------------------------------------------------------------------------------
 # Base classes ----------------------------------------------------------------
@@ -123,6 +141,9 @@ class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
     _post_masters_sigs: set[bytes]
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        esm_flag: bool = flag(0)
 
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.
@@ -478,6 +499,11 @@ class AMreCell(MelRecord):
     ref_types = set()
     interior_temp_extra = set()
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        persistent: bool = flag(10)
+        off_limits: bool = flag(17) # interior CELL
+        cant_wait: bool = flag(19)
+
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
         For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
@@ -501,6 +527,9 @@ class AMreWrld(MelRecord):
     ref_types = set() # same as AMreCell
     exterior_temp_extra = [] # exterior cell temp cell references
     wrld_children_extra = [] # record sigs that appear in wrld children grup
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        cant_wait: bool = flag(19)
 
     @classmethod
     def nested_records_sigs(cls):
@@ -617,6 +646,9 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
+    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
+        pass # not_playable exists since FO3
+
     class _eyes_flags(Flags):
         playable: bool
         not_male: bool # since FO3
@@ -656,6 +688,9 @@ class MreFsts(MelRecord):
 class MreGlob(MelRecord):
     """Global."""
     rec_sig = b'GLOB'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        constant: bool = flag(6)    # since FO3? definitely FO4
 
     melSet = MelSet(
         MelEdid(),

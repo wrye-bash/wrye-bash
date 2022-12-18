@@ -25,8 +25,8 @@ __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
 
 from ... import bush
-from ...bolt import Flags, structs_cache, TrimmedFlags, struct_calcsize
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
+from ...bolt import Flags, flag, structs_cache, TrimmedFlags, struct_calcsize
+from ...brec import MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
     MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
     MelReferences, MelIdleTimerSetting, MelIdleRelatedAnims, MelAnimations, \
@@ -53,7 +53,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
     gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
-    MelLLChanceNone, MelLLGlobal
+    MelLLChanceNone, MelLLGlobal, NavMeshFlags, VWDFlag
+from ...brec import MelRecord as _BaseMelRecord
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -69,6 +70,12 @@ def fnv_only(fnv_obj):
     index in the flags list, so it's a good idea to specify flag indices
     explicitly when using it."""
     return if_fnv(fo3_version=None, fnv_version=fnv_obj)
+
+class MelRecord(_BaseMelRecord):
+    class HeaderFlags(_BaseMelRecord.HeaderFlags):
+        # Track down which records use this (it's not currently referenced
+        # in ours or xEdit's code).
+        no_voice_filter: bool = flag(13)
 
 # Common Flags
 aiService = Flags.from_names(
@@ -391,6 +398,19 @@ class MreActi(MelRecord):
     """Activator."""
     rec_sig = b'ACTI'
 
+    class HeaderFlags(NavMeshFlags, MelRecord.HeaderFlags):
+        has_tree_lod: bool = flag(6)
+        must_update_anims: bool = flag(8)           # FNV only?
+        # NOTE: xEdit FO3 souce has "On Local Map", but *hidden* is consistent
+        # with all other games with this flag.
+        hidden_from_local_map: bool = flag(9)
+        random_animation_start: bool = flag(16)
+        dangerous: bool = flag(17)
+        ignore_object_interaction: bool = flag(20)  # FNV only?
+        is_marker: bool = flag(23)                  # FNV only?
+        obstacle: bool = flag(25)
+        child_can_use: bool = flag(29)
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -516,6 +536,9 @@ class MreArma(MelRecord):
 class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(fnv_only(2))
 
     _dnamFlags = Flags.from_names('modulates_voice')
 
@@ -1487,6 +1510,9 @@ class MreLscr(MelRecord):
     """Load Screen."""
     rec_sig = b'LSCR'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        displays_in_main_menu: bool = flag(10)
+
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
@@ -2402,6 +2428,21 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
+    class HeaderFlags(VWDFlag, NavMeshFlags, MelRecord.HeaderFlags):
+        hidden_from_local_map: bool = flag(6)   # DOOR
+        inaccessible: bool = flag(8)            # DOOR
+        doesnt_light_water: bool = flag(8)      # LIGH
+        casts_shadows: bool = flag(9)           # LIGH
+        motion_blur: bool = flag(9)             # MSTT?
+        persistent: bool = flag(10)
+        full_lod: bool = flag(16)               # non-LIGH?
+        never_fades: bool = flag(16)            # LIGH
+        doesnt_light_landscape: bool = flag(17) # LIGH
+        no_ai_acquire: bool = flag(25)
+        reflected_by_auto_water: bool = flag(28)# LIGH
+        no_respawn: bool = flag(30)
+        multi_bound: bool = flag(31)
+
     _lockFlags = Flags.from_names(None, None, 'leveledLock')
     _destinationFlags = Flags.from_names('noAlarm')
 
@@ -2503,6 +2544,9 @@ class MreRefr(MelRecord):
 class MreRegn(MelRecord):
     """Region."""
     rec_sig = b'REGN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        border_region: bool = flag(6)
 
     obflags = Flags.from_names(
         'conform',
@@ -2684,6 +2728,18 @@ class MreStat(MelRecord):
     """Static."""
     rec_sig = b'STAT'
 
+    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
+        has_tree_lod: bool = flag(6)
+        addon_lod_object: bool = flag(7)    # FNV only?
+        # cannot_save: 14 - runtime only
+        # 17: use_hd_lod_texture
+        #     Not in xEdit source, but in old WB comments (not specified which
+        #     game).  In Sky it's STAT:use_hd_lod_texture
+        use_hd_lod_texture: bool = flag(17)
+        platform_specific_texture: bool = flag(19)  # ? in old WB comments
+        has_currents: bool = flag(19) # matches skyrim, so probably the right 19
+        show_in_world_map: bool = flag(28)
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -2696,6 +2752,9 @@ class MreStat(MelRecord):
 class MreTact(MelRecord):
     """Talking Activator."""
     rec_sig = b'TACT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        radio_station: bool = flag(17)
 
     melSet = MelSet(
         MelEdid(),

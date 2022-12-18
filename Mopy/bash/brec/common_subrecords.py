@@ -706,7 +706,7 @@ class MelIdleData(MelStruct):
 class MelIdleEnam(MelString):
     """Handles the IDLE subrecord ENAM (Animation Event)."""
     def __init__(self):
-        super().__init__(b'ENAM', 'animation_event'),
+        super().__init__(b'ENAM', 'animation_event')
 
 #------------------------------------------------------------------------------
 class MelIdleRelatedAnims(MelStruct):
@@ -1440,7 +1440,7 @@ class MelSeasons(MelStruct):
     """Handles the common PFPC (Seasonal Ingredient Production) subrecord."""
     def __init__(self):
         super().__init__(b'PFPC', ['4B'], 'sip_spring', 'sip_summer',
-            'sip_fall', 'sip_winter'),
+            'sip_fall', 'sip_winter')
 
 #------------------------------------------------------------------------------
 class MelShortName(MelLString):

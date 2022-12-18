@@ -24,7 +24,7 @@
 import io
 import re
 
-from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
+from ...bolt import Flags, flag, int_or_zero, structs_cache, str_or_none, \
     int_or_none, str_to_sig, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -1509,6 +1509,20 @@ class MreMisc(MelRecord):
     """Misc. Item."""
     rec_sig = b'MISC'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        @property
+        def use_actor_value(self) -> bool:
+            """The ActorValue flag is encoded in bits 6-7.  It might actually be
+            treated as an int with different meanings for values 0, 1, 2, 3, but
+            current code requires both bits set.
+            """
+            return (self._field & 0b01100000) == 0b01100000
+
+        @use_actor_value.setter
+        def use_actor_value(self, new_av: bool) -> None:
+            new_bits = 0b01100000 if new_av else 0
+            self._field = (self._field & ~0b01100000) | new_bits
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -1517,8 +1531,8 @@ class MreMisc(MelRecord):
         MelScript(),
         MelUnion({
             False: MelValueWeight(),
-            True: MelStruct(b'DATA', [u'2I'], (FID, u'value'), u'weight'),
-        }, decider=FlagDecider(u'flags1', [u'borderRegion', u'turnFireOff'])),
+            True: MelStruct(b'DATA', ['2I'], (FID, 'value'), 'weight'),
+        }, decider=FlagDecider('flags1', ['use_actor_value'])),
     )
 
 #------------------------------------------------------------------------------
@@ -1810,6 +1824,10 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        persistent: bool = flag(10)
+        casts_shadows: bool = flag(9)   # REFR to LIGH?
+
     _lockFlags = Flags.from_names((2, u'leveledLock'))
 
     class MelRefrXloc(MelTruncatedStruct):
@@ -1864,6 +1882,9 @@ class MreRefr(MelRecord):
 class MreRegn(MelRecord):
     """Region."""
     rec_sig = b'REGN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        border_region: bool = flag(6)
 
     rdatFlags = Flags.from_names('Override')
     obflags = Flags.from_names(

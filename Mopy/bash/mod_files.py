@@ -241,7 +241,7 @@ class ModFile(object):
     def __load_strs(self, do_unpack, ins, loadStrings, progress):
         # Check if we need to handle strings
         self.strings.clear()
-        if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
+        if do_unpack and loadStrings and getattr(self.tes4.flags1, 'localized', False):
             from . import bosh
             stringsProgress = SubProgress(progress, 0,
                                           0.1)  # Use 10% of progress bar

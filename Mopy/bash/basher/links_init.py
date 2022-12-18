@@ -544,7 +544,7 @@ def InitModLinks():
         ModList.context_links.append(Mod_Patch_Update())
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_FlipEsm())
-        if bush.game.check_esl:
+        if bush.game.has_esl:
             ModList.context_links.append(Mod_FlipEsl())
         ModList.context_links.append(Mod_FlipMasters())
         ModList.context_links.append(Mod_CreateDummyMasters())

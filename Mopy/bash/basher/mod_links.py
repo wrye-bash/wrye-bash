@@ -169,9 +169,10 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             ciext = newInfo.fn_key.fn_ext
-            if (is_esl := ciext == '.esl') or ciext == '.esm':
-                newFile.tes4.flags1.esm = True
-                newFile.tes4.flags1.eslFile = is_esl
+            if ciext in ('.esl', '.esm'):
+                newFile.tes4.flags1.esm_flag = True
+            if ciext == '.esl' and bush.game.has_esl:
+                newFile.tes4.flags1.esl_flag = True
             newFile.safeSave()
         to_select = []
         for mod, info, previous in to_refresh:
