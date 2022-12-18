@@ -38,28 +38,10 @@ from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
     MelColor, MelDebrData, MelFull, MelIcon, MelBounds, MelColorInterpolator, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId
+from .utils_constants import FID, FormId, NotPlayableFlag
 from .. import bolt, exception
 from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, flag, \
     remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
-
-# Common record header flags.  Implemented as mixin classes, so the flag names
-# can be added to existing Flags superclasses
-class NotPlayableFlag:
-    not_playable: bool = flag(2)
-
-class VWDFlag:
-    """Mixin class to use with bolt.Flags for the common Visible When Distant
-    flag.
-    """
-    has_distant_lod: bool = flag(15)    # aka Visible when distant
-
-class NavMeshFlags:
-    """Common NavMesh related header flags, always show up together."""
-    # These show up in FO3+
-    navmesh_filter: bool = flag(26)
-    navmesh_bounding_box: bool = flag(27)
-    navmesh_ground: bool = flag(30)
 
 #------------------------------------------------------------------------------
 # Base classes ----------------------------------------------------------------

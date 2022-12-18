@@ -228,9 +228,6 @@ class PatchGame(GameInfo):
     # Tweak Assorted
     #--------------------------------------------------------------------------
     assorted_tweaks = set()
-    # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
-    # as playable if it has at least one biped flag that is not in this set.
-    nonplayable_biped_flags = set()
     # The record attribute and flag name needed to find out if a piece of armor
     # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
     not_playable_flag = ('flags1', 'not_playable')

@@ -115,7 +115,40 @@ class _MelBodt(MelTruncatedStruct):
 class MelBodtBod2(MelSequential):
     """Handler for BODT and BOD2 subrecords. Reads both types, but writes only
     BOD2."""
-    _bp_flags = BipedFlags.from_names()
+    class _bp_flags(BipedFlags):
+        head: bool
+        hair: bool
+        body: bool
+        hands: bool
+        forearms: bool
+        amulet: bool
+        ring: bool
+        feet: bool
+        calves: bool
+        shield: bool
+        addon_tail: bool
+        long_hair: bool
+        circlet: bool
+        addon_ears: bool
+        dragon_head: bool
+        dragon_lwing: bool
+        dragon_rwing: bool
+        dragon_body: bool
+        bodyaddon7: bool
+        bodyaddon8: bool
+        decapitate_head: bool
+        decapitate: bool
+        bodyaddon9: bool
+        bodyaddon10: bool
+        bodyaddon11: bool
+        bodyaddon12: bool
+        bodyaddon13: bool
+        bodyaddon14: bool
+        bodyaddon15: bool
+        bodyaddon16: bool
+        bodyaddon17: bool
+        fx01: bool
+
     # Used when loading BODT subrecords - #4 is the only one we care about
     class _legacy_flags(TrimmedFlags):
         modulates_voice: bool = flag(0) # From FO3's ARMA, unused in Skyrim

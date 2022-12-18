@@ -586,12 +586,36 @@ class MreAppa(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class CommonBipedFlags(BipedFlags):
+    head: bool
+    hair: bool
+    upperBody: bool
+    lowerBody: bool
+    hand: bool
+    foot: bool
+    rightRing: bool
+    leftRing: bool
+    amulet: bool
+    weapon: bool
+    backWeapon: bool
+    sideWeapon: bool
+    quiver: bool
+    shield: bool
+    torch: bool
+    tail: bool
+
+    _not_playable_flags = {'backWeapon', 'quiver', 'weapon', 'torch',
+                           'rightRing', 'sideWeapon'}
+
 class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = BipedFlags.from_names((16, u'hideRings'), (17, u'hideAmulet'),
-                                   (22, u'notPlayable'), (23, u'heavy_armor'))
+    class _flags(CommonBipedFlags):
+        hideRings: bool = flag(16)
+        hideAmulet: bool = flag(17)
+        notPlayable: bool = flag(22)
+        heavy_armor: bool = flag(23)
 
     melSet = MelSet(
         MelEdid(),
@@ -720,8 +744,10 @@ class MreClot(MelRecord):
     """Clothing."""
     rec_sig = b'CLOT'
 
-    _flags = BipedFlags.from_names((16, u'hideRings'), (17, u'hideAmulet'),
-                                   (22, u'notPlayable'))
+    class _flags(CommonBipedFlags):
+        hideRings: bool = flag(16)
+        hideAmulet: bool = flag(17)
+        notPlayable: bool = flag(22)
 
     melSet = MelSet(
         MelEdid(),

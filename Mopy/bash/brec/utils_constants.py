@@ -29,7 +29,7 @@ from itertools import chain
 from typing import Callable, Type
 
 from .. import bolt
-from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache
+from ..bolt import cstrip, decoder, Flags, flag, structs_cache, attrgetter_cache
 from ..exception import StateError, AbstractError
 
 # no local imports, imported everywhere in brec
@@ -301,17 +301,36 @@ class AutoFixedString(FixedString):
     _str_encoding = None
 
 # Common flags ----------------------------------------------------------------
+class NotPlayableFlag:
+    """Mixin to add the not_playable flag to a HeaderFlags class."""
+    not_playable: bool = flag(2)
+
+class VWDFlag:
+    """Mixin to add the Visible When Distant (has_distant_lod) flag to a
+    HeaderFlags class.
+    """
+    has_distant_lod: bool = flag(15)    # aka Visible when distant
+
+class NavMeshFlags:
+    """Mixin to add the NavMesh related flags to a HeaderFlags class."""
+    # These show up in FO3+
+    navmesh_filter: bool = flag(26)
+    navmesh_bounding_box: bool = flag(27)
+    navmesh_ground: bool = flag(30)
+
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
-    """Biped flags element. Includes biped flag set by default."""
-    __slots__ = ()
+    """Base Biped flags element. Includes logic for checking if armor/clothing
+    can be marked as playable.  Should be subclassed to add the appropriate
+    flags and, if needed, the non-playable flags.
+    """
+    _not_playable_flags: set[str] = set()
 
-    @classmethod
-    def from_names(cls, *names):
-        from .. import bush
-        flag_names = *bush.game.Esp.biped_flag_names, *names
-        return super(BipedFlags, cls).from_names(*flag_names)
+    @property
+    def any_body_flag_set(self) -> bool:
+        check_flags = set(type(self)._names) - type(self)._not_playable_flags
+        return any(getattr(self, flg_name) for flg_name in check_flags)
 
 # Sort Keys -------------------------------------------------------------------
 fid_key = attrgetter_cache[u'fid']

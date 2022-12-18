@@ -429,8 +429,6 @@ class GameInfo(object):
 
     # Plugin format stuff
     class Esp(object):
-        # A tuple containing all biped flag names (in order) for this game
-        biped_flag_names = ()
         # WB can create Bashed Patches
         canBash = False
         # WB can edit basic info in the main header record - generally has

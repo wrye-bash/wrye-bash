@@ -125,7 +125,7 @@ class MelAppr(MelSimpleArray):
 #------------------------------------------------------------------------------
 class MelBod2(MelUInt32Flags):
     """Handles the BOD2 (Biped Body Template) subrecord."""
-    _bp_flags = BipedFlags.from_names()
+    _bp_flags = BipedFlags  # Needs filling in
 
     def __init__(self):
         super().__init__(b'BOD2', 'biped_flags', self._bp_flags)

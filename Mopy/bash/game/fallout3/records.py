@@ -153,7 +153,31 @@ class MreActor(AMreActor):
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
     """Handles the common BMDT (Biped Data) subrecord."""
-    _bp_flags = BipedFlags.from_names()
+    class _bp_flags(BipedFlags):
+        head: bool
+        hair: bool
+        upperBody: bool
+        leftHand: bool
+        rightHand: bool
+        weapon: bool
+        pipboy: bool
+        backpack: bool
+        necklace: bool
+        headband: bool
+        hat: bool
+        eyeGlasses: bool
+        noseRing: bool
+        earrings: bool
+        mask: bool
+        choker: bool
+        mouthObject: bool
+        bodyAddon1: bool
+        bodyAddon2: bool
+        bodyAddon3: bool
+
+        ##: Taken from valda's version, investigate
+        _not_playable_flags = {'pipboy'}
+
     class _general_flags(TrimmedFlags):
         hasBackpack: bool = flag(fnv_only(2))
         medium_armor: bool = flag(fnv_only(3))
