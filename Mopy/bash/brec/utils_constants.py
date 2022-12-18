@@ -24,7 +24,7 @@
 almost all other parts of brec."""
 from __future__ import annotations
 
-import sys
+from contextlib import suppress
 from itertools import chain
 from typing import Callable, Type
 
@@ -128,89 +128,62 @@ class FormId:
         return hash(self.long_fid)
 
     def __eq__(self, other):
-        try:
+        with suppress(AttributeError):
             return self.long_fid == other.long_fid
-        except AttributeError as e:
-            if other is None: return False
-            # identical code in rest of the methods below
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}') from e
-                raise StateError(f'Comparing {self!r} with {other}') from e
-        return self.long_fid == other
+        if other is None:
+            return False
+        elif isinstance(self.long_fid, type(other)):
+            return self.long_fid == other
+        return NotImplemented
 
     def __ne__(self, other):
-        try:
+        with suppress(AttributeError):
             return self.long_fid != other.long_fid
-        except AttributeError as e:
-            if other is None: return True
-            if not isinstance(self.long_fid, type(other)):
-                if not isinstance(other, (tuple, int)):
-                    raise TypeError(f'Comparing FormId with {type(other)} is '
-                                    f'not supported: {other!r}') from e
-                raise StateError(f'Comparing {self!r} with {other}') from e
-        return self.long_fid != other
+        if other is None:
+            return True
+        elif isinstance(self.long_fid, type(other)):
+            return self.long_fid != other
+        return NotImplemented
 
     def __lt__(self, other):
-        try:
+        with suppress(TypeError):
             # If we're in a write context, compare FormIds properly
             return short_mapper(self) < short_mapper(other)
-        except TypeError:
-            # Otherwise, use alphanumeric order
-            ##: This is a hack - rewrite _AMerger to not sort and absorb all
-            # mergers (see #497). Same with all the other compare dunders
-            try:
-                return self.long_fid < other.long_fid
-            except AttributeError as e:
-                if not isinstance(self.long_fid, type(other)):
-                    if not isinstance(other, (tuple, int)):
-                        raise TypeError(f'Comparing FormId with {type(other)} '
-                                        f'is not supported: {other!r}') from e
-                    raise StateError(f'Comparing {self!r} with {other}') from e
+        # Otherwise, use alphanumeric order
+        ##: This is a hack - rewrite _AMerger to not sort and absorb all
+        # mergers (see #497). Same with all the other compare dunders
+        with suppress(AttributeError):
+            return self.long_fid < other.long_fid
+        if isinstance(self.long_fid, type(other)):
             return self.long_fid < other
+        return NotImplemented
 
     def __ge__(self, other):
-        try:
+        with suppress(TypeError):
             return short_mapper(self) >= short_mapper(other)
-        except TypeError:
-            try:
-                return self.long_fid >= other.long_fid
-            except AttributeError as e:
-                if not isinstance(self.long_fid, type(other)):
-                    if not isinstance(other, (tuple, int)):
-                        raise TypeError(f'Comparing FormId with {type(other)} '
-                                        f'is not supported: {other!r}') from e
-                    raise StateError(f'Comparing {self!r} with {other}') from e
+        with suppress(AttributeError):
+            return self.long_fid >= other.long_fid
+        if isinstance(self.long_fid, type(other)):
             return self.long_fid >= other
+        return NotImplemented
 
     def __gt__(self, other):
-        try:
+        with suppress(TypeError):
             return short_mapper(self) > short_mapper(other)
-        except TypeError:
-            try:
-                return self.long_fid > other.long_fid
-            except AttributeError as e:
-                if not isinstance(self.long_fid, type(other)):
-                    if not isinstance(other, (tuple, int)):
-                        raise TypeError(f'Comparing FormId with {type(other)} '
-                                        f'is not supported: {other!r}') from e
-                    raise StateError(f'Comparing {self!r} with {other}') from e
+        with suppress(AttributeError):
+            return self.long_fid > other.long_fid
+        if isinstance(self.long_fid, type(other)):
             return self.long_fid > other
+        return NotImplemented
 
     def __le__(self, other):
-        try:
+        with suppress(TypeError):
             return short_mapper(self) <= short_mapper(other)
-        except TypeError:
-            try:
-                return self.long_fid <= other.long_fid
-            except AttributeError as e:
-                if not isinstance(self.long_fid, type(other)):
-                    if not isinstance(other, (tuple, int)):
-                        raise TypeError(f'Comparing FormId with {type(other)} '
-                                        f'is not supported: {other!r}') from e
-                    raise StateError(f'Comparing {self!r} with {other}') from e
+        with suppress(AttributeError):
+            return self.long_fid <= other.long_fid
+        if isinstance(self.long_fid, type(other)):
             return self.long_fid <= other
+        return NotImplemented
 
     # avoid setstate/getstate round trip
     def __deepcopy__(self, memodict={}):
@@ -235,6 +208,54 @@ class FormId:
     def dump(self):
         return short_mapper(self)
 
+class _NoneFid:
+    """Special FormId value of NONE, which sorts last always.  Used in FO4, and
+    internally for sorted lists which don't have a FormId but need to sort last.
+
+    NOTE: Not derived from FormId, since we want this to blow if FormId's other
+    methods are called on this.
+    """
+    def __init__(self):
+        pass
+
+    def __str__(self) -> str:
+        return 'NONE'
+
+    def __repr__(self) -> str:
+        return 'FormId(NONE)'
+
+    def __lt__(self, other: FormId | _NoneFid) -> bool:
+        if isinstance(other, (FormId, _NoneFid)):
+            return False
+        return NotImplemented
+
+    def __le__(self, other: FormId | _NoneFid) -> bool:
+        return not self > other
+
+    def __gt__(self, other: FormId | _NoneFid) -> bool:
+        if isinstance(other, FormId):
+            return True
+        elif isinstance(other, _NoneFid):
+            return False
+        return NotImplemented
+
+    def __ge__(self, other: FormId | _NoneFid) -> bool:
+        return not self < other
+
+    def __eq__(self, other: FormId | _NoneFid) -> bool:
+        if isinstance(other, FormId):
+            return False
+        elif isinstance(other, _NoneFid):
+            return True
+        return NotImplemented
+
+    def __ne__(self, other: FormId | _NoneFid) -> bool:
+        return not self == other
+
+    def dump(self) -> int:
+        return 0xFFFFFFFF
+
+
 class _Tes4Fid(FormId):
     """The special formid of the plugin header record - aka 0. Also used
     as a MelStruct default and when we set the form id to "zero" in some
@@ -248,6 +269,7 @@ class _Tes4Fid(FormId):
 
 # cache an instance of Tes4 and export that to the rest of Bash
 ZERO_FID = _Tes4Fid(0)
+NONE_FID = _NoneFid()
 
 # Global FormId class used to wrap all formids of currently loading mod. It
 # must be set by the mod reader context manager based on the currently loading
@@ -353,7 +375,7 @@ def perk_effect_key(e):
         # leading to a None for pe_ability - sort those last (valid IDs
         # shouldn't be 0)
         return (e.pe_rank, e.pe_priority, perk_effect_type,
-                extra_vals or sys.maxsize)
+                extra_vals or NONE_FID)
     else:
         return e.pe_rank, e.pe_priority, perk_effect_type, *extra_vals
 
