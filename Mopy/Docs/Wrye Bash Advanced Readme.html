@@ -892,7 +892,33 @@ tab. The directories skipped are:
                 with their xSE plugins. You can skip them here if you
                 want.</td>
         </tr>
-        <tr><td rowspan="5">Global Redirects</td></tr>
+        <tr><td rowspan="6">Global Redirects</td></tr>
+        <tr>
+            <td>Redirect CSVs</td>
+            <td>If checked, top-level CSV files (.csv) will be moved to a
+                <code>Bash Patches</code> subfolder of the Data folder. Such
+                top-level CSV files are usually intended to be manually
+                installed for use by the Bashed Patch, but BAIN will be able to
+                handle installing them with this option checked.</td>
+        </tr>
+        <tr>
+            <td>Redirect Docs</td>
+            <td>If checked, top-level documentation files (see
+                <a href="#bainSkipDocs">Skip Docs</a> for a list of affected
+                file extensions) will be moved to a <code>Docs</code> subfolder
+                of the Data folder. This is both to organize them better and,
+                in earlier games like Oblivion, to work around engine issues
+                when too many files are installed in the Data folder.</td>
+        </tr>
+        <tr>
+            <td>Redirect Script Sources</td>
+            <td><em>Skyrim&colon; Special Edition only.</em> If checked, loose script
+                sources (.psc files) installed to the incorrect folders
+                (<code>source\scripts</code> and <code>source</code>) will be
+                redirected to the correct folder (<code>scripts\source</code>).
+                <a href="#bainSkipScriptSources">Skip Script Sources</a> must
+                be off.</td>
+        </tr>
         <tr>
             <td>Rename Docs</td>
             <td>If checked, documentation files (see
@@ -919,29 +945,11 @@ tab. The directories skipped are:
         </tr>
         <tr>
             <td>Rename String Translation Files</td>
-            <td><em>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special Edition
-                &amp; Fallout 4 only.</em> If checked, string translation files
-                will be renamed so that they are loaded for the language the
-                game is currently run for, unless there are existing
-                translation files for that language.</td>
-        </tr>
-        <tr>
-            <td>Redirect Docs</td>
-            <td>If checked, top-level documentation files (see
-                <a href="#bainSkipDocs">Skip Docs</a> for a list of affected
-                file extensions) will be moved to a <code>Docs</code> subfolder
-                of the Data folder. This is both to organize them better and,
-                in earlier games like Oblivion, to work around engine issues
-                when too many files are installed in the Data folder.</td>
-        </tr>
-        <tr>
-            <td>Redirect Script Sources</td>
-            <td><em>Skyrim&colon; Special Edition only.</em> If checked, loose script
-                sources (.psc files) installed to the incorrect folders
-                (<code>source\scripts</code> and <code>source</code>) will be
-                redirected to the correct folder (<code>scripts\source</code>).
-                <a href="#bainSkipScriptSources">Skip Script Sources</a> must
-                be off.</td>
+            <td><em>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon;
+                Special Edition &amp; Fallout 4 only.</em> If checked, string
+                translation files will be renamed so that they are loaded for
+                the language the game is currently run for, unless there are
+                existing translation files for that language.</td>
         </tr>
 </table>
 </div>

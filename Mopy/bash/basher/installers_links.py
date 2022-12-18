@@ -29,7 +29,7 @@ from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush, load_order
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
-    EnabledLink
+    EnabledLink, SeparatorLink
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
@@ -642,6 +642,21 @@ class _AInstallers_NoSkipDocs(EnabledLink, _Installers_RescanningLink):
     def _enable(self):
         return not bass.settings['bash.installers.skipDocs']
 
+class _Installers_RedirectCSVs(_Installers_RescanningLink):
+    """Toggle auto-redirection of top-level CSV files."""
+    _text = _('Redirect CSVs')
+    _help = _('If checked, Wrye Bash will move all top-level CSV files (.csv) '
+              'to the Bash Patches folder.')
+    _bl_key = 'bash.installers.redirect_csvs'
+
+class _Installers_RedirectDocs(_AInstallers_NoSkipDocs):
+    """Toggle auto-redirection of docs."""
+    _text = _('Redirect Docs')
+    _help = _('If checked, Wrye Bash will move all top-level documentation '
+              "files (.txt, .html, etc.) to a Docs subfolder. 'Skip "
+              "Docs' must be off.")
+    _bl_key = 'bash.installers.redirect_docs'
+
 class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
                                         _Installers_RescanningLink):
     """Toggle auto-redirection of script sources."""
@@ -658,13 +673,13 @@ class _Installers_RedirectScriptSources(AppendableLink, EnabledLink,
     def _enable(self):
         return not bass.settings['bash.installers.skipScriptSources']
 
-class _Installers_RedirectDocs(_AInstallers_NoSkipDocs):
-    """Toggle auto-redirection of docs."""
-    _text = _('Redirect Docs')
-    _help = _('If checked, Wrye Bash will move all top-level documentation '
-              "files (.txt, .html, etc.) to a Docs subfolder. 'Skip "
-              "Docs' must be off.")
-    _bl_key = 'bash.installers.redirect_docs'
+class _Installers_RenameDocs(_AInstallers_NoSkipDocs):
+    """Toggle auto-renaming of docs."""
+    _text = _('Rename Docs')
+    _help = _('If checked, Wrye Bash will rename documentation files with '
+              'common names (e.g. readme.txt) to avoid packages overwriting '
+              "each other's docs.")
+    _bl_key = 'bash.installers.rename_docs'
 
 class _Installers_RenameStrings(AppendableLink, _Installers_RescanningLink):
     """Toggle auto-renaming of .STRINGS files"""
@@ -676,13 +691,6 @@ class _Installers_RenameStrings(AppendableLink, _Installers_RescanningLink):
     def _append(self, window):
         return bool(bush.game.Esp.stringsFiles)
 
-class _Installers_RenameDocs(_AInstallers_NoSkipDocs):
-    """Toggle auto-renaming of docs."""
-    _text = _('Rename Docs')
-    _help = _('If checked, Wrye Bash will rename documentation files with '
-              'common names (e.g. readme.txt) to avoid packages overwriting '
-              "each other's docs.")
-    _bl_key = 'bash.installers.rename_docs'
 
 class Installers_GlobalRedirects(balt.MenuLink):
     """Global Redirects menu."""
@@ -690,8 +698,10 @@ class Installers_GlobalRedirects(balt.MenuLink):
 
     def __init__(self):
         super().__init__()
+        self.append(_Installers_RedirectCSVs())
         self.append(_Installers_RedirectDocs())
         self.append(_Installers_RedirectScriptSources())
+        self.append(SeparatorLink())
         self.append(_Installers_RenameDocs())
         self.append(_Installers_RenameStrings())
 

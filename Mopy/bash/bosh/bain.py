@@ -101,7 +101,8 @@ class Installer(ListInfo):
     # even ones we'll end up skipping, since this is for the detection of
     # archive 'types' - not actually deciding which get installed
     _top_files_extensions = bush.game.espm_extensions | {
-        bush.game.Bsa.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
+        bush.game.Bsa.bsa_extension, '.bsl', '.ckm', '.csv', '.ini',
+        '.modgroups'}
     # Same as _top_files_extensions, plus doc extensions. Needed since we want
     # to allow top-level docs files in sub-packages, but we don't want them to
     # invalidate a type 2 package
@@ -503,17 +504,21 @@ class Installer(ListInfo):
         re_common_docs_match = Installer.re_common_docs.match
         docs_ = u'Docs' + os_sep
         ignore_doclike = {'masterlist.txt', 'dlclist.txt'}
+        def _split_fr(file_relative):
+            """Small helper for splitting up file_relative into parent
+            directory and file name."""
+            fr_split = file_relative.rsplit(os_sep, 1)
+            return (('', fr_split[0]) if len(fr_split) == 1 else fr_split)
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
             maReadMe = reReadMeMatch(fileLower)
             if maReadMe and not self.hasReadme:
                 self.hasReadme = full
             ##: Linux: test fileLower, full are os agnostic
-            rsplit = file_relative.rsplit(os_sep, 1)
-            parent_dir, fname = ('', rsplit[0]) if len(rsplit) == 1 else rsplit
+            parent_dir, split_fn = _split_fr(file_relative)
             lower_parent = parent_dir.lower()
+            lower_root = split_fn.lower()[:-len(fileExt)]
             package_root = self.fn_key.fn_body if self._valid_exts_re else \
                 self.fn_key
-            lower_root = fname.lower()[:-len(fileExt)]
             if lower_root in package_root.lower() and not self.hasReadme:
                 # This is named similarly to the package (with a doc ext), so
                 # probably a readme
@@ -535,7 +540,7 @@ class Installer(ListInfo):
                 if not parent_dir or lower_parent == 'docs':
                     ma_cd = re_common_docs_match(lower_root)
                     if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
-                        dest = dest_start + package_root + ' ' + fname
+                        dest = dest_start + package_root + ' ' + split_fn
                     elif maReadMe and not (maReadMe.group(1) or
                                            maReadMe.group(3)):
                         dest = dest_start + package_root + fileExt
@@ -553,7 +558,7 @@ class Installer(ListInfo):
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
         def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
-            if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: # DOCS !
+            if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: ##: DOCS!
                 self.hasBCF = full
                 return None # skip
             return file_relative
@@ -565,6 +570,13 @@ class Installer(ListInfo):
             return _process_docs(self, fileLower, full, fileExt, file_relative,
                                  sub)
         Installer._attributes_process[u'.txt'] = _process_txt
+        def _process_csv(self, fileLower, full, fileExt, file_relative, sub):
+            parent_dir, split_fn = _split_fr(file_relative)
+            if (not parent_dir and
+                    bass.settings['bash.installers.redirect_csvs']):
+                return f'Bash Patches{os_sep}{split_fn}'
+            return file_relative
+        Installer._attributes_process['.csv'] = _process_csv
         def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
             rootLower = file_relative.split(os_sep, 1)
             if len(rootLower) > 1:
