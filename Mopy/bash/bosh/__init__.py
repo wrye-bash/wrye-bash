@@ -911,8 +911,9 @@ class ModInfo(FileInfo):
                 # Note that the only thing that matters is the first byte of
                 # the fid, since both overrides and injected records need ONAM.
                 # We sort because xEdit does as well.
-                new_onam = sorted(h.fid for h in temp_headers
-                                  if h.fid.mod_dex < num_masters)
+                new_onam = sorted([h.fid for h in temp_headers
+                                   if h.fid.mod_dex < num_masters],
+                    key=lambda f: f.short_fid)
             else:
                 # We're no longer a master now, so discard all ONAM
                 new_onam = []

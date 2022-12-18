@@ -522,7 +522,7 @@ class ModHeaderReader(object):
     ##: The methods above have to be very fast, but this one can afford to be
     # much slower. Should eventually be absorbed by refactored ModFile API.
     @staticmethod
-    def read_temp_child_headers(mod_info) -> list[RecordHeader]:
+    def read_temp_child_headers(mod_info) -> list[RecHeader]:
         """Reads the headers of all temporary CELL chilren in the specified mod
         and returns them as a list. Used for determining FO3/FNV/TES5 ONAM."""
         ret_headers = []
