@@ -230,10 +230,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         """Darnifies the text of the specified record and returns it as a
         string."""
         self.inBold = False
-        # There are some FUNKY quotes that don't translate properly (they are
-        # in *latin* encoding, not even cp1252 or something normal but
-        # non-unicode). Get rid of those before we blow up.
-        rec_text = record.book_text.replace(u'\u201d', u'')
+        rec_text = record.book_text
         if self._re_head_2.match(rec_text):
             rec_text = self._re_head_2.sub(
                 r'\1<font face=1 color=220000>\2<font face=3 '
