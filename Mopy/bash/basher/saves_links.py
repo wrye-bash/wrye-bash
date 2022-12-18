@@ -369,10 +369,10 @@ class Save_DiffMasters(EnabledLink):
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):
     """Renumbers a whole lot of save files."""
-    _text = _(u'Re-number Save(s)...')
+    _text = _('Renumber Saves...')
     _help = _(u'Renumber a whole lot of save files. Savename must be of the '
               u'form "Save <some number><optional text>"')
-    _re_numbered_save = re.compile(r'^(save ?)(\d*)(.*)', re.I | re.U)
+    _re_numbered_save = re.compile(r'^(save ?)(\d*)(.*)', re.I)
 
     def _enable(self):
         self._matches = [(s_groups, sinf) for sinf in self.iselected_infos() if
@@ -382,20 +382,22 @@ class Save_Renumber(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        newNumber = self._askNumber(
+        nfn_number = self._askNumber(
             _(u'Enter new number to start numbering the selected saves at.'),
-            prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
+            prompt=_(u'Save Number'), title=_('Renumber Saves'), value=1,
             min=1, max=10000)
-        if newNumber is None: return
+        if nfn_number is None: return
         old_names = set()
         new_names = set()
         for s_groups, sinf in self._matches:
-            newFileName = FName(f'{s_groups[0]}{newNumber:d}{s_groups[2]}')
-            if newFileName != sinf.fn_key:
-                if self.window.try_rename(sinf, newFileName, new_names,
-                                          old_names):
+            # We have to pass the root, so strip off the extension
+            ofn_root = FName(s_groups[2]).fn_body
+            nfn_save = FName(f'{s_groups[0]}{nfn_number:d}{ofn_root}')
+            if nfn_save != sinf.fn_key.fn_body:
+                if not self.window.try_rename(sinf, nfn_save, new_names,
+                                              old_names):
                     break
-                newNumber += 1
+                nfn_number += 1
         if new_names:
             self.window.RefreshUI(redraw=new_names, to_del=old_names)
             self.window.SelectItemsNoCallback(new_names)
