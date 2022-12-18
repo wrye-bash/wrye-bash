@@ -22,7 +22,7 @@
 # =============================================================================
 """This module contains the falloutnv record classes."""
 from ..fallout3.records import MelDestructible, MelModel
-from ...bolt import Flags
+from ...bolt import Flags, flag
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
     MelFid, MelFids, MelBase, MelSimpleArray, AMreHeader, MelFloat, MelEdid, \
     MelUInt32, MelBounds, MelTruncatedStruct, MelIcons, MelIcon, MelUInt8, \
@@ -209,7 +209,9 @@ class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'
 
-    _DialFlags = Flags.from_names('rumors', 'toplevel')
+    class _DialFlags(Flags):
+        rumors: bool
+        toplevel: bool
 
     @classmethod
     def nested_records_sigs(cls):
@@ -289,14 +291,13 @@ class MreMset(MelRecord):
     """Media Set."""
     rec_sig = b'MSET'
 
-    _flags = Flags.from_names(
-        ( 0,'dayOuter'),
-        ( 1,'dayMiddle'),
-        ( 2,'dayInner'),
-        ( 3,'nightOuter'),
-        ( 4,'nightMiddle'),
-        ( 5,'nightInner'),
-    )
+    class _flags(Flags):
+        dayOuter: bool = flag(0)
+        dayMiddle: bool = flag(1)
+        dayInner: bool = flag(2)
+        nightOuter: bool = flag(3)
+        nightMiddle: bool = flag(4)
+        nightInner: bool = flag(5)
 
     melSet = MelSet(
         MelEdid(),
