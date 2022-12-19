@@ -1785,7 +1785,7 @@ class Link(object):
         :param window: the element the menu is being popped from (usually a
             UIList subclass)
         :param selection: the selected items when the menu is appended or None.
-            In modlist/installers it's a list<Path> while in subpackage it's
+            In modlist/installers it's a list<Path> while in sub-package it's
             the index of the right-clicked item. In main (column header) menus
             it's the column clicked on or the first column. Set in
             Links.popup_menu()."""
@@ -1820,8 +1820,10 @@ class Link(object):
         return askYes(self.window, message, title=title, default=default,
                       questionIcon=questionIcon)
 
-    def _askContinue(self, message, continueKey, title=_(u'Warning')):
-        return askContinue(self.window, message, continueKey, title=title)
+    def _askContinue(self, message, continueKey, title=_('Warning'),
+            show_cancel=True):
+        return askContinue(self.window, message, continueKey, title=title,
+            show_cancel=show_cancel)
 
     def _askContinueShortTerm(self, message, title=_(u'Warning')):
         return askContinueShortTerm(self.window, message, title=title)

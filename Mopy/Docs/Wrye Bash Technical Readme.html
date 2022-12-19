@@ -393,7 +393,7 @@
 
 <h3 id="wizards-keywords">Keywords</h3>
 <p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
-<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the plugins in that subpackage in the BAIN window.</p>
+<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the plugins in that sub-package in the BAIN window.</p>
 <code class="box">SelectSubPackage name</code>
 <ul>
     <li><var>name</var> - A string or variable holding the name of the sub-package to select.
@@ -517,14 +517,14 @@ EndFor</code>
             <li><var>end_value</var> - value of <var>var</var> that will end the for loop.
             <li><var>increment_value</var> - Optional. This the value that will be added to <var>var</var> at the end of each run of the loop. Defaults to <code>1</code> if <var>start_value</var> is greater than <var>end_value</var> or <code>-1</code> otherwise.
         </ul>
-        <li><code><var>sub</var> in SubPackages</code> - This type of for loop iterates over the names of the SubPackages in the current package.
+        <li><code><var>sub</var> in SubPackages</code> - This type of for loop iterates over the names of the sub-packages in the current package.</li>
         <ul>
-            <li><var>sub</var> - A variable that holds the names of the SubPackages.
+            <li><var>sub</var> - A variable that holds the names of the sub-packages.</li>
         </ul>
-        <li><code><var>file</var> in <var>sub</var></code> - This type of for loop iterates over the names of the files in the given subpackage. Filenames are relative to the Data directory, before any remapping that would normally be done by BAIN.
+        <li><code><var>file</var> in <var>sub</var></code> - This type of for loop iterates over the names of the files in the given sub-package. Filenames are relative to the Data directory, before any remapping that would normally be done by BAIN.
         <ul>
             <li><var>file</var> - A variable that holds the filenames.
-            <li><var>sub</var> - The name of the subpackage to iterate through.
+            <li><var>sub</var> - The name of the sub-package to iterate through.
         </ul>
     </ul>
     <li><code>Continue</code> - Signals the for loop to begin over again at the <code>For</code> statement.
@@ -759,7 +759,7 @@ startswith(myStr, "foo")</code>
 <p>Only three constants are defined in BAIN Wizards:
 <p><dfn>True</dfn> - <code>True</code>. Equal to boolean <code>true</code> (text representation) or <code>1</code> (binary representation).</p>
 <p><dfn>False</dfn> - <code>False</code>. Equal to boolean <code>false</code> (text representation) or <code>0</code> (binary representation).</p>
-<p><dfn>SubPackages</dfn> - A list of strings. Contains the names of the subpackages of the installer that this wizard belongs to. Can be iterated over with a <code>For</code> statement or used with the <code>in</code> operator.</p>
+<p><dfn>SubPackages</dfn> - A list of strings. Contains the names of the sub-packages of the installer that this wizard belongs to. Can be iterated over with a <code>For</code> statement or used with the <code>in</code> operator.</p>
 
 <h3 id="wizards-escape">Escape Sequences</h3>
 <p>Escape sequences are special sequences of characters you can use to get a different character outputted. The escape sequences allowed are:
@@ -965,9 +965,9 @@ For Each DataFile &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [Searc
 For Each PluginFolder &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]
 For Each Plugin &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]</code>
             <td>Use:
-            <code class="box">For subpackage in SubPackages</code>
+            <code class="box">For sub in SubPackages</code>
             <p>and/or:
-            <code class="box">For file in subpackage</code>
+            <code class="box">For file in sub</code>
             <p>to iterate over files and folders in an installer. Then use:
             <code class="box">file.lower().endswith(".esp")
 GetFilename(file)

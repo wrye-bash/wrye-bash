@@ -1044,6 +1044,8 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.iniTweaks.continue',
         _(u'[Installers, Screenshots] Opening a lot of items'):
             u'bash.maxItemsOpen.continue',
+        _('[Installers] Installing unconfigured complex packages'):
+            'bash.installers.nothing_installed.continue',
         _(u"[Installers] Opening a mod's page at the "
           u'%s') % bush.game.nexusName:
             bush.game.nexusKey,

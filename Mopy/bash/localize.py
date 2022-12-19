@@ -185,11 +185,11 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     if _files is None: _files = []
     _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
-    # Find subpackages - returned format is (module_loader, name, is_pkg)
+    # Find packages - returned format is (module_loader, name, is_pkg)
     for module_loader, pkg_name, is_pkg in pkgutil.iter_modules([cur_dir]):
         if not is_pkg: # Skip it if it's not a package
             continue
-        # Recurse into the subpackage we just found
+        # Recurse into the package we just found
         _find_all_bash_modules(
             os.path.join(bash_path, pkg_name) if bash_path else u'bash',
             os.path.join(cur_dir, pkg_name), _files)

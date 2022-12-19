@@ -51,7 +51,7 @@ class WizInstallInfo(object):
     # select_plugins: List of plugins to 'select' for install
     # rename_plugins: Dictionary of renames for plugins.  In the format of:
     #   'original name':'new name'
-    # select_sub_packages: List of Subpackages to 'select' for install
+    # select_sub_packages: List of sub-packages to 'select' for install
     # ini_edits: Dictionary of INI edits to apply/create.  In the format of:
     #   'ini file': {
     #      'section': {
@@ -1247,7 +1247,7 @@ class WryeParser(ScriptParser.Parser):
             self.variables[varname.text] = start
             self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
         elif args[1].text == u'in':
-            # For sub_name in SubPackages / For sub_name in SubPackage
+            # For sub in SubPackages / For file in sub
             if args[2].text == u'SubPackages':
                 if len(args) > 4:
                     error(_(u"Invalid syntax for 'For' statement.  Expected format:")
@@ -1258,7 +1258,8 @@ class WryeParser(ScriptParser.Parser):
                 sub_name = self.ExecuteTokens(args[2:])
                 subpackage = sub_name if sub_name in self.sublist else None
                 if subpackage is None:
-                    error(_(u"SubPackage '%s' does not exist.") % sub_name)
+                    error(_("Sub-package '%(sp_name)s' does not exist.") % {
+                        'sp_name': sub_name})
                 List = []
                 if self.installer.is_project:
                     sub = bass.dirs[u'installers'].join(self._path, subpackage)

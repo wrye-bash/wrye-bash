@@ -312,7 +312,7 @@ class Installer_EditWizard(_Installer_AViewOrEditFile):
         self._selected_info.open_wizard()
 
 class Installer_Wizard(_Installer_AWizardLink):
-    """Runs the install wizard to select subpackages and plugin filtering"""
+    """Runs the install wizard to select sub-packages and filter plugins."""
     def __init__(self, *, auto_wizard):
         super(Installer_Wizard, self).__init__()
         self.bAuto = auto_wizard
@@ -587,19 +587,22 @@ class Installer_Install(_NoMarkerLink):
         ui_refresh = [False, False]
         try:
             with balt.Progress(_('Installing...')) as progress:
-                last = (self.mode == u'LAST')
-                override = (self.mode != u'MISSING')
+                last = (self.mode == 'LAST')
+                override = (self.mode != 'MISSING')
                 try:
                     new_tweaks = self.idata.bain_install(self._installables,
                         ui_refresh, progress, last, override)
-                except (CancelError,SkipError):
-                    pass
+                except (CancelError, SkipError):
+                    return
                 except StateError as e:
-                    self._showError(u'%s'%e)
-                else: # no error occurred
-                    self._warn_mismatched_ini_tweaks_created(new_tweaks)
+                    self._showError(f'{e}')
+                    return
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
+        # No error occurred and we didn't cancel or skip, but let RefreshUIMods
+        # run first so it can update checkbox colors
+        self._warn_nothing_installed()
+        self._warn_mismatched_ini_tweaks_created(new_tweaks)
 
     def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
         if not new_tweaks: return
@@ -607,6 +610,53 @@ class Installer_Install(_NoMarkerLink):
             u'existing INI was different than what BAIN installed:') + \
             u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in new_tweaks])
         self._showInfo(msg, title=_(u'INI Tweaks'))
+
+    def _warn_nothing_installed(self):
+        inst_packages = [self.idata[i] for i in self._installables]
+        # See set_subpackage_checkmarks for the off-by-one explanation
+        unconf_packages = [p for p in inst_packages
+                           if p.type == 2 and not any(p.subActives[1:])]
+        if unconf_packages:
+            up_title = _('Installed unconfigured packages')
+            up_msg2 = _(
+                'To remedy this, use the "Sub-Packages" and "Plugin '
+                'Filter" boxes to select game data to install for the '
+                'affected packages, then use "Anneal" to update the '
+                'installation. You can also identify this problem by the '
+                'white package checkbox.')
+            if len(unconf_packages) == len(inst_packages):
+                if len(unconf_packages) == 1:
+                    up_msg1 = _(
+                        'The package you installed (%(sel_pkg)s) is complex, '
+                        'which means it has sub-packages. However, you did '
+                        'not activate any sub-packages for it, which is '
+                        'probably a mistake since it means no game data has '
+                        'been installed for it.') % {
+                        'sel_pkg': unconf_packages[0]}
+                    up_msg2 = _(
+                        'To remedy this, use the "Sub-Packages" and "Plugin '
+                        'Filter" boxes to select game data to install for the '
+                        'affected package, then use "Anneal" to update the '
+                        'installation. You can also identify this problem by '
+                        'the white package checkbox.')
+                    up_title = _('Installed unconfigured package')
+                else:
+                    up_msg1 = _(
+                        'The packages you installed are complex, which means '
+                        'they have sub-packages. However, you did not '
+                        'activate any sub-packages for them, which is '
+                        'probably a mistake since it means no game data has '
+                        'been installed for them.')
+            else:
+                up_msg1 = _(
+                    'One or more of the packages you installed are complex, '
+                    'which means they have sub-packages. However, you did not '
+                    'activate any sub-packages for them, which is probably a '
+                    'mistake since it means no game data has been installed '
+                    'for them.')
+            self._askContinue(f'{up_msg1}\n\n{up_msg2}',
+                'bash.installers.nothing_installed.continue',
+                title=up_title, show_cancel=False)
 
 class Installer_InstallSmart(_NoMarkerLink):
     """A 'smart' installer for new users. Uses wizards and FOMODs if present,
@@ -1045,7 +1095,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         balt.Link.Frame.notebook.SelectPage(u'Mods', self.target_plugin)
 
 #------------------------------------------------------------------------------
-# InstallerDetails Subpackage Links -------------------------------------------
+# InstallerDetails Sub-package Links ------------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Subs(_Installer_Details_Link):
     def _enable(self): return self.window.gSubList.lb_get_items_count() > 1

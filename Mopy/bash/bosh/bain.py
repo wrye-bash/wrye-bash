@@ -757,7 +757,7 @@ class Installer(ListInfo):
         else: lang = u''
         languageLower = lang.lower()
         hasExtraData = self.hasExtraData
-        # exclude u'' from active subpackages
+        # exclude '' from active sub-packages
         activeSubs = (
             {x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y}
             if bain_type == 2 else set())
@@ -795,16 +795,16 @@ class Installer(ListInfo):
                 fileLower = file_relative.lower()
             sub = u''
             # Complex archive; skip the logic if FOMOD mode is active (since
-            # subpackage selection doesn't (currently) work in FOMOD mode
+            # sub-package selection doesn't (currently) work in FOMOD mode
             # anyways)
             if bain_type == 2 and not fm_active:
                 split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
-                    # redefine file, excluding the subpackage directory
+                    # redefine file, excluding the sub-package directory
                     sub,file_relative = split
                     fileLower = file_relative.lower()
                     if fileLower.startswith(Installer._silentSkipsStart):
-                        continue # skip subpackage level '--', etc
+                        continue # skip sub-package level '--', etc
                 if sub not in activeSubs:
                     if sub == u'':
                         skipDirFilesAdd(file_relative)

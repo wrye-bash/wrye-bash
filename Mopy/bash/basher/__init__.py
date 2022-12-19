@@ -3102,7 +3102,7 @@ class InstallersDetails(_SashDetailsPanel):
             else:
                 ##: TODO(ut) subNames/subActives should be a dict really no?
                 sub_isactive = zip(installer.subNames, installer.subActives)
-                next(sub_isactive) # pop empty subpackage, duh
+                next(sub_isactive) # pop empty sub-package, duh
                 sub_isactive = {k: v for k, v in sub_isactive}
                 self.gSubList.set_all_items_keep_pos(sub_isactive)
             self._update_fomod_state()
@@ -3279,7 +3279,7 @@ class InstallersDetails(_SashDetailsPanel):
         return EventResult.FINISH
 
     def set_subpackage_checkmarks(self, checked):
-        """Checks or unchecks all subpackage checkmarks and propagates that
+        """Checks or unchecks all sub-package checkmarks and propagates that
         information to BAIN."""
         self.gSubList.set_all_checkmarks(checked=checked)
         for index in range(self.gSubList.lb_get_items_count()):
@@ -3310,8 +3310,8 @@ class InstallersDetails(_SashDetailsPanel):
         """Programatically enables or disables FOMOD mode and updates the GUI
         as needed. Does not refresh, callers are responsible for that."""
         self.file_info.extras_dict[u'fomod_active'] = fomod_enabled
-        # Uncheck all subpackages, otherwise the FOMOD files will get combined
-        # with the ones from the checked subpackages. Store the active
+        # Uncheck all sub-packages, otherwise the FOMOD files will get combined
+        # with the ones from the checked sub-packages. Store the active
         # sub-packages and restore them if we go back to regular sub-packages
         # mode again. This is a big fat HACK: it shouldn't be necessary to do
         # this - fix BAIN so it isn't.

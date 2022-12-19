@@ -269,9 +269,9 @@
     <li>Silent skips. These are <em>not</em> listed on the <q>Skipped</q> panel on the right and are:
         <ul>
             <li><code>thumbs.db</code> and <code>desktop.ini</code> files
-            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) if on the top level of package or subpackage
-            <li>the <code>wizard images</code> directory (again if on the top level of package or subpackage)
-            <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
+            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) if on the top level of package or sub-package
+            <li>the <code>wizard images</code> directory (again if on the top level of package or sub-package)
+            <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a sub-package will be silently skipped. This is so that mod
                 authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
             <li>Bash will also skip voices for plugins that are not installed from complex installers
             <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types, namely the ones on the <a href="#bainGlobalSkips">Global Skips</a> submenu for
@@ -283,13 +283,13 @@
     listed in the <q>Skipped</q> panel on the right on the <em>== Skipped (Dir)</em> section. Installation of non-standard directories may be forced by using the <a
             href="#bainHasExtraDirectories">Has Extra Directories</a> option. Even if Has Extra Directories option is checked, directories that are silently skipped will still be skipped.
     <strong>For a complex package,</strong> any top level files (with the exception of files that contain "readme" and variations in their name) will be also considered as belonging to a skipped directory
-    and will be listed in the '== Skipped (Dir)' section. Top level means at the subpackages level, not inside a subpackage.
+    and will be listed in the '== Skipped (Dir)' section. Top level means at the sub-packages level, not inside a sub-package.
     <li>Archives &amp; executables. Executable files, apart from Script Extender plugins if the <a href="#bainSkipSEPlugins">Skip **SE Plugins</a> option is disabled, and archives in
     packages will be skipped. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right on the <em>== Skipped (Extension)</em> section. The complete list of
     extensions skipped is:
     <code>.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip</code>
     This includes BCFs (they have a .7z extension) - still BAIN will detect those.
-    <li>Plugin files that are not in top level of the package/subpackage. It makes no sense to have those files in a subfolder, so those are skipped.
+    <li>Plugin files that are not in top level of the package/sub-package. It makes no sense to have those files in a subfolder, so those are skipped.
 </ul>
 
 <h3 id="bain-plugin-filter">The Plugin Filter <a class="back2top" href="#contents">Back to top</a></h3>
@@ -528,7 +528,7 @@ tab. The directories skipped are:
 <h3 id="bain-se">Script Extender Plugin Installation <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Script Extender (e.g. OBSE, SKSE, F4SE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
 <ul>
-    <li>The package (or subpackage in the case of a Complex Bain) contains the **SE plugin file inside <code>Data\[**SE]\Plugins\</code> (e.g. OBSE for
+    <li>The package (or sub-package in the case of a Complex Bain) contains the **SE plugin file inside <code>Data\[**SE]\Plugins\</code> (e.g. OBSE for
         Oblivion) sub-folders.</li>
     <li>The <a href="#bainSkipSEPlugins">Skip **SE Plugins</a> option found in the Installers tab column header context menu is disabled.</li>
 </ul>
@@ -1193,7 +1193,7 @@ tab. The directories skipped are:
     <tbody>
         <tr><td>Select All<td>Selects all the sub-packages in the list.
         <tr><td>Deselect All<td>Deselects all the sub-packages in the list.
-        <tr><td>Toggle Selection<td>Deselects currently selected sub-packages, and selects currently deselected subpackages.
+        <tr><td>Toggle Selection<td>Deselects currently selected sub-packages, and selects currently deselected sub-packages.
         <tr><td>List Sub-Packages<td>Generates a forum-formatted list of sub-packages in the package, highlighting checked packages with <code>**</code>.
 </table>
 <table id="bain-plugin-filter-commands">
