@@ -153,13 +153,14 @@ class GameInfo(object):
 
     # Master esm form ids factory
     __master_fids = {}
-    def master_fid(self, object_id):
+    @classmethod
+    def master_fid(cls, object_id):
         """Create a FormId subclass representing a particular master record."""
         try:
-            return self.__master_fids[object_id]
+            return cls.__master_fids[object_id]
         except KeyError:
-            return self.__master_fids.setdefault(object_id,
-                brec.FormId.from_tuple((self.master_file, object_id)))
+            return cls.__master_fids.setdefault(object_id,
+                brec.FormId.from_tuple((cls.master_file, object_id)))
 
     class Ws(object):
         """Information about this game on the Windows Store."""

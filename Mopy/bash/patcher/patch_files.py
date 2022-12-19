@@ -267,16 +267,14 @@ class PatchFile(ModFile):
 
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""
-        def add_to_factories(merged_sig):
-            """Makes sure that once we merge a record type, all later plugin
-            loads will load that record type too so that we can update the
-            merged records according to load order."""
-            if merged_sig not in self.loadFactory.recTypes:
-                self.readFactory.add_class(merged_sig)
-                self.loadFactory.add_class(merged_sig)
         for top_grup_sig,block in modFile.tops.items():
+            # Make sure that once we merge a record type, all later plugin
+            # loads will load that record type too so that we can update the
+            # merged records according to load order
             for s in block.get_all_signatures():
-                add_to_factories(s)
+                if s not in self.loadFactory.recTypes:
+                    self.readFactory.add_class(s)
+                    self.loadFactory.add_class(s)
             iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
             self.tops[top_grup_sig].merge_records(block, self.loadSet,
                 self.mergeIds, iiSkipMerge, doFilter)
@@ -321,11 +319,11 @@ class PatchFile(ModFile):
         self.tes4.masters = self.getMastersUsed()
         progress(1.0, _('Compiled.'))
         # Build the description
-        numRecords = sum(x.getNumRecords(includeGroups=False)
-                         for x in self.tops.values())
+        num_records = sum(x.getNumRecords(includeGroups=False)
+                          for x in self.tops.values())
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
-            'Records Changed: %(num_recs)d') % {'num_recs': numRecords})
+            'Records Changed: %(num_recs)d') % {'num_recs': num_records})
         # Flag as ESL if the game supports them and the option is enabled
         # Note that we can always safely mark as ESL as long as the number of
         # new records we created is smaller than 0xFFF, since the BP only ever

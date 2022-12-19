@@ -70,7 +70,7 @@ class RecordHeader(object):
 
 class RecHeader(RecordHeader):
     """Fixed size structure defining next record."""
-    __slots__ = (u'flags1', u'fid', u'flags2')
+    __slots__ = ('flags1', 'fid', 'flags2')
 
     def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0,
                  _entering_context=False):
@@ -87,7 +87,7 @@ class RecHeader(RecordHeader):
         self.flags1 = arg1
         # FID call will blow as no FORM_ID global is defined when
         # _entering_context - setting FORM_ID to FormId would be more implicit
-        self.fid = utils_constants.FID(arg2) if not _entering_context else arg2
+        self.fid = arg2 if _entering_context else utils_constants.FID(arg2)
         self.flags2 = arg3
         self.extra = arg4
 

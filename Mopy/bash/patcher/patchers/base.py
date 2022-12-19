@@ -242,9 +242,8 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                                     traceback=True)
             progress.plus()
 
-    def scanModFile(self, modFile, progress, *,
-                    __get_temp=attrgetter('temp_refs'),
-                    __get_pers=attrgetter('persistent_refs')):
+    def scanModFile(self, modFile, progress, *, __get_refs=(
+            attrgetter('temp_refs'), attrgetter('persistent_refs'))):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         patchCells = self.patchFile.tops[b'CELL']
@@ -258,7 +257,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
             for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
                 if cellImported := cfid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cfid].cell = cellBlock.cell
-                for get_refs in (__get_temp, __get_pers):
+                for get_refs in __get_refs:
                     for record in get_refs(cellBlock):
                         if record.base in self.old_new:
                             if not cellImported:
@@ -280,7 +279,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                             and wcfid in (patch_world_cell :=
                                 patchWorlds.id_worldBlocks[wfid].id_cellBlock):
                         patch_world_cell[wcfid].cell = cellBlock.cell
-                    for get_refs in (__get_temp, __get_pers):
+                    for get_refs in __get_refs:
                         for record in get_refs(cellBlock):
                             if record.base in self.old_new:
                                 if not worldImported:
@@ -299,26 +298,25 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                                 else:
                                     refs.append(record)
 
-    def buildPatch(self, log, progress, *, __get_temp=attrgetter('temp_refs'),
-                   __get_pers=attrgetter('persistent_refs')):
+    def buildPatch(self, log, progress, *, __get_refs=(attrgetter('temp_refs'),
+                   attrgetter('persistent_refs'))):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
         old_new = self.old_new
         keep = self.patchFile.getKeeper()
         count = Counter()
         def swapper(oldId):
-            newId = old_new.get(oldId,None)
-            return newId if newId else oldId
+            return old_new.get(oldId, oldId)
 ##        for type in MreRecord.simpleTypes:
 ##            for record in self.patchFile.tops[type].getActiveRecords():
 ##                if record.fid in self.old_new:
-##                    record.fid = swapper(record.fid)
+##                    record.fid = old_new.get(record.fid, record.fid)
 ##                    count.increment(record.fid[0])
 ####                    record.mapFids(swapper,True)
 ##                    record.setChanged()
 ##                    keep(record.fid)
         for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
-            for get_refs in (__get_temp, __get_pers):
+            for get_refs in __get_refs:
                 for record in get_refs(cellBlock):
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
@@ -330,7 +328,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
             b'WRLD'].id_worldBlocks.items():
             keepWorld = False
             for cfid, cellBlock in worldBlock.id_cellBlock.items():
-                for get_refs in (__get_temp, __get_pers):
+                for get_refs in __get_refs:
                     for record in get_refs(cellBlock):
                         if record.base in self.old_new:
                             record.base = swapper(record.base)
@@ -343,7 +341,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                 keep(worldId)
         log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
-        log(u'\n=== '+_(u'Records Patched'))
+        log('\n=== ' + _('Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(f'* {srcMod}: {count[srcMod]:d}')
 

@@ -140,20 +140,20 @@ class MobBase(object):
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
         """Returns a set of all signatures contained in this block."""
-        raise AbstractError(u'get_all_signatures not implemented')
+        raise AbstractError('get_all_signatures not implemented')
 
     def iter_records(self):
         """Flattens the structure of this record block into a linear sequence
         of records. Works as an iterator for memory reasons."""
-        raise AbstractError(u'iter_records not implemented')
+        raise AbstractError('iter_records not implemented')
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        raise AbstractError(u'keepRecords not implemented')
+        raise AbstractError('keepRecords not implemented')
 
     def _load_rec_group(self, ins, endPos):
         """Loads data from input stream. Called by __init__()."""
-        raise AbstractError(u'_load_rec_group not implemented')
+        raise AbstractError('_load_rec_group not implemented')
 
     ##: params here are not the prettiest
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
@@ -176,7 +176,7 @@ class MobBase(object):
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        raise AbstractError(u'updateMasters not implemented')
+        raise AbstractError('updateMasters not implemented')
 
     def updateRecords(self, srcBlock, mergeIds):
         """Looks through all of the records in 'block', and updates any
@@ -224,10 +224,10 @@ class MobObjects(MobBase):
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self - if empty return 0."""
-        numRecords = len(self.id_records)
-        if numRecords: numRecords += includeGroups #--Count self
-        self.numRecords = numRecords
-        return numRecords
+        num_recs = len(self.id_records)
+        if num_recs: num_recs += includeGroups #--Count self
+        self.numRecords = num_recs
+        return num_recs
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
@@ -1221,7 +1221,7 @@ class MobWorld(MobCells):
                 if isFallout: cells[cell.fid] = cell
                 if block and ((pos := insTell()) > endBlockPos or pos >
                               endSubblockPos):
-                        raise ModError(self.inName,
+                    raise ModError(self.inName,
                             f'Exterior cell {cell!r} after block or subblock.')
             elif _rsig == b'GRUP':
                 groupType = header.groupType

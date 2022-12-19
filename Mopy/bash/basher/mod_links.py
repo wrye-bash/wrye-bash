@@ -1266,7 +1266,9 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
     _load_sigs = [b'CELL', b'WRLD']
 
     def Execute(self):
-        message = _(u'In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.')
+        message = _('In some circumstances, editing a mod will leave orphaned '
+                    'cell records in the world group. This command will '
+                    'remove such orphans.')
         if not self._askContinue(message, u'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):

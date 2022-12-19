@@ -55,8 +55,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
             srcFile = self._mod_file_read(srcInfo)
             for worldId, worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.items():
                 if worldBlock.road:
-                    road = worldBlock.road.getTypeCopy()
-                    self.world_road[worldId] = road
+                    self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?

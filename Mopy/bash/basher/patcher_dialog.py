@@ -269,9 +269,8 @@ class PatchDialog(DialogWindow):
 
     def _error(self, e_msg):
         balt.playSound(self.parent, bass.inisettings[u'SoundError'])
+        bolt.deprint('Exception during Bashed Patch building:', traceback=True)
         balt.showError(self, e_msg, _(u'Bashed Patch Error'))
-        bolt.deprint(u'Exception during Bashed Patch building:',
-                     traceback=True)
 
     def _save_pbash(self, patchFile, patch_name):
         while True:

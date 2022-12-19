@@ -280,10 +280,14 @@ class RecordType(type):
         return new
 
 class MreRecord(metaclass=RecordType):
-    """See the Wrye Bash wiki for information on all possible flags:
+    """Generic Record. See the Wrye Bash wiki for information on all possible
+    header flags:
     https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Record-Header-Flags
     """
+    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
+                 'changed', 'data', 'inName')
     subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
+    isKeyedByEid = False
 
     class HeaderFlags(bolt.Flags):
         """Common flags to all (most) record types, based on Oblivion flags.
@@ -297,36 +301,17 @@ class MreRecord(metaclass=RecordType):
         ignored: bool = flag(12)
         compressed: bool = flag(18)
 
-    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
-                 'changed', 'data', 'inName')
-    isKeyedByEid = False
-
-    # instance attributes
-    header: Any     # type: RecHeader
-    _rec_sig: bytes
-    fid: utils_constants.FormId
-    flags1: HeaderFlags
-    size: int
-    flags2: Any     # track down actual type
-    changed: bool
-    data: bytes | None
-    inName: str | None
-
-    @classmethod
-    def nested_records_sigs(cls):
-        return set()
-
     def __init__(self, header, ins=None, *, do_unpack=False):
-        self.header = header
-        self._rec_sig = header.recType
-        self.fid = header.fid # type: utils_constants.FormId
+        self.header = header # type: RecHeader
+        self._rec_sig: bytes = header.recType
+        self.fid: utils_constants.FormId = header.fid
         flags1_class = RecordType.sig_to_class[self._rec_sig].HeaderFlags
-        self.flags1 = flags1_class(header.flags1)
-        self.size = header.size
-        self.flags2 = header.flags2
-        self.changed = False
-        self.data = None
-        self.inName = ins and ins.inName
+        self.flags1: MreRecord.HeaderFlags = flags1_class(header.flags1)
+        self.size: int = header.size
+        self.flags2: Any = header.flags2 ##: track down actual type
+        self.changed: bool = False
+        self.data: bytes | None = None
+        self.inName: str | None = ins and ins.inName
         if ins: # Load data from ins stream
             file_offset = ins.tell()
             ##: Couldn't we toss this data if we unpacked it? (memory!)
@@ -343,6 +328,10 @@ class MreRecord(metaclass=RecordType):
             finally: # restore the wrapped stream to read next record
                 ins.ins, ins.size = ins_ins, ins_size
                 ins.debug_offset = ins_debug_offset
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return set()
 
     def __repr__(self):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''

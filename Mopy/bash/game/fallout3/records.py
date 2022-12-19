@@ -1824,7 +1824,9 @@ class MreNavm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUInt32(b'NVER', 'version'),
-        MelStruct(b'DATA', [u'I', u'5I'],(FID,'cell'),'vertexCount','triangleCount','enternalConnectionsCount','nvcaCount','doorsCount'),
+        MelStruct(b'DATA', ['I', '5I'], (FID, 'cell_fid'), 'vertexCount',
+                  'triangleCount', 'enternalConnectionsCount', 'nvcaCount',
+                  'doorsCount'),
         MelArray('vertices',
             MelStruct(b'NVVX', [u'3f'], 'vertexX', 'vertexY', 'vertexZ'),
         ),
