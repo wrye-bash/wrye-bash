@@ -293,7 +293,7 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Manual controls
         if self.forceAuto:
             side_button_layout = None
-            self._sort_and_update_items(self.getAutoItems())
+            self._sort_and_update_items(self._get_auto_items())
         else:
             right_side_components = []
             if self.show_empty_sublist_checkbox:
@@ -415,7 +415,7 @@ class _ListPatcherPanel(_PatcherPanel):
         """Automatic checkbox changed."""
         self.autoIsChecked = is_checked
         if self.autoIsChecked:
-            self._sort_and_update_items(self.getAutoItems())
+            self._sort_and_update_items(self._get_auto_items())
         else:
             # In autoIsChecked case, this is called by _handle_item_search
             self._update_manual_buttons()
@@ -521,20 +521,32 @@ class _ListPatcherPanel(_PatcherPanel):
         ret_label = u'%s' % item # Path or string - YAK
         return ret_label.replace(u'&', u'&&') # escape & - thanks wx
 
-    def getAutoItems(self):
+    def _get_auto_items(self):
         """Returns list of items to be used for automatic configuration."""
-        return self._get_auto_mods()
-
-    def _get_auto_mods(self):
         mods_prior_to_patch = load_order.cached_lower_loading(
             patch_files.executing_patch)
-        return [mod for mod in mods_prior_to_patch if
-                self.__class__.autoKey & bosh.modInfos[mod].getBashTags()]
+        ret_autos = []
+        present_plugins = set(bosh.modInfos)
+        for mod in mods_prior_to_patch:
+            if self._valid_auto_mod(mod, bosh.modInfos[mod], present_plugins):
+                ret_autos.append(mod)
+        return ret_autos
+
+    def _valid_auto_mod(self, mod, minf, present_plugins):
+        """Returns True if the plugin with the specified ModInfo should be part
+        of the sources for this patcher."""
+        # Must have an appropriate tag
+        minf_bts = minf.getBashTags()
+        if not self.__class__.autoKey & minf_bts:
+            return False
+        # Must have no missing masters or a Filter tag
+        m_missing_masters = set(minf.masterNames) - present_plugins
+        return not m_missing_masters or 'Filter' in minf_bts
 
     def _import_config(self, default=False):
         super(_ListPatcherPanel, self)._import_config(default)
         if default:
-            self._sort_and_update_items(self.getAutoItems())
+            self._sort_and_update_items(self._get_auto_items())
             return
         # Reset the search bar, this will call _handle_item_search
         self._item_search.text_content = ''
@@ -928,10 +940,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             self._get_set_choice(item)
         return config
 
-    def _get_auto_mods(self):
-        autoItems = super(_ListsMergerPanel, self)._get_auto_mods()
-        for mod in autoItems: self._get_set_choice(mod)
-        return autoItems
+    def _valid_auto_mod(self, mod, minf, present_plugins):
+        self._get_set_choice(mod)
+        return super()._valid_auto_mod(mod, minf, present_plugins)
 
     def ShowChoiceMenu(self, itemIndex):
         """Displays a popup choice menu if applicable.
@@ -985,13 +996,17 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _('Mergeable Plugins')
 
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            patch_files.executing_patch)
-        return [mod for mod in mods_prior_to_patch if (
-            mod in bosh.modInfos.mergeable and u'NoMerge' not in bosh.modInfos[
-                mod].getBashTags())]
+    def _valid_auto_mod(self, mod, minf, present_plugins):
+        # Must be mergeable
+        if mod not in bosh.modInfos.mergeable:
+            return False
+        minf_bts = minf.getBashTags()
+        # Must not have a NoMerge tag
+        if 'NoMerge' in minf_bts:
+            return False
+        # Must have no missing masters or a Filter tag
+        m_missing_masters = set(minf.masterNames) - present_plugins
+        return not m_missing_masters or 'Filter' in minf_bts
 
 class _GmstTweakerPanel(_TweakPatcherPanel):
     # CONFIG DEFAULTS
@@ -1003,16 +1018,16 @@ class _AListPanelCsv(_ListPatcherPanel):
     # CSV files for this patcher have to end with _{this value}.csv
     _csv_key = None
 
-    def getAutoItems(self):
+    def _get_auto_items(self):
         if not self._csv_key:
             raise SyntaxError(f'_csv_key not specified for CSV-supporting '
                               f'patcher panel ({self.__class__.__name__})')
-        auto_items = super(_AListPanelCsv, self).getAutoItems()
+        ret_autos = super()._get_auto_items()
         csv_ending = f'_{self._csv_key}.csv'
-        for fileName in sorted(patches_set()):
-            if fileName.endswith(csv_ending):
-                auto_items.append(fileName)
-        return auto_items
+        for csv_auto in sorted(patches_set()):
+            if csv_auto.endswith(csv_ending):
+                ret_autos.append(csv_auto)
+        return ret_autos
 
 #------------------------------------------------------------------------------
 # GUI Patcher classes
@@ -1154,13 +1169,13 @@ class ImportActorsFaces(_ImporterPatcherPanel):
                u'NpcFacesForceFullImport'}
     _config_key = u'NpcFacePatcher'
     patcher_type = preservers.ImportActorsFacesPatcher
+    _auto_re = re.compile('^TNR .*.esp$', re.I)
 
-    def _get_auto_mods(self, autoRe=re.compile(u'^TNR .*.esp$', re.I | re.U)):
+    def _valid_auto_mod(self, mod, minf, present_plugins):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            patch_files.executing_patch)
-        return [mod for mod in mods_prior_to_patch if autoRe.match(mod) or (
-            self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
+        if self._auto_re.match(mod):
+            return True
+        return super()._valid_auto_mod(mod, minf, present_plugins)
 
 # -----------------------------------------------------------------------------
 class ImportSounds(_ImporterPatcherPanel):

@@ -2685,10 +2685,9 @@ class ModInfos(FileInfos):
             # first select the bashed patch(es) and their masters
             for mod in mods:
                 if self[mod].isBP(): _add_to_activate(mod)
-            # then activate mods not tagged Deactivate or Filter
+            # then activate mods not tagged Deactivate
             def _activatable(modName):
-                tags = modInfos[modName].getBashTags()
-                return not (u'Deactivate' in tags or u'Filter' in tags)
+                return 'Deactivate' not in modInfos[modName].getBashTags()
             mods = [mod for mod in mods if _activatable(mod)]
             mergeable = set(self.mergeable)
             for mod in mods:

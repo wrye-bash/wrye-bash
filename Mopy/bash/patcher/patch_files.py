@@ -28,14 +28,14 @@ from operator import attrgetter
 from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
-from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
+from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url
 from ..brec import RecHeader, FormId, RecordType
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
 
 # the currently executing patch set in _Mod_Patch_Update before showing the
-# dialog - used in getAutoItems, to get mods loading before the patch
+# dialog - used in _getAutoItems, to get mods loading before the patch
 ##: HACK ! replace with method param once gui_patchers are refactored
 executing_patch: bolt.FName | None = None
 
@@ -76,14 +76,18 @@ class PatchFile(ModFile):
                     log('  * ' + _('The imported plugin, %(imp_plugin)s, '
                                    'skipped %(num_recs)d records.') % {
                         'imp_plugin': mod, 'num_recs': skipcount})
-        if self.unFilteredMods:
-            log.setHeader('=== ' + _('Unfiltered Plugins'))
-            log(_('The following plugins were active when the patch was '
-                  'built. For these plugins to work properly, you should '
-                  'deactivate them and then rebuild the patch with them '
-                  '[[%(url_merge_filtering)s|merged]] in.') % {
-                'url_merge_filtering': _link('patch-filter')})
-            for mod in self.unFilteredMods: log(f'* {mod}')
+        if self.needs_filter_mods:
+            log.setHeader('===' + _('Plugins Needing Filter Tag'))
+            log(_('The following plugins are missing masters and have tags '
+                  'that indicate that you want to import data from them into '
+                  'the Bashed Patch. However, since they have missing masters '
+                  'and do not have a Filter tag they have been skipped. '
+                  'Consider adding a Filter tag to them or installing the '
+                  'required masters. See the '
+                  '[[%(filtering_section)s|Filtering]] section of the readme '
+                  'for more information.') % {
+                'filtering_section': _link('patch-filter')})
+            for mod in self.needs_filter_mods: log(f'* {mod}')
         if self.loadErrorMods:
             log.setHeader('=== ' + _('Load Error Plugins'))
             log(_('The following plugins had load errors and were skipped '
@@ -157,7 +161,7 @@ class PatchFile(ModFile):
         self.mergeIds = set()
         self.loadErrorMods = []
         self.worldOrphanMods = []
-        self.unFilteredMods = []
+        self.needs_filter_mods = []
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Mods
@@ -217,19 +221,25 @@ class PatchFile(ModFile):
         """Scans load+merge mods."""
         nullProgress = Progress()
         progress = progress.setFull(len(self.all_plugins))
+        all_plugins_set = set(self.all_plugins)
+        # Set of all Bash Tags that don't trigger an import from some patcher
+        non_import_bts = {'Deactivate', 'Filter', 'IIM',
+                          'MustBeActiveIfImported', 'NoMerge'}
         for index,modName in enumerate(self.all_plugins):
             modInfo = self.p_file_minfos[modName]
             # Check some commonly needed properties of the current plugin
             bashTags = modInfo.getBashTags()
             is_loaded = modName in self.loadSet
             is_merged = modName in self.mergeSet
-            should_filter = 'Filter' in bashTags
-            doFilter = is_merged and should_filter
+            can_filter = 'Filter' in bashTags
+            if (set(modInfo.masterNames) - all_plugins_set and not can_filter
+                    and (bashTags - non_import_bts)):
+                # This plugin has missing masters, is not Filter-tagged but
+                # still wants to import data -> user needs to add Filter tag
+                self.needs_filter_mods.append(modName)
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = is_merged and 'IIM' in bashTags
-            if is_loaded and should_filter:
-                self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
                 progress(index, f'{modName}\n' + _('Loading...'))
@@ -246,7 +256,7 @@ class PatchFile(ModFile):
                 if is_merged:
                     # If the plugin is to be merged, merge it
                     progress(pstate, f'{modName}\n' + _('Merging...'))
-                    self.mergeModFile(modFile, doFilter, iiMode)
+                    self.mergeModFile(modFile, can_filter, iiMode)
                 elif is_loaded:
                     # Else, if the plugin is active, update records from it. If
                     # the plugin is inactive, we only want to import from it,
