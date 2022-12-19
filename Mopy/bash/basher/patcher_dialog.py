@@ -258,7 +258,7 @@ class PatchDialog(DialogWindow):
             pass
         except BPConfigError as e: # User configured BP incorrectly
             self._error(_(u'The configuration of the Bashed Patch is '
-                          u'incorrect.') + f'\n{e}')
+                          u'incorrect.') + f'\n\n{e}')
         except (BoltError, FileEditError) as e: # Nonfatal error
             self._error(f'{e}')
         except Exception as e: # Fatal error
