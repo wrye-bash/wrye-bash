@@ -1420,16 +1420,6 @@ class ContentsChecker(_PatcherPanel):
     default_isEnabled = True
 
 # -----------------------------------------------------------------------------
-class EyeChecker(_PatcherPanel):
-    """Checks for and fixes googly eyes."""
-    patcher_name = _(u'Eye Checker')
-    patcher_desc = _(u"Filters race eyes in order to fix the 'googly eyes' "
-                     u'bug.')
-    _config_key = u'EyeChecker'
-    patcher_type = checkers.EyeCheckerPatcher
-    default_isEnabled = True
-
-# -----------------------------------------------------------------------------
 class RaceChecker(_PatcherPanel):
     """Sorts hairs and eyes."""
     patcher_name = _(u'Race Checker')

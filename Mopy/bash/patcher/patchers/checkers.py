@@ -32,7 +32,7 @@ from itertools import chain
 from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush, bolt
-from ...bolt import FName, deprint, dict_sort, sig_to_str
+from ...bolt import FName, dict_sort, sig_to_str
 from ...brec import FormId
 from ...mod_files import LoadFactory
 
@@ -147,130 +147,6 @@ class ContentsCheckerPatcher(Patcher):
                         for removedId in sorted(id_removed[contId]):
                             log(f'  . {removedId.mod_fn}: '
                                 f'{removedId.object_dex:06X}')
-
-#------------------------------------------------------------------------------
-class EyeCheckerPatcher(Patcher):
-    patcher_group = u'Special'
-    patcher_order = 29 # Run before Tweak Races
-    _read_sigs = (b'EYES', b'RACE')
-
-    def __init__(self, p_name, p_file):
-        super(EyeCheckerPatcher, self).__init__(p_name, p_file)
-        self.isActive = True ##: Always enabled to support eye filtering?
-        self.eye_mesh = {}
-
-    @property
-    def active_write_sigs(self):
-        return (b'RACE',) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress):
-        if b'RACE' not in modFile.tops: return
-        eye_mesh = self.eye_mesh
-        patchBlock = self.patchFile.tops[b'RACE']
-        id_records = patchBlock.id_records
-        srcEyes = {rid for rid, _record in
-                   modFile.tops[b'EYES'].getActiveRecords()}
-        for rid, record in modFile.tops[b'RACE'].getActiveRecords():
-            if rid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy())
-            if not record.rightEye or not record.leftEye:
-                # Don't complain if the FULL is missing, that probably means
-                # it's an internal or unused RACE
-                if record.full:
-                    deprint(f'No right and/or no left eye recorded in race '
-                            f'{record.full}, from mod {modFile.fileInfo}')
-                continue
-            for eye in record.eyes:
-                if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),
-                                     record.leftEye.modPath.lower())
-
-    def buildPatch(self, log, progress):
-        if not self.isActive: return
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        racesFiltered = []
-        keep = patchFile.getKeeper()
-        #--Eye Mesh filtering
-        eye_mesh = self.eye_mesh
-        try:
-            blueEyeMesh = eye_mesh[bush.game.master_fid(0x27308)]
-        except KeyError:
-            deprint(u'error getting blue eye mesh:')
-            deprint(u'eye meshes:', eye_mesh)
-            raise
-        argonianEyeMesh = eye_mesh[bush.game.master_fid(0x3e91e)]
-        for eye in (
-            bush.game.master_fid(0x1a), #--Reanimate
-            bush.game.master_fid(0x54bb9), #--Dark Seducer
-            bush.game.master_fid(0x54bba), #--Golden Saint
-            bush.game.master_fid(0x5fa43), #--Ordered
-            ):
-            eye_mesh.setdefault(eye,blueEyeMesh)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
-        skip_race_fid = bush.game.master_fid(0x038010)
-        for rid, race in patchFile.tops[b'RACE'].id_records.items():
-            if not race.eyes: continue  #--Sheogorath. Assume is handled
-            # correctly.
-            if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match('^117[a-zA-Z]', race.eid): continue #--x117 race?
-            raceChanged = False
-            mesh_eye = {}
-            for eye in race.eyes:
-                if eye not in eye_mesh:
-                    deprint(f'Mesh undefined for eye {eye} in race '
-                            f'{race.eid}, eye removed from race list.')
-                    continue
-                mesh = eye_mesh[eye]
-                if mesh not in mesh_eye:
-                    mesh_eye[mesh] = []
-                mesh_eye[mesh].append(eye)
-            currentMesh = (
-                race.rightEye.modPath.lower(), race.leftEye.modPath.lower())
-            try:
-                maxEyesMesh = sorted(mesh_eye, key=lambda a: len(mesh_eye[a]),
-                                     reverse=True)[0]
-            except IndexError:
-                maxEyesMesh = blueEyeMesh
-            #--Single eye mesh, but doesn't match current mesh?
-            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
-                setRaceEyeMesh(race,*maxEyesMesh)
-                raceChanged = True
-            #--Multiple eye meshes (and playable)?
-            if len(mesh_eye) > 1 and (race.flags.playable or rid == skip_race_fid):
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present,
-                # use that.
-                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
-                    setRaceEyeMesh(race,*blueEyeMesh)
-                    race.eyes = mesh_eye[blueEyeMesh]
-                    raceChanged = True
-                elif argonianEyeMesh in mesh_eye:
-                    setRaceEyeMesh(race,*argonianEyeMesh)
-                    race.eyes = mesh_eye[argonianEyeMesh]
-                    raceChanged = True
-                #--Else figure that current eye mesh is the correct one
-                elif currentMesh in mesh_eye:
-                    race.eyes = mesh_eye[currentMesh]
-                    raceChanged = True
-                #--Else use most popular eye mesh
-                else:
-                    setRaceEyeMesh(race,*maxEyesMesh)
-                    race.eyes = mesh_eye[maxEyesMesh]
-                    raceChanged = True
-            if raceChanged:
-                racesFiltered.append(race.eid)
-                keep(rid)
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'\n=== ' + _(u'Eye Meshes Filtered'))
-        if not racesFiltered:
-            log(u'. ~~%s~~' % _(u'None'))
-        else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
-                  u'been removed from the following races.'))
-            for eid in sorted(racesFiltered):
-                log(u'* ' + eid)
 
 #------------------------------------------------------------------------------
 class RaceCheckerPatcher(Patcher):
