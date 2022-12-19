@@ -41,9 +41,13 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     # Set to this because SkyrimSE.exe also exists for Enderal SE
     game_detect_includes = {'SkyrimSELauncher.exe'}
     # Files carefully chosen such that no platform has any of them in common
-    # with another platform
+    # with another platform. SkyrimVR.exe is here because some older guides
+    # recommend creating a copy of SkyrimVR.exe called SkyrimSE.exe to "trick"
+    # WB into launching. That's from back when WB had no VR support, but those
+    # guides haven't been updated since...
     game_detect_excludes = (GOG_COMMON_FILES | WS_COMMON_FILES |
-                            {'EOSSDK-Win64-Shipping.dll'}) # Epic Store
+                            {'EOSSDK-Win64-Shipping.dll'} | # Epic Store
+                            {'SkyrimVR.exe'})
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'
