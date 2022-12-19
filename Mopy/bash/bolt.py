@@ -1349,7 +1349,6 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-Flag = Annotated[bool, 'Flag']
 _not_a_flag = object()  # sentinel for Flags typhints
 
 def flag(index: int | None) -> bool:
@@ -1357,43 +1356,28 @@ def flag(index: int | None) -> bool:
     return index    # type: ignore
 
 class Flags:
-    """Represents a flag field.  New Flags classes can be defined by either
-    subclassing, or using the functional interface `from_names`.
+    """Represents a flag field.  New Flags classes are defined by subclassing.
 
-    When subclassing, simply typhint attribute names with `bool` or `Flag` to
-    have these as aliases for bits in the Flag instance.  Bit 0 refers to the
+    When subclassing, simply typehint attribute names with `bool` to
+    have these as aliases for bits in the Flags instance. Bit 0 refers to the
     least significant bit, and successive names increment from there. To
     override which bit an attribute maps to, set it using `= flag(bit)`.
 
     To support Flags types whose fields are determined at runtime, you can
-    specify `= flag(None)` to indicate that the index should be incremented, but
-    not name associated with that bit of the field.  This can be combined for
-    example with `fnv_only`.
-
-    In the case that you need to specify a non-flag instance attribute with a
-    type of `bool`, pass `use_bool_hint=False` when subclassing to make only
-    `Flag` typehints make an attribute alias to a bit in the field. Example:
-
-    class MyFlag(Flags, use_bool_hint=False):
-        bit0: Flag
-        bit3: Flag = flag(3)
-        bit4: Flag
-
-        other_item: bool
-
-    For the functional interface (`from_names`), see the docstring there.
-    """
+    specify `= flag(None)` to indicate that the index should be incremented,
+    but not name associated with that bit of the field. This is intended for
+    usage with static deciders like `fnv_only` and `sse_only`."""
     __slots__ = ('_field',)
     _names: ClassVar[dict[str, int]] = {}
 
     @classmethod
-    def __init_subclass__(cls, *args, use_bool_hint: bool = True, **kwargs):
+    def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
         names_dict = {}
         current_index = 0
-        hints = get_type_hints(cls, include_extras=not use_bool_hint)
+        hints = get_type_hints(cls)
         for attr, hint in hints.items():
-            if (use_bool_hint and hint is bool) or (hint is Flag):
+            if hint is bool:
                 override = getattr(cls, attr, _not_a_flag)
                 if override is not _not_a_flag:
                     if override is None:
@@ -1416,26 +1400,6 @@ class Flags:
                 names_dict[attr] = current_index
                 current_index += 1
         cls._names = names_dict
-
-    @classmethod
-    def from_names(cls, *names: str | tuple[int, str] | None | Literal[0]):
-        """Return Flag subtype with specified names to index dictionary.
-        Indices range may not be contiguous.
-        Names are either strings or (index,name) tuples.
-        E.g., Flags.from_names('isQuest', 'isHidden', None, (4, 'isDark'),
-        (7, 'hasWater'))."""
-        namesDict = {}
-        for index,flg_name in enumerate(names):
-            if isinstance(flg_name, tuple):
-                namesDict[flg_name[1]] = flg_name[0]
-            elif flg_name: #--skip if "name" is 0 or None
-                namesDict[flg_name] = index
-        class __Flags(cls):
-            __slots__ = ()
-        # Need to do this *after* class definition, to override what
-        # __init_subclass__ sets for _names.
-        __Flags._names = namesDict
-        return __Flags
 
     #--Generation
     def __init__(self, value: int | Flags = 0): # py 3.11: hint with int | Self
@@ -1550,7 +1514,7 @@ class Flags:
         return f'0x{self.hex()} ({all_flags})'
 
 class TrimmedFlags(Flags):
-    """Flag subtype that will discard unnamed flags on __init__ and dump."""
+    """Flags subtype that will discard unnamed flags on __init__ and dump."""
     __slots__ = ()
 
     def __init__(self, value=0):
