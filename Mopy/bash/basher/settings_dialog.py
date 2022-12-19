@@ -323,11 +323,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.UpdateUIButtons()
 
     def on_apply(self):
-        for key,newColor in self.changes.items():
-            bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
-            colors[key] = newColor
-        self.UpdateUIButtons()
-        self.UpdateUIColors()
+        if self.changes:
+            for key,newColor in self.changes.items():
+                bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
+                colors[key] = newColor
+            self.UpdateUIButtons()
+            self.UpdateUIColors()
 
     def OnExport(self):
         outDir = bass.dirs[u'patches']
