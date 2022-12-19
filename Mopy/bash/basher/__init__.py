@@ -1375,11 +1375,11 @@ class ModList(_ModsUIList):
 
     def lo_undo(self):
         """Undoes a load order change."""
-        self._undo_redo_op(load_order.undo_load_order)
+        self._undo_redo_op(self.data_store.undo_load_order)
 
     def lo_redo(self):
         """Redoes a load order change."""
-        self._undo_redo_op(load_order.redo_load_order)
+        self._undo_redo_op(self.data_store.redo_load_order)
 
     # Other -------------------------------------------------------------------
     def new_bashed_patch(self):
