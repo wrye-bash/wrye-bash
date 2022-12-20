@@ -547,7 +547,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     if they are not. If you want to learn more about each type of package and how to install and configure
     their options manually, read on.</p>
 <p>If a package contains a BAIN wizard (i.e. there is
-    <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its
+    <img alt="a wand icon" src="../bash/images/readme/wizard.png"/> overlaid on its
     checkbox):</p>
 <ol>
     <li>Right-click the package and select
@@ -655,7 +655,7 @@ from other packages previously overridden by the uninstalled package's
 
 <h3 id="bain-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
-<p><strong>Note:</strong> Installed packages are marked with a plus, eg. <img alt="Green Plus" src="../bash/images/checkbox_green_inc.png" width="16" height="16"/>. Corrupt or incomplete packages are marked with a cross, eg. <img alt="Red X" src="../bash/images/checkbox_red_x.png" width="16" height="16"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
+<p><strong>Note:</strong> Installed packages are marked with a plus, eg. <img alt="Green Plus" src="../bash/images/checkbox_green_inc.png" width="16" height="16"/>. Corrupt or incomplete packages are marked with a cross, eg. <img alt="Red X" src="../bash/images/red_x.svg" width="16" height="16"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
 <table>
     <thead><tr><th>Checkbox Shape<th>Meaning
     <tbody>
@@ -671,6 +671,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"/><td>All the package files are installed, but some resource (ie. non-plugin) files are not identical (eg. another package has overwritten them with another version of the files)
         <tr><td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"/><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
         <tr><td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"/><td>BAIN does not recognise the structure of this package so cannot install it.
+        <tr><td><img alt="corrupt" src="../bash/images/red_x.svg" width="16" height="16"/></td><td>The package is corrupt or can not be read by BAIN for some reason.</td></tr>
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
@@ -1671,73 +1672,73 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr>
             <td><img alt="Enderal Icon" src="../bash/images/enderal_32.png" width="32" height="32"/></td>
             <td>Enderal&colon; Forgotten Stories</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Enderal Icon" src="../bash/images/enderalse_32.png" width="32" height="32"/></td>
             <td>Enderal&colon; Forgotten Stories&colon; Special Edition</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Fallout 3 Icon" src="../bash/images/fallout3_32.png" width="32" height="32"/></td>
             <td>Fallout 3</td>
-            <td><img alt="Fallout 3 GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td>
+            <td><img alt="Fallout 3 GECK Icon" src="../bash/images/tools/geck32.png" width="32" height="32"/></td>
             <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Fallout 4 Icon" src="../bash/images/fallout4_32.png" width="32" height="32"/></td>
             <td>Fallout 4</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Fallout 4 VR Icon" src="../bash/images/fallout4vr_32.png" width="32" height="32"/></td>
             <td>Fallout 4 VR</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv_32.png" width="32" height="32"/></td>
             <td>Fallout&colon; New Vegas</td>
-            <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td>
+            <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/tools/geck32.png" width="32" height="32"/></td>
             <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Morrowind Icon" src="../bash/images/morrowind_32.png" width="32" height="32"/></td>
             <td>Morrowind</td>
-            <td><img alt="Morrowind CS Icon" src="../bash/images/tescs32.png" width="32"/></td>
+            <td><img alt="Morrowind CS Icon" src="../bash/images/tools/tescs32.png" width="32"/></td>
             <td><a href="https://en.uesp.net/wiki/Morrowind_Mod:Construction_Set">Morrowind Construction Set</a></td>
         </tr>
         <tr>
             <td><img alt="Nehrim Icon" src="../bash/images/nehrim_32.png" width="32" height="32"/></td>
             <td>Nehrim&colon; At Fate's Edge</td>
-            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td>
+            <td><img alt="Oblivion CS Icon" src="../bash/images/tools/tescs32.png" width="32" height="32"/></td><td>
             <a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
         </tr>
         <tr>
             <td><img alt="Oblivion Icon" src="../bash/images/oblivion_32.png" width="32" height="32"/></td>
             <td>Oblivion</td>
-            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td>
+            <td><img alt="Oblivion CS Icon" src="../bash/images/tools/tescs32.png" width="32" height="32"/></td>
             <td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
         </tr>
         <tr>
             <td><img alt="Skyrim Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td>
             <td>Skyrim</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/skyrimse_32.png" width="32" height="32"/></td>
             <td>Skyrim&colon; Special Edition</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
         <tr>
             <td><img alt="Skyrim VR Icon" src="../bash/images/skyrimvr_32.png" width="32" height="32"/></td>
             <td>Skyrim VR</td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/tools/creationkit32.png" width="32" height="32"/></td>
             <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
     </tbody>
@@ -1803,10 +1804,10 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><th colspan="2">Oblivion<th colspan="2">Skyrim
         <tr><th>Icon<th>Application<th>Icon<th>Application
     <tbody>
-        <tr><td><img alt="tool image" src="../bash/images/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
-            <td><img alt="tool image" src="../bash/images/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
-        <tr><td><img alt="tool image" src="../bash/images/loot32.png" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
-            <td><img alt="tool image" src="../bash/images/loot32.png" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
+            <td><img alt="tool image" src="../bash/images/tools/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/loot.svg" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
+            <td><img alt="tool image" src="../bash/images/tools/loot.svg" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
         <tr><td><img alt="tool image" src="../bash/images/tools/tes4edit32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>
             <td><img alt="tool image" src="../bash/images/tools/tes4edit32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/skyrim/mods/25859">TES5Edit</a>
         <tr><td><img alt="tool image" src="../bash/images/tools/tes4lodgen32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/15781">TES4LODGen</a>
@@ -1819,7 +1820,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td><td>
         <tr><td><img alt="tool image" src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/7808">Oblivion Face Exchange Lite</a>
             <td><td>
-        <tr><td><img alt="tool image" src="../bash/images/obmm32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/2097">Oblivion Mod Manager</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/obmm32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/2097">Oblivion Mod Manager</a>
             <td><td>
         <tr><td><img alt="tool image" src="../bash/images/tools/tabula32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/33486">Tabula</a>
             <td><td>
@@ -1887,7 +1888,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td><img alt="tool image" src="../bash/images/tools/softimagemodtool32.png" width="32" height="32"/><td><a href="https://developer.valvesoftware.com/wiki/Softimage_Mod_Tool">Softimage Mod Tool</a>
             <td><img alt="tool image" src="../bash/images/tools/krita32.png" width="32" height="32"/><td><a href="https://krita.org/">Krita</a>
                 <td><td>
-                     <td><img alt="tool image" src="../bash/images/steam32.png" width="32" height="32"/><td><a href="https://www.steampowered.com/">Steam</a>
+                     <td><img alt="tool image" src="../bash/images/tools/steam.svg" width="32" height="32"/><td><a href="https://www.steampowered.com/">Steam</a>
         <tr><td><img alt="tool image" src="../bash/images/tools/speedtree32.png" width="32" height="32"/><td><a href="https://store.speedtree.com/">SpeedTree</a>
             <td><img alt="tool image" src="../bash/images/tools/icofx32.png" width="32" height="32"/><td><a href="http://icofx.ro/index.html">icoFX</a>
                 <td><td>
@@ -1965,18 +1966,18 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <table>
     <thead><tr><th>Icon<th>Feature<th>Description
     <tbody>
-        <tr><td><img alt="tool image" src="../bash/images/docbrowser32.png" width="32" height="32"/>
+        <tr><td><img alt="tool image" src="../bash/images/book.svg" width="32" height="32"/>
             <td>Doc Browser
             <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
         <tr>
-            <td id="launchersPluginChecker"><img alt="tool image" src="../bash/images/modchecker32.png" width="32" height="32"/></td>
+            <td id="launchersPluginChecker"><img alt="tool image" src="../bash/images/plugin_checker.svg" width="32" height="32"/></td>
             <td>Plugin Checker</td>
             <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>.</td>
         </tr>
-        <tr><td id="launchersSettingsMenu"><img alt="tool image" src="../bash/images/settingsbutton32.png" width="32" height="32"/>
+        <tr><td id="launchersSettingsMenu"><img alt="tool image" src="../bash/images/gear.svg" width="32" height="32"/>
             <td>Settings
             <td>Brings up the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings Menu</a>.
-        <tr><td><img alt="tool image" src="../bash/images/help32.png" width="32" height="32"/>
+        <tr><td><img alt="tool image" src="../bash/images/help.svg" width="32" height="32"/>
             <td>Help
             <td>Show this help file in the default web browser.
 </table>
@@ -2126,7 +2127,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 <h2 id="credits">Credits <a class="back2top" href="#contents">Back to top</a></h2>
 <h3>Original Creator <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
-  <li><img class="monkeygod" alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong>:</a> Monkey God of Modding!</span></li>
+  <li><img class="monkeygod" alt="Monkey God's Icon" src="../bash/images/people/wryeavi.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong>:</a> Monkey God of Modding!</span></li>
 </ul>
 <h3>Current Maintainers <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
@@ -2169,12 +2170,12 @@ Respect developer's time - keep discussions there short, sweet and technical. No
   <li>
     <strong>Translators</strong>
     <ul>
-        <li><img class="smallcred" alt="Flag of China" src="../bash/images/Flag_of_China_32.png"><span>Chinese:</span><img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png"><span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span></li>
-      <li><img class="smallcred" alt="Flag of Germany" src="../bash/images/Flag_of_Germany_32.png"><span>German:</span><img class="smallcred" alt="DWS's Icon" src="../bash/images/bash_32_2.png"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
-      <li><img class="smallcred" alt="Flag of Italy" src="../bash/images/Flag_of_Italy_32.png"><span>Italian:</span><img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
-      <li><img class="smallcred" alt="Flag of Japan" src="../bash/images/Flag_of_Japan_32.png"><span>Japanese:</span><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda</a></span></li>
-      <li><img class="smallcred" alt="Flag of Portugal" src="../bash/images/Flag_of_Brazil_32.png"><span>Portuguese:</span><img class="smallcred" alt="Hadoki's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span></li>
-      <li><img class="smallcred" alt="Flag of Russia" src="../bash/images/Flag_of_Russia_32.png"><span>Russian:</span><img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
+        <li><img class="smallcred" alt="Flag of China" src="../bash/images/readme/Flag_of_China_32.png"><span>Chinese:</span><img class="smallcred" alt="blueksy404's Icon" src="../bash/images/people/blskavi32.png"><span><a href="https://www.nexusmods.com/users/2541088">bluesky404</a></span></li>
+      <li><img class="smallcred" alt="Flag of Germany" src="../bash/images/readme/Flag_of_Germany_32.png"><span>German:</span><img class="smallcred" alt="DWS's Icon" src="../bash/images/bash.svg"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
+      <li><img class="smallcred" alt="Flag of Italy" src="../bash/images/readme/Flag_of_Italy_32.png"><span>Italian:</span><img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
+      <li><img class="smallcred" alt="Flag of Japan" src="../bash/images/readme/Flag_of_Japan_32.png"><span>Japanese:</span><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda</a></span></li>
+      <li><img class="smallcred" alt="Flag of Portugal" src="../bash/images/readme/Flag_of_Brazil_32.png"><span>Portuguese:</span><img class="smallcred" alt="Hadoki's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span></li>
+      <li><img class="smallcred" alt="Flag of Russia" src="../bash/images/readme/Flag_of_Russia_32.png"><span>Russian:</span><img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
     </ul>
   </li>
   <li>
@@ -2185,14 +2186,14 @@ Respect developer's time - keep discussions there short, sweet and technical. No
       <li><img class="smallcred" alt="GhostWheel's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://web.archive.org/web/20170707181414/https://mw.modhistory.com/search-au-Ghostwheel">GhostWheel</a></span></li>
       <li><img class="smallcred" alt="Resetgun's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://www.nexusmods.com/users/99351">Resetgun</a>, aka mpuonti</span></li>
       <li><img class="smallcred" alt="Rick's Icon" src="../bash/images/people/rickavi32.png"><span><a href="https://github.com/gibbed">Rick</a></span></li>
-      <li><img class="smallcred" alt="Scripter Ron's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/123768">ScripterRon</a></span></li>
-      <li><img class="smallcred" alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong></a></span></li>
+      <li><img class="smallcred" alt="Scripter Ron's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/users/123768">ScripterRon</a></span></li>
+      <li><img class="smallcred" alt="Monkey God's Icon" src="../bash/images/people/wryeavi.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong></a></span></li>
     </ul>
   </li>
   <li>
     <strong>Python Kings</strong>
     <ul>
-      <li><img class="smallcred" alt="Python Kings' Icon" src="../bash/images/bash_32_2.png"><span>Guido van Rossum and many, many others.</span></li>
+      <li><img class="smallcred" alt="Python Kings' Icon" src="../bash/images/bash.svg"><span>Guido van Rossum and many, many others.</span></li>
     </ul>
   </li>
   <li>
@@ -2214,16 +2215,16 @@ Respect developer's time - keep discussions there short, sweet and technical. No
       <li><img class="smallcred" alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.com/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim&colon; Special Edition, and being an all-round bon oeuf.</span></li>
       <li><img class="smallcred" alt="Arthmoor's Icon" src="../bash/images/people/armravi32.png"><span><a href="https://github.com/Arthmoor">Arthmoor:</a> All-round support of the project including pushing code snippets from anonymous contributors, assisting with issue tracking, and generally high activity in and around the project.</span></li>
       <li><img class="smallcred" alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> Bug catching, technical suggestions.</span></li>
-      <li><img class="smallcred" alt="Kmacg94's Icon" src="../bash/images/bash_32_2.png"><span>Kmacg94: Additional power exhaustion coverage.</span></li>
+      <li><img class="smallcred" alt="Kmacg94's Icon" src="../bash/images/bash.svg"><span>Kmacg94: Additional power exhaustion coverage.</span></li>
       <li><img class="smallcred" alt="Llde's Icon" src="../bash/images/people/lldeavi32.png"><span><a href="https://github.com/llde">llde:</a> Fixup for parsing archives that have attribute-less files.</span></li>
       <li><img class="smallcred" alt="Mator's Icon" src="../bash/images/people/matravi32.jpg"><span><a href="https://github.com/matortheeternal">MatorTheEternal:</a> Assisted with porting xEdit definitions in a format usable for Wrye Bash.</span></li>
       <li><img class="smallcred" alt="Metallicow's Icon" src="../bash/images/people/mcowavi32.png"><span><a href="https://github.com/Metallicow">Metallicow:</a> Shiny new tool launcher icons, Graphics, Mooo, &amp; the WizBAIN Editor.</span></li>
-      <li><img class="smallcred" alt="Preacui's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://sourceforge.net/u/preacui/profile/">preacui:</a> <a href="https://3d.xkcd.com/353/">Existed.</a></span></li>
+      <li><img class="smallcred" alt="Preacui's Icon" src="../bash/images/bash.svg"><span><a href="https://sourceforge.net/u/preacui/profile/">preacui:</a> <a href="https://3d.xkcd.com/353/">Existed.</a></span></li>
       <li><img class="smallcred" alt="Sativarg's Icon" src="../bash/images/people/genyavi32.png"><span><a href="https://github.com/Sativarg">Sativarg:</a> Proofreading.</span></li>
       <li><img class="smallcred" alt="Saebel's Icon" src="../bash/images/people/saebavi32.png"><span><a href="https://www.nexusmods.com/users/813052">saebel:</a> Caught and added a missing OBSE INI setting.</span></li>
       <li><img class="smallcred" alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span><a href="https://www.nexusmods.com/users/77237">Tom Supergan:</a> Several well researched suggestions.</span></li>
-      <li><img class="smallcred" alt="Testers' Icon" src="../bash/images/bash_32_2.png"><span>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.</span></li>
-      <li><img class="smallcred" alt="Helpers' Icon" src="../bash/images/bash_32_2.png"><span>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, Ortham, Trira, and many others.</span></li>
+      <li><img class="smallcred" alt="Testers' Icon" src="../bash/images/bash.svg"><span>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.</span></li>
+      <li><img class="smallcred" alt="Helpers' Icon" src="../bash/images/bash.svg"><span>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, Ortham, Trira, and many others.</span></li>
     </ul>
   </li>
   <li>
@@ -2240,32 +2241,32 @@ Respect developer's time - keep discussions there short, sweet and technical. No
   <li>
     <strong>Names Files</strong>
     <ul>
-      <li><img class="smallcred" alt="Flak's Icon" src="../bash/images/bash_32_2.png"><span>Flak: <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a></span></li>
+      <li><img class="smallcred" alt="Flak's Icon" src="../bash/images/bash.svg"><span>Flak: <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a></span></li>
     </ul>
   </li>
   <li>
     <strong>Bash Features</strong>
     <ul>
       <li><img class="smallcred" alt="Crypton's Icon" src="../bash/images/people/crypavi32.png"><span>No Light Flicker: <a href="https://www.nexusmods.com/oblivion/mods/6150">No Light Flicker</a> (<a href="https://www.nexusmods.com/users/23266">Crypton</a>)</span></li>
-      <li><img class="smallcred" alt="Kyorisu's Icon" src="../bash/images/bash_32_2.png"><span>Save Profiles: <a href="https://www.nexusmods.com/oblivion/mods/2342">Tes IV Save Manager</a> (<a href="https://www.nexusmods.com/users/102992">Kyorisu</a>)</span></li>
+      <li><img class="smallcred" alt="Kyorisu's Icon" src="../bash/images/bash.svg"><span>Save Profiles: <a href="https://www.nexusmods.com/oblivion/mods/2342">Tes IV Save Manager</a> (<a href="https://www.nexusmods.com/users/102992">Kyorisu</a>)</span></li>
     </ul>
   </li>
   <li>
     <strong>Tweaks</strong>
     <ul>
-      <li><img class="smallcred" alt="Showler's Icon" src="../bash/images/bash_32_2.png"><span>AI: Max Dead Actors (<a href="https://www.nexusmods.com/users/38829">showler</a>)</span></li>
-      <li><img class="smallcred" alt="Aelius's Icon" src="../bash/images/bash_32_2.png"><span>Arrow Litter, Essential NPC Unconsciousness (Aelius)</span></li>
-      <li><img class="smallcred" alt="Demuerte's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon: No Refraction</a> (demuerte)</span></li>
-      <li><img class="smallcred" alt="Woodman's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/1840">Chase Camera</a> (<a href="https://www.nexusmods.com/users/85866">Woodman</a>)</span></li>
+      <li><img class="smallcred" alt="Showler's Icon" src="../bash/images/bash.svg"><span>AI: Max Dead Actors (<a href="https://www.nexusmods.com/users/38829">showler</a>)</span></li>
+      <li><img class="smallcred" alt="Aelius's Icon" src="../bash/images/bash.svg"><span>Arrow Litter, Essential NPC Unconsciousness (Aelius)</span></li>
+      <li><img class="smallcred" alt="Demuerte's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon: No Refraction</a> (demuerte)</span></li>
+      <li><img class="smallcred" alt="Woodman's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/oblivion/mods/1840">Chase Camera</a> (<a href="https://www.nexusmods.com/users/85866">Woodman</a>)</span></li>
       <li><img class="smallcred" alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span>Chase Camera Distance (<a href="https://www.nexusmods.com/users/77237">Tom Supergan</a>)</span></li>
-      <li><img class="smallcred" alt="Compass Disable Icon" src="../bash/images/bash_32_2.png"><span>Compass Disable (??)</span></li>
-      <li><img class="smallcred" alt="Compass Recognition Distance Icon" src="../bash/images/bash_32_2.png"><span>Compass Recognition Distance (??)</span></li>
-      <li><img class="smallcred" alt="Ravida's Icon" src="../bash/images/bash_32_2.png"><span>Movement: Fatigue from Running/Encumbrance (Ravida)</span></li>
-      <li><img class="smallcred" alt="Horse Turning Speed Icon" src="../bash/images/bash_32_2.png"><span>Horse Turning Speed (Acleacius, dbolivar)</span></li>
-      <li><img class="smallcred" alt="5133p39's Icon" src="../bash/images/bash_32_2.png"><span>Opposite Gender Anims: Female (<a href="https://www.nexusmods.com/users/277511">5133p39</a>)</span></li>
-      <li><img class="smallcred" alt="David Moyer's Icon" src="../bash/images/bash_32_2.png"><span>PC Death Camera (David Moyer)</span></li>
-      <li><img class="smallcred" alt="KseAli's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/4882">POI Visibility</a> (<a href="https://www.nexusmods.com/users/114786">KseAli</a>)</span></li>
-      <li><img class="smallcred" alt="Timmypod's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2246">Unlimited Amulets and Rings</a> (timmypod)</span></li>
+      <li><img class="smallcred" alt="Compass Disable Icon" src="../bash/images/bash.svg"><span>Compass Disable (??)</span></li>
+      <li><img class="smallcred" alt="Compass Recognition Distance Icon" src="../bash/images/bash.svg"><span>Compass Recognition Distance (??)</span></li>
+      <li><img class="smallcred" alt="Ravida's Icon" src="../bash/images/bash.svg"><span>Movement: Fatigue from Running/Encumbrance (Ravida)</span></li>
+      <li><img class="smallcred" alt="Horse Turning Speed Icon" src="../bash/images/bash.svg"><span>Horse Turning Speed (Acleacius, dbolivar)</span></li>
+      <li><img class="smallcred" alt="5133p39's Icon" src="../bash/images/bash.svg"><span>Opposite Gender Anims: Female (<a href="https://www.nexusmods.com/users/277511">5133p39</a>)</span></li>
+      <li><img class="smallcred" alt="David Moyer's Icon" src="../bash/images/bash.svg"><span>PC Death Camera (David Moyer)</span></li>
+      <li><img class="smallcred" alt="KseAli's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/oblivion/mods/4882">POI Visibility</a> (<a href="https://www.nexusmods.com/users/114786">KseAli</a>)</span></li>
+      <li><img class="smallcred" alt="Timmypod's Icon" src="../bash/images/bash.svg"><span><a href="https://www.nexusmods.com/oblivion/mods/2246">Unlimited Amulets and Rings</a> (timmypod)</span></li>
     </ul>
   </li>
 </ul>

@@ -81,18 +81,18 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, Resources, \
     AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, NotebookPanel, \
-    images, colors, Links, ItemLink
+    images, colors, Links, ItemLink, InstallerColorChecks
 
 from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
     WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
-    GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
+    GlobalMenu, CopyOrMovePopup, ListBox, PureImageButton, CENTER, \
     MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen, ImageButton, DateAndTimeDialog
+    get_shift_down, FileOpen, DateAndTimeDialog
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults, installercons
+from .constants import colorInfo, settingDefaults
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -1605,9 +1605,8 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
-        calendar_button = ImageButton(top,
-            ImageWrapper(bass.dirs['images'].join(
-                'calendar16.png')).get_bitmap(), exact_fit=True,
+        calendar_button = PureImageButton(top,
+            balt.images['calendar.16'].get_bitmap(),
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
@@ -1621,15 +1620,15 @@ class ModDetails(_ModsSavesDetails):
         self._set_desc_label('')
         #--Bash tags
         ##: Come up with a better solution for this
-        class _ExClickableImage(WithMouseEvents, ClickableImage):
+        class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
-        self._add_tag_btn = _ExClickableImage(self._bottom_low_panel,
-            'ART_PLUS', no_border=False,
-            btn_tooltip=_(u'Add bash tags to this plugin.'))
+        self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
+            balt.images['plus.16'].get_bitmap(),
+            btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
-        self._rem_tag_btn = ClickableImage(self._bottom_low_panel,
-            'ART_MINUS', no_border=False,
-            btn_tooltip=_(u'Remove the selected tag(s) from this plugin.'))
+        self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
+            balt.images['minus.16'].get_bitmap(),
+            btn_tooltip=_('Remove the selected tag(s) from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
@@ -2565,7 +2564,7 @@ class InstallersList(balt.UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
-    _icons = installercons
+    _icons = InstallerColorChecks()
     _sunkenBorder = False
     _shellUI = True
     _editLabels = _copy_paths = True
@@ -4589,17 +4588,20 @@ def InitImages():
     #--Images
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))
-    #--Standard
-    images[u'save.on'] = _png(u'save_on.png')
-    images[u'save.off'] = _png(u'save_off.png')
-    # Up/Down arrows for UIList columns
-    images[u'arrow.up'] = _png(u'arrow_up.png')
-    images[u'arrow.down'] = _png(u'arrow_down.png')
-    #--Misc
-    images[u'help.16'] = _png(u'help16.png')
-    images[u'help.24'] = _png(u'help24.png')
-    images[u'help.32'] = _png(u'help32.png')
-    #--ColorChecks
+    def _svg(fname, bm_px_size, invertible=False):
+        """Creates an SVG wrapper.
+
+        :param fname: The SVG's filename, relative to bash/images.
+        :param bm_px_size: The size of the resulting bitmap, in
+            device-independent pixels (DIP).
+        :param invertible: True if the SVG is invertible, which means it's
+            entirely black and has 'var(--invert)' usages that can be
+            changed to '#FFF' or '#000', depending on whether we want to invert
+            or not."""
+        return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size,
+            invertible_svg=invertible)
+    # PNGs --------------------------------------------------------------------
+    # Checkboxes
     images[u'checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images[u'checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
     images[u'checkbox.red.x.24'] = _png(u'checkbox_red_x_24.png')
@@ -4619,18 +4621,42 @@ def InitImages():
     images[u'checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
     images[u'checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
     images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    #--DocBrowser
-    images[u'doc.16'] = _png(u'docbrowser16.png')
-    images[u'doc.24'] = _png(u'docbrowser24.png')
-    images[u'doc.32'] = _png(u'docbrowser32.png')
-    images[u'settingsbutton.16'] = _png(u'settingsbutton16.png')
-    images[u'settingsbutton.24'] = _png(u'settingsbutton24.png')
-    images[u'settingsbutton.32'] = _png(u'settingsbutton32.png')
-    images[u'modchecker.16'] = _png(u'modchecker16.png')
-    images[u'modchecker.24'] = _png(u'modchecker24.png')
-    images[u'modchecker.32'] = _png(u'modchecker32.png')
-    images[u'pickle.16'] = _png(u'pickle16.png')
-    images[u'pickle.24'] = _png(u'pickle24.png')
-    images[u'pickle.32'] = _png(u'pickle32.png')
+    # SVGs --------------------------------------------------------------------
+    # Up/Down arrows for UIList columns
+    images['arrow.up.16'] = _svg('arrow_up.svg', 16, invertible=True)
+    images['arrow.down.16'] = _svg('arrow_down.svg', 16, invertible=True)
+    # Modification time button
+    images['calendar.16'] = _svg('calendar.svg', 16, invertible=True)
+    # DocumentViewer
+    images['back.16'] = _svg('back.svg', 16, invertible=True)
+    images['forward.16'] = _svg('forward.svg', 16, invertible=True)
+    # DocumentViewer and Restart
+    images['reload.16'] = _svg('reload.svg', 16, invertible=True)
+    images['reload.24'] = _svg('reload.svg', 24, invertible=True)
+    images['reload.32'] = _svg('reload.svg', 32, invertible=True)
+    # Checkmark/Cross
+    images['checkmark.16'] = _svg('checkmark.svg', 16, invertible=True)
+    images['error_cross.16'] = _svg('error_cross.svg', 16, invertible=True)
+    # Minus/Plus for the Bash Tags popup
+    images['minus.16'] = _svg('minus.svg', 16, invertible=True)
+    images['plus.16'] = _svg('plus.svg', 16, invertible=True)
+    # Warning icon in various GUIs
+    images['warning.32'] = _svg('warning.svg', 32)
+    # Settings button
+    images['settings_button.16'] = _svg('gear.svg', 16, invertible=True)
+    images['settings_button.24'] = _svg('gear.svg', 24, invertible=True)
+    images['settings_button.32'] = _svg('gear.svg', 32, invertible=True)
+    # Help button(s)
+    images['help.16'] = _svg('help.svg', 16, invertible=True)
+    images['help.24'] = _svg('help.svg', 24, invertible=True)
+    images['help.32'] = _svg('help.svg', 32, invertible=True)
+    # Plugin Checker
+    images['plugin_checker.16'] = _svg('checklist.svg', 16, invertible=True)
+    images['plugin_checker.24'] = _svg('checklist.svg', 24, invertible=True)
+    images['plugin_checker.32'] = _svg('checklist.svg', 32, invertible=True)
+    # Doc Browser
+    images['doc_browser.16'] = _svg('book.svg', 16, invertible=True)
+    images['doc_browser.24'] = _svg('book.svg', 24, invertible=True)
+    images['doc_browser.32'] = _svg('book.svg', 32, invertible=True)
 
 from .links_init import InitLinks

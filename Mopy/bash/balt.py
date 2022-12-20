@@ -44,8 +44,8 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave, DirOpen
+    bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, FileSave, \
+    DirOpen, scaled
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -61,10 +61,10 @@ class Resources(object):
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
     red_bundle = ImageBundle()
-    red_bundle.Add(bass.dirs[u'images'].join(u'bash_32-2.ico'))
+    red_bundle.Add(bass.dirs['images'].join('bash_icons_red.ico'))
     Resources.bashRed = red_bundle.GetIconBundle()
     blue_bundle = ImageBundle()
-    blue_bundle.Add(bass.dirs[u'images'].join(u'bash_blue.svg-2.ico'))
+    blue_bundle.Add(bass.dirs['images'].join('bash_icons_blue.ico'))
     Resources.bashBlue = blue_bundle.GetIconBundle()
 
 # Settings --------------------------------------------------------------------
@@ -104,9 +104,9 @@ class ImageList(object):
 
     Allows ImageList to be specified before wx.App is initialized.
     Provides access to ImageList integers through imageList[key]."""
-    def __init__(self,width,height):
-        self.width = width
-        self.height = height
+    def __init__(self, il_width, il_height):
+        self.width = scaled(il_width)
+        self.height = scaled(il_height)
         self.images = []
         self.indices = {}
         self.imageList = None
@@ -129,7 +129,7 @@ class ImageList(object):
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
     def __init__(self):
-        ImageList.__init__(self, 16, 16)
+        super().__init__(16, 16)
         if not (im_dir := Path.getcwd().join('bash', 'images')).exists(): ##: CI Hack
             im_dir = Path.getcwd().join('Mopy', 'bash', 'images')
         for state in (u'on', u'off', u'inc', u'imp'):
@@ -139,7 +139,7 @@ class ColorChecks(ImageList):
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img,
-                    ImageWrapper.img_types['.png'])
+                    iconSize=16)
                 self.images.append((shortKey, image))
 
     def Get(self,status,on):
@@ -173,6 +173,83 @@ class ColorChecks(ImageList):
             elif status <=20: shortKey = u'orange.off'
             else: shortKey = u'red.off'
         return self.indices[shortKey]
+
+class InstallerColorChecks(ImageList):
+    def __init__(self):
+        super().__init__(16, 16)
+        imDirJn = bass.dirs['images'].join
+        def _icc(fname): return ImageWrapper(imDirJn(fname), iconSize=16)
+        self.images.extend({
+            #--Off/Archive
+            'off.green':  _icc('checkbox_green_off.png'),
+            'off.grey':   _icc('checkbox_grey_off.png'),
+            'off.red':    _icc('checkbox_red_off.png'),
+            'off.white':  _icc('checkbox_white_off.png'),
+            'off.orange': _icc('checkbox_orange_off.png'),
+            'off.yellow': _icc('checkbox_yellow_off.png'),
+            #--Off/Archive - Wizard
+            'off.green.wiz':    _icc('checkbox_green_off_wiz.png'),
+            #grey
+            'off.red.wiz':      _icc('checkbox_red_off_wiz.png'),
+            'off.white.wiz':    _icc('checkbox_white_off_wiz.png'),
+            'off.orange.wiz':   _icc('checkbox_orange_off_wiz.png'),
+            'off.yellow.wiz':   _icc('checkbox_yellow_off_wiz.png'),
+            #--On/Archive
+            'on.green':  _icc('checkbox_green_inc.png'),
+            'on.grey':   _icc('checkbox_grey_inc.png'),
+            'on.red':    _icc('checkbox_red_inc.png'),
+            'on.white':  _icc('checkbox_white_inc.png'),
+            'on.orange': _icc('checkbox_orange_inc.png'),
+            'on.yellow': _icc('checkbox_yellow_inc.png'),
+            #--On/Archive - Wizard
+            'on.green.wiz':  _icc('checkbox_green_inc_wiz.png'),
+            #grey
+            'on.red.wiz':    _icc('checkbox_red_inc_wiz.png'),
+            'on.white.wiz':  _icc('checkbox_white_inc_wiz.png'),
+            'on.orange.wiz': _icc('checkbox_orange_inc_wiz.png'),
+            'on.yellow.wiz': _icc('checkbox_yellow_inc_wiz.png'),
+            #--Off/Directory
+            'off.green.dir':  _icc('diamond_green_off.png'),
+            'off.grey.dir':   _icc('diamond_grey_off.png'),
+            'off.red.dir':    _icc('diamond_red_off.png'),
+            'off.white.dir':  _icc('diamond_white_off.png'),
+            'off.orange.dir': _icc('diamond_orange_off.png'),
+            'off.yellow.dir': _icc('diamond_yellow_off.png'),
+            #--Off/Directory - Wizard
+            'off.green.dir.wiz':  _icc('diamond_green_off_wiz.png'),
+            #grey
+            'off.red.dir.wiz':    _icc('diamond_red_off_wiz.png'),
+            'off.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'off.orange.dir.wiz': _icc('diamond_orange_off_wiz.png'),
+            'off.yellow.dir.wiz': _icc('diamond_yellow_off_wiz.png'),
+            #--On/Directory
+            'on.green.dir':  _icc('diamond_green_inc.png'),
+            'on.grey.dir':   _icc('diamond_grey_inc.png'),
+            'on.red.dir':    _icc('diamond_red_inc.png'),
+            'on.white.dir':  _icc('diamond_white_inc.png'),
+            'on.orange.dir': _icc('diamond_orange_inc.png'),
+            'on.yellow.dir': _icc('diamond_yellow_inc.png'),
+            #--On/Directory - Wizard
+            'on.green.dir.wiz':  _icc('diamond_green_inc_wiz.png'),
+            #grey
+            'on.red.dir.wiz':    _icc('diamond_red_inc_wiz.png'),
+            'on.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'on.orange.dir.wiz': _icc('diamond_orange_inc_wiz.png'),
+            'on.yellow.dir.wiz': _icc('diamond_yellow_inc_wiz.png'),
+            #--Broken
+            'corrupt': _icc('red_x.svg'),
+        }.items())
+
+def get_dv_bitmaps():
+    """Returns the bitmaps needed for DocumentViewer."""
+    return tuple(images[i].get_bitmap() for i in (
+        'back.16', 'forward.16', 'reload.16'))
+
+# TODO(inf) de-wx! Actually, don't - absorb via better API
+def staticBitmap(parent, bitmap=None):
+    """Tailored to current usages - IAW: do not use."""
+    return wx.StaticBitmap(_AComponent._resolve(parent),
+        bitmap=images['warning.32'].get_bitmap() if bitmap is None else bitmap)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -433,7 +510,7 @@ class WryeLog(_Log):
             bolt.convert_wtext_to_html(logPath, logText, css_dir)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = DocumentViewer(self.window)
+        self._html_ctrl = DocumentViewer(self.window, get_dv_bitmaps())
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window)
@@ -882,8 +959,8 @@ class UIList(PanelWin):
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         checkboxesIL = self._icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
-        self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
+        self.sm_up = checkboxesIL.Add(images['arrow.up.16'].get_bitmap())
+        self.sm_dn = checkboxesIL.Add(images['arrow.down.16'].get_bitmap())
         self.__gList._native_widget.SetImageList(checkboxesIL,
                                                  wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:

@@ -42,7 +42,7 @@ class GameInfo(object):
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
     # Name of the icon to use for the game, including a %u specifier for the
-    # icon size (16/24/32)
+    # icon size (16/24/32). Relative to images/games/
     game_icon = u'' ## Example: u'skyrim_%u.png'
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
     # Preferably pick a single word without spaces here, but don't change it
@@ -200,7 +200,7 @@ class GameInfo(object):
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
         se_args = None
-        # Image name template for the status bar
+        # Image name template for the status bar, relative to images/tools
         image_name = u''
 
     class Se(object):

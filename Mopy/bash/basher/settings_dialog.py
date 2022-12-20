@@ -323,11 +323,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.UpdateUIButtons()
 
     def on_apply(self):
-        for key,newColor in self.changes.items():
-            bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
-            colors[key] = newColor
-        self.UpdateUIButtons()
-        self.UpdateUIColors()
+        if self.changes:
+            for key,newColor in self.changes.items():
+                bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
+                colors[key] = newColor
+            self.UpdateUIButtons()
+            self.UpdateUIColors()
 
     def OnExport(self):
         outDir = bass.dirs[u'patches']
@@ -653,6 +654,53 @@ class LanguagePage(_AScrollablePage):
         """Enables or disables all l10n-specific buttons."""
         for ctx_btn in (self._edit_l10n_btn, self._rename_l10n_btn):
             ctx_btn.enabled = btns_enabled
+
+# Misc Appearance -------------------------------------------------------------
+class MiscAppearancePage(_AFixedPage):
+    """Appearance settings that don't fix anywhere else yet."""
+    _setting_ids = {'alt_name_on', 'rev_icons_on'}
+
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        self._alt_name_checkbox = CheckBox(self,
+            _('Use Alternate Wrye Bash Name'),
+            chkbx_tooltip=_('Use an alternate display name for Wrye Bash '
+                            'based on the game it is managing.'),
+            checked=bass.settings['bash.useAltName'])
+        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        self._reverse_icons_checkbox = CheckBox(self, _('Reverse Icon Colors'),
+            chkbx_tooltip=_('Replace black icons used by Wrye Bash with white '
+                            'ones. Useful if you are using an OS theme that '
+                            'makes those icons hard to see.'),
+            checked=bass.settings['bash.use_reverse_icons'])
+        self._reverse_icons_checkbox.on_checked.subscribe(self._on_rev_icons)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._panel_text,
+            HorizontalLine(self),
+            self._alt_name_checkbox,
+            self._reverse_icons_checkbox,
+        ]).apply_to(self)
+
+    def _on_alt_name(self, checked):
+        self._mark_setting_changed('alt_name_on',
+            checked != bass.settings['bash.useAltName'])
+
+    def _on_rev_icons(self, checked):
+        self._mark_setting_changed('rev_icons_on',
+            checked != bass.settings['bash.use_reverse_icons'])
+
+    def on_apply(self):
+        # Use Alternate Wrye Bash Name
+        if self._is_changed('alt_name_on'):
+            new_alt_name = self._alt_name_checkbox.is_checked
+            bass.settings['bash.useAltName'] = new_alt_name
+            Link.Frame.set_bash_frame_title()
+        # Reverse Icon Colors
+        if self._is_changed('rev_icons_on'):
+            new_rev_icons = self._reverse_icons_checkbox.is_checked
+            bass.settings['bash.use_reverse_icons'] = new_rev_icons
+            self._request_restart(_('Reverse Icon Colors'))
+        super().on_apply()
 
 # Status Bar ------------------------------------------------------------------
 class StatusBarPage(_AScrollablePage):
@@ -1198,8 +1246,8 @@ class GeneralPage(_AScrollablePage):
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.items()}
-    _setting_ids = {'alt_name_on', 'global_menu_on', 'res_scroll_on',
-                    'managed_game', 'plugin_encoding', 'uac_restart'}
+    _setting_ids = {'global_menu_on', 'res_scroll_on', 'managed_game',
+                    'plugin_encoding', 'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1214,7 +1262,8 @@ class GeneralPage(_AScrollablePage):
                                           u'will use to read and write '
                                           u'plugins.')
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
-        ##: The next two should belong to a subpage of Appearance
+        ##: Replace with a dropdown that lets you disable the global menu, the
+        # column menus, or neither
         self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
             chkbx_tooltip=_(u'If checked, a global menu will be shown above '
                             u'the tabs. If disabled, its options will still '
@@ -1223,12 +1272,6 @@ class GeneralPage(_AScrollablePage):
         self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
         # Hide the option on Linux - see refresh_global_menu_visibility
         self._global_menu_checkbox.visible = os_name == u'nt'
-        self._alt_name_checkbox = CheckBox(self,
-            _(u'Use Alternate Wrye Bash Name'),
-            chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
-                            u'based on the game it is managing.'),
-            checked=bass.settings[u'bash.useAltName'])
-        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
@@ -1256,18 +1299,14 @@ class GeneralPage(_AScrollablePage):
                 ]),
             ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
-                self._global_menu_checkbox, self._alt_name_checkbox,
-                self._restore_scroll_checkbox, self._uac_restart_checkbox,
+                self._global_menu_checkbox, self._restore_scroll_checkbox,
+                self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
     @property
     def _current_encoding(self):
         return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
-
-    def _on_alt_name(self, checked):
-        self._mark_setting_changed(u'alt_name_on',
-            checked != bass.settings[u'bash.useAltName'])
 
     def _on_global_menu(self, checked):
         self._mark_setting_changed(u'global_menu_on',
@@ -1315,11 +1354,6 @@ class GeneralPage(_AScrollablePage):
             new_gm_on = self._global_menu_checkbox.is_checked
             bass.settings[u'bash.show_global_menu'] = new_gm_on
             Link.Frame.refresh_global_menu_visibility()
-        # Use Alternate Wrye Bash Name
-        if self._is_changed(u'alt_name_on'):
-            new_alt_name = self._alt_name_checkbox.is_checked
-            bass.settings[u'bash.useAltName'] = new_alt_name
-            Link.Frame.set_bash_frame_title()
         # Restore Scroll Positions on Start
         if self._is_changed(u'res_scroll_on'):
             new_res_scroll = self._restore_scroll_checkbox.is_checked
@@ -1389,7 +1423,8 @@ class TrustedBinariesPage(_AFixedPage):
                                             u'have forbidden'))
             self._dump_dlls(bass.settings['bash.installers.badDlls'], out)
 
-    def _dump_dlls(self, dll_dict, out):
+    @staticmethod
+    def _dump_dlls(dll_dict, out):
         if not dll_dict:
             out.write(f'# {_("None")}\n') # Treated as a comment
             return
@@ -1531,6 +1566,7 @@ _settings_pages = {
     _(u'Appearance'): {
         _(u'Colors'): ColorsPage,
         _(u'Language'): LanguagePage,
+        _('Miscellaneous'): MiscAppearancePage,
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
@@ -1548,6 +1584,8 @@ _page_descriptions = {
     _(u'Appearance') + u'/' + _(u'Language'):
         _(u'Change the language that Wrye Bash is displayed in and manage '
           u'localizations.'),
+    _('Appearance') + '/' + _('Miscellaneous'):
+        _('Change various miscellaneous appearance settings.'),
     _(u'Appearance') + u'/' + _(u'Status Bar'):
         _(u'Change settings related to the status bar at the bottom and '
           u'manage hidden buttons.'),
@@ -1568,6 +1606,7 @@ _page_descriptions = {
 _page_anchors = defaultdict(lambda: u'settings', {
     _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
     _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _('Appearance') + '/' + _('Miscellaneous'): 'settings-appearance-misc',
     _(u'Appearance') + u'/' + _(u'Status Bar'):
         u'settings-appearance-status-bar',
     _(u'Backups'): u'settings-backups',

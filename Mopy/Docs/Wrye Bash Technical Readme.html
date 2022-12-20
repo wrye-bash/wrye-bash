@@ -559,10 +559,12 @@ EndSelect</code>
         <li><var>description n</var> - The description to display when <var>option n</var> is selected.
         <li><var>image n</var> - The image to display when <var>option n</var> is selected. An empty string will make no image display.</li>
     </ul>
-        Note that you can also use one of the images that come bundled with Wrye Bash in the <code>Mopy/bash/images</code> folder.
-        Simply specify the path relative to that folder, and Wrye Bash will look there if it doesn't find a matching image in your
-        package. For example, specifying <code>wryesplash.png</code> would allow you to use the Wrye Bash splash screen as an image
-        in your wizard.</li>
+        Note that you can also use one of the images that come bundled with
+        Wrye Bash in the <code>Mopy/bash/images/Wizard Images</code> folder.
+        Simply specify the path as <code>Wizard Images\\[image]</code>, and Wrye
+        Bash will look there if it doesn't find a matching image in your
+        package. For example, specifying <code>Wizard Images\\</code> would allow
+        you to use the Wrye Bash splash screen as an image in your wizard.</li>
     <li><code>Case <var>option</var></code> - The lines following the <code>Case</code> will be run if the user selected its corresponding option on the dialog, until a <code>Break</code> or <code>EndSelect</code> is met.
     <ul>
         <li><var>option</var> - The option that the <code>Case</code> corresponds to.

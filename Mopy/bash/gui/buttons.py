@@ -181,9 +181,7 @@ class NextButton(Button):
 class ImageButton(Button):
     """A button that display an image alongside its label.
 
-    See Button for documentation on button events. Note: this implementation
-    locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
-    """
+    See Button for documentation on button events."""
     def __init__(self, parent, image_id=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.
@@ -212,62 +210,13 @@ class ImageButton(Button):
         # Changing bitmap may change the 'best size', so resize it
         self._native_widget.SetInitialSize()
 
-class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
-    """Base class for ImageButtons that come with a standard wx-supplied
-    image."""
-    _wx_icon_key: str
+class PureImageButton(ImageButton):
+    """An image that acts like a button. Has no text, but does have a border.
 
-    def __init__(self, parent, **kwargs):
-        super(_StdImageButton, self).__init__(parent, **kwargs)
-        ##: maybe rescale to self._native_widget.FromDIP(self._dip_size)) ?
-        self.image = bass.wx_bitmap[self._wx_icon_key]
+    See Button for documentation on button events.
 
-class BackwardButton(_StdImageButton):
-    """An image button with no text that displays an arrow pointing to the
-    right. Used for navigation, e.g. in a browser.
-
-    See Button for documentation on button events."""
-    _wx_icon_key = 'ART_GO_BACK'
-
-    def __init__(self, parent):
-        super(BackwardButton, self).__init__(parent, exact_fit=True,
-                                             btn_tooltip=_(u'Go Back'))
-
-class ForwardButton(_StdImageButton):
-    """An image button with no text that displays an arrow pointing to the
-    right. Used for navigation, e.g. in a browser.
-
-    See Button for documentation on button events."""
-    _wx_icon_key = 'ART_GO_FORWARD'
-
-    def __init__(self, parent):
-        super(ForwardButton, self).__init__(parent, exact_fit=True,
-                                            btn_tooltip=_(u'Go Forwards'))
-
-class QuitButton(_StdImageButton, CancelButton):
-    """Similar to CancelButton, also has a standard image shown on it."""
-    _default_label =_(u'Quit')
-    _wx_icon_key = 'ART_ERROR'
-
-class ReloadButton(ImageButton):
-    """An image button with no text that displays two arrows in a circle. Used
-    for reloading documents, websites, etc.
-
-    See Button for documentation on button events."""
-    def __init__(self, parent, reload_icon):
-        """Creates a new ReloadButton with the specified parent.
-
-        :param parent: The object that this button belongs to. May be a wx
-                       object or a component."""
-        super(ReloadButton, self).__init__(parent, reload_icon,
-                                           btn_tooltip=_(u'Reload'),
-                                           exact_fit=True)
-
-class ClickableImage(ImageButton):
-    """An image that acts like a button. Has no text and no borders.
-
-    See Button for documentation on button events."""
-    def __init__(self, parent, image_id, btn_tooltip=None, no_border=True):
+    See also ClickableImage."""
+    def __init__(self, parent, image_id, btn_tooltip=None):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -275,6 +224,22 @@ class ClickableImage(ImageButton):
         :param image_id: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button."""
-        super(ClickableImage, self).__init__(
-            parent, image_id, btn_tooltip=btn_tooltip, exact_fit=True,
-            no_border=no_border)
+        super().__init__(parent, image_id, btn_tooltip=btn_tooltip,
+            exact_fit=True)
+
+class ClickableImage(ImageButton):
+    """An image that acts like a button. Has no text and no borders.
+
+    See Button for documentation on button events.
+
+    See also PureImageButton."""
+    def __init__(self, parent, image_id, btn_tooltip=None):
+        """Creates a new ClickableImage with the specified properties.
+
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component.
+        :param image_id: The image id to be shown on this button.
+        :param btn_tooltip: A tooltip to show when the user hovers over this
+                            button."""
+        super().__init__(parent, image_id, btn_tooltip=btn_tooltip,
+            exact_fit=True, no_border=True)

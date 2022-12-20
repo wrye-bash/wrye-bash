@@ -30,8 +30,10 @@ import functools
 import os
 import platform
 import textwrap
-import wx as _wx
 from typing import get_type_hints
+
+import wx as _wx
+import wx.svg as _svg
 
 from .events import EventHandler, null_processor
 from ..bolt import deprint
@@ -42,7 +44,10 @@ from ..exception import ArgumentError
 def _csf() -> float:
     """Returns the content scale factor (CSF) needed for high DPI displays."""
     if platform.system() != 'Darwin': ##: Linux? os_name == 'nt' if so
-        return _wx.Window().GetContentScaleFactor()
+        ##: This should really be GetContentScaleFactor(), but that always
+        # returns 1.0 for me (on wxPython 4.2.0), so use a workaround
+        scaled_size = _wx.Window().FromDIP((16, 16))
+        return scaled_size[0] / 16
     else:
         return 1.0 # Everything scales automatically on macOS
 
@@ -334,9 +339,9 @@ class _AComponent:
 
     def to_absolute_position(self,
             relative_pos: tuple[int, int]) -> tuple[int, int]:
-        """Converts the specified position that is relative to the center of
-        this component into absolute coordinates, i.e. relative to the top left
-        of the screen."""
+        """Converts a position that is relative to the center of this component
+        into absolute coordinates, i.e. relative to the top left of the
+        screen."""
         return tuple(self._native_widget.ClientToScreen(relative_pos))
 
     def to_relative_position(self,
@@ -460,39 +465,67 @@ class ImageWrapper:
         '.jpeg': _wx.BITMAP_TYPE_JPEG,
         '.jpg': _wx.BITMAP_TYPE_JPEG,
         '.png': _wx.BITMAP_TYPE_PNG,
+        '.svg': None, # Special handling needed, see _is_svg
         '.tif': _wx.BITMAP_TYPE_TIF,
         '.tga': _wx.BITMAP_TYPE_TGA,
     }
 
-    def __init__(self, filename, imageType=None, iconSize=16):
+    def __init__(self, filename, imageType=None, iconSize=-1,
+            invertible_svg=False):
         self._img_path = filename.s # must be a bolt.Path
         try:
             self._img_type = imageType or self.img_types[filename.cext]
         except KeyError:
             deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY
+        self._is_svg = filename.cext == '.svg'
+        if self._is_svg and iconSize == -1:
+            raise ArgumentError('You must specify iconSize to '
+                                'rasterize an SVG to a bitmap!')
+        self._invertible_svg = invertible_svg
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
         if not os.path.exists(self._img_path.split(';')[0]):
             raise ArgumentError(f'Missing resource file: {filename}.')
 
-    def get_bitmap(self):
-        if not self.bitmap:
+    def get_bitmap(self, force_reload=False):
+        if not self.bitmap or force_reload:
             if self._img_type == _wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
                 w, h = self.icon.GetWidth(), self.icon.GetHeight()
                 self.bitmap = _wx.Bitmap(w, h)
                 self.bitmap.CopyFromIcon(self.icon)
                 # Hack - when user scales windows display icon may need scaling
-                if w != self.iconSize or h != self.iconSize: # rescale !
+                if (self.iconSize != -1 and w != self.iconSize or
+                    h != self.iconSize): # rescale !
                     self.bitmap = _wx.Bitmap(
                         self.bitmap.ConvertToImage().Scale(
                             self.iconSize, self.iconSize,
                             _wx.IMAGE_QUALITY_HIGH))
+            elif self._is_svg:
+                with open(self._img_path, 'rb') as ins:
+                    svg_data = ins.read()
+                if b'var(--invert)' in svg_data:
+                    svg_data = svg_data.replace(b'var(--invert)',
+                        b'#FFF' if self._should_invert_svg() else b'#000')
+                svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
+                svg_size = scaled(self.iconSize)
+                self.bitmap = svg_img.ConvertToScaledBitmap(
+                    (svg_size, svg_size))
             else:
-                self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
+                bm_img = _wx.Image(self._img_path, self._img_type)
+                if self.iconSize != -1:
+                    wanted_size = scaled(self.iconSize)
+                    if bm_img.GetWidth() != wanted_size:
+                        bm_img.Rescale(wanted_size, wanted_size,
+                            _wx.IMAGE_QUALITY_HIGH)
+                self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
+
+    def _should_invert_svg(self):
+        from .. import bass
+        return self._invertible_svg and bass.settings['bash.use_reverse_icons']
 
     def GetIcon(self):
         if not self.icon:

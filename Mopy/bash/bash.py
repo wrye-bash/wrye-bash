@@ -444,8 +444,9 @@ def _main(opts, wx_locale, wxver):
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
-    basher.InitLinks()
+    # Status bar buttons are initialized in InitLinks and use images
     basher.InitImages()
+    basher.InitLinks()
     #--Start application
     bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages
@@ -639,27 +640,28 @@ class _AppReturnCode(object):
     def set(self, value): self.value = value
 
 def _select_game_popup(game_infos):
-    from .balt import Resources
+    from .balt import Resources, ImageWrapper
     from .gui import Label, TextAlignment, WindowFrame, VLayout, \
         ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
-        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown, \
-        CENTER
+        HLayout, ImageButton, HorizontalLine, Stretch, DropDown, CENTER, \
+        CancelButton
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 
         def __init__(self, game_infos, callback):
-            super(SelectGamePopup, self).__init__(
-                None, title=_(u'Select Game'), icon_bundle=Resources.bashRed)
+            super().__init__(None, title=_('Select Game'),
+                icon_bundle=Resources.bashRed)
             self._callback = callback
             self._sorted_games = sorted(g.displayName for g in game_infos)
             self._game_to_paths = {g.displayName: ps for g, ps
                                   in game_infos.items()}
             self._game_to_info = {g.displayName: g for g in game_infos}
+            gi_join = bass.dirs['images'].join('games').join
             self._game_to_bitmap = {
-                g.displayName: _wx.Bitmap(bass.dirs[u'images'].join(
-                    g.game_icon % 32).s) for g in game_infos}
+                g.displayName: ImageWrapper(gi_join(g.game_icon % 32),
+                    iconSize=32).get_bitmap() for g in game_infos}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self, hint=_('Search Games'))
             game_search.on_text_changed.subscribe(self._perform_search)
@@ -668,11 +670,16 @@ def _select_game_popup(game_infos):
             self._lang_dropdown = DropDown(self, value=u'', choices=[u''])
             self._lang_dropdown.on_combo_select.subscribe(self._select_lang)
             self._game_path = TextField(self, editable=False)
-            quit_button = QuitButton(self)
+            class _ImgCancelButton(CancelButton, ImageButton): pass
+            quit_img = ImageWrapper(bass.dirs['images'].join('quit.svg'),
+                iconSize=32)
+            quit_button = _ImgCancelButton(self, quit_img.get_bitmap(),
+                btn_label=_('Quit'))
             quit_button.on_clicked.subscribe(self._handle_quit)
-            launch_img = bass.dirs[u'images'].join(u'bash_32_2.png').s
-            self._launch_button = ImageButton(self, _wx.Bitmap(launch_img),
-                                              btn_label=_(u'Launch'))
+            launch_img = ImageWrapper(bass.dirs['images'].join('bash.svg'),
+                iconSize=32)
+            self._launch_button = ImageButton(self, launch_img.get_bitmap(),
+                btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
             # Start out with an empty search and the alphabetically first game
             # selected

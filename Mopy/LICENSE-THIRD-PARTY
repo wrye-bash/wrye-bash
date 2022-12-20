@@ -2,6 +2,9 @@ Wrye Bash incoporates code from third-party sources. Their licenses are listed h
 
 To easily navigate this document, search for the '::LICENSE::' markers placed at the start of every license.
 
+Note: Some of the icons in Mopy/bash/images are released under other licenses too - please see the
+'Mopy/bash/images/ICON_LICENSES.md' file for their licenses.
+
 ======================
 Code From Dependencies
 ======================

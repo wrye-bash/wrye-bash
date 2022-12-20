@@ -21,9 +21,8 @@
 #
 # =============================================================================
 from . import bEnableWizard
-from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
-from ..balt import colors
+from ..balt import colors, ImageWrapper
 from ..bolt import FName, top_level_dirs, text_wrap
 from ..bosh import faces, ModInfo, InstallerProject
 from ..fomod_schema import default_moduleconfig
@@ -183,7 +182,8 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_icon('off.red.dir'))
+        self.set_icon(ImageWrapper(bass.dirs['images'].join(
+            'diamond_red_off.png')).GetIcon())
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self._project_name.text_content)
 
@@ -198,15 +198,16 @@ class CreateNewProject(DialogWindow):
             self._project_name.tooltip = None
         self.ok_button.enabled = not existing
 
-    def OnCheckBoxChange(self, is_checked=None):
+    def OnCheckBoxChange(self, _is_checked=None):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
         if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
-            img_key = f'off.red.dir' \
-                      f'{self._check_wizard.is_checked and ".wiz" or ""}'
+            img_fname = ('diamond_red_off' +
+                         ('_wiz' if self._check_wizard.is_checked else ''))
         else:
-            img_key = 'off.grey.dir'
-        self.set_icon(installercons.get_icon(img_key))
+            img_fname = 'diamond_grey_off'
+        self.set_icon(ImageWrapper(bass.dirs['images'].join(
+            img_fname + '.png')).GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """

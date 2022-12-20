@@ -608,12 +608,12 @@ class TESCS_Button(_ExeButton):
         cse_path = bass.dirs['mods'].join('obse', 'plugins',
             'Construction Set Extender.dll')
         if cse_path.exists():
-            version = cse_path.strippedVersion
-            if version != (0,):
-                version = '.'.join([f'{x}' for x in version])
-            else:
-                version = ''
-            tip_ += f' + CSE {version}'
+            cse_version = ''
+            if bass.settings['bash.statusbar.showversion']:
+                cse_ver = cse_path.strippedVersion
+                if cse_ver != (0,):
+                    cse_version = ' ' + '.'.join([f'{x}' for x in cse_ver])
+            tip_ += f' + CSE{cse_version}'
         return tip_
 
     def _app_button_execute(self):
@@ -756,7 +756,7 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    imageKey = 'doc.%s'
+    imageKey = 'doc_browser.%s'
     _tip = _('Doc Browser')
 
     def Execute(self):
@@ -768,7 +768,7 @@ class App_DocBrowser(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
     """Show settings dialog."""
-    imageKey, _tip = u'settingsbutton.%s', _(u'Settings')
+    imageKey, _tip = 'settings_button.%s', _('Settings')
 
     def GetBitmapButton(self, window, image=None, onRClick=None):
         return super(App_Settings, self).GetBitmapButton(
@@ -781,11 +781,7 @@ class App_Settings(StatusBar_Button):
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u'Restart')
-
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        iconSize = bass.settings[u'bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(window,
-            bass.wx_bitmap[('ART_UNDO', iconSize)], onRClick)
+    imageKey = 'reload.%s'
 
     def Execute(self): Link.Frame.Restart()
 
@@ -793,7 +789,7 @@ class App_Restart(StatusBar_Button):
 class App_PluginChecker(StatusBar_Button):
     """Show plugin checker."""
     _tip = _(u'Plugin Checker')
-    imageKey = u'modchecker.%s'
+    imageKey = 'plugin_checker.%s'
 
     def Execute(self):
         PluginChecker.create_or_raise()

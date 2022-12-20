@@ -31,7 +31,6 @@ from .base_components import _AComponent, Color
 from .buttons import Button, CancelButton, DeselectAllButton, \
     SelectAllButton, OkButton
 from .checkables import CheckBox
-from .functions import staticBitmap # yuck
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VLayout, \
     VBoxedLayout
 from .misc_components import HorizontalLine, DatePicker, TimePicker
@@ -50,6 +49,7 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
 
     def __init__(self, parent, message, sizes_dict):
         super().__init__(parent, sizes_dict=sizes_dict)
+        from ..balt import staticBitmap ##: yuck
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
         move_button = Button(self, btn_label=_(u'Move'))

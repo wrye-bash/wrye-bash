@@ -108,9 +108,3 @@ def get_key_down(key_char): # type: (str) -> bool
 def get_shift_down(): # type: () -> bool
     """Returns True if the Shift key is currently down."""
     return _wx.GetKeyState(_wx.WXK_SHIFT)
-
-# TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bitmap=None):
-    """Tailored to current usages - IAW: do not use."""
-    return _wx.StaticBitmap(_AComponent._resolve(parent),
-        bitmap=bass.wx_bitmap['ART_WARNING'] if bitmap is None else bitmap)

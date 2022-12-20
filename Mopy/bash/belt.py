@@ -30,14 +30,13 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .balt import ItemLink, Links
+from .balt import ItemLink, Links, images, staticBitmap
 from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
-    WizardPage, staticBitmap
+    ListBox, CheckListBox, PictureWithCursor, WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -420,8 +419,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [ImageWrapper(bass.dirs['images'].join(x)).get_bitmap() for x in
-                (u'error_cross_24.png', u'checkmark_24.png')]
+        bmps = [images[i].get_bitmap() for i in (
+            'error_cross.16', 'checkmark.16')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -1367,10 +1366,12 @@ class WryeParser(ScriptParser.Parser):
             imageJoin = bass.dirs[u'installers'].join(self._path).join
         for i in images_:
             # Try looking inside the package first, then look if it's using one
-            # of the images packaged with Wrye Bash (from Mopy/bash/images)
+            # of the images packaged with Wrye Bash (from
+            # Mopy/bash/images/Wizard Images)
             wiz_img_path = imageJoin(i)
-            if not wiz_img_path.is_file():
-                std_img_path = bass.dirs[u'images'].join(i)
+            if (i.lower().startswith('wizard images') and
+                    not wiz_img_path.is_file()):
+                std_img_path = bass.dirs['images'].join(i)
                 if std_img_path.is_file():
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
