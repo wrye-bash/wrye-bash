@@ -38,7 +38,7 @@ __author__ = u'Infernio'
 import copy
 from collections import defaultdict
 from struct import Struct
-from ..bolt import Flags, unpack_4s, unpack_int, AFile
+from ..bolt import Flags, flag, unpack_4s, unpack_int, AFile
 from ..exception import DDSError
 
 # Constants
@@ -61,38 +61,37 @@ _MAGIC_GRGB = b'GRGB'
 _MAGIC_YUY2 = b'YUY2'
 _MAGIC_BC6H = b'BC6H'
 
-_CAPS_FLAGS = Flags.from_names(
-    (3,  u'DDSCAPS_COMPLEX'), # 0x8
-    (12, u'DDSCAPS_TEXTURE'), # 0x1000
-    (22, u'DDSCAPS_MIPMAP'),  # 0x400000
-)
-_CAPS2_FLAGS = Flags.from_names(
-    (9,  u'DDSCAPS2_CUBEMAP'),           # 0x200
-    (10, u'DDSCAPS2_CUBEMAP_POSITIVEX'), # 0x400
-    (11, u'DDSCAPS2_CUBEMAP_NEGATIVEX'), # 0x800
-    (12, u'DDSCAPS2_CUBEMAP_POSITIVEY'), # 0x1000
-    (13, u'DDSCAPS2_CUBEMAP_NEGATIVEY'), # 0x2000
-    (14, u'DDSCAPS2_CUBEMAP_POSITIVEZ'), # 0x4000
-    (15, u'DDSCAPS2_CUBEMAP_NEGATIVEZ'), # 0x8000
-    (21, u'DDSCAPS2_VOLUME'),            # 0x200000
-)
-_DDS_FLAGS = Flags.from_names(
-    (0,  u'DDSD_CAPS'),        # 0x1
-    (1,  u'DDSD_HEIGHT'),      # 0x2
-    (2,  u'DDSD_WIDTH'),       # 0x4
-    (3,  u'DDSD_PITCH'),       # 0x8
-    (12, u'DDSD_PIXELFORMAT'), # 0x1000
-    (17, u'DDSD_MIPMAPCOUNT'), # 0x20000
-    (19, u'DDSD_LINEARSIZE'),  # 0x80000
-)
-_PF_FLAGS = Flags.from_names(
-    (0,  u'DDPF_ALPHAPIXELS'), # 0x1
-    (1,  u'DDPF_ALPHA'),       # 0x2
-    (2,  u'DDPF_FOURCC'),      # 0x4
-    (6,  u'DDPF_RGB'),         # 0x40
-    (9,  u'DDPF_YUV'),         # 0x200
-    (17, u'DDPF_LUMINANCE'),   # 0x20000
-)
+class _CAPS_FLAGS(Flags):
+    DDSCAPS_COMPLEX: bool = flag(3)    # 0x8
+    DDSCAPS_TEXTURE: bool = flag(12)   # 0x1000
+    DDSCAPS_MIPMAP: bool = flag(22)    # 0x400000
+
+class _CAPS2_FLAGS(Flags):
+    DDSCAPS2_CUBEMAP: bool = flag(9)   # 0x200
+    DDSCAPS2_CUBEMAP_POSITIVEX: bool    # 0x400
+    DDSCAPS2_CUBEMAP_NEGATIVEX: bool    # 0x800
+    DDSCAPS2_CUBEMAP_POSITIVEY: bool    # 0x1000
+    DDSCAPS2_CUBEMAP_NEGATIVEY: bool    # 0x2000
+    DDSCAPS2_CUBEMAP_POSITIVEZ: bool    # 0x4000
+    DDSCAPS2_CUBEMAP_NEGATIVEZ: bool    # 0x8000
+    DDSCAPS2_VOLUME: bool = flag(21)   # 0x200000
+
+class _DDS_FLAGS(Flags):
+    DDSD_CAPS: bool                     # 0x1
+    DDSD_HEIGHT: bool                   # 0x2
+    DDSD_WIDTH: bool                    # 0x4
+    DDSD_PITCH: bool                    # 0x8
+    DDSD_PIXELFORMAT: bool = flag(12)  # 0x1000
+    DDSD_MIPMAPCOUNT: bool = flag(17)  # 0x20000
+    DDSD_LINEARSIZE: bool = flag(19)   # 0x80000
+
+class _PF_FLAGS(Flags):
+    DDPF_ALPHAPIXELS: bool              # 0x1
+    DDPF_ALPHA: bool                    # 0x2
+    DDPF_FOURCC: bool                   # 0x4
+    DDPF_RGB: bool = flag(6)           # 0x40
+    DDPF_YUV: bool = flag(9)           # 0x200
+    DDPF_LUMINANCE: bool = flag(17)    # 0x20000
 
 # PY3: These are redundant, see above - IntFlag would help
 _DDPF_ALPHAPIXELS = _PF_FLAGS(0x1)

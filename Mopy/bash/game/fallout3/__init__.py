@@ -134,11 +134,6 @@ class Fallout3GameInfo(PatchGame):
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
-        biped_flag_names = (
-            'head', 'hair', 'upperBody', 'leftHand', 'rightHand', 'weapon',
-            'pipboy', 'backpack', 'necklace', 'headband', 'hat', 'eyeGlasses',
-            'noseRing', 'earrings', 'mask', 'choker', 'mouthObject',
-            'bodyAddOn1', 'bodyAddOn2', 'bodyAddOn3')
         canBash = True
         canEditHeader = True
         generate_temp_child_onam = True
@@ -1031,8 +1026,6 @@ class Fallout3GameInfo(PatchGame):
         'AssortedTweak_GunsUseISAnimation',
         'AssortedTweak_BookWeight',
     }
-    ##: Taken from valda's version, investigate
-    nonplayable_biped_flags = {'pipboy'}
     not_playable_flag = ('generalFlags', 'notPlayable')
     static_attenuation_rec_type = b'SOUN'
 

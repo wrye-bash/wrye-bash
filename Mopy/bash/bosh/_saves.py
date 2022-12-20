@@ -31,7 +31,7 @@ from itertools import starmap, repeat
 
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
+from ..bolt import Flags, flag, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8, dict_sort, sig_to_str
 from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, FormId, \
@@ -48,18 +48,18 @@ class SreNPC(object):
     """NPC change record."""
     __slots__ = ('form', 'health', 'unused2', 'attributes', 'acbs', 'spells',
                  'factions', 'full', 'ai', 'skills', 'modifiers')
-    sre_flags = Flags.from_names(
-        (0, 'form'),
-        (2, 'health'),
-        (3, 'attributes'),
-        (4, 'acbs'),
-        (5, 'spells'),
-        (6, 'factions'),
-        (7, 'full'),
-        (8, 'ai'),
-        (9, 'skills'),
-        (28, 'modifiers'),
-    )
+
+    class sre_flags(Flags):
+        form: bool
+        health: bool = flag(2)
+        attributes: bool
+        acbs: bool
+        spells: bool
+        factions: bool
+        full: bool
+        ai: bool
+        skills: bool
+        modifiers: bool = flag(28)
 
     class ACBS(object):
         __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
@@ -219,12 +219,32 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags.from_names('form', 'baseid', 'moved', 'havocMoved',
-        'scale', 'allExtra', 'lock', 'owner', 'unk8', 'unk9', 'mapMarkerFlags',
-        'hadHavokMoveFlag', 'unk12', 'unk13', 'unk14', 'unk15', 'emptyFlag',
-        'droppedItem', 'doorDefaultState', 'doorState', 'teleport',
-        'extraMagic', 'furnMarkers', 'oblivionFlag', 'movementExtra',
-        'animation', 'script', 'inventory', 'created', 'unk29', 'enabled')
+
+    class recordFlags(Flags):
+        form: bool
+        baseid: bool
+        moved: bool
+        havokMoved: bool
+        scale: bool
+        allExtra: bool
+        lock: bool
+        owner: bool
+        mapMarkerFlags: bool = flag(10)
+        hadHavokMoveFlag: bool
+        emptyFlag: bool = flag(16)
+        droppedItem: bool
+        doorDefaultSate: bool
+        doorState: bool
+        teleport: bool
+        extraMagic: bool
+        furnMarkers: bool
+        oblivionFlag: bool
+        movementExtra: bool
+        animation: bool
+        script: bool
+        inventory: bool
+        created: bool
+        enabled: bool = flag(30)
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo

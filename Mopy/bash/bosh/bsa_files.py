@@ -199,18 +199,18 @@ class BsaHeader(_Header):
          u'file_flags')
     formats = [(f, struct_calcsize(f)) for f in [u'I'] * 8]
     header_size = 36
-    _archive_flags = Flags.from_names(
-        u'include_directory_names',
-        u'include_file_names',
-        u'compressed_archive',
-        u'retain_directory_names',
-        u'retain_file_names',
-        u'retain_file_name_offsets',
-        u'xbox360_archive',
-        u'retain_strings_during_startup',
-        u'embed_file_names',
-        u'xmem_codec',
-    )
+
+    class _archive_flags(Flags):
+        include_directory_names: bool
+        include_file_names: bool
+        compressed_archive: bool
+        retain_directory_names: bool
+        retain_file_names: bool
+        retain_file_name_offsets: bool
+        xbox360_archive: bool
+        retain_strings_during_startup: bool
+        embed_file_names: bool
+        xmem_codec: bool
 
     def load_header(self, ins, bsa_name):
         super(BsaHeader, self).load_header(ins, bsa_name)

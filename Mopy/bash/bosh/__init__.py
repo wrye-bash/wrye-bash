@@ -428,23 +428,23 @@ class ModInfo(FileInfo):
     def set_esm_flag(self, new_esm_flag):
         """Changes this file's ESM flag to the specified value. Recalculates
         ONAM info if necessary."""
-        self.header.flags1.esm = new_esm_flag
+        self.header.flags1.esm_flag = new_esm_flag
         self._recalc_esm()
         self.update_onam()
         self.writeHeader()
 
     def _recalc_esm(self):
         """Forcibly recalculates the cached ESM status."""
-        self._has_esm_flag = self.header.flags1.esm
+        self._has_esm_flag = self.header.flags1.esm_flag
 
     def has_esl_flag(self):
         """Check if the mod info is an ESL based on ESL flag alone - header
         must be set."""
-        return self.header.flags1.eslFile
+        return self.header.flags1.esl_flag
 
     def set_esl_flag(self, new_esl_flag):
         """Changes this file's ESL flag to the specified value."""
-        self.header.flags1.eslFile = new_esl_flag
+        self.header.flags1.esl_flag = new_esl_flag
         self._recalc_esl()
         self.writeHeader()
 
@@ -847,7 +847,7 @@ class ModInfo(FileInfo):
             returned by _string_files_paths (i.e. starting with 'strings/'. If
             specified, no stat calls will occur to determine if loose strings
             files exist."""
-        if not self.header.flags1.hasStrings: return False
+        if not getattr(self.header.flags1, 'localized', False): return False
         lang = oblivionIni.get_ini_language()
         bsa_infos = self._find_string_bsas(cached_ini_info)
         info_dir_join = self.info_dir.join
@@ -2805,9 +2805,9 @@ class ModInfos(FileInfos):
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         if esm_flag:
-            newFile.tes4.flags1.esm = True
+            newFile.tes4.flags1.esm_flag = True
         if esl_flag:
-            newFile.tes4.flags1.eslFile = True
+            newFile.tes4.flags1.esl_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
             self.new_info(newName, notify_bain=True)  # notify just in case...

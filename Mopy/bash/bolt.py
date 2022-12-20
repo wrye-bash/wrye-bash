@@ -48,7 +48,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import Iterable
+from typing import Iterable, ClassVar, Annotated, get_type_hints, Literal
 from urllib.parse import quote
 from zlib import crc32
 
@@ -1349,31 +1349,60 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Flags(object):
-    """Represents a flag field."""
+_not_a_flag = object()  # sentinel for Flags typhints
+
+def flag(index: int | None) -> bool:
+    """Type erasing method for assigning Field index values."""
+    return index    # type: ignore
+
+class Flags:
+    """Represents a flag field.  New Flags classes are defined by subclassing.
+
+    When subclassing, simply typehint attribute names with `bool` to
+    have these as aliases for bits in the Flags instance. Bit 0 refers to the
+    least significant bit, and successive names increment from there. To
+    override which bit an attribute maps to, set it using `= flag(bit)`.
+
+    To support Flags types whose fields are determined at runtime, you can
+    specify `= flag(None)` to indicate that the index should be incremented,
+    but not name associated with that bit of the field. This is intended for
+    usage with static deciders like `fnv_only` and `sse_only`."""
     __slots__ = ('_field',)
-    _names = {}
+    _names: ClassVar[dict[str, int]] = {}
 
     @classmethod
-    def from_names(cls, *names):
-        """Return Flag subtype with specified names to index dictionary.
-        Indices range may not be contiguous.
-        Names are either strings or (index,name) tuples.
-        E.g., Flags.from_names('isQuest', 'isHidden', None, (4, 'isDark'),
-        (7, 'hasWater'))."""
-        namesDict = {}
-        for index,flg_name in enumerate(names):
-            if isinstance(flg_name,tuple):
-                namesDict[flg_name[1]] = flg_name[0]
-            elif flg_name: #--skip if "name" is 0 or None
-                namesDict[flg_name] = index
-        class __Flags(cls):
-            __slots__ = ()
-            _names = namesDict
-        return __Flags
+    def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
+        names_dict = {}
+        current_index = 0
+        hints = get_type_hints(cls)
+        for attr, hint in hints.items():
+            if hint is bool:
+                override = getattr(cls, attr, _not_a_flag)
+                if override is not _not_a_flag:
+                    if override is None:
+                        # None indicates just increment the index
+                        current_index += 1
+                        continue
+                    # Error checks
+                    if not isinstance(override, int):
+                        raise TypeError(
+                            f'{cls.__name__} flag field index must '
+                            f'be an integer or None, got {override!r}'
+                        )
+                    elif override < 0:
+                        raise ValueError(
+                            f'{cls.__name__} flag field index must be a '
+                            f'positive integer None, got {override}'
+                        )
+                    else:
+                        current_index = override
+                names_dict[attr] = current_index
+                current_index += 1
+        cls._names = names_dict
 
     #--Generation
-    def __init__(self, value=0):
+    def __init__(self, value: int | Flags = 0): # py 3.11: hint with int | Self
         """Set the internal int value."""
         object.__setattr__(self, u'_field', int(value))
 
@@ -1420,13 +1449,17 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self, attr_key):
-        """Get value by flag name. E.g. flags.isQuestItem"""
+    def __getattribute__(self, attr_key: str):
+        """Get value by flag name. E.g. flags.isQuestItem.
+        Since some flag names may have values set on the class itself via
+        `flagname = flag(bit)`, we can't use __getattr__ as accessing these
+        won't raise AttributeError (which leads to __getattr__ being called).
+        """
         try:
-            index = self.__class__._names[attr_key]
-            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
+            index = type(self)._names[attr_key]
+            return (super().__getattribute__('_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(attr_key)
+            return super().__getattribute__(attr_key)
 
     def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
@@ -1481,7 +1514,7 @@ class Flags(object):
         return f'0x{self.hex()} ({all_flags})'
 
 class TrimmedFlags(Flags):
-    """Flag subtype that will discard unnamed flags on __init__ and dump."""
+    """Flags subtype that will discard unnamed flags on __init__ and dump."""
     __slots__ = ()
 
     def __init__(self, value=0):

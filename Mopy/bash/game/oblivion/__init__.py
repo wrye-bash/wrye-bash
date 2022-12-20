@@ -176,10 +176,6 @@ class OblivionGameInfo(PatchGame):
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
-        biped_flag_names = (
-            'head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot',
-            'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon',
-            'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
         canBash = True
         canEditHeader = True
         sort_lvsp_after_spel = True
@@ -1072,8 +1068,6 @@ class OblivionGameInfo(PatchGame):
         'AssortedTweak_SEFFIcon',
         'AssortedTweak_BookWeight',
     }
-    nonplayable_biped_flags = {'backWeapon', 'quiver', 'weapon', 'torch',
-                               'rightRing', 'sideWeapon'}
     not_playable_flag = ('biped_flags', 'notPlayable')
     staff_condition = ('weaponType', 4)
     static_attenuation_rec_type = b'SOUN'

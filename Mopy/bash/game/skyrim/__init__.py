@@ -175,14 +175,6 @@ class SkyrimGameInfo(PatchGame):
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):
-        biped_flag_names = (
-            'head', 'hair', 'body', 'hands', 'forearms', 'amulet', 'ring',
-            'feet', 'calves', 'shield', 'addon_tail', 'long_hair', 'circlet',
-            'addon_ears', 'dragon_head', 'dragon_lwing', 'dragon_rwing',
-            'dragon_body', 'bodyaddon7', 'bodyaddon8', 'decapitate_head',
-            'decapitate', 'bodyaddon9', 'bodyaddon10', 'bodyaddon11',
-            'bodyaddon12', 'bodyaddon13', 'bodyaddon14', 'bodyaddon15',
-            'bodyaddon16', 'bodyaddon17', 'fx01')
         canBash = True
         canEditHeader = True
         generate_temp_child_onam = True

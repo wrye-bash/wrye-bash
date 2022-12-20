@@ -796,7 +796,7 @@ class MelUnion(MelBase):
     # unique attributes on the records
     _union_index = 0
 
-    def __init__(self, element_mapping, decider=SignatureDecider(),
+    def __init__(self, element_mapping, decider: ADecider=SignatureDecider(),
                  fallback=None):
         """Creates a new MelUnion with the specified element mapping and
         optional parameters. See the class docstring for extensive information

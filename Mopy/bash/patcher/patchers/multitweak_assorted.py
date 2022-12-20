@@ -149,9 +149,7 @@ class _APlayableTweak(MultiTweakItem):
 
     @staticmethod
     def _any_body_flag_set(record):
-        return any(getattr(record.biped_flags, bd_flag) for bd_flag
-                   in (set(bush.game.Esp.biped_flag_names) -
-                       bush.game.nonplayable_biped_flags))
+        return record.biped_flags.any_body_flag_set
 
     @staticmethod
     def _should_skip(test_str):

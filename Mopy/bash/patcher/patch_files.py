@@ -334,7 +334,7 @@ class PatchFile(ModFile):
         # getNextObject and so properly increments nextObject.
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
                 self.tes4.nextObject <= 0xFFF):
-            self.tes4.flags1.eslFile = True
+            self.tes4.flags1.esl_flag = True
             msg = '\n' + _('This patch has been automatically ESL-flagged to '
                            'save a load order slot.')
             self.tes4.description += msg

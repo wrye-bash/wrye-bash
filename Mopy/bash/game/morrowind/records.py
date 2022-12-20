@@ -24,7 +24,7 @@
 and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 
-from ...bolt import Flags
+from ...bolt import Flags, flag
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     AMreHeader, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO, \
@@ -51,32 +51,31 @@ class MelMWId(MelString): # needed everywhere, so put it early
 #------------------------------------------------------------------------------
 class MelAIData(MelStruct):
     """Handles the AIDT subrecord shared between CREA and NPC_."""
-    _ai_flags = Flags.from_names(
-        u'ai_weapon',
-        u'ai_armor',
-        u'ai_clothing',
-        u'ai_books',
-        u'ai_ingredient',
-        u'ai_picks',
-        u'ai_probes',
-        u'ai_lights',
-        u'ai_apparatus',
-        u'ai_repair_items',
-        u'ai_misc',
-        u'ai_spells',
-        u'ai_magic_items',
-        u'ai_potions',
-        u'ai_training',
-        u'ai_spellmaking',
-        u'ai_enchanting',
-        u'ai_repair',
-    )
+    class _ai_flags(Flags):
+        ai_weapon: bool
+        ai_armor: bool
+        ai_clothing: bool
+        ai_books: bool
+        ai_ingredient: bool
+        ai_picks: bool
+        ai_probes: bool
+        ai_lights: bool
+        ai_apparatus: bool
+        ai_repair_items: bool
+        ai_misc: bool
+        ai_spells: bool
+        ai_magic_items: bool
+        ai_potions: bool
+        ai_training: bool
+        ai_spellmaking: bool
+        ai_enchanting: bool
+        ai_repair: bool
 
     def __init__(self):
         super(MelAIData, self).__init__(b'AIDT',
             [u'B', u's', u'3B', u'3s', u'I'], u'ai_hello',
             u'aidt_unknown1', u'ai_fight', u'ai_flee', u'ai_alarm',
-            u'aidt_unknown2', (self._ai_flags, u'ai_flags')),
+            u'aidt_unknown2', (self._ai_flags, u'ai_flags'))
 
 #------------------------------------------------------------------------------
 class MelAIAccompanyPackage(MelOptStruct):
@@ -314,7 +313,9 @@ class MreBody(MelRecord):
     """Body Parts."""
     rec_sig = b'BODY'
 
-    _part_flags = Flags.from_names(u'part_female', u'part_playable')
+    class _part_flags(Flags):
+        part_female: bool
+        part_playable: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -329,7 +330,8 @@ class MreBook(MelRecord):
     """Book."""
     rec_sig = b'BOOK'
 
-    _scroll_flags = Flags.from_names(u'is_scroll')
+    class _scroll_flags(Flags):
+        is_scroll: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -361,12 +363,11 @@ class MreCell(AMreCell):
     """Cell."""
     # TODO ref_types and co?
 
-    _cell_flags = Flags.from_names(
-        (0, u'is_interior_cell'),
-        (1, u'has_water'),
-        (2, u'illegal_to_sleep_here'),
-        (7, u'behave_like_exterior'),
-    )
+    class _cell_flags(Flags):
+        is_interior_cell: bool = flag(0)
+        has_water: bool = flag(1)
+        illegal_to_sleep_here: bool = flag(2)
+        behave_like_exterior: bool = flag(7)
 
     melSet = MelSet(
         MelMWId(),
@@ -406,27 +407,28 @@ class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    _class_flags = Flags.from_names(u'class_playable')
-    _ac_flags = Flags.from_names(
-        u'ac_weapon',
-        u'ac_armor',
-        u'ac_clothing',
-        u'ac_books',
-        u'ac_ingredients',
-        u'ac_picks',
-        u'ac_probes',
-        u'ac_lights',
-        u'ac_apparatus',
-        u'ac_repair_items',
-        u'ac_misc',
-        u'ac_spells',
-        u'ac_magic_items',
-        u'ac_potions',
-        u'ac_training',
-        u'ac_spellmaking',
-        u'ac_enchanting',
-        u'ac_repair',
-    )
+    class _class_flags(Flags):
+        class_playable: bool
+
+    class _ac_flags(Flags):
+        ac_weapon: bool
+        ac_armor: bool
+        ac_clothing: bool
+        ac_books: bool
+        ac_ingredients: bool
+        ac_picks: bool
+        ac_probes: bool
+        ac_lights: bool
+        ac_apparatus: bool
+        ac_repair_items: bool
+        ac_misc: bool
+        ac_spells: bool
+        ac_magic_items: bool
+        ac_potions: bool
+        ac_training: bool
+        ac_spellmaking: bool
+        ac_enchanting: bool
+        ac_repair: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -462,11 +464,10 @@ class MreCont(MelRecord):
     """Container."""
     rec_sig = b'CONT'
 
-    _cont_flags = Flags.from_names(
-        u'cont_organic',
-        u'cont_respawns',
-        u'default_unknown', # always set
-    )
+    class _cont_flags(Flags):
+        cont_organic: bool
+        cont_respawns: bool
+        default_unknown: bool   # always set
 
     melSet = MelSet(
         MelMWId(),
@@ -485,16 +486,15 @@ class MreCrea(MelRecord):
 
     # Names match those of MreCrea._flags in later games
     # Default is 0x48 (walks | crea_none)
-    _crea_flags = Flags.from_names(
-        'biped',
-        'respawn',
-        'weaponAndShield',
-        'crea_none',
-        'swims',
-        'flies',
-        'walks',
-        'essential',
-    )
+    class _crea_flags(Flags):
+        biped: bool
+        respawn: bool
+        weaponAndShield: bool
+        crea_none: bool
+        swims: bool
+        flies: bool
+        walks: bool
+        essential: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -691,11 +691,10 @@ class MreLand(MelRecord):
     """Landscape."""
     rec_sig = b'LAND'
 
-    _data_type_flags = Flags.from_names( ##: Shouldn't we set/use these?
-        u'include_vnml_vhgt_wnam',
-        u'include_vclr',
-        u'include_vtex',
-    )
+    class _data_type_flags(Flags): ##: Shouldn't we set/use these?
+        include_vnml_vhgt_wnam: bool
+        include_vclr: bool
+        include_vtex: bool
 
     ##: No MelMWId, will that be a problem?
     melSet = MelSet(
@@ -742,10 +741,16 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _light_flags = Flags.from_names('light_dynamic', 'light_can_take',
-        'light_negative', 'light_flickers', 'light_fire',
-        'light_off_by_default', 'light_flickers_slow', 'light_pulses',
-        'light_pulses_slow')
+    class _light_flags(Flags):
+        light_dynamic: bool
+        light_can_take: bool
+        light_negative: bool
+        light_flickers: bool
+        light_fire: bool
+        light_off_by_default: bool
+        light_flickers_slow: bool
+        light_pulses: bool
+        light_pulses_slow: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -790,11 +795,10 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    _mgef_flags = Flags.from_names(
-        (9,  u'spellmaking'),
-        (10, u'enchanting'),
-        (11, u'negative'),
-    )
+    class _mgef_flags(Flags):
+        spellmaking: bool = flag(9)
+        enchanting: bool = flag(10)
+        negative: bool = flag(11)
 
     ##: No MelMWId, will that be a problem?
     ##: This will be a pain. They're hardcoded like in Oblivion, but use an int
@@ -840,13 +844,12 @@ class MreNpc_(MelRecord):
     rec_sig = b'NPC_'
 
     # Names match those of MreNpc_._flags in later games
-    _npc_flags = Flags.from_names(
-        'female',
-        'essential',
-        'respawn',
-        'default_unknown', # always set
-        'autoCalc',
-    )
+    class _npc_flags(Flags):
+        female: bool
+        essential: bool
+        respawn: bool
+        default_unknown: bool # always set
+        autoCalc: bool
 
     class MelNpcData(MelLists):
         """Converts attributes and skills into lists."""
@@ -927,7 +930,9 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    _race_flags = Flags.from_names(u'playable', u'beast_race')
+    class _race_flags(Flags):
+        playable: bool
+        beast_race: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -1041,11 +1046,10 @@ class MreSpel(MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
 
-    _spell_flags = Flags.from_names(
-        u'auto_calc',
-        u'pc_start',
-        u'always_suceeds',
-    )
+    class _spell_flags(Flags):
+        auto_calc: bool
+        pc_start: bool
+        always_suceeds: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -1081,8 +1085,9 @@ class MreWeap(MelRecord):
     """Weapon."""
     rec_sig = b'WEAP'
 
-    _weapon_flags = Flags.from_names(u'ignore_normal_weapon_resistance',
-                                     u'is_silver')
+    class _weapon_flags(Flags):
+        ignore_normal_weapon_resistance: bool
+        is_silver: bool
 
     melSet = MelSet(
         MelMWId(),

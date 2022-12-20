@@ -38,9 +38,9 @@ from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
     MelColor, MelDebrData, MelFull, MelIcon, MelBounds, MelColorInterpolator, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId
+from .utils_constants import FID, FormId, NotPlayableFlag
 from .. import bolt, exception
-from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
+from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, flag, \
     remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
 
 #------------------------------------------------------------------------------
@@ -123,6 +123,9 @@ class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
     _post_masters_sigs: set[bytes]
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        esm_flag: bool = flag(0)
 
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.
@@ -253,14 +256,21 @@ class AMreImad(MelRecord):
     counters programmatically."""
     rec_sig = b'IMAD'
 
-    imad_dof_flags = Flags.from_names(
-        'mode_front',
-        'mode_back',
-        'no_sky',
-        'blur_radius_bit_2',
-        'blur_radius_bit_1',
-        'blur_radius_bit_0',
-    )
+    class imad_dof_flags(Flags):
+        mode_front: bool
+        mode_back: bool
+        no_sky: bool
+        blur_radius_bit_2: bool
+        blur_radius_bit_1: bool
+        blur_radius_bit_0: bool
+
+        @property
+        def blur_radius(self) -> int:
+            return self._field & 0b111
+
+        @blur_radius.setter
+        def blur_radius(self, new_radius: int) -> None:
+            self._field = (self._field & ~0b111) | (new_radius & 0b111)
 
     dnam_attrs1 = (
         'eye_adapt_speed_mult', 'eye_adapt_speed_add',
@@ -471,6 +481,11 @@ class AMreCell(MelRecord):
     ref_types = set()
     interior_temp_extra = set()
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        persistent: bool = flag(10)
+        off_limits: bool = flag(17) # interior CELL
+        cant_wait: bool = flag(19)
+
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
         For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
@@ -494,6 +509,9 @@ class AMreWrld(MelRecord):
     ref_types = set() # same as AMreCell
     exterior_temp_extra = [] # exterior cell temp cell references
     wrld_children_extra = [] # record sigs that appear in wrld children grup
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        cant_wait: bool = flag(19)
 
     @classmethod
     def nested_records_sigs(cls):
@@ -521,8 +539,10 @@ class MreColl(MelRecord):
     """Collision Layer."""
     rec_sig = b'COLL'
 
-    _coll_flags = Flags.from_names('trigger_volume', 'sensor',
-        'navmesh_obstacle')
+    class _coll_flags(Flags):
+        trigger_volume: bool
+        sensor: bool
+        navmesh_obstacle: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -555,7 +575,10 @@ class MreDlbr(MelRecord):
     """Dialog Branch."""
     rec_sig = b'DLBR'
 
-    _dlbr_flags = Flags.from_names('top_level', 'blocking', 'exclusive')
+    class _dlbr_flags(Flags):
+        top_level: bool
+        blocking: bool
+        exclusive: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -586,8 +609,10 @@ class MreDual(MelRecord):
     """Dual Cast Data."""
     rec_sig = b'DUAL'
 
-    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
-        'projectile_scale', 'explosion_scale')
+    class _inherit_scale_flags(Flags):
+        hit_effect_art_scale: bool
+        projectile_scale: bool
+        explosion_scale: bool
 
     melSet = MelSet(
         MelEdid(),
@@ -603,8 +628,13 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    # not_male and not_female exist since FO3
-    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
+    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
+        pass # not_playable exists since FO3
+
+    class _eyes_flags(Flags):
+        playable: bool
+        not_male: bool # since FO3
+        not_female: bool # since FO3
 
     melSet = MelSet(
         MelEdid(),
@@ -640,6 +670,9 @@ class MreFsts(MelRecord):
 class MreGlob(MelRecord):
     """Global."""
     rec_sig = b'GLOB'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        constant: bool = flag(6)    # since FO3? definitely FO4
 
     melSet = MelSet(
         MelEdid(),
