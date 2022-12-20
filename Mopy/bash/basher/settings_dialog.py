@@ -1046,8 +1046,8 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.maxItemsOpen.continue',
         _('[Installers] Installing unconfigured complex packages'):
             'bash.installers.nothing_installed.continue',
-        _(u"[Installers] Opening a mod's page at the "
-          u'%s') % bush.game.nexusName:
+        _("[Installers] Opening a mod's page at the %(target_nexus_name)s") % {
+            'target_nexus_name': bush.game.nexusName}:
             bush.game.nexusKey,
         _(u"[Installers] Opening a mod's page at TES Alliance"):
             u'bash.installers.openTESA.continue',
@@ -1076,9 +1076,13 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
-        _(u"[Mods] Renaming a plugin to something that %s can't "
-          u'load') % bush.game.displayName:
-            u'bash.rename.isBadFileName.continue',
+        # Strip off the '(GOG)' etc. suffixes for display names
+        ##: Game handling! These different display names shouldn't exist and
+        # such games should instead just show up as 'variants' of the main game
+        # in the GUI
+        _("[Mods] Renaming a plugin to something that %(game_name)s can't "
+          'load') % {'game_name': bush.game.displayName.split('(')[0].strip()}:
+            'bash.rename.isBadFileName.continue',
         _(u'[Mods] Reordering plugins by name'):
             u'bash.sortMods.continue',
         _(u"[Mods] Replacing a plugin's FormIDs based on a text file"):
@@ -1121,6 +1125,12 @@ class ConfirmationsPage(_AFixedPage):
                  _(u'Stats'):        u'stats'}.items():
         _confirmations[_(u'[Mods] Importing %s from a text '
                          u'file') % k] = u'bash.%s.import.continue' % v
+    # Detect parentheses in the confirmation names, which will cause problems
+    # when we go to strip out the internal keys
+    for conf_key in _confirmations:
+        if '(' in conf_key or ')' in conf_key:
+            raise SyntaxError(f'_confirmations keys may not contain '
+                              f'parentheses (offending key: {conf_key!r}')
     _setting_ids = {u'confirmed_prompts', u'drop_action', u'internal_keys'}
 
     def __init__(self, parent, page_desc):
