@@ -127,8 +127,8 @@ class _Mods_DeactivateAll(_AMods_ActivePlugins):
     def Execute(self):
         self._select_exact([])
 
-class _Mods_ActivateSelected(_AMods_ActivePlugins):
-    _text = _('Activate Selected')
+class _Mods_ActivateOnlySelected(_AMods_ActivePlugins):
+    _text = _('Activate Only Selected')
     _help = _('Activate only the currently selected plugins.')
 
     def Execute(self):
@@ -205,7 +205,7 @@ class Mods_ActivePlugins(MenuLink):
         super().__init__()
         self.append(_Mods_ActivateAll())
         self.append(_Mods_ActivateNonMergeable())
-        self.append(_Mods_ActivateSelected())
+        self.append(_Mods_ActivateOnlySelected())
         self.append(_Mods_DeactivateAll())
         self.append(SeparatorLink())
         self.append(_Mods_SaveActivePluginsList(self))

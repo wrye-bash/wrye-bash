@@ -2612,6 +2612,8 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         # Skip .esu files, those can't be activated
+        ##: This .esu handling needs to be centralized - sprinkled all over
+        # actives related lo_* methods
         if fileName.fn_ext == u'.esu': return []
         try:
             espms_extra, esls_extra = load_order.check_active_limit(
@@ -2711,36 +2713,47 @@ class ModInfos(FileInfos):
         finally:
             if wip_actives: self.cached_lo_save_active(active=wip_actives)
 
-    def lo_activate_exact(self, modNames):
-        """Activate exactly the specified set of mods."""
-        modsSet, all_mods = set(modNames), set(self)
-        #--Ensure plugins that cannot be deselected stay selected
-        modsSet.update(load_order.must_be_active_if_present() & all_mods)
-        #--Deselect/select plugins
-        missingSet = modsSet - all_mods
-        toSelect = modsSet - missingSet
-        listToSelect = load_order.get_ordered(toSelect)
-        skipped_esms, skipped_esls = load_order.check_active_limit(
-            listToSelect)
-        skipped = skipped_esls | skipped_esms
-        #--Save
-        if skipped:
-            listToSelect = [x for x in listToSelect if x not in skipped]
-        self.cached_lo_save_active(active=listToSelect)
-        #--Done/Error Message
-        message = u''
-        if missingSet:
-            message += _(u'Some plugins could not be found and were '
-                         u'skipped:') + u'\n* '
-            message += u'\n* '.join(missingSet)
-        if skipped:
-            if missingSet: message += u'\n'
-            message += _(u'Load order is full, so some plugins were '
-                         u'skipped:') + u'\n* '
-            message += u'\n* '.join(skipped)
+    def lo_activate_exact(self, partial_actives: Iterable[FName]):
+        """Activate exactly the specified iterable of plugin names (plus
+        required masters and plugins that can't be deactivated). May contain
+        missing plugins. Returns an error/warning message or an empty
+        string."""
+        partial_set = set(partial_actives)
+        missing_plugins = partial_set - set(self)
+        wip_actives = partial_set - missing_plugins
+        def _add_masters(target_plugin):
+            """Recursively adds the target and its masters (and their masters,
+            and so on)."""
+            wip_actives.add(target_plugin)
+            for tp_master in self[target_plugin].masterNames:
+                if tp_master in self:
+                    _add_masters(tp_master)
+        # Expand the WIP actives to include all masters and required plugins
+        for present_plugin in list(wip_actives):
+            if present_plugin.fn_ext != '.esu':
+                _add_masters(present_plugin)
+        wip_actives |= load_order.must_be_active_if_present()
+        # Sort the result and check if we would hit an actives limit
+        ordered_wip = load_order.get_ordered(wip_actives)
+        trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
+        trimmed_plugins = trim_regular | trim_esl
+        # Trim off any excess plugins and commit
+        self._active_wip = [p for p in ordered_wip if p not in trimmed_plugins]
+        self.cached_lo_save_active()
+        message = ''
+        if missing_plugins:
+            message += _('Some plugins could not be found and were '
+                         'skipped:') + '\n* '
+            message += '\n* '.join(load_order.get_ordered(missing_plugins))
+        if trimmed_plugins:
+            if missing_plugins:
+                message += '\n'
+            message += _('Plugin list is full, so some plugins were '
+                         'skipped:') + '\n* '
+            message += '\n* '.join(load_order.get_ordered(trimmed_plugins))
         return message
 
-    def lo_reorder(self, partial_order):
+    def lo_reorder(self, partial_order: list[FName]):
         """Changes the load order to match the specified potentially invalid
         'partial' load order as much as possible. To that end, it filters out
         plugins that don't exist in the Data folder and tries to insert plugins
