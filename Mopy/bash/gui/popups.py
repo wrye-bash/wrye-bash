@@ -36,7 +36,8 @@ from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout
 from .misc_components import DatePicker, HorizontalLine, TimePicker
 from .multi_choices import CheckListBox
-from .text_components import Label, SearchBar, TextAlignment, TextField
+from .text_components import Label, SearchBar, TextAlignment, TextField, \
+    WrappingLabel
 from .top_level_windows import DialogWindow
 ##: Remove GPath, it's for file dialogs
 from ..bolt import GPath, dict_sort
@@ -240,6 +241,58 @@ class DirOpen(_FileDialog):
         # we call _FileDialog parent in mro so we need to stringify defaultPath
         super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
                                           style=st)
+
+# Deletion --------------------------------------------------------------------
+class DeletionDialog(DialogWindow): ##: wx.PopupWindow?
+    """A popup for deleting a list of """
+    _def_size = (290, 250)
+    _min_size = (290, 150)
+
+    def __init__(self, parent, *, sizes_dict, title: str,
+            items_to_delete: list[str], default_recycle: bool):
+        super().__init__(parent, sizes_dict=sizes_dict, title=title)
+        self._deletable_items = CheckListBox(self, choices=items_to_delete)
+        self._deletable_items.set_all_checkmarks(checked=True)
+        self._recycle_checkbox = CheckBox(self, _('Recycle'),
+            checked=default_recycle, chkbx_tooltip=_(
+                'Whether to move deleted items to the recycling bin or '
+                'permanently delete them.'))
+        self._recycle_checkbox.on_checked.subscribe(self._set_question_msg)
+        self._question_label = WrappingLabel(self, self._get_question_msg(),
+            wrap_initially=True)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._question_label,
+            HorizontalLine(self),
+            Label(self, _('Uncheck items to skip deleting them if desired.')),
+            (self._deletable_items, LayoutOptions(weight=1)),
+            HLayout(item_expand=True, items=[
+                self._recycle_checkbox,
+                Stretch(),
+                OkButton(self),
+                CancelButton(self),
+            ]),
+        ]).apply_to(self)
+
+    def _get_question_msg(self):
+        return (_('Delete these items to the recycling bin?')
+                if self._recycle_checkbox.is_checked else
+                _('Permanently delete these items? This operation cannot be '
+                  'undone!'))
+
+    def _set_question_msg(self, _checked):
+        """Internal callback for changing the question message whenever the
+        recycling checkbox is changed."""
+        self._question_label.label_text = self._get_question_msg()
+        self.update_layout()
+
+    def show_modal(self) -> tuple[bool, tuple[str, ...], bool]:
+        """Return whether the OK button or Cancel button was pressed, the
+        items to be deleted as a tuple of strings and whether the recycling
+        checkbox was ticked or not."""
+        result = super().show_modal()
+        chosen_strings = self._deletable_items.get_checked_strings()
+        chosen_recycle = self._recycle_checkbox.is_checked
+        return result, chosen_strings, chosen_recycle
 
 # Date and Time ---------------------------------------------------------------
 class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?

@@ -93,8 +93,10 @@ class SettingsDialog(DialogWindow):
                 self._apply_btn,
             ]),
         ]).apply_to(self)
-        # We have to wait until now and pass this size along because the panels
-        # don't get a working size assigned (they're all '20x20' internally)
+        # We have to wait until now and pass this size along because we can't
+        # get a size from the panels (they're all sized '20x20' internally and
+        # querying their best size breaks because that depends on the size of
+        # the text - which is exactly what we're trying to adjust...)
         self._tab_tree.wrap_page_descriptions(self.component_size[0])
 
     def _exec_mark_changed(self, requesting_page, is_changed):

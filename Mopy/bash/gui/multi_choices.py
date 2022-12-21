@@ -237,6 +237,10 @@ class CheckListBox(ListBox, WithCharEvents):
     def lb_is_checked_at_index(self, lb_selection_dex):
         return self._native_widget.IsChecked(lb_selection_dex)
 
+    def get_checked_strings(self) -> tuple[str, ...]:
+        """Returns a tuple of strings corresponding to checked items."""
+        return self._native_widget.GetCheckedStrings()
+
     def toggle_checked_at_index(self, lb_selection_dex):
         do_check = not self.lb_is_checked_at_index(lb_selection_dex)
         self.lb_check_at_index(lb_selection_dex, do_check)

@@ -103,6 +103,6 @@ def get_key_down(key_char): # type: (str) -> bool
     currently down."""
     return _wx.GetKeyState(ord(key_char))
 
-def get_shift_down(): # type: () -> bool
+def get_shift_down() -> bool:
     """Returns True if the Shift key is currently down."""
     return _wx.GetKeyState(_wx.WXK_SHIFT)
