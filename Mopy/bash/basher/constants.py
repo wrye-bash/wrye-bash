@@ -74,11 +74,6 @@ colorInfo = {
           'time conflict.  This means that two or more plugins with the same '
           'timestamp are active.'),
     ),
-    'mods.bkgd.deactivate': (_(u"'Deactivate' Plugin"),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for an active plugin that is '
-          u"tagged 'Deactivate'."),
-    ),
     'mods.bkgd.ghosted': (_('Ghosted Plugin'),
         _('Tabs: Mods') + '\n\n' +
         _('This is the background color used for a ghosted plugin.'),
@@ -185,8 +180,7 @@ settingDefaults = { # keep current naming format till refactored
         'mods.text.mergeable':          (0,   153, 0),
         'mods.text.noMerge':            (150, 130, 0),
         'mods.bkgd.doubleTime.exists':  (255, 220, 220),
-        'mods.bkgd.doubleTime.load':    (255, 100, 100),
-        'mods.bkgd.deactivate':         (255, 100, 100),
+        'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
         'mods.text.eslm':               (123, 29,  223),
         'mods.text.esl':                (226, 54,  197),

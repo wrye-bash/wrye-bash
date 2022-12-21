@@ -1097,9 +1097,6 @@ class ModList(_ModsUIList):
         elif mod_info.hasActiveTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.load'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif u'Deactivate' in fileBashTags and checkMark == 1:
-            item_format.back_key = u'mods.bkgd.deactivate'
-            mouseText += _('Mod should be imported and deactivated.') + ' '
         elif mod_info.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Another plugin has the same timestamp.') + ' '
