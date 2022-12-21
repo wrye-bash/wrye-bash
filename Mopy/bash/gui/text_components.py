@@ -29,6 +29,8 @@ __author__ = u'nycz, Infernio'
 
 import wx as _wx
 import wx.adv as _adv
+from wx.lib.stattext import GenStaticText as _GenStaticTextWx
+from wx.lib.wordwrap import wordwrap as _wordwrap_wx
 
 from .base_components import _AComponent, scaled
 from .events import EventResult
@@ -235,14 +237,14 @@ class SearchBar(TextField):
 class _ALabel(_AComponent):
     """Abstract base class for labels."""
     @property
-    def label_text(self): # type: () -> str
+    def label_text(self) -> str:
         """Returns the text of this label as a string.
 
         :return: The text of this label."""
         return self._native_widget.GetLabel()
 
     @label_text.setter
-    def label_text(self, new_text): # type: (str) -> None
+    def label_text(self, new_text: str):
         """Changes the text of this label to the specified string.
 
         :param new_text: The new text to use."""
@@ -272,6 +274,98 @@ class Label(_ALabel):
         :param max_length: The maximum number of device-independent pixels
             (DIP) a line may be long."""
         self._native_widget.Wrap(scaled(max_length))
+
+# All code starting from the 'BEGIN WXPYTHON-LICENSED PART' comment and until
+# the 'END WXPYTHON-LICENSED PART' comment is based on wx.lib.agw.infobar.AutoWrapStaticText
+# https://github.com/wxWidgets/Phoenix/blob/a3b6cfec77fcdcada6b7cb04b9e8f617525d763c/wx/lib/agw/infobar.py
+# by Andrea Gavana.
+# Modified to refactor and fit WB's code style, get rid of the background color
+# change and work around a weird bug.
+# BEGIN WXPYTHON-LICENSED PART ================================================
+class _WrappingStaticTextWx(_GenStaticTextWx):
+    """A StaticText alternative that automatically word-wraps when the parent
+    window is resized."""
+    def __init__(self, parent, label, style):
+        # Set this first - DoGetBestSize needs it and gets called by parent's
+        # __init__
+        self._orig_label = label
+        super().__init__(parent, label=label,
+            style=_wx.ST_NO_AUTORESIZE | style)
+        self.Bind(_wx.EVT_SIZE, self.OnSize)
+
+    def OnSize(self, event):
+        self.Wrap(event.GetSize().width)
+        event.Skip()
+
+    def Wrap(self, new_width):
+        if new_width < 0:
+            return
+        self.Freeze()
+        dc = _wx.ClientDC(self)
+        dc.SetFont(self.GetFont())
+        self.SetLabel(_wordwrap_wx(self._orig_label, new_width, dc), wrapped=True)
+        self.Thaw()
+
+    def SetLabel(self, label, wrapped=False):
+        # wrapped is only True if called from Wrap() since it doesn't exist in
+        # the parent method's signature
+        if not wrapped:
+            self._orig_label = label
+        super().SetLabel(label)
+
+    def DoGetBestSize(self):
+        wst_font = self.GetFont()
+        if not wst_font:
+            wst_font = _wx.SystemSettings.GetFont(_wx.SYS_DEFAULT_GUI_FONT)
+        dc = _wx.ClientDC(self)
+        dc.SetFont(wst_font)
+        wst_label = self.GetLabel()
+        # Workaround for a really weird bug where we sometimes get a label
+        # that's got a \n before every single word character (e.g.
+        # '\nf\no\no \nb\na\nr')
+        if wst_label.startswith('\n'):
+            wst_label = ''.join(wst_label.split('\n'))
+        # Draw the label's text in memory (i.e. not on a real window) and keep
+        # track of how much we drew
+        longest_line_width = total_drawn_height = 0
+        for label_line in wst_label.split('\n'):
+            if label_line == '':
+                w, h = dc.GetTextExtent('W') # Empty lines have height too
+            else:
+                w, h = dc.GetTextExtent(label_line)
+            total_drawn_height += h
+            longest_line_width = max(longest_line_width, w)
+        wst_best = _wx.Size(longest_line_width, total_drawn_height)
+        self.CacheBestSize(wst_best)
+        return wst_best
+# END WXPYTHON-LICENSED PART ==================================================
+
+class WrappingLabel(Label):
+    """Similar to Label, but automatically word-wraps when the parent window is
+    resized."""
+    _native_widget: _WrappingStaticTextWx
+
+    def __init__(self, parent, init_text, alignment=TextAlignment.LEFT, *,
+            wrap_initially=False):
+        """Extends Label.__init__, see there for docs on first three
+        parameters.
+
+        :param wrap_initially: If True, wrap this label immediately using the
+            parent's width. This is only useful if the parent has a usable
+            width, which some components don't (e.g. PanelWin does not)."""
+        super().__init__(parent, init_text, alignment=alignment)
+        # Wrap to parent's size if we have some initial text passed in and
+        # weren't asked not to
+        if init_text and wrap_initially:
+            self.wrap(parent.component_size[0])
+
+    @_ALabel.label_text.setter
+    def label_text(self, new_text: str):
+        # Override to word-wrap when changing text programmatically as well.
+        # Note: you *do* still have to call update_layout after doing this!
+        if self.label_text != new_text:
+            self._native_widget.SetLabel(new_text)
+            self.wrap(self.component_size[0])
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a

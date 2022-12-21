@@ -37,7 +37,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     HLayout, HorizontalLine, Label, LayoutOptions, ListBox, OkButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
-    VBoxedLayout, VLayout, WrappingTextMixin
+    VBoxedLayout, VLayout, WrappingLabel
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -93,6 +93,9 @@ class SettingsDialog(DialogWindow):
                 self._apply_btn,
             ]),
         ]).apply_to(self)
+        # We have to wait until now and pass this size along because the panels
+        # don't get a working size assigned (they're all '20x20' internally)
+        self._tab_tree.wrap_page_descriptions(self.component_size[0])
 
     def _exec_mark_changed(self, requesting_page, is_changed):
         """Marks or unmarks the requesting page as changed, and enables or
@@ -132,7 +135,7 @@ class SettingsDialog(DialogWindow):
                 self._requesting_restart.clear()
                 del self._restart_params[:]
 
-class _ASettingsPage(WrappingTextMixin, ATreeMixin):
+class _ASettingsPage(ATreeMixin):
     """Abstract class for all settings pages."""
     # A set of all setting IDs in this page. This is optional, see
     # _mark_setting_changed below
@@ -140,7 +143,8 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     _setting_ids = set()
 
     def __init__(self, parent, page_desc):
-        super(_ASettingsPage, self).__init__(page_desc, parent)
+        super().__init__(parent)
+        self._page_desc_label = WrappingLabel(self, page_desc)
         # Callback to a method that takes the settings page and a boolean,
         # marking the settings in the specified page as changed or not. Used
         # to automatically enable or disable the Apply button.
@@ -252,7 +256,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HLayout(items=[
                 (self.comboBox, LayoutOptions(expand=True, weight=1)),
@@ -530,7 +534,7 @@ class LanguagePage(_AScrollablePage):
         self._populate_l10n_list()
         self._set_context_buttons(btns_enabled=False)
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
@@ -677,7 +681,7 @@ class MiscAppearancePage(_AFixedPage):
             checked=bass.settings['bash.use_reverse_icons'])
         self._reverse_icons_checkbox.on_checked.subscribe(self._on_rev_icons)
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             self._alt_name_checkbox,
             self._reverse_icons_checkbox,
@@ -733,7 +737,7 @@ class StatusBarPage(_AScrollablePage):
         self._icon_lists.move_btn_callback = self._on_move_btn
         self._populate_icon_lists()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
                 items=[
@@ -876,7 +880,7 @@ class BackupsPage(_AFixedPage):
         self._set_context_buttons(btns_enabled=False)
         self._populate_backup_list()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
@@ -1151,7 +1155,7 @@ class ConfirmationsPage(_AFixedPage):
         self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
         self._populate_confirmations()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HLayout(spacing=6, items=[
                 Label(self, _(u'Drop Action:')), self._file_drop_dropdown,
@@ -1298,7 +1302,7 @@ class GeneralPage(_AScrollablePage):
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
         self._uac_restart_checkbox.visible = env.is_uac()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
                 HLayout(spacing=6, items=[
@@ -1396,7 +1400,7 @@ class TrustedBinariesPage(_AFixedPage):
         export_btn.on_clicked.subscribe(self._export_lists)
         self._populate_binaries()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             (self._binaries_list, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[Stretch(), import_btn, export_btn]),

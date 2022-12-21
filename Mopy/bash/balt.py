@@ -44,7 +44,7 @@ from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
     HLayout, HorizontalLine, ImageWrapper, Label, LayoutOptions, ListBox, \
     OkButton, PanelWin, Stretch, TextArea, UIListCtrl, VLayout, WindowFrame, \
-    WrappingTextMixin, bell, copy_files_to_clipboard, scaled, \
+    WrappingLabel, bell, copy_files_to_clipboard, scaled, \
     web_viewer_available, AutoSize
 from .gui.base_components import _AComponent
 
@@ -2344,10 +2344,8 @@ class TreeCtrl(_AComponent):
 
     def OnMotion(self, event): return
 
-class ListBoxes(WrappingTextMixin, DialogWindow):
+class ListBoxes(DialogWindow):
     """A window with 1 or more lists."""
-    _wrapping_offset = 64
-
     def __init__(self, parent, title, message, lists, liststyle=u'check',
                  style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
         """lists is in this format:
@@ -2358,16 +2356,15 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        super(ListBoxes, self).__init__(message, parent, title=title,
-                                        icon_bundle=Resources.bashBlue,
-                                        sizes_dict=sizes, style=style)
+        super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
+            sizes_dict=sizes, style=style)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
         # TODO(inf) de-wx!
         minWidth = int(self._native_widget.ToDIP(
             self._native_widget.GetTextExtent(title)).width * 1.2 + 64)
-        self._panel_text.wrap(minWidth) # otherwise expands to max width
+        self._panel_text = WrappingLabel(self, message)
         layout = VLayout(border=5, spacing=5, items=[self._panel_text])
         self._ctrls = {}
         # Size ourselves slightly larger than the wrapped text, otherwise some
