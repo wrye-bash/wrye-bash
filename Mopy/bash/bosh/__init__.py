@@ -3426,6 +3426,12 @@ class BSAInfos(FileInfos):
 class ScreenInfos(FileInfos):
     """Collection of screenshot. This is the backend of the Screens tab."""
     _bain_notify = False # BAIN can't install to game dir
+    # Files that go in the main game folder (aka default screenshots folder)
+    # and have screenshot extensions, but aren't screenshots and therefore
+    # shouldn't be managed here - right now only ENB stuff
+    _ss_skips = {FName(s) for s in (
+        'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
+        'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
 
     def __init__(self):
         self._orig_store_dir = dirs[u'app'] # type: bolt.Path
@@ -3434,6 +3440,12 @@ class ScreenInfos(FileInfos):
             re.I | re.U)
         super(ScreenInfos, self).__init__(self._orig_store_dir,
                                           factory=ScreenInfo)
+
+    def rightFileType(cls, fileName: bolt.FName | str):
+        if fileName in cls._ss_skips:
+            # Some non-screenshot file, skip it
+            return False
+        return super().rightFileType(fileName)
 
     def refresh(self, refresh_infos=True, booting=False):
         # Check if we need to adjust the screenshot dir

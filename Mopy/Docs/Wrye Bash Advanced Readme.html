@@ -96,7 +96,8 @@
                 <li class="list"><a href="#screenshots">Screenshots Tab</a>
                     <ol class="items">
                         <li><a href="#screenshots-overview">Overview</a>
-                        <li><a href="#screenshots-alt-path">Change screenshots directory (Oblivion)</a>
+                        <li><a href="#screenshots-skipped">Skipped Files</a></li>
+                        <li><a href="#screenshots-alt-path">Changing screenshots directory</a>
                         <li><a href="#screenshots-commands">Context Menu Commands</a>
                     </ol>
                 <li class="list"><a href="#launchers">Advanced Launchers</a>
@@ -9454,28 +9455,91 @@ noted in the description of the tweak.</p>
     list of supported file extensions is: .bmp, .gif, .jpg, .jpeg, .png, .tif
     and .tga.</p>
 
-<h3 id="screenshots-alt-path">Change screenshots directory (Oblivion) <a class="back2top" href="#contents">Back to top</a></h3>
-<p>By default, Oblivion stores its screenshots in Oblivion's root folder but allows you to change the default directory via an ini setting.
-    You can change the ini setting by directly editing Oblivion.ini or by using the "Next Shot" column menu item in the Screenshots tab.
-    For instance Oblivion Reloaded uses Oblivion\Screenshots. To change the screenshots directory to Oblivion\Screenshots by editing the
-    Oblivion.ini find the following line under the <code>[Display]</code> heading:</p>
+<h3 id="screenshots-skipped">Skipped Files <a class="back2top" href="#contents">Back to top</a></h3>
+<p>A few files with screenshot extensions that are likely to be found in the
+    main game folder, but are not in fact screenshots and should not be managed
+    via this tab will be skipped. They are:</p>
+
+<ul>
+    <li><code>enblensmask.png</code></li>
+    <li><code>enbpalette.bmp</code></li>
+    <li><code>enbsunsprite.bmp</code></li>
+    <li><code>enbsunsprite.tga</code></li>
+    <li><code>enbunderwaternoise.bmp</code></li>
+</ul>
+
+<h3 id="screenshots-alt-path">Changing screenshots directory <a class="back2top" href="#contents">Back to top</a></h3>
+<p>By default, the game stores its screenshots in its root folder. Howver, it
+    is possible to change the default directory via an INI setting. You can
+    change the INI setting by directly editing the game INI or by using the
+    <a href="#screenshots-next-shot">Next Shot</a> command on the Screenshots
+    tab. For instance, Oblivion Reloaded uses
+    <code>Oblivion\Screenshots</code>. To change the screenshots directory
+    to <code>G:\steam\steamapps\common\Oblivion\Screenshots</code> (assuming
+    you have installed Oblivion to
+    <code>G:\steam\steamapps\common\Oblivion</code>), hit
+    <a href="#screenshots-next-shot">Next Shot</a> and supply the path as
+    follows:</p>
+
+    <code>Screenshots\Screenshot0</code>
+
+<p>where 0 is the (optional) screenshot base number (it will set the
+    <code>iScreenShotIndex</code> INI setting, which determines what your next
+    screenshot will be named). An absolute path will also work (e.g.
+    <code>F:\Game Screenshots\Oblivion</code>). Wrye Bash will then edit the
+    INI for you. You may also want to create INI tweaks to easily switch
+    screenshot directories, if you find yourself doing this often.</p>
+
+<p>Alternatively, you can edit <code>Oblivion.ini</code> directly. Find the
+    following line under the <code>[Display]</code> heading:</p>
 
     <code>SScreenShotBaseName=ScreenShot</code>
 
-<p>and add the path to the Oblivion\Screenshots folder, i.e.:</p>
+<p>and change the setting to point to the <code>Oblivion\Screenshots</code>
+    folder, i.e.:</p>
 
     <code>SScreenShotBaseName=C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot</code>
 
-<p>Alternatively hit "Next Shot" and supply the path as in:</p>
+<p>If you also want to change the screenshot index, find and edit the
+    <code>iScreenShotIndex</code> too.</p>
 
-    <code>C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot0</code>
+<p><strong>IMPORTANT</strong>: The base filename "Screenshot" (or any other
+    base name you like) must be included in the path or the game's native
+    screenshots will not work - that is pressing the Prt Scr key will do
+    nothing.</p>
 
-<p>where 0 is the (optional) Screenshot base number (it will set the <code>iScreenShotIndex</code> ini setting). A relative path will
-    also work (as in <code>Screenshots\Screenshot</code>). Bash will go ahead and edit the ini for you. You may also create an ini
-    tweak to readily switch directories.
+<p>Also, note that <strong>the above example was for Oblivion.</strong> The INI
+    settings may vary per game. The following table lists them, along with
+    their default values:</p>
 
-<p><strong>IMPORTANT</strong>: The base filename "Screenshot" (or any other base name you like) must be included in the path or Oblivion's
-    native screenshots will not work - that is pressing the Prt Scr key will do nothing.
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">Screenshot INI Settings Per Game</th>
+        </tr>
+        <tr>
+            <th>Game</th>
+            <th>Path INI Setting</th>
+            <th>Index INI Setting</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Morrowind</td>
+            <td><code class="box">[General]
+Screen Shot Base Name=ScreenShot</code></td>
+            <td><code class="box">[General]
+Screen Shot Index=0</code></td>
+        </tr>
+        <tr>
+            <td>All later games</td>
+            <td><code class="box">[Display]
+sScreenShotBaseName=ScreenShot</code></td>
+            <td><code class="box">[Display]
+iScreenShotIndex=0</code></td>
+        </tr>
+    </tbody>
+</table>
 
 <h3 id="screenshots-commands">Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
 <div class="prlflex clearf">
@@ -9503,10 +9567,17 @@ noted in the description of the tweak.</p>
                 <td>This submenu allows you to choose which columns are visible
                     in the screenshot list.</td>
             </tr>
-            <tr><td>Files..</td>
-                <td>Open<td>Open the screenshot directory in Windows Explorer.</td></tr>
-            <tr><td colspan="2">Next Shot<td>Set any or all of the base name and number of
-                the next screenshot as well as the screenshot directory.</td></tr>
+            <tr>
+                <td>Files..</td>
+                <td>Open</td>
+                <td>Open the screenshot directory in your operating system's
+                    file explorer.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="screenshots-next-shot">Next Shot</td>
+                <td>Set any or all of the base name and number of the next
+                    screenshot as well as the screenshot directory.</td>
+            </tr>
             <tr>
                 <td colspan="2">JPEG Quality..</td>
                 <td>Set the quality of JPEGs created during conversion.</td>
