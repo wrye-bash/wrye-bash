@@ -1970,13 +1970,16 @@ class MenuLink(Link):
         return subMenu
 
     def _enable_menu(self):
-        """Disable ourselves if none of our children are visible."""
-        for l in self.links:
-            if isinstance(l, (SeparatorLink, MultiLink)):
+        """Disable ourselves if none of our children are usable."""
+        return self._any_link_usable(self.links)
+
+    def _any_link_usable(self, candidate_links):
+        """Helper method that returns True if at least one of the candidate links
+        can be interacted with by the user."""
+        for l in candidate_links:
+            if isinstance(l, SeparatorLink):
                 # SeparatorLinks are not interactable links, so there is no
-                # need to worry about their enabled status. MultiLinks are
-                # virtual - they don't actually exist and only append other
-                # links
+                # need to worry about their enabled status
                 continue
             if isinstance(l, AppendableLink):
                 # This is an AppendableLink, skip if it's not appended
@@ -1987,6 +1990,14 @@ class MenuLink(Link):
             elif isinstance(l, EnabledLink):
                 # This is an EnabledLink, check if it's enabled
                 if l._enable(): return True
+                if isinstance(l, MultiLink): # not elif!
+                    # This is a MultiLink (appended and enabled), check if any
+                    # of its child links are usable
+                    if self._any_link_usable(l._links()): return True
+            elif isinstance(l, MultiLink):
+                # This is a MultiLink (appended and not an EnabledLink), check
+                # if any of its child links are usable
+                if self._any_link_usable(l._links()): return True
             else:
                 # This is some other type of link that's always enabled
                 return True
