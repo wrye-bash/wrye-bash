@@ -274,6 +274,10 @@ class PluginsFullError(BoltError):
     def __init__(self, message=u'Load list is full.'):
         super(PluginsFullError, self).__init__(message)
 
+class SkippedMergeablePluginsError(Exception):
+    """Indicates that one or more mergeable plugins had to be skipped during a
+    full load order activation."""
+
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
     def __init__(self, modIndex):  # type: (int) -> None

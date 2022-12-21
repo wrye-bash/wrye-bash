@@ -465,10 +465,7 @@ def InitModLinks():
             files_menu.links.append(Mods_CreateBlankBashedPatch())
         ModList.column_links.append(files_menu)
     ModList.column_links.append(SeparatorLink())
-    if True: #--Active Plugins
-        ap_menu = MenuLink(_('Active Plugins..'))
-        ap_menu.links.append(Mods_LoadList())
-        ModList.column_links.append(ap_menu)
+    ModList.column_links.append(Mods_ActivePlugins())
     if True: #--Load Order
         lo_menu = MenuLink(_('Load Order..'))
         lo_menu.links.append(Mods_LOUndo())
@@ -653,9 +650,7 @@ def InitModLinks():
     file_menu.append(Misc_SaveData())
     # Edit Menu
     edit_menu = ModList.global_links[_('Edit')]
-    ap_submenu = MenuLink(_('Active Plugins..'))
-    ap_submenu.append(Mods_LoadList())
-    edit_menu.append(ap_submenu)
+    edit_menu.append(Mods_ActivePlugins())
     lo_submenu = MenuLink(_('Load Order..'))
     lo_submenu.links.append(Mods_LOUndo())
     lo_submenu.links.append(Mods_LORedo())

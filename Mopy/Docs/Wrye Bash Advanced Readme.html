@@ -1381,26 +1381,36 @@ tab. The directories skipped are:
                         default text editor.</td>
                 </tr>
             <tr>
-                <td rowspan="6">Active Plugins..</td>
+                <td rowspan="7">Active Plugins..</td>
                 <td id="modsActivateAll">Activate All</td>
-                <td>Activates all the plugins in the plugin list. If more than
-                    255 plugins (254 for games with ESL support) are present,
-                    Wrye Bash will activate all it can from the Bashed Patches,
-                    then non mergeable and then mergeable plugins, then it will
-                    display an error message. Wrye Bash will try to activate
-                    plugins in their load order.</td>
+                <td>Activates all the plugins in the plugin list. This will
+                    first activate as many non-mergeable plugins, according to
+                    load order, as possible. If that would result in &gt;255
+                    active plugins (&gt;254 non-ESLs for games with ESL
+                    support) or &gt;4096 active ESLs, an error is shown. For
+                    games without ESL support, if there is still space for
+                    active plugins afterwards, it will next activate as many
+                    mergeable plugins, according to load order, as possible. If
+                    that would result in &gt;255 active plugins, an info popup
+                    is shown.</td>
             </tr>
             <tr>
-                <td>De-activate All</td>
-                <td>Deactivates all the plugins in the plugin list. Some
-                    plugins will not be deactivated (for instance Fallout 4
-                    DLCs) as the game force-loads them when present.</td>
+                <td>Activate Non-Mergeable</td>
+                <td><em>Not available for games with ESL support.</em> Same as
+                    <a href="#modsActivateAll">Activate All</a>, but doesn't
+                    activate any mergeable plugins.</td>
             </tr>
             <tr>
                 <td>Activate Selected</td>
                 <td>Activate only the currently selected plugins.
                     <strong>Warning: their masters won't be
                         activated!</strong></td>
+            </tr>
+            <tr>
+                <td>Deactivate All</td>
+                <td>Deactivates all the plugins in the plugin list. Some
+                    plugins will not be deactivated (for instance Fallout 4
+                    DLCs) as the game force-loads them when present.</td>
             </tr>
             <tr>
                 <td>Save Active Plugins List</td>

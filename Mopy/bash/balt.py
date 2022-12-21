@@ -1764,11 +1764,12 @@ class Link(object):
     # Menu label (may depend on UI state when the menu is shown)
     _text = u''
 
-    def __init__(self, _text=None): ##: is the _text param even used anymore?
+    def __init__(self, _text=None):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
-        specify text as a class attribute (or set in it _initData())."""
+        specify text as a class attribute (or set in it _initData()). Used by
+        ChoiceLink however, so it *is* still used."""
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 

@@ -54,7 +54,7 @@ from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext, \
     FormIdWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
-    SaveHeaderError, SkipError, StateError
+    SaveHeaderError, SkipError, StateError, SkippedMergeablePluginsError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
     get_ini_type_and_encoding, AIniFile
 from ..mod_files import ModFile, ModHeaderReader
@@ -2674,36 +2674,42 @@ class ModInfos(FileInfos):
         if doSave: self.cached_lo_save_active()
         return old - sel # return deselected
 
-    def lo_activate_all(self):
-        toActivate = set(load_order.cached_active_tuple())
+    def lo_activate_all(self, activate_mergeable=True):
+        """Activates all non-mergeable plugins (except ones tagged Deactivate),
+        then all mergeable plugins (again, except ones tagged Deactivate).
+        Raises a PluginsFullError if too many non-mergeable plugins are present
+        and a SkippedMergeablePluginsError if too many mergeable plugins are
+        present."""
+        wip_actives = set(load_order.cached_active_tuple())
+        def _add_to_actives(p):
+            """Helper for activating a plugin, if necessary."""
+            if p not in wip_actives:
+                self.lo_activate(p, doSave=False)
+                wip_actives.add(p)
+        def _activatable(p):
+            """Helper for checking if a plugin should be activated."""
+            return (p.fn_ext != '.esu' and
+                    'Deactivate' not in modInfos[p].getBashTags())
         try:
-            def _add_to_activate(m):
-                if not m in toActivate:
-                    self.lo_activate(m, doSave=False)
-                    toActivate.add(m)
-            mods = load_order.get_ordered(self)
-            # first select the bashed patch(es) and their masters
-            for mod in mods:
-                if self[mod].isBP(): _add_to_activate(mod)
-            # then activate mods not tagged Deactivate
-            def _activatable(modName):
-                return 'Deactivate' not in modInfos[modName].getBashTags()
-            mods = [mod for mod in mods if _activatable(mod)]
-            mergeable = set(self.mergeable)
-            for mod in mods:
-                if not mod in mergeable: _add_to_activate(mod)
-            # then activate as many of the remaining mods as we can
-            for mod in mods:
-                if mod in mergeable: _add_to_activate(mod)
-        except PluginsFullError:
-            deprint(u'select All: 255 mods activated', traceback=True)
-            raise
+            s_plugins = load_order.get_ordered(filter(_activatable, self))
+            try:
+                # First, activate non-mergeable plugins not tagged Deactivate
+                for p in s_plugins:
+                    if p not in self.mergeable: _add_to_actives(p)
+            except PluginsFullError:
+                raise
+            if activate_mergeable:
+                try:
+                    # Then activate as many of the mergeable plugins as we can
+                    for p in s_plugins:
+                        if p in self.mergeable: _add_to_actives(p)
+                except PluginsFullError as e:
+                    raise SkippedMergeablePluginsError() from e
         except BoltError:
-            toActivate.clear()
-            deprint(u'select All: cached_lo_save_active failed',traceback=True)
+            wip_actives.clear() # Don't save, something went wrong
             raise
         finally:
-            if toActivate: self.cached_lo_save_active(active=toActivate)
+            if wip_actives: self.cached_lo_save_active(active=wip_actives)
 
     def lo_activate_exact(self, modNames):
         """Activate exactly the specified set of mods."""
