@@ -43,36 +43,7 @@ colorInfo = {
     'mods.text.esm': (_('ESM'),
         _('Tabs: Mods, Saves') + '\n\n' +
         _('This is the text color used for ESMs in the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),),
-    'mods.text.esl': (_('ESL'),
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs in the Mods Tab, and in the '
-          'Masters info on both the Mods Tab and Saves Tab.'),),
-    'mods.text.eslm': (_('ESLM'),
-        _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag in the '
-          'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
-          'Tab.'),),
-    'mods.text.noMerge': (_(u"'NoMerge' Plugin"),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for a mergeable plugin that is '
-          u"tagged 'NoMerge'."),
-    ),
-    'mods.text.bashedPatch': (_('Bashed Patch'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for Bashed Patches.'),
-    ),
-    'mods.bkgd.doubleTime.exists': (_('Inactive Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an inactive '
-          'time conflict.  This means that two or more plugins have the same '
-          'timestamp, but only one (or none) of them is active.'),
-    ),
-    'mods.bkgd.doubleTime.load': (_('Active Time Conflict'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the background color used for a plugin with an active '
-          'time conflict.  This means that two or more plugins with the same '
-          'timestamp are active.'),
+          'Masters info on both the Mods Tab and Saves Tab.'),
     ),
     'mods.bkgd.ghosted': (_('Ghosted Plugin'),
         _('Tabs: Mods') + '\n\n' +
@@ -135,23 +106,72 @@ colorInfo = {
         _('This is the background color used for images.'),
     ),
 }
-if bush.game.check_esl:
-    colorInfo['mods.text.mergeable'] = (_('ESL Capable plugin'),
-            _('Tabs: Mods') + '\n\n' +
-            _('This is the text color used for ESL Capable plugins.'),
-        )
-else:
-    colorInfo['mods.text.mergeable'] = (_('Mergeable Plugin'),
-            _('Tabs: Mods') + '\n\n' +
-            _('This is the text color used for mergeable plugins.'),
-        )
 
+# Only show color options when the game actually supports them
+# Do masters have working DATA subrecords? ------------------------------------
 if bush.game.Esp.check_master_sizes:
     colorInfo['mods.bkgd.size_mismatch'] = (_('Size Mismatch'),
         _('Tabs: Mods') + '\n\n' +
         _('This is the background color used for plugin masters that have a '
           'stored size not matching the one of the plugin on disk, and for '
-          'plugins that have at least one such master.')
+          'plugins that have at least one such master.'),
+    )
+
+# Does the LO use timestamps? -------------------------------------------------
+##: Is this condition OK? We can't really call load_order to check...
+if not bush.game.using_txt_file:
+    colorInfo['mods.bkgd.doubleTime.exists'] = (_('Inactive Time Conflict'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the background color used for a plugin with an inactive '
+          'time conflict.  This means that two or more plugins have the same '
+          'timestamp, but only one (or none) of them is active.'),
+    )
+    colorInfo['mods.bkgd.doubleTime.load'] = (_('Active Time Conflict'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the background color used for a plugin with an active '
+          'time conflict.  This means that two or more plugins with the same '
+          'timestamp are active.'),
+    )
+
+# Can we create a BP? ---------------------------------------------------------
+if bush.game.Esp.canBash:
+    colorInfo['mods.text.bashedPatch'] = (_('Bashed Patch'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for Bashed Patches.'),
+    )
+
+# Are ESLs supported? ---------------------------------------------------------
+if bush.game.has_esl:
+    colorInfo['mods.text.esl'] = (_('ESL'),
+        _('Tabs: Mods, Saves') + '\n\n' +
+        _('This is the text color used for ESLs in the Mods Tab, and in the '
+          'Masters info on both the Mods Tab and Saves Tab.'),
+    )
+    colorInfo['mods.text.eslm'] = (_('ESLM'),
+        _('Tabs: Mods, Saves') + '\n\n' +
+        _('This is the text color used for ESLs with a master flag in the '
+          'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
+          'Tab.'),
+    )
+
+# Do we check mergeability or ESL capability? ---------------------------------
+if bush.game.check_esl:
+    colorInfo['mods.text.mergeable'] = (_('ESL Capable plugin'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for ESL Capable plugins.'),
+    )
+else:
+    colorInfo['mods.text.mergeable'] = (_('Mergeable Plugin'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for mergeable plugins.'),
+    )
+
+# Does NoMerge exist? ---------------------------------------------------------
+if 'NoMerge' in bush.game.allTags:
+    colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for a mergeable plugin that is '
+          u"tagged 'NoMerge'."),
     )
 
 #--Load config/defaults
@@ -182,6 +202,7 @@ settingDefaults = { # keep current naming format till refactored
         'mods.bkgd.doubleTime.exists':  (255, 220, 220),
         'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
+        'mods.bkgd.size_mismatch':      (255, 238, 217),
         'mods.text.eslm':               (123, 29,  223),
         'mods.text.esl':                (226, 54,  197),
         'mods.text.bashedPatch':        (30,  157, 251),
@@ -416,10 +437,6 @@ settingDefaults = { # keep current naming format till refactored
 # No need to store defaults for all the xEdits for all games
 settingDefaults[bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing'] = False
 settingDefaults[bush.game.Xe.xe_key_prefix + '.skip_bsas'] = False
-
-if bush.game.Esp.check_master_sizes:
-    settingDefaults['bash.colors']['mods.bkgd.size_mismatch'] = (255, 238,
-                                                                   217)
 
 if bush.game.has_esl: # Enable Index columns by default for ESL games
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')

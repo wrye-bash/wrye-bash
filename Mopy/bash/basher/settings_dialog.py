@@ -225,7 +225,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--DropDown
         def _display_text(k):
             return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
-        self._txt_key = {_display_text(x): x for x in colors}
+        # Note the 'in colorInfo' to filter out colors that this game doesn't
+        # actually use
+        self._txt_key = {_display_text(x): x for x in colors if x in colorInfo}
         colored = sorted(self._txt_key, key=str.lower)
         combo_text = colored[0]
         choiceKey = self._txt_key[combo_text]
