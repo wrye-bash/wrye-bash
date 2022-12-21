@@ -444,9 +444,10 @@ class ModInfo(FileInfo):
 
     def set_esl_flag(self, new_esl_flag):
         """Changes this file's ESL flag to the specified value."""
-        self.header.flags1.esl_flag = new_esl_flag
-        self._recalc_esl()
-        self.writeHeader()
+        if bush.game.has_esl:
+            self.header.flags1.esl_flag = new_esl_flag
+            self._recalc_esl()
+            self.writeHeader()
 
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
@@ -1962,6 +1963,8 @@ def _lo_cache(lord_func):
             # to do this. We could technically be smarter, but this takes <1ms
             # even with hundreds of plugins
             self._recalc_real_indices()
+            # Same reasoning goes for dependents as well
+            self._recalc_dependents()
             new_active = active_set - old_active_set
             for neu in new_active: # new active mods, unghost
                 self[neu].setGhost(False)

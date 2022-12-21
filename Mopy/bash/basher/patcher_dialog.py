@@ -171,10 +171,12 @@ class PatchDialog(DialogWindow):
             if patchFile.tes4.num_masters > bush.game.Esp.master_limit:
                 balt.showError(self, _(
                     'The resulting Bashed Patch contains too many masters '
-                    '(>%(max_masters)d). You can try to disable some '
-                    'patchers, create a second Bashed Patch and rebuild that '
-                    'one with only the patchers you disabled in this one '
-                    'active.') % {'max_masters': bush.game.Esp.master_limit})
+                    '(%(curr_num_masters)d, limit is %(max_num_masters)d). '
+                    'You can try to disable some patchers, create a second '
+                    'Bashed Patch and rebuild that one with only the patchers '
+                    'you disabled in this one active.') % {
+                    'curr_num_masters': patchFile.tes4.num_masters,
+                    'max_num_masters': bush.game.Esp.master_limit})
                 return # Abort, we'll just blow up on saving it
             #--Save
             progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
@@ -218,6 +220,10 @@ class PatchDialog(DialogWindow):
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
             balt.WryeLog(self.parent, readme, patch_name,
                          log_icons=Resources.bashBlue)
+            # We have to parse the new info first, since the masters may
+            # differ. Most people probably don't keep BAIN packages of BPs, but
+            # *I* do, so...
+            info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             #--Select?
             if self.mods_to_reselect:
                 for mod in self.mods_to_reselect:
@@ -240,14 +246,12 @@ class PatchDialog(DialogWindow):
                     balt.showError(self,
                         _('Unable to activate plugin %(bp_name)s because the '
                           'load order is full.') % {'bp_name': patch_name})
-            # although improbable user has package with bashed patches...
-            info = bosh.modInfos.new_info(patch_name, notify_bain=True)
             if info.fsize == patch_size:
-                # needed if size remains the same - mtime is set in
-                # parsers.ModFile#safeSave which can't use
-                # setmtime(crc_changed), as no info is there. In this case
-                # _reset_cache > calculate_crc() would not detect the crc
-                # change. That's a general problem with crc cache - API limits
+                # Needed if size remains the same - mtime is set in
+                # ModFile.safeSave which can't use setmtime(crc_changed), as no
+                # info is there. In this case _reset_cache > calculate_crc()
+                # would not detect the crc change. That's a general problem
+                # with crc cache - API limits
                 info.calculate_crc(recalculate=True)
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except CancelError:
