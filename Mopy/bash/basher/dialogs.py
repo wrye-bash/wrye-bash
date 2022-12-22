@@ -29,7 +29,8 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
-    TextAlignment, TextField, VBoxedLayout, VLayout, bell
+    TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
+    MLEList
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -482,3 +483,40 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.deprefix'] = pfx_remove
         cmt_skip = self._skip_comments.is_checked
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
+
+#------------------------------------------------------------------------------
+class SyncFromDataEditor(AMultiListEditor):
+    """Template for a multi-list editor for Sync From Data."""
+    title = _('Sync From Data - Preview')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, pkg_missing: list[str],
+            pkg_mismatched: list[str], pkg_name: str):
+        # Note the map(str) usages to get rid of CIstr for gui/wx, which we
+        # later have to recreate in show_modal
+        del_data = MLEList(
+            mlel_title=_('Files to delete (%(missing_count)d):') % {
+                'missing_count': len(pkg_missing)},
+            mlel_desc=_('Uncheck files to keep them in the package.'),
+            mlel_items=list(map(str, pkg_missing)))
+        upd_data = MLEList(
+            mlel_title=_('Files to update (%(mismatched_count)d):') % {
+                'mismatched_count': len(pkg_mismatched)},
+            mlel_desc=_('Uncheck files to keep them unchanged in the '
+                        'package.'),
+            mlel_items=list(map(str, pkg_mismatched)))
+        sync_desc = _('Update %(target_package)s according to '
+                      '%(data_folder)s directory?') % {
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+        sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
+        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
+            'square_check.16', 'square_empty.16'))
+        super().__init__(parent, list_data=[del_data, upd_data],
+            data_desc=sync_desc, check_uncheck_bitmaps=cu_bitmaps,
+            sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
+
+    def show_modal(self):
+        # Add the CIstrs we removed in __init__ back in
+        result = super().show_modal()
+        final_lists = [list(map(bolt.CIstr, l)) for l in result[1:]]
+        return result[0], *final_lists

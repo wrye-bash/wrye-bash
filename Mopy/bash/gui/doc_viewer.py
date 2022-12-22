@@ -236,9 +236,12 @@ class DocumentViewer(_AComponent):
             self._text_ctrl.enabled = False
         else:
             # Emulate the buttons WebViewer would normally provide
-            self._prev_button = PureImageButton(parent, icon_list[0])
-            self._next_button = PureImageButton(parent, icon_list[1])
-            self._reload_button = PureImageButton(parent, icon_list[2])
+            self._prev_button = PureImageButton(parent, icon_list[0],
+                btn_tooltip='')
+            self._next_button = PureImageButton(parent, icon_list[1],
+                btn_tooltip='')
+            self._reload_button = PureImageButton(parent, icon_list[2],
+                btn_tooltip='')
         if pdf_viewer_available():
             self._pdf_ctrl = PDFViewer(self)
             items.append(self._pdf_ctrl)

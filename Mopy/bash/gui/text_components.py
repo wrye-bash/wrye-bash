@@ -27,6 +27,8 @@ from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
 
+from enum import Enum
+
 import wx as _wx
 import wx.adv as _adv
 from wx.lib.stattext import GenStaticText as _GenStaticTextWx
@@ -36,7 +38,7 @@ from .base_components import _AComponent, scaled
 from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
-class TextAlignment(object): # PY3: enum
+class TextAlignment(Enum):
     LEFT = 0
     RIGHT = 1
     CENTER = 2
@@ -106,7 +108,7 @@ class _ATextInput(_AComponent):
             self._on_size_changed.subscribe(self._on_size_change)
             self.on_text_changed.subscribe(self._update_tooltip)
 
-    def _update_tooltip(self, new_text): # type: (str) -> None
+    def _update_tooltip(self, new_text: str):
         """Internal callback that shows or hides the tooltip depending on the
         length of the currently entered text and the size of this text input.
 
@@ -122,14 +124,14 @@ class _ATextInput(_AComponent):
         self._update_tooltip(self._native_widget.GetValue())
 
     @property
-    def editable(self): # type: () -> bool
+    def editable(self) -> bool:
         """Returns True if this text input can be edited by the user.
 
         :return: True if this text input is editable."""
         return self._native_widget.IsEditable()
 
     @editable.setter
-    def editable(self, is_editable): # type: (bool) -> None
+    def editable(self, is_editable: bool):
         """Enables or disables user input to this text input based on the
         specified parameter.
 
@@ -137,21 +139,21 @@ class _ATextInput(_AComponent):
         self._native_widget.SetEditable(is_editable)
 
     @property
-    def text_content(self): # type: () -> str
+    def text_content(self) -> str:
         """Returns the text that is currently inside this text input.
 
         :return: The entered text."""
         return self._native_widget.GetValue()
 
     @text_content.setter
-    def text_content(self, new_text): # type: (str) -> None
+    def text_content(self, new_text: str):
         """Changes the text inside this text input to the specified string.
 
         :param new_text: What to change this text input's text to."""
         self._native_widget.SetValue(new_text)
 
     @property
-    def modified(self): # type: () -> bool
+    def modified(self) -> bool:
         """Returns True if the user has modified the text inside this text
         input.
 
@@ -159,7 +161,7 @@ class _ATextInput(_AComponent):
         return self._native_widget.IsModified()
 
     @modified.setter
-    def modified(self, is_modified):
+    def modified(self, is_modified: bool):
         """Changes whether or not this text input is modified based on the
         specified parameter.
 
@@ -168,6 +170,7 @@ class _ATextInput(_AComponent):
         self._native_widget.SetModified(is_modified)
 
     def select_all_text(self):
+        """Selects all text currently present in this component."""
         self._native_widget.SelectAll()
 
 class TextArea(_ATextInput):
@@ -255,7 +258,6 @@ class _ALabel(_AComponent):
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
-    # _native_widget: type: _wx.StaticText
     _native_widget: _wx.StaticText
 
     def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
@@ -267,7 +269,7 @@ class Label(_ALabel):
         super(Label, self).__init__(parent, label=init_text,
                                     style=_ta_to_wx[alignment])
 
-    def wrap(self, max_length): # type: (int) -> None
+    def wrap(self, max_length: int):
         """Wraps this label's text so that each line is at most max_length
         pixels long.
 

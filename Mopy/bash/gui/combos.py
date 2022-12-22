@@ -30,7 +30,7 @@ from itertools import chain
 
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, scaled
 from .buttons import Button
 from .events import EventResult
 from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
@@ -195,7 +195,8 @@ class ATreeMixin(_AComponent):
         return True
 
     def wrap_page_description(self, parent_width: int):
-        """Wraps the description of this page to the parent's width."""
+        """Wraps the description of this page to the parent's width (in
+        DIP)."""
         self._page_desc_label.wrap(parent_width)
 
 class TreePanel(_APageComponent):
@@ -333,12 +334,13 @@ class TreePanel(_APageComponent):
         return None
 
     def wrap_page_descriptions(self, parent_width: int):
-        """Wraps all page descriptions to the specified parent width."""
+        """Wraps all page descriptions to the specified parent width (in
+        DIP)."""
         # We've got the parent width now, but that's not what's actually
         # available to the page panels. Extra space is taken away by the tree
         # on the left side and the borders (6 * 2 + 6 * 2 + 4 * 2 = 32)
         tree_ctrl = self._native_widget.GetTreeCtrl()
         tree_width = tree_ctrl.ToDIP(tree_ctrl.GetSize()).width
-        effective_width = parent_width - tree_width - 32
+        effective_width = parent_width - tree_width - scaled(32)
         for child_page in chain(self._all_leaf_pages, self._all_link_pages):
             child_page.wrap_page_description(effective_width)

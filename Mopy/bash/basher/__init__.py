@@ -4639,6 +4639,9 @@ def InitImages():
     images['doc_browser.16'] = _svg('book.svg', 16, invertible=True)
     images['doc_browser.24'] = _svg('book.svg', 24, invertible=True)
     images['doc_browser.32'] = _svg('book.svg', 32, invertible=True)
+    # Check/Uncheck All buttons
+    images['square_empty.16'] = _svg('square_empty.svg', 16, invertible=True)
+    images['square_check.16'] = _svg('square_checked.svg', 16, invertible=True)
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

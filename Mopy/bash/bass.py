@@ -32,9 +32,6 @@ active_locale = None
 AppVersion = '311'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
-# wx bitmaps cached to workaround locale issues
-wx_bitmap = {}
-
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
 dirs = {}

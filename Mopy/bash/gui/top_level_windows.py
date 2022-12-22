@@ -197,9 +197,10 @@ class DialogWindow(_TopLevelWin):
         with cls(*args, **kwargs) as dialog:
             return dialog.show_modal()
 
-    def show_modal(self):
+    def show_modal(self) -> bool:
         """Begins a new modal dialog and returns a boolean indicating if the
-        exit code was fine.
+        exit code was fine. Note that some subclasses override this to return
+        more than just that boolean.
 
         :return: True if the dialog was closed with a good exit code (e.g. by
             clicking an 'OK' or 'Yes' button), False otherwise."""

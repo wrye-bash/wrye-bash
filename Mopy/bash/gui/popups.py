@@ -25,12 +25,15 @@ information, e.g. a string, a number or just confirmation."""
 from __future__ import annotations
 
 import datetime
+from dataclasses import dataclass
+from functools import partial
+from typing import Any
 
 import wx as _wx
 
 from .base_components import Color, _AComponent
 from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
-    SelectAllButton
+    PureImageButton, SelectAllButton
 from .checkables import CheckBox
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout
@@ -43,7 +46,7 @@ from .top_level_windows import DialogWindow
 from ..bolt import GPath, dict_sort
 from ..exception import AbstractError
 
-class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
+class CopyOrMovePopup(DialogWindow):
     """A popup that allows the user to choose between moving or copying a file
     and also includes a checkbox for remembering the choice in the future."""
     title = _(u'Move or Copy?')
@@ -78,7 +81,7 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
         self._ret_action = new_ret
         self.accept_modal()
 
-    def show_modal(self):
+    def show_modal(self) -> tuple[bool | str, bool]:
         """Return the choice the user made (either the string 'MOVE' or the
         string 'COPY') and whether that choice should be remembered."""
         result = super().show_modal()
@@ -242,14 +245,21 @@ class DirOpen(_FileDialog):
                                           style=st)
 
 # Deletion --------------------------------------------------------------------
-class DeletionDialog(DialogWindow): ##: wx.PopupWindow?
-    """A popup for deleting a list of """
+class DeletionDialog(DialogWindow):
+    """A popup for choosing what to delete from a list of items. Allows the
+    user to uncheck items and choose whether or not to recycle them."""
     _def_size = (290, 250)
     _min_size = (290, 150)
 
     def __init__(self, parent, *, title: str,
             items_to_delete: list[str], default_recycle: bool,
             sizes_dict, icon_bundle):
+        """Initializes a new DeletionDialog.
+
+        :param items_to_delete: A list of strings representing the items that
+            can be deleted.
+        :param default_recycle: Whether the 'Recycle' checkbox should be
+            checked by default or not."""
         super().__init__(parent, sizes_dict=sizes_dict, title=title,
             icon_bundle=icon_bundle)
         self._deletable_items = CheckListBox(self, choices=items_to_delete)
@@ -296,7 +306,7 @@ class DeletionDialog(DialogWindow): ##: wx.PopupWindow?
         return result, chosen_strings, chosen_recycle
 
 # Date and Time ---------------------------------------------------------------
-class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?
+class DateAndTimeDialog(DialogWindow):
     """Dialog for choosing a date and time."""
     title = _('Choose a date and time')
     _def_size = (270, 360)
@@ -376,3 +386,130 @@ class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?
         manual_datetime = datetime.datetime.strptime(
             self._manual_entry.text_content, '%c')
         return result, manual_datetime
+
+# Misc ------------------------------------------------------------------------
+@dataclass(slots=True)
+class MLEList:
+    """Represents a single list shown in a multi-list editor."""
+    # The title of the list. Shown above the description and items.
+    mlel_title: str
+    # A description of what this list represents or advice regarding what to do
+    # with this list. Shown above the items.
+    mlel_desc: str
+    # A list of items in the list. Will be shown in the order they are passed
+    # in, so you may want to sort them first.
+    mlel_items: list[str]
+
+class AMultiListEditor(DialogWindow):
+    """Base class for a multi-list editor. You have to subclass this and pass
+    in appropriate arguments (see __init__ below). That way we also get a
+    unique __class__.__name__ for the settings key."""
+    _min_size = (300, 400)
+
+    def __init__(self, parent, *, data_desc: str,
+            list_data: list[MLEList], check_uncheck_bitmaps, sizes_dict,
+            icon_bundle):
+        """Initializes a new AMultiListEditor.
+
+        :param data_desc: A description that will be shown at the top of the
+            resulting dialog.
+        :param list_data: A list specifying the lists that can be edited via
+            this dialog. See MLEList for more information.
+        :param check_uncheck_bitmaps: A tuple of _wx.Bitmaps for the
+            check/uncheck buttons. Order is checked, unchecked."""
+        super().__init__(parent, sizes_dict=sizes_dict,
+            icon_bundle=icon_bundle)
+        # Stores the state of the edited data in each list
+        self._wip_list_data = [{i: True for i in m.mlel_items}
+                               for m in list_data]
+        self._editor_clbs = []
+        clb_items = []
+        for i, mle_list in enumerate(list_data):
+            # Skip showing any list editors for lists without items. However,
+            # we do still want to return them in show_modal for ease of use
+            if not mle_list.mlel_items:
+                # To keep indices identical between _editor_clbs and
+                # _wip_list_data
+                self._editor_clbs.append(None)
+                continue
+            mle_clb = CheckListBox(self, choices=mle_list.mlel_items)
+            # Start out with everything checked - could make a param if needed
+            mle_clb.set_all_checkmarks(checked=True)
+            mle_clb.on_box_checked.subscribe(partial(
+                self._handle_box_checked, i))
+            self._editor_clbs.append(mle_clb)
+            clb_items.append(WrappingLabel(self, mle_list.mlel_title)),
+            clb_items.append(WrappingLabel(self, mle_list.mlel_desc)),
+            # Put the check/uncheck buttons right before the search bar
+            search_layout = HLayout(item_expand=True, spacing=4)
+            check_all_btn = PureImageButton(self, check_uncheck_bitmaps[0],
+                btn_tooltip=_('Check all currently visible items.'))
+            check_all_btn.on_clicked.subscribe(partial(
+                self._handle_mass_check, i, True))
+            search_layout.add(check_all_btn)
+            uncheck_all_btn = PureImageButton(self, check_uncheck_bitmaps[1],
+                btn_tooltip=_('Uncheck all currently visible items.'))
+            uncheck_all_btn.on_clicked.subscribe(partial(
+                self._handle_mass_check, i, False))
+            search_layout.add(uncheck_all_btn)
+            mle_sb = SearchBar(self)
+            mle_sb.on_text_changed.subscribe(partial(
+                self._handle_editor_search, i))
+            # The search bar should take up all remaining horizontal space
+            search_layout.add((mle_sb, LayoutOptions(weight=1)))
+            clb_items.append(search_layout)
+            # And last goes the CheckListBox, which should tkae up all
+            # remaining vertical space
+            clb_items.append((mle_clb, LayoutOptions(weight=1)))
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            WrappingLabel(self, data_desc),
+            HorizontalLine(self),
+            *clb_items,
+            HLayout(spacing=4, item_expand=True, items=[
+                Stretch(),
+                OkButton(self, _('Commit')),
+                CancelButton(self)
+            ]),
+        ]).apply_to(self)
+
+    def _handle_box_checked(self, list_data_index: int, box_index: int):
+        """Internal callback, called whenever a checkbox is checked or
+        unchecked. Updates the internal state tracking dict to keep track of
+        checking/unchecking."""
+        curr_clb = self._editor_clbs[list_data_index]
+        now_checked = curr_clb.lb_is_checked_at_index(box_index)
+        checked_item = curr_clb.lb_get_str_item_at_index(box_index)
+        self._wip_list_data[list_data_index][checked_item] = now_checked
+
+    def _handle_editor_search(self, list_data_index: int, search_str: str):
+        """Internal callback, called whenever text is entered into a seach bar.
+        Updates the contents of the affected CheckListBox to match."""
+        lower_search_str = search_str.strip().lower()
+        mle_item_state = self._wip_list_data[list_data_index]
+        searched_items = {i: mle_item_state[i] for i in mle_item_state
+                          if lower_search_str in i.lower()}
+        self._editor_clbs[list_data_index].set_all_items(searched_items)
+
+    def _handle_mass_check(self, list_data_index: int, checked_state: bool):
+        """Internal callback, called whenever a Check All or Uncheck All button
+        is pressed. Checks or unchecks all currently visible items."""
+        curr_clb = self._editor_clbs[list_data_index]
+        # This does not end up calling _handle_box_checked, so no need to
+        # pause that subscription
+        curr_clb.set_all_checkmarks(checked=checked_state)
+        curr_wip_data = self._wip_list_data[list_data_index]
+        for wip_item in curr_clb.lb_get_str_items():
+            curr_wip_data[wip_item] = checked_state
+
+    ##: Return type should be tuple[bool, list[str], ...] (I think), but
+    # PyCharm complains about that
+    def show_modal(self) -> tuple[bool, Any]:
+        """Return whether the OK button or Cancel button was pressed and one or
+        more lists of strings, where each list of strings corresponds to the
+        selected items from the nth list in the editor."""
+        result = super().show_modal()
+        # Compile only the checked items into the resulting lists
+        final_lists = [
+            [mle_item for mle_item, mle_item_checked in mle_list_data.items()
+             if mle_item_checked] for mle_list_data in self._wip_list_data]
+        return result, *final_lists

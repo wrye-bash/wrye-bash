@@ -38,6 +38,7 @@ from collections import defaultdict
 from itertools import chain
 
 from . import BashFrame, INIList, Installers_Link
+from .dialogs import SyncFromDataEditor
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
@@ -1233,37 +1234,32 @@ class Installer_SyncFromData(_SingleInstallable):
                 return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
-        msg_del = [_(u'Files to delete (%u):') % len(missing),
-                   _(u'Uncheck files to keep them in the package.')]
-        msg_del.extend(missing)
-        msg_upd = [_(u'Files to update (%u):') % len(mismatched),
-                   _(u'Uncheck files to keep them unchanged in the package.')]
-        msg_upd.extend(mismatched)
-        m = _(u'Update %s according to %s directory?') % (
-            self._selected_item, bush.game.mods_dir) + u'\n' + _(
-            u'Uncheck any files you want to keep unchanged.')
-        sel_missing, sel_mismatched = map(set, balt.ListBoxes.display_dialog(
-            self.window, self._text, m, [msg_del, msg_upd],
-            get_checked=[(msg_del[0], missing), (msg_upd[0], mismatched)]))
-        if not sel_missing and not sel_mismatched:
-            return # Nothing left to sync, cancel
+        ed_ok, ed_missing, ed_mismatched = SyncFromDataEditor.display_dialog(
+            self.window, pkg_missing=missing, pkg_mismatched=mismatched,
+            pkg_name=self._selected_item)
+        if not ed_ok or (not ed_missing and not ed_mismatched):
+            return # Aborted by user or nothing left to sync, cancel
         #--Sync it, baby!
         with balt.Progress(self._text) as progress:
-            progress(0.1,_(u'Updating files.'))
+            progress(0.1, _('Updating files.'))
             actual_upd, actual_del = self._selected_info.sync_from_data(
-                sel_missing | sel_mismatched,
+                set(ed_missing) | set(ed_mismatched),
                 progress=SubProgress(progress, 0.1, 0.7))
-            if (actual_del != len(sel_missing)
-                    or actual_upd != len(sel_mismatched)):
-                msg = u'\n'.join([
-                    _(u'Something went wrong when updating "%s" installer.'
-                      ) % self._selected_info,
-                    _(u'Deleted %s. Expected to delete %s file(s).') % (
-                        actual_del, len(sel_missing)),
-                    _(u'Updated %s. Expected to update %s file(s).') % (
-                        actual_upd, len(sel_mismatched)),
-                    _(u'Check the integrity of the installer.')])
-                self._showWarning(msg)
+            if (actual_del != len(ed_missing)
+                    or actual_upd != len(ed_mismatched)):
+                msg = '\n'.join([
+                    _('Something went wrong when updating '
+                      '%(target_package)s.'),
+                    _('Deleted %(act_deleted)d files, expected to delete '
+                      '%(exp_deleted)d files.'),
+                    _('Updated %(act_updated)d files, expected to update '
+                      '%(exp_updated)d files.'),
+                    _('Check the integrity of %(target_package)s.')])
+                self._showWarning(msg % {
+                    'target_package': self._selected_item,
+                    'act_deleted': actual_del, 'exp_deleted': len(ed_missing),
+                    'act_updated': actual_upd,
+                    'exp_updated': len(ed_mismatched)})
             self._selected_info.refreshBasic(SubProgress(progress, 0.7, 0.8))
             if was_rar:
                 final_package = self._selected_info.writable_archive_name()
