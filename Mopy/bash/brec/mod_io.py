@@ -207,6 +207,12 @@ class ExteriorGrupHeader(GrupHeader):
         return [__rh.pack_formats[4], b'GRUP', self.size, *self.label,
                 self.groupType, self.stamp]
 
+    def __repr__(self):
+        # Reverse the labels for repr display, makes it easier to compare them
+        # against the ones in xEdit
+        return (f'<GRUP Header: {group_types[self.groupType]}, '
+                f'{tuple(reversed(self.label))}>')
+
 def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
                   __children=frozenset({1, 6, 7, 8, 9, 10}),
                   __exterior=frozenset({4, 5}),

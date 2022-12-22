@@ -396,7 +396,7 @@ class _Nested(_AMobBase):
     def __init__(self, loadFactory, ins=None, end_pos=None, **kwargs):
         self._stray_recs = {sig: kwargs.get(sig_to_str(sig).lower(), None) for
                             sig in self._extra_records}
-        self._mob_objects = {}
+        self._mob_objects = dict.fromkeys(self._mob_objects_type) # fixed order
         self._merged_strays = set()
         if ins: ins.rewind()
         self._end_pos = end_pos or _EOF # we don't know the size in advance
@@ -516,8 +516,9 @@ class _Nested(_AMobBase):
     def dump(self, out):
         for r in self._stray_recs.values():
             if r: r.dump(out)
-        for m in self._mob_objects.values():
-            m.dump(out) # won't dump if empty
+        # Dump the cell children out in order: persistent -> temporary -> VWD
+        for v in self._mob_objects.values():
+            v.dump(out) # won't dump if empty
 
 def _process_rec(sig, after=True, target=None):
     """Hack to do some processing before or after calling super method omitting
@@ -895,10 +896,23 @@ class CellRefs(_ChildrenGrup):
      _import_records."""
 
 class _PersRefs(CellRefs):
+    """Persistent cell children."""
     _children_grup_type = 8
+
 class TempRefs(CellRefs):
+    """Temporary cell children - need special sorting logic."""
     _children_grup_type = 9
+    # LAND -> PGRD -> other temporary refs
+    _sort_overrides = defaultdict(lambda: 2, {b'LAND': 0, b'PGRD': 1})
+
+    def _sort_group(self):
+        # First sort by FormID, then sort LAND and PGRD before the others
+        super()._sort_group()
+        self.id_records = dict(sorted(self.id_records.items(),
+            key=lambda p: self._sort_overrides[p[1]._rec_sig]))
+
 class _DistRefs(CellRefs):
+    """Visible when distant cell children."""
     _children_grup_type = 10
 
 class _CellChildren(_Nested, _ChildrenGrup):
@@ -906,7 +920,7 @@ class _CellChildren(_Nested, _ChildrenGrup):
     instead of a MobObjects."""
     _top_type = b'CELL'
     _mob_objects_type = {cl._children_grup_type: cl for cl in
-                         (_PersRefs, _DistRefs, TempRefs)}
+                         (_PersRefs, TempRefs, _DistRefs)}
     _mob_objects: dict[int, CellRefs]
     _children_grup_type = 6
 
@@ -914,9 +928,9 @@ class _CellChildren(_Nested, _ChildrenGrup):
     def __init__(self, grup_head, loadFactory, ins=None, do_unpack=False,
                  master_rec=None):
         # Initialize the _Nested attributes that _load_rec_group relies on
-        self._stray_recs = {sig: None for sig in self._extra_records}
+        self._stray_recs = dict.fromkeys(self._extra_records)
         # _mob_objects is now a dict as we have multiple children
-        self._mob_objects = {}
+        self._mob_objects = dict.fromkeys(self._mob_objects_type) # fixed order
         self._merged_strays = set()
         # then load as a MobBase to handle the header and specify endPos
         super(_Nested, self).__init__(grup_head, loadFactory, ins, do_unpack,
@@ -1124,7 +1138,7 @@ class WrldTempRefs(TempRefs):
 class _ExtCellChildren(_CellChildren):
     _top_type = b'CELL' # these are part of an WRLD record
     _mob_objects_type = {cl._children_grup_type: cl for cl in
-                         (_PersRefs, _DistRefs, WrldTempRefs)}
+                         (_PersRefs, WrldTempRefs, _DistRefs)}
 
 class _ExtCell(MobCell):
     _mob_objects_type = {6: _ExtCellChildren}
