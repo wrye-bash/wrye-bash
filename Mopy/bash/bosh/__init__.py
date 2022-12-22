@@ -1378,12 +1378,12 @@ class DataStore(DataDict):
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
 
-    def delete(self, delete_keys, *, confirm=False, recycle=True):
+    def delete(self, delete_keys, *, recycle=True):
         """Deletes member file(s)."""
         full_delete_paths, delete_info = self.files_to_delete(delete_keys)
         try:
             self._delete_operation(full_delete_paths, delete_info,
-                confirm=confirm, recycle=recycle)
+                recycle=recycle)
         finally:
             self.delete_refresh(full_delete_paths, delete_info,
                 check_existence=True)
@@ -1391,9 +1391,8 @@ class DataStore(DataDict):
     def files_to_delete(self, filenames, **kwargs):
         raise AbstractError
 
-    def _delete_operation(self, paths, delete_info, *, confirm=False,
-            recycle=True):
-        env.shellDelete(paths, confirm=confirm, recycle=recycle)
+    def _delete_operation(self, paths, delete_info, *, recycle=True):
+        env.shellDelete(paths, recycle=recycle)
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Useful to

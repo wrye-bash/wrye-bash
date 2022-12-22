@@ -614,7 +614,6 @@ class INIList(balt.UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _shellUI = True
     _sort_keys = {
         u'File'     : None,
         u'Installer': lambda self, a: self.data_store[a].get_table_prop(
@@ -2551,7 +2550,6 @@ class InstallersList(balt.UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _icons = InstallerColorChecks()
     _sunkenBorder = False
-    _shellUI = True
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
     _sort_keys = {
@@ -3515,7 +3513,6 @@ class ScreensList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _shellUI = True
     _editLabels = _copy_paths = True
 
     _sort_keys = {u'File'    : None,

@@ -913,7 +913,6 @@ class UIList(PanelWin):
     global_links = None
     #--gList image collection
     _icons = ColorChecks()
-    _shellUI = False # only True in Screens/INIList/Installers
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -1638,24 +1637,16 @@ class UIList(PanelWin):
             # Only undeletable items selected, inform the user
             showError(self, _('The selected items cannot be deleted.'))
             return
-        if not self.__class__._shellUI:
-            # The user may adjust deleted items and recycling state via GUI
-            items, recycle = self._promptDelete(
-                items, dialogTitle, order, recycle)
-        if not items: return
-        try:
-            self.data_store.delete(items, confirm=self.__class__._shellUI,
-                recycle=recycle)
-        except (AccessDeniedError, CancelError, SkipError): pass
-        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
-
-    def _promptDelete(self, items, dialogTitle, order, recycle):
-        if not items: return items, recycle
         if order: items.sort()
+        # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             sizes_dict=sizes, title=dialogTitle, items_to_delete=items,
             default_recycle=recycle)
-        return (dd_items, dd_recycle) if dd_ok else (None, recycle)
+        if not dd_ok or not dd_items: return
+        try:
+            self.data_store.delete(dd_items, recycle=dd_recycle)
+        except (AccessDeniedError, CancelError, SkipError): pass
+        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:
