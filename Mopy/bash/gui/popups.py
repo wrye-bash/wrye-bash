@@ -49,8 +49,9 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
     title = _(u'Move or Copy?')
     _def_size = _min_size = (450, 175)
 
-    def __init__(self, parent, message, sizes_dict):
-        super().__init__(parent, sizes_dict=sizes_dict)
+    def __init__(self, parent, message, *, sizes_dict, icon_bundle):
+        super().__init__(parent, sizes_dict=sizes_dict,
+            icon_bundle=icon_bundle)
         ##: yuck, decouple!
         from ..balt import staticBitmap
         self._ret_action = u''
@@ -93,7 +94,7 @@ class _TransientPopup(_AComponent):
         # argument to this wx class for whatever reason
         super().__init__(parent, _wx.BORDER_SIMPLE | _wx.PU_CONTAINS_CONTROLS)
 
-    def show_popup(self, popup_pos): # type: (tuple) -> None
+    def show_popup(self, popup_pos: tuple[int, int]):
         """Shows this popup at the specified position on the screen."""
         self._native_widget.Position(popup_pos, (0, 0))
         self._native_widget.Popup()
@@ -102,7 +103,7 @@ class MultiChoicePopup(_TransientPopup):
     """A transient popup that shows a list of checkboxes with a search bar. To
     implement special behavior when an item is checked or unchecked, you have
     to override the on_item_checked and on_mass_select methods."""
-    def __init__(self, parent, all_choices: dict[str, bool], help_text='',
+    def __init__(self, parent, *, all_choices: dict[str, bool], help_text='',
             aa_btn_tooltip='', ra_btn_tooltip=''):
         """Creates a new MultiChoicePopup with the specified parameters.
 
@@ -173,15 +174,13 @@ class MultiChoicePopup(_TransientPopup):
         self._all_choices[choice_name] = choice_checked
         self.on_item_checked(choice_name, choice_checked)
 
-    def on_item_checked(self, choice_name, choice_checked):
-        # type: (str, bool) -> None
+    def on_item_checked(self, choice_name: str, choice_checked: bool):
         """Called when a single item has been checked or unchecked."""
-        raise AbstractError(u'on_item_checked not implemented')
+        raise AbstractError('on_item_checked not implemented')
 
-    def on_mass_select(self, curr_choices, choices_checked):
-        # type: (list, bool) -> None
+    def on_mass_select(self, curr_choices: list[str], choices_checked: bool):
         """Called when multiple items have been checked or unchecked."""
-        raise AbstractError(u'on_mass_select not implemented')
+        raise AbstractError('on_mass_select not implemented')
 
 # File Dialogs ----------------------------------------------------------------
 class _FileDialog(_AComponent):
@@ -248,9 +247,11 @@ class DeletionDialog(DialogWindow): ##: wx.PopupWindow?
     _def_size = (290, 250)
     _min_size = (290, 150)
 
-    def __init__(self, parent, *, sizes_dict, title: str,
-            items_to_delete: list[str], default_recycle: bool):
-        super().__init__(parent, sizes_dict=sizes_dict, title=title)
+    def __init__(self, parent, *, title: str,
+            items_to_delete: list[str], default_recycle: bool,
+            sizes_dict, icon_bundle):
+        super().__init__(parent, sizes_dict=sizes_dict, title=title,
+            icon_bundle=icon_bundle)
         self._deletable_items = CheckListBox(self, choices=items_to_delete)
         self._deletable_items.set_all_checkmarks(checked=True)
         self._recycle_checkbox = CheckBox(self, _('Recycle'),
@@ -300,8 +301,8 @@ class DateAndTimeDialog(DialogWindow): ##: wx.PopupWindow?
     title = _('Choose a date and time')
     _def_size = (270, 360)
 
-    def __init__(self, parent, warning_color: Color):
-        super().__init__(parent)
+    def __init__(self, parent, *, warning_color: Color, icon_bundle):
+        super().__init__(parent, icon_bundle=icon_bundle)
         self._warning_color = warning_color
         self._date_picker = DatePicker(self)
         # We need to turn this into a POSIX timestamp later

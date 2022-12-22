@@ -1640,8 +1640,8 @@ class UIList(PanelWin):
         if order: items.sort()
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
-            sizes_dict=sizes, title=dialogTitle, items_to_delete=items,
-            default_recycle=recycle)
+            title=dialogTitle, items_to_delete=items, default_recycle=recycle,
+            sizes_dict=sizes, icon_bundle=Resources.bashBlue)
         if not dd_ok or not dd_items: return
         try:
             self.data_store.delete(dd_items, recycle=dd_recycle)

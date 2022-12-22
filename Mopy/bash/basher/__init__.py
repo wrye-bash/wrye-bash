@@ -1752,7 +1752,8 @@ class ModDetails(_ModsSavesDetails):
         """Internal callback that handles showing the date and time dialog and
         processing its result."""
         user_ok, user_datetime = DateAndTimeDialog.display_dialog(
-            self, warning_color=balt.colors['default.warn'])
+            self, warning_color=balt.colors['default.warn'],
+            icon_bundle=balt.Resources.bashBlue)
         if user_ok:
             self._apply_modified_timestamp(user_datetime.strftime('%c'))
 
@@ -2762,7 +2763,7 @@ class InstallersList(balt.UIList):
             else: msg = _('You have dragged some converters into Wrye Bash.')
             msg += '\n' + _('What would you like to do with them?')
             action, remember = CopyOrMovePopup.display_dialog(self, msg,
-                sizes_dict=balt.sizes)
+                sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
             if action and remember:
                 settings[u'bash.installers.onDropFiles.action'] = action
         return action

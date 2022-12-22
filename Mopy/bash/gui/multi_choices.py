@@ -172,7 +172,7 @@ class ListBox(WithMouseEvents):
     def lb_get_str_item_at_index(self, lb_selection_dex): ##: && ->& ?
         return self._native_widget.GetString(lb_selection_dex)
 
-    def lb_get_str_items(self):
+    def lb_get_str_items(self) -> list[str]:
         return self._native_widget.GetStrings()
 
     def lb_get_selections(self): return self._native_widget.GetSelections()
