@@ -138,7 +138,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
         id_info = self.id_stored_data[b'FACT']
-        for rid, record in modFile.tops[b'SPEL'].getActiveRecords():
+        for rid, record in modFile.tops[b'SPEL'].iter_present_records():
             if record.spellType == 2 and rid in id_info:
                 patchRecords.setRecord(record)
 
@@ -219,7 +219,7 @@ class MorphFactionsPatcher(_ExSpecialList):
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record)
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+        for rid, record in modFile.tops[b'FACT'].iter_present_records():
             if rid in id_info:
                 patchBlock.setRecord(record)
 
@@ -228,11 +228,10 @@ class MorphFactionsPatcher(_ExSpecialList):
         if not self.isActive: return
         mFactLong = self.mFactLong
         id_info = self.id_stored_data[b'FACT']
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         changes_counts = Counter()
         mFactable = []
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+        for rid, record in self.patchFile.tops[b'FACT'].iter_present_records(): ##: for the patch file use iter_records? No deleted or ignored should end up here - or better safe...
             if rid not in id_info: continue
             if rid == mFactLong: continue
             mFactable.append(rid)
@@ -259,7 +258,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                 keep(rid)
                 changes_counts[rid.mod_fn] += 1
         #--MFact record
-        record = modFile.tops[b'FACT'].getRecord(mFactLong)
+        record = self.patchFile.tops[b'FACT'].getRecord(mFactLong)
         if record:
             relations = record.relations
             del relations[:]

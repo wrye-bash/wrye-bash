@@ -900,7 +900,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 if b'NPC_' not in modFile.tops: continue
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.augmented_masters(), ordered)
-                for rid, npc in modFile.tops[b'NPC_'].getActiveRecords():
+                for rid, npc in modFile.tops[b'NPC_'].iter_present_records():
                     fid = mapToOrdered(rid.short_fid, None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
