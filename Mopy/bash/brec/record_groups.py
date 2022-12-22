@@ -410,15 +410,15 @@ class _Nested(_AMobBase):
                 self._mob_objects[gt] = mob_type.empty_mob(*args)
 
     def getSize(self):
-        recs = (r for r in self._stray_recs.values() if r)
-        return sum(chg.getSize() for chg in chain(recs,
-                                                  self._mob_objects.values()))
+        recs = [r for r in self._stray_recs.values() if r]
+        # getSize for MreRecord does not include the record header
+        return len(recs) * RecordHeader.rec_header_size + sum(
+            chg.getSize() for chg in chain(recs, self._mob_objects.values()))
 
     def getNumRecords(self,includeGroups=True):
-        nrecs = sum(1 for __ in self.iter_records())
-        if includeGroups and nrecs: # no recs => no top or nested groups
-            nrecs += sum(1 for m in self._mob_objects if m)
-        return nrecs
+        return sum(
+            v.getNumRecords(includeGroups) for v in self._mob_objects.values()
+            if v) + sum(1 for v in self._stray_recs.values() if v)
 
     def get_all_signatures(self):
         return {i._rec_sig for i in self.iter_records()}
@@ -595,6 +595,13 @@ class _ComplexRec(_Nested):
         if _loaded_world_records is not None:
             _loaded_world_records[self.master_record.group_key()] = self
         super()._load_rec_group(ins, endPos, self.master_record)
+
+    def getNumRecords(self,includeGroups=True):
+        if self.master_record:
+            return super().getNumRecords(includeGroups)
+        # Master record is not present, we won't be dumped out
+        ##: Can we even reach this point? Or will be keepRecords'd out before?
+        return 0
 
     @_process_rec(None)
     def keepRecords(self, p_keep_ids):
@@ -1018,16 +1025,17 @@ class MobCells(MobObjects):
             return self.size
         self.size = 0
         self._block_subblock_cells = defaultdict(lambda: defaultdict(list))
-        hsize = RecordHeader.rec_header_size # add the size of subblock header
+        hsize = RecordHeader.rec_header_size
+        # Every subblock has one record header
         self._block_subblock_sizes = defaultdict(
             lambda: defaultdict(lambda: hsize))
         for cell_rid, mob_cell in self.id_records.items():
             block, subblock = mob_cell.master_record.getBsb()
-            cell_size = mob_cell.getSize()
-            self._block_subblock_sizes[block][subblock] += cell_size
+            self._block_subblock_sizes[block][subblock] += mob_cell.getSize()
             self._block_subblock_cells[block][subblock].append(cell_rid)
-        # sum sublock sizes to get the block size (+ hsize for block header)
+        # Every block has one record header
         self._block_sizes = defaultdict(lambda: hsize)
+        # Sum sublock sizes to get the block size
         for block, subs_sizes in self._block_subblock_cells.items():
             bsize = sum(self._block_subblock_sizes[block].values())
             self._block_sizes[block] += bsize # includes the sizes of headers
@@ -1107,12 +1115,17 @@ class MobICells(MobCells, TopComplexGrup):
     _block_header_type = GrupHeader
 
     def getNumRecords(self, includeGroups=True):
+        # MobCells comes first in mro and does not call super, so duplicate
+        # what TopComplexGrup does here
         count = super().getNumRecords(includeGroups)
-        return (count + 1) if count else 0
+        return count + includeGroups if count else 0
 
     def getSize(self):
-        count = super().getSize()
-        return (count + RecordHeader.rec_header_size) if count else 0
+        # MobCells comes first in mro and does not call super, so duplicate
+        # what TopComplexGrup does here
+        gsize = super().getSize()
+        # The top GRUP header (0)
+        return (gsize + RecordHeader.rec_header_size) if gsize else 0
 
 #------------------------------------------------------------------------------
 class WrldTempRefs(TempRefs):
@@ -1215,16 +1228,31 @@ class WorldChildren(_CellChildren):
     def getNumRecords(self,includeGroups=True):
         if nrecs := (self._stray_recs[b'CELL'] or 0):
             nrecs = nrecs.getNumRecords(includeGroups)
-        recs = self._stray_recs
+        recs = self._stray_recs.copy()
         try:
-            del recs[b'CELL']
+            del self._stray_recs[b'CELL']
             num_recs = super().getNumRecords(includeGroups)
             if not num_recs and nrecs: # we only have a persistent cell
-                nrecs += includeGroups # add the WorldChildren grup 6 header
+                nrecs += includeGroups # add the WorldChildren grup 1 header
             nrecs += num_recs
         finally:
             self._stray_recs = recs
         return nrecs
+
+    def getSize(self):
+        # As per usual, the persistent CELL needs special handling - otherwise
+        # it'll just be counted as a regular stray record instead of a group
+        if self._stray_recs[b'CELL']:
+            gsize = self._stray_recs[b'CELL'].getSize()
+            recs = self._stray_recs.copy()
+            try:
+                del self._stray_recs[b'CELL']
+                gsize += super().getSize()
+            finally:
+                self._stray_recs = recs
+        else:
+            gsize = super().getSize()
+        return gsize
 
     @_process_rec(b'CELL', target=0)
     def updateRecords(self, srcBlock, mergeIds):
