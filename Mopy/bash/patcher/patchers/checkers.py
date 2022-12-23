@@ -318,8 +318,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # timescale
         def find_timescale(glob_file):
             if b'GLOB' not in glob_file.tops: return None
-            for glob_eid, glob_rec in glob_file.tops[
-                b'GLOB'].iter_present_records(rec_key=u'eid'):
+            glob_recs = glob_file.tops[b'GLOB'].iter_present_records()
+            for glob_eid, glob_rec in ((r.eid, r) for _gkey, r in glob_recs):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value
             return None

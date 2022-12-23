@@ -84,13 +84,15 @@ class _AMobBase:
         raise AbstractError
 
     def iter_present_records(self, rec_sig=None, *, include_ignored=False,
-                             rec_key='fid', __attrgetters=attrgetter_cache):
+                             __attrgetters=attrgetter_cache):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""
-        key_get = __attrgetters[rec_key]
-        return ((key_get(r), r) for r in self.iter_records() if not
+        if rec_sig is None: # iterate our top record blocks
+            return [(k, r) for k, r in self.id_records.items() if not
+                r.flags1.deleted and (include_ignored or not r.flags1.ignored)]
+        return ((r.group_key(), r) for gkey, r in self.iter_records() if not
                 r.flags1.deleted and (include_ignored or not r.flags1.ignored)
-                and (not rec_sig or r._rec_sig == rec_sig))
+                and r._rec_sig == rec_sig)
 
     def get_all_signatures(self):
         """Returns a set of all signatures actually contained in this block."""

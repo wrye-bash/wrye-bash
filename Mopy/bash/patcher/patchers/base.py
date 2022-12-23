@@ -242,38 +242,37 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
-            for cfid, cellBlock in modFile.tops[b'CELL'].id_records.items():
+            for cfid, cblock in modFile.tops[b'CELL'].iter_present_records():
                 if patch_cell := cfid in patchCells.id_records:
-                    patch_cell = patchCells.setRecord(cellBlock.master_record,
+                    patch_cell = patchCells.setRecord(cblock.master_record,
                                                       do_copy=False)
                 for get_refs in __get_refs:
-                    for record in get_refs(cellBlock).iter_records():
-                        if getattr(record, 'base', None) in self.old_new:
+                    for __, rec in get_refs(cblock).iter_present_records():
+                        if getattr(rec, 'base', None) in self.old_new:
                             if not patch_cell:
                                 patch_cell = patchCells.setRecord(
-                                    cellBlock.master_record)
-                            get_refs(patch_cell).setRecord(record,
-                                                           do_copy=False)
+                                    cblock.master_record)
+                            get_refs(patch_cell).setRecord(rec, do_copy=False)
         if b'WRLD' in modFile.tops:
-            for wfid, worldBlock in modFile.tops[b'WRLD'].id_records.items():
+            for wfid, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
                 if patch_wrld := (wfid in patchWorlds.id_records):
                     patch_wrld = patchWorlds.setRecord(
                         worldBlock.master_record, do_copy=False)
-                for wcfid, cellBlock in worldBlock.ext_cells.id_records.items():
+                for wcfid, cblock in worldBlock.ext_cells.iter_present_records():
                     if patch_cell := (patch_wrld and wcfid in
                             patch_wrld.ext_cells.id_records):
                         patch_cell = patch_wrld.ext_cells.setRecord(
-                            cellBlock.master_record, do_copy=False)
+                            cblock.master_record, do_copy=False)
                     for get_refs in __get_refs:
-                        for record in get_refs(cellBlock).iter_records():
-                            if getattr(record, 'base', None) in self.old_new:
+                        for __, rec in get_refs(cblock).iter_present_records():
+                            if getattr(rec, 'base', None) in self.old_new:
                                 if not patch_wrld:
                                     patch_wrld = patchWorlds.setRecord(
                                         worldBlock.master_record)
                                 if not patch_cell:
                                     patch_cell = patch_wrld.ext_cells.setRecord(
-                                        cellBlock.master_record)
-                                get_refs(patch_cell).setRecord(record,
+                                        cblock.master_record)
+                                get_refs(patch_cell).setRecord(rec,
                                                                do_copy=False)
 
     def buildPatch(self, log, progress, *, __get_refs=(attrgetter('temp_refs'),

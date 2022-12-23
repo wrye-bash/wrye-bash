@@ -50,8 +50,8 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            for worldId, worldBlock in srcFile.tops[b'WRLD'].id_records.items():
+            src_wrld_block = self._mod_file_read(srcInfo).tops[b'WRLD']
+            for worldId, worldBlock in src_wrld_block.iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
@@ -60,7 +60,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         """Add lists from modFile."""
         if b'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.tops[b'WRLD']
-        for worldId, worldBlock in modFile.tops[b'WRLD'].id_records.items():
+        for worldId, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
             if worldBlock.road:
                 patch_world_block = patchWorlds.setRecord(
                     worldBlock.master_record)
@@ -71,7 +71,8 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldId, worldBlock in self.patchFile.tops[b'WRLD'].id_records.items():
+        for worldId, worldBlock in self.patchFile.tops[
+                b'WRLD'].iter_present_records():
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
@@ -148,7 +149,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         count = Counter()
         keep = self.patchFile.getKeeper()
         id_info = self.id_stored_data[b'FACT']
-        for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
+        for rid, record in self.patchFile.tops[b'SPEL'].iter_present_records():
             ##: Skips OBME records - rework to support them
             if record.obme_record_version is not None: continue
             #--Skip this one?
