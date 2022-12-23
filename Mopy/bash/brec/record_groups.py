@@ -35,7 +35,7 @@ from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
     ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
 from .utils_constants import DUMMY_FID, group_types, FormId
 from ..bolt import attrgetter_cache, sig_to_str, dict_sort
-from ..exception import AbstractError, ModError, ModFidMismatchError
+from ..exception import AbstractError, ModError
 
 class _AMobBase:
     """Group of records and/or subgroups."""
@@ -390,11 +390,13 @@ class _Nested(_AMobBase):
     _mob_objects_type: dict[int, type[_ChildrenGrup]] = {}
     _mob_objects: dict[int, _ChildrenGrup]
     _marker_groups = {0} # when we hit a top group loading is over
+    _merged_strays: set[bytes]
 
     def __init__(self, loadFactory, ins=None, end_pos=None, **kwargs):
         self._stray_recs = {sig: kwargs.get(sig_to_str(sig).lower(), None) for
                             sig in self._extra_records}
         self._mob_objects = {}
+        self._merged_strays = set()
         if ins: ins.rewind()
         self._end_pos = end_pos or _EOF # we don't know the size in advance
         super().__init__(loadFactory, ins, self._end_pos)
@@ -431,11 +433,10 @@ class _Nested(_AMobBase):
         from ..mod_files import MasterSet # YUCK
         mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
-        for rsig in self._stray_recs:
-            # Grab the version that we're trying to merge, and check if there's
-            # even one present
-            src_rec = src_block._stray_recs[rsig]
-            if src_rec and not src_rec.flags1.ignored:
+        for rsig, src_rec in src_block._stray_recs.items():
+            if rsig in self._merged_strays:
+                continue # Already handled by callee
+            if src_rec and not src_rec.should_skip():
                 # If we're Filter-tagged, perform merge filtering first
                 if doFilter:
                     src_rec.mergeFilter(loadSet)
@@ -449,21 +450,17 @@ class _Nested(_AMobBase):
                 if not iiSkipMerge:
                     # We're past all hurdles - stick a copy of this record into
                     # ourselves and mark it as merged
-                    self._validate(rsig, src_rec)
                     mergeIdsAdd(src_rec.fid)
                     self._stray_recs[rsig] = src_rec.getTypeCopy()
         for gt, block_mob in src_block._mob_objects.items():
             self._mob_objects[gt].merge_records(block_mob, loadSet, mergeIds,
                                                 iiSkipMerge, doFilter)
 
-    def _validate(self, sig, src_rec): pass ## todo just for WRLD...?
-
     def updateRecords(self, srcBlock, mergeIds):
         for gt, chg in self._mob_objects.items():
             chg.updateRecords(srcBlock._mob_objects[gt], mergeIds)
         for sig, rec in srcBlock._stray_recs.items():
-            if rec and not rec.flags1.ignored:
-                self._validate(sig, rec)
+            if rec and not rec.should_skip():
                 self._stray_recs[sig] = rec.getTypeCopy()
                 mergeIds.discard(rec.fid)
 
@@ -628,14 +625,15 @@ class _ComplexRec(_Nested):
             mergeIds.discard(src_dial.fid)
             return True # call super
 
-    @_process_rec(None, after=False)
     def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
         mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
         # First, check the main DIAL record
         src_rec = src_block.master_record
-        if not src_rec.flags1.ignored:
+        # Otherwise we'll try to do this again in super
+        self._merged_strays.add(src_rec._rec_sig)
+        if not src_rec.should_skip():
             # If we're Filter-tagged, perform merge filtering first
             if doFilter:
                 src_rec.mergeFilter(loadSet)
@@ -654,7 +652,8 @@ class _ComplexRec(_Nested):
                 mergeIdsAdd(src_rec.fid)
                 self.master_record = src_rec.getTypeCopy()
             # Now we're ready to filter and merge the children
-            return True
+            super().merge_records(src_block, loadSet, mergeIds, iiSkipMerge,
+                doFilter)
 
     def __str__(self):
         mr = mr.fid if (mr := self.master_record) else \
@@ -928,6 +927,7 @@ class _CellChildren(_Nested, _ChildrenGrup):
         self._stray_recs = {sig: None for sig in self._extra_records}
         # _mob_objects is now a dict as we have multiple children
         self._mob_objects = {}
+        self._merged_strays = set()
         # then load as a MobBase to handle the header and specify endPos
         super(_Nested, self).__init__(grup_head, loadFactory, ins, do_unpack,
                                       master_rec)
@@ -1165,6 +1165,13 @@ class _ExteriorCells(MobCells):
     def getActiveRecords(self, rec_sig=None):
         return TopComplexGrup.getActiveRecords(self, rec_sig)
 
+    def updateRecords(self, srcBlock, mergeIds):
+        TopComplexGrup.updateRecords(self, srcBlock, mergeIds)
+
+    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
+        TopComplexGrup.merge_records(self, block, loadSet, mergeIds,
+            iiSkipMerge, doFilter)
+
     def setRecord(self, block, do_copy=True, _loading=False):
         """We want to get a block here not a mere record."""
         return TopComplexGrup.setRecord(self, block, do_copy, _loading)
@@ -1260,11 +1267,12 @@ class WorldChildren(_CellChildren):
             if pcell := self._stray_recs[b'CELL']:
                 pcell.updateRecords(src_cell, mergeIds)
 
-    @_process_rec(b'CELL')
     def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet  # YUCK
         loadSetIsSuperset = loadSet.issuperset
         if src_cell := src_block._stray_recs[b'CELL']:
+            # Otherwise we'll try to do this again in super
+            self._merged_strays.add(b'CELL')
             # If we don't have a world cell block yet, make a new one to merge
             # the source's world cell block into
             if was_newly_added := not self._stray_recs[b'CELL']:
@@ -1288,13 +1296,8 @@ class WorldChildren(_CellChildren):
                     # we need to remove it from this block again.
                     if was_newly_added:
                         self._stray_recs[b'CELL'] = None
-
-    def _validate(self, sig, src_rec):
-        dest_rec = self._stray_recs[sig]
-        ##: This may be wrong, check if ROAD behaves like PGRD/LAND
-        if dest_rec and dest_rec.fid != src_rec.fid:
-            raise ModFidMismatchError(self.inName, dest_rec.rec_str,
-                                      dest_rec.fid, src_rec.fid)
+        super().merge_records(src_block, loadSet, mergeIds, iiSkipMerge,
+            doFilter)
 
     @_process_rec(b'CELL', after=False)
     def keepRecords(self, p_keep_ids):
