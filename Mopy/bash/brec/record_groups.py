@@ -264,9 +264,10 @@ class MobObjects(MobBase):
             return self.size
         else:
             if not self.id_records: return 0
-            hsize = RecordHeader.rec_header_size
-            recs_size = sum((hsize + r.getSize()) for r in self.id_records.values())
-            return hsize + recs_size # add hsize for the GRUP header
+            recs_size = sum(r.getSize() for r in self.id_records.values())
+            # The top GRUP header (0)
+            return ((RecordHeader.rec_header_size + recs_size) if recs_size
+                    else 0)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -412,10 +413,9 @@ class _Nested(_AMobBase):
                 self._mob_objects[gt] = mob_type.empty_mob(*args)
 
     def getSize(self):
-        recs = [r for r in self._stray_recs.values() if r]
-        # getSize for MreRecord does not include the record header
-        return len(recs) * RecordHeader.rec_header_size + sum(
-            chg.getSize() for chg in chain(recs, self._mob_objects.values()))
+        return sum(chg.getSize() for chg in
+                   chain((r for r in self._stray_recs.values() if r),
+                         self._mob_objects.values()))
 
     def getNumRecords(self,includeGroups=True):
         return sum(
@@ -716,16 +716,6 @@ class TopComplexGrup(TopGrup):
         self.numRecords = num_recs
         return num_recs
 
-    def getSize(self):
-        """Returns size (including size of any group headers)."""
-        if not self.changed:
-            return self.size
-        else:
-            if not self.id_records: return 0
-            recs_size = sum((r.getSize()) for r in self.id_records.values())
-            # add hsize for the GRUP header
-            return RecordHeader.rec_header_size + recs_size
-
     def iter_records(self):
         return chain(*(d.iter_records() for d in self.id_records.values()))
 
@@ -935,9 +925,8 @@ class _CellChildren(_Nested, _ChildrenGrup):
 
     def getSize(self):
         gsize = super().getSize()
-        if gsize:
-            gsize += RecordHeader.rec_header_size # the children group header
-        return gsize
+        # The cell children GRUP header (6) or world children GRUP header (1)
+        return (gsize + RecordHeader.rec_header_size) if gsize else 0
 
     def getNumRecords(self,includeGroups=True):
         nrecs = super().getNumRecords(includeGroups)
@@ -1245,21 +1234,6 @@ class WorldChildren(_CellChildren):
         finally:
             self._stray_recs = recs
         return nrecs
-
-    def getSize(self):
-        # As per usual, the persistent CELL needs special handling - otherwise
-        # it'll just be counted as a regular stray record instead of a group
-        if self._stray_recs[b'CELL']:
-            gsize = self._stray_recs[b'CELL'].getSize()
-            recs = self._stray_recs.copy()
-            try:
-                del self._stray_recs[b'CELL']
-                gsize += super().getSize()
-            finally:
-                self._stray_recs = recs
-        else:
-            gsize = super().getSize()
-        return gsize
 
     @_process_rec(b'CELL', target=0)
     def updateRecords(self, srcBlock, mergeIds):
