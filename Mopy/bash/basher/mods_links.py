@@ -42,7 +42,7 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_ActivePlugins', u'Mods_SelectedFirst',
            u'Mods_LockActivePlugins', u'Mods_PluginChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            'Mods_ClearManualBashTags', 'Mods_OpenLOFileMenu', 'Mods_LOUndo',
-           'Mods_LORedo']
+           'Mods_LORedo', 'Mods_IgnoreDirtyVanillaFiles']
 
 # "Active Plugins" submenu ----------------------------------------------------
 class _Mods_ActivePluginsData(balt.ListEditorData):
@@ -385,15 +385,28 @@ class Mods_AutoESLFlagBP(BoolLink):
               u'up a load order slot.')
     _bl_key = u'bash.mods.auto_flag_esl'
 
-class Mods_ScanDirty(BoolLink):
-    """Read mod CRC's to check for dirty mods."""
-    _text = _(u"Check mods against LOOT's dirty mod list")
-    _help = _(u'Display a tooltip if mod is dirty and underline dirty mods.')
-    _bl_key = u'bash.mods.scanDirty'
+class _AMods_DirtyUpdateLink(BoolLink):
+    """Base class for links that have to refresh UI to account for changes in
+    dirty plugin highlighting."""
 
     def Execute(self):
-        super(Mods_ScanDirty, self).Execute()
-        self.window.RefreshUI(refreshSaves=False) # update all mouse tips
+        super().Execute()
+        # Update static help text & underlined plugins
+        self.window.RefreshUI(refreshSaves=False)
+
+class Mods_ScanDirty(_AMods_DirtyUpdateLink):
+    """Read mod CRC's to check for dirty mods."""
+    _text = _("Check Against LOOT's Dirty Plugin List")
+    _help = _('Display a tooltip if a plugin is dirty and underline dirty '
+              'plugins.')
+    _bl_key = u'bash.mods.scanDirty'
+
+class Mods_IgnoreDirtyVanillaFiles(_AMods_DirtyUpdateLink):
+    """Ignore dirty vanilla files on the Mods tab and in the Plugin Checker."""
+    _text = _('Ignore Dirty Vanilla Files')
+    _help = _("When checking plugins against LOOT's dirty plugin list, skip "
+              "vanilla plugins (e.g. DLCs).")
+    _bl_key = 'bash.mods.ignore_dirty_vanilla_files'
 
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""

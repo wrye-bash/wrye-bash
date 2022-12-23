@@ -1475,10 +1475,24 @@ tab. The directories skipped are:
             <tr><td colspan="2">ESL-Flag Bashed Patches</td><td><em>Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> If enabled,
                 then any built Bashed Patches will automatically be ESL-flagged, saving a load order slot.</td></tr>
             <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
-            <tr><td colspan="2">Check mods against LOOT's dirty mod list</td><td>LOOT's masterlist contains information on dirty plugins that
-                can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this
-                information. Note that the detection will try to use masterlists from the user's system-wide LOOT installation, if those
-                exist, otherwise Bash falls back to the taglists it comes bundled with.</td></tr>
+            <tr>
+                <td colspan="2" id="mods-check-dirty">Check Against LOOT's
+                    Dirty Plugin List</td>
+                <td>LOOT's masterlist contains information on dirty plugins
+                    that can be used by Wrye Bash to highlight these plugins on
+                    the Mods tab. Checking this setting tells Wrye Bash to use
+                    this information. Note that the detection will try to use
+                    masterlists from the user's system-wide LOOT installation,
+                    if those exist, otherwise Wrye Bash falls back to the
+                    taglists it comes bundled with.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Ignore Dirty Vanilla Files</td>
+                <td>Cleaning the game's master files (DLCs, Creation Club
+                    content, etc.) is controversial. Turning this setting on
+                    causes Wrye Bash to not highlight any dirty vanilla
+                    plugins on the Mods tab or in the Plugin Checker.</td>
+            </tr>
             <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
                 versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
             <tr>

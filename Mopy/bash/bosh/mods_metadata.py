@@ -216,8 +216,14 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     scan_for_cleaning = set()
     dirty_msgs = [(k, m.getDirtyMessage()) for k, m in
                   all_present_minfs.items()]
+    ignore_vanilla = bass.settings['bash.mods.ignore_dirty_vanilla_files']
+    num_dirty_vanilla = 0
     for x, y in dirty_msgs:
         if y[0]:
+            # Don't report vanilla plugins if the ignore setting is on
+            if ignore_vanilla and x in vanilla_masters:
+                num_dirty_vanilla += 1
+                continue
             cleaning_messages[x] = y[1]
         elif scan_plugins:
             scan_for_cleaning.add(x)
@@ -586,6 +592,12 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             u'cleaning_wiki_url': _cleaning_wiki_url,
             u'xedit_name': bush.game.Xe.full_name})
         log_plugin_messages(cleaning_messages)
+        if num_dirty_vanilla:
+            log('\n' + _("Additionally, %(num_ignored_vanilla)d vanilla "
+                         "plugins were reported dirty by LOOT. They were "
+                         "ignored because you have enabled 'Ignore Dirty "
+                         "Vanilla Files'.") % {
+                'num_ignored_vanilla': num_dirty_vanilla})
     if deleted_navmeshes:
         log.setHeader(u'=== ' + _(u'Deleted Navmeshes'))
         log(_(u'The following plugins have deleted navmeshes. They will cause '

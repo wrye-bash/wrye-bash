@@ -1108,9 +1108,12 @@ class ModList(_ModsUIList):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _('Has size-mismatched masters.') + ' '
         if settings[u'bash.mods.scanDirty']:
-            message = mod_info.getDirtyMessage()
-            mouseText += message[1]
-            if message[0]: item_format.underline = True
+            # Don't mark vanilla files as dirty if the ignore setting is active
+            if (not settings['bash.mods.ignore_dirty_vanilla_files'] or
+                    mod_name not in bush.game.bethDataFiles):
+                message = mod_info.getDirtyMessage()
+                mouseText += message[1]
+                if message[0]: item_format.underline = True
         self.mouseTexts[mod_name] = mouseText
 
     def RefreshUI(self, **kwargs):

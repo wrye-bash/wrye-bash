@@ -489,6 +489,7 @@ def InitModLinks():
     ModList.column_links.append(Mods_LockLoadOrder())
     ModList.column_links.append(Mods_LockActivePlugins())
     ModList.column_links.append(Mods_ScanDirty())
+    ModList.column_links.append(Mods_IgnoreDirtyVanillaFiles())
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_CrcRefresh())
     ModList.column_links.append(Mods_PluginChecker())
@@ -684,6 +685,7 @@ def InitModLinks():
     settings_menu.append(Mods_LockLoadOrder())
     settings_menu.append(Mods_LockActivePlugins())
     settings_menu.append(Mods_ScanDirty())
+    settings_menu.append(Mods_IgnoreDirtyVanillaFiles())
     settings_menu.append(SeparatorLink())
     settings_menu.append(Misc_SettingsDialog())
 

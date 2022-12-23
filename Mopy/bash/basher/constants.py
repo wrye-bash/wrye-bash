@@ -384,6 +384,7 @@ settingDefaults = { # keep current naming format till refactored
     'bash.mods.details.colReverse': {},
     'bash.mods.renames': {},
     'bash.mods.scanDirty': True,
+    'bash.mods.ignore_dirty_vanilla_files': False,
     'bash.mods.export.skip': '',
     'bash.mods.export.deprefix': '',
     'bash.mods.export.skipcomments': False,
