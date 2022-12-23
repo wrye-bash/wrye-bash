@@ -616,20 +616,20 @@ class _ComplexRec(_Nested):
 
     @_process_rec(None, after=False, target=0)
     def updateRecords(self, srcBlock, mergeIds):
-        src_dial = srcBlock.master_record
+        src_rec = srcBlock.master_record
         # Copy the latest version of the master record over. We can safely mark
         # it as not merged because keepRecords above ensures that we never
         # discard a master record when it still has children
-        if not src_dial.flags1.ignored:
-            self.master_record = src_dial.getTypeCopy()
-            mergeIds.discard(src_dial.fid)
+        if not src_rec.should_skip():
+            self.master_record = src_rec.getTypeCopy()
+            mergeIds.discard(src_rec.fid)
             return True # call super
 
     def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
         mergeIdsAdd = mergeIds.add
         loadSetIsSuperset = loadSet.issuperset
-        # First, check the main DIAL record
+        # First, check the main record
         src_rec = src_block.master_record
         # Otherwise we'll try to do this again in super
         self._merged_strays.add(src_rec._rec_sig)
@@ -640,9 +640,9 @@ class _ComplexRec(_Nested):
                 masterset = MasterSet()
                 src_rec.updateMasters(masterset.add)
                 if not loadSetIsSuperset(masterset):
-                    # Filtered out, discard this DIAL record (and, by
-                    # extension, all its INFO children)
-                    self.master_record = None # will drop us from MobDials
+                    # Filtered out, discard this record (and, by extension, all
+                    # its children)
+                    self.master_record = None # will drop us from parent
                     return
             # In IIM, we can't just return here since we also need to filter
             # the children that came with this complex record
@@ -748,48 +748,48 @@ class TopComplexGrup(TopGrup):
         self.setChanged()
 
     def updateRecords(self, srcBlock, mergeIds):
-        lookup_dial = self.id_records.get
-        for dfid, src_dial in srcBlock.id_records.items():
-            # Check if we have a corresponding DIAL record in the destination
-            dest_dial = lookup_dial(dfid)
-            if dest_dial:
-                dest_dial.updateRecords(src_dial, mergeIds)
+        lookup_rec = self.id_records.get
+        for dfid, src_rec in srcBlock.id_records.items():
+            # Check if we have a corresponding record in the destination
+            dest_rec = lookup_rec(dfid)
+            if dest_rec:
+                dest_rec.updateRecords(src_rec, mergeIds)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
-        lookup_dial = self.id_records.get
-        filtered_dials = {}
+        lookup_rec = self.id_records.get
+        filtered_recs = {}
         loadSetIsSuperset = loadSet.issuperset
-        for src_fid, src_dialogue in block.id_records.items():
-            # Check if we already have a dialogue with that FormID
-            dest_dialogue = lookup_dial(src_fid)
-            if was_newly_added := not dest_dialogue:
+        for src_fid, src_record in block.id_records.items():
+            # Check if we already have a record with that FormID
+            dest_record = lookup_rec(src_fid)
+            if was_newly_added := not dest_record:
                 # We do not, add it and get it - will typeCopy the rec
-                dest_dialogue = self.setRecord(src_dialogue.master_record)
-            # Delegate merging to the (potentially newly added) child dialogue
-            dest_dialogue.merge_records(src_dialogue, loadSet, mergeIds,
+                dest_record = self.setRecord(src_record.master_record)
+            # Delegate merging to the (potentially newly added) child record
+            dest_record.merge_records(src_record, loadSet, mergeIds,
                 iiSkipMerge, doFilter)
             # In IIM, skip all merging - note that we need to remove the child
-            # dialogue again if it was newly added in IIM mode.
+            # record again if it was newly added in IIM mode.
             if iiSkipMerge:
                 if was_newly_added:
-                    del self.id_records[dest_dialogue.group_key()]
+                    del self.id_records[dest_record.group_key()]
                 continue
-            # If we're Filter-tagged, check if the dialogue got filtered out
+            # If we're Filter-tagged, check if the record got filtered out
             if doFilter:
                 masterset = MasterSet()
-                src_dialogue.updateMasters(masterset.add)
+                src_record.updateMasters(masterset.add)
                 if not loadSetIsSuperset(masterset):
-                    # The child dialogue got filtered out. If it was newly
-                    # added, we need to remove it from this block again.
-                    # Otherwise, we can just skip forward to the next child.
+                    # The child record got filtered out. If it was newly added,
+                    # we need to remove it from this block again. Otherwise, we
+                    # can just skip forward to the next child.
                     if was_newly_added:
-                        del self.id_records[dest_dialogue.group_key()]
+                        del self.id_records[dest_record.group_key()]
                     continue
-            # We're either not Filter-tagged or we want to keep this dialogue
-            filtered_dials[src_fid] = src_dialogue
+            # We're either not Filter-tagged or we want to keep this record
+            filtered_recs[src_fid] = src_record
         # Apply any merge filtering we've done above to the record block
-        block.id_records = filtered_dials
+        block.id_records = filtered_recs
 
 #------------------------------------------------------------------------------
 class MobDial(_ComplexRec):
