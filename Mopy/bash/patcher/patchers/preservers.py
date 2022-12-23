@@ -234,7 +234,7 @@ class APreserver(ImportPatcher):
             patchBlock = self.patchFile.tops[rsig]
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
-            copied_records = patchBlock.id_records.copy()
+            copied_records = set(patchBlock.id_records)
             for rfid, record in modFile.tops[rsig].iter_present_records():
                 # Skip if we've already copied this record or if we're not
                 # interested in it
@@ -272,8 +272,7 @@ class APreserver(ImportPatcher):
         type_count = Counter()
         for rsig in self.srcs_sigs:
             if rsig not in modFileTops: continue
-            present_recs = modFileTops[rsig].iter_present_records(
-                include_ignored=True) ##: why include_ignored?
+            present_recs = modFileTops[rsig].iter_present_records()
             self._inner_loop(keep, present_recs, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
@@ -395,9 +394,7 @@ class ImportTextPatcher(APreserver):
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
 #------------------------------------------------------------------------------
-##: absorbing this one will be hard - hint: getActiveRecords only exists on
-# MobObjects, iter_records works for all Mob* classes, so attack that part of
-# _APreserver
+##: absorbing this one will be hard - or not :P
 class ImportCellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD')
@@ -437,7 +434,7 @@ class ImportCellsPatcher(ImportPatcher):
             # cell_data.
             for sig in self._read_sigs:
                 if block := srcFile.tops.get(sig):
-                    # for the WRLD block getActiveRecords will return
+                    # for the WRLD block iter_present_records will return
                     # exterior cells and the persistent cell - previous code
                     # did not differentiate either
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
@@ -486,8 +483,7 @@ class ImportCellsPatcher(ImportPatcher):
                 if cfid in cellData:
                     patchCells.setRecord(cell_rec) # todo why only the cell and not the whole block??
         if b'WRLD' in modFile.tops:
-            for wfid, worldBlock in modFile.tops[b'WRLD'].id_records.items():
-                if worldBlock.should_skip(): continue
+            for wfid, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
                 # if curr_pworld := wfid in patchWorlds.id_records:
                 curr_pworld = patchWorlds.setRecord(worldBlock.master_record)
                 for cfid, cell_rec in worldBlock.iter_present_records(b'CELL'):
@@ -519,7 +515,8 @@ class ImportCellsPatcher(ImportPatcher):
             return cell_modified
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cell_fid, patch_cell in self.patchFile.tops[b'CELL'].getActiveRecords(b'CELL'):
+        for cell_fid, patch_cell in self.patchFile.tops[b'CELL'
+                ].iter_present_records(b'CELL'):
             if cell_fid in cellData and handlePatchCellBlock():
                 count[cell_fid.mod_fn] += 1
         for worldId, worldBlock in self.patchFile.tops[

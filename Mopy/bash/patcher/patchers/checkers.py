@@ -63,7 +63,7 @@ class ContentsCheckerPatcher(Patcher):
         id_type = self.fid_to_type
         for entry_type in self.entryTypes:
             if entry_type not in modFile.tops: continue
-            for rid, _record in modFile.tops[entry_type].getActiveRecords():
+            for rid, _record in modFile.tops[entry_type].iter_present_records():
                 if rid not in id_type:
                     id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
@@ -73,7 +73,7 @@ class ContentsCheckerPatcher(Patcher):
             patchBlock = self.patchFile.tops[cont_type]
             pb_add_record = patchBlock.setRecord
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[cont_type].getActiveRecords():
+            for rid, record in modFile.tops[cont_type].iter_present_records():
                 if rid not in id_records:
                     pb_add_record(record)
 
@@ -159,22 +159,21 @@ class RaceCheckerPatcher(Patcher):
         for pb_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].getActiveRecords():
+            for rid, record in modFile.tops[pb_sig].iter_present_records():
                 if rid not in id_records:
                     patchBlock.setRecord(record)
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        keep = patchFile.getKeeper()
+        if b'RACE' not in self.patchFile.tops: return
+        keep = self.patchFile.getKeeper()
         racesSorted = []
         eyeNames = {k: x.full for k, x in
-                    patchFile.tops[b'EYES'].id_records.items()}
+                    self.patchFile.tops[b'EYES'].id_records.items()}
         hairNames = {k: x.full for k, x in
-                     patchFile.tops[b'HAIR'].id_records.items()}
+                     self.patchFile.tops[b'HAIR'].id_records.items()}
         skip_race_fid = bush.game.master_fid(0x038010)
-        for rid, race in patchFile.tops[b'RACE'].id_records.items():
+        for rid, race in self.patchFile.tops[b'RACE'].id_records.items():
             if (race.flags.playable or rid == skip_race_fid) and race.eyes:
                 prev_hairs = race.hairs[:]
                 race.hairs.sort(key=lambda x: hairNames.get(x) or '')
@@ -223,7 +222,7 @@ class NpcCheckerPatcher(Patcher):
         for pb_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].getActiveRecords():
+            for rid, record in modFile.tops[pb_sig].iter_present_records():
                 if rid not in id_records:
                     patchBlock.setRecord(record)
 
