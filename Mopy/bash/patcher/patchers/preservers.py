@@ -608,17 +608,17 @@ class ImportRacesPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, val in id_data[rfid].items():
-                record_val = __attrgetters[attr](record)
-                if attr in (u'eyes', u'hairs'):
+            for att, val in id_data[rfid].items():
+                record_val = __attrgetters[att](record)
+                if att in ('eyes', 'hairs'):
                     if set(record_val) != set(val): break
                 else:
-                    if attr in (u'leftEye', u'rightEye') and not record_val:
-                        deprint(u'Very odd race %s found - %s is None' % (
-                            record.full, attr))
+                    if att in ('leftEye', 'rightEye') and not record_val:
+                        deprint(f'Very odd race {record.full} found - {att} '
+                                f'is None')
                     elif record_val != val: break
             else: continue
-            for attr, val in id_data[rfid].items():
-                loop_setattr(record, attr, val)
+            for att, val in id_data[rfid].items():
+                loop_setattr(record, att, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
