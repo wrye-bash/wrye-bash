@@ -59,6 +59,10 @@ class _AMobBase:
         for record in self.iter_records():
             record.updateMasters(masterset_add)
 
+    def get_num_records(self):
+        """Return the number of leaf records contained in this group."""
+        return sum(1 for __ in self.iter_records())
+
     # Abstract methods --------------------------------------------------------
     def getSize(self):
         """Returns size (including size of any group headers)."""
