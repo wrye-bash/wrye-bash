@@ -27,7 +27,6 @@ from operator import itemgetter
 from ._shared import ExSpecial, cobl_main
 from .... import load_order
 from ....brec import FormId, null4
-from ....parsers import _HandleAliases
 from ....patcher.base import CsvListPatcher, ImportPatcher, ListPatcher
 
 class ImportRoadsPatcher(ImportPatcher, ExSpecial):
@@ -97,7 +96,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars
 
 #------------------------------------------------------------------------------
-class _ExSpecialList(_HandleAliases, CsvListPatcher, ExSpecial):
+class _ExSpecialList(CsvListPatcher, ExSpecial):
     _csv_key = u'OVERRIDE'
 
     def __init__(self, p_name, p_file, p_sources):

@@ -38,6 +38,7 @@ from .. import load_order
 from ..bolt import deprint, dict_sort, sig_to_str
 from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
+from ..parsers import _HandleAliases
 
 #------------------------------------------------------------------------------
 # APatcher and subclasses -----------------------------------------------------
@@ -115,7 +116,7 @@ class ListPatcher(APatcher):
             for srcFile in self.srcs:
                 log(f'* {srcFile}')
 
-class CsvListPatcher(ListPatcher):
+class CsvListPatcher(_HandleAliases, ListPatcher):
     """List patcher with csv sources."""
 
     def initData(self,progress):
@@ -199,8 +200,7 @@ class AMultiTweakItem(object):
                            u'tweak_log_msg'):
             if getattr(self, tweak_attr) == u'OVERRIDE':
                 self._raise_tweak_syntax_error(f"A '{tweak_attr}' attribute "
-                                               f"is still set to the default "
-                                               f"('OVERRIDE')")
+                    f"is still set to the default ('OVERRIDE')")
         # TODO: docs for attributes below! - done for static ones above
         self.choiceLabels = []
         self.choiceValues = []

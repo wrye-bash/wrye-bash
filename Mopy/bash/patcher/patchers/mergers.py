@@ -554,14 +554,13 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         merged_deleted = self._id_merged_deleted
-        special_lvsp_sort = bush.game.Esp.sort_lvsp_after_spel
         spel_type = self._spel_type
         mod_count = Counter()
         def sorted_spells(spell_list):
             # First pass: sort by the final load order (and ObjectID)
             spells_ret = sorted(spell_list,
                 key=lambda s: (load_order.cached_lo_index(s.mod_fn), s.object_dex))
-            if special_lvsp_sort:
+            if spel_type:
                 # Second pass: sort LVSP after SPEL
                 spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
             return spells_ret

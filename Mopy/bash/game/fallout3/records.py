@@ -58,7 +58,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     perk_effect_key
 from ...exception import ModSizeError
 
-_is_fnv = bush.game.fsName == u'FalloutNV'
+_is_fnv = bush.game.fsName == 'FalloutNV'
 def if_fnv(fo3_version, fnv_version):
     """Resolves to one of two different objects, depending on whether we're
     managing Fallout 3 or NV."""
@@ -123,7 +123,7 @@ class MelModel(MelGroup):
         b'DMDL': (b'DMDL', b'DMDT'),
     }
 
-    class _facegen_model_flags(Flags):
+    class _FacegenModelFlags(Flags):
         head: bool
         torso: bool
         rightHand: bool
@@ -143,7 +143,7 @@ class MelModel(MelGroup):
         # No MODD/MOSD equivalent for MOD2 and MOD4
         if len(types) == 5 and with_facegen_flags:
             mdl_elements.append(MelUInt8Flags(types[4], 'facegen_model_flags',
-                self.__class__._facegen_model_flags))
+                self.__class__._FacegenModelFlags))
         super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ class MelActivationPrompt(MelString):
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
     """Handles the common BMDT (Biped Data) subrecord."""
-    class _bp_flags(BipedFlags):
+    class _BpFlags(BipedFlags):
         head: bool
         hair: bool
         upperBody: bool
@@ -176,11 +176,10 @@ class MelBipedData(MelStruct):
         bodyAddon1: bool
         bodyAddon2: bool
         bodyAddon3: bool
-
         ##: Taken from valda's version, investigate
         _not_playable_flags = {'pipboy'}
 
-    class _general_flags(TrimmedFlags):
+    class _GeneralFlags(TrimmedFlags):
         hasBackpack: bool = flag(fnv_only(2))
         medium_armor: bool = flag(fnv_only(3))
         power_armor: bool = flag(5)
@@ -189,16 +188,16 @@ class MelBipedData(MelStruct):
 
     def __init__(self):
         super().__init__(b'BMDT', ['I', 'B', '3s'],
-            (self._bp_flags, 'biped_flags'),
-            (self._general_flags, 'generalFlags'), 'bp_unused')
+                         (self._BpFlags, 'biped_flags'),
+                         (self._GeneralFlags, 'generalFlags'), 'bp_unused')
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
     """Represents a collection of destruction-related subrecords."""
-    class _dest_header_flags(TrimmedFlags):
+    class _DestHeaderFlags(TrimmedFlags):
         vats_targetable: bool
 
-    class _dest_stage_flags(Flags):
+    class _DestStageFlags(Flags):
         cap_damage: bool
         disable: bool
         destroy: bool
@@ -206,12 +205,12 @@ class MelDestructible(MelGroup):
     def __init__(self):
         super().__init__('destructible',
             MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
-                (MelDestructible._dest_header_flags, 'dest_flags'),
-                'dest_unused'),
+                      (MelDestructible._DestHeaderFlags, 'dest_flags'),
+                      'dest_unused'),
             MelGroups('stages',
                 MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
                           'damage_stage',
-                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          (MelDestructible._DestStageFlags, 'stage_flags'),
                           'self_damage_per_second', (FID, 'explosion'),
                           (FID, 'debris'), 'debris_count'),
                 MelModel(b'DMDL'),
@@ -223,17 +222,16 @@ class MelDestructible(MelGroup):
 class MelEmbeddedScript(MelSequential):
     """Handles an embedded script, a SCHR/SCDA/SCTX/SLSD/SCVR/SCRO/SCRV
     subrecord combo."""
-    class _script_header_flags(Flags):
+    class _ScriptHeaderFlags(Flags):
         enabled: bool
 
     def __init__(self):
         super(MelEmbeddedScript, self).__init__(
-            MelOptStruct(
-                b'SCHR', [u'4s', u'3I', u'2H'], u'unused1', u'num_refs',
-                u'compiled_size', u'last_index', u'script_type',
-                (self._script_header_flags, u'schr_flags')),
-            MelBase(b'SCDA', u'compiled_script'),
-            MelString(b'SCTX', u'script_source'),
+            MelOptStruct(b'SCHR', ['4s', '3I', '2H'], 'unused1', 'num_refs',
+                         'compiled_size', 'last_index', 'script_type',
+                         (self._ScriptHeaderFlags, 'schr_flags')),
+            MelBase(b'SCDA', 'compiled_script'),
+            MelString(b'SCTX', 'script_source'),
             MelScriptVars(),
             MelReferences(),
         )
@@ -295,12 +293,12 @@ class MelLLItems(AMelLLItems):
 class MelRaceHeadPart(MelGroup):
     """Implements special handling for ears, which can only contain an icon
     or a model, not both. Has to be here, since it's used by lambdas inside
-    the RACE definition so it can't be a subclass."""
+    the RACE definition, so it can't be a subclass."""
     def __init__(self, part_indx):
         self._modl_loader = MelModel()
-        self._icon_loader = MelIcons(mico_attr=u'')
-        self._mico_loader = MelIcons(icon_attr=u'')
-        super(MelRaceHeadPart, self).__init__(u'head_part',
+        self._icon_loader = MelIcons(mico_attr='')
+        self._mico_loader = MelIcons(icon_attr='')
+        super(MelRaceHeadPart, self).__init__('head_part',
             self._modl_loader,
             self._icon_loader,
             self._mico_loader,
@@ -312,8 +310,8 @@ class MelRaceHeadPart(MelGroup):
             target_head_part = getattr(record, self.attr)
             # Special handling for ears: If ICON or MICO is present, don't
             # dump the model
-            has_icon = hasattr(target_head_part, u'iconPath')
-            has_mico = hasattr(target_head_part, u'smallIconPath')
+            has_icon = hasattr(target_head_part, 'iconPath')
+            has_mico = hasattr(target_head_part, 'smallIconPath')
             if not has_icon and not has_mico:
                 self._modl_loader.dumpData(target_head_part, out)
             else:
@@ -433,7 +431,7 @@ class MreActi(MelRecord):
     class HeaderFlags(NavMeshFlags, MelRecord.HeaderFlags):
         has_tree_lod: bool = flag(6)
         must_update_anims: bool = flag(8)           # FNV only?
-        # NOTE: xEdit FO3 souce has "On Local Map", but *hidden* is consistent
+        # NOTE: xEdit FO3 source has "On Local Map", but *hidden* is consistent
         # with all other games with this flag.
         hidden_from_local_map: bool = flag(9)
         random_animation_start: bool = flag(16)
