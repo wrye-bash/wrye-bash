@@ -24,7 +24,7 @@
 import re
 
 from ...bolt import Flags, flag, int_or_zero, structs_cache, str_or_none, \
-    int_or_none, str_to_sig, sig_to_str
+    int_or_none, str_to_sig, sig_to_str, LowerDict
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     AMreHeader, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
@@ -2127,34 +2127,26 @@ class MreSoun(MelRecord):
 class MreSpel(MreHasEffects, MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
-    ##: use LowerDict and get rid of the lower() in callers
-    _spell_type_num_name = {None: u'NONE',
-                            0   : u'Spell',
-                            1   : u'Disease',
-                            2   : u'Power',
-                            3   : u'LesserPower',
-                            4   : u'Ability',
-                            5   : u'Poison'}
-    _spell_type_name_num = {y.lower(): x for x, y in
-                            _spell_type_num_name.items() if x is not None}
-    _level_type_num_name = {None : u'NONE',
-                            0    : u'Novice',
-                            1    : u'Apprentice',
-                            2    : u'Journeyman',
-                            3    : u'Expert',
-                            4    : u'Master'}
-    _level_type_name_num = {y.lower(): x for x, y in
-                            _level_type_num_name.items() if x is not None}
-    attr_csv_struct[u'level'][2] = \
+    _spell_type_name_num = LowerDict(
+        {'Spell': 0, 'Disease': 1, 'Power': 2, 'LesserPower': 3, 'Ability': 4,
+         'Poison': 5})
+    _spell_type_num_name = {y: x for x, y in _spell_type_name_num.items()}
+    _spell_type_num_name[None] = 'NONE'
+    _level_type_name_num = LowerDict(
+        {'Novice': 0, 'Apprentice': 1, 'Journeyman': 2, 'Expert': 3,
+         'Master': 4})
+    _level_type_num_name = {y: x for x, y in _level_type_name_num.items()}
+    _level_type_num_name[None] = 'NONE'
+    attr_csv_struct['level'][2] = \
         lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
-    attr_csv_struct[u'spellType'][2] = \
+    attr_csv_struct['spellType'][2] = \
         lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
-        MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
+        MelStruct(b'SPIT', ['3I', 'B', '3s'], 'spellType', 'cost', 'level',
                   (SpellFlags, 'spell_flags'), 'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
@@ -2162,15 +2154,14 @@ class MreSpel(MreHasEffects, MelRecord):
 
     @classmethod
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
-        attr_dict = super(MreSpel, cls).parse_csv_line(csv_fields, index_dict,
-                                                       reuse)
+        attr_dict = super().parse_csv_line(csv_fields, index_dict, reuse)
         try:
-            lvl = attr_dict[u'level'] # KeyError on 'detailed' pass
-            attr_dict[u'level'] = cls._level_type_name_num.get(lvl.lower(),
+            lvl = attr_dict['level'] # KeyError on 'detailed' pass
+            attr_dict['level'] = cls._level_type_name_num.get(lvl,
                 int_or_zero(lvl))
-            stype = attr_dict[u'spellType']
-            attr_dict[u'spellType'] = cls._spell_type_name_num.get(
-                stype.lower(), int_or_zero(stype))
+            stype = attr_dict['spellType']
+            attr_dict['spellType'] = cls._spell_type_name_num.get(stype,
+                int_or_zero(stype))
             attr_dict['spell_flags'] = SpellFlags(
                 attr_dict.get('spell_flags', 0))
         except KeyError:
@@ -2199,10 +2190,10 @@ class MreTree(MelRecord):
         MelSorted(MelArray('speedTree',
             MelUInt32(b'SNAM', 'seed'),
         ), sort_by_attrs='seed'),
-        MelStruct(b'CNAM', [u'5f', u'i', u'2f'], 'curvature','minAngle','maxAngle',
-                  'branchDim','leafDim','shadowRadius','rockSpeed',
-                  'rustleSpeed'),
-        MelStruct(b'BNAM', [u'2f'],'widthBill','heightBill'),
+        MelStruct(b'CNAM', ['5f', 'i', '2f'], 'curvature', 'minAngle',
+                  'maxAngle', 'branchDim', 'leafDim', 'shadowRadius',
+                  'rockSpeed', 'rustleSpeed'),
+        MelStruct(b'BNAM', ['2f'], 'widthBill', 'heightBill'),
     )
 
 class MelWatrData(MelTruncatedStruct):

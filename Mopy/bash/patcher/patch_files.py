@@ -167,7 +167,7 @@ class PatchFile(ModFile):
         #--Mods
         # checking for files to include in patch, investigate
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
-        # exclude moding esms (those tend to be huge)
+        # exclude modding esms (those tend to be huge)
         self.all_plugins = [k for k in self.all_plugins if
                             k not in bush.game.modding_esm_size]
         loadMods = [m for m in self.all_plugins

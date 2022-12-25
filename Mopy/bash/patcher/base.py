@@ -226,7 +226,7 @@ class AMultiTweakItem(object):
         self.choiceLabels = []
         self.choiceValues = []
         self.default = None
-        # Caught some copy-paste mistakes where I forgot to make a it list,
+        # Caught some copy-paste mistakes where I forgot to make it a list,
         # left it in for that reason
         if not isinstance(self.tweak_choices, list):
             self._raise_tweak_syntax_error(u'tweak_choices must be a list of '
@@ -261,8 +261,7 @@ class AMultiTweakItem(object):
     def tweak_log(self, log, count):
         """Logs the total changes and details for each plugin."""
         log.setHeader(u'=== ' + self.tweak_log_header)
-        log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
+        log('* ' + self.tweak_log_msg % {'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
             log(f'  * {src_plugin}: {count[src_plugin]}')
 

@@ -385,8 +385,8 @@ class PCFaces(object):
     # MODS --------------------------------------------------------------------
     @staticmethod
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
-        loadFactory = LoadFactory(keepAll=keepAll, by_sig=by_sig)
-        modFile = ModFile(modInfo,loadFactory)
+        lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
+        modFile = ModFile(modInfo, lf)
         if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
             modFile.load(True)
         return modFile

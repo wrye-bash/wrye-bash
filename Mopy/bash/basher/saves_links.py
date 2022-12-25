@@ -884,14 +884,14 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
+            lf = LoadFactory(False, by_sig=[b'NPC_'])
             ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
                 subProgress(index, _(u'Scanning %s') % modName)
                 modInfo = bosh.modInfos[modName]
-                modFile = ModFile(modInfo, loadFactory)
+                modFile = ModFile(modInfo, lf)
                 try:
                     modFile.load(True)
                 except ModError as x:
