@@ -468,8 +468,8 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = set()
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
-            (u'nextObject', 0x800)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
+                  ('nextObject', 0x800)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -590,8 +590,8 @@ class MreAppa(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'B', u'I', u'f', u'f'], 'apparatus', ('value', 25),
-                  ('weight', 1), ('quality', 10)),
+        MelStruct(b'DATA', ['B', 'I', 'f', 'f'], 'apparatus', 'value',
+                  'weight', 'quality'),
     )
 
 #------------------------------------------------------------------------------
@@ -648,7 +648,7 @@ class MreBook(MelRecord):
     """Book."""
     rec_sig = b'BOOK'
 
-    class _flags(Flags):
+    class _BookFlags(Flags):
         isScroll: bool
         isFixed: bool
 
@@ -661,8 +661,8 @@ class MreBook(MelRecord):
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
-                  'value', 'weight'),
+        MelStruct(b'DATA', ['B', 'b', 'I', 'f'], (_BookFlags, 'flags'),
+                  'teaches', 'value', 'weight'),
     )
 
 #------------------------------------------------------------------------------
@@ -795,7 +795,7 @@ class MreCrea(AMreActor):
     """Creature."""
     rec_sig = b'CREA'
 
-    class _flags(Flags):
+    class _CreaFlags(Flags):
         biped: bool = flag(0)
         essential: bool = flag(1)
         weaponAndShield: bool = flag(2)
@@ -821,10 +821,10 @@ class MreCrea(AMreActor):
         MelItems(),
         MelSpellsTes4(),
         MelBodyParts(),
-        MelBase(b'NIFT','nift_p'), # Texture File Hashes
-        MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
-            (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level_offset',1),'calcMin','calcMax'),
+        MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
+                  (_CreaFlags, 'flags'), 'baseSpell', 'fatigue', 'barterGold',
+                  'level_offset', 'calcMin', 'calcMax'),
         MelFactions(),
         MelFid(b'INAM', 'deathItem'),
         MelScript(),
@@ -1586,7 +1586,7 @@ class MreNpc_(AMreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    class _flags(Flags):
+    class NpcFlags(Flags):
         female: bool = flag(0)
         essential: bool = flag(1)
         respawn: bool = flag(3)
@@ -1608,9 +1608,9 @@ class MreNpc_(AMreActor):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
-            (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level_offset',1),'calcMin','calcMax'),
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'flags'),
+                  'baseSpell', 'fatigue', 'barterGold', 'level_offset',
+                  'calcMin', 'calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelRace(),
@@ -1621,9 +1621,8 @@ class MreNpc_(AMreActor):
         MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelFid(b'CNAM','iclass'),
-        MelNpcData(b'DATA', [u'21B', u'H', u'2s', u'8B'],
-                   (u'skills', [0 for _x in range(21)]), u'health',
-                   u'unused2', (u'attributes', [0 for _y in range(8)])),
+        MelNpcData(b'DATA', ['21B', 'H', '2s', '8B'], 'skills', 'health',
+                   'unused2', 'attributes'),
         MelFid(b'HNAM', 'hair'),
         MelFloat(b'LNAM', 'hairLength'),
         ##: This is a FormID array in xEdit, but I haven't found any NPC_
@@ -1801,10 +1800,11 @@ class MreRace(MelRecord):
         MelDescription(),
         MelSpellsTes4(),
         MelRelations(with_gcr=False),
-        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
-                    'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
-                    'femaleWeight', (_RaceFlags, 'flags')),
-        MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
+        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], 'skills', 'unused1',
+                    'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
+                    (_RaceFlags, 'flags')),
+        MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'),
+                      (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', ['2I'], (FID, 'defaultHairMale'),
                      (FID, 'defaultHairFemale')),
         # Corresponds to GMST sHairColorNN

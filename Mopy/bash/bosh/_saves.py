@@ -70,7 +70,7 @@ class SreNPC(object):
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = RecordType.sig_to_class[b'NPC_']._flags(self.flags)
+            self.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(self.flags)
 
         def __str__(self):
             return '\n'.join(

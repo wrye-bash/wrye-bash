@@ -149,10 +149,10 @@ class PCFaces(object):
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for a in ('attributes', 'skills', 'health', 'unused2'):
-            npc_val = getattr(npc, a)
+        for att in ('attributes', 'skills', 'health', 'unused2'):
+            npc_val = getattr(npc, att)
             if npc_val is not None:
-                setattr(face, a, npc_val)
+                setattr(face, att, npc_val)
         #--Iref >> fid
         getFid = saveFile.getFid
         face.spells = [getFid(x) for x in (npc.spells or [])]
@@ -400,14 +400,14 @@ class PCFaces(object):
         for _rid, npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
-            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
-                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
-                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
-                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
-                npc_val = getattr(npc, a)
+            for att in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                        'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                        'fgts_p', 'level_offset', 'skills', 'health', 'iclass',
+                        'unused2', 'baseSpell', 'fatigue', 'attributes'):
+                npc_val = getattr(npc, att)
                 if isinstance(npc_val, FormId):
                     npc_val = npc_val.short_fid # saves code uses the ints...
-                setattr(face, a, npc_val)
+                setattr(face, att, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face
