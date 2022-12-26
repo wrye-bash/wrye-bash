@@ -133,7 +133,7 @@ class MobBase(_AMobBase):
         self.size = grup_head.size
         # binary blob of the whole record group minus its GRUP header ##: rename
         self.data = None
-        self.numRecords = -1
+        self._num_headers = -1
         # we need to store the _end_pos for _WorldChildren
         self._end_pos = ins and (ins.tell() + grup_head.blob_size()) ##: WIP!
         if ins:
@@ -156,11 +156,11 @@ class MobBase(_AMobBase):
         there's no subrecords, in which case, it returns 0."""
         if self.changed:
             raise AbstractError
-        elif self.numRecords > -1: #--Cached value.
-            return self.numRecords
+        elif self._num_headers > -1: #--Cached value.
+            return self._num_headers
         elif not self.data: #--No data >> no records, not even self.
-            self.numRecords = 0
-            return self.numRecords
+            self._num_headers = 0
+            return self._num_headers
         else:
             num_headers = 1 # the top level grup itself - not included in data
             with FastModReader(self.inName, self.data) as ins:
@@ -172,16 +172,14 @@ class MobBase(_AMobBase):
                         # FMR.seek doesn't have *debug_str arg so use blob_size
                         ins.seek(header.blob_size(), 1) # instead of skip_blob
                     num_headers += 1
-            self.numRecords = num_headers
-            return self.numRecords
+            self._num_headers = num_headers
+            return self._num_headers
 
     def dump(self,out):
         """Dumps record header and data into output file stream."""
         if self.changed:
             raise AbstractError
-        if self.numRecords == -1:
-            self.get_num_headers()
-        if self.numRecords > 0:
+        if self.data:
             self._grup_head.size = self.size
             out.write(self._grup_head.pack_head())
             out.write(self.data)
@@ -265,7 +263,6 @@ class MobObjects(MobBase):
         if not self: return 0
         num_recs = sum(r.get_num_headers() for r in
                        self.id_records.values()) + 1 #--Count self
-        self.numRecords = num_recs
         return num_recs
 
     def getSize(self):
