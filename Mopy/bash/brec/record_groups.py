@@ -64,6 +64,10 @@ class _AMobBase:
         return sum(1 for __ in self.iter_records())
 
     # Abstract methods --------------------------------------------------------
+    def _load_rec_group(self, ins, end_pos):
+        """Loads data from input stream. Called by __init__()."""
+        raise AbstractError('_load_rec_group not implemented')
+
     def getSize(self):
         """Returns size (including size of any group headers)."""
         raise AbstractError
@@ -98,10 +102,6 @@ class _AMobBase:
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         raise AbstractError('keepRecords not implemented')
-
-    def _load_rec_group(self, ins, end_pos):
-        """Loads data from input stream. Called by __init__()."""
-        raise AbstractError('_load_rec_group not implemented')
 
     ##: params here are not the prettiest
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
@@ -217,6 +217,10 @@ class MobObjects(MobBase):
             else: header.skip_blob(ins)
         self.setChanged()
 
+    def iter_records(self):
+        yield from self.id_records.values()
+
+    # MobObjects API - makes no sense for (most) _Nested ----------------------
     def _group_element(self, header, ins, do_unpack=True) -> 'MreRecord':
         rec_class = self._load_f.sig_to_type[header.recType]
         return None if rec_class is None else rec_class(header, ins,
@@ -231,13 +235,31 @@ class MobObjects(MobBase):
         elif self._grup_header_type:
             raise self._load_err(f'Missing header in {self!r}')
 
+    def _sort_group(self):
+        """Sorts records by FormID - now eid order matters too for
+        isKeyedByEid records."""
+        self.id_records = dict(dict_sort(self.id_records))
+
+    def setRecord(self, record, do_copy=True, _loading=False):
+        """Adds record to self.id_records."""
+        el_key = record.group_key()
+        if _loading and el_key in self.id_records:
+            self._load_err(f'Duplicate {el_key} record in {self}')
+        self.id_records[el_key] = record if _loading or not do_copy else \
+            record.getTypeCopy()
+
     @classmethod
     def empty_mob(cls, load_f, head_label, *head_arg):
         """Get an empty MobObjects collection to use in merge_records etc."""
-        raise AbstractError
+        head = cls._grup_header_type(0, head_label, *head_arg) if \
+            cls._grup_header_type else None
+        mob = cls(head, load_f)
+        mob.setChanged()
+        return mob
 
     def __bool__(self): return bool(self.id_records)
 
+    # _AMobBase API -----------------------------------------------------------
     def get_num_headers(self):
         """Returns number of records, including self - if empty return 0."""
         num_recs = len(self.id_records)
@@ -267,24 +289,6 @@ class MobObjects(MobBase):
             self._sort_group()
             for record in self.id_records.values():
                 record.dump(out)
-
-    def _sort_group(self):
-        """Sorts records by FormID - now eid order matters too for
-        isKeyedByEid records."""
-        self.id_records = dict(dict_sort(self.id_records))
-
-    def getRecord(self, rec_rid):
-        """Gets record with corresponding id.
-        If record doesn't exist, returns None."""
-        return self.id_records.get(rec_rid, None)
-
-    def setRecord(self, record, do_copy=True, _loading=False):
-        """Adds record to self.id_records."""
-        el_key = record.group_key()
-        if _loading and el_key in self.id_records:
-            self._load_err(f'Duplicate {el_key} record in {self}')
-        self.id_records[el_key] = record if _loading or not do_copy else \
-            record.getTypeCopy()
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
@@ -335,9 +339,6 @@ class MobObjects(MobBase):
         # filtered out here.
         block.id_records = filtered
 
-    def iter_records(self):
-        return self.id_records.values()
-
     def __repr__(self):
         return f'<{self}: {len(self.id_records)} {self._accepted_sigs} ' \
                f'record(s)>'
@@ -355,15 +356,6 @@ class _ChildrenGrup(MobObjects):
             self._load_err(f'Children subgroup ({groupFid}) does '
                            f'not match parent {master_rec!r}.')
         super().__init__(grup_header, load_f, ins, do_unpack)
-
-    @classmethod
-    def empty_mob(cls, load_f, head_label, *head_arg):
-        """Get an empty MobObjects collection to use in merge_records etc."""
-        head = cls._grup_header_type(0, head_label, *head_arg) if \
-            cls._grup_header_type else None
-        mob = cls(head, load_f)
-        mob.setChanged()
-        return mob
 
     def get_all_signatures(self):
         return {r._rec_sig for r in self.id_records.values()}
@@ -500,7 +492,7 @@ class _Nested(_AMobBase):
         return None if rec_class is None else rec_class(header, ins,
                                                         do_unpack=do_unpack)
 
-    def dump(self, out):
+    def dump(self, out): # No _sort_group
         for r in self._stray_recs.values():
             if r: r.dump(out)
         # Dump the cell children out in order: persistent -> temporary -> VWD
@@ -664,14 +656,6 @@ class TopGrup(MobObjects):
 
     def get_all_signatures(self):
         return self._accepted_sigs if self else set()
-
-    @classmethod
-    def empty_mob(cls, load_f, head_label, *head_arg):
-        """Get an empty MobObjects collection to use in merge_records etc."""
-        head = cls._grup_header_type(0, head_label, *head_arg)
-        mob = cls(head, load_f)
-        mob.setChanged()
-        return mob
 
     def __str__(self):
         return f'{sig_to_str(self._grup_head.label)} {super().__str__()}'
@@ -1152,13 +1136,6 @@ class _ExteriorCells(MobCells):
     def setRecord(self, block, do_copy=True, _loading=False):
         """We want to get a block here not a mere record."""
         return TopComplexGrup.setRecord(self, block, do_copy, _loading)
-
-    @classmethod
-    def empty_mob(cls, load_f, head_label, *head_arg):
-        """_ExteriorCells is a header-less group."""
-        mob = cls(None, load_f)
-        mob.setChanged()
-        return mob
 
     def dump(self,out):
         """Dumps group header and then records."""

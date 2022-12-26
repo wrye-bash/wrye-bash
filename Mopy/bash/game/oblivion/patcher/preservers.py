@@ -217,7 +217,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         patchBlock = self.patchFile.tops[b'FACT']
         if modFile.fileInfo.fn_key == cobl_main:
-            record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
+            record = modFile.tops[b'FACT'].id_records.get(self.mFactLong)
             if record:
                 patchBlock.setRecord(record)
         for rid, record in modFile.tops[b'FACT'].iter_present_records():
@@ -259,7 +259,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                 keep(rid, record)
                 changes_counts[rid.mod_fn] += 1
         #--MFact record
-        record = self.patchFile.tops[b'FACT'].getRecord(mFactLong)
+        record = self.patchFile.tops[b'FACT'].id_records.get(mFactLong)
         if record:
             relations = record.relations
             del relations[:]

@@ -68,7 +68,8 @@ class OblivionGameInfo(PatchGame):
         ##: Could we adapt this for FO3/FNV?
         mod_fn_key = modFile.fileInfo.fn_key
         if b'SCPT' in modFile.tops and mod_fn_key != cls.master_file:
-            gls = modFile.tops[b'SCPT'].getRecord(cls.master_fid(0x00025811))
+            gls = modFile.tops[b'SCPT'].id_records.get(
+                cls.master_fid(0x00025811))
             if gls and gls.compiled_size == 4 and gls.last_index == 0:
                 patch_file.compiledAllMods.append(mod_fn_key)
 
