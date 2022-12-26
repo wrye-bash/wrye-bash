@@ -336,6 +336,7 @@ class MreRecord(metaclass=RecordType):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
+    # Group element API -------------------------------------------------------
     def should_skip(self):
         """Returns True if this record should be skipped by most processing,
         i.e. if it is ignored or deleted."""
@@ -348,6 +349,11 @@ class MreRecord(metaclass=RecordType):
         if self.isKeyedByEid and record_id.is_null():
             record_id = self.eid
         return record_id
+
+    @staticmethod
+    def get_num_headers():
+        """Hacky way of simplifying _AMobBase API."""
+        return 1
 
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an

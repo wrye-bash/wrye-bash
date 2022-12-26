@@ -262,8 +262,9 @@ class MobObjects(MobBase):
     # _AMobBase API -----------------------------------------------------------
     def get_num_headers(self):
         """Returns number of records, including self - if empty return 0."""
-        num_recs = len(self.id_records)
-        if num_recs: num_recs += 1 #--Count self
+        if not self: return 0
+        num_recs = sum(r.get_num_headers() for r in
+                       self.id_records.values()) + 1 #--Count self
         self.numRecords = num_recs
         return num_recs
 
@@ -397,9 +398,9 @@ class _Nested(_AMobBase):
                          self._mob_objects.values()))
 
     def get_num_headers(self):
-        return sum(
-            v.get_num_headers() for v in self._mob_objects.values()
-            if v) + sum(1 for v in self._stray_recs.values() if v)
+        # _stray_recs may be MreRecord or even grups (like the _PersistentCell)
+        return sum(v.get_num_headers() for v in chain(
+            self._stray_recs.values(), self._mob_objects.values()) if v)
 
     def get_all_signatures(self):
         return {i._rec_sig for i in self.iter_records()}
@@ -671,14 +672,6 @@ class TopComplexGrup(TopGrup):
     def _group_element(self, header, ins, do_unpack=True, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, **kwargs)
 
-    def get_num_headers(self):
-        """Returns number of records, including self - if empty return 0."""
-        if not self: return 0
-        num_recs = sum(r.get_num_headers() for r in
-                       self.id_records.values()) + 1 #--Count self
-        self.numRecords = num_recs
-        return num_recs
-
     def iter_records(self):
         return chain(*(d.iter_records() for d in self.id_records.values()))
 
@@ -905,10 +898,8 @@ class _CellChildren(_Nested, _ChildrenGrup):
         return (gsize + RecordHeader.rec_header_size) if gsize else 0
 
     def get_num_headers(self):
-        nrecs = super().get_num_headers()
-        if nrecs: # no records => no top or nested groups
-            nrecs += 1 # 1 for the group 6 header
-        return nrecs
+        nrecs = super().get_num_headers()#no records => no top or nested groups
+        return nrecs + 1 if nrecs else 0 # 1 for the group 6 header
 
     def __bool__(self): return any(self.iter_records())
 
@@ -1185,20 +1176,6 @@ class WorldChildren(_CellChildren):
             yield from chain(recs, self._mob_objects[4].iter_records())
         else:
             yield from super().iter_records()
-
-    def get_num_headers(self):
-        if nrecs := (self._stray_recs[b'CELL'] or 0):
-            nrecs = nrecs.get_num_records()
-        recs = self._stray_recs.copy()
-        try:
-            del self._stray_recs[b'CELL']
-            num_recs = super().get_num_headers()
-            if not num_recs and nrecs: # we only have a persistent cell
-                nrecs += 1 # add the WorldChildren grup 1 header
-            nrecs += num_recs
-        finally:
-            self._stray_recs = recs
-        return nrecs
 
     @_process_rec(b'CELL', target=0)
     def updateRecords(self, srcBlock, mergeIds):
