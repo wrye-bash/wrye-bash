@@ -34,7 +34,7 @@ from . import MelRecord
 from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
     ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
 from .utils_constants import DUMMY_FID, group_types, FormId
-from ..bolt import attrgetter_cache, sig_to_str, dict_sort
+from ..bolt import attrgetter_cache, sig_to_str, dict_sort, deprint
 from ..exception import AbstractError, ModError
 
 class _AMobBase:
@@ -68,9 +68,9 @@ class _AMobBase:
         """Returns size (including size of any group headers)."""
         raise AbstractError
 
-    def getNumRecords(self,includeGroups=True):
-        """Returns number of records, including self (if plusSelf), unless
-        there's no subrecords, in which case, it returns 0."""
+    def get_num_headers(self):
+        """Return the number of record and GRUP headers contained in this
+        group."""
         raise AbstractError
 
     def dump(self, out):
@@ -151,7 +151,7 @@ class MobBase(_AMobBase):
         if self.changed: raise AbstractError
         return self.size
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
         there's no subrecords, in which case, it returns 0."""
         if self.changed:
@@ -162,8 +162,7 @@ class MobBase(_AMobBase):
             self.numRecords = 0
             return self.numRecords
         else:
-            numSubRecords = 0
-            num_groups = 1 # the top level grup itself - not included in data
+            num_headers = 1 # the top level grup itself - not included in data
             with FastModReader(self.inName, self.data) as ins:
                 ins_tell = ins.tell
                 ins_size = ins.size
@@ -172,9 +171,8 @@ class MobBase(_AMobBase):
                     if header.recType != b'GRUP':
                         # FMR.seek doesn't have *debug_str arg so use blob_size
                         ins.seek(header.blob_size(), 1) # instead of skip_blob
-                        numSubRecords += 1
-                    else: num_groups += 1
-            self.numRecords = numSubRecords + includeGroups * num_groups
+                    num_headers += 1
+            self.numRecords = num_headers
             return self.numRecords
 
     def dump(self,out):
@@ -182,7 +180,7 @@ class MobBase(_AMobBase):
         if self.changed:
             raise AbstractError
         if self.numRecords == -1:
-            self.getNumRecords()
+            self.get_num_headers()
         if self.numRecords > 0:
             self._grup_head.size = self.size
             out.write(self._grup_head.pack_head())
@@ -240,10 +238,10 @@ class MobObjects(MobBase):
 
     def __bool__(self): return bool(self.id_records)
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_headers(self):
         """Returns number of records, including self - if empty return 0."""
         num_recs = len(self.id_records)
-        if num_recs: num_recs += includeGroups #--Count self
+        if num_recs: num_recs += 1 #--Count self
         self.numRecords = num_recs
         return num_recs
 
@@ -406,9 +404,9 @@ class _Nested(_AMobBase):
                    chain((r for r in self._stray_recs.values() if r),
                          self._mob_objects.values()))
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_headers(self):
         return sum(
-            v.getNumRecords(includeGroups) for v in self._mob_objects.values()
+            v.get_num_headers() for v in self._mob_objects.values()
             if v) + sum(1 for v in self._stray_recs.values() if v)
 
     def get_all_signatures(self):
@@ -559,7 +557,7 @@ class _ComplexRec(_Nested):
             self.master_record.flags1.deleted
 
     def _set_mob_objects(self, head_label=None):
-        super()._set_mob_objects(self.master_record and self.master_record.group_key())
+        super()._set_mob_objects(self.master_record.group_key())
 
     def _load_rec_group(self, ins, end_pos, master_rec=None):
         """Loads data from input stream. Called by load()."""
@@ -582,11 +580,12 @@ class _ComplexRec(_Nested):
             _loaded_world_records[self.master_record.group_key()] = self
         super()._load_rec_group(ins, end_pos, self.master_record)
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_records(self):
         if self.master_record:
-            return super().getNumRecords(includeGroups)
+            return super().get_num_headers()
         # Master record is not present, we won't be dumped out
         ##: Can we even reach this point? Or will be keepRecords'd out before?
+        deprint(f'Missing master record: {self!r}')
         return 0
 
     @_process_rec(None)
@@ -688,11 +687,11 @@ class TopComplexGrup(TopGrup):
     def _group_element(self, header, ins, do_unpack=True, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, **kwargs)
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_headers(self):
         """Returns number of records, including self - if empty return 0."""
         if not self: return 0
-        num_recs = sum(r.getNumRecords(includeGroups) for r in
-                       self.id_records.values()) + includeGroups #--Count self
+        num_recs = sum(r.get_num_headers() for r in
+                       self.id_records.values()) + 1 #--Count self
         self.numRecords = num_recs
         return num_recs
 
@@ -921,9 +920,9 @@ class _CellChildren(_Nested, _ChildrenGrup):
         # The cell children GRUP header (6) or world children GRUP header (1)
         return (gsize + RecordHeader.rec_header_size) if gsize else 0
 
-    def getNumRecords(self,includeGroups=True):
-        nrecs = super().getNumRecords(includeGroups)
-        if includeGroups and nrecs: # no records => no top or nested groups
+    def get_num_headers(self):
+        nrecs = super().get_num_headers()
+        if nrecs: # no records => no top or nested groups
             nrecs += 1 # 1 for the group 6 header
         return nrecs
 
@@ -984,12 +983,11 @@ class MobCells(MobObjects):
         else: # MobICells
             super().__init__(grup_header, load_f, ins, do_unpack)
 
-    def getNumRecords(self, includeGroups=True, *,
-                      __get_cell=attrgetter_cache['master_record']):
+    def get_num_headers(self, *, __get_cell=attrgetter_cache['master_record']):
         """Returns number of records, including self and all children."""
         count = sum(
-            r.getNumRecords(includeGroups) for r in self.id_records.values())
-        if count and includeGroups:
+            r.get_num_headers() for r in self.id_records.values())
+        if count:
             blocks_bsbs = {__get_cell(cell_block).getBsb() for cell_block in
                            self.id_records.values()}
             # 1 GRUP header for each separate subblock and one for every block
@@ -1096,11 +1094,11 @@ class MobICells(MobCells, TopComplexGrup):
     _block_type, _subblock_type = MobCell.block_types
     _block_header_type = GrupHeader
 
-    def getNumRecords(self, includeGroups=True):
+    def get_num_headers(self):
         # MobCells comes first in mro and does not call super, so duplicate
         # what TopComplexGrup does here
-        count = super().getNumRecords(includeGroups)
-        return count + includeGroups if count else 0
+        count = super().get_num_headers()
+        return count + 1 if count else 0
 
     def getSize(self):
         # MobCells comes first in mro and does not call super, so duplicate
@@ -1211,15 +1209,15 @@ class WorldChildren(_CellChildren):
         else:
             yield from super().iter_records()
 
-    def getNumRecords(self,includeGroups=True):
+    def get_num_headers(self):
         if nrecs := (self._stray_recs[b'CELL'] or 0):
-            nrecs = nrecs.getNumRecords(includeGroups)
+            nrecs = nrecs.get_num_records()
         recs = self._stray_recs.copy()
         try:
             del self._stray_recs[b'CELL']
-            num_recs = super().getNumRecords(includeGroups)
+            num_recs = super().get_num_headers()
             if not num_recs and nrecs: # we only have a persistent cell
-                nrecs += includeGroups # add the WorldChildren grup 1 header
+                nrecs += 1 # add the WorldChildren grup 1 header
             nrecs += num_recs
         finally:
             self._stray_recs = recs

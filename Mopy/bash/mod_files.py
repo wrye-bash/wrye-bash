@@ -273,7 +273,7 @@ class ModFile(object):
                                 self.tes4.version) as out:
             #--Mod Record
             self.tes4.setChanged()
-            self.tes4.numRecords = sum(block.getNumRecords()
+            self.tes4.numRecords = sum(block.get_num_headers()
                                        for block in self.tops.values())
             self.tes4.getSize()
             self.tes4.dump(out)

@@ -117,7 +117,7 @@ class Mod_FullLoad(_LoadLink):
                      'record definitions.', title='Verification Succeeded')
 
 class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
-    """Useful for debugging if any getNumRecords implementations are broken.
+    """Useful for debugging if any get_num_headers implementations are broken.
     Simply copy-paste the loop from below into ModFile.save to get output on BP
     save, then compare it to the MobBase-based output from this link."""
     _text = 'Recalculate Record Counts'
@@ -128,7 +128,7 @@ class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
         modFile = self._load_mod(self._selected_info, do_map_fids=False)
         for top_grup_sig, block in dict_sort(modFile.tops):
             bolt.deprint(f'{sig_to_str(top_grup_sig)} GRUP has '
-                         f'{block.getNumRecords()} records')
+                         f'{block.get_num_headers()} records and groups')
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
