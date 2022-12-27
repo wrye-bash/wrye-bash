@@ -72,15 +72,15 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
         for worldId, worldBlock in self.patchFile.tops[
-                b'WRLD'].iter_present_records():
+                b'WRLD'].id_records.items():
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
                     or curRoad.connections_p != newRoad.connections_p):
-                worldBlock.road = newRoad
-                keep(worldId)
-                keep(newRoad.fid)
-                worldsPatched.add((worldId.mod_fn, worldBlock.master_record.eid))
+                if keep(worldId, worldBlock) and keep(newRoad.fid, newRoad): ##: setChanged
+                    worldBlock.road = newRoad
+                    worldsPatched.add(
+                        (worldId.mod_fn, worldBlock.master_record.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
@@ -149,7 +149,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         count = Counter()
         keep = self.patchFile.getKeeper()
         id_info = self.id_stored_data[b'FACT']
-        for rid, record in self.patchFile.tops[b'SPEL'].iter_present_records():
+        for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
             if record.obme_record_version is not None: continue
             #--Skip this one?
@@ -174,7 +174,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
-            keep(rid)
+            keep(rid, record)
             count[rid.mod_fn] += 1
         #--Log
         self._pLog(log, count)
@@ -232,7 +232,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         keep = self.patchFile.getKeeper()
         changes_counts = Counter()
         mFactable = []
-        for rid, record in self.patchFile.tops[b'FACT'].iter_present_records(): ##: for the patch file use iter_records? No deleted or ignored should end up here - or better safe...
+        for rid, record in self.patchFile.tops[b'FACT'].id_records.items():
             if rid not in id_info: continue
             if rid == mFactLong: continue
             mFactable.append(rid)
@@ -256,7 +256,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                         # if rank_level was not present it will be None
                         dds_ = f'generic{rank.rank_level or 0:02d}.dds'
                         rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
-                keep(rid)
+                keep(rid, record)
                 changes_counts[rid.mod_fn] += 1
         #--MFact record
         record = self.patchFile.tops[b'FACT'].getRecord(mFactLong)
@@ -268,5 +268,5 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
-            keep(record.fid)
+            keep(mFactLong, record)
         self._pLog(log, changes_counts)

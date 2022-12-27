@@ -157,7 +157,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                             deprint(record.error_string('tweaking'),
                                     traceback=True)
                             continue
-                        keep(rid)
+                        keep(rid, record)
                         tweak_counter[p_tweak][rid.mod_fn] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
         # finishing touches (e.g. creating records for GMST tweaks), then log
@@ -285,13 +285,12 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
         def swapper(oldId):
             return old_new.get(oldId, oldId)
 ##        for type in MreRecord.simpleTypes:
-##            for record in self.patchFile.tops[type].iter_present_records():
-##                if record.fid in self.old_new:
+##            for rid, record in self.patchFile.tops[type].iter_present_records():
+##                if rid in self.old_new:
 ##                    record.fid = old_new.get(record.fid, record.fid)
 ##                    count.increment(record.fid[0])
 ####                    record.mapFids(swapper,True)
-##                    record.setChanged()
-##                    keep(record.fid)
+##                    keep(record.fid, record)
         for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_records.items():
             for get_refs in __get_refs:
                 for rid, record in get_refs(cellBlock).id_records.items():
@@ -299,10 +298,12 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
                         record.base = swapper(record.base)
                         count[cfid.mod_fn] += 1
                         ## record.mapFids(swapper,True)
-                        record.setChanged()
-                        keep(rid)
+                        keep(rid, record)
         for worldId, worldBlock in self.patchFile.tops[
             b'WRLD'].id_records.items():
+            if worldBlock.should_skip():
+                deprint(f'Block {worldBlock!r} should have been skipped')
+                continue
             keepWorld = False
             for cfid, cellBlock in worldBlock.ext_cells.id_records.items():
                 for get_refs in __get_refs:
@@ -311,11 +312,9 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
                             record.base = swapper(record.base)
                             count[cfid.mod_fn] += 1
                             ## record.mapFids(swapper,True)
-                            record.setChanged()
-                            keep(rid)
-                            keepWorld = True
+                            keepWorld |= keep(rid, record)
             if keepWorld:
-                keep(worldId)
+                keep(worldId, worldBlock)
         log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         log('\n=== ' + _('Records Patched'))

@@ -182,7 +182,16 @@ class PatchFile(ModFile):
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
-        return self.keepIds.add
+        def _patch_keeper(rec_formid, rec):
+            """Keep rec_formid if rec is not ignored/deleted - setChanged on
+            rec."""
+            if rec.should_skip():
+                deprint(f'Record {rec!r} should have been skipped')
+                return 0
+            self.keepIds.add(rec_formid)
+            rec.setChanged() ##: this here may be a _ComplexRec
+            return 1
+        return _patch_keeper
 
     def create_record(self, new_rec_sig: bytes, new_rec_fid: FormId = None):
         """Creates a new record with the specified record signature (and

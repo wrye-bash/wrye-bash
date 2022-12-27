@@ -108,9 +108,8 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             book = patch_books.id_records[book_fid]
             book.book_text = '<div align="left"><font face=3 color=4444>'
             book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
-            book.changed = True
-            keep(book_fid)
-            return book
+            if keep(book_fid, book):
+                return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         for (num, objectId, full) in _ingred_alchem:
@@ -202,7 +201,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         cyrodiilQuests = self.cyrodiilQuests
         keep = self.patchFile.getKeeper()
         patched = []
-        for rid, record in self.patchFile.tops[b'QUST'].iter_present_records():
+        for rid, record in self.patchFile.tops[b'QUST'].id_records.items():
             if rid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
@@ -214,7 +213,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 condition.param2 = condition.param1 = b'\x00' * 4
                 condition.compValue = 0.0
                 record.conditions.insert(0,condition)
-                keep(rid)
-                patched.append(record.eid)
+                if keep(rid, record):
+                    patched.append(record.eid)
         log.setHeader(f'= {self._patcher_name}')
         log('===' + _('Quests Patched') + f': {len(patched)}')

@@ -80,7 +80,6 @@ class ContentsCheckerPatcher(Patcher):
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         fid_to_type = self.fid_to_type
         id_eid = self.id_eid
@@ -102,13 +101,14 @@ class ContentsCheckerPatcher(Patcher):
             # First entry in the pass is always the record types this pass
             # applies to
             for rec_type in cc_pass[0]:
-                if rec_type not in modFile.tops: continue
+                if rec_type not in self.patchFile.tops: continue
                 # Set up a dict to track which entries we have removed per fid
                 id_removed = defaultdict(list)
                 # Grab the types that are actually valid for our current record
                 # types
                 valid_types = set(self.contType_entryTypes[rec_type])
-                for rid, record in modFile.tops[rec_type].id_records.items():
+                for rid, record in self.patchFile.tops[
+                        rec_type].id_records.items():
                     # Set up two lists, one containing the current record
                     # contents, and a second one that we will be filling with
                     # only valid entries.
@@ -138,7 +138,7 @@ class ContentsCheckerPatcher(Patcher):
                     # lists have diverged and, if so, keep the changed record
                     if len(new_entries) != len(current_entries):
                         setattr(record, group_attr, new_entries)
-                        keep(rid)
+                        keep(rid, record)
                 # Log the result if we removed at least one entry
                 if id_removed:
                     log(f'\n=== {sig_to_str(rec_type)}')
@@ -181,7 +181,7 @@ class RaceCheckerPatcher(Patcher):
                 race.eyes.sort(key=lambda x: eyeNames.get(x) or '')
                 if race.hairs != prev_hairs or race.eyes != prev_eyes:
                     racesSorted.append(race.eid)
-                    keep(rid)
+                    keep(rid, race)
         log.setHeader(f'= {self._patcher_name}')
         log(f'\n=== {_("Eyes/Hair Sorted")}')
         if not racesSorted:
@@ -269,18 +269,18 @@ class NpcCheckerPatcher(Patcher):
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             raceHair = (
                 (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             if not npc.hairLength:
                 npc.hairLength = random.random()
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         if mod_npcsFixed:
@@ -347,12 +347,12 @@ class TimescaleCheckerPatcher(ModLoader):
         # doing, e.g. changing timescale from 30 to 20 -> multiply wave period
         # by 1.5 (= 30/20)
         wp_multiplier = def_timescale / final_timescale
-        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
+        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].id_records.items():
             grass_rec.wave_period *= wp_multiplier
             grasses_changed[grass_fid.mod_fn] += 1
-            keep(grass_fid)
+            keep(grass_fid, grass_rec)
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:
             log(u'\n=== ' + _(u'Wave Periods changed'))
             for src_mod, num_fixed in dict_sort(grasses_changed):
-                log(u'* %s: %d' % (src_mod, num_fixed))
+                log(f'* {src_mod}: {num_fixed:d}')

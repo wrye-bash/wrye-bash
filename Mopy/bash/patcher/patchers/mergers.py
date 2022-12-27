@@ -214,7 +214,7 @@ class _AMerger(ImportPatcher):
                             if en_key(entry) not in current_entries:
                                 record_entries.append(entry)
                 if old_items != sorted(getattr(record, sr_attr), key=en_key):
-                    keep(rid)
+                    keep(rid, record)
                     mod_count[rid.mod_fn] += 1
         self.id_deltas.clear()
         self._patchLog(log,mod_count)
@@ -411,8 +411,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                 if rid not in merged_deleted: continue
                 if record.aiPackages != merged_deleted[rid][u'merged']:
                     record.aiPackages = merged_deleted[rid][u'merged']
-                    keep(rid)
-                    mod_count[rid.mod_fn] += 1
+                    mod_count[rid.mod_fn] += keep(rid, record)
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -590,8 +589,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     merged_deleted[rid]['merged'])
                 if sorted_spells(record.spells) != merged_spells:
                     record.spells = merged_spells
-                    keep(rid)
-                    mod_count[rid.mod_fn] += 1
+                    mod_count[rid.mod_fn] += keep(rid, record)
         self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
@@ -759,11 +757,12 @@ class _AListsMerger(ListPatcher):
                                       key=lambda l: l.eid or ''):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
-                keep(list_fid)
-                patch_block.setRecord(stored_lists[list_fid], do_copy=False)
-                log(u'* ' + stored_list.eid)
-                for merge_source in stored_list.mergeSources:
-                    log(u'  * ' + self.annotate_plugin(merge_source))
+                if keep(list_fid, stored_list):
+                    patch_block.setRecord(stored_lists[list_fid],
+                                          do_copy=False)
+                    log(f'* {stored_list.eid}')
+                    for merge_source in stored_list.mergeSources:
+                        log(f'  * {self.annotate_plugin(merge_source)}')
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
@@ -811,7 +810,7 @@ class _AListsMerger(ListPatcher):
                     # an ITPO
                     if old_entries != stored_list.entries:
                         cleaned_lists.add(stored_list.eid)
-                        keep(sub_super)
+                        keep(sub_super, stored_list)
             log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
             for list_eid in sorted(removed_empty_sublists, key=str.lower):
                 log(u'* ' + list_eid)
@@ -957,7 +956,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
             #--Changed
             if race.spells != orig_spells:
                 racesPatched.append(race.eid)
-                keep(rfid)
+                keep(rfid, race)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         self._srcMods(log)

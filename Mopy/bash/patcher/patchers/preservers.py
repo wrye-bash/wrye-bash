@@ -262,7 +262,7 @@ class APreserver(ImportPatcher):
                 else:
                     # This is a regular attribute, so we just need to assign it
                     loop_setattr(record, attr, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress):
@@ -510,8 +510,7 @@ class ImportCellsPatcher(ImportPatcher):
                     setattr_deep(patch_cell, attr, val)
                     cell_modified = True
             if cell_modified:
-                patch_cell.setChanged()
-                keep(cell_fid)
+                keep(cell_fid, patch_cell)
             return cell_modified
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
@@ -527,7 +526,7 @@ class ImportCellsPatcher(ImportPatcher):
                     count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if keepWorld:
-                keep(worldId)
+                keep(worldId, worldBlock.master_record)
         self.cellData.clear()
         self._patchLog(log, count)
 
@@ -567,7 +566,7 @@ class ImportGraphicsPatcher(APreserver):
             else: continue
             for attr, val in id_data[rfid].items():
                 setattr(record, attr, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
@@ -593,5 +592,5 @@ class ImportRacesPatcher(APreserver):
             else: continue
             for att, val in id_data[rfid].items():
                 loop_setattr(record, att, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1
