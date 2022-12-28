@@ -205,6 +205,7 @@ class PatchFile(ModFile):
             RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
         self.keepIds.add(new_rec_fid)
         self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
+        new_rec.setChanged()
         return new_rec
 
     def new_gmst(self, gmst_eid, gmst_val):

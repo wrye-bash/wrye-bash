@@ -54,16 +54,6 @@ class _AMobBase:
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
 
-    ##: This should be dropped later once we ensure we correctly call
-    # setChanged() on all non-BP uses of ModFile where we modify records and
-    # make the BP call setChanged() during its record trimming phase on all
-    # keepIds - hard right now due to having to trace ModFile.load() calls.
-    def set_records_changed(self):
-        """Mark all records in this record group as changed."""
-        if type(self) != MobBase: # ugh
-            for r in self.iter_records():
-                r.setChanged()
-
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         for record in self.iter_records():
