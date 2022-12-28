@@ -514,6 +514,7 @@ class ImportCellsPatcher(ImportPatcher):
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
+        if not self.isActive: return
         def handlePatchCellBlock(patchCellBlock):
             """This function checks if an attribute or flag in CellData has
             a value which is different to the corresponding value in the
@@ -534,7 +535,6 @@ class ImportCellsPatcher(ImportPatcher):
                 patch_cell.setChanged()
                 keep(patch_cell_fid)
             return cell_modified
-        if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
         for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():

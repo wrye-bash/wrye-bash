@@ -40,7 +40,8 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
     str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import RecordType, RecHeader, attr_csv_struct, null3, FormId
+from .brec import RecordType, RecHeader, attr_csv_struct, null3, FormId, \
+    MelObject
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 

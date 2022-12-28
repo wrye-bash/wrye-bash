@@ -925,12 +925,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                         npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
-                    if acbs and (
-                        (acbs.level_offset != level_offset) or
-                        (acbs.calcMin != calcMin) or
-                        (acbs.calcMax != calcMax) or
-                        (acbs.flags.pcLevelOffset != pcLevelOffset)
-                        ):
+                    if acbs and (acbs.level_offset != level_offset or
+                                 acbs.calcMin != calcMin or
+                                 acbs.calcMax != calcMax or
+                                 acbs.flags.pcLevelOffset != pcLevelOffset):
                         acbs.flags.pcLevelOffset = pcLevelOffset
                         acbs.level_offset = level_offset
                         acbs.calcMin = calcMin

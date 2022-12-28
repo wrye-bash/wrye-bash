@@ -284,8 +284,8 @@ class MreRecord(metaclass=RecordType):
     header flags:
     https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Record-Header-Flags
     """
-    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
-                 'changed', 'data', 'inName')
+    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'changed',
+                 'data', 'inName')
     subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
     isKeyedByEid = False
 
@@ -308,7 +308,6 @@ class MreRecord(metaclass=RecordType):
         flags1_class = RecordType.sig_to_class[self._rec_sig].HeaderFlags
         self.flags1: MreRecord.HeaderFlags = flags1_class(header.flags1)
         self.size: int = header.size
-        self.flags2: Any = header.flags2 ##: track down actual type
         self.changed: bool = False
         self.data: bytes | None = None
         self.inName: str | None = ins and ins.inName

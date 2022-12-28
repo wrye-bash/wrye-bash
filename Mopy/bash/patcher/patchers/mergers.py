@@ -745,8 +745,8 @@ class _AListsMerger(ListPatcher):
     def buildPatch(self, log, progress):
         keep = self.patchFile.getKeeper()
         # Relevs/Delevs List
-        log.setHeader(u'= ' + self._patcher_name, True)
-        log.setHeader(u'=== ' + self._de_re_header)
+        log.setHeader(f'= {self._patcher_name}', True)
+        log.setHeader(f'=== {self._de_re_header}')
         for leveler in self.levelers:
             log(u'* ' + self.annotate_plugin(leveler))
         # Save to patch file

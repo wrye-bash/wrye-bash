@@ -161,11 +161,10 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
 _ob_path = bush.game.master_file
 class SEWorldTestsPatcher(ExSpecial, ModLoader):
     """Suspends Cyrodiil quests while in Shivering Isles."""
-    patcher_name = _(u'SEWorld Tests')
-    patcher_desc = _(u"Suspends Cyrodiil quests while in Shivering Isles. "
-                     u"I.e. re-instates GetPlayerInSEWorld tests as "
-                     u"necessary.")
-    _config_key = u'SEWorldEnforcer'
+    patcher_name = _('SEWorld Tests')
+    patcher_desc = _("Suspends Cyrodiil quests while in Shivering Isles. "
+                     "I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    _config_key = 'SEWorldEnforcer'
     _read_sigs = (b'QUST',)
 
     @classmethod
@@ -218,5 +217,5 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 record.conditions.insert(0,condition)
                 keep(rid)
                 patched.append(record.eid)
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'===' + _(u'Quests Patched') + f': {len(patched)}')
+        log.setHeader(f'= {self._patcher_name}')
+        log('===' + _('Quests Patched') + f': {len(patched)}')

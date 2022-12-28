@@ -84,7 +84,7 @@ class ContentsCheckerPatcher(Patcher):
         keep = self.patchFile.getKeeper()
         fid_to_type = self.fid_to_type
         id_eid = self.id_eid
-        log.setHeader(u'= ' + self._patcher_name)
+        log.setHeader(f'= {self._patcher_name}')
         # Execute each pass - one pass is needed for every distinct record
         # class layout, e.g. leveled list classes generally share the same
         # layout (LVLI.entries[i].listId, LVLN.entries[i].listId, etc.)
@@ -141,9 +141,9 @@ class ContentsCheckerPatcher(Patcher):
                         keep(rid)
                 # Log the result if we removed at least one entry
                 if id_removed:
-                    log(u'\n=== ' + sig_to_str(rec_type))
+                    log(f'\n=== {sig_to_str(rec_type)}')
                     for contId in sorted(id_removed):
-                        log(u'* ' + id_eid[contId])
+                        log(f'* {id_eid[contId]}')
                         for removedId in sorted(id_removed[contId]):
                             log(f'  . {removedId.mod_fn}: '
                                 f'{removedId.object_dex:06X}')
