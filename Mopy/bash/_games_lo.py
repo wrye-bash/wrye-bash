@@ -1482,7 +1482,10 @@ class Fallout4(AsteriskGame):
 class Fallout4VR(Fallout4):
     must_be_active_if_present = (
         *Fallout4.must_be_active_if_present, FName(u'Fallout4_VR.esm'))
-    _ccc_filename = u''
+    # No ESLs, reset these back to their pre-ESL versions
+    _ccc_filename = ''
+    max_espms = 255
+    max_esls = 0
 
 class SkyrimSE(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
@@ -1569,7 +1572,10 @@ class SkyrimSE(AsteriskGame):
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = (
     *SkyrimSE.must_be_active_if_present, FName(u'SkyrimVR.esm'))
-    _ccc_filename = u''
+    # No ESLs, reset these back to their pre-ESL versions
+    _ccc_filename = ''
+    max_espms = 255
+    max_esls = 0
 
 class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
