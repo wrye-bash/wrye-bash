@@ -227,11 +227,14 @@ class MobObjects(MobBase):
     def _write_header(self, out):
         """getSize not only gets the size - essentially prepares the whole
         grup for dumping - WIP"""
-        if self._grup_head:
-            self._grup_head.size = self.getSize()
-            out.write(self._grup_head.pack_head())# keep the rest of the header
-        elif self._grup_header_type:
-            raise self._load_err(f'Missing header in {self!r}')
+        # for non headed groups we still need to call getSize to populate the
+        # block data structures - see _ExteriorCells
+        group_size = self.getSize()
+        if self._grup_header_type:
+            if self._grup_head:
+                self._grup_head.size = group_size # keep the rest of the header
+                out.write(self._grup_head.pack_head())
+            else: raise self._load_err(f'Missing header in {self!r}')
 
     def _sort_group(self):
         """Sorts records by FormID - now eid order matters too for
@@ -285,8 +288,11 @@ class MobObjects(MobBase):
             if not self.id_records: return
             self._write_header(out)
             self._sort_group()
-            for record in self.id_records.values():
-                record.dump(out)
+            self._dump_group(out)
+
+    def _dump_group(self, out):
+        for record in self.id_records.values():
+            record.dump(out)
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
@@ -1032,7 +1038,7 @@ class MobCells(TopComplexGrup):
             block: {k: sorted(v) for k, v in dict_sort(subblock_dict)} for
             (block, subblock_dict) in dict_sort(self._block_subblock_cells)}
 
-    def dumpBlocks(self, out):
+    def _dump_group(self, out):
         """Dumps the cell blocks and their block and sub-block groups to
         out."""
         bsb_size = self._block_sizes
@@ -1049,17 +1055,6 @@ class MobCells(TopComplexGrup):
                     self._subblock_type, head_st).pack_head())
                 for cfid in mob_cells:
                     self.id_records[cfid].dump(out)
-
-    def dump(self,out):
-        """Dumps group header and then records."""
-        # if not self.changed:
-        #     out.write(self.header.pack_head())
-        #     out.write(self.data)
-        if self.id_records:
-            self._grup_head.size = self.getSize()
-            out.write(self._grup_head.pack_head())
-            self._sort_group()
-            self.dumpBlocks(out)
 
 #------------------------------------------------------------------------------
 class MobICells(MobCells):
@@ -1108,17 +1103,7 @@ class _ExteriorCells(MobCells):
     _block_header_type = ExteriorGrupHeader
     _cell_type = _ExtCell
 
-    def dump(self,out):
-        """Dumps group header and then records."""
-        # if not self.changed:
-        #     out.write(self.header.pack_head())
-        #     out.write(self.data)
-        if self.id_records:
-            self.getSize() # populate the block data structures
-            self._sort_group()
-            self.dumpBlocks(out)
-
-    def __str__(self): return f'Exterior Cells' # todo add the WRLD info
+    def __str__(self): return f'Exterior Cells'
 
 class _PersistentCell(MobCell):
     _marker_groups = {0, 4} # we get a group 4 of exterior cells right after
