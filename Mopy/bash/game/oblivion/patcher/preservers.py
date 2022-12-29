@@ -25,11 +25,9 @@ from operator import itemgetter
 
 from ._shared import cobl_main, ExSpecial
 from .... import load_order
-from ....bolt import deprint
 from ....brec import null4, FormId
 from ....parsers import _HandleAliases
-from ....patcher import getPatchesPath
-from ....patcher.base import ImportPatcher, ListPatcher
+from ....patcher.base import ImportPatcher, ListPatcher, CsvListPatcher
 
 class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     """Imports roads."""
@@ -96,7 +94,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars
 
 #------------------------------------------------------------------------------
-class _ExSpecialList(_HandleAliases, ListPatcher, ExSpecial):
+class _ExSpecialList(_HandleAliases, CsvListPatcher, ExSpecial):
     _csv_key = u'OVERRIDE'
 
     def __init__(self, p_name, p_file, p_sources):
@@ -110,7 +108,7 @@ class _ExSpecialList(_HandleAliases, ListPatcher, ExSpecial):
         return cls_vars.update(more) or cls_vars
 
 class CoblExhaustionPatcher(_ExSpecialList):
-    """Modifies most Greater power to work with Cobl's power exhaustion
+    """Modifies most Greater powers to work with Cobl's power exhaustion
     feature."""
     patcher_name = _(u'Cobl Exhaustion')
     patcher_desc = u'\n\n'.join(
@@ -130,22 +128,12 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
+        log('* ' + _('Powers Tweaked') + f': {sum(count.values())}')
         for srcMod in load_order.get_ordered(count):
-            log(u'  * %s: %d' % (srcMod, count[srcMod]))
+            log(f'  * {srcMod}: {count[srcMod]:d}')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         return int(csv_fields[3])
-
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(f'{srcFile} is no longer in patches set',
-                                    traceback=True)
-            progress.plus()
 
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
@@ -222,15 +210,6 @@ class MorphFactionsPatcher(_ExSpecialList):
         # self.id_info #--Morphable factions keyed by fid
         self.isActive &= cobl_main in p_file.loadSet
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
-
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        for srcFile in self.srcs:
-            try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(
-                u'%s is no longer in patches set' % srcFile, traceback=True)
-            progress.plus()
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""

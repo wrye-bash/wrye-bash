@@ -32,7 +32,7 @@ from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    ItemLink, SeparatorLink, OneItemLink, UIList_Rename
+    ItemLink, SeparatorLink, OneItemLink
 from ..bolt import GPath, SubProgress, Path, FName
 from ..bosh import faces, _saves
 from ..brec import ShortFidWriteContext

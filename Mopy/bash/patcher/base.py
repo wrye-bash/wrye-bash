@@ -31,8 +31,9 @@ from this module outside of the patcher package."""
 # instance Patcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
 
+from . import getPatchesPath
 from .. import load_order
-from ..bolt import dict_sort, sig_to_str
+from ..bolt import dict_sort, sig_to_str, deprint
 from ..exception import AbstractError, BPConfigError
 from ..mod_files import LoadFactory, ModFile
 
@@ -117,6 +118,19 @@ class ListPatcher(Patcher):
         else:
             for srcFile in self.srcs:
                 log(f'* {srcFile}')
+
+class CsvListPatcher(ListPatcher):
+    """List patcher with csv sources."""
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
+            try: self.read_csv(getPatchesPath(srcFile))
+            except OSError: deprint(f'{srcFile} is no longer in patches set',
+                                    traceback=True)
+            progress.plus()
 
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and

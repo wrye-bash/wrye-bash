@@ -33,7 +33,6 @@ from .base import MultiTweakItem, IndexingTweak, MultiTweaker, \
     CustomChoiceTweak
 from ... import bush
 from ...bolt import build_esub, RecPath, setattr_deep
-from ...brec import MelObject
 from ...exception import AbstractError, BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
@@ -810,7 +809,8 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
                     ##: This should have a better solution (in records?)
                     obj_attr = gold_attr.split('.', maxsplit=1)[0]
                     if getattr(gold_rec, obj_attr) is None:
-                        setattr(gold_rec, obj_attr, MelObject())
+                        setattr(gold_rec, obj_attr,
+                                gold_rec.getDefault(obj_attr))
                 setattr_deep(gold_rec, gold_attr, gold_value)
 
     def tweak_log(self, log, count):
