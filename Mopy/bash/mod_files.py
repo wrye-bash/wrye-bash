@@ -78,7 +78,7 @@ class LoadFactory:
     """Encapsulate info on which record type we use to load which record
     signature."""
     grup_class = {} # map top record group signatures to class loading them
-    __slots__ = ('keepAll', 'topTypes', 'sig_to_type')
+    __slots__ = ('keepAll', 'topTypes', 'sig_to_type', 'all_sigs')
 
     def __init__(self, keepAll, *, by_sig: Iterable[bytes] = (),
                  generic: Iterable[bytes] = ()):
@@ -89,6 +89,7 @@ class LoadFactory:
         self.keepAll = keepAll
         self.topTypes = set()
         self.sig_to_type = defaultdict(lambda: MreRecord if keepAll else None)
+        self.all_sigs = set()
         # no generic classes if we keep all (we return MreRecord anyway)
         self.add_class(*by_sig, generic=() if keepAll else generic)
 
@@ -105,6 +106,7 @@ class LoadFactory:
         if by_sig:
             self.sig_to_type.update(
                 (k, RecordType.sig_to_class[k]) for k in by_sig)
+        self.all_sigs = {*self.all_sigs, *all_sigs}
         #--Top type
         for class_sig in all_sigs:
             if class_sig in RecordType.nested_to_top:
@@ -186,14 +188,12 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
-                        load_fully = topClass != MobBase
-                        new_top = topClass(g_head, self.loadFactory, ins,
-                                           load_fully)
+                        new_top = topClass(g_head, self.loadFactory, ins)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if top_grup_sig not in self.tops:
                             self.tops[top_grup_sig] = new_top
-                        elif not load_fully:
+                        elif new_top.data:
                             # Duplicate top-level group and we can't merge due
                             # to not loading it fully. Log and replace the
                             # existing one

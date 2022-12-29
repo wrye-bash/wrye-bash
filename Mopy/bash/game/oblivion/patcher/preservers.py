@@ -77,7 +77,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
                     or curRoad.connections_p != newRoad.connections_p):
-                if keep(worldId, worldBlock) and keep(newRoad.fid, newRoad): ##: setChanged
+                if keep(worldId, worldBlock) and keep(newRoad.fid, newRoad):
                     worldBlock.road = newRoad
                     worldsPatched.add(
                         (worldId.mod_fn, worldBlock.master_record.eid))

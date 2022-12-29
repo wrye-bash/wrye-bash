@@ -69,7 +69,7 @@ class AMreFlst(MelRecord):
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
 
-    def __init__(self, header, ins=None, do_unpack=False):
+    def __init__(self, header, ins=None, do_unpack=True):
         super().__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
@@ -381,7 +381,7 @@ class AMreLeveledList(MelRecord):
                  're_records')
                 # + ['flags', 'entries'] # define those in the subclasses
 
-    def __init__(self, header, ins=None, do_unpack=False):
+    def __init__(self, header, ins=None, do_unpack=True):
         super().__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions

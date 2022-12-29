@@ -301,7 +301,7 @@ class MreRecord(metaclass=RecordType):
         ignored: bool = flag(12)
         compressed: bool = flag(18)
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=True):
         self.header = header # type: RecHeader
         self._rec_sig: bytes = header.recType
         self.fid: utils_constants.FormId = header.fid
@@ -504,7 +504,7 @@ class MelRecord(MreRecord):
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=True):
         if self.__class__.rec_sig != header.recType:
             raise ValueError(f'Initialize {type(self)} with header.recType '
                              f'{header.recType}')

@@ -526,7 +526,7 @@ class ImportCellsPatcher(ImportPatcher):
                     count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if keepWorld:
-                keep(worldId, worldBlock.master_record)
+                keep(worldId, worldBlock)
         self.cellData.clear()
         self._patchLog(log, count)
 

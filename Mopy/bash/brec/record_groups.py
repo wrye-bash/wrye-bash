@@ -40,7 +40,6 @@ from ..exception import AbstractError, ModError
 class _AMobBase:
     """Group of records and/or subgroups."""
     def __init__(self, load_f, ins, endPos):
-        self.changed = False
         self._load_f = load_f
         # due to subclasses sometimes setting ins to None
         self.inName = getattr(self, 'inName', None) or (ins and ins.inName)
@@ -49,10 +48,6 @@ class _AMobBase:
 
     def _load_err(self, msg): ##: add ins and print more info
         raise ModError(self.inName, msg)
-
-    def setChanged(self,value=True):
-        """Sets changed attribute to value. [Default = True.]"""
-        self.changed = value
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -124,38 +119,99 @@ class _AMobBase:
         merge_records)."""
         raise AbstractError('updateRecords not implemented')
 
-class MobBase(_AMobBase):
-    """Group of records and/or subgroups. This basic implementation does not
-    support unpacking, but can report its number of records and be dumped."""
+class _HeadedGrup(_AMobBase):
+    """Grup headed by a header - header might be None in the case of
+    ExtCellChildren but the handling of this is done more economically here."""
+    _grup_header_type: type[GrupHeader] | None = None
+    _accepted_sigs = {b'OVERRIDE'} # set in PatchGame._import_records
 
-    def __init__(self, grup_head, load_f, ins=None, do_unpack=False):
-        self._grup_head = grup_head
-        self.size = grup_head.size
+    def __init__(self, grup_head_or_end, load_f, ins, do_unpack=True):
+        self.id_records = {} # not used in MobBase
+        if self._grup_header_type:
+            # we need to store the _end_pos for _WorldChildren
+            self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size())
+            self._grup_head = grup_head_or_end
+            self.size = grup_head_or_end.size # includes RecordHeader.rec_header_size
+        else:
+            self._end_pos = grup_head_or_end # yep
+            self._grup_head = None
+            self.size = ins and (self._end_pos - ins.tell())
         # binary blob of the whole record group minus its GRUP header ##: rename
         self.data = None
-        self._num_headers = -1
-        # we need to store the _end_pos for _WorldChildren
-        self._end_pos = ins and (ins.tell() + grup_head.blob_size()) ##: WIP!
-        if ins:
-            # self._end_pos = ins.tell() + grup_head.blob_size()
-            #--Read, but don't analyze.
-            if not do_unpack:
-                self.data = ins.read(grup_head.blob_size(),
+        if ins: # self._load_f is not yet defined
+            needs_load = self._accepted_sigs & load_f.all_sigs
+            do_unpack = do_unpack and needs_load
+            if all_none := not load_f.keepAll and not needs_load:
+                ins.seek(self._end_pos)
+            elif not do_unpack: #--Read, but don't analyze.
+                self.data = ins.read(self._end_pos - ins.tell(),
                                      type(self).__name__)
+            if all_none or not do_unpack:
                 self.inName = ins.inName
                 ins = None # block _load_rec_group in super
         super().__init__(load_f, ins, self._end_pos)
 
+    def dump(self,out):
+        """Dumps group header and then records."""
+        if self.data is not None:
+            if self.data:
+                self._write_header(out)
+                out.write(self.data)
+        elif self:
+            self._write_header(out)
+            self._sort_group()
+            self._dump_group(out)
+
+    def _write_header(self, out):
+        """getSize not only gets the size - essentially prepares the whole
+        grup for dumping - WIP"""
+        # for non headed groups we still need to call getSize to populate the
+        # block data structures - see _ExteriorCells
+        group_size = self.getSize()
+        if self._grup_header_type:
+            if self._grup_head:
+                self._grup_head.size = group_size # keep the rest of the header
+                out.write(self._grup_head.pack_head())
+            else: raise self._load_err(f'Missing header in {self!r}')
+
+    def _sort_group(self):
+        """Sorts records by FormID - now eid order matters too for
+        isKeyedByEid records."""
+        self.id_records = dict(dict_sort(self.id_records))
+
+    def _dump_group(self, out):
+        for record in self.id_records.values():
+            record.dump(out)
+
+    def __bool__(self): return bool(self.data) if self.data is not None else \
+        bool(self.id_records)
+
+    @classmethod
+    def empty_mob(cls, load_f, head_label, *head_arg, **kwargs):
+        """Get an empty _HeadedGrup to use in _TopGroupDict/_set_mob_objects"""
+        head = cls._grup_header_type(0, head_label, *head_arg) if \
+            cls._grup_header_type else kwargs.pop('endPos') # _ExteriorCells
+        return cls(head, load_f, None)
+
+class MobBase(_HeadedGrup):
+    """Top grup basic implementation that does not support unpacking,
+    but can report its number of headers and be dumped."""
+    _grup_header_type = TopGrupHeader
+
+    def __init__(self, grup_head_or_end, load_f, ins=None):
+        self._num_headers = -1
+        super().__init__(grup_head_or_end, load_f, ins, False) #set do_unpack to False
+
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        if self.changed: raise AbstractError
+        if self.data is None: raise AbstractError(f'{self!r} was not loaded')
         return self.size
 
     def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
         there's no subrecords, in which case, it returns 0."""
-        if self.changed:
-            raise AbstractError
+        if self.data is None:
+            raise AbstractError(f'{self!r} was not loaded')
         elif self._num_headers > -1: #--Cached value.
             return self._num_headers
         elif not self.data: #--No data >> no records, not even self.
@@ -177,29 +233,14 @@ class MobBase(_AMobBase):
 
     def dump(self,out):
         """Dumps record header and data into output file stream."""
-        if self.changed:
-            raise AbstractError
-        if self.data:
-            self._grup_head.size = self.size
-            out.write(self._grup_head.pack_head())
-            out.write(self.data)
+        if self.data is None: raise AbstractError(f'{self!r} was not loaded')
+        super().dump(out)
 
 #------------------------------------------------------------------------------
-class MobObjects(MobBase):
+class MobObjects(_HeadedGrup):
     """Represents a group consisting of the record types specified in
     _accepted_sigs."""
     _bad_form = None # yak
-    _accepted_sigs = {b'OVERRIDE'} # set in PatchGame._import_records
-    _grup_header_type: type[GrupHeader] | None = None
-
-    def __init__(self, grup_header, load_f, ins=None, do_unpack=False):
-        self.id_records = {}
-        if ins and all(load_f.sig_to_type[r]  # self._load_f is not yet defined
-                       is None for r in self._accepted_sigs):
-            grup_header.skip_blob(ins)
-            self.inName = ins.inName
-            ins = None # block _load_rec_group
-        super().__init__(grup_header, load_f, ins, do_unpack)
 
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by load()."""
@@ -210,36 +251,17 @@ class MobObjects(MobBase):
             header = unpack_header(ins)
             if header.recType not in self._accepted_sigs:
                 self._load_err(f'Unexpected {header!r} record in {errLabel}.')
-            grel = self._group_element(header, ins)
+            grel = self._group_element(header, ins, end_pos)
             if grel is not None: self.setRecord(grel, _loading=True)
             else: header.skip_blob(ins)
-        self.setChanged()
 
     def iter_records(self):
         yield from self.id_records.values()
 
     # MobObjects API - makes no sense for (most) _Nested ----------------------
-    def _group_element(self, header, ins, do_unpack=True) -> 'MreRecord':
+    def _group_element(self, header, ins, end_pos) -> 'MreRecord':
         rec_class = self._load_f.sig_to_type[header.recType]
-        return None if rec_class is None else rec_class(header, ins,
-                                                        do_unpack=do_unpack)
-
-    def _write_header(self, out):
-        """getSize not only gets the size - essentially prepares the whole
-        grup for dumping - WIP"""
-        # for non headed groups we still need to call getSize to populate the
-        # block data structures - see _ExteriorCells
-        group_size = self.getSize()
-        if self._grup_header_type:
-            if self._grup_head:
-                self._grup_head.size = group_size # keep the rest of the header
-                out.write(self._grup_head.pack_head())
-            else: raise self._load_err(f'Missing header in {self!r}')
-
-    def _sort_group(self):
-        """Sorts records by FormID - now eid order matters too for
-        isKeyedByEid records."""
-        self.id_records = dict(dict_sort(self.id_records))
+        return None if rec_class is None else rec_class(header, ins)
 
     def setRecord(self, record, do_copy=True, _loading=False):
         """Adds record to self.id_records."""
@@ -248,17 +270,6 @@ class MobObjects(MobBase):
             self._load_err(f'Duplicate {el_key} record in {self}')
         self.id_records[el_key] = record if _loading or not do_copy else \
             record.getTypeCopy()
-
-    @classmethod
-    def empty_mob(cls, load_f, head_label, *head_arg):
-        """Get an empty MobObjects collection to use in merge_records etc."""
-        head = cls._grup_header_type(0, head_label, *head_arg) if \
-            cls._grup_header_type else None
-        mob = cls(head, load_f)
-        mob.setChanged()
-        return mob
-
-    def __bool__(self): return bool(self.id_records)
 
     # _AMobBase API -----------------------------------------------------------
     def get_num_headers(self):
@@ -270,7 +281,7 @@ class MobObjects(MobBase):
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        if not self.changed:
+        if self.data is not None:
             return self.size
         else:
             if not self.id_records: return 0
@@ -279,26 +290,10 @@ class MobObjects(MobBase):
             return ((RecordHeader.rec_header_size + recs_size) if recs_size
                     else 0)
 
-    def dump(self,out):
-        """Dumps group header and then records."""
-        if not self.changed:
-            out.write(self._grup_head.pack_head())
-            out.write(self.data)
-        else:
-            if not self.id_records: return
-            self._write_header(out)
-            self._sort_group()
-            self._dump_group(out)
-
-    def _dump_group(self, out):
-        for record in self.id_records.values():
-            record.dump(out)
-
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         self.id_records = {rec_key: record for rec_key, record in
                            self.id_records.items() if rec_key in p_keep_ids}
-        self.setChanged()
 
     def updateRecords(self, srcBlock, mergeIds):
         merge_ids_discard = mergeIds.discard
@@ -354,12 +349,11 @@ class _ChildrenGrup(MobObjects):
     _grup_header_type = ChildrenGrupHeader
     _children_grup_type = -1
 
-    def __init__(self, grup_header, load_f, ins=None, do_unpack=False,
-                 master_rec=None):
+    def __init__(self, grup_header, load_f, ins=None, master_rec=None):
         if master_rec and (groupFid := grup_header.label) != master_rec.fid:
             self._load_err(f'Children subgroup ({groupFid}) does '
                            f'not match parent {master_rec!r}.')
-        super().__init__(grup_header, load_f, ins, do_unpack)
+        super().__init__(grup_header, load_f, ins)
 
     def get_all_signatures(self):
         return {r._rec_sig for r in self.id_records.values()}
@@ -386,14 +380,14 @@ class _Nested(_AMobBase):
         super().__init__(load_f, ins, self._end_pos)
         self._set_mob_objects()
 
-    def _set_mob_objects(self, head_label=None):
+    def _set_mob_objects(self, head_label=None, **kwargs):
         for gt, mob_type in self._mob_objects_type.items():
             mobs = self._mob_objects.get(gt)
             # if not None might still be empty with size == rec_header_size -
             # I kept those empty groups instead of creating a new one (size==0)
             if mobs is None:
                 args = self._load_f, head_label or DUMMY_FID, gt
-                self._mob_objects[gt] = mob_type.empty_mob(*args)
+                self._mob_objects[gt] = mob_type.empty_mob(*args, **kwargs)
 
     def getSize(self):
         return sum(chg.getSize() for chg in
@@ -468,7 +462,7 @@ class _Nested(_AMobBase):
                         ins.rewind()
                         break
                     self._load_err(f'Duplicate {self._stray_recs[head_sig]!r}')
-                grel = self._group_element(header, ins)
+                grel = self._group_element(header, ins, end_pos)
                 if grel: self._stray_recs[head_sig] = grel
                 else: header.skip_blob(ins)
             elif head_sig == b'GRUP':
@@ -477,24 +471,22 @@ class _Nested(_AMobBase):
                     break
                 if gt in subgroups_loaded:
                     self._load_err(f'Duplicate subgroup type {gt} in {self}')
-                self._load_mobs(gt, header, ins, master_rec)
+                self._load_mobs(gt, header, ins, master_rec=master_rec)
                 subgroups_loaded.add(gt)
             else:
                 self._load_err(f'Unexpected {sig_to_str(head_sig)} record in '
                                f'{self} group.')
-        self.setChanged()
 
-    def _load_mobs(self, gt, header, ins, master_rec):
+    def _load_mobs(self, gt, header, ins, **kwargs):
         try:
             self._mob_objects[gt] = self._mob_objects_type[gt](header,
-                self._load_f, ins, do_unpack=True, master_rec=master_rec)
+                self._load_f, ins, **kwargs)
         except KeyError:
             self._load_err(f'Sub {gt} in {self}')
 
-    def _group_element(self, header, ins, do_unpack=True) -> 'MreRecord':
+    def _group_element(self, header, ins, end_pos) -> 'MreRecord':
         rec_class = self._load_f.sig_to_type[header.recType]
-        return None if rec_class is None else rec_class(header, ins,
-                                                        do_unpack=do_unpack)
+        return None if rec_class is None else rec_class(header, ins)
 
     def dump(self, out): # No _sort_group
         for r in self._stray_recs.values():
@@ -552,8 +544,12 @@ class _ComplexRec(_Nested):
         return self.master_record.flags1.ignored or \
             self.master_record.flags1.deleted
 
-    def _set_mob_objects(self, head_label=None):
-        super()._set_mob_objects(self.master_record.group_key())
+    def setChanged(self, value=True):
+        """Set master_record.changed attribute to given value."""
+        self.master_record.setChanged(value)
+
+    def _set_mob_objects(self, head_label=None, **kwargs):
+        super()._set_mob_objects(self.master_record.group_key(), **kwargs)
 
     def _load_rec_group(self, ins, end_pos, master_rec=None):
         """Loads data from input stream. Called by load()."""
@@ -571,7 +567,7 @@ class _ComplexRec(_Nested):
                 return
             self._load_err(f'{self}: Missing {self._top_type} master record')
         recClass = self._load_f.sig_to_type[hsig]
-        self.master_record = recClass(header, ins, do_unpack=True)
+        self.master_record = recClass(header, ins)
         if _loaded_world_records is not None:
             _loaded_world_records[self.master_record.group_key()] = self
         super()._load_rec_group(ins, end_pos, self.master_record)
@@ -654,9 +650,9 @@ class TopGrup(MobObjects):
     except CELL, WRLD and DIAL."""
     _grup_header_type = TopGrupHeader
 
-    def __init__(self, grup_header, load_f, ins=None, do_unpack=False):
+    def __init__(self, grup_header, load_f, ins=None):
         self._accepted_sigs = {grup_header.label} # needed in _load_rec_group
-        super().__init__(grup_header, load_f, ins, do_unpack)
+        super().__init__(grup_header, load_f, ins)
 
     def get_all_signatures(self):
         return self._accepted_sigs if self else set()
@@ -672,8 +668,8 @@ class TopComplexGrup(TopGrup):
         return {*chain(
             *(r.get_all_signatures() for r in self.id_records.values()))}
 
-    def _group_element(self, header, ins, do_unpack=True, **kwargs) -> _ComplexRec:
-        return self._top_rec_class(self._load_f, ins, **kwargs)
+    def _group_element(self, header, ins, end_pos=_EOF, **kwargs) -> _ComplexRec:
+        return self._top_rec_class(self._load_f, ins, end_pos, **kwargs)
 
     def iter_records(self):
         return chain(*(d.iter_records() for d in self.id_records.values()))
@@ -685,10 +681,9 @@ class TopComplexGrup(TopGrup):
             # it's the block's master record (needed for _merge_records)
             if not _loading and do_copy:
                 block = block.getTypeCopy()
-            master_rec = block
+            master_record = block
             block = self._group_element(None, ins=None, **{ # the master record
-                sig_to_str(master_rec._rec_sig).lower(): master_rec})
-            block.setChanged()
+                sig_to_str(master_record._rec_sig).lower(): master_record})
         grel_key = block.group_key()
         if grel_key in self.id_records:
             if _loading:
@@ -704,7 +699,6 @@ class TopComplexGrup(TopGrup):
         # loop above may set complex_rec.master_record to None
         self.id_records = {k: d for k, d in self.id_records.items() if
                            d.master_record is not None}
-        self.setChanged()
 
     def updateRecords(self, srcBlock, mergeIds):
         lookup_rec = self.id_records.get
@@ -882,18 +876,15 @@ class CellChildren(_Nested, _ChildrenGrup):
     _mob_objects: dict[int, CellRefs]
     _children_grup_type = 6
 
-    # todo do_unpack handling (and rename -> data -> _grup_blob)
-    def __init__(self, grup_head, load_f, ins=None, do_unpack=False,
-                 master_rec=None):
+    def __init__(self, grup_head_or_end, load_f, ins=None, master_rec=None):
         # Initialize the _Nested attributes that _load_rec_group relies on
         self._stray_recs = dict.fromkeys(self._extra_records)
         # _mob_objects is now a dict as we have multiple children
         self._mob_objects = dict.fromkeys(self._mob_objects_type) # fixed order
         self._merged_strays = set()
         # then load as a MobBase to handle the header and specify endPos
-        super(_Nested, self).__init__(grup_head, load_f, ins, do_unpack,
-                                      master_rec)
-        self._set_mob_objects(grup_head.label)
+        super(_Nested, self).__init__(grup_head_or_end, load_f, ins, master_rec)
+        self._set_mob_objects(grup_head_or_end.label, endPos=self._end_pos)
 
     def getSize(self):
         gsize = super().getSize()
@@ -952,16 +943,7 @@ class MobCells(TopComplexGrup):
     cells, bsbs are tuples of two numbers, while for exterior cells, bsb labels
     are tuples of grid tuples."""
     _block_type, _subblock_type = -1, -1
-    _cell_type = MobCell
-
-    def __init__(self, grup_header, load_f, ins=None, do_unpack=False,
-                 endPos=_EOF):
-        if grup_header is None:
-            self.id_records = {}
-            self._accepted_sigs = {b'CELL'}
-            super(MobBase, self).__init__(load_f, ins, endPos)
-        else: # MobICells - _accepted_sigs will be populated in TopGrup
-            super().__init__(grup_header, load_f, ins, do_unpack)
+    _top_rec_class = MobCell
 
     def get_num_headers(self, *, __get_cell=attrgetter_cache['master_record']):
         """Returns number of records, including self and all children."""
@@ -974,14 +956,11 @@ class MobCells(TopComplexGrup):
             count += len(blocks_bsbs) + len({x1[0] for x1 in blocks_bsbs})
         return count
 
-    def _group_element(self, header, ins, end_pos=None, do_unpack=True, **kwargs) -> _cell_type:
-        return self._cell_type(self._load_f, ins, end_pos, **kwargs)
-
     def getSize(self):
         """Return the total size of the block, but also compute dictionaries
         containing the sizes of the individual blocks/subblocks and the cell
         ids every block contains."""
-        if not self.changed:
+        if self.data is not None:
             return self.size
         self.size = 0
         self._block_subblock_cells = defaultdict(lambda: defaultdict(list))
@@ -1000,7 +979,6 @@ class MobCells(TopComplexGrup):
             bsize = sum(self._block_subblock_sizes[block].values())
             self._block_sizes[block] += bsize # includes the sizes of headers
             self.size += self._block_sizes[block]
-        # self.setChanged(False) ## FIXME revisit all setChanged machinery
         return self.size
 
     def _load_rec_group(self, ins, end_pos):
@@ -1030,7 +1008,6 @@ class MobCells(TopComplexGrup):
             else:
                 self._load_err(f'Unexpected {sig_to_str(_rsig)} record in '
                                f'{self} group.')
-        self.setChanged()
 
     def _sort_group(self):
         """First sort by the block they belong to, then by the CELL FormID."""
@@ -1101,7 +1078,11 @@ class _ExteriorCells(MobCells):
     _grup_header_type = None
     _block_type, _subblock_type = _ExtCell.block_types
     _block_header_type = ExteriorGrupHeader
-    _cell_type = _ExtCell
+    _top_rec_class = _ExtCell
+    _accepted_sigs = {b'CELL'}
+
+    def __init__(self, grup_header, load_f, ins, **kwargs):
+        super(TopGrup, self).__init__(grup_header, load_f, ins)
 
     def __str__(self): return f'Exterior Cells'
 
@@ -1115,22 +1096,18 @@ class WorldChildren(CellChildren):
     _mob_objects: dict[int, _ExteriorCells]
     _children_grup_type = 1
 
-    def _load_mobs(self, gt, header, ins, master_rec):
-        try:
-            ins.rewind() # to reread first block header
-            self._mob_objects[gt] = self._mob_objects_type[gt](None,
-                self._load_f, ins, do_unpack=True, endPos=self._end_pos)
-        except KeyError:
-            self._load_err(f'Sub {gt} in {self}')
+    def _load_mobs(self, gt, header, ins, **kwargs):
+        ins.rewind() # to reread (0, 0) block header - which we discard below
+        super()._load_mobs(gt, self._end_pos, ins, **kwargs)
 
-    def _group_element(self, header, ins, do_unpack=True) -> 'MreRecord':
+    def _group_element(self, header, ins, end_pos) -> 'MreRecord':
         if header.recType == b'CELL': # loading the persistent Cell
             # will rewind to reread the header in _Nested.__init__
             rec = _PersistentCell(self._load_f, ins, self._end_pos)
             if rec.master_record and not rec.master_record.flags1.persistent:
                 self._load_err(f'Misplaced exterior cell '
                                f'{rec.master_record!r}.')
-        else: rec = super()._group_element(header, ins, do_unpack)
+        else: rec = super()._group_element(header, ins, end_pos)
         return rec
 
     # WorldChildren is special as its CELL extra_record is a group not a record
@@ -1197,10 +1174,8 @@ class WorldChildren(CellChildren):
             if self._stray_recs[b'CELL']:
                 self._stray_recs[b'CELL'].master_record = cell_copy
             else:
-                new_pers_block = _PersistentCell(self._load_f, None,
-                                                 cell=cell_copy)
-                new_pers_block.setChanged()
-                self._stray_recs[b'CELL'] = new_pers_block
+                self._stray_recs[b'CELL'] = _PersistentCell(self._load_f, None,
+                                                            cell=cell_copy)
         else: # exterior cell - will copy it - previous behavior
             self._mob_objects[4].setRecord(cell_rec) #, do_copy=False?
 
@@ -1211,20 +1186,20 @@ class MobWorld(_ComplexRec):
     _mob_objects_type = {_grp_key: WorldChildren}
     _mob_objects: dict[int, WorldChildren]
 
-    def _load_mobs(self, gt, header, ins, master_rec):
+    def _load_mobs(self, gt, header, ins, **kwargs):
         if gt == self._grp_key: # if != 1 let it blow with a KeyError
             header_fid = header.label
-            if header_fid != master_rec.fid:
+            if header_fid != kwargs['master_rec'].fid:
                 if _loaded_world_records is not None and (
                         wrld_block := _loaded_world_records.get(header_fid)):
                     super(MobWorld, wrld_block)._load_mobs(
-                        gt, header, ins, wrld_block.master_record)
+                        gt, header, ins, master_rec=wrld_block.master_record)
                     return
                 header.skip_blob()
                 global _orphans_skipped
                 _orphans_skipped += 1
                 return
-        super()._load_mobs(gt, header, ins, master_rec)
+        super()._load_mobs(gt, header, ins, **kwargs)
 
     def get_cells(self):
         return self._mob_objects[self._grp_key].iter_present_records(b'CELL')
@@ -1256,9 +1231,9 @@ class MobWorlds(TopComplexGrup):
     of world blocks."""
     _top_rec_class = MobWorld
 
-    def __init__(self, grup_header, load_f, ins=None, do_unpack=False):
+    def __init__(self, grup_header, load_f, ins=None):
         global _orphans_skipped, _loaded_world_records # reset the globals
         _loaded_world_records = {}
         self.orphansSkipped = _orphans_skipped = 0
-        super().__init__(grup_header, load_f, ins, do_unpack)
+        super().__init__(grup_header, load_f, ins)
         self.orphansSkipped = _orphans_skipped

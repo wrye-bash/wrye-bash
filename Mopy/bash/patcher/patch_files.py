@@ -189,7 +189,7 @@ class PatchFile(ModFile):
                 deprint(f'Record {rec!r} should have been skipped')
                 return 0
             self.keepIds.add(rec_formid)
-            rec.setChanged() ##: this here may be a _ComplexRec
+            rec.setChanged() # this here may be a _ComplexRec
             return 1
         return _patch_keeper
 
