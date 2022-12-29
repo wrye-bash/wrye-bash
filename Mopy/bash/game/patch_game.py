@@ -304,11 +304,11 @@ class PatchGame(GameInfo):
         mobs = brec.record_groups
         cell_class = rtype.sig_to_class[b'CELL']
         mobs.CellRefs._accepted_sigs = cell_class.ref_types
-        mobs.TempRefs._accepted_sigs = mobs._CellChildren._accepted_sigs = {
+        mobs.TempRefs._accepted_sigs = mobs.CellChildren._accepted_sigs = {
             *cell_class.ref_types, *cell_class.interior_temp_extra}
         wrld_class = rtype.sig_to_class[b'WRLD']
         wrld_cell = {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
         mobs.WrldTempRefs._accepted_sigs = \
-            mobs._ExtCellChildren._accepted_sigs = wrld_cell
+            mobs.ExtCellChildren._accepted_sigs = wrld_cell
         mobs.WorldChildren._accepted_sigs = {*wrld_cell,
                                              *wrld_class.wrld_children_extra}

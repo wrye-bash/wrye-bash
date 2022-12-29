@@ -867,7 +867,7 @@ class _DistRefs(CellRefs):
     """Visible when distant cell children."""
     _children_grup_type = 10
 
-class _CellChildren(_Nested, _ChildrenGrup):
+class CellChildren(_Nested, _ChildrenGrup):
     """The notorious group 6. It's a _ChildrenGrup that is-a _Nested group
     instead of a MobObjects."""
     _top_type = b'CELL'
@@ -920,8 +920,8 @@ class MobCell(_ComplexRec):
     subrecords."""
     _extra_records = b'CELL',
     _top_type = b'CELL'
-    _mob_objects_type = {6: _CellChildren}
-    _mob_objects: dict[int, _CellChildren]
+    _mob_objects_type = {6: CellChildren}
+    _mob_objects: dict[int, CellChildren]
     block_types = 2, 3
     _marker_groups = {0, *block_types}
 
@@ -935,9 +935,10 @@ class MobCell(_ComplexRec):
         return self._mob_objects[6]._mob_objects[9]
 
 #------------------------------------------------------------------------------
-class MobCells(MobObjects):
+class MobCells(TopComplexGrup):
     """A block containing cells. It's an anomalous MobObjects, as it may not
-    have a header (exterior WRLD cells) - WIP
+    have a header (exterior WRLD cells) - not always a TopComplexGrup either
+    but most of the behavior (the non header dependent) is identical.
 
     Note that "blocks" here only roughly match the file block structure.
 
@@ -951,8 +952,9 @@ class MobCells(MobObjects):
                  endPos=_EOF):
         if grup_header is None:
             self.id_records = {}
+            self._accepted_sigs = {b'CELL'}
             super(MobBase, self).__init__(load_f, ins, endPos)
-        else: # MobICells
+        else: # MobICells - _accepted_sigs will be populated in TopGrup
             super().__init__(grup_header, load_f, ins, do_unpack)
 
     def get_num_headers(self, *, __get_cell=attrgetter_cache['master_record']):
@@ -1060,7 +1062,7 @@ class MobCells(MobObjects):
             self.dumpBlocks(out)
 
 #------------------------------------------------------------------------------
-class MobICells(MobCells, TopComplexGrup):
+class MobICells(MobCells):
     """Tes4 top block for interior cell records."""
     _top_rec_class = MobCell
     _block_type, _subblock_type = MobCell.block_types
@@ -1084,46 +1086,27 @@ class WrldTempRefs(TempRefs):
     """Temp references for wrld exterior cells may differ from interior ones.
     """
 
-class _ExtCellChildren(_CellChildren):
+class ExtCellChildren(CellChildren):
     _top_type = b'CELL' # these are part of an WRLD record
     _mob_objects_type = {cl._children_grup_type: cl for cl in
                          (_PersRefs, WrldTempRefs, _DistRefs)}
 
 class _ExtCell(MobCell):
-    _mob_objects_type = {6: _ExtCellChildren}
+    _mob_objects_type = {6: ExtCellChildren}
     block_types = 4, 5
     _marker_groups = {0, *block_types}
 
     def __repr__(self): return f'ExteriorCell'
 
 class _ExteriorCells(MobCells):
-    """No header MobObjects containing cells divided in blocks/subblocks."""
+    """No header MobObjects containing cells divided in blocks/subblocks.
+    Inherits basic behavior from MobCells, the rest from TopComplexGrup -
+    only  _write_header / empty_mob / __bool__ / __repr__ come from
+    MobObjects - WIP."""
     _grup_header_type = None
     _block_type, _subblock_type = _ExtCell.block_types
     _block_header_type = ExteriorGrupHeader
     _cell_type = _ExtCell
-
-    # maybe _ExteriorCells is-a TopComplexGrup? then we need to track overrides
-    # that need to delegate to MobObjects - wait till we further thin base API
-    def iter_records(self):
-        return TopComplexGrup.iter_records(self)
-
-    def get_all_signatures(self):
-        return TopComplexGrup.get_all_signatures(self)
-
-    def keepRecords(self, p_keep_ids):
-        return TopComplexGrup.keepRecords(self, p_keep_ids)
-
-    def updateRecords(self, srcBlock, mergeIds):
-        TopComplexGrup.updateRecords(self, srcBlock, mergeIds)
-
-    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        TopComplexGrup.merge_records(self, block, loadSet, mergeIds,
-            iiSkipMerge, doFilter)
-
-    def setRecord(self, block, do_copy=True, _loading=False):
-        """We want to get a block here not a mere record."""
-        return TopComplexGrup.setRecord(self, block, do_copy, _loading)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -1140,7 +1123,7 @@ class _ExteriorCells(MobCells):
 class _PersistentCell(MobCell):
     _marker_groups = {0, 4} # we get a group 4 of exterior cells right after
 
-class WorldChildren(_CellChildren):
+class WorldChildren(CellChildren):
     _extra_records = (b'ROAD', b'CELL') ## todo SET in _validate_recs
     _top_type = b'WRLD'
     _mob_objects_type = {4: _ExteriorCells} # we hit a 4 type block
