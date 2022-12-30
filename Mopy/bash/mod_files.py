@@ -27,27 +27,15 @@ from collections import defaultdict
 from typing import Iterable
 from zlib import decompress as zlib_decompress, error as zlib_error
 
-from . import bolt, bush, env, load_order
-from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
+from . import bolt, bush, env
+from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str, \
+    MasterSet
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     MobBase, TopGrup, unpack_header, FastModReader, Subrecord, int_unpacker, \
     FormIdReadContext, FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
-
-class MasterSet(set):
-    """Set of master names."""
-    def add(self,element):
-        """Add a long fid's mod index."""
-        try:
-            super().add(element.mod_fn)
-        except AttributeError:
-            if element is not None:
-                raise
-
-    def getOrdered(self):
-        """Returns masters in proper load order."""
-        return load_order.get_ordered(self)
+from .load_order import get_ordered
 
 class MasterMap(object):
     """Serves as a map between two sets of masters."""
@@ -208,7 +196,7 @@ class ModFile(object):
                                     f'{sig_to_str(top_grup_sig)} group, '
                                     f'merging')
                             self.tops[top_grup_sig].merge_records(new_top,
-                                set(), set(), False, False)
+                                None, set(), False)
                     else:
                         self.topsSkipped.add(top_grup_sig)
                         g_head.skip_blob(ins)
@@ -295,7 +283,7 @@ class ModFile(object):
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here
         masters_set.discard(self.fileInfo.fn_key)
-        return masters_set.getOrdered()
+        return get_ordered(masters_set)
 
     def _index_mgefs(self):
         """Indexes and cache all MGEF properties and stores them for retrieval

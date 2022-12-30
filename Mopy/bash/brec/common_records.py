@@ -50,17 +50,18 @@ class AMreWithItems(MelRecord):
     """Base class for record types that contain a list of items (see
     common_subrecords.AMelItems)."""
 
-    def mergeFilter(self, modSet):
-        self.items = [i for i in self.items if i.item.mod_fn in modSet]
+    def keep_fids(self, keep_plugins):
+        self.items = [i for i in self.items if i.item.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class AMreActor(AMreWithItems):
     """Base class for Creatures and NPCs."""
 
-    def mergeFilter(self, modSet):
-        super().mergeFilter(modSet)
-        self.spells = [x for x in self.spells if x.mod_fn in modSet]
-        self.factions = [x for x in self.factions if x.faction.mod_fn in modSet]
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.spells = [x for x in self.spells if x.mod_fn in keep_plugins]
+        self.factions = [x for x in self.factions if
+                         x.faction.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
@@ -78,9 +79,9 @@ class AMreFlst(MelRecord):
         self.de_records = None #--Set of items deleted by list (Deflst mods)
         self.re_records = None # unused, needed by patcher
 
-    def mergeFilter(self, modSet):
+    def keep_fids(self, keep_plugins):
         self.formIDInList = [f for f in self.formIDInList if
-                             f.mod_fn in modSet]
+                             f.mod_fn in keep_plugins]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
@@ -389,9 +390,9 @@ class AMreLeveledList(MelRecord):
         self.de_records = None #--Set of items deleted by list (Delev and Relev mods)
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
-    def mergeFilter(self, modSet):
+    def keep_fids(self, keep_plugins):
         self.entries = [entry for entry in self.entries if
-                        entry.listId.mod_fn in modSet]
+                        entry.listId.mod_fn in keep_plugins]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.

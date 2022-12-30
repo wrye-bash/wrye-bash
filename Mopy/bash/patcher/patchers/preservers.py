@@ -182,7 +182,7 @@ class APreserver(ImportPatcher):
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
-        loaded_mods = self.patchFile.loadSet
+        loaded_mods = self.patchFile.load_dict
         for srcMod in self.srcs:
             mod_id_data = {}
             if srcMod not in minfs: continue

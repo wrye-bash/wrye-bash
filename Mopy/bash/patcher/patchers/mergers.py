@@ -660,7 +660,7 @@ class _AListsMerger(ListPatcher):
         :type remove_empty: bool
         :type tag_choices: defaultdict[bolt.Path, set[str]]"""
         super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
-        self.isActive |= bool(p_file.loadSet) # Can do meaningful work even without sources
+        self.isActive |= bool(p_file.load_dict) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
         self.masterItems = defaultdict(dict)
         # Calculate levelers/de_masters first, using unmodified self.srcs
@@ -673,7 +673,7 @@ class _AListsMerger(ListPatcher):
         self.de_masters = set()
         for leveler in self.levelers:
             self.de_masters.update(p_file.p_file_minfos[leveler].masterNames)
-        self.srcs = set(self.srcs) & p_file.loadSet
+        self.srcs = {s for s in self.srcs if s in p_file.load_dict}
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices
 

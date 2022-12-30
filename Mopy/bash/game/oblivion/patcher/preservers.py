@@ -124,8 +124,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
-        self.isActive &= (cobl_main in p_file.loadSet and
-            self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
+        self.isActive &= (cobl_main in p_file.load_dict and
+                          self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -209,7 +209,7 @@ class MorphFactionsPatcher(_ExSpecialList):
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
-        self.isActive &= cobl_main in p_file.loadSet
+        self.isActive &= cobl_main in p_file.load_dict
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
 
     def scanModFile(self, modFile, progress):

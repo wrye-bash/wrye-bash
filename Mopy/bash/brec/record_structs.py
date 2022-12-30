@@ -367,11 +367,11 @@ class MreRecord(metaclass=RecordType):
         myCopy.data = None
         return myCopy
 
-    def mergeFilter(self, modSet):
-        """This method is called by the bashed patch mod merger. The
-        intention is to allow a record to be filtered according to the
-        specified modSet. E.g. for a list record, items coming from mods not
-        in the modSet could be removed from the list."""
+    def keep_fids(self, keep_plugins):
+        """Filter specific record elements that contain fids to only keep
+        those whose fids come from keep_plugins. E.g. for a list record
+        element, items coming from mods not in keep_plugins will be removed
+        from the list."""
 
     def getDecompressed(self, *, __unpacker=int_unpacker):
         """Return (decompressed if necessary) record data wrapped in BytesIO.

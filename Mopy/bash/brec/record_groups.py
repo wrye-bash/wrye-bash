@@ -34,7 +34,7 @@ from . import MelRecord
 from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
     ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
 from .utils_constants import DUMMY_FID, group_types, FormId
-from ..bolt import attrgetter_cache, sig_to_str, dict_sort, deprint
+from ..bolt import attrgetter_cache, sig_to_str, dict_sort, deprint, MasterSet
 from ..exception import AbstractError, ModError
 
 class _AMobBase:
@@ -98,18 +98,18 @@ class _AMobBase:
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         raise AbstractError('keepRecords not implemented')
 
-    ##: params here are not the prettiest
-    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        """Merges records from the specified block into this block and performs
-        merge filtering if doFilter is True.
+    def merge_records(self, block, loaded_mods: set | None, mergeIds,
+                      iiSkipMerge):
+        """Merges records from the specified block into this block.
 
         :param block: The block to merge records from.
-        :param loadSet: The set of currently loaded plugins.
+        :param loaded_mods: set of active mods loading earlier than the
+            bashed patch - if not None (can't be empty) we need to perform
+            filtering on missing masters.
         :param mergeIds: A set into which the fids of all records that will be
             merged by this operation will be added.
         :param iiSkipMerge: If True, skip merging and only perform merge
-            filtering. Used by IIM mode.
-        :param doFilter: If True, perform merge filtering."""
+            filtering. Used by IIM mode."""
         raise AbstractError(f'{self}: merge_records not implemented')
 
     def updateRecords(self, srcBlock, mergeIds):
@@ -118,6 +118,22 @@ class _AMobBase:
         only done by importers (using setRecord) or by merging files (via
         merge_records)."""
         raise AbstractError('updateRecords not implemented')
+
+    # Helpers -----------------------------------------------------------------
+    @staticmethod
+    def _masters_miss_after_filtering(src_rec, active_mods_earlier_than_patch,
+                                      *, perform_filtering=True):
+        """If we're Filter-tagged (so we may have missing masters), keep only
+        fids of earlier loading mods. Then, check if the record has still any
+        elements with FormIDs belonging to inactive/missing masters. If it
+        does, skip the whole record. """
+        if perform_filtering:  # otherwise we passed a block not a record in
+            src_rec.keep_fids(active_mods_earlier_than_patch)
+        masterset = MasterSet()
+        src_rec.updateMasters(masterset.add)
+        if not active_mods_earlier_than_patch.issuperset(masterset):
+            return True
+        return False
 
 class _HeadedGrup(_AMobBase):
     """Grup headed by a header - header might be None in the case of
@@ -303,25 +319,15 @@ class MobObjects(_HeadedGrup):
                 copy_to_self(record)
                 merge_ids_discard(rid)
 
-    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        # YUCK, drop these local imports!
-        from ..mod_files import MasterSet
+    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
         filtered = {}
-        loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
         for rid, src_rec in block.iter_present_records():
             #--Include this record?
-            if doFilter:
-                # If we're Filter-tagged, perform merge filtering. Then, check
-                # if the record has any FormIDs with masters that are on disk
-                # left. If it does not, skip the whole record (because all of
-                # its contents have been merge-filtered out).
-                src_rec.mergeFilter(loadSet)
-                masterset = MasterSet()
-                src_rec.updateMasters(masterset.add)
-                if not loadSetIsSuperset(masterset):
-                    continue
+            if loaded_mods is not None and self._masters_miss_after_filtering(
+                    src_rec, loaded_mods):
+                continue
             # We're either not Filter-tagged or we want to keep this record
             filtered[rkey := src_rec.group_key()] = src_rec
             # If we're IIM-tagged and this is not one of the IIM-approved
@@ -404,23 +410,18 @@ class _Nested(_AMobBase):
         return chain((r for r in self._stray_recs.values() if r),
                      *(v.iter_records() for v in self._mob_objects.values()))
 
-    def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from ..mod_files import MasterSet # YUCK
+    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
         mergeIdsAdd = mergeIds.add
-        loadSetIsSuperset = loadSet.issuperset
         for rsig, src_rec in src_block._stray_recs.items():
             if rsig in self._merged_strays:
                 continue # Already handled by callee
             if src_rec and not src_rec.should_skip():
                 # If we're Filter-tagged, perform merge filtering first
-                if doFilter:
-                    src_rec.mergeFilter(loadSet)
-                    masterset = MasterSet()
-                    src_rec.updateMasters(masterset.add)
-                    if not loadSetIsSuperset(masterset):
-                        # Filtered out, discard this record and skip to next
-                        src_block._stray_recs[rsig] = None
-                        continue
+                if loaded_mods is not None and \
+                      self._masters_miss_after_filtering(src_rec, loaded_mods):
+                    # Filtered out, discard this record and skip to next
+                    src_block._stray_recs[rsig] = None
+                    continue
                 # In IIM, skip all merging (duh)
                 if not iiSkipMerge:
                     # We're past all hurdles - stick a copy of this record into
@@ -428,8 +429,8 @@ class _Nested(_AMobBase):
                     mergeIdsAdd(src_rec.fid)
                     self._stray_recs[rsig] = src_rec.getTypeCopy()
         for gt, block_mob in src_block._mob_objects.items():
-            self._mob_objects[gt].merge_records(block_mob, loadSet, mergeIds,
-                                                iiSkipMerge, doFilter)
+            self._mob_objects[gt].merge_records(block_mob, loaded_mods,
+                                                mergeIds, iiSkipMerge)
 
     def updateRecords(self, srcBlock, mergeIds):
         for gt, chg in self._mob_objects.items():
@@ -603,25 +604,19 @@ class _ComplexRec(_Nested):
             mergeIds.discard(src_rec.fid)
             return True # call super
 
-    def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from ..mod_files import MasterSet # YUCK
+    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
         mergeIdsAdd = mergeIds.add
-        loadSetIsSuperset = loadSet.issuperset
         # First, check the main record
         src_rec = src_block.master_record
         # Otherwise we'll try to do this again in super
         self._merged_strays.add(src_rec._rec_sig)
         if not src_rec.should_skip():
             # If we're Filter-tagged, perform merge filtering first
-            if doFilter:
-                src_rec.mergeFilter(loadSet)
-                masterset = MasterSet()
-                src_rec.updateMasters(masterset.add)
-                if not loadSetIsSuperset(masterset):
-                    # Filtered out, discard this record (and, by extension, all
-                    # its children)
-                    self.master_record = None # will drop us from parent
-                    return
+            if loaded_mods is not None and self._masters_miss_after_filtering(
+                    src_rec, loaded_mods):
+                # Discard this record (and, by extension, all its children)
+                self.master_record = None  # will drop us from parent
+                return
             # In IIM, we can't just return here since we also need to filter
             # the children that came with this complex record
             if not iiSkipMerge:
@@ -630,8 +625,8 @@ class _ComplexRec(_Nested):
                 mergeIdsAdd(src_rec.fid)
                 self.master_record = src_rec.getTypeCopy()
             # Now we're ready to filter and merge the children
-            super().merge_records(src_block, loadSet, mergeIds, iiSkipMerge,
-                doFilter)
+            super().merge_records(src_block, loaded_mods, mergeIds,
+                                  iiSkipMerge)
 
     def __str__(self):
         mr = mr.fid if (mr := self.master_record) else \
@@ -706,11 +701,9 @@ class TopComplexGrup(TopGrup):
             if dest_rec:
                 dest_rec.updateRecords(complex_rec, mergeIds)
 
-    def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from ..mod_files import MasterSet # YUCK
+    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
         lookup_rec = self.id_records.get
         filtered = {}
-        loadSetIsSuperset = loadSet.issuperset
         for src_fid, src_rec in block.iter_present_records():
             # Check if we already have a record with that FormID
             dest_record = lookup_rec(src_fid)
@@ -718,25 +711,19 @@ class TopComplexGrup(TopGrup):
                 # We do not, add it and get it - will typeCopy the rec
                 dest_record = self.setRecord(src_rec.master_record)
             # Delegate merging to the (potentially newly added) child record
-            dest_record.merge_records(src_rec, loadSet, mergeIds,
-                iiSkipMerge, doFilter)
+            dest_record.merge_records(src_rec, loaded_mods, mergeIds,
+                                      iiSkipMerge)
             # In IIM, skip all merging - note that we need to remove the child
             # record again if it was newly added in IIM mode.
-            if iiSkipMerge:
+            if iiSkipMerge or (loaded_mods is not None and
+                self._masters_miss_after_filtering(src_rec, loaded_mods,
+                                                   perform_filtering=False)):
                 if was_newly_added:
-                    del self.id_records[dest_record.group_key()]
-                continue
-            # If we're Filter-tagged, check if the record got filtered out
-            if doFilter:
-                masterset = MasterSet()
-                src_rec.updateMasters(masterset.add)
-                if not loadSetIsSuperset(masterset):
                     # The child record got filtered out. If it was newly added,
                     # we need to remove it from this block again. Otherwise, we
                     # can just skip forward to the next child.
-                    if was_newly_added:
-                        del self.id_records[dest_record.group_key()]
-                    continue
+                    del self.id_records[dest_record.group_key()]
+                continue
             # We're either not Filter-tagged or we want to keep this record
             filtered[src_fid] = src_rec
         # Apply any merge filtering we've done above to the record block
@@ -1123,9 +1110,7 @@ class WorldChildren(CellChildren):
             if pcell := self._stray_recs[b'CELL']:
                 pcell.updateRecords(src_cell, mergeIds)
 
-    def merge_records(self, src_block, loadSet, mergeIds, iiSkipMerge, doFilter):
-        from ..mod_files import MasterSet  # YUCK
-        loadSetIsSuperset = loadSet.issuperset
+    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
         if src_cell := src_block._stray_recs[b'CELL']:
             # Otherwise we'll try to do this again in super
             self._merged_strays.add(b'CELL')
@@ -1135,25 +1120,18 @@ class WorldChildren(CellChildren):
                 self._stray_recs[b'CELL'] = _PersistentCell(self._load_f, None,
                                                             cell=src_cell)
             # Delegate merging to the (potentially newly added) block
-            self._stray_recs[b'CELL'].merge_records(src_cell, loadSet,
-                mergeIds, iiSkipMerge, doFilter)
+            self._stray_recs[b'CELL'].merge_records(src_cell, loaded_mods,
+                mergeIds, iiSkipMerge)
             # In IIM, skip all merging - note that we need to remove the world
             # cell block again if it was newly added in IIM mode.
-            if iiSkipMerge:
+            if iiSkipMerge or (loaded_mods is not None and
+                self._masters_miss_after_filtering(self._stray_recs[b'CELL'],
+                    loaded_mods, perform_filtering=False)):
+                # The cell block got filtered out. If it was newly added,
+                # we need to remove it from this block again.
                 if was_newly_added:
                     self._stray_recs[b'CELL'] = None
-            elif doFilter:
-                # If we're Filter-tagged, check if the world cell block got
-                # filtered out
-                masterset = MasterSet()
-                self._stray_recs[b'CELL'].updateMasters(masterset.add)
-                if not loadSetIsSuperset(masterset):
-                    # The cell block got filtered out. If it was newly added,
-                    # we need to remove it from this block again.
-                    if was_newly_added:
-                        self._stray_recs[b'CELL'] = None
-        super().merge_records(src_block, loadSet, mergeIds, iiSkipMerge,
-            doFilter)
+        super().merge_records(src_block, loaded_mods, mergeIds, iiSkipMerge)
 
     @_process_rec(b'CELL', after=False)
     def keepRecords(self, p_keep_ids):

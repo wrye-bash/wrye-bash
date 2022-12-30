@@ -23,7 +23,7 @@
 from __future__ import annotations
 import time
 from collections import defaultdict, Counter
-from itertools import chain
+from itertools import chain, count
 from operator import attrgetter
 from .. import bolt # for type hints
 from .. import bush # for game etc
@@ -45,7 +45,7 @@ class PatchFile(ModFile):
     def set_mergeable_mods(self, mergeMods):
         """Set `mergeSet` attribute to the srcs of MergePatchesPatcher."""
         self.mergeSet = set(mergeMods)
-        self.merged_or_loaded = self.mergeSet | self.loadSet
+        self.merged_or_loaded = {*self.mergeSet, *self.load_dict}
         self.merged_or_loaded_ord = load_order.get_ordered(
             self.merged_or_loaded)
 
@@ -121,9 +121,9 @@ class PatchFile(ModFile):
         log.setHeader('=== ' + _('Active Plugins'), True)
         for mname in self.merged_or_loaded_ord:
             version = self.p_file_minfos.getVersion(mname)
-            if mname in self.loadSet:
-                message = f'* {self.loadMods.index(mname):02X} '
-            else:
+            try:
+                message = f'* {self.load_dict[mname]:02X} '
+            except KeyError:
                 message = '* ++ '
             if version:
                 message += _('%(msg_plugin)s  [Version %(plugin_ver)s]') % {
@@ -165,18 +165,18 @@ class PatchFile(ModFile):
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Mods
-        # checking for files to include in patch, investigate
+        # Load order is not supposed to change during patch execution
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude modding esms (those tend to be huge)
         self.all_plugins = [k for k in self.all_plugins if
                             k not in bush.game.modding_esm_size]
-        loadMods = [m for m in self.all_plugins
-                    if load_order.cached_is_active(m)]
-        if not loadMods:
+        c = count() ##: should we use load_order.cached_active_index(m) ?? (might differ if modding esms are active (unlikely))
+        loaded_mods = {m: next(c) for m in self.all_plugins if
+                       load_order.cached_is_active(m)}
+        if not loaded_mods:
             raise BoltError('No active plugins loading before the Bashed '
                             'Patch')
-        self.loadMods = tuple(loadMods)
-        self.loadSet = frozenset(self.loadMods)
+        self.load_dict = loaded_mods # used in printing BP masters' indexes
         self.set_mergeable_mods([])
         self.p_file_minfos = p_file_minfos
 
@@ -232,6 +232,7 @@ class PatchFile(ModFile):
         nullProgress = Progress()
         progress = progress.setFull(len(self.all_plugins))
         all_plugins_set = set(self.all_plugins)
+        load_set = set(self.load_dict)
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
@@ -239,14 +240,14 @@ class PatchFile(ModFile):
             modInfo = self.p_file_minfos[modName]
             # Check some commonly needed properties of the current plugin
             bashTags = modInfo.getBashTags()
-            is_loaded = modName in self.loadSet
+            is_loaded = modName in self.load_dict
             is_merged = modName in self.mergeSet
             can_filter = 'Filter' in bashTags
-            if (set(modInfo.masterNames) - all_plugins_set and not can_filter
-                    and (bashTags - non_import_bts)):
+            if not can_filter and set(modInfo.masterNames) - all_plugins_set \
+                    and (bashTags - non_import_bts):
                 # This plugin has missing masters, is not Filter-tagged but
                 # still wants to import data -> user needs to add Filter tag
-                self.needs_filter_mods.append(modName)
+                self.needs_filter_mods.append(modName) ##: should we need to 'filter' after all?
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = is_merged and 'IIM' in bashTags
@@ -266,7 +267,8 @@ class PatchFile(ModFile):
                 if is_merged:
                     # If the plugin is to be merged, merge it
                     progress(pstate, f'{modName}\n' + _('Merging...'))
-                    self.mergeModFile(modFile, can_filter, iiMode)
+                    self.mergeModFile(modFile, # signal we won't "filter"
+                                      load_set if can_filter else None, iiMode)
                 elif is_loaded:
                     # Else, if the plugin is active, update records from it. If
                     # the plugin is inactive, we only want to import from it,
@@ -285,7 +287,7 @@ class PatchFile(ModFile):
                 raise
         progress(progress.full, _('Load plugins scanned.'))
 
-    def mergeModFile(self, modFile, doFilter, iiMode):
+    def mergeModFile(self, modFile, loaded_mods, iiMode):
         """Copies contents of modFile into self."""
         for top_grup_sig,block in modFile.tops.items():
             # Make sure that once we merge a record type, all later plugin
@@ -296,8 +298,8 @@ class PatchFile(ModFile):
                     self.readFactory.add_class(s)
                     self.loadFactory.add_class(s)
             iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
-            self.tops[top_grup_sig].merge_records(block, self.loadSet,
-                self.mergeIds, iiSkipMerge, doFilter)
+            self.tops[top_grup_sig].merge_records(block, loaded_mods,
+                                                  self.mergeIds, iiSkipMerge)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""

@@ -63,7 +63,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
 
     def __init__(self, p_name, p_file):
         super(CoblCatalogsPatcher, self).__init__(p_name, p_file)
-        self.isActive = cobl_main in p_file.loadSet
+        self.isActive = cobl_main in p_file.load_dict
         self.id_ingred = {}
 
     @property
@@ -174,7 +174,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
     def __init__(self, p_name, p_file):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
-        if _ob_path in p_file.loadSet:
+        if _ob_path in p_file.load_dict:
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = self._mod_file_read(modInfo) # read Oblivion quests
             for rid, record in modFile.tops[b'QUST'].iter_present_records():
