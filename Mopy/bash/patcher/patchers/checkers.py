@@ -297,7 +297,7 @@ class TimescaleCheckerPatcher(ModLoader):
 
     def __init__(self, p_name, p_file):
         super(TimescaleCheckerPatcher, self).__init__(p_name, p_file)
-        # We want to use _mod_read_records for GLOB records, not GRAS records
+        # We want to use _mod_file_read for GLOB records, not GRAS records
         self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
 
     def scanModFile(self, modFile, progress):

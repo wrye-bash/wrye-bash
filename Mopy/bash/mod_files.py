@@ -171,8 +171,8 @@ class ModFile(object):
         self.tops = _TopGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
 
-    def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True, do_map_fids=True):
+    def load_plugin(self, progress=None, loadStrings=True, catch_errors=True,
+                    do_map_fids=True):
         ##: track uses and decide on exception handling and setChanged behavior
         """Load file."""
         progress = progress or bolt.Progress()
@@ -183,8 +183,7 @@ class ModFile(object):
                 ins.load_tes4(do_unpack_tes4=False)
             self.tes4 = ins.plugin_header
             if do_map_fids:
-                progress = self.__load_strs(do_unpack, ins, loadStrings,
-                                            progress)
+                progress = self.__load_strs(ins, loadStrings, progress)
             #--Raw data read
             progress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -198,7 +197,7 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
-                        load_fully = do_unpack and (topClass != MobBase)
+                        load_fully = topClass != MobBase
                         new_top = topClass(g_head, self.loadFactory, ins,
                                            load_fully)
                         # Starting with FO4, some of Bethesda's official files
@@ -238,10 +237,10 @@ class ModFile(object):
         for target_top in self.tops.values():
             target_top.set_records_changed()
 
-    def __load_strs(self, do_unpack, ins, loadStrings, progress):
+    def __load_strs(self, ins, loadStrings, progress):
         # Check if we need to handle strings
         self.strings.clear()
-        if do_unpack and loadStrings and getattr(self.tes4.flags1, 'localized', False):
+        if loadStrings and getattr(self.tes4.flags1, 'localized', False):
             from . import bosh
             stringsProgress = SubProgress(progress, 0,
                                           0.1)  # Use 10% of progress bar

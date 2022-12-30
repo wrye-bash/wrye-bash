@@ -243,8 +243,8 @@ class PatchFile(ModFile):
             try:
                 loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
                 progress(index, f'{modName}\n' + _('Loading...'))
-                modFile = ModFile(modInfo,loadFactory)
-                modFile.load(True,SubProgress(progress,index,index+0.5))
+                modFile = ModFile(modInfo, loadFactory)
+                modFile.load_plugin(SubProgress(progress, index, index + 0.5))
             except ModError as e:
                 deprint('load error:', traceback=True)
                 self.loadErrorMods.append((modName,e))

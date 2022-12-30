@@ -893,7 +893,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 modInfo = bosh.modInfos[modName]
                 modFile = ModFile(modInfo, lf)
                 try:
-                    modFile.load(True)
+                    modFile.load_plugin()
                 except ModError as x:
                     modErrors.append(f'{x}')
                     continue

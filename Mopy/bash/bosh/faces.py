@@ -377,7 +377,7 @@ class PCFaces(object):
         lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
         modFile = ModFile(modInfo, lf)
         if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
-            modFile.load(True)
+            modFile.load_plugin()
         return modFile
 
     @staticmethod

@@ -95,7 +95,7 @@ class IndexingTweak(MultiTweakItem):
 
     def _mod_file_read(self, modInfo):
         modFile = ModFile(modInfo, self.loadFactory)
-        modFile.load(do_unpack=True)
+        modFile.load_plugin()
         return modFile
 
     def prepare_for_tweaking(self, patch_file):

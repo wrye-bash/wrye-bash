@@ -686,9 +686,9 @@ class SaveSpells(_SaveData):
                                   modInfo.extras['bash.spellList'].items())
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
-        modFile = ModFile(modInfo, loadFactory)
-        try: modFile.load(True, catch_errors=False)
+        spell_lf = LoadFactory(False, by_sig=[b'SPEL'])
+        modFile = ModFile(modInfo, spell_lf)
+        try: modFile.load_plugin(catch_errors=False)
         except ModError as err:
             deprint(f'skipped mod due to read error ({err})')
             return

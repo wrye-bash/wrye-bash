@@ -376,7 +376,7 @@ class ModLoader(Patcher):
     def _mod_file_read(self, modInfo):
         modFile = ModFile(modInfo,
                           self.loadFactory or self._patcher_read_fact())
-        modFile.load(True)
+        modFile.load_plugin()
         return modFile
 
 # Patchers: 20 ----------------------------------------------------------------
