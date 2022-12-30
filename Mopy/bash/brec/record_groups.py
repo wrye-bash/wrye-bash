@@ -240,7 +240,6 @@ class MobBase(_HeadedGrup):
 class MobObjects(_HeadedGrup):
     """Represents a group consisting of the record types specified in
     _accepted_sigs."""
-    _bad_form = None # yak
 
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by load()."""
@@ -312,7 +311,6 @@ class MobObjects(_HeadedGrup):
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
         for rid, src_rec in block.iter_present_records():
-            if rid == self._bad_form: continue
             #--Include this record?
             if doFilter:
                 # If we're Filter-tagged, perform merge filtering. Then, check

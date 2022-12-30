@@ -1179,10 +1179,8 @@ class OblivionGameInfo(PatchGame):
 
     @classmethod
     def _import_records(cls, package_name, plugin_form_vers=None):
-        from .. import brec
-        # DarkPCB record
-        brec.TopGrup._bad_form = cls.master_fid(0xA31D)
         super()._import_records(package_name) # package name is oblivion here
+        from .. import brec
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
 
