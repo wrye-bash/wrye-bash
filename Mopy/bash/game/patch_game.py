@@ -267,8 +267,10 @@ class PatchGame(GameInfo):
         all decoded records and have the RecordType class variables updated.
         :param plugin_form_vers: if not None set RecordHeader variable"""
         importlib.import_module('.records', package=package_name)
-        from .. import brec
-        rtype, rec_head = brec.RecordType, brec.RecordHeader
+        from .. import brec as _brec_
+        rtype, rec_head = _brec_.RecordType, _brec_.RecordHeader
+        _sig_class = rtype.sig_to_class
+        cls._plugin_header_rec_type = _sig_class[cls.Esp.plugin_header_sig]
         if plugin_form_vers is not None:
             rec_head.plugin_form_version = plugin_form_vers
         rec_head.top_grup_sigs = {k: k for k in cls.top_groups}
@@ -276,8 +278,8 @@ class PatchGame(GameInfo):
         ##: complex_groups should not be needed but added due to fo4 DIAL (?)
         valid_header_sigs = {cls.Esp.plugin_header_sig, *cls.top_groups,
                              *rtype.nested_to_top, *cls.complex_groups}
-        for rec_sig, rec_class in list(rtype.sig_to_class.items()):
-            if issubclass(rec_class, brec.MelRecord):
+        for rec_sig, rec_class in list(_sig_class.items()):
+            if issubclass(rec_class, _brec_.MelRecord):
                 # when emulating startup in tests, an earlier loaded game may
                 # override the rec_class in sig_to_class with a stub (for
                 # instance <class 'bash.game.fallout4.records.MreCell'>)
@@ -285,28 +287,27 @@ class PatchGame(GameInfo):
                     bolt.deprint(f'{rec_class}: no melSet')
                     continue
                 rec_class.validate_record_syntax()
-        if miss := [s for s in valid_header_sigs if
-                    s not in rtype.sig_to_class]:
+        if miss := [s for s in valid_header_sigs if s not in _sig_class]:
             bolt.deprint(f'Signatures {miss} lack an implementation - '
                          f'defaulting to MreRecord')
-            rtype.sig_to_class.update(dict.fromkeys(miss, brec.MreRecord))
-        rtype.sig_to_class = {k: v for k, v in rtype.sig_to_class.items() if
+            _sig_class.update(dict.fromkeys(miss, _brec_.MreRecord))
+        rtype.sig_to_class = {k: v for k, v in _sig_class.items() if
                               k in valid_header_sigs}
         rec_head.valid_record_sigs = valid_header_sigs
         from ..mod_files import LoadFactory as Lf
-        Lf.grup_class = dict.fromkeys(cls.top_groups, brec.TopGrup)
-        Lf.grup_class[b'DIAL'] = brec.MobDials
-        Lf.grup_class[b'CELL'] = brec.MobICells
-        Lf.grup_class[b'WRLD'] = brec.MobWorlds
+        Lf.grup_class = dict.fromkeys(cls.top_groups, _brec_.TopGrup)
+        Lf.grup_class[b'DIAL'] = _brec_.MobDials
+        Lf.grup_class[b'CELL'] = _brec_.MobICells
+        Lf.grup_class[b'WRLD'] = _brec_.MobWorlds
         # that's the case for most games so do it here and override if needed
         rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups
         # set GRUP class variables
-        mobs = brec.record_groups
-        cell_class = rtype.sig_to_class[b'CELL']
+        mobs = _brec_.record_groups
+        cell_class = _sig_class[b'CELL']
         mobs.CellRefs._accepted_sigs = cell_class.ref_types
         mobs.TempRefs._accepted_sigs = mobs.CellChildren._accepted_sigs = {
             *cell_class.ref_types, *cell_class.interior_temp_extra}
-        wrld_class = rtype.sig_to_class[b'WRLD']
+        wrld_class = _sig_class[b'WRLD']
         wrld_cell = {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
         mobs.WrldTempRefs._accepted_sigs = \
             mobs.ExtCellChildren._accepted_sigs = wrld_cell

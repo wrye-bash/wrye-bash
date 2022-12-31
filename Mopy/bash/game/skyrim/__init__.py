@@ -1403,7 +1403,7 @@ class SkyrimGameInfo(PatchGame):
         cls.mergeable_sigs = set(cls.top_groups) - {
             b'RGDL', b'SCPT', b'CELL', b'SCEN', b'SCOL', b'HAIR', b'CLDC',
             b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
-        from .. import brec
-        brec.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
+        from ... import brec as _brec_
+        _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
 GAME_TYPE = SkyrimGameInfo

@@ -794,11 +794,11 @@ class Fallout4GameInfo(PatchGame):
 
     @classmethod
     def _import_records(cls, package_name, plugin_form_vers=131):
-        from .. import brec
+        from ... import brec as _brec_
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
-        brec.RecordHeader.skip_form_version_upgrade = {b'DMGT'}
+        _brec_.RecordHeader.skip_form_version_upgrade = {b'DMGT'}
         # package name is fallout4 here
         super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
@@ -811,7 +811,7 @@ class Fallout4GameInfo(PatchGame):
             b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
-        brec.RecordType.simpleTypes = cls.mergeable_sigs
+        _brec_.RecordType.simpleTypes = cls.mergeable_sigs
 
 class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
     """GameInfo override for the Windows Store version of Fallout 4."""

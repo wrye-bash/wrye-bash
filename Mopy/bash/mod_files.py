@@ -29,6 +29,7 @@ from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
 from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
+# first import of brec for games with patchers - _dynamic_import_modules
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     MobBase, TopGrup, unpack_header, FastModReader, Subrecord, int_unpacker, \
     FormIdReadContext, FormIdWriteContext, ZERO_FID, RecordType
