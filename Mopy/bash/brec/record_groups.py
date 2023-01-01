@@ -49,15 +49,6 @@ class _AMobBase:
     def _load_err(self, msg): ##: add ins and print more info
         raise ModError(self.inName, msg)
 
-    def updateMasters(self, masterset_add):
-        """Updates set of master names according to masters actually used."""
-        for record in self.iter_records():
-            record.updateMasters(masterset_add)
-
-    def get_num_records(self):
-        """Return the number of leaf records contained in this group."""
-        return sum(1 for __ in self.iter_records())
-
     # Abstract methods --------------------------------------------------------
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by __init__()."""
@@ -76,6 +67,14 @@ class _AMobBase:
         """Dumps record header and data into output file stream."""
         raise AbstractError
 
+class _RecordsGrup(_AMobBase):
+    """Record group unpacked into records."""
+
+    def iter_records(self):
+        """Flattens the structure of this record block into a linear sequence
+        of records. Works as an iterator for memory reasons."""
+        raise AbstractError('iter_records not implemented')
+
     def iter_present_records(self, rec_sig=None):
         """Filters iter_records, returning only records that have not set
         the deleted or the ignored flag(s)."""
@@ -85,15 +84,20 @@ class _AMobBase:
         return ((r.group_key(), r) for r in self.iter_records() if
                 r._rec_sig == rec_sig and not r.should_skip())
 
+    def get_num_records(self):
+        """Return the number of leaf records contained in this group."""
+        return sum(1 for __ in self.iter_records())
+
     def get_all_signatures(self):
         """Returns a set of all signatures actually contained in this block."""
-        raise AbstractError('get_all_signatures not implemented')
+        return {r._rec_sig for r in self.iter_records()}
 
-    def iter_records(self):
-        """Flattens the structure of this record block into a linear sequence
-        of records. Works as an iterator for memory reasons."""
-        raise AbstractError('iter_records not implemented')
+    def updateMasters(self, masterset_add):
+        """Updates set of master names according to masters actually used."""
+        for record in self.iter_records():
+            record.updateMasters(masterset_add)
 
+    # Patch API
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         raise AbstractError('keepRecords not implemented')
@@ -253,7 +257,7 @@ class MobBase(_HeadedGrup):
         super().dump(out)
 
 #------------------------------------------------------------------------------
-class MobObjects(_HeadedGrup):
+class MobObjects(_RecordsGrup, _HeadedGrup):
     """Represents a group consisting of the record types specified in
     _accepted_sigs."""
 
@@ -359,11 +363,8 @@ class _ChildrenGrup(MobObjects):
                            f'not match parent {master_rec!r}.')
         super().__init__(grup_header, load_f, ins)
 
-    def get_all_signatures(self):
-        return {r._rec_sig for r in self.id_records.values()}
-
 _EOF = -1 # endPos is at the end of file - used for non-headed groups
-class _Nested(_AMobBase):
+class _Nested(_RecordsGrup):
     """A nested grup of records with some optional records[ in front]."""
     # signatures of 'stray' records - appear at most once except if required
     _extra_records: tuple[bytes] = ()
@@ -402,9 +403,6 @@ class _Nested(_AMobBase):
         # _stray_recs may be MreRecord or even grups (like the _PersistentCell)
         return sum(v.get_num_headers() for v in chain(
             self._stray_recs.values(), self._mob_objects.values()) if v)
-
-    def get_all_signatures(self):
-        return {i._rec_sig for i in self.iter_records()}
 
     def iter_records(self):
         return chain((r for r in self._stray_recs.values() if r),
@@ -656,10 +654,6 @@ class TopGrup(MobObjects):
 class TopComplexGrup(TopGrup):
     """CELL, WRLD and DIAL."""
     _top_rec_class: type[_ComplexRec] = None
-
-    def get_all_signatures(self):
-        return {*chain(
-            *(r.get_all_signatures() for r in self.id_records.values()))}
 
     def _group_element(self, header, ins, end_pos=_EOF, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, end_pos, **kwargs)
