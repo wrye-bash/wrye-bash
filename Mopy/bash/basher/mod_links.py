@@ -964,7 +964,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         if not bush.game.check_esl:
             if self._ask_deactivate_mergeable(bashed_patch):
                 # we might have de-activated plugins so recalculate active sets
-                bashed_patch.set_active_arrays()
+                bashed_patch.set_active_arrays(bosh.modInfos)
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         if missing or delinquent:
             error_msg = _(

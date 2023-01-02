@@ -189,7 +189,7 @@ class APreserver(ImportPatcher):
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
             mod_sigs = set()
-            mod_tags = srcFile.fileInfo.getBashTags() if self._multi_tag else None
+            mod_tags = srcInfo.getBashTags()
             for rsig in self.rec_type_attrs:
                 if rsig not in srcFile.tops: continue
                 self.srcs_sigs.add(rsig)
@@ -197,7 +197,7 @@ class APreserver(ImportPatcher):
                 self._init_data_loop(rsig, srcFile, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
             if (self._force_full_import_tag and
-                    self._force_full_import_tag in srcInfo.getBashTags()):
+                    self._force_full_import_tag in mod_tags):
                 # We want to force-import - copy the temp data without
                 # filtering by masters, then move on to the next mod
                 id_data.update(mod_id_data)

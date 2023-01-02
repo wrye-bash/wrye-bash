@@ -78,9 +78,8 @@ class IndexingTweak(MultiTweakItem):
         return modFile
 
     def prepare_for_tweaking(self, patch_file):
-        pf_minfs = patch_file.p_file_minfos
-        for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
-            index_plugin = self._mod_file_read(pf_minfs[fn_plugin])
+        for fn_plugin, pl_info in patch_file.merged_or_loaded_ord.items(): ##: all_plugins?
+            index_plugin = self._mod_file_read(pl_info)
             for index_sig in self._index_sigs:
                 self._indexed_records[index_sig].update(
                     index_plugin.tops[index_sig].iter_present_records())

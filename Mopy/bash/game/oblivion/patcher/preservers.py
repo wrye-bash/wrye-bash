@@ -48,8 +48,8 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         if not self.isActive: return
         self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
-            if srcMod not in self.patchFile.p_file_minfos: continue
-            srcInfo = self.patchFile.p_file_minfos[srcMod]
+            if srcMod not in self.patchFile.all_plugins: continue
+            srcInfo = self.patchFile.all_plugins[srcMod]
             src_wrld_block = self._mod_file_read(srcInfo).tops[b'WRLD']
             for worldId, worldBlock in src_wrld_block.iter_present_records():
                 if worldBlock.road:

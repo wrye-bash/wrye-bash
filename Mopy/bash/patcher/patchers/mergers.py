@@ -66,9 +66,8 @@ class _AMerger(ImportPatcher):
         self._present_sigs = set()
         self.mod_id_entries = {}
         self.touched = set()
-        self.inventOnlyMods = (
-            {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
-             p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
+        self.inventOnlyMods = {x for x in self.srcs if
+                               x in p_file.ii_mode} if self.iiMode else set()
 
     ##: post-tweak pooling, see if we can use RecPath for this
     def _entry_key(self, subrecord_entry):

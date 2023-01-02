@@ -41,8 +41,10 @@ class PatchFile(ModFile):
         """Set `mergeSet` attribute to the srcs of MergePatchesPatcher."""
         self.mergeSet = set(mergeMods)
         self.merged_or_loaded = {*self.mergeSet, *self.load_dict}
-        self.merged_or_loaded_ord = load_order.get_ordered(
-            self.merged_or_loaded)
+        self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
+            load_order.get_ordered(self.merged_or_loaded)}
+        self.ii_mode = {m for m in self.mergeSet if
+                        'IIM' in self.p_file_minfos[m].getBashTags()}
 
     def _log_header(self, log, patch_name):
         log.setHeader(f'= {patch_name} {"=" * 30}#', True)
@@ -145,7 +147,7 @@ class PatchFile(ModFile):
         self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
     #--Instance
-    def __init__(self, modInfo, p_file_minfos):
+    def __init__(self, modInfo, pfile_minfos):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = 'BASHED PATCH'
@@ -162,12 +164,12 @@ class PatchFile(ModFile):
         # Load order is not supposed to change during patch execution
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude modding esms (those tend to be huge)
-        self.all_plugins = {k: p_file_minfos[k] for k in self.all_plugins if
+        self.all_plugins = {k: pfile_minfos[k] for k in self.all_plugins if
                             k not in bush.game.modding_esm_size}
-        self.p_file_minfos = p_file_minfos
-        self.set_active_arrays()
+        self.p_file_minfos = pfile_minfos
+        self.set_active_arrays(pfile_minfos)
 
-    def set_active_arrays(self):
+    def set_active_arrays(self, pfile_minfos):
         """Populate PatchFile data structures with info on active mods - must
         be rerun when active plugins change"""
         c = count()
@@ -227,8 +229,9 @@ class PatchFile(ModFile):
                     # is filtered tagged, we will filter some masters and
                     # then recheck in merge_record - drop from inactive_mm
                     del self.inactive_mm[modName]
-            if modName in self.p_file_minfos.mergeable and modName not in self.inactive_inm \
-                and 'NoMerge' not in bashTags: self.bp_mergeable.add(modName)
+            if modName in pfile_minfos.mergeable and \
+                modName not in self.inactive_inm and 'NoMerge' not in bashTags:
+                self.bp_mergeable.add(modName)
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -290,7 +293,7 @@ class PatchFile(ModFile):
             is_merged = modName in self.mergeSet
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
-            iiMode = is_merged and 'IIM' in bashTags
+            iiMode = modName in self.ii_mode
             try:
                 loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
                 progress(index, f'{modName}\n' + _('Loading...'))

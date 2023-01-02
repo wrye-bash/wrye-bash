@@ -327,9 +327,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # override the timescale and look for the last override (hence the
         # reversed order)
         if final_timescale is None:
-            pf_minfs = self.patchFile.p_file_minfos
-            relevant_plugins = [pf_minfs[p] for p
-                                in self.patchFile.merged_or_loaded_ord]
+            relevant_plugins = [v for v in
+                                self.patchFile.merged_or_loaded_ord.values()]
             for r_plugin in reversed(relevant_plugins):
                 final_timescale = find_timescale(self._mod_file_read(r_plugin))
                 if final_timescale is not None:

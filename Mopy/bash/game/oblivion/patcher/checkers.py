@@ -175,7 +175,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         if _ob_path in p_file.load_dict:
-            modInfo = self.patchFile.p_file_minfos[_ob_path]
+            modInfo = self.patchFile.all_plugins[_ob_path]
             modFile = self._mod_file_read(modInfo) # read Oblivion quests
             for rid, record in modFile.tops[b'QUST'].iter_present_records():
                 for condition in record.conditions:
