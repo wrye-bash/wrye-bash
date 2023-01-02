@@ -35,7 +35,7 @@ from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox, DeselectAllButton, SelectAllButton, FileOpenMultiple, \
     SearchBar
-from ..patcher import patch_files, patches_set, base
+from ..patcher import patches_set, base
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
@@ -59,6 +59,8 @@ class _PatcherPanel(object):
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
         self._is_slanted = False
+        # executing bashed patch file, use only for info on active mod arrays
+        self._bp = None
 
     @property
     def patcher_tip(self):
@@ -523,25 +525,15 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _get_auto_items(self):
         """Returns list of items to be used for automatic configuration."""
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            patch_files.executing_patch)
-        ret_autos = []
-        present_plugins = set(bosh.modInfos)
-        for mod in mods_prior_to_patch:
-            if self._valid_auto_mod(mod, bosh.modInfos[mod], present_plugins):
-                ret_autos.append(mod)
-        return ret_autos
+        return [mod for mod, modinfo in self._bp.all_plugins.items() if
+                self._valid_auto_mod(mod, modinfo)]
 
-    def _valid_auto_mod(self, mod, minf, present_plugins):
+    def _valid_auto_mod(self, mod, minf):
         """Returns True if the plugin with the specified ModInfo should be part
         of the sources for this patcher."""
-        # Must have an appropriate tag
-        minf_bts = minf.getBashTags()
-        if not self.__class__.autoKey & minf_bts:
-            return False
-        # Must have no missing masters or a Filter tag
-        m_missing_masters = set(minf.masterNames) - present_plugins
-        return not m_missing_masters or 'Filter' in minf_bts
+        # Must have an appropriate tag and no missing masters or a Filter tag
+        return (self.__class__.autoKey & minf.getBashTags()) \
+            and mod not in self._bp.inactive_mm
 
     def _import_config(self, default=False):
         super(_ListPatcherPanel, self)._import_config(default)
@@ -940,9 +932,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             self._get_set_choice(item)
         return config
 
-    def _valid_auto_mod(self, mod, minf, present_plugins):
+    def _valid_auto_mod(self, mod, minf):
         self._get_set_choice(mod)
-        return super()._valid_auto_mod(mod, minf, present_plugins)
+        return super()._valid_auto_mod(mod, minf)
 
     def ShowChoiceMenu(self, itemIndex):
         """Displays a popup choice menu if applicable.
@@ -993,21 +985,6 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         # source plugins
         super(_ListsMergerPanel, self)._style_patcher_label(bold=bold)
 
-class _MergerPanel(_ListPatcherPanel):
-    listLabel = _('Mergeable Plugins')
-
-    def _valid_auto_mod(self, mod, minf, present_plugins):
-        # Must be mergeable
-        if mod not in bosh.modInfos.mergeable:
-            return False
-        minf_bts = minf.getBashTags()
-        # Must not have a NoMerge tag
-        if 'NoMerge' in minf_bts:
-            return False
-        # Must have no missing masters or a Filter tag
-        m_missing_masters = set(minf.masterNames) - present_plugins
-        return not m_missing_masters or 'Filter' in minf_bts
-
 class _GmstTweakerPanel(_TweakPatcherPanel):
     # CONFIG DEFAULTS
     default_isEnabled = True
@@ -1044,12 +1021,16 @@ class AliasModNames(_AliasesPatcherPanel):
     _config_key = u'AliasesPatcher'
     patcher_type = base.AliasModNamesPatcher
 
-class MergePatches(_MergerPanel):
+class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""
+    listLabel = _('Mergeable Plugins')
     patcher_name = _(u'Merge Patches')
     patcher_desc = _('Merge patch plugins into the Bashed Patch.')
     _config_key = u'PatchMerger'
     patcher_type = base.MergePatchesPatcher
+
+    def _valid_auto_mod(self, mod, minf):
+        return mod in self._bp.bp_mergeable
 
 # Patchers 20 -----------------------------------------------------------------
 class ImportGraphics(_ImporterPatcherPanel):
@@ -1171,11 +1152,11 @@ class ImportActorsFaces(_ImporterPatcherPanel):
     patcher_type = preservers.ImportActorsFacesPatcher
     _auto_re = re.compile('^TNR .*.esp$', re.I)
 
-    def _valid_auto_mod(self, mod, minf, present_plugins):
+    def _valid_auto_mod(self, mod, minf):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
         if self._auto_re.match(mod):
             return True
-        return super()._valid_auto_mod(mod, minf, present_plugins)
+        return super()._valid_auto_mod(mod, minf)
 
 # -----------------------------------------------------------------------------
 class ImportSounds(_ImporterPatcherPanel):

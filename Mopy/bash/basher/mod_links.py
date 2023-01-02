@@ -44,7 +44,7 @@ from ..exception import AbstractError, BoltError, CancelError
 from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import CsvParser
-from ..patcher import patch_files
+from ..patcher.patch_files import PatchFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
@@ -922,7 +922,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         """Handle activation event."""
         self.mods_to_reselect = set()
         try:
-            if not self._execute_bp(): return # prevent settings save
+            if not self._execute_bp(self._selected_info, bosh.modInfos):
+                return # prevent settings save
         except CancelError:
             return # prevent settings save
         finally:
@@ -935,9 +936,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
 
-    def _execute_bp(self):
+    def _execute_bp(self, patch_info, mod_infos):
         # Clean up some memory
-        bp_config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         bolt.GPathPurge()
         # We need active mods
         if not load_order.cached_active_tuple():
@@ -946,6 +946,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 _(u'Load some mods and try again.'),
                 _(u'Existential Error'))
             return False
+        # Read the config
+        bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
         if _configIsCBash(bp_config):
             if not self._askYes(
                     _(u'This patch was built in CBash mode. This is no longer '
@@ -956,25 +958,14 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                       u'abort now.'), title=_(u'Unsupported CBash Patch')):
                 return False
             bp_config = {}
-        patch_files.executing_patch = self._selected_item
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            self._selected_item)
+        # Create the PatchFile instance
+        bashed_patch = PatchFile(patch_info, mod_infos)
         #--Check if we should be deactivating some plugins
-        active_prior_to_patch = [x for x in mods_prior_to_patch if
-                                 load_order.cached_is_active(x)]
         if not bush.game.check_esl:
-            self._ask_deactivate_mergeable(active_prior_to_patch)
-        previousMods = set()
-        missing = defaultdict(list)
-        delinquent = defaultdict(list)
-        for mod in load_order.cached_active_tuple():
-            if mod == self._selected_item: break
-            for master in bosh.modInfos[mod].masterNames:
-                if not load_order.cached_is_active(master):
-                    missing[mod].append(master)
-                elif master not in previousMods:
-                    delinquent[mod].append(master)
-            previousMods.add(mod)
+            if self._ask_deactivate_mergeable(bashed_patch):
+                # we might have de-activated plugins so recalculate active sets
+                bashed_patch.set_active_arrays()
+        missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         if missing or delinquent:
             error_msg = _(
                 'The following plugins have master file errors. You will '
@@ -993,13 +984,13 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 liststyle='tree', canCancel=False)
             return False
         # No errors, proceed with building the BP
-        PatchDialog.display_dialog(self.window, self._selected_info,
+        PatchDialog.display_dialog(self.window, bashed_patch,
                                    self.mods_to_reselect, bp_config)
         return True
 
-    def _ask_deactivate_mergeable(self, active_prior_to_patch):
+    def _ask_deactivate_mergeable(self, bashed_patch):
         merge, noMerge, deactivate = [], [], []
-        for mod in active_prior_to_patch:
+        for mod in bashed_patch.load_dict:
             tags = bosh.modInfos[mod].getBashTags()
             if mod in bosh.modInfos.mergeable:
                 if u'MustBeActiveIfImported' in tags:
@@ -1045,6 +1036,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         with BusyCursor():
             bosh.modInfos.lo_deactivate(deselect, doSave=True)
         self.window.RefreshUI(refreshSaves=True)
+        return True
 
 #------------------------------------------------------------------------------
 class Mod_ListPatchConfig(_Mod_BP_Link):

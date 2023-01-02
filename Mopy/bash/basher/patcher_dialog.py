@@ -38,7 +38,6 @@ from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
     CheckListBox, HorizontalLine, EventResult, FileOpen, BusyCursor
 from ..patcher import exportConfig, list_patches_dir
-from ..patcher.patch_files import PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
@@ -51,17 +50,19 @@ class PatchDialog(DialogWindow):
     """
     _min_size = (400, 300)
 
-    def __init__(self, parent, patchInfo, mods_to_reselect, patchConfigs):
+    def __init__(self, parent, bashed_patch, mods_to_reselect, patchConfigs):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + f'{patchInfo}'
+        self.bashed_patch = bashed_patch
+        self.patchInfo = bashed_patch.fileInfo
+        title = _('Update ') + f'{self.patchInfo}'
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
             size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
-        self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
+        for g in self._gui_patchers: g._bp = bashed_patch
         self.currentPatcher = None
         patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
@@ -162,7 +163,7 @@ class PatchDialog(DialogWindow):
             self.patchInfo.set_table_prop(u'bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(io.StringIO())
-            patchFile = PatchFile(self.patchInfo, bosh.modInfos)
+            patchFile = self.bashed_patch
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
             patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!

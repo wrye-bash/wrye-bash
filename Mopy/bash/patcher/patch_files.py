@@ -34,11 +34,6 @@ from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
 
-# the currently executing patch set in _Mod_Patch_Update before showing the
-# dialog - used in _getAutoItems, to get mods loading before the patch
-##: HACK ! replace with method param once gui_patchers are refactored
-executing_patch: bolt.FName | None = None
-
 class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
 
@@ -161,24 +156,79 @@ class PatchFile(ModFile):
         self.mergeIds = set()
         self.loadErrorMods = []
         self.worldOrphanMods = []
-        self.needs_filter_mods = []
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Mods
         # Load order is not supposed to change during patch execution
         self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude modding esms (those tend to be huge)
-        self.all_plugins = [k for k in self.all_plugins if
-                            k not in bush.game.modding_esm_size]
-        c = count() ##: should we use load_order.cached_active_index(m) ?? (might differ if modding esms are active (unlikely))
+        self.all_plugins = {k: p_file_minfos[k] for k in self.all_plugins if
+                            k not in bush.game.modding_esm_size}
+        self.p_file_minfos = p_file_minfos
+        self.set_active_arrays()
+
+    def set_active_arrays(self):
+        """Populate PatchFile data structures with info on active mods - must
+        be rerun when active plugins change"""
+        c = count()
         loaded_mods = {m: next(c) for m in self.all_plugins if
                        load_order.cached_is_active(m)}
+        # TODO: display those
+        loaded_modding_esms = [m for m in load_order.cached_active_tuple() if
+                               m in bush.game.modding_esm_size]
         if not loaded_mods:
             raise BoltError('No active plugins loading before the Bashed '
                             'Patch')
         self.load_dict = loaded_mods # used in printing BP masters' indexes
-        self.set_mergeable_mods([])
-        self.p_file_minfos = p_file_minfos
+        self.set_mergeable_mods([]) # reset - depends on load_dict
+        # Populate mod arrays for the rest of the patch stages ----------------
+        all_plugins_set = set(self.all_plugins)
+        self.needs_filter_mods = {}
+        self.bp_mergeable = set() # plugins we can show as sources for the merge patcher
+        # inactive plugins with missing masters - that may be ok
+        self.inactive_mm = defaultdict(list)
+        # inactive plugins with inactive masters - not ok but not for merged
+        self.inactive_inm = defaultdict(list)
+        previousMods = set()
+        # GUI - fatal errors
+        # active mods with missing/inactive masters
+        self.active_mm = defaultdict(list)
+        # active mods whose masters load after them
+        self.delinquent = defaultdict(list)
+        # Set of all Bash Tags that don't trigger an import from some patcher
+        non_import_bts = {'Deactivate', 'Filter', 'IIM',
+                          'MustBeActiveIfImported', 'NoMerge'}
+        for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
+            # Check some commonly needed properties of the current plugin
+            bashTags = modInfo.getBashTags()
+            is_loaded = modName in loaded_mods
+            for master in modInfo.masterNames:
+                if master not in loaded_mods:
+                    if is_loaded:
+                        self.active_mm[modName].append(master)
+                    elif master not in all_plugins_set: ##: test against modInfos?
+                        self.inactive_mm[modName].append(master)
+                    else:
+                        self.inactive_inm[modName].append(master)
+                elif master not in previousMods:
+                    if is_loaded: self.delinquent[modName].append(master)
+            previousMods.add(modName)
+            if modName in self.active_mm or modName in self.delinquent:
+                continue
+            can_filter = 'Filter' in bashTags
+            if modName in list(self.inactive_mm):
+                if not can_filter:
+                    if bashTags - non_import_bts:
+                        # This plugin has missing masters, is not Filter-tagged but
+                        # still wants to import data -> user needs to add Filter tag
+                        self.needs_filter_mods[modName] = self.inactive_mm[modName]
+                    continue
+                else:
+                    # is filtered tagged, we will filter some masters and
+                    # then recheck in merge_record - drop from inactive_mm
+                    del self.inactive_mm[modName]
+            if modName in self.p_file_minfos.mergeable and modName not in self.inactive_inm \
+                and 'NoMerge' not in bashTags: self.bp_mergeable.add(modName)
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -231,23 +281,13 @@ class PatchFile(ModFile):
         """Scans load+merge mods."""
         nullProgress = Progress()
         progress = progress.setFull(len(self.all_plugins))
-        all_plugins_set = set(self.all_plugins)
         load_set = set(self.load_dict)
-        # Set of all Bash Tags that don't trigger an import from some patcher
-        non_import_bts = {'Deactivate', 'Filter', 'IIM',
-                          'MustBeActiveIfImported', 'NoMerge'}
-        for index,modName in enumerate(self.all_plugins):
-            modInfo = self.p_file_minfos[modName]
+        for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
+            if modName in self.needs_filter_mods:
+                continue
             # Check some commonly needed properties of the current plugin
             bashTags = modInfo.getBashTags()
-            is_loaded = modName in self.load_dict
             is_merged = modName in self.mergeSet
-            can_filter = 'Filter' in bashTags
-            if not can_filter and set(modInfo.masterNames) - all_plugins_set \
-                    and (bashTags - non_import_bts):
-                # This plugin has missing masters, is not Filter-tagged but
-                # still wants to import data -> user needs to add Filter tag
-                self.needs_filter_mods.append(modName) ##: should we need to 'filter' after all?
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = is_merged and 'IIM' in bashTags
@@ -268,8 +308,8 @@ class PatchFile(ModFile):
                     # If the plugin is to be merged, merge it
                     progress(pstate, f'{modName}\n' + _('Merging...'))
                     self.mergeModFile(modFile, # signal we won't "filter"
-                                      load_set if can_filter else None, iiMode)
-                elif is_loaded:
+                        load_set if 'Filter' in bashTags else None, iiMode)
+                elif modName in self.load_dict:
                     # Else, if the plugin is active, update records from it. If
                     # the plugin is inactive, we only want to import from it,
                     # so do nothing here

@@ -29,6 +29,7 @@ from operator import attrgetter
 # Internal
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher, \
     CsvListPatcher
+from ..patch_files import PatchFile
 from ... import load_order, bush
 from ...bolt import deprint
 from ...brec import RecordType
@@ -175,38 +176,28 @@ class MergePatchesPatcher(ListPatcher):
     """Merges specified patches into Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 10
-    _missing_master_error = _(
+    _missing_master_error = '\n\n'.join([_(
         '%(merged_plugin)s is supposed to be merged into the Bashed Patch, '
-        'but at least one of its masters (%(missing_master)s) is '
-        'missing.') + '\n\n' + _(
-        'Please install %(missing_master)s to fix this.')
-    _inactive_master_error = _(
+        'but some of its masters %(missing_master)s are missing.'),
+        _('Please install the missing master(s) to fix this.')])
+    _inactive_master_error = '\n\n'.join([_(
         '%(merged_plugin)s is supposed to be merged into the Bashed Patch, '
-        'but at least one of its masters (%(inactive_master)s) is '
-        'inactive.') + '\n\n' + _(
-        'Please activate %(inactive_master)s to fix this.')
+        'but some of its masters %(inactive_master)s are inactive.'),
+        _('Please activate the inactive master(s) to fix this.')])
 
-    def __init__(self, p_name, p_file, p_sources):
-        super(MergePatchesPatcher, self).__init__(p_name, p_file, p_sources)
+    def __init__(self, p_name, p_file: PatchFile, p_sources):
+        super().__init__(p_name, p_file, p_sources)
         if not self.isActive: return
-        pf_minfs = self.patchFile.p_file_minfos
         # First, perform an error check for missing/inactive masters
         for merge_src in self.srcs:
-            merge_minf = pf_minfs[merge_src]
-            for merge_master in merge_minf.masterNames:
-                if merge_master not in pf_minfs:
-                    # Filter plugins may legitimately be missing masters
-                    if 'Filter' not in merge_minf.getBashTags():
-                        raise BPConfigError(self._missing_master_error % {
-                            'merged_plugin': merge_src,
-                            'missing_master': merge_master,
-                        })
-                elif not load_order.cached_is_active(merge_master):
-                    # It's present but inactive - that won't work for merging
-                    raise BPConfigError(self._inactive_master_error % {
-                        'merged_plugin': merge_src,
-                        'inactive_master': merge_master,
-                    })
+            if ((mm := p_file.active_mm.get(merge_src)) or  # should not happen
+                    (mm := p_file.inactive_mm.get(merge_src))):
+                raise BPConfigError(self._missing_master_error % {
+                    'merged_plugin': merge_src, 'missing_master': mm})
+            elif mm := p_file.inactive_inm.get(merge_src):
+                # It's present but inactive - that won't work for merging
+                raise BPConfigError(self._inactive_master_error % {
+                    'merged_plugin': merge_src, 'inactive_master': mm})
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
         # first - ensured through its group of 'General'
