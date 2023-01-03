@@ -181,7 +181,7 @@ class APreserver(ImportPatcher):
         id_data = self.id_data
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         loaded_mods = self.patchFile.load_dict
         for srcMod in self.srcs:
             mod_id_data = {}
@@ -411,7 +411,7 @@ class ImportCellsPatcher(ImportPatcher):
         cellData = self.cellData
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
             if srcMod not in minfs: continue
             # tempCellData maps long fids for cells in srcMod to dicts of

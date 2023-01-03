@@ -31,6 +31,8 @@ from this module outside of the patcher package."""
 # instance Patcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
 
+from typing import Iterable
+
 from . import getPatchesPath
 from .. import load_order
 from ..bolt import dict_sort, sig_to_str, deprint
@@ -46,7 +48,7 @@ class Abstract_Patcher(object):
     patcher_group = u'UNDEFINED'
     patcher_order = 10
     iiMode = False
-    _read_sigs = () # top group signatures this patcher patches ##: type: tuple | set
+    _read_sigs: Iterable[bytes] = () #top group signatures this patcher patches
 
     def getName(self):
         """Return patcher name passed in by the gui, needed for logs."""

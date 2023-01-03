@@ -85,7 +85,7 @@ class _AMerger(ImportPatcher):
         # set loadFactory attribute to be used by _mod_file_read
         self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
         progress.setFull(len(self.srcs))
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for index,srcMod in enumerate(self.srcs):
             srcFile = self._mod_file_read(minfs[srcMod])
             for block in self._wanted_subrecord:
@@ -319,11 +319,11 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for index,srcMod in enumerate(self.srcs):
+            if not (srcInfo := minfs.get(srcMod)):
+                continue
             tempData = {}
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
             force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
             for rsig in read_sigs:
@@ -455,7 +455,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self._id_merged_deleted
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
             tempData = {}
             if srcMod not in minfs: continue
@@ -671,7 +671,7 @@ class _AListsMerger(ListPatcher):
         # 'De'-tagged plugin
         self.de_masters = set()
         for leveler in self.levelers:
-            self.de_masters.update(p_file.p_file_minfos[leveler].masterNames)
+            self.de_masters.update(p_file.all_plugins[leveler].masterNames)
         self.srcs = {s for s in self.srcs if s in p_file.load_dict}
         self.remove_empty_sublists = remove_empty
         self.tag_choices = tag_choices
@@ -873,38 +873,36 @@ class FormIDListsPatcher(_AListsMerger):
 
 #------------------------------------------------------------------------------
 class ImportRacesSpellsPatcher(ImportPatcher):
-    _read_write_records = (b'RACE',)
+    _read_sigs = (b'RACE',)
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ImportRacesSpellsPatcher, self).__init__(p_name, p_file,
-                                                       p_sources)
+        super().__init__(p_name, p_file, p_sources)
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
 
     def initData(self, progress):
         if not self.isActive or not self.srcs: return
-        self.loadFactory = self._patcher_read_fact(by_sig=[b'RACE'])
+        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for index, srcMod in enumerate(self.srcs):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
             if b'RACE' not in srcFile.tops: continue
+            bashTags = srcInfo.getBashTags()
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
-            if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
-                raise BoltError(
-                    u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
-                    u'tags - only one of those tags should be on a mod at '
-                    u'one time' % srcMod)
+            change_spells = 'R.ChangeSpells' in bashTags
+            add_spells = 'R.AddSpells' in bashTags
+            if change_spells and add_spells:
+                raise BoltError(f'WARNING mod {srcMod} has both R.AddSpells '
+                                f'and R.ChangeSpells tags - only one of '
+                                f'those tags should be on a mod at one time')
             for rid, race in srcFile.tops[b'RACE'].iter_present_records():
-                tempRaceData = tmp_race_data[rid]
-                raceData = self.raceData[rid]
-                if u'R.AddSpells' in bashTags:
-                    tempRaceData[u'AddSpells'] = race.spells
-                if u'R.ChangeSpells' in bashTags:
-                    raceData[u'spellsOverride'] = race.spells
+                if add_spells:
+                    tmp_race_data[rid]['AddSpells'] = race.spells
+                if change_spells:
+                    self.raceData[rid]['spellsOverride'] = race.spells
             for master in srcInfo.masterNames:
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
@@ -912,8 +910,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                 else:
                     masterInfo = minfs[master]
                     masterFile = self._mod_file_read(masterInfo)
-                    if b'RACE' not in masterFile.tops: continue
                     cachedMasters[master] = masterFile
+                    if b'RACE' not in masterFile.tops: continue
                 for rid, race in masterFile.tops[b'RACE'].iter_present_records():
                     if rid not in tmp_race_data: continue
                     tempRaceData = tmp_race_data[rid]
