@@ -116,8 +116,8 @@ class PatchFile(ModFile):
                                  'url_decomp': _link('modsDecompileAll')})
             for mod in self.compiledAllMods: log(f'* {mod}')
         log.setHeader('=== ' + _('Active Plugins'), True)
-        for mname in self.merged_or_loaded_ord:
-            version = self.p_file_minfos.getVersion(mname)
+        for mname, modinfo in self.merged_or_loaded_ord.items():
+            version = modinfo.get_version()
             try:
                 message = f'* {self.load_dict[mname]:02X} '
             except KeyError:

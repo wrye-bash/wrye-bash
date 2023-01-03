@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
 from collections import Counter
 from operator import itemgetter
 
@@ -123,9 +124,15 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
     def __init__(self, p_name, p_file, p_sources):
-        super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
-        self.isActive &= (cobl_main in p_file.load_dict and
-                          self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
+        super().__init__(p_name, p_file, p_sources)
+        if self.isActive:
+            if cobl_main in p_file.load_dict:
+                vers = self.patchFile.all_plugins[cobl_main].get_version()
+                maVersion = re.search(r'(\d+\.?\d*)', vers)
+                if maVersion:
+                    self.isActive = float(maVersion.group(1)) > 1.65
+                    return
+            self.isActive = False # COBL not loaded or its version is < 1.65
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)

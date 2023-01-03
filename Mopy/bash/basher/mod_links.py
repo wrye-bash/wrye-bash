@@ -692,37 +692,29 @@ class Mod_CopyModInfo(ItemLink):
     _help = _(u'Copies the basic info about selected mod(s)')
 
     def Execute(self):
-        info_txt = u''
-        if len(self.selected) > 5:
-            spoiler = True
-            info_txt += '[spoiler]\n'
-        else:
-            spoiler = False
+        info_txt = []
         # Create the report
-        isFirst = True
-        for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
-            # add a blank line in between mods
-            if isFirst: isFirst = False
-            else: info_txt += u'\n\n'
+        for fname, fileInfo in self.iselected_pairs():
+            mod_text = [_('Plugin: %(plugin_file)s') % {'plugin_file': fname}]
             #-- Name of file, plus a link if we can figure it out
-            info_txt += _('Plugin: %(plugin_file)s') % {
-                'plugin_file': fileName}
             linked_installer = fileInfo.get_table_prop('installer', '')
             if linked_installer:
                 installer_url = _getUrl(linked_installer)
                 if installer_url:
-                    info_txt += '\n' + _('URL: %(linked_url)s') % {
-                        'linked_url': installer_url}
+                    mod_text.append(_('URL: %(linked_url)s') % {
+                        'linked_url': installer_url})
             labels = self.window.labels
             for col in self.window.allowed_cols:
-                if col == u'File': continue
-                lab = labels[col](self.window, fileName)
-                info_txt += u'\n%s: %s' % (col, lab if lab else u'-')
+                if col != 'File':
+                    lab = labels[col](self.window, fname)
+                    mod_text.append(f'{col}: {lab if lab else "-"}')
             #-- Version, if it exists
-            version = bosh.modInfos.getVersion(fileName)
-            if version:
-                info_txt += u'\n'+_(u'Version')+u': %s' % version
-        if spoiler: info_txt += '\n[/spoiler]'
+            if vers := fileInfo.get_version():
+                mod_text.append(_('Version') + f': {vers}')
+            info_txt.append('\n'.join(mod_text))
+        info_txt = '\n\n'.join(info_txt) # add a blank line in between mods
+        if len(self.selected) > 5:
+            info_txt = f'[spoiler]\n{info_txt}\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_(u'Mod Info Report'), fixedFont=False)
