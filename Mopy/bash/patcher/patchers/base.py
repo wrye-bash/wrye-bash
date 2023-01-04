@@ -108,14 +108,12 @@ class MultiTweaker(AMultiTweaker,Patcher):
 
     def scanModFile(self,modFile,progress):
         rec_pool = defaultdict(set)
-        common_tops = set(modFile.tops) & set(self._tweak_dict)
-        for curr_top in common_tops:
+        for curr_top, block in modFile.iter_tops(self._tweak_dict):
             # Collect all records that poolable tweaks are interested in
             poolable_tweaks = self._tweak_dict[curr_top]
             if not poolable_tweaks: continue
             pool_record = rec_pool[curr_top].add
-            for _rid, record in modFile.tops[curr_top].iter_present_records(
-                    curr_top):
+            for _rid, record in block.iter_present_records(curr_top):
                 for p_tweak in poolable_tweaks:
                     if p_tweak.wants_record(record):
                         pool_record(record)

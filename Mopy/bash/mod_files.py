@@ -276,6 +276,10 @@ class ModFile(object):
         """List of plugin masters with the plugin's own name appended."""
         return [*self.tes4.masters, self.fileInfo.fn_key]
 
+    def iter_tops(self, top_sigs):
+        return ((top_sig, t) for top_sig, t in self.tops.items() if
+                top_sig in top_sigs)
+
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
         masters_set = MasterSet([bush.game.master_file])

@@ -61,19 +61,17 @@ class ContentsCheckerPatcher(Patcher):
         # types. We need to know if a given fid belongs to one of the valid
         # types, otherwise we want to remove it.
         id_type = self.fid_to_type
-        for entry_type in self.entryTypes:
-            if entry_type not in modFile.tops: continue
-            for rid, _record in modFile.tops[entry_type].iter_present_records():
+        for entry_type, block in modFile.iter_tops(self.entryTypes):
+            for rid, _record in block.iter_present_records():
                 if rid not in id_type:
                     id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
         # types we may end up patching
-        for cont_type in self.contTypes:
-            if cont_type not in modFile.tops: continue
+        for cont_type, block in modFile.iter_tops(self.contTypes):
             patchBlock = self.patchFile.tops[cont_type]
             pb_add_record = patchBlock.setRecord
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[cont_type].iter_present_records():
+            for rid, record in block.iter_present_records():
                 if rid not in id_records:
                     pb_add_record(record)
 
@@ -100,15 +98,13 @@ class ContentsCheckerPatcher(Patcher):
             entry_attr = cc_pass[2] if needs_entry_attr else None
             # First entry in the pass is always the record types this pass
             # applies to
-            for rec_type in cc_pass[0]:
-                if rec_type not in self.patchFile.tops: continue
+            for rec_type, block in self.patchFile.iter_tops(cc_pass[0]):
                 # Set up a dict to track which entries we have removed per fid
                 id_removed = defaultdict(list)
                 # Grab the types that are actually valid for our current record
                 # types
                 valid_types = set(self.contType_entryTypes[rec_type])
-                for rid, record in self.patchFile.tops[
-                        rec_type].id_records.items():
+                for rid, record in block.id_records.items():
                     # Set up two lists, one containing the current record
                     # contents, and a second one that we will be filling with
                     # only valid entries.
@@ -155,11 +151,10 @@ class RaceCheckerPatcher(Patcher):
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
 
     def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
+        for pb_sig, block in modFile.iter_tops(self._read_sigs):
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].iter_present_records():
+            for rid, record in block.iter_present_records():
                 if rid not in id_records:
                     patchBlock.setRecord(record)
 
@@ -218,11 +213,10 @@ class NpcCheckerPatcher(Patcher):
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
+        for pb_sig, block in modFile.iter_tops(self._read_sigs):
             patchBlock = self.patchFile.tops[pb_sig]
             id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].iter_present_records():
+            for rid, record in block.iter_present_records():
                 if rid not in id_records:
                     patchBlock.setRecord(record)
 
@@ -300,11 +294,10 @@ class TimescaleCheckerPatcher(ModLoader):
         self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
 
     def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
+        for pb_sig, block in modFile.iter_tops(self._read_sigs):
             patch_block = self.patchFile.tops[pb_sig]
             id_records = patch_block.id_records
-            for rfid, record in modFile.tops[pb_sig].iter_present_records():
+            for rfid, record in block.iter_present_records():
                 if rfid in id_records: continue
                 if record.wave_period == 0.0: continue # type: bolt.Rounder
                 patch_block.setRecord(record)

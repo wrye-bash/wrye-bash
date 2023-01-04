@@ -430,14 +430,13 @@ class TweakRacesPatcher(MultiTweaker):
         if bush.game.race_tweaks_need_collection:
             # Need to gather EYES/HAIR data for the tweaks
             tweak_data = self.collected_tweak_data
-            for tweak_type in (b'EYES', b'HAIR'):
-                if tweak_type not in modFile.tops: continue
+            for tweak_type, block in modFile.iter_tops({b'EYES', b'HAIR'}):
                 type_data = tweak_data[tweak_type]
                 type_data_set = set(type_data)
-                for rid, _r in modFile.tops[tweak_type].iter_present_records():
+                for rid, _r in block.iter_present_records():
                     if rid not in type_data_set:
                         type_data.append(rid)
-        super(TweakRacesPatcher, self).scanModFile(modFile, progress)
+        super().scanModFile(modFile, progress)
 
     def buildPatch(self, log, progress):
         if (bush.game.race_tweaks_need_collection

@@ -354,9 +354,8 @@ class PatchFile(ModFile):
             for _rid, record in modFile.tops[b'MGEF'].iter_present_records():
                 add_mgef_to_patch(record)
         # Update all other record types
-        for block_type in shared_rec_types:
-            self.tops[block_type].updateRecords(modFile.tops[block_type],
-                                                self.mergeIds)
+        for top_sig, block in self.iter_tops(shared_rec_types):
+            block.updateRecords(modFile.tops[top_sig], self.mergeIds)
 
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using

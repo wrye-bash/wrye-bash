@@ -130,7 +130,7 @@ class APreserver(ImportPatcher):
     def _read_sigs(self):
         return self.srcs_sigs
 
-    def _init_data_loop(self, top_grup_sig, srcFile, srcMod, mod_id_data,
+    def _init_data_loop(self, top_grup_sig, src_top, srcMod, mod_id_data,
                         mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
         rec_attrs = self.rec_type_attrs[top_grup_sig]
         fid_attrs = self._fid_rec_attrs_class[top_grup_sig]
@@ -155,7 +155,6 @@ class APreserver(ImportPatcher):
         # loop below
         ra_getters = [(a, __attrgetters[a]) for a in rec_attrs]
         fa_getters = [__attrgetters[a] for a in fid_attrs]
-        src_top = srcFile.tops[top_grup_sig]
         # If we have FormID attributes, check those before importing - since
         # this is constant for the entire loop, duplicate the loop to save the
         # overhead in the no-FormIDs case
@@ -190,11 +189,10 @@ class APreserver(ImportPatcher):
             srcFile = self._mod_file_read(srcInfo)
             mod_sigs = set()
             mod_tags = srcInfo.getBashTags()
-            for rsig in self.rec_type_attrs:
-                if rsig not in srcFile.tops: continue
+            for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
                 self.srcs_sigs.add(rsig)
                 mod_sigs.add(rsig)
-                self._init_data_loop(rsig, srcFile, srcMod, mod_id_data,
+                self._init_data_loop(rsig, block, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
             if (self._force_full_import_tag and
                     self._force_full_import_tag in mod_tags):
@@ -209,10 +207,8 @@ class APreserver(ImportPatcher):
                 else:
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
-                for rsig in self.rec_type_attrs:
-                    if rsig not in masterFile.tops or rsig not in mod_sigs:
-                        continue
-                    for rfid, record in masterFile.tops[rsig].iter_present_records():
+                for rsig, block in masterFile.iter_tops(mod_sigs):
+                    for rfid, record in block.iter_present_records():
                         if rfid not in mod_id_data: continue
                         for attr, val in mod_id_data[rfid].items():
                             try:
@@ -229,13 +225,12 @@ class APreserver(ImportPatcher):
 
     def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
         id_data = self.id_data
-        for rsig in self.srcs_sigs:
-            if rsig not in modFile.tops: continue
+        for rsig, block in modFile.iter_tops(self.srcs_sigs):
             patchBlock = self.patchFile.tops[rsig]
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = set(patchBlock.id_records)
-            for rfid, record in modFile.tops[rsig].iter_present_records():
+            for rfid, record in block.iter_present_records():
                 # Skip if we've already copied this record or if we're not
                 # interested in it
                 if rfid in copied_records or rfid not in id_data: continue
@@ -267,12 +262,10 @@ class APreserver(ImportPatcher):
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
-        modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        for rsig in self.srcs_sigs:
-            if rsig not in modFileTops: continue
-            present_recs = modFileTops[rsig].iter_present_records()
+        for rsig, block in self.patchFile.iter_tops(self.srcs_sigs):
+            present_recs = block.iter_present_records()
             self._inner_loop(keep, present_recs, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
@@ -432,19 +425,17 @@ class ImportCellsPatcher(ImportPatcher):
             # are used to filter for required records by formID and to update
             # the attribute values taken from the master files when creating
             # cell_data.
-            for sig in self._read_sigs:
-                if (block := srcFile.tops.get(sig)) is not None:
-                    # for the WRLD block iter_present_records will return
-                    # exterior cells and the persistent cell - previous code
-                    # did not differentiate either
-                    for cfid, cell_rec in block.iter_present_records(b'CELL'):
-                        # If we're in an interior, see if we have to ignore
-                        # any attrs
-                        actual_attrs = interior_attrs if \
-                            cell_rec.flags.isInterior else attrs
-                        for attr in actual_attrs:
-                            tempCellData[cfid][attr] = __attrgetters[attr](
-                                cell_rec)
+            for _sig, block in srcFile.iter_tops(self._read_sigs):
+                # for the WRLD block iter_present_records will return
+                # exterior cells and the persistent cell - previous code
+                # did not differentiate either
+                for cfid, cell_rec in block.iter_present_records(b'CELL'):
+                    # If we're in an interior, see if we have to ignore
+                    # any attrs
+                    actual_attrs = interior_attrs if \
+                        cell_rec.flags.isInterior else attrs
+                    for att in actual_attrs:
+                        tempCellData[cfid][att] = __attrgetters[att](cell_rec)
             # Add attribute values from record(s) in master file(s). Only adds
             # records where a matching formID is found in temp cell data. The
             # attribute values in temp cell data are then used to update these
@@ -456,18 +447,15 @@ class ImportCellsPatcher(ImportPatcher):
                 else:
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
-                for sig in self._read_sigs:
-                    if (block := masterFile.tops.get(sig)) is not None:
-                        for cfid, cell_rec in block.iter_present_records(
-                                b'CELL'):
-                            if cfid not in tempCellData: continue
-                            attrs1 = interior_attrs if \
-                                cell_rec.flags.isInterior else attrs
-                            for attr1 in attrs1:
-                                master_attr = __attrgetters[attr1](cell_rec)
-                                if tempCellData[cfid][attr1] != master_attr:
-                                    cellData[cfid][attr1] = tempCellData[cfid][
-                                        attr1]
+                for _sig, block in masterFile.iter_tops(self._read_sigs):
+                    for cfid, cell_rec in block.iter_present_records(b'CELL'):
+                        if cfid not in tempCellData: continue
+                        attrs1 = interior_attrs if cell_rec.flags.isInterior\
+                            else attrs
+                        for att in attrs1:
+                            master_attr = __attrgetters[att](cell_rec)
+                            if tempCellData[cfid][att] != master_attr:
+                                cellData[cfid][att] = tempCellData[cfid][att]
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile0
