@@ -433,7 +433,7 @@ class ImportCellsPatcher(ImportPatcher):
             # the attribute values taken from the master files when creating
             # cell_data.
             for sig in self._read_sigs:
-                if block := srcFile.tops.get(sig):
+                if (block := srcFile.tops.get(sig)) is not None:
                     # for the WRLD block iter_present_records will return
                     # exterior cells and the persistent cell - previous code
                     # did not differentiate either
@@ -457,7 +457,7 @@ class ImportCellsPatcher(ImportPatcher):
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
                 for sig in self._read_sigs:
-                    if block := masterFile.tops.get(sig):
+                    if (block := masterFile.tops.get(sig)) is not None:
                         for cfid, cell_rec in block.iter_present_records(
                                 b'CELL'):
                             if cfid not in tempCellData: continue

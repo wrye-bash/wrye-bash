@@ -67,34 +67,36 @@ class _AMobBase:
         """Dumps record header and data into output file stream."""
         raise AbstractError
 
+    def __bool__(self): raise AbstractError
+
 class _RecordsGrup(_AMobBase):
     """Record group unpacked into records."""
 
-    def iter_records(self):
+    def iter_records(self, *, skip_flagged=True):
         """Flattens the structure of this record block into a linear sequence
-        of records. Works as an iterator for memory reasons."""
+        of records. Works as an iterator for memory reasons.
+        :param skip_flagged: skip records flagged as ignored/deleted."""
         raise AbstractError('iter_records not implemented')
 
     def iter_present_records(self, rec_sig=None):
         """Filters iter_records, returning only records that have not set
-        the deleted or the ignored flag(s)."""
-        if rec_sig is None: # iterate our top record blocks
-            return ((k, r) for k, r in self.id_records.items() if
-                    not r.should_skip())
-        return ((r.group_key(), r) for r in self.iter_records() if
-                r._rec_sig == rec_sig and not r.should_skip())
+        the deleted or the ignored flag(s).
+        :param rec_sig: makes sense only for TopComplexGrup where we filter
+            based on the record signature."""
+        return ((r.group_key(), r) for r in self.iter_records())
 
+    # iter_records based methods - note some do *not* skip flagged records
     def get_num_records(self):
         """Return the number of leaf records contained in this group."""
-        return sum(1 for __ in self.iter_records())
+        return sum(1 for __ in self.iter_records(skip_flagged=False))
 
     def get_all_signatures(self):
         """Returns a set of all signatures actually contained in this block."""
-        return {r._rec_sig for r in self.iter_records()}
+        return {r._rec_sig for r in self.iter_records()} # skip deleted/ignored
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        for record in self.iter_records():
+        for record in self.iter_records(skip_flagged=False):
             record.updateMasters(masterset_add)
 
     # Patch API
@@ -138,6 +140,9 @@ class _RecordsGrup(_AMobBase):
         if not active_mods_earlier_than_patch.issuperset(masterset):
             return True
         return False
+
+    def __bool__(self):
+        return any(self.iter_records(skip_flagged=False))
 
 class _HeadedGrup(_AMobBase):
     """Grup headed by a header - header might be None in the case of
@@ -202,9 +207,6 @@ class _HeadedGrup(_AMobBase):
     def _dump_group(self, out):
         for record in self.id_records.values():
             record.dump(out)
-
-    def __bool__(self): return bool(self.data) if self.data is not None else \
-        bool(self.id_records)
 
     @classmethod
     def empty_mob(cls, load_f, head_label, *head_arg, **kwargs):
@@ -274,8 +276,10 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
             if grel is not None: self.setRecord(grel, _loading=True)
             else: header.skip_blob(ins)
 
-    def iter_records(self):
-        yield from self.id_records.values()
+    def iter_records(self, *, skip_flagged=True):
+        it = self.id_records.values()
+        yield from (j for j in it if
+                    not j.should_skip()) if skip_flagged else it
 
     # MobObjects API - makes no sense for (most) _Nested ----------------------
     def _group_element(self, header, ins, end_pos) -> 'MreRecord':
@@ -404,9 +408,11 @@ class _Nested(_RecordsGrup):
         return sum(v.get_num_headers() for v in chain(
             self._stray_recs.values(), self._mob_objects.values()) if v)
 
-    def iter_records(self):
-        return chain((r for r in self._stray_recs.values() if r),
-                     *(v.iter_records() for v in self._mob_objects.values()))
+    def iter_records(self, *, skip_flagged=True):
+        recs = (r for r in self._stray_recs.values() if
+                 r and (not skip_flagged or not r.should_skip()))
+        return chain(recs, *(v.iter_records(skip_flagged=skip_flagged) for v in
+                             self._mob_objects.values()))
 
     def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
         mergeIdsAdd = mergeIds.add
@@ -582,7 +588,7 @@ class _ComplexRec(_Nested):
         if mr_rec := self.master_record:
             # Get rid of the master record and look for children
             self.master_record = None
-            any_children_kept = any(self.iter_records())
+            any_children_kept = any(self.iter_records(skip_flagged=False))
             if any_children_kept or mr_rec.group_key() in p_keep_ids:
                 # Either we want to keep the master record or at least one of
                 # its children, so restore the master record and keep it if it
@@ -658,8 +664,18 @@ class TopComplexGrup(TopGrup):
     def _group_element(self, header, ins, end_pos=_EOF, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, end_pos, **kwargs)
 
-    def iter_records(self):
-        return chain(*(d.iter_records() for d in self.id_records.values()))
+    def iter_records(self, *, skip_flagged=True):
+        return chain(*(d.iter_records(skip_flagged=skip_flagged) for d in
+                       self.id_records.values()))
+
+    def iter_present_records(self, rec_sig=None):
+        """Iterate over the top blocks if rec_sig is None else filter super
+        to only keep specified record type."""
+        if rec_sig is None: # iterate our top record blocks
+            return ((k, r) for k, r in self.id_records.items() if
+                    not r.should_skip())
+        return ((k, r) for k, r in super().iter_present_records() if
+                r._rec_sig == rec_sig)
 
     def setRecord(self, block, do_copy=True, _loading=False):
         """Adds the specified complex record to self, overriding an existing
@@ -754,7 +770,7 @@ class MobDial(_ComplexRec):
             # list at the right spot based on their PNAM
             sorted_infos = []
             remaining_infos = deque()
-            for r in self.iter_records():
+            for r in self.iter_records(skip_flagged=False): ###: FIXME previous behavior
                 if not r.prev_info:
                     sorted_infos.append(r)
                 else:
@@ -874,10 +890,8 @@ class CellChildren(_Nested, _ChildrenGrup):
         nrecs = super().get_num_headers()#no records => no top or nested groups
         return nrecs + 1 if nrecs else 0 # 1 for the group 6 header
 
-    def __bool__(self): return any(self.iter_records())
-
-    def dump(self,out):
-        if self:
+    def dump(self, out):
+        if any(self.iter_records(skip_flagged=False)):
             self._write_header(out)
             super().dump(out)
 
@@ -1090,13 +1104,12 @@ class WorldChildren(CellChildren):
         return rec
 
     # WorldChildren is special as its CELL extra_record is a group not a record
-    def iter_records(self):
-        if self._stray_recs[b'CELL']:
-            recs = chain(*(recs for sig, r in self._stray_recs.items() if r and
-                (recs := r.iter_records() if sig == b'CELL' else [r])))
-            yield from chain(recs, self._mob_objects[4].iter_records())
-        else:
-            yield from super().iter_records()
+    def iter_records(self, *, skip_flagged=True):
+        recs = chain(*((r.iter_records(skip_flagged=skip_flagged)
+            if sig == b'CELL' else [r]) for sig, r in self._stray_recs.items()
+                       if r))
+        yield from chain(recs, self._mob_objects[4].iter_records(
+            skip_flagged=skip_flagged))
 
     @_process_rec(b'CELL', target=0)
     def updateRecords(self, srcBlock, mergeIds):
