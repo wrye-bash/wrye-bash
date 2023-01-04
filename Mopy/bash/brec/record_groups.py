@@ -150,8 +150,7 @@ class _HeadedGrup(_AMobBase):
     _grup_header_type: type[GrupHeader] | None = None
     _accepted_sigs = {b'OVERRIDE'} # set in PatchGame._import_records
 
-    def __init__(self, grup_head_or_end, load_f, ins, do_unpack=True):
-        self.id_records = {} # not used in MobBase
+    def __init__(self, grup_head_or_end, load_f, ins):
         if self._grup_header_type:
             # we need to store the _end_pos for _WorldChildren
             self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size())
@@ -161,31 +160,13 @@ class _HeadedGrup(_AMobBase):
             self._end_pos = grup_head_or_end # yep
             self._grup_head = None
             self.size = ins and (self._end_pos - ins.tell())
-        # binary blob of the whole record group minus its GRUP header ##: rename
-        self.data = None
         if ins: # self._load_f is not yet defined
             needs_load = self._accepted_sigs & load_f.all_sigs
-            do_unpack = do_unpack and needs_load
-            if all_none := not load_f.keepAll and not needs_load:
+            if not load_f.keepAll and not needs_load:
                 ins.seek(self._end_pos)
-            elif not do_unpack: #--Read, but don't analyze.
-                self.data = ins.read(self._end_pos - ins.tell(),
-                                     type(self).__name__)
-            if all_none or not do_unpack:
                 self.inName = ins.inName
                 ins = None # block _load_rec_group in super
         super().__init__(load_f, ins, self._end_pos)
-
-    def dump(self,out):
-        """Dumps group header and then records."""
-        if self.data is not None:
-            if self.data:
-                self._write_header(out)
-                out.write(self.data)
-        elif self:
-            self._write_header(out)
-            self._sort_group()
-            self._dump_group(out)
 
     def _write_header(self, out):
         """getSize not only gets the size - essentially prepares the whole
@@ -198,15 +179,6 @@ class _HeadedGrup(_AMobBase):
                 self._grup_head.size = group_size # keep the rest of the header
                 out.write(self._grup_head.pack_head())
             else: raise self._load_err(f'Missing header in {self!r}')
-
-    def _sort_group(self):
-        """Sorts records by FormID - now eid order matters too for
-        isKeyedByEid records."""
-        self.id_records = dict(dict_sort(self.id_records))
-
-    def _dump_group(self, out):
-        for record in self.id_records.values():
-            record.dump(out)
 
     @classmethod
     def empty_mob(cls, load_f, head_label, *head_arg, **kwargs):
@@ -222,26 +194,30 @@ class MobBase(_HeadedGrup):
 
     def __init__(self, grup_head_or_end, load_f, ins=None):
         self._num_headers = -1
-        super().__init__(grup_head_or_end, load_f, ins, False) #set do_unpack to False
+        super().__init__(grup_head_or_end, load_f, ins)
+
+    def _load_rec_group(self, ins, end_pos):
+        self.grup_blob = ins.read(end_pos - ins.tell(), type(self).__name__)
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        if self.data is None: raise AbstractError(f'{self!r} was not loaded')
+        if self.grup_blob is None:
+            raise AbstractError(f'{self!r} was not loaded')
         return self.size
 
     def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
         there's no subrecords, in which case, it returns 0."""
-        if self.data is None:
+        if self.grup_blob is None:
             raise AbstractError(f'{self!r} was not loaded')
         elif self._num_headers > -1: #--Cached value.
             return self._num_headers
-        elif not self.data: #--No data >> no records, not even self.
+        elif not self.grup_blob: #--No data >> no records, not even self.
             self._num_headers = 0
             return self._num_headers
         else:
             num_headers = 1 # the top level grup itself - not included in data
-            with FastModReader(self.inName, self.data) as ins:
+            with FastModReader(self.inName, self.grup_blob) as ins:
                 ins_tell = ins.tell
                 ins_size = ins.size
                 while ins_tell() != ins_size:
@@ -253,15 +229,22 @@ class MobBase(_HeadedGrup):
             self._num_headers = num_headers
             return self._num_headers
 
-    def dump(self,out):
+    def dump(self, out):
         """Dumps record header and data into output file stream."""
-        if self.data is None: raise AbstractError(f'{self!r} was not loaded')
-        super().dump(out)
+        if self.grup_blob is None:
+            raise AbstractError(f'{self!r} was not loaded')
+        if self.grup_blob:
+            self._write_header(out)
+            out.write(self.grup_blob)
 
 #------------------------------------------------------------------------------
 class MobObjects(_RecordsGrup, _HeadedGrup):
     """Represents a group consisting of the record types specified in
     _accepted_sigs."""
+
+    def __init__(self, grup_head_or_end, load_f, ins):
+        self.id_records = {}
+        super().__init__(grup_head_or_end, load_f, ins)
 
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by load()."""
@@ -294,6 +277,15 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
         self.id_records[el_key] = record if _loading or not do_copy else \
             record.getTypeCopy()
 
+    def _sort_group(self):
+        """Sorts records by FormID - now eid order matters too for
+        isKeyedByEid records."""
+        self.id_records = dict(dict_sort(self.id_records))
+
+    def _dump_group(self, out):
+        for record in self.id_records.values():
+            record.dump(out)
+
     # _AMobBase API -----------------------------------------------------------
     def get_num_headers(self):
         """Returns number of records, including self - if empty return 0."""
@@ -304,14 +296,17 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        if self.data is not None:
-            return self.size
-        else:
-            if not self.id_records: return 0
-            recs_size = sum(r.getSize() for r in self.id_records.values())
-            # The top GRUP header (0)
-            return ((RecordHeader.rec_header_size + recs_size) if recs_size
-                    else 0)
+        if not self.id_records: return 0
+        recs_size = sum(r.getSize() for r in self.id_records.values())
+        # The top GRUP header (0)
+        return (RecordHeader.rec_header_size + recs_size) if recs_size else 0
+
+    def dump(self,out):
+        """Dumps group header and then records."""
+        if self.id_records:
+            self._write_header(out)
+            self._sort_group()
+            self._dump_group(out)
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
@@ -953,8 +948,6 @@ class MobCells(TopComplexGrup):
         """Return the total size of the block, but also compute dictionaries
         containing the sizes of the individual blocks/subblocks and the cell
         ids every block contains."""
-        if self.data is not None:
-            return self.size
         self.size = 0
         self._block_subblock_cells = defaultdict(lambda: defaultdict(list))
         hsize = RecordHeader.rec_header_size

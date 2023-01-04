@@ -182,7 +182,7 @@ class ModFile(object):
                         # have duplicate top-level groups
                         if top_grup_sig not in self.tops:
                             self.tops[top_grup_sig] = new_top
-                        elif new_top.data:
+                        elif hasattr(new_top, 'grup_blob'):
                             # Duplicate top-level group and we can't merge due
                             # to not loading it fully. Log and replace the
                             # existing one
