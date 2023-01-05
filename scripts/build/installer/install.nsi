@@ -34,6 +34,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout4VR == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_Fallout4VR != $Empty
+                !insertmacro InstallBashFiles "$Path_Fallout4VR" "Fallout4VR Path"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_SkyrimSE != $Empty
@@ -45,6 +52,13 @@
             ; Install resources:
             ${If} $Path_SkyrimSE_GOG != $Empty
                 !insertmacro InstallBashFiles "$Path_SkyrimSE_GOG" "SkyrimSE_GOG Path"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimVR == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_SkyrimVR != $Empty
+                !insertmacro InstallBashFiles "$Path_SkyrimVR" "SkyrimVR Path"
             ${EndIf}
         ${EndIf}
 
@@ -139,6 +153,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout4VR == ${BST_CHECKED}
+            ${If} $Path_Fallout4VR != $Empty
+                SetOutPath $Path_Fallout4VR\Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4VR.lnk" "$Path_Fallout4VR\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
@@ -150,6 +171,13 @@
             ${If} $Path_SkyrimSE_GOG != $Empty
                 SetOutPath $Path_SkyrimSE_GOG\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (GOG).lnk" "$Path_SkyrimSE_GOG\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimVR == ${BST_CHECKED}
+            ${If} $Path_SkyrimVR != $Empty
+                SetOutPath $Path_SkyrimVR\Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimVR.lnk" "$Path_SkyrimVR\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
 

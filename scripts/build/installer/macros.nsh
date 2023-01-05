@@ -757,6 +757,11 @@
             ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
         ${EndIf}
 
+        ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\Wrye Bash" "Fallout4VR Path"
+        ${If} $Path_Fallout4VR == $Empty
+            ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4VR Path"
+        ${EndIf}
+
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
@@ -765,6 +770,11 @@
         ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
         ${If} $Path_SkyrimSE_GOG == $Empty
             ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\Wrye Bash" "SkyrimVR Path"
+        ${If} $Path_SkyrimVR == $Empty
+            ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimVR Path"
         ${EndIf}
 
         ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Wrye Bash" "Fallout3 Path"
@@ -820,6 +830,11 @@
             ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
         ${EndIf}
 
+        ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\Wrye Bash" "Fallout4VR Path"
+        ${If} $Path_Fallout4VR == $Empty
+            ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4VR Path"
+        ${EndIf}
+
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
@@ -828,6 +843,11 @@
         ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
         ${If} $Path_SkyrimSE_GOG == $Empty
             ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\Wrye Bash" "SkyrimVR Path"
+        ${If} $Path_SkyrimVR == $Empty
+            ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimVR Path"
         ${EndIf}
 
         ReadRegStr $Path_Fallout3 HKLM "Software\Wrye Bash" "Fallout3 Path"

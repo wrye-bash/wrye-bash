@@ -35,6 +35,12 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout4VR == ${BST_CHECKED}
+            ${If} $Path_Fallout4VR != $Empty
+                !insertmacro UninstallBash $Path_Fallout4VR "Fallout4VR"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro UninstallBash $Path_SkyrimSE "SkyrimSE"
@@ -44,6 +50,12 @@
         ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
             ${If} $Path_SkyrimSE_GOG != $Empty
                 !insertmacro UninstallBash $Path_SkyrimSE_GOG "SkyrimSE_GOG"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimVR == ${BST_CHECKED}
+            ${If} $Path_SkyrimVR != $Empty
+                !insertmacro UninstallBash $Path_SkyrimVR "SkyrimVR"
             ${EndIf}
         ${EndIf}
 
@@ -94,8 +106,10 @@
         ${AndIf} $Path_Nehrim == $Empty
         ${AndIf} $Path_Skyrim == $Empty
         ${AndIf} $Path_Fallout4 == $Empty
+        ${AndIf} $Path_Fallout4VR == $Empty
         ${AndIf} $Path_SkyrimSE == $Empty
         ${AndIf} $Path_SkyrimSE_GOG == $Empty
+        ${AndIf} $Path_SkyrimVR == $Empty
         ${AndIf} $Path_Fallout3 == $Empty
         ${AndIf} $Path_FalloutNV == $Empty
         ${AndIf} $Path_Enderal == $Empty

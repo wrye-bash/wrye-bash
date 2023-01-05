@@ -50,8 +50,10 @@ ManifestDPIAware true
     Var Path_Nehrim
     Var Path_Skyrim
     Var Path_Fallout4
+    Var Path_Fallout4VR
     Var Path_SkyrimSE
     Var Path_SkyrimSE_GOG
+    Var Path_SkyrimVR
     Var Path_Fallout3
     Var Path_FalloutNV
     Var Path_Enderal
@@ -64,8 +66,10 @@ ManifestDPIAware true
     Var Check_Nehrim
     Var Check_Skyrim
     Var Check_Fallout4
+    Var Check_Fallout4VR
     Var Check_SkyrimSE
     Var Check_SkyrimSE_GOG
+    Var Check_SkyrimVR
     Var Check_Extra
     Var Check_Fallout3
     Var Check_FalloutNV
@@ -77,8 +81,10 @@ ManifestDPIAware true
     Var CheckState_Nehrim
     Var CheckState_Skyrim
     Var CheckState_Fallout4
+    Var CheckState_Fallout4VR
     Var CheckState_SkyrimSE
     Var CheckState_SkyrimSE_GOG
+    Var CheckState_SkyrimVR
     Var CheckState_Extra
     Var CheckState_Fallout3
     Var CheckState_FalloutNV
@@ -90,8 +96,10 @@ ManifestDPIAware true
     Var PathDialogue_Nehrim
     Var PathDialogue_Skyrim
     Var PathDialogue_Fallout4
+    Var PathDialogue_Fallout4VR
     Var PathDialogue_SkyrimSE
     Var PathDialogue_SkyrimSE_GOG
+    Var PathDialogue_SkyrimVR
     Var PathDialogue_Fallout3
     Var PathDialogue_FalloutNV
     Var PathDialogue_Enderal
@@ -102,8 +110,10 @@ ManifestDPIAware true
     Var Browse_Nehrim
     Var Browse_Skyrim
     Var Browse_Fallout4
+    Var Browse_Fallout4VR
     Var Browse_SkyrimSE
     Var Browse_SkyrimSE_GOG
+    Var Browse_SkyrimVR
     Var Browse_Fallout3
     Var Browse_FalloutNV
     Var Browse_Enderal
@@ -195,6 +205,16 @@ ManifestDPIAware true
             StrCpy $CheckState_Fallout4 ${BST_CHECKED}
         ${EndIf}
 
+        ${If} $Path_Fallout4VR == $Empty
+            ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\Bethesda Softworks\Fallout 4 VR" "Installed Path"
+            ${If} $Path_Fallout4VR == $Empty
+                ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\WOW6432Node\Bethesda Softworks\Fallout 4 VR" "Installed Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_Fallout4VR != $Empty
+            StrCpy $CheckState_Fallout4VR ${BST_CHECKED}
+        ${EndIf}
+
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Bethesda Softworks\Skyrim Special Edition" "Installed Path"
             ${If} $Path_SkyrimSE == $Empty
@@ -220,6 +240,16 @@ ManifestDPIAware true
         ${EndIf}
         ${If} $Path_SkyrimSE_GOG != $Empty
             StrCpy $CheckState_SkyrimSE_GOG ${BST_CHECKED}
+        ${EndIf}
+
+        ${If} $Path_SkyrimVR == $Empty
+            ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\Bethesda Softworks\Skyrim VR" "Installed Path"
+            ${If} $Path_SkyrimVR == $Empty
+                ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\WOW6432Node\Bethesda Softworks\Skyrim VR" "Installed Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_SkyrimVR != $Empty
+            StrCpy $CheckState_SkyrimVR ${BST_CHECKED}
         ${EndIf}
 
         ${If} $Path_Fallout3 == $Empty
@@ -287,10 +317,14 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Fallout4
             StrCpy $1 $PathDialogue_Fallout4
+        ${ElseIf} $0 == $Browse_Fallout4VR
+            StrCpy $1 $PathDialogue_Fallout4VR
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
         ${ElseIf} $0 == $Browse_SkyrimSE_GOG
             StrCpy $1 $PathDialogue_SkyrimSE_GOG
+        ${ElseIf} $0 == $Browse_SkyrimVR
+            StrCpy $1 $PathDialogue_SkyrimVR
         ${ElseIf} $0 == $Browse_Fallout3
             StrCpy $1 $PathDialogue_Fallout3
         ${ElseIf} $0 == $Browse_FalloutNV
@@ -345,10 +379,14 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Fallout4
             StrCpy $1 $PathDialogue_Fallout4
+        ${ElseIf} $0 == $Browse_Fallout4VR
+            StrCpy $1 $PathDialogue_Fallout4VR
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
         ${ElseIf} $0 == $Browse_SkyrimSE_GOG
             StrCpy $1 $PathDialogue_SkyrimSE_GOG
+        ${ElseIf} $0 == $Browse_SkyrimVR
+            StrCpy $1 $PathDialogue_SkyrimVR
         ${ElseIf} $0 == $Browse_Fallout3
             StrCpy $1 $PathDialogue_Fallout3
         ${ElseIf} $0 == $Browse_FalloutNV
