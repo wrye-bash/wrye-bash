@@ -223,21 +223,13 @@ class APreserver(ImportPatcher):
             self._parse_csv_sources(progress)
         self.isActive = bool(self.srcs_sigs)
 
-    def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
-        id_data = self.id_data
-        for rsig, block in modFile.iter_tops(self.srcs_sigs):
-            patchBlock = self.patchFile.tops[rsig]
-            # Records that have been copied into the BP once will automatically
-            # be updated by update_patch_records_from_mod/mergeModFile
-            copied_records = set(patchBlock.id_records)
-            for rfid, record in block.iter_present_records():
-                # Skip if we've already copied this record or if we're not
-                # interested in it
-                if rfid in copied_records or rfid not in id_data: continue
-                for attr, val in id_data[rfid].items():
-                    if __attrgetters[attr](record) != val:
-                        patchBlock.setRecord(record)
-                        break
+    def _add_to_patch(self, rid, record, top_sig, *,
+                      __attrgetters=attrgetter_cache):
+        if rid not in self.id_data or rid in self.patchFile.tops[
+            top_sig].id_records: return False # see parent docs
+        for att, val in self.id_data[rid].items():
+            if __attrgetters[att](record) != val:
+                return True
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
@@ -389,7 +381,7 @@ class ImportTextPatcher(APreserver):
 #------------------------------------------------------------------------------
 ##: absorbing this one will be hard - or not :P
 class ImportCellsPatcher(ImportPatcher):
-    logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
+    logMsg = '\n=== ' + _('Cells/Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
@@ -458,27 +450,17 @@ class ImportCellsPatcher(ImportPatcher):
                                 cellData[cfid][att] = tempCellData[cfid][att]
             progress.plus()
 
-    def scanModFile(self, modFile, progress): # scanModFile0
-        """Add lists from modFile."""
-        if not (b'CELL' in modFile.tops or b'WRLD' in modFile.tops):
-            return
-        cellData = self.cellData
-        patchCells = self.patchFile.tops[b'CELL']
-        patchWorlds = self.patchFile.tops[b'WRLD']
-        if b'CELL' in modFile.tops:
-            for cfid, cell_rec in modFile.tops[b'CELL'].iter_present_records(
-                    b'CELL'):
-                if cfid in cellData:
-                    patchCells.setRecord(cell_rec) # todo why only the cell and not the whole block??
-        if b'WRLD' in modFile.tops:
-            for wfid, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
-                # if curr_pworld := wfid in patchWorlds.id_records:
-                curr_pworld = patchWorlds.setRecord(worldBlock.master_record)
-                for cfid, cell_rec in worldBlock.iter_present_records(b'CELL'):
-                    if cfid in cellData:
-                        # if not curr_pworld:
-                        # curr_pworld = patchWorlds.setRecord(worldBlock.world)
-                        curr_pworld.set_cell(cell_rec)
+    def _add_to_patch(self, rid, cell_wrld_block, top_sig):
+        """Handle CELL and WRLD top blocks here."""
+        if top_sig == b'CELL' and rid in self.cellData:
+            self.patchFile.tops[b'CELL'].setRecord(
+                cell_wrld_block.master_record)
+        elif top_sig == b'WRLD':
+            curr_pworld = self.patchFile.tops[b'WRLD'].setRecord(
+                cell_wrld_block.master_record)
+            for rid, cell_rec in cell_wrld_block.iter_present_records(b'CELL'):
+                if rid in self.cellData:
+                    curr_pworld.set_cell(cell_rec)
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""

@@ -24,11 +24,11 @@
 special.py."""
 
 from ....bolt import FName
-from ....patcher.base import Abstract_Patcher
+from ....patcher.base import ScanPatcher
 
 cobl_main = FName(u'Cobl Main.esm')
 
-class ExSpecial(Abstract_Patcher):
+class ExSpecial(ScanPatcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
     sense as they did not use scan_more."""
     patcher_group = u'Special'

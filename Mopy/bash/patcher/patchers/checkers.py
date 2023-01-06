@@ -30,16 +30,23 @@ from collections import defaultdict, Counter
 from itertools import chain
 
 from .base import is_templated
-from ..base import Patcher, ModLoader
-from ... import bush, bolt
+from ..base import ModLoader, ScanPatcher
+from ... import bush
 from ...bolt import FName, dict_sort, sig_to_str
 from ...brec import FormId
 from ...mod_files import LoadFactory
 
-class ContentsCheckerPatcher(Patcher):
+class _Checker(ScanPatcher):
+    """Common checkers code."""
+    patcher_group = 'Special'
+    patcher_order = 40
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid not in self.patchFile.tops[top_sig].id_records
+
+class ContentsCheckerPatcher(_Checker):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    patcher_group = u'Special'
     patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
@@ -55,7 +62,7 @@ class ContentsCheckerPatcher(Patcher):
     def active_write_sigs(self):
         return tuple(self.contTypes) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
@@ -67,13 +74,7 @@ class ContentsCheckerPatcher(Patcher):
                     id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
         # types we may end up patching
-        for cont_type, block in modFile.iter_tops(self.contTypes):
-            patchBlock = self.patchFile.tops[cont_type]
-            pb_add_record = patchBlock.setRecord
-            id_records = patchBlock.id_records
-            for rid, record in block.iter_present_records():
-                if rid not in id_records:
-                    pb_add_record(record)
+        super().scanModFile(modFile, progress, self.contTypes)
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
@@ -145,18 +146,8 @@ class ContentsCheckerPatcher(Patcher):
                                 f'{removedId.object_dex:06X}')
 
 #------------------------------------------------------------------------------
-class RaceCheckerPatcher(Patcher):
-    patcher_group = u'Special'
-    patcher_order = 40 # Run after Tweak Races
+class RaceCheckerPatcher(_Checker): # patcher_order 40 to run after Tweak Races
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
-
-    def scanModFile(self, modFile, progress):
-        for pb_sig, block in modFile.iter_tops(self._read_sigs):
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for rid, record in block.iter_present_records():
-                if rid not in id_records:
-                    patchBlock.setRecord(record)
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
@@ -201,24 +192,12 @@ def _find_vanilla_eyes():
         ret[new_key] = new_val
     return ret
 
-class NpcCheckerPatcher(Patcher):
-    """Race patcher."""
-    patcher_group = u'Special'
-    patcher_order = 40
+class NpcCheckerPatcher(_Checker):
     _read_sigs = (b'HAIR', b'NPC_', b'RACE')
 
     def __init__(self, p_name, p_file):
         super(NpcCheckerPatcher, self).__init__(p_name, p_file)
         self.vanilla_eyes = _find_vanilla_eyes()
-
-    def scanModFile(self, modFile, progress):
-        """Add appropriate records from modFile."""
-        for pb_sig, block in modFile.iter_tops(self._read_sigs):
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for rid, record in block.iter_present_records():
-                if rid not in id_records:
-                    patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -284,7 +263,7 @@ class NpcCheckerPatcher(Patcher):
 
 #------------------------------------------------------------------------------
 class TimescaleCheckerPatcher(ModLoader):
-    patcher_group = u'Special'
+    patcher_group = 'Special'
     patcher_order = 40
     _read_sigs = (b'GRAS',)
 
@@ -293,14 +272,9 @@ class TimescaleCheckerPatcher(ModLoader):
         # We want to use _mod_file_read for GLOB records, not GRAS records
         self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
 
-    def scanModFile(self, modFile, progress):
-        for pb_sig, block in modFile.iter_tops(self._read_sigs):
-            patch_block = self.patchFile.tops[pb_sig]
-            id_records = patch_block.id_records
-            for rfid, record in block.iter_present_records():
-                if rfid in id_records: continue
-                if record.wave_period == 0.0: continue # type: bolt.Rounder
-                patch_block.setRecord(record)
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid not in self.patchFile.tops[top_sig].id_records \
+            and record.wave_period != 0.0
 
     def buildPatch(self, log, progress):
         if not self.isActive: return

@@ -421,12 +421,12 @@ class TweakRacesPatcher(MultiTweaker):
     """Tweaks race things."""
     _tweak_classes = {globals()[t] for t in bush.game.race_tweaks}
 
-    def initData(self, progress):
-        super(TweakRacesPatcher, self).initData(progress)
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super().__init__(p_name, p_file, enabled_tweaks)
         if bush.game.race_tweaks_need_collection:
             self.collected_tweak_data: _MixedDict = {b'EYES': [], b'HAIR': []}
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         if bush.game.race_tweaks_need_collection:
             # Need to gather EYES/HAIR data for the tweaks
             tweak_data = self.collected_tweak_data
@@ -436,7 +436,7 @@ class TweakRacesPatcher(MultiTweaker):
                 for rid, _r in block.iter_present_records():
                     if rid not in type_data_set:
                         type_data.append(rid)
-        super().scanModFile(modFile, progress)
+        super().scanModFile(modFile, progress, scan_sigs)
 
     def buildPatch(self, log, progress):
         if (bush.game.race_tweaks_need_collection

@@ -277,10 +277,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
     tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
     # Probably not needed on newer games, so default-enable only on TES4
     default_enabled = bush.game.fsName == u'Oblivion'
-    tweak_read_classes = b'CELL', ## # FIXME TTT b'WRLD', # WRLD is useless, but we want this
-    # patcher to run in the same group as Import Cells, so we'll have to
-    # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
-    ##: Does this even make sense without CBash now?
+    tweak_read_classes = b'CELL',
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0

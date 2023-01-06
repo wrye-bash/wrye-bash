@@ -47,7 +47,7 @@ _effect_alchem = (
 _book_fids = {FormId.from_tuple((cobl_main, book_data[1]))
               for book_data in chain(_ingred_alchem, _effect_alchem)}
 
-class CoblCatalogsPatcher(Patcher, ExSpecial):
+class CoblCatalogsPatcher(ExSpecial):
     """Updates COBL alchemical catalogs."""
     patcher_name = _(u'Cobl Catalogs')
     patcher_desc = u'\n\n'.join(
@@ -70,22 +70,19 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
     def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
-    def scanModFile(self,modFile,progress):
+    def _add_to_patch(self, rid, record, top_sig):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
-        patch_books = self.patchFile.tops[b'BOOK']
-        id_books = patch_books.id_records
-        for book_rid, record in modFile.tops[b'BOOK'].iter_present_records():
-            if book_rid in _book_fids and book_rid not in id_books:
-                patch_books.setRecord(record, do_copy=False)
-        id_ingred = self.id_ingred
-        for rid, record in modFile.tops[b'INGR'].iter_present_records():
-            if not record.full: continue #--Ingredient must have name!
-            if record.obme_record_version is not None:
-                continue ##: Skips OBME records - rework to support them
-            effects = record.getEffects()
-            if not (b'SEFF', 0) in effects:
-                id_ingred[rid] = (record.eid, record.full, effects)
+        if top_sig == b'BOOK':
+            if rid in _book_fids and rid not in self.patchFile.tops[
+                b'BOOK'].id_records:
+                self.patchFile.tops[b'BOOK'].setRecord(record, do_copy=False) ##: todo do_copy.... else we would just return True
+        if top_sig == b'INGR': ##: Skips OBME records - rework to support them
+            #--Ingredient must have name!
+            if record.full and record.obme_record_version is None:
+                effects = record.getEffects()
+                if not (b'SEFF', 0) in effects:
+                    self.id_ingred[rid] = (record.eid, record.full, effects)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -184,16 +181,13 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                         break
         self.isActive = bool(self.cyrodiilQuests)
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         if modFile.fileInfo.fn_key == _ob_path: return
-        cyrodiilQuests = self.cyrodiilQuests
-        patchBlock = self.patchFile.tops[b'QUST']
-        for rid, record in modFile.tops[b'QUST'].iter_present_records():
-            if rid not in cyrodiilQuests: continue
-            for condition in record.conditions:
-                if condition.ifunc == 365: break #--365: playerInSeWorld
-            else:
-                patchBlock.setRecord(record)
+        super().scanModFile(modFile, progress, scan_sigs)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid in self.cyrodiilQuests and all(  #--365: playerInSeWorld
+            condition.ifunc != 365 for condition in record.conditions)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""

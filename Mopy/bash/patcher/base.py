@@ -36,7 +36,7 @@ from typing import Iterable
 from . import getPatchesPath
 from .. import load_order
 from ..bolt import dict_sort, sig_to_str, deprint
-from ..exception import AbstractError, BPConfigError
+from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
@@ -94,8 +94,7 @@ class Patcher(Abstract_Patcher):
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it. If adds record, should first convert it to
-        long fids."""
+        mod, but won't alter it."""
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
@@ -133,37 +132,6 @@ class CsvListPatcher(ListPatcher):
             except OSError: deprint(f'{srcFile} is no longer in patches set',
                                     traceback=True)
             progress.plus()
-
-class AMultiTweaker(Abstract_Patcher):
-    """Combines a number of sub-tweaks which can be individually enabled and
-    configured through a choice menu."""
-    patcher_group = u'Tweakers'
-    patcher_order = 30
-    _tweak_classes = set() # override in implementations
-
-    def __init__(self, p_name, p_file, enabled_tweaks: list[AMultiTweakItem]):
-        super(AMultiTweaker, self).__init__(p_name, p_file)
-        for e_tweak in enabled_tweaks:
-            if e_tweak.custom_choice:
-                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
-                validation_err = e_tweak.validate_values(e_values)
-                # We've somehow ended up with a custom value that is not
-                # accepted by the tweak itself, this will almost certainly fail
-                # at runtime so abort the BP process now with a more
-                # informative error message
-                if validation_err is not None:
-                    err_header = e_tweak.validation_error_header(e_values)
-                    raise BPConfigError(err_header + '\n\n' + validation_err)
-        self.enabled_tweaks = enabled_tweaks
-        self.isActive = bool(enabled_tweaks)
-
-    @classmethod
-    def tweak_instances(cls):
-        # Sort alphabetically first for aesthetic reasons
-        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
-        # After that, sort to make tweaks instantiate & run in the right order
-        tweak_classes.sort(key=lambda c: c.tweak_order)
-        return [t() for t in tweak_classes]
 
 #------------------------------------------------------------------------------
 # AMultiTweakItem(object) -----------------------------------------------------
@@ -371,7 +339,25 @@ class AMultiTweakItem(object):
         ITPOs through!"""
         raise AbstractError(u'tweak_record not implemented')
 
-class ModLoader(Patcher):
+class ScanPatcher(Patcher):
+    """WIP class to encapsulate scanModFile common logic."""
+
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """Add records from modFile."""
+        for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
+            patchBlock = self.patchFile.tops[top_sig]
+            for rid, rec in block.iter_present_records():
+                if self._add_to_patch(rid, rec, top_sig):
+                    patchBlock.setRecord(rec)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        """Decide if this record should be added to the patch top_sig block.
+        Records that have been copied into the BP once will automatically
+        be updated by update_patch_records_from_mod/mergeModFile so skip if
+        we've already copied this record or if we're not interested in it."""
+        raise AbstractError
+
+class ModLoader(ScanPatcher): ##: this must go - WIP!
     """Mixin for patchers loading mods"""
     loadFactory = None
 

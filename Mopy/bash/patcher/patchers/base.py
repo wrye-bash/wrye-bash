@@ -23,12 +23,11 @@
 """This module contains base patcher classes."""
 
 from collections import Counter, defaultdict
-from itertools import chain
 from operator import attrgetter
 
 # Internal
-from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher, \
-    CsvListPatcher
+from ..base import AMultiTweakItem, Patcher, ListPatcher, CsvListPatcher, \
+    ScanPatcher
 from ..patch_files import PatchFile
 from ... import load_order, bush
 from ...bolt import deprint
@@ -90,54 +89,69 @@ class CustomChoiceTweak(MultiTweakItem):
     label."""
     custom_choice = _(u'Custom')
 
-class MultiTweaker(AMultiTweaker,Patcher):
-    _tweak_dict: defaultdict[bytes, list[AMultiTweakItem]]
+class MultiTweaker(ScanPatcher):
+    """Combines a number of sub-tweaks which can be individually enabled and
+    configured through a choice menu."""
+    patcher_group = 'Tweakers'
+    patcher_order = 30
+    _tweak_classes = set() # override in implementations
 
-    def initData(self,progress):
-        # Build up a dict mapping tweaks to the record signatures they're
-        # interested in
-        self._tweak_dict = defaultdict(list)
+    def __init__(self, p_name, p_file, enabled_tweaks: list[MultiTweakItem]):
+        super().__init__(p_name, p_file)
+        for e_tweak in enabled_tweaks:
+            if e_tweak.custom_choice:
+                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
+                validation_err = e_tweak.validate_values(e_values)
+                # We've somehow ended up with a custom value that is not
+                # accepted by the tweak itself, this will almost certainly fail
+                # at runtime so abort the BP process now with a more
+                # informative error message
+                if validation_err is not None:
+                    err_header = e_tweak.validation_error_header(e_values)
+                    raise BPConfigError(err_header + '\n\n' + validation_err)
+        self.enabled_tweaks: list[MultiTweakItem] = enabled_tweaks
+        self.isActive = bool(enabled_tweaks)
+        # Build up a dict mapping record signatures to the tweaks who need them
+        tweak_dict = defaultdict(list)
         for tweak in self.enabled_tweaks:
             for read_sig in tweak.tweak_read_classes:
-                self._tweak_dict[read_sig].append(tweak)
+                tweak_dict[read_sig].append(tweak)
+        self._tweak_dict: dict[bytes, list[MultiTweakItem]] = dict(tweak_dict)
+
+    @classmethod
+    def tweak_instances(cls):
+        # Sort alphabetically first for aesthetic reasons
+        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
+        # After that, sort to make tweaks instantiate & run in the right order
+        tweak_classes.sort(key=lambda c: c.tweak_order)
+        return [t() for t in tweak_classes]
 
     @property
     def _read_sigs(self):
-        return set(chain.from_iterable(
-            tweak.tweak_read_classes for tweak in self.enabled_tweaks))
+        return set(self._tweak_dict)
 
-    def scanModFile(self,modFile,progress):
-        rec_pool = defaultdict(set)
-        for curr_top, block in modFile.iter_tops(self._tweak_dict):
-            # Collect all records that poolable tweaks are interested in
-            poolable_tweaks = self._tweak_dict[curr_top]
-            if not poolable_tweaks: continue
-            pool_record = rec_pool[curr_top].add
-            for _rid, record in block.iter_present_records(curr_top):
-                for p_tweak in poolable_tweaks:
-                    if p_tweak.wants_record(record):
-                        pool_record(record)
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """We need to iterate only through the master records for complex
+        groups."""
+        for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
+            patchBlock = self.patchFile.tops[top_sig]
+            for rid, rec in block.iter_present_records(top_sig): # this
+                for p_tweak in self._tweak_dict[top_sig]:
+                    if p_tweak.wants_record(rec):
+                        patchBlock.setRecord(rec)
                         break # Exit as soon as a tweak is interested
-        # Finally, copy all pooled records in one fell swoop
-        for top_grup_sig, pooled_records in rec_pool.items():
-            for record in pooled_records:
-                self.patchFile.tops[top_grup_sig].setRecord(record)
 
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
         if not self.isActive: return
         log.setHeader(u'= ' + self._patcher_name, True)
-        for tweak in self.enabled_tweaks: # type: MultiTweakItem
+        for tweak in self.enabled_tweaks:
             tweak.prepare_for_tweaking(self.patchFile)
-        common_tops = set(self.patchFile.tops) & set(self._tweak_dict)
         keep = self.patchFile.getKeeper()
         tweak_counter = defaultdict(Counter)
-        for curr_top in common_tops:
-            poolable_tweaks = self._tweak_dict[curr_top]
-            if not poolable_tweaks: continue
-            for rid, record in self.patchFile.tops[curr_top
-                    ].iter_present_records(curr_top):
-                for p_tweak in poolable_tweaks:  # type: MultiTweakItem
+        for curr_top, block in self.patchFile.iter_tops(self._tweak_dict):
+            for rid, record in block.iter_present_records(curr_top):
+                for p_tweak in self._tweak_dict[curr_top]:
                     # Check if this tweak can actually change the record - just
                     # relying on the check in scanModFile is *not* enough.
                     # After all, another tweak or patcher could have made a

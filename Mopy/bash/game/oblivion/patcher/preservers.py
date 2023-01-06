@@ -38,7 +38,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
-    _read_sigs = (b'CELL', b'WRLD', b'ROAD')
+    _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -57,15 +57,15 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
 
-    def scanModFile(self, modFile, progress): # scanModFile3 ?
-        """Add lists from modFile."""
-        if b'WRLD' not in modFile.tops: return
-        patchWorlds = self.patchFile.tops[b'WRLD']
-        for worldId, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
-            if worldBlock.road:
-                patch_world_block = patchWorlds.setRecord(
-                    worldBlock.master_record)
-                patch_world_block.road = worldBlock.road.getTypeCopy()
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        super().scanModFile(modFile, progress, [b'WRLD'])
+
+    def _add_to_patch(self, rid, worldBlock, top_sig):
+        """We deal with a worldBlock - do the update here."""
+        if worldBlock.road:
+            patch_world_block = self.patchFile.tops[b'WRLD'].setRecord(
+                worldBlock.master_record)
+            patch_world_block.road = worldBlock.road.getTypeCopy()
 
     def buildPatch(self,log,progress): # buildPatch3: one type
         """Adds merged lists to patchfile."""
@@ -143,12 +143,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         return int(csv_fields[3])
 
-    def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
-        patchRecords = self.patchFile.tops[b'SPEL']
-        id_info = self.id_stored_data[b'FACT']
-        for rid, record in modFile.tops[b'SPEL'].iter_present_records():
-            if record.spellType == 2 and rid in id_info:
-                patchRecords.setRecord(record)
+    def _add_to_patch(self, rid, record, top_sig):
+        return record.spellType == 2 and rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -219,17 +215,16 @@ class MorphFactionsPatcher(_ExSpecialList):
         self.isActive &= cobl_main in p_file.load_dict
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
-        id_info = self.id_stored_data[b'FACT']
-        patchBlock = self.patchFile.tops[b'FACT']
         if modFile.fileInfo.fn_key == cobl_main:
             record = modFile.tops[b'FACT'].id_records.get(self.mFactLong)
             if record:
-                patchBlock.setRecord(record)
-        for rid, record in modFile.tops[b'FACT'].iter_present_records():
-            if rid in id_info:
-                patchBlock.setRecord(record)
+                self.patchFile.tops[b'FACT'].setRecord(record)
+        super().scanModFile(modFile, progress, scan_sigs)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
