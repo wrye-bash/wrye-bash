@@ -306,10 +306,14 @@ class PatchGame(GameInfo):
         cell_class = _sig_class[b'CELL']
         mobs.CellRefs._accepted_sigs = cell_class.ref_types
         mobs.TempRefs._accepted_sigs = mobs.CellChildren._accepted_sigs = {
-            *cell_class.ref_types, *cell_class.interior_temp_extra}
+            *cell_class.ref_types, *(ite := cell_class.interior_temp_extra)}
+        mobs.TempRefs._sort_overrides = {s: j for j, s in enumerate(ite)}
         wrld_class = _sig_class[b'WRLD']
-        wrld_cell = {*wrld_class.ref_types, *wrld_class.exterior_temp_extra}
+        wrld_cell = {*wrld_class.ref_types,
+                     *(ete := wrld_class.exterior_temp_extra)}
         mobs.WrldTempRefs._accepted_sigs = \
             mobs.ExtCellChildren._accepted_sigs = wrld_cell
+        mobs.WrldTempRefs._sort_overrides = {s: j for j, s in enumerate(ete)}
         mobs.WorldChildren._accepted_sigs = {*wrld_cell,
                                              *wrld_class.wrld_children_extra}
+        mobs.WorldChildren._extra_records = wrld_class.wrld_children_extra

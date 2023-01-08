@@ -435,7 +435,7 @@ class _Nested(_RecordsGrup):
         for gt, chg in self._mob_objects.items():
             chg.updateRecords(srcBlock._mob_objects[gt], mergeIds)
         for sig, rec in srcBlock._stray_recs.items():
-            if rec and not rec.should_skip():
+            if rec and not rec.should_skip() and self._stray_recs[sig]: ##: correct?
                 self._stray_recs[sig] = rec.getTypeCopy()
                 mergeIds.discard(rec.fid)
 
@@ -489,8 +489,7 @@ class _Nested(_RecordsGrup):
     def dump(self, out): # No _sort_group
         for r in self._stray_recs.values():
             if r: r.dump(out)
-        # Dump the cell children out in order: persistent -> temporary -> VWD
-        for v in self._mob_objects.values():
+        for v in self._mob_objects.values(): # dump _mob_objects in order
             v.dump(out) # won't dump if empty
 
 def _process_rec(sig, after=True, target=None):
@@ -842,16 +841,54 @@ class _PersRefs(CellRefs):
     _children_grup_type = 8
 
 class TempRefs(CellRefs):
-    """Temporary cell children - need special sorting logic."""
+    """Temporary cell children - need special sorting and merge logic."""
     _children_grup_type = 9
-    # LAND -> PGRD -> other temporary refs
-    _sort_overrides = defaultdict(lambda: 2, {b'LAND': 0, b'PGRD': 1})
+    _sort_overrides = {} # (in|ex)terior_temp_extra -> other temporary refs
+
+    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
+        special_recs = {} # these records are merged based on record signature
+        filtered = {}
+        for sig in self._sort_overrides:
+            for k, src_rec in block.iter_present_records():
+                if src_rec._rec_sig == sig:
+                    special_recs[k] = src_rec
+                    del block.id_records[k]
+                    break
+        for k, src_rec in special_recs.items():
+            if loaded_mods is not None and self._masters_miss_after_filtering(
+                    src_rec, loaded_mods):
+                continue # we deleted it above
+            filtered[k] = src_rec
+            if not iiSkipMerge:
+                mergeIds.add(k)
+                self.setRecord(src_rec)
+        super().merge_records(block, loaded_mods, mergeIds, iiSkipMerge)
+        # add to the block the possibly filtered PGRD/LAND etc
+        block.id_records = {**filtered, **block.id_records}
+
+    def updateRecords(self, srcBlock, mergeIds):
+        merge_ids_discard = mergeIds.discard
+        copy_to_self = self.setRecord
+        dest_rec_fids = self.id_records
+        present_extra = {}
+        for rid, src_rec in self.iter_present_records():
+            if src_rec._rec_sig in self._sort_overrides:
+                present_extra[src_rec._rec_sig] = rid
+        for rid, record in srcBlock.iter_present_records():
+            if record._rec_sig in present_extra: # only keep if already present
+                del self.id_records[present_extra[record._rec_sig]]
+                copy_to_self(record)
+                merge_ids_discard(rid)
+            elif rid in dest_rec_fids: # rest of records keep based on rid
+                copy_to_self(record)
+                merge_ids_discard(rid)
 
     def _sort_group(self):
         # First sort by FormID, then sort LAND and PGRD before the others
         super()._sort_group()
+        last = len(self._sort_overrides)
         self.id_records = dict(sorted(self.id_records.items(),
-            key=lambda p: self._sort_overrides[p[1]._rec_sig]))
+            key=lambda p: self._sort_overrides.get(p[1]._rec_sig, last)))
 
 class _DistRefs(CellRefs):
     """Visible when distant cell children."""
@@ -1076,7 +1113,6 @@ class _PersistentCell(MobCell):
     _marker_groups = {0, 4} # we get a group 4 of exterior cells right after
 
 class WorldChildren(CellChildren):
-    _extra_records = (b'ROAD', b'CELL') ## todo SET in _validate_recs
     _top_type = b'WRLD'
     _mob_objects_type = {4: _ExteriorCells} # we hit a 4 type block
     _mob_objects: dict[int, _ExteriorCells]
