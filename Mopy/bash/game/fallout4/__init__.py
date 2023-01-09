@@ -40,7 +40,11 @@ class Fallout4GameInfo(PatchGame):
     appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
     game_detect_includes = {'Fallout4.exe'}
-    game_detect_excludes = WS_COMMON_FILES
+    # Fallout4VR.exe is here because some older guides recommend creating a
+    # copy of Fallout4VR.exe called Fallout4.exe to "trick" WB into launching.
+    # That's from back when WB had no VR support, but those guides haven't been
+    # updated since...
+    game_detect_excludes = WS_COMMON_FILES | {'Fallout4VR.exe'}
     version_detect_file = u'Fallout4.exe'
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
