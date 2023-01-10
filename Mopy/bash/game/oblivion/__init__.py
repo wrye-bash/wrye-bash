@@ -1067,6 +1067,8 @@ class OblivionGameInfo(PatchGame):
         'AssortedTweak_TextlessLSCRs',
         'AssortedTweak_SEFFIcon',
         'AssortedTweak_BookWeight',
+        'AssortedTweak_AttackSpeedStavesMinimum',
+        'AssortedTweak_AttackSpeedStavesMaximum',
     }
     not_playable_flag = ('biped_flags', 'notPlayable')
     staff_condition = ('weaponType', 4)

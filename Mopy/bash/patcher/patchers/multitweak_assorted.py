@@ -340,19 +340,14 @@ class AssortedTweak_NoLightFlicker_Fo4(AssortedTweak_NoLightFlicker):
 #------------------------------------------------------------------------------
 class _AWeightTweak(CustomChoiceTweak):
     """Base class for weight tweaks."""
-    _log_weight_value = u'OVERRIDE' # avoid pycharm warning
+    _log_weight_value: str
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
 
-    def tweak_log(self, log, count):
-        """Will write to log for a class that has a weight field"""
-        log.setHeader(u'=== ' + self.tweak_log_header)
-        log(self._log_weight_value % self.chosen_weight)
-        log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
-        for src_plugin in load_order.get_ordered(count):
-            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
+    def _tweak_make_log_header(self, log):
+        super()._tweak_make_log_header(log)
+        log(self._log_weight_value % {'weight_value': self.chosen_weight})
 
     def wants_record(self, record):
         return record.weight > self.chosen_weight # type: bolt.Rounder
@@ -383,7 +378,7 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6)]
     tweak_log_msg = _(u'Potions Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Potions set to maximum weight of %f.')
+    _log_weight_value = _('Potions set to maximum weight of %(weight_value)f.')
 
     def validate_values(self, chosen_values: tuple) -> str | None:
         if chosen_values[0] >= 1.0:
@@ -406,7 +401,8 @@ class AssortedTweak_IngredientWeight(_AWeightTweak_SEFF):
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ingredients Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
+    _log_weight_value = _('Ingredients set to maximum weight of '
+                          '%(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
@@ -420,15 +416,24 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
                      (u'2.0', 2.0), (u'4.0', 4.0)]
     tweak_log_msg = _(u'Ingestibles Reweighed: %(total_changed)d')
     tweak_order = 11 # Run after Reweigh: Potions (Maximum) for consistency
-    _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
+    _log_weight_value = _('Ingestibles set to minimum weight of '
+                          '%(weight_value)f.')
 
     def wants_record(self, record): ##: no SEFF condition - intended?
         return record.weight < self.chosen_weight
 
 #------------------------------------------------------------------------------
-class AssortedTweak_StaffWeight(_AWeightTweak):
-    """Reweighs staves."""
+class _AStaffTweak(MultiTweakItem):
+    """Base class for tweaks that target staves."""
     tweak_read_classes = b'WEAP',
+
+    def wants_record(self, record):
+        staff_attr, staff_val = bush.game.staff_condition
+        return super().wants_record(record) and getattr(
+            record, staff_attr) == staff_val
+
+class AssortedTweak_StaffWeight(_AStaffTweak, _AWeightTweak):
+    """Reweighs staves."""
     tweak_name = _(u'Reweigh: Staves')
     tweak_tip =  _(u'Staff weight will be capped.')
     tweak_key = u'StaffWeight'
@@ -436,12 +441,7 @@ class AssortedTweak_StaffWeight(_AWeightTweak):
                      (u'4.0', 4.0), (u'5.0', 5.0), (u'6.0', 6.0),
                      (u'7.0', 7.0), (u'8.0', 8.0)]
     tweak_log_msg = _(u'Staves Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Staves set to maximum weight of %f.')
-
-    def wants_record(self, record):
-        staff_attr, staff_val = bush.game.staff_condition
-        return getattr(record, staff_attr) == staff_val and super(
-            AssortedTweak_StaffWeight, self).wants_record(record)
+    _log_weight_value = _('Staves set to maximum weight of %(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ArrowWeight(_AWeightTweak):
@@ -453,7 +453,8 @@ class AssortedTweak_ArrowWeight(_AWeightTweak):
     tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
                      (u'0.4', 0.4), (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ammunition Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Ammunition set to maximum weight of %f.')
+    _log_weight_value = _('Ammunition set to maximum weight of '
+                          '%(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_BookWeight(_AWeightTweak):
@@ -464,7 +465,52 @@ class AssortedTweak_BookWeight(_AWeightTweak):
     tweak_choices = [(u'0.0', 0.0), (u'0.3', 0.3), (u'0.5', 0.5),
                      (u'0.75', 0.75), (u'1.0', 1.0)]
     tweak_log_msg = _(u'Books Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Books set to maximum weight of %f.')
+    _log_weight_value = _('Books set to maximum weight of %(weight_value)f.')
+
+#------------------------------------------------------------------------------
+class _AASTweakMin(MultiTweakItem):
+    """Base class for tweaks that alter minimum attack speeds."""
+    _log_attack_speed_value: str
+
+    @property
+    def chosen_attack_speed(self): return self.choiceValues[self.chosen][0]
+
+    def _tweak_make_log_header(self, log):
+        super()._tweak_make_log_header(log)
+        log(self._log_attack_speed_value % {
+            'attack_speed_value': self.chosen_attack_speed})
+
+    def wants_record(self, record):
+        return record.speed < self.chosen_attack_speed
+
+    def tweak_record(self, record):
+        record.speed = self.chosen_attack_speed
+
+class AssortedTweak_AttackSpeedStavesMinimum(_AStaffTweak, _AASTweakMin):
+    """Sets a floor for staff attack speeds."""
+    tweak_name = _('Attack Speed: Staves (Minimum)')
+    tweak_tip = _('Ensures every staff has at least the chosen attack speed.')
+    tweak_key = 'attack_speed_staves_min'
+    tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
+    tweak_log_msg = _('Staves Changed: %(total_changed)d')
+    _log_attack_speed_value = _('Staff attack speed set to minimum of '
+                                '%(attack_speed_value)f.')
+
+#------------------------------------------------------------------------------
+class _AASTweakMax(_AASTweakMin):
+    """Base class for tweaks that alter maximum attack speeds."""
+    def wants_record(self, record):
+        return record.speed > self.chosen_attack_speed
+
+class AssortedTweak_AttackSpeedStavesMaximum(_AStaffTweak, _AASTweakMax):
+    """Sets a ceiling for staff attack speeds."""
+    tweak_name = _('Attack Speed: Staves (Maximum)')
+    tweak_tip = _('Ensures every staff has at most the chosen attack speed.')
+    tweak_key = 'attack_speed_staves_max'
+    tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
+    tweak_log_msg = _('Staves Changed: %(total_changed)d')
+    _log_attack_speed_value = _('Staff attack speed set to maximum of '
+                                '%(attack_speed_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
@@ -495,7 +541,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
 
     def tweak_log(self, log, count):
         # count would be pointless, always one record
-        super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
+        super().tweak_log(log, {})
 
 #------------------------------------------------------------------------------
 class AssortedTweak_HarvestChance(CustomChoiceTweak):

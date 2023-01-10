@@ -73,10 +73,8 @@ class _AClothesTweak_MaxWeight(_AClothesTweak, CustomChoiceTweak):
     def tweak_record(self, record):
         record.weight = self.chosen_weight
 
-    def tweak_log(self, log, count):
-        self.tweak_log_header = (self.tweak_name +
-                                 u' [%4.2f]' % self.chosen_weight)
-        super(_AClothesTweak_MaxWeight, self).tweak_log(log, count)
+    def _tweak_make_log_header(self, log):
+        log.setHeader(f'=== {self.tweak_name} [{self.chosen_weight:4.2f}]')
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeightAmulets(_AClothesTweak_MaxWeight):

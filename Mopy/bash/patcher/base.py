@@ -274,10 +274,15 @@ class AMultiTweakItem(object):
 
     def tweak_log(self, log, count):
         """Logs the total changes and details for each plugin."""
-        log.setHeader(u'=== ' + self.tweak_log_header)
+        self._tweak_make_log_header(log)
         log('* ' + self.tweak_log_msg % {'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
             log(f'  * {src_plugin}: {count[src_plugin]}')
+
+    def _tweak_make_log_header(self, log):
+        """Sets the header - override if you only need to add something to the
+        header."""
+        log.setHeader('=== ' + self.tweak_log_header)
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""

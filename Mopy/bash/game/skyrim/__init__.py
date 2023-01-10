@@ -1128,6 +1128,8 @@ class SkyrimGameInfo(PatchGame):
         'AssortedTweak_AllWaterDamages',
         'AssortedTweak_AbsorbSummonFix',
         'AssortedTweak_BookWeight',
+        'AssortedTweak_AttackSpeedStavesMinimum',
+        'AssortedTweak_AttackSpeedStavesMaximum',
     }
     staff_condition = ('animationType', 8)
 
