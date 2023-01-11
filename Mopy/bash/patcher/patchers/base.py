@@ -26,7 +26,7 @@ from collections import Counter, defaultdict
 from operator import attrgetter
 
 # Internal
-from ..base import AMultiTweakItem, Patcher, ListPatcher, CsvListPatcher, \
+from ..base import AMultiTweakItem, APatcher, ListPatcher, CsvListPatcher, \
     ScanPatcher
 from ..patch_files import PatchFile
 from ... import load_order, bush
@@ -178,7 +178,7 @@ class MultiTweaker(ScanPatcher):
             tweak.tweak_log(log, tweak_counter[tweak])
 
 # Patchers: 10 ----------------------------------------------------------------
-class AliasModNamesPatcher(Patcher):
+class AliasModNamesPatcher(APatcher):
     """Specify mod aliases for patch files."""
     patcher_group = u'General'
     patcher_order = 10

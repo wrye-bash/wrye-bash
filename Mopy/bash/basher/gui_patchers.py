@@ -46,7 +46,7 @@ class _PatcherPanel(object):
     # These are sometimes quite ugly - backwards compat leftover from when
     # those were the class names and got written directly into the configs
     _config_key: str = None
-    patcher_type: base.Abstract_Patcher = None
+    patcher_type: base.APatcher = None
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
     selectCommands = True # whether this panel displays De/Select All

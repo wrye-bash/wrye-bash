@@ -28,7 +28,7 @@ from this module outside of the patcher package."""
 # classes and the patching process. Once this is done we should delete the (
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
-# instance Patcher.buildPatch() apparently is NOT always overridden
+# instance APatcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
 
 from typing import Iterable
@@ -40,19 +40,18 @@ from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
-# Abstract_Patcher and subclasses ---------------------------------------------
+# APatcher and subclasses -----------------------------------------------------
 #------------------------------------------------------------------------------
-class Abstract_Patcher(object):
+class APatcher:
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO (method resolution order), just before object"""
     patcher_group = u'UNDEFINED'
     patcher_order = 10
     iiMode = False
     _read_sigs: Iterable[bytes] = () #top group signatures this patcher patches
-
-    def getName(self):
-        """Return patcher name passed in by the gui, needed for logs."""
-        return self._patcher_name
+    # Whether this patcher will get inactive plugins passed to its scanModFile
+    ##: Once _AMerger is rewritten, this may become obsolete
+    _scan_inactive = False
 
     def __init__(self, p_name, p_file):
         """Initialization of common values to defaults."""
@@ -60,13 +59,9 @@ class Abstract_Patcher(object):
         self.patchFile = p_file
         self._patcher_name = p_name
 
-class Patcher(Abstract_Patcher):
-    """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # Whether or not this patcher will get inactive plugins passed to its
-    # scanModFile method
-    ##: Once _AMerger is rewritten, this may become obsolete
-    _scan_inactive = False
+    def getName(self):
+        """Return patcher name passed in by the gui, needed for logs."""
+        return self._patcher_name
 
     @property
     def active_read_sigs(self):
@@ -99,7 +94,7 @@ class Patcher(Abstract_Patcher):
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class ListPatcher(Patcher):
+class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
@@ -339,7 +334,7 @@ class AMultiTweakItem(object):
         ITPOs through!"""
         raise AbstractError(u'tweak_record not implemented')
 
-class ScanPatcher(Patcher):
+class ScanPatcher(APatcher):
     """WIP class to encapsulate scanModFile common logic."""
 
     def scanModFile(self, modFile, progress, scan_sigs=None):

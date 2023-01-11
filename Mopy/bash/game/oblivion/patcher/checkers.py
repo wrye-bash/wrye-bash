@@ -29,7 +29,7 @@ from itertools import chain
 from ._shared import cobl_main, ExSpecial
 from .... import bush
 from ....brec import FormId, RecordType
-from ....patcher.base import ModLoader, Patcher
+from ....patcher.base import ModLoader
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
