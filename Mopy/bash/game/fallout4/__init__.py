@@ -81,6 +81,7 @@ class Fallout4GameInfo(PatchGame):
 
     class Ini(GameInfo.Ini):
         default_ini_file = u'Fallout4_default.ini'
+        default_game_lang = 'en'
         dropdown_inis = [u'Fallout4.ini', u'Fallout4Prefs.ini']
         resource_archives_keys = (
             u'sResourceIndexFileList', u'sResourceStartUpArchiveList',

@@ -687,8 +687,8 @@ class GameIni(IniFile):
 
     def get_ini_language(self, cached=True):
         if not cached or self._ini_language is None:
-            self._ini_language = self.getSetting(u'General', u'sLanguage',
-                                                 u'English')
+            self._ini_language = self.getSetting('General', 'sLanguage',
+                bush.game.Ini.default_game_lang)
         return self._ini_language
 
     def target_ini_exists(self, msg=None):

@@ -298,6 +298,8 @@ class GameInfo(object):
         bsa_redirection_key = (u'', u'')
         # Name of game's default ini file.
         default_ini_file = u''
+        # The default value for the [General] sLanguage setting
+        default_game_lang = 'English'
         # INI files that should show up in the INI Edits tab. Note that the
         # first one *must* be the main INI!
         #  Example: [u'Oblivion.ini']
