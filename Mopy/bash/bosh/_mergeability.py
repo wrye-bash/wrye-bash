@@ -97,7 +97,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
     merge_types_fact = LoadFactory(False, generic=bush.game.mergeable_sigs)
     modFile = ModFile(modInfo, merge_types_fact)
     try:
-        modFile.load(True,loadStrings=False)
+        modFile.load_plugin(loadStrings=False)
     except ModError as error:
         if not verbose: return False
         reasons.append(f'{error}.')

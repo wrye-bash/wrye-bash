@@ -1854,7 +1854,7 @@ class ModDetails(_ModsSavesDetails):
             modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
             modInfo.header.masters = self.uilist.GetNewMasters()
-            modInfo.header.changed = True
+            modInfo.header.setChanged()
             modInfo.writeHeader(old_mi_masters)
         #--Change date?
         if changeDate:

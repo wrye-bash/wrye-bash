@@ -27,8 +27,8 @@ from itertools import chain
 from operator import attrgetter
 
 # Internal
-from .. import getPatchesPath
-from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
+from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher, \
+    CsvListPatcher
 from ... import load_order, bush
 from ...bolt import deprint
 from ...brec import RecordType
@@ -95,7 +95,7 @@ class IndexingTweak(MultiTweakItem):
 
     def _mod_file_read(self, modInfo):
         modFile = ModFile(modInfo, self.loadFactory)
-        modFile.load(do_unpack=True)
+        modFile.load_plugin()
         return modFile
 
     def prepare_for_tweaking(self, patch_file):
@@ -241,7 +241,7 @@ class MergePatchesPatcher(ListPatcher):
         # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(self.srcs)
 
-class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
+class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
@@ -255,20 +255,9 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
         ListPatcher.__init__(self, p_name, p_file, p_sources)
 
     def _parse_line(self, csv_fields):
-        oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
-        oldId = self._coerce_fid(oldMod, oldObj)
-        newId = self._coerce_fid(newMod, newObj)
+        oldId = self._coerce_fid(csv_fields[1], csv_fields[2]) # oldMod, oldObj
+        newId = self._coerce_fid(csv_fields[5], csv_fields[6]) # newMod, newObj
         self.old_new[oldId] = newId
-
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(f'{srcFile} is no longer in patches set',
-                                    traceback=True)
-            progress.plus()
 
     def scanModFile(self, modFile, progress, *, __get_refs=(
             attrgetter('temp_refs'), attrgetter('persistent_refs'))):

@@ -70,7 +70,7 @@ class SreNPC(object):
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = RecordType.sig_to_class[b'NPC_']._flags(self.flags)
+            self.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(self.flags)
 
         def __str__(self):
             return '\n'.join(
@@ -686,9 +686,9 @@ class SaveSpells(_SaveData):
                                   modInfo.extras['bash.spellList'].items())
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
-        modFile = ModFile(modInfo, loadFactory)
-        try: modFile.load(True, catch_errors=False)
+        spell_lf = LoadFactory(False, by_sig=[b'SPEL'])
+        modFile = ModFile(modInfo, spell_lf)
+        try: modFile.load_plugin(catch_errors=False)
         except ModError as err:
             deprint(f'skipped mod due to read error ({err})')
             return

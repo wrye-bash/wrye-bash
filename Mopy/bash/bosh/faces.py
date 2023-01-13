@@ -149,10 +149,10 @@ class PCFaces(object):
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for a in ('attributes', 'skills', 'health', 'unused2'):
-            npc_val = getattr(npc, a)
+        for att in ('attributes', 'skills', 'health', 'unused2'):
+            npc_val = getattr(npc, att)
             if npc_val is not None:
-                setattr(face, a, npc_val)
+                setattr(face, att, npc_val)
         #--Iref >> fid
         getFid = saveFile.getFid
         face.spells = [getFid(x) for x in (npc.spells or [])]
@@ -227,19 +227,8 @@ class PCFaces(object):
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
-        npc.full = face.pcName
         npc.flags.female = (face.gender & 0x1)
-        npc.setRace(masterMap(face.race,0x00907)) #--Default to Imperial
-        npc.eye = masterMap(face.eye,None)
-        npc.hair = masterMap(face.hair,None)
-        npc.hairLength = face.hairLength
-        npc.hairRed = face.hairRed
-        npc.hairBlue = face.hairBlue
-        npc.hairGreen = face.hairGreen
-        npc.unused3 = face.unused3
-        npc.fggs_p = face.fggs_p
-        npc.fgga_p = face.fgga_p
-        npc.fgts_p = face.fgts_p
+        PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats: Skip Level, baseSpell, fatigue and factions since they're discarded by game engine.
         if face.skills: npc.skills = face.skills
         if face.health:
@@ -385,10 +374,10 @@ class PCFaces(object):
     # MODS --------------------------------------------------------------------
     @staticmethod
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
-        loadFactory = LoadFactory(keepAll=keepAll, by_sig=by_sig)
-        modFile = ModFile(modInfo,loadFactory)
+        lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
+        modFile = ModFile(modInfo, lf)
         if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
-            modFile.load(True)
+            modFile.load_plugin()
         return modFile
 
     @staticmethod
@@ -400,14 +389,14 @@ class PCFaces(object):
         for _rid, npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
-            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
-                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
-                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
-                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
-                npc_val = getattr(npc, a)
+            for att in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                        'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                        'fgts_p', 'level_offset', 'skills', 'health', 'iclass',
+                        'unused2', 'baseSpell', 'fatigue', 'attributes'):
+                npc_val = getattr(npc, att)
                 if isinstance(npc_val, FormId):
                     npc_val = npc_val.short_fid # saves code uses the ints...
-                setattr(face, a, npc_val)
+                setattr(face, att, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face
@@ -454,20 +443,9 @@ class PCFaces(object):
         npc = RecordType.sig_to_class[b'NPC_'](
             RecHeader(b'NPC_', 0, 0x40000, npcid, 0, _entering_context=True))
         npc.eid = eid
-        npc.full = face.pcName
         npc.flags.female = face.gender
         npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
-        npc.setRace(masterMap(face.race,0x00907)) #--Default to Imperial
-        npc.eye = masterMap(face.eye,None)
-        npc.hair = masterMap(face.hair,None)
-        npc.hairLength = face.hairLength
-        npc.hairRed = face.hairRed
-        npc.hairBlue = face.hairBlue
-        npc.hairGreen = face.hairGreen
-        npc.unused3 = face.unused3
-        npc.fggs_p = face.fggs_p
-        npc.fgga_p = face.fgga_p
-        npc.fgts_p = face.fgts_p
+        PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats
         npc.level_offset = face.level_offset
         npc.baseSpell = face.baseSpell
@@ -482,3 +460,18 @@ class PCFaces(object):
         #--Save
         modFile.safeSave()
         return npc
+
+    @staticmethod
+    def _set_npc_attrs(npc, face, masterMap):
+        npc.full = face.pcName
+        npc.setRace(masterMap(face.race, 0x00907))  #--Default to Imperial
+        npc.eye = masterMap(face.eye, None)
+        npc.hair = masterMap(face.hair, None)
+        npc.hairLength = face.hairLength
+        npc.hairRed = face.hairRed
+        npc.hairBlue = face.hairBlue
+        npc.hairGreen = face.hairGreen
+        npc.unused3 = face.unused3
+        npc.fggs_p = face.fggs_p
+        npc.fgga_p = face.fgga_p
+        npc.fgts_p = face.fgts_p

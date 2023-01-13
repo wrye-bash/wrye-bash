@@ -80,9 +80,9 @@ class _LoadLink(ItemLink):
         return LoadFactory(keepAll, by_sig=self._load_sigs)
 
     def _load_mod(self, mod_info, keepAll=True, load_fact=None, **kwargs):
-        loadFactory = load_fact or self._load_fact(keepAll=keepAll)
-        modFile = ModFile(mod_info, loadFactory)
-        modFile.load(True, **kwargs)
+        lf = load_fact or self._load_fact(keepAll=keepAll)
+        modFile = ModFile(mod_info, lf)
+        modFile.load_plugin(**kwargs)
         return modFile
 
 # Dev tools, no need to translate strings here

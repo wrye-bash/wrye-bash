@@ -21,11 +21,10 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-import io
 import re
 
 from ...bolt import Flags, flag, int_or_zero, structs_cache, str_or_none, \
-    int_or_none, str_to_sig, sig_to_str
+    int_or_none, str_to_sig, sig_to_str, LowerDict
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     AMreHeader, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
@@ -70,7 +69,7 @@ class MelModel(MelGroup):
 
 #------------------------------------------------------------------------------
 # Common Flags
-class aiService(Flags):
+class AiService(Flags):
     weapons: bool = flag(0)
     armor: bool = flag(1)
     clothing: bool = flag(2)
@@ -90,14 +89,23 @@ class aiService(Flags):
 # A distributor config for use with MelEffectsTes4, since MelEffectsTes4 also
 # contains a FULL subrecord
 _effects_distributor = {
-    b'FULL': u'full', # don't rely on EDID being present
+    b'FULL': 'full', # don't rely on EDID being present
     b'EFID': {
-        b'FULL': u'effects',
+        b'FULL': 'effects',
     },
     b'EFXX': {
-        b'FULL': u'obme_full',
+        b'FULL': 'obme_full',
     },
 }
+
+#------------------------------------------------------------------------------
+class MelAidt(MelStruct):
+    """Handles the AIDT subrecords defining AI Data."""
+    def __init__(self):
+        super().__init__(b'AIDT', ['4B', 'I', 'b', 'B', '2s'], 'aggression',
+                         'confidence', 'energyLevel', 'responsibility',
+                         (AiService, 'services'), 'trainSkill', 'trainLevel',
+                         'unused1')
 
 #------------------------------------------------------------------------------
 class MelEmbeddedScript(MelSequential):
@@ -106,13 +114,13 @@ class MelEmbeddedScript(MelSequential):
     def __init__(self, with_script_vars=False):
         seq_elements = [
             MelUnion({
-                b'SCHR': MelStruct(b'SCHR', [u'4s', u'4I'], u'unused1',
-                                  u'num_refs', u'compiled_size', u'last_index',
-                                  u'script_type'),
-                b'SCHD': MelBase(b'SCHD', u'old_script_header'),
+                b'SCHR': MelStruct(b'SCHR', ['4s', '4I'], 'unused1',
+                                   'num_refs', 'compiled_size', 'last_index',
+                                   'script_type'),
+                b'SCHD': MelBase(b'SCHD', 'old_script_header'),
             }),
-            MelBase(b'SCDA', u'compiled_script'),
-            MelString(b'SCTX', u'script_source'),
+            MelBase(b'SCDA', 'compiled_script'),
+            MelString(b'SCTX', 'script_source'),
             MelReferences(), # MelScriptVars goes before here (index 3)
         ]
         if with_script_vars: seq_elements.insert(3, MelScriptVars())
@@ -305,7 +313,7 @@ class MreHasEffects(object):
 
     def _get_spell_school(self):
         """Returns the school based on the highest cost spell effect."""
-        spellSchool = [0,0]
+        spellSchool = [0, 0]
         for effect in self.effects:
             school = MreMgef.mgef_school[effect.effect_sig]
             effectValue = MreMgef.mgef_basevalue[effect.effect_sig]
@@ -321,27 +329,27 @@ class MreHasEffects(object):
 
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
-        buff = io.StringIO()
+        buff = []
         avEffects = MreMgef.generic_av_effects
         aValues = actor_values
-        buffWrite = buff.write
+        buffWrite = buff.append
         if self.effects:
             school = self._get_spell_school()
-            buffWrite(aValues[20 + school] + u'\n')
+            buffWrite(f'{aValues[20 + school]}\n')
         for index, effect in enumerate(self.effects):
             if effect.scriptEffect: ##: #480 - setDefault commit - return None
-                effectName = effect.scriptEffect.full or u'Script Effect'
+                effectName = effect.scriptEffect.full or 'Script Effect'
             else:
                 effectName = MreMgef.mgef_name[effect.effect_sig]
                 if effect.effect_sig in avEffects:
-                    effectName = re.sub(_(u'(Attribute|Skill)'),
+                    effectName = re.sub(_('(Attribute|Skill)'),
                                         aValues[effect.actorValue], effectName)
             buffWrite('o+*'[effect.recipient] + f' {effectName}')
             if effect.magnitude: buffWrite(f' {effect.magnitude}m')
             if effect.area: buffWrite(f' {effect.area}a')
             if effect.duration > 1: buffWrite(f' {effect.duration}d')
-            buffWrite(u'\n')
-        return buff.getvalue()
+            buffWrite('\n')
+        return ''.join(buff)
 
     @classmethod
     def _read_effects(cls, _effects, _coerce_fid, *,
@@ -442,7 +450,7 @@ class MreHasEffects(object):
 
     # Tweaks APIs -------------------------------------------------------------
     def is_harmful(self, cached_hostile):
-        """Return True if all of the effects on the specified record are
+        """Return True if all the effects on the specified record are
         harmful/hostile."""
         for rec_eff in self.effects:
             is_effect_hostile = se.flags.hostile if (se := rec_eff.scriptEffect
@@ -460,8 +468,8 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = set()
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
-            (u'nextObject', 0x800)),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
+                  ('nextObject', 0x800)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -476,15 +484,15 @@ class MreAchr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'NAME', u'base'),
+        MelFid(b'NAME', 'base'),
         # both unused
         MelNull(b'XPCI'),
         MelNull(b'FULL'),
         MelXlod(),
         MelEnableParent(),
-        MelFid(b'XMRC', u'merchantContainer'),
-        MelFid(b'XHRS', u'horse'),
-        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
+        MelFid(b'XMRC', 'merchantContainer'),
+        MelFid(b'XHRS', 'horse'),
+        MelBase(b'XRGD', 'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelRef3D(),
     )
@@ -496,10 +504,10 @@ class MreAcre(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'NAME', u'base'),
+        MelFid(b'NAME', 'base'),
         MelOwnershipTes4(),
         MelEnableParent(),
-        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
+        MelBase(b'XRGD', 'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
         MelRef3D(),
     )
@@ -522,7 +530,7 @@ class MreAlch(MreHasEffects, MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
-    class _flags(Flags):
+    class _AlchFlags(Flags):
         autoCalc: bool
         alch_is_food: bool
 
@@ -534,7 +542,8 @@ class MreAlch(MreHasEffects, MelRecord):
         MelIcon(),
         MelScript(),
         MelWeight(),
-        MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
+        MelStruct(b'ENIT', ['i', 'B', '3s'], 'value', (_AlchFlags, 'flags'),
+                  'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -544,9 +553,8 @@ class MreAmmo(MelRecord):
     """Ammunition."""
     rec_sig = b'AMMO'
 
-    class _flags(Flags):
+    class _AmmoFlags(Flags):
         notNormalWeapon: bool
-
 
     melSet = MelSet(
         MelEdid(),
@@ -555,8 +563,9 @@ class MreAmmo(MelRecord):
         MelIcon(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelStruct(b'DATA', [u'f', u'B', u'3s', u'I', u'f', u'H'], 'speed', (_flags, u'flags'),
-                  'unused1', 'value', 'weight', 'damage'),
+        MelStruct(b'DATA', ['f', 'B', '3s', 'I', 'f', 'H'], 'speed',
+                  (_AmmoFlags, 'flags'), 'unused1', 'value', 'weight',
+                  'damage'),
     )
 
 #------------------------------------------------------------------------------
@@ -567,7 +576,7 @@ class MreAnio(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelFid(b'DATA','animationId'),
+        MelFid(b'DATA', 'animationId'),
     )
 
 #------------------------------------------------------------------------------
@@ -581,12 +590,12 @@ class MreAppa(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'B', u'I', u'f', u'f'], 'apparatus', ('value', 25),
-                  ('weight', 1), ('quality', 10)),
+        MelStruct(b'DATA', ['B', 'I', 'f', 'f'], 'apparatus', 'value',
+                  'weight', 'quality'),
     )
 
 #------------------------------------------------------------------------------
-class CommonBipedFlags(BipedFlags):
+class _CommonBipedFlags(BipedFlags):
     head: bool
     hair: bool
     upperBody: bool
@@ -611,7 +620,7 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    class _flags(CommonBipedFlags):
+    class _ArmoBipedFlags(_CommonBipedFlags):
         hideRings: bool = flag(16)
         hideAmulet: bool = flag(17)
         notPlayable: bool = flag(22)
@@ -623,14 +632,15 @@ class MreArmo(MelRecord):
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
+        MelUInt32Flags(b'BMDT', 'biped_flags', _ArmoBipedFlags),
         MelModel(b'MODL', 'maleBody'),
         MelModel(b'MOD2', 'maleWorld'),
-        MelIcon(u'maleIconPath'),
+        MelIcon('maleIconPath'),
         MelModel(b'MOD3', 'femaleBody'),
         MelModel(b'MOD4', 'femaleWorld'),
-        MelIco2(u'femaleIconPath'),
-        MelStruct(b'DATA', [u'H', u'I', u'I', u'f'],'strength','value','health','weight'),
+        MelIco2('femaleIconPath'),
+        MelStruct(b'DATA', ['H', 'I', 'I', 'f'], 'strength', 'value', 'health',
+                  'weight'),
     )
 
 #------------------------------------------------------------------------------
@@ -638,7 +648,7 @@ class MreBook(MelRecord):
     """Book."""
     rec_sig = b'BOOK'
 
-    class _flags(Flags):
+    class _BookFlags(Flags):
         isScroll: bool
         isFixed: bool
 
@@ -651,8 +661,8 @@ class MreBook(MelRecord):
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
-                  'value', 'weight'),
+        MelStruct(b'DATA', ['B', 'b', 'I', 'f'], (_BookFlags, 'flags'),
+                  'teaches', 'value', 'weight'),
     )
 
 #------------------------------------------------------------------------------
@@ -674,7 +684,7 @@ class MreCell(AMreCell):
     ref_types = {b'ACHR', b'ACRE', b'REFR'}
     interior_temp_extra = [b'PGRD']
 
-    class cellFlags(Flags):
+    class _CellFlags(Flags):
         isInterior: bool = flag(0)
         hasWater: bool = flag(1)
         invertFastTravel: bool = flag(2)
@@ -686,7 +696,7 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8Flags(b'DATA', u'flags', cellFlags),
+        MelUInt8Flags(b'DATA', 'flags', _CellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
         MelSkipInterior(MelOptStruct(b'XCLC', ['2i'],
@@ -697,10 +707,10 @@ class MreCell(AMreCell):
             'fogRed', 'fogGreen', 'fogBlue', 'unused3', 'fogNear', 'fogFar',
             'directionalXY', 'directionalZ', 'directionalFade', 'fogClip'),
         MelRegions(),
-        MelUInt8(b'XCMT', u'music'),
-        MelFloat(b'XCLW', u'waterHeight'),
-        MelFid(b'XCCM', u'climate'),
-        MelFid(b'XCWT', u'water'),
+        MelUInt8(b'XCMT', 'music'),
+        MelFloat(b'XCLW', 'waterHeight'),
+        MelFid(b'XCCM', 'climate'),
+        MelFid(b'XCWT', 'water'),
         MelOwnershipTes4(),
     )
 
@@ -709,7 +719,7 @@ class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    class _flags(Flags):
+    class _ClasFlags(Flags):
         class_playable: bool
         class_guard: bool
 
@@ -718,12 +728,11 @@ class MreClas(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcon(),
-        MelTruncatedStruct(b'DATA', [u'2i', u'I', u'7i', u'2I', u'b', u'B', u'2s'], 'primary1', 'primary2',
-                           'specialization', 'major1', 'major2', 'major3',
-                           'major4', 'major5', 'major6', 'major7',
-                           (_flags, u'flags'), (aiService, u'services'),
-                           'trainSkill', 'trainLevel',
-                           'unused1', old_versions={'2iI7i2I'}),
+        MelTruncatedStruct(b'DATA', ['2i', 'I', '7i', '2I', 'b', 'B', '2s'],
+            'primary1', 'primary2', 'specialization', 'major1', 'major2',
+            'major3', 'major4', 'major5', 'major6', 'major7',
+            (_ClasFlags, 'flags'), (AiService, 'services'), 'trainSkill',
+            'trainLevel', 'unused1', old_versions={'2iI7i2I'}),
     )
 
 #------------------------------------------------------------------------------
@@ -744,7 +753,7 @@ class MreClot(MelRecord):
     """Clothing."""
     rec_sig = b'CLOT'
 
-    class _flags(CommonBipedFlags):
+    class _ClotBipedFlags(_CommonBipedFlags):
         hideRings: bool = flag(16)
         hideAmulet: bool = flag(17)
         notPlayable: bool = flag(22)
@@ -755,13 +764,13 @@ class MreClot(MelRecord):
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
+        MelUInt32Flags(b'BMDT', 'biped_flags', _ClotBipedFlags),
         MelModel(b'MODL', 'maleBody'),
         MelModel(b'MOD2', 'maleWorld'),
-        MelIcon(u'maleIconPath'),
+        MelIcon('maleIconPath'),
         MelModel(b'MOD3', 'femaleBody'),
         MelModel(b'MOD4', 'femaleWorld'),
-        MelIco2(u'femaleIconPath'),
+        MelIco2('femaleIconPath'),
         MelValueWeight(),
     )
 
@@ -786,7 +795,7 @@ class MreCrea(AMreActor):
     """Creature."""
     rec_sig = b'CREA'
 
-    class _flags(Flags):
+    class _CreaFlags(Flags):
         biped: bool = flag(0)
         essential: bool = flag(1)
         weaponAndShield: bool = flag(2)
@@ -812,32 +821,29 @@ class MreCrea(AMreActor):
         MelItems(),
         MelSpellsTes4(),
         MelBodyParts(),
-        MelBase(b'NIFT','nift_p'), # Texture File Hashes
-        MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
-            (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level_offset',1),'calcMin','calcMax'),
+        MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
+                  (_CreaFlags, 'flags'), 'baseSpell', 'fatigue', 'barterGold',
+                  'level_offset', 'calcMin', 'calcMax'),
         MelFactions(),
-        MelFid(b'INAM','deathItem'),
+        MelFid(b'INAM', 'deathItem'),
         MelScript(),
-        MelStruct(b'AIDT', [u'4B', u'I', u'b', u'B', u'2s'],
-            ('aggression',5),('confidence',50),('energyLevel',50),
-            ('responsibility',50),(aiService, u'services'),'trainSkill',
-            'trainLevel','unused1'),
+        MelAidt(),
         MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
-        MelStruct(b'DATA', [u'5B', u's', u'H', u'2s', u'H', u'8B'],'creatureType','combatSkill','magic',
-                  'stealth','soul','unused2','health',
-                  'unused3','attackDamage','strength','intelligence',
-                  'willpower','agility','speed','endurance','personality',
-                  'luck'),
+        MelStruct(b'DATA', ['5B', 's', 'H', '2s', 'H', '8B'],'creatureType',
+                  'combatSkill', 'magic', 'stealth', 'soul', 'unused2',
+                  'health', 'unused3', 'attackDamage', 'strength',
+                  'intelligence', 'willpower', 'agility', 'speed', 'endurance',
+                  'personality', 'luck'),
         MelUInt8(b'RNAM', 'attackReach'),
-        MelFid(b'ZNAM','combatStyle'),
+        MelFid(b'ZNAM', 'combatStyle'),
         MelFloat(b'TNAM', 'turningSpeed'),
         MelFloat(b'BNAM', 'baseScale'),
         MelFloat(b'WNAM', 'footWeight'),
-        MelString(b'NAM0','bloodSprayPath'),
-        MelString(b'NAM1','bloodDecalPath'),
-        MelFid(b'CSCR','inheritsSoundsFrom'),
+        MelString(b'NAM0', 'bloodSprayPath'),
+        MelString(b'NAM1', 'bloodDecalPath'),
+        MelFid(b'CSCR', 'inheritsSoundsFrom'),
         MelActorSounds(),
     )
 
@@ -846,7 +852,7 @@ class MreCsty(MelRecord):
     """Combat Style."""
     rec_sig = b'CSTY'
 
-    class _csty_flags1(Flags):
+    class _CstyFlags1(Flags):
         advanced: bool
         use_chance_for_attack: bool
         ignore_allies: bool
@@ -856,7 +862,7 @@ class MreCsty(MelRecord):
         prefers_ranged: bool
         melee_alert_ok: bool
 
-    class _csty_flags2(Flags):
+    class _CstyFlags2(Flags):
         do_not_acquire: bool
 
     melSet = MelSet(
@@ -871,11 +877,10 @@ class MreCsty(MelRecord):
             'p_atk_chance', 'unused3', 'p_atk_brecoil', 'p_atk_bunc',
             'p_atk_normal', 'p_atk_for', 'p_atk_back', 'p_atk_l', 'p_atk_r',
             'unused4', 'hold_timer_min', 'hold_timer_max',
-            (_csty_flags1, 'csty_flags1'), 'acro_dodge', 'unused5',
-            ('r_mult_opt', 1.0), ('r_mult_max', 1.0), ('m_distance', 250.0),
-            ('r_distance', 1000.0), ('buff_stand', 325.0), ('r_stand', 500.0),
-            ('group_stand', 325.0), ('rush_chance', 25), 'unused6',
-            ('rush_mult', 1.0), (_csty_flags2, 'csty_flags2'), old_versions={
+            (_CstyFlags1, 'csty_flags1'), 'acro_dodge', 'unused5',
+            'r_mult_opt', 'r_mult_max', 'm_distance', 'r_distance',
+            'buff_stand', 'r_stand', 'group_stand', 'rush_chance', 'unused6',
+            'rush_mult', (_CstyFlags2, 'csty_flags2'), old_versions={
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s7fB3sf',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s7f',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s5f',
@@ -904,7 +909,7 @@ class MreDial(MelRecord):
         MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
         MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
-        MelUInt8(b'DATA', u'dialType'),
+        MelUInt8(b'DATA', 'dialType'),
     )
 
 #------------------------------------------------------------------------------
@@ -929,7 +934,7 @@ class MreEfsh(MelRecord):
     """Effect Shader."""
     rec_sig = b'EFSH'
 
-    class _efsh_flags(Flags):
+    class _EfshFlags(Flags):
         no_membrane_shader: bool = flag(0)
         no_particle_shader: bool = flag(3)
         ee_inverse: bool = flag(4)
@@ -942,7 +947,7 @@ class MreEfsh(MelRecord):
         MelTruncatedStruct(b'DATA',
             ['B', '3s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f',
              '3B', 's', '3B', 's', '3B', 's', '6f'],
-            (_efsh_flags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
+            (_EfshFlags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
             'ms_blend_operation', 'ms_z_test_function',
             *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
             'fill_full_alpha_time', 'fill_alpha_fade_out_time',
@@ -976,7 +981,7 @@ class MreEnch(MreHasEffects, MelRecord):
     """Enchantment."""
     rec_sig = b'ENCH'
 
-    class _enit_flags(Flags):
+    class _EnitFlags(Flags):
         ench_no_auto_calc: bool
 
     melSet = MelSet(
@@ -984,7 +989,7 @@ class MreEnch(MreHasEffects, MelRecord):
         MelObme(),
         MelFull(), #--At least one mod has this. Odd.
         MelStruct(b'ENIT', ['3I', 'B', '3s'], 'item_type', 'charge_amount',
-            'enchantment_cost', (_enit_flags, 'enit_flags'), 'unused1'),
+            'enchantment_cost', (_EnitFlags, 'enit_flags'), 'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -994,7 +999,7 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    class _fact_flags(Flags):
+    class _FactFlags(Flags):
         hidden_from_pc: bool
         evil: bool
         special_combat: bool
@@ -1003,7 +1008,7 @@ class MreFact(MelRecord):
         MelEdid(),
         MelFull(),
         MelRelations(with_gcr=False),
-        MelUInt8Flags(b'DATA', 'fact_flags', _fact_flags),
+        MelUInt8Flags(b'DATA', 'fact_flags', _FactFlags),
         MelFloat(b'CNAM', 'crime_gold_multiplier'),
         MelFactRanks(),
     )
@@ -1077,7 +1082,7 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    class _info_response_flags(Flags):
+    class _InfoResponseFlags(Flags):
         goodbye: bool
         random: bool
         say_once: bool
@@ -1088,7 +1093,7 @@ class MreInfo(MelRecord):
 
     melSet = MelSet(
         MelTruncatedStruct(b'DATA', ['3B'], 'info_type', 'next_speaker',
-            (_info_response_flags, 'response_flags'), old_versions={'2B'}),
+            (_InfoResponseFlags, 'response_flags'), old_versions={'2B'}),
         MelFid(b'QSTI', 'info_quest'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
@@ -1111,7 +1116,7 @@ class MreIngr(MreHasEffects, MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    class _flags(Flags):
+    class _IngrFlags(Flags):
         ingr_no_auto_calc: bool
         ingr_is_food: bool
 
@@ -1123,7 +1128,8 @@ class MreIngr(MreHasEffects, MelRecord):
         MelIcon(),
         MelScript(),
         MelWeight(),
-        MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
+        MelStruct(b'ENIT', ['i', 'B', '3s'], 'value', (_IngrFlags, 'flags'),
+                  'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -1156,7 +1162,7 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    class _light_flags(Flags):
+    class _LighFlags(Flags):
         light_dynamic: bool = flag(0)
         light_can_take: bool = flag(1)
         light_negative: bool = flag(2)
@@ -1176,7 +1182,7 @@ class MreLigh(MelRecord):
         MelIcon(),
         MelTruncatedStruct(b'DATA', ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I',
                                      'f'], 'duration', 'light_radius',
-            *gen_color('light_color'), (_light_flags, 'light_flags'),
+            *gen_color('light_color'), (_LighFlags, 'light_flags'),
             'light_falloff', 'light_fov', 'value', 'weight',
             old_versions={'iI3BsI2f'}),
         MelLighFade(),
@@ -1259,7 +1265,7 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    class _obme_flag_overrides(Flags):
+    class _ObmeFlagOverrides(Flags):
         ov_param_flag_a: bool = flag(2)
         ov_beneficial: bool = flag(3)
         ov_param_flag_b: bool = flag(16)
@@ -1269,7 +1275,7 @@ class MreMgef(MelRecord):
         ov_param_flag_d: bool = flag(20)
         ov_hidden: bool = flag(30)
 
-    class _flags(Flags):
+    class _MgefFlags(Flags):
         hostile: bool = flag(0)
         recover: bool = flag(1)
         detrimental: bool = flag(2)
@@ -1295,167 +1301,167 @@ class MreMgef(MelRecord):
         noHitEffect: bool = flag(27)
 
     _magic_effects = {
-        b'ABAT': [5, _(u'Absorb Attribute'), 0.95],
-        b'ABFA': [5, _(u'Absorb Fatigue'), 6],
-        b'ABHE': [5, _(u'Absorb Health'), 16],
-        b'ABSK': [5, _(u'Absorb Skill'), 2.1],
-        b'ABSP': [5, _(u'Absorb Magicka'), 7.5],
-        b'BA01': [1, _(u'Bound Armor Extra 01'), 0],#--Formid == 0
-        b'BA02': [1, _(u'Bound Armor Extra 02'), 0],#--Formid == 0
-        b'BA03': [1, _(u'Bound Armor Extra 03'), 0],#--Formid == 0
-        b'BA04': [1, _(u'Bound Armor Extra 04'), 0],#--Formid == 0
-        b'BA05': [1, _(u'Bound Armor Extra 05'), 0],#--Formid == 0
-        b'BA06': [1, _(u'Bound Armor Extra 06'), 0],#--Formid == 0
-        b'BA07': [1, _(u'Bound Armor Extra 07'), 0],#--Formid == 0
-        b'BA08': [1, _(u'Bound Armor Extra 08'), 0],#--Formid == 0
-        b'BA09': [1, _(u'Bound Armor Extra 09'), 0],#--Formid == 0
-        b'BA10': [1, _(u'Bound Armor Extra 10'), 0],#--Formid == 0
-        b'BABO': [1, _(u'Bound Boots'), 12],
-        b'BACU': [1, _(u'Bound Cuirass'), 12],
-        b'BAGA': [1, _(u'Bound Gauntlets'), 8],
-        b'BAGR': [1, _(u'Bound Greaves'), 12],
-        b'BAHE': [1, _(u'Bound Helmet'), 12],
-        b'BASH': [1, _(u'Bound Shield'), 12],
-        b'BRDN': [0, _(u'Burden'), 0.21],
-        b'BW01': [1, _(u'Bound Order Weapon 1'), 1],
-        b'BW02': [1, _(u'Bound Order Weapon 2'), 1],
-        b'BW03': [1, _(u'Bound Order Weapon 3'), 1],
-        b'BW04': [1, _(u'Bound Order Weapon 4'), 1],
-        b'BW05': [1, _(u'Bound Order Weapon 5'), 1],
-        b'BW06': [1, _(u'Bound Order Weapon 6'), 1],
-        b'BW07': [1, _(u'Summon Staff of Sheogorath'), 1],
-        b'BW08': [1, _(u'Bound Priest Dagger'), 1],
-        b'BW09': [1, _(u'Bound Weapon Extra 09'), 0],#--Formid == 0
-        b'BW10': [1, _(u'Bound Weapon Extra 10'), 0],#--Formid == 0
-        b'BWAX': [1, _(u'Bound Axe'), 39],
-        b'BWBO': [1, _(u'Bound Bow'), 95],
-        b'BWDA': [1, _(u'Bound Dagger'), 14],
-        b'BWMA': [1, _(u'Bound Mace'), 91],
-        b'BWSW': [1, _(u'Bound Sword'), 235],
-        b'CALM': [3, _(u'Calm'), 0.47],
-        b'CHML': [3, _(u'Chameleon'), 0.63],
-        b'CHRM': [3, _(u'Charm'), 0.2],
-        b'COCR': [3, _(u'Command Creature'), 0.6],
-        b'COHU': [3, _(u'Command Humanoid'), 0.75],
-        b'CUDI': [5, _(u'Cure Disease'), 1400],
-        b'CUPA': [5, _(u'Cure Paralysis'), 500],
-        b'CUPO': [5, _(u'Cure Poison'), 600],
-        b'DARK': [3, _(u'DO NOT USE - Darkness'), 0],
-        b'DEMO': [3, _(u'Demoralize'), 0.49],
-        b'DGAT': [2, _(u'Damage Attribute'), 100],
-        b'DGFA': [2, _(u'Damage Fatigue'), 4.4],
-        b'DGHE': [2, _(u'Damage Health'), 12],
-        b'DGSP': [2, _(u'Damage Magicka'), 2.45],
-        b'DIAR': [2, _(u'Disintegrate Armor'), 6.2],
-        b'DISE': [2, _(u'Disease Info'), 0], #--Formid == 0
-        b'DIWE': [2, _(u'Disintegrate Weapon'), 6.2],
-        b'DRAT': [2, _(u'Drain Attribute'), 0.7],
-        b'DRFA': [2, _(u'Drain Fatigue'), 0.18],
-        b'DRHE': [2, _(u'Drain Health'), 0.9],
-        b'DRSK': [2, _(u'Drain Skill'), 0.65],
-        b'DRSP': [2, _(u'Drain Magicka'), 0.18],
-        b'DSPL': [4, _(u'Dispel'), 3.6],
-        b'DTCT': [4, _(u'Detect Life'), 0.08],
-        b'DUMY': [2, _(u'Mehrunes Dagon'), 0], #--Formid == 0
-        b'FIDG': [2, _(u'Fire Damage'), 7.5],
-        b'FISH': [0, _(u'Fire Shield'), 0.95],
-        b'FOAT': [5, _(u'Fortify Attribute'), 0.6],
-        b'FOFA': [5, _(u'Fortify Fatigue'), 0.04],
-        b'FOHE': [5, _(u'Fortify Health'), 0.14],
-        b'FOMM': [5, _(u'Fortify Magicka Multiplier'), 0.04],
-        b'FOSK': [5, _(u'Fortify Skill'), 0.6],
-        b'FOSP': [5, _(u'Fortify Magicka'), 0.15],
-        b'FRDG': [2, _(u'Frost Damage'), 7.4],
-        b'FRNZ': [3, _(u'Frenzy'), 0.04],
-        b'FRSH': [0, _(u'Frost Shield'), 0.95],
-        b'FTHR': [0, _(u'Feather'), 0.1],
-        b'INVI': [3, _(u'Invisibility'), 40],
-        b'LGHT': [3, _(u'Light'), 0.051],
-        b'LISH': [0, _(u'Shock Shield'), 0.95],
-        b'LOCK': [0, _(u'DO NOT USE - Lock'), 30],
-        b'MYHL': [1, _(u'Summon Mythic Dawn Helm'), 110],
-        b'MYTH': [1, _(u'Summon Mythic Dawn Armor'), 120],
-        b'NEYE': [3, _(u'Night-Eye'), 22],
-        b'OPEN': [0, _(u'Open'), 4.3],
-        b'PARA': [3, _(u'Paralyze'), 475],
-        b'POSN': [2, _(u'Poison Info'), 0],
-        b'RALY': [3, _(u'Rally'), 0.03],
-        b'REAN': [1, _(u'Reanimate'), 10],
-        b'REAT': [5, _(u'Restore Attribute'), 38],
-        b'REDG': [4, _(u'Reflect Damage'), 2.5],
-        b'REFA': [5, _(u'Restore Fatigue'), 2],
-        b'REHE': [5, _(u'Restore Health'), 10],
-        b'RESP': [5, _(u'Restore Magicka'), 2.5],
-        b'RFLC': [4, _(u'Reflect Spell'), 3.5],
-        b'RSDI': [5, _(u'Resist Disease'), 0.5],
-        b'RSFI': [5, _(u'Resist Fire'), 0.5],
-        b'RSFR': [5, _(u'Resist Frost'), 0.5],
-        b'RSMA': [5, _(u'Resist Magic'), 2],
-        b'RSNW': [5, _(u'Resist Normal Weapons'), 1.5],
-        b'RSPA': [5, _(u'Resist Paralysis'), 0.75],
-        b'RSPO': [5, _(u'Resist Poison'), 0.5],
-        b'RSSH': [5, _(u'Resist Shock'), 0.5],
-        b'RSWD': [5, _(u'Resist Water Damage'), 0], #--Formid == 0
-        b'SABS': [4, _(u'Spell Absorption'), 3],
-        b'SEFF': [0, _(u'Script Effect'), 0],
-        b'SHDG': [2, _(u'Shock Damage'), 7.8],
-        b'SHLD': [0, _(u'Shield'), 0.45],
-        b'SLNC': [3, _(u'Silence'), 60],
-        b'STMA': [2, _(u'Stunted Magicka'), 0],
-        b'STRP': [4, _(u'Soul Trap'), 30],
-        b'SUDG': [2, _(u'Sun Damage'), 9],
-        b'TELE': [4, _(u'Telekinesis'), 0.49],
-        b'TURN': [1, _(u'Turn Undead'), 0.083],
-        b'VAMP': [2, _(u'Vampirism'), 0],
-        b'WABR': [0, _(u'Water Breathing'), 14.5],
-        b'WAWA': [0, _(u'Water Walking'), 13],
-        b'WKDI': [2, _(u'Weakness to Disease'), 0.12],
-        b'WKFI': [2, _(u'Weakness to Fire'), 0.1],
-        b'WKFR': [2, _(u'Weakness to Frost'), 0.1],
-        b'WKMA': [2, _(u'Weakness to Magic'), 0.25],
-        b'WKNW': [2, _(u'Weakness to Normal Weapons'), 0.25],
-        b'WKPO': [2, _(u'Weakness to Poison'), 0.1],
-        b'WKSH': [2, _(u'Weakness to Shock'), 0.1],
-        b'Z001': [1, _(u'Summon Rufio\'s Ghost'), 13],
-        b'Z002': [1, _(u'Summon Ancestor Guardian'), 33.3],
-        b'Z003': [1, _(u'Summon Spiderling'), 45],
-        b'Z004': [1, _(u'Summon Flesh Atronach'), 1],
-        b'Z005': [1, _(u'Summon Bear'), 47.3],
-        b'Z006': [1, _(u'Summon Gluttonous Hunger'), 61],
-        b'Z007': [1, _(u'Summon Ravenous Hunger'), 123.33],
-        b'Z008': [1, _(u'Summon Voracious Hunger'), 175],
-        b'Z009': [1, _(u'Summon Dark Seducer'), 1],
-        b'Z010': [1, _(u'Summon Golden Saint'), 1],
-        b'Z011': [1, _(u'Wabba Summon'), 0],
-        b'Z012': [1, _(u'Summon Decrepit Shambles'), 45],
-        b'Z013': [1, _(u'Summon Shambles'), 87.5],
-        b'Z014': [1, _(u'Summon Replete Shambles'), 150],
-        b'Z015': [1, _(u'Summon Hunger'), 22],
-        b'Z016': [1, _(u'Summon Mangled Flesh Atronach'), 22],
-        b'Z017': [1, _(u'Summon Torn Flesh Atronach'), 32.5],
-        b'Z018': [1, _(u'Summon Stitched Flesh Atronach'), 75.5],
-        b'Z019': [1, _(u'Summon Sewn Flesh Atronach'), 195],
-        b'Z020': [1, _(u'Extra Summon 20'), 0],
-        b'ZCLA': [1, _(u'Summon Clannfear'), 75.56],
-        b'ZDAE': [1, _(u'Summon Daedroth'), 123.33],
-        b'ZDRE': [1, _(u'Summon Dremora'), 72.5],
-        b'ZDRL': [1, _(u'Summon Dremora Lord'), 157.14],
-        b'ZFIA': [1, _(u'Summon Flame Atronach'), 45],
-        b'ZFRA': [1, _(u'Summon Frost Atronach'), 102.86],
-        b'ZGHO': [1, _(u'Summon Ghost'), 22],
-        b'ZHDZ': [1, _(u'Summon Headless Zombie'), 56],
-        b'ZLIC': [1, _(u'Summon Lich'), 350],
-        b'ZSCA': [1, _(u'Summon Scamp'), 30],
-        b'ZSKA': [1, _(u'Summon Skeleton Guardian'), 32.5],
-        b'ZSKC': [1, _(u'Summon Skeleton Champion'), 152],
-        b'ZSKE': [1, _(u'Summon Skeleton'), 11.25],
-        b'ZSKH': [1, _(u'Summon Skeleton Hero'), 66],
-        b'ZSPD': [1, _(u'Summon Spider Daedra'), 195],
-        b'ZSTA': [1, _(u'Summon Storm Atronach'), 125],
-        b'ZWRA': [1, _(u'Summon Faded Wraith'), 87.5],
-        b'ZWRL': [1, _(u'Summon Gloom Wraith'), 260],
-        b'ZXIV': [1, _(u'Summon Xivilai'), 200],
-        b'ZZOM': [1, _(u'Summon Zombie'), 16.67],
+        b'ABAT': [5, _('Absorb Attribute'), 0.95],
+        b'ABFA': [5, _('Absorb Fatigue'), 6],
+        b'ABHE': [5, _('Absorb Health'), 16],
+        b'ABSK': [5, _('Absorb Skill'), 2.1],
+        b'ABSP': [5, _('Absorb Magicka'), 7.5],
+        b'BA01': [1, _('Bound Armor Extra 01'), 0],#--Formid == 0
+        b'BA02': [1, _('Bound Armor Extra 02'), 0],#--Formid == 0
+        b'BA03': [1, _('Bound Armor Extra 03'), 0],#--Formid == 0
+        b'BA04': [1, _('Bound Armor Extra 04'), 0],#--Formid == 0
+        b'BA05': [1, _('Bound Armor Extra 05'), 0],#--Formid == 0
+        b'BA06': [1, _('Bound Armor Extra 06'), 0],#--Formid == 0
+        b'BA07': [1, _('Bound Armor Extra 07'), 0],#--Formid == 0
+        b'BA08': [1, _('Bound Armor Extra 08'), 0],#--Formid == 0
+        b'BA09': [1, _('Bound Armor Extra 09'), 0],#--Formid == 0
+        b'BA10': [1, _('Bound Armor Extra 10'), 0],#--Formid == 0
+        b'BABO': [1, _('Bound Boots'), 12],
+        b'BACU': [1, _('Bound Cuirass'), 12],
+        b'BAGA': [1, _('Bound Gauntlets'), 8],
+        b'BAGR': [1, _('Bound Greaves'), 12],
+        b'BAHE': [1, _('Bound Helmet'), 12],
+        b'BASH': [1, _('Bound Shield'), 12],
+        b'BRDN': [0, _('Burden'), 0.21],
+        b'BW01': [1, _('Bound Order Weapon 1'), 1],
+        b'BW02': [1, _('Bound Order Weapon 2'), 1],
+        b'BW03': [1, _('Bound Order Weapon 3'), 1],
+        b'BW04': [1, _('Bound Order Weapon 4'), 1],
+        b'BW05': [1, _('Bound Order Weapon 5'), 1],
+        b'BW06': [1, _('Bound Order Weapon 6'), 1],
+        b'BW07': [1, _('Summon Staff of Sheogorath'), 1],
+        b'BW08': [1, _('Bound Priest Dagger'), 1],
+        b'BW09': [1, _('Bound Weapon Extra 09'), 0],#--Formid == 0
+        b'BW10': [1, _('Bound Weapon Extra 10'), 0],#--Formid == 0
+        b'BWAX': [1, _('Bound Axe'), 39],
+        b'BWBO': [1, _('Bound Bow'), 95],
+        b'BWDA': [1, _('Bound Dagger'), 14],
+        b'BWMA': [1, _('Bound Mace'), 91],
+        b'BWSW': [1, _('Bound Sword'), 235],
+        b'CALM': [3, _('Calm'), 0.47],
+        b'CHML': [3, _('Chameleon'), 0.63],
+        b'CHRM': [3, _('Charm'), 0.2],
+        b'COCR': [3, _('Command Creature'), 0.6],
+        b'COHU': [3, _('Command Humanoid'), 0.75],
+        b'CUDI': [5, _('Cure Disease'), 1400],
+        b'CUPA': [5, _('Cure Paralysis'), 500],
+        b'CUPO': [5, _('Cure Poison'), 600],
+        b'DARK': [3, _('DO NOT USE - Darkness'), 0],
+        b'DEMO': [3, _('Demoralize'), 0.49],
+        b'DGAT': [2, _('Damage Attribute'), 100],
+        b'DGFA': [2, _('Damage Fatigue'), 4.4],
+        b'DGHE': [2, _('Damage Health'), 12],
+        b'DGSP': [2, _('Damage Magicka'), 2.45],
+        b'DIAR': [2, _('Disintegrate Armor'), 6.2],
+        b'DISE': [2, _('Disease Info'), 0], #--Formid == 0
+        b'DIWE': [2, _('Disintegrate Weapon'), 6.2],
+        b'DRAT': [2, _('Drain Attribute'), 0.7],
+        b'DRFA': [2, _('Drain Fatigue'), 0.18],
+        b'DRHE': [2, _('Drain Health'), 0.9],
+        b'DRSK': [2, _('Drain Skill'), 0.65],
+        b'DRSP': [2, _('Drain Magicka'), 0.18],
+        b'DSPL': [4, _('Dispel'), 3.6],
+        b'DTCT': [4, _('Detect Life'), 0.08],
+        b'DUMY': [2, _('Mehrunes Dagon'), 0], #--Formid == 0
+        b'FIDG': [2, _('Fire Damage'), 7.5],
+        b'FISH': [0, _('Fire Shield'), 0.95],
+        b'FOAT': [5, _('Fortify Attribute'), 0.6],
+        b'FOFA': [5, _('Fortify Fatigue'), 0.04],
+        b'FOHE': [5, _('Fortify Health'), 0.14],
+        b'FOMM': [5, _('Fortify Magicka Multiplier'), 0.04],
+        b'FOSK': [5, _('Fortify Skill'), 0.6],
+        b'FOSP': [5, _('Fortify Magicka'), 0.15],
+        b'FRDG': [2, _('Frost Damage'), 7.4],
+        b'FRNZ': [3, _('Frenzy'), 0.04],
+        b'FRSH': [0, _('Frost Shield'), 0.95],
+        b'FTHR': [0, _('Feather'), 0.1],
+        b'INVI': [3, _('Invisibility'), 40],
+        b'LGHT': [3, _('Light'), 0.051],
+        b'LISH': [0, _('Shock Shield'), 0.95],
+        b'LOCK': [0, _('DO NOT USE - Lock'), 30],
+        b'MYHL': [1, _('Summon Mythic Dawn Helm'), 110],
+        b'MYTH': [1, _('Summon Mythic Dawn Armor'), 120],
+        b'NEYE': [3, _('Night-Eye'), 22],
+        b'OPEN': [0, _('Open'), 4.3],
+        b'PARA': [3, _('Paralyze'), 475],
+        b'POSN': [2, _('Poison Info'), 0],
+        b'RALY': [3, _('Rally'), 0.03],
+        b'REAN': [1, _('Reanimate'), 10],
+        b'REAT': [5, _('Restore Attribute'), 38],
+        b'REDG': [4, _('Reflect Damage'), 2.5],
+        b'REFA': [5, _('Restore Fatigue'), 2],
+        b'REHE': [5, _('Restore Health'), 10],
+        b'RESP': [5, _('Restore Magicka'), 2.5],
+        b'RFLC': [4, _('Reflect Spell'), 3.5],
+        b'RSDI': [5, _('Resist Disease'), 0.5],
+        b'RSFI': [5, _('Resist Fire'), 0.5],
+        b'RSFR': [5, _('Resist Frost'), 0.5],
+        b'RSMA': [5, _('Resist Magic'), 2],
+        b'RSNW': [5, _('Resist Normal Weapons'), 1.5],
+        b'RSPA': [5, _('Resist Paralysis'), 0.75],
+        b'RSPO': [5, _('Resist Poison'), 0.5],
+        b'RSSH': [5, _('Resist Shock'), 0.5],
+        b'RSWD': [5, _('Resist Water Damage'), 0], #--Formid == 0
+        b'SABS': [4, _('Spell Absorption'), 3],
+        b'SEFF': [0, _('Script Effect'), 0],
+        b'SHDG': [2, _('Shock Damage'), 7.8],
+        b'SHLD': [0, _('Shield'), 0.45],
+        b'SLNC': [3, _('Silence'), 60],
+        b'STMA': [2, _('Stunted Magicka'), 0],
+        b'STRP': [4, _('Soul Trap'), 30],
+        b'SUDG': [2, _('Sun Damage'), 9],
+        b'TELE': [4, _('Telekinesis'), 0.49],
+        b'TURN': [1, _('Turn Undead'), 0.083],
+        b'VAMP': [2, _('Vampirism'), 0],
+        b'WABR': [0, _('Water Breathing'), 14.5],
+        b'WAWA': [0, _('Water Walking'), 13],
+        b'WKDI': [2, _('Weakness to Disease'), 0.12],
+        b'WKFI': [2, _('Weakness to Fire'), 0.1],
+        b'WKFR': [2, _('Weakness to Frost'), 0.1],
+        b'WKMA': [2, _('Weakness to Magic'), 0.25],
+        b'WKNW': [2, _('Weakness to Normal Weapons'), 0.25],
+        b'WKPO': [2, _('Weakness to Poison'), 0.1],
+        b'WKSH': [2, _('Weakness to Shock'), 0.1],
+        b'Z001': [1, _('Summon Rufio\'s Ghost'), 13],
+        b'Z002': [1, _('Summon Ancestor Guardian'), 33.3],
+        b'Z003': [1, _('Summon Spiderling'), 45],
+        b'Z004': [1, _('Summon Flesh Atronach'), 1],
+        b'Z005': [1, _('Summon Bear'), 47.3],
+        b'Z006': [1, _('Summon Gluttonous Hunger'), 61],
+        b'Z007': [1, _('Summon Ravenous Hunger'), 123.33],
+        b'Z008': [1, _('Summon Voracious Hunger'), 175],
+        b'Z009': [1, _('Summon Dark Seducer'), 1],
+        b'Z010': [1, _('Summon Golden Saint'), 1],
+        b'Z011': [1, _('Wabba Summon'), 0],
+        b'Z012': [1, _('Summon Decrepit Shambles'), 45],
+        b'Z013': [1, _('Summon Shambles'), 87.5],
+        b'Z014': [1, _('Summon Replete Shambles'), 150],
+        b'Z015': [1, _('Summon Hunger'), 22],
+        b'Z016': [1, _('Summon Mangled Flesh Atronach'), 22],
+        b'Z017': [1, _('Summon Torn Flesh Atronach'), 32.5],
+        b'Z018': [1, _('Summon Stitched Flesh Atronach'), 75.5],
+        b'Z019': [1, _('Summon Sewn Flesh Atronach'), 195],
+        b'Z020': [1, _('Extra Summon 20'), 0],
+        b'ZCLA': [1, _('Summon Clannfear'), 75.56],
+        b'ZDAE': [1, _('Summon Daedroth'), 123.33],
+        b'ZDRE': [1, _('Summon Dremora'), 72.5],
+        b'ZDRL': [1, _('Summon Dremora Lord'), 157.14],
+        b'ZFIA': [1, _('Summon Flame Atronach'), 45],
+        b'ZFRA': [1, _('Summon Frost Atronach'), 102.86],
+        b'ZGHO': [1, _('Summon Ghost'), 22],
+        b'ZHDZ': [1, _('Summon Headless Zombie'), 56],
+        b'ZLIC': [1, _('Summon Lich'), 350],
+        b'ZSCA': [1, _('Summon Scamp'), 30],
+        b'ZSKA': [1, _('Summon Skeleton Guardian'), 32.5],
+        b'ZSKC': [1, _('Summon Skeleton Champion'), 152],
+        b'ZSKE': [1, _('Summon Skeleton'), 11.25],
+        b'ZSKH': [1, _('Summon Skeleton Hero'), 66],
+        b'ZSPD': [1, _('Summon Spider Daedra'), 195],
+        b'ZSTA': [1, _('Summon Storm Atronach'), 125],
+        b'ZWRA': [1, _('Summon Faded Wraith'), 87.5],
+        b'ZWRL': [1, _('Summon Gloom Wraith'), 260],
+        b'ZXIV': [1, _('Summon Xivilai'), 200],
+        b'ZZOM': [1, _('Summon Zombie'), 16.67],
     }
     mgef_school = {x: y for x, [y, z, a] in _magic_effects.items()}
     mgef_name = {x: z for x, [y, z, a] in _magic_effects.items()}
@@ -1520,28 +1526,28 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelObme(extra_format=['2B', '2s', '4s', 'I', '4s'], extra_contents=[
-            u'obme_param_a_info', u'obme_param_b_info', u'obme_unused_mgef',
-            u'obme_handler', (_obme_flag_overrides, u'obme_flag_overrides'),
-            u'obme_param_b']),
+            'obme_param_a_info', 'obme_param_b_info', 'obme_unused_mgef',
+            'obme_handler', (_ObmeFlagOverrides, 'obme_flag_overrides'),
+            'obme_param_b']),
         MelUnion({
             None: MelNull(b'EDDX'), # discard for non-OBME records
-        }, decider=AttrValDecider(u'obme_record_version'),
-            fallback=MelString(b'EDDX', u'obme_eid')),
+        }, decider=AttrValDecider('obme_record_version'),
+            fallback=MelString(b'EDDX', 'obme_eid')),
         MelFull(),
         MelDescription(),
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelTruncatedStruct(b'DATA',
             ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I',
-             '2f'], (_flags, 'flags'), 'base_cost', (FID, 'associated_item'),
+             '2f'], (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'school', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'projectileSpeed', (FID, 'effectShader'),
             (FID, 'enchantEffect'), (FID, 'castingSound'), (FID, 'boltSound'),
             (FID, 'hitSound'), (FID, 'areaSound'), 'cef_enchantment',
             'cef_barter', old_versions={'IfIiiH2sIfI'}),
             counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelArray(u'counter_effects',
-            MelStruct(b'ESCE', [u'4s'], u'counter_effect_code'),
+        MelSorted(MelArray('counter_effects',
+            MelStruct(b'ESCE', ['4s'], 'counter_effect_code'),
         ), sort_by_attrs='counter_effect_code'),
     )
 
@@ -1553,10 +1559,9 @@ class MreMisc(MelRecord):
     class HeaderFlags(MelRecord.HeaderFlags):
         @property
         def use_actor_value(self) -> bool:
-            """The ActorValue flag is encoded in bits 6-7.  It might actually be
-            treated as an int with different meanings for values 0, 1, 2, 3, but
-            current code requires both bits set.
-            """
+            """The ActorValue flag is encoded in bits 6-7.  It might
+            actually be treated as an int with different meanings for values
+            0, 1, 2, 3, but current code requires both bits set. """
             return (self._field & 0b01100000) == 0b01100000
 
         @use_actor_value.setter
@@ -1581,7 +1586,7 @@ class MreNpc_(AMreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    class _flags(Flags):
+    class NpcFlags(Flags):
         female: bool = flag(0)
         essential: bool = flag(1)
         respawn: bool = flag(3)
@@ -1603,31 +1608,27 @@ class MreNpc_(AMreActor):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
-            (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level_offset',1),'calcMin','calcMax'),
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'flags'),
+                  'baseSpell', 'fatigue', 'barterGold', 'level_offset',
+                  'calcMin', 'calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelRace(),
         MelSpellsTes4(),
         MelScript(),
         MelItems(),
-        MelStruct(b'AIDT', [u'4B', u'I', u'b', u'B', u'2s'], ('aggression', 5), ('confidence', 50),
-                  ('energyLevel', 50), ('responsibility', 50),
-                  (aiService, u'services'), 'trainSkill', 'trainLevel',
-                  'unused1'),
+        MelAidt(),
         MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelFid(b'CNAM','iclass'),
-        MelNpcData(b'DATA', [u'21B', u'H', u'2s', u'8B'],
-                   (u'skills', [0 for _x in range(21)]), u'health',
-                   u'unused2', (u'attributes', [0 for _y in range(8)])),
+        MelNpcData(b'DATA', ['21B', 'H', '2s', '8B'], 'skills', 'health',
+                   'unused2', 'attributes'),
         MelFid(b'HNAM', 'hair'),
-        MelFloat(b'LNAM', u'hairLength'),
+        MelFloat(b'LNAM', 'hairLength'),
         ##: This is a FormID array in xEdit, but I haven't found any NPC_
         # records with >1 eye. Changing it would also break the NPC Checker
         MelFid(b'ENAM', 'eye'),
-        MelStruct(b'HCLR', [u'3B', u's'], 'hairRed', 'hairBlue', 'hairGreen',
+        MelStruct(b'HCLR', ['3B', 's'], 'hairRed', 'hairBlue', 'hairGreen',
                   'unused3'),
         MelFid(b'ZNAM','combatStyle'),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
@@ -1636,27 +1637,27 @@ class MreNpc_(AMreActor):
         MelBase(b'FNAM', 'fnam'),
     )
 
-    def setRace(self,race):
+    def setRace(self, race):
         """Set additional race info."""
         self.race = race
         if not self.model:
             self.model = self.getDefault('model')
         if race in (0x23fe9, 0x223c7): # Argonian & Khajiit
-            self.model.modPath = u"Characters\\_Male\\SkeletonBeast.NIF"
+            self.model.modPath = r'Characters\_Male\SkeletonBeast.NIF'
         else:
-            self.model.modPath = u"Characters\\_Male\\skeleton.nif"
+            self.model.modPath = r'Characters\_Male\skeleton.nif'
         fnams = {
-            0x23fe9 : b'\xdc<',    # Argonian
-            0x224fc : b'H\x1d',    # Breton
-            0x191c1 : b'rT',       # Dark Elf
-            0x19204 : b'\xe6!',    # High Elf
-            0x00907 : b'\x8e5',    # Imperial
-            0x22c37 : b'T[',       # Khajiit
-            0x224fd : b'\xb6\x03', # Nord
-            0x191c0 : b't\t',      # Orc
-            0x00d43 : b'\xa9a',    # Redguard
-            0x00019 : b'wD',       # Vampire
-            0x223c8 : b'.J',       # Wood Elf
+            0x23fe9: b'\xdc<',    # Argonian
+            0x224fc: b'H\x1d',    # Breton
+            0x191c1: b'rT',       # Dark Elf
+            0x19204: b'\xe6!',    # High Elf
+            0x00907: b'\x8e5',    # Imperial
+            0x22c37: b'T[',       # Khajiit
+            0x224fd: b'\xb6\x03', # Nord
+            0x191c0: b't\t',      # Orc
+            0x00d43: b'\xa9a',    # Redguard
+            0x00019: b'wD',       # Vampire
+            0x223c8: b'.J',       # Wood Elf
         }
         self.fnam = fnams.get(race, b'\x8e5') # default to Imperial
 
@@ -1665,7 +1666,7 @@ class MrePack(MelRecord):
     """AI Package."""
     rec_sig = b'PACK'
 
-    class _flags(Flags):
+    class _PackFlags(Flags):
         offersServices: bool
         mustReachLocation: bool
         mustComplete: bool
@@ -1690,7 +1691,7 @@ class MrePack(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'PKDT', [u'I', u'B', u'3s'], (_flags, 'flags'),
+        MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'], (_PackFlags, 'flags'),
             'aiType', 'unused1', old_versions={'HBs'}),
         MelUnion({
             (0, 1, 2, 3, 4): MelOptStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
@@ -1723,15 +1724,15 @@ class MrePgrd(MelRecord):
     # Most of these MelBases could be loaded via MelArray, but they're really
     # big, don't contain FormIDs and are too complex to manipulate
     melSet = MelSet(
-        MelUInt16(b'DATA', u'point_count'),
-        MelBase(b'PGRP', u'point_array'),
-        MelBase(b'PGAG', u'unknown1'),
-        MelBase(b'PGRR', u'point_to_point_connections'), # sorted
-        MelBase(b'PGRI', u'inter_cell_connections'), # sorted
-        MelSorted(MelGroups(u'point_to_reference_mappings',
+        MelUInt16(b'DATA', 'point_count'),
+        MelBase(b'PGRP', 'point_array'),
+        MelBase(b'PGAG', 'unknown1'),
+        MelBase(b'PGRR', 'point_to_point_connections'), # sorted
+        MelBase(b'PGRI', 'inter_cell_connections'), # sorted
+        MelSorted(MelGroups('point_to_reference_mappings',
             MelSorted(MelArray(
-                u'mapping_points', MelUInt32(b'PGRL', u'm_point'),
-                prelude=MelFid(b'PGRL', u'mapping_reference')
+                'mapping_points', MelUInt32(b'PGRL', 'm_point'),
+                prelude=MelFid(b'PGRL', 'mapping_reference')
             ), sort_by_attrs='m_point'),
         ), sort_special=lambda e: tuple(p.m_point for p in e.mapping_points)),
     )
@@ -1741,15 +1742,15 @@ class MreQust(MelRecord):
     """Quest."""
     rec_sig = b'QUST'
 
-    class _questFlags(Flags):
+    class _QustFlags(Flags):
         startGameEnabled: bool
         repeatedTopics: bool = flag(2)
         repeatedStages: bool
 
-    class stageFlags(Flags):
+    class _StageFlags(Flags):
         complete: bool
 
-    class targetFlags(Flags):
+    class _TargetFlags(Flags):
         ignoresLocks: bool
 
     melSet = MelSet(
@@ -1757,31 +1758,31 @@ class MreQust(MelRecord):
         MelScript(),
         MelFull(),
         MelIcon(),
-        MelStruct(b'DATA', [u'B', u'B'],(_questFlags, u'questFlags'),'priority'),
+        MelStruct(b'DATA', ['B', 'B'], (_QustFlags, 'questFlags'), 'priority'),
         MelConditionsTes4(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
-                MelUInt8Flags(b'QSDT', u'flags', stageFlags),
+                MelUInt8Flags(b'QSDT', 'flags', _StageFlags),
                 MelConditionsTes4(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
             ),
         ), sort_by_attrs='stage'),
         MelGroups('targets',
-            MelStruct(b'QSTA', [u'I', u'B', u'3s'], (FID, 'targetId'),
-                      (targetFlags, 'flags'), 'unused1'),
+            MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'targetId'),
+                (_TargetFlags, 'flags'), 'unused1'),
             MelConditionsTes4(),
         ),
     ).with_distributor({
         b'EDID|DATA': { # just in case one is missing
-            b'CTDA': u'conditions',
+            b'CTDA': 'conditions',
         },
         b'INDX': {
-            b'CTDA': u'stages',
+            b'CTDA': 'stages',
         },
         b'QSTA': {
-            b'CTDA': u'targets',
+            b'CTDA': 'targets',
         },
     })
 
@@ -1790,7 +1791,7 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    class _flags(Flags):
+    class _RaceFlags(Flags):
         playable: bool
 
     melSet = MelSet(
@@ -1799,17 +1800,18 @@ class MreRace(MelRecord):
         MelDescription(),
         MelSpellsTes4(),
         MelRelations(with_gcr=False),
-        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
-                    'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
-                    'femaleWeight', (_flags, u'flags')),
-        MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
-        MelOptStruct(b'DNAM', [u'2I'], (FID, u'defaultHairMale'),
-                     (FID, u'defaultHairFemale')),
+        MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], 'skills', 'unused1',
+                    'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
+                    (_RaceFlags, 'flags')),
+        MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'),
+                      (FID, 'femaleVoice')),
+        MelOptStruct(b'DNAM', ['2I'], (FID, 'defaultHairMale'),
+                     (FID, 'defaultHairFemale')),
         # Corresponds to GMST sHairColorNN
         MelUInt8(b'CNAM', 'defaultHairColor'),
         MelFloat(b'PNAM', 'mainClamp'),
         MelFloat(b'UNAM', 'faceClamp'),
-        MelStruct(b'ATTR', [u'16B'], 'maleStrength', 'maleIntelligence',
+        MelStruct(b'ATTR', ['16B'], 'maleStrength', 'maleIntelligence',
                   'maleWillpower', 'maleAgility', 'maleSpeed', 'maleEndurance',
                   'malePersonality', 'maleLuck', 'femaleStrength',
                   'femaleIntelligence', 'femaleWillpower', 'femaleAgility',
@@ -1818,22 +1820,22 @@ class MreRace(MelRecord):
         # Indexed Entries
         MelBaseR(b'NAM0', 'face_data_marker'),
         MelRaceParts({
-            0: u'head',
-            1: u'maleEars',
-            2: u'femaleEars',
-            3: u'mouth',
-            4: u'teethLower',
-            5: u'teethUpper',
-            6: u'tongue',
-            7: u'leftEye',
-            8: u'rightEye',
+            0: 'head',
+            1: 'maleEars',
+            2: 'femaleEars',
+            3: 'mouth',
+            4: 'teethLower',
+            5: 'teethUpper',
+            6: 'tongue',
+            7: 'leftEye',
+            8: 'rightEye',
         }, group_loaders=lambda _indx: (
             # TODO(inf) Can't use MelModel here, since some patcher code
             #  directly accesses these - MelModel would put them in a group,
             #  which breaks that. Change this to a MelModel, then hunt down
             #  that code and change it
-            MelString(b'MODL', u'modPath'),
-            MelFloat(b'MODB', u'modb'),
+            MelString(b'MODL', 'modPath'),
+            MelFloat(b'MODB', 'modb'),
             MelBase(b'MODT', 'modt_p'),
             MelIcon(),
         )),
@@ -1841,20 +1843,20 @@ class MreRace(MelRecord):
         MelBaseR(b'MNAM', 'male_body_data_marker'),
         MelModel(b'MODL', 'maleTailModel'),
         MelRaceParts({
-            0: u'maleUpperBodyPath',
-            1: u'maleLowerBodyPath',
-            2: u'maleHandPath',
-            3: u'maleFootPath',
-            4: u'maleTailPath',
+            0: 'maleUpperBodyPath',
+            1: 'maleLowerBodyPath',
+            2: 'maleHandPath',
+            3: 'maleFootPath',
+            4: 'maleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
         MelBaseR(b'FNAM', 'female_body_data_marker'),
         MelModel(b'MODL', 'femaleTailModel'),
         MelRaceParts({
-            0: u'femaleUpperBodyPath',
-            1: u'femaleLowerBodyPath',
-            2: u'femaleHandPath',
-            3: u'femaleFootPath',
-            4: u'femaleTailPath',
+            0: 'femaleUpperBodyPath',
+            1: 'femaleLowerBodyPath',
+            2: 'femaleHandPath',
+            3: 'femaleFootPath',
+            4: 'femaleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
         # Normal Entries
         # Note: xEdit marks both HNAM and ENAM as sorted. They are not, but
@@ -1862,21 +1864,21 @@ class MreRace(MelRecord):
         # them as sorted here, because that's what the Race Checker is for!
         MelSimpleArray('hairs', MelFid(b'HNAM')),
         MelSimpleArray('eyes', MelFid(b'ENAM')),
-        MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
-        MelStruct(b'SNAM', [u'2s'],'snam_p'),
+        MelBase(b'FGGS', 'fggs_p'), ####FaceGen Geometry-Symmetric
+        MelBase(b'FGGA', 'fgga_p'), ####FaceGen Geometry-Asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ####FaceGen Texture-Symmetric
+        MelStruct(b'SNAM', ['2s'], 'snam_p'),
     ).with_distributor({
         b'NAM0': {
-            b'INDX|MODL|MODB|MODT|ICON': u'head',
+            b'INDX|MODL|MODB|MODT|ICON': 'head',
         },
         b'MNAM': {
-            b'MODL|MODB|MODT': u'maleTailModel',
-            b'INDX|ICON': u'maleUpperBodyPath',
+            b'MODL|MODB|MODT': 'maleTailModel',
+            b'INDX|ICON': 'maleUpperBodyPath',
         },
         b'FNAM': {
-            b'MODL|MODB|MODT': u'femaleTailModel',
-            b'INDX|ICON': u'femaleUpperBodyPath',
+            b'MODL|MODB|MODT': 'femaleTailModel',
+            b'INDX|ICON': 'femaleUpperBodyPath',
         },
     })
 
@@ -1889,7 +1891,7 @@ class MreRefr(MelRecord):
         persistent: bool = flag(10)
         casts_shadows: bool = flag(9)   # REFR to LIGH?
 
-    class _lockFlags(Flags):
+    class _LockFlags(Flags):
         leveledLock: bool = flag(2)
 
     class MelRefrXloc(MelTruncatedStruct):
@@ -1903,40 +1905,39 @@ class MreRefr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'NAME', u'base'),
-        MelOptStruct(b'XTEL', [u'I', u'6f'], (FID, u'destinationFid'),
-            u'destinationPosX', u'destinationPosY', u'destinationPosZ',
-            u'destinationRotX', u'destinationRotY', u'destinationRotZ'),
-        MelRefrXloc(b'XLOC',
-            [u'B', u'3s', u'I', u'4s', u'B', u'3s'], u'lockLevel', u'unused1',
-            (FID, u'lockKey'), u'unused2', (_lockFlags, u'lockFlags'),
-            u'unused3', is_optional=True, old_versions={u'B3sIB3s'}),
+        MelFid(b'NAME', 'base'),
+        MelOptStruct(b'XTEL', ['I', '6f'], (FID, 'destinationFid'),
+            'destinationPosX', 'destinationPosY', 'destinationPosZ',
+            'destinationRotX', 'destinationRotY', 'destinationRotZ'),
+        MelRefrXloc(b'XLOC', ['B', '3s', 'I', '4s', 'B', '3s'], 'lockLevel',
+            'unused1', (FID, 'lockKey'), 'unused2', (_LockFlags, 'lockFlags'),
+            'unused3', is_optional=True, old_versions={'B3sIB3s'}),
         MelOwnershipTes4(),
         MelEnableParent(),
-        MelFid(b'XTRG', u'targetId'),
-        MelBase(b'XSED', u'seed_p'),
+        MelFid(b'XTRG', 'targetId'),
+        MelBase(b'XSED', 'seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into
         # the list of seed values in the TREE record
         ####if it's 4 byte it's the seed value directly.
         MelXlod(),
-        MelFloat(b'XCHG', u'charge'),
-        MelSInt32(b'XHLT', u'health'),
+        MelFloat(b'XCHG', 'charge'),
+        MelSInt32(b'XHLT', 'health'),
         MelNull(b'XPCI'), # These two are unused
         MelReadOnly(MelFull()), # Can't use MelNull, we need to distribute
-        MelSInt32(b'XLCM', u'levelMod'),
-        MelFid(b'XRTM', u'teleport_ref'),
+        MelSInt32(b'XLCM', 'levelMod'),
+        MelFid(b'XRTM', 'teleport_ref'),
         MelActionFlags(),
-        MelSInt32(b'XCNT', u'count'),
+        MelSInt32(b'XCNT', 'count'),
         MelMapMarker(),
-        MelBase(b'ONAM', u'open_by_default'),
-        MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray
+        MelBase(b'ONAM', 'open_by_default'),
+        MelBase(b'XRGD', 'xrgd_p'), # Ragdoll Data, bytearray
         MelRefScale(),
-        MelUInt8(b'XSOL', u'ref_soul'),
+        MelUInt8(b'XSOL', 'ref_soul'),
         MelRef3D(),
     ).with_distributor({
-        b'FULL': u'full', # unused, but still need to distribute it
+        b'FULL': 'full', # unused, but still need to distribute it
         b'XMRK': {
-            b'FULL': u'map_marker',
+            b'FULL': 'map_marker',
         },
     })
 
@@ -1948,10 +1949,10 @@ class MreRegn(MelRecord):
     class HeaderFlags(MelRecord.HeaderFlags):
         border_region: bool = flag(6)
 
-    class rdatFlags(Flags):
+    class _RdatFlags(Flags):
         Override: bool
 
-    class obflags(Flags):
+    class _ObFlags(Flags):
         conform: bool = flag(0)
         paintVertices: bool = flag(1)
         sizeVariance: bool = flag(2)
@@ -1961,7 +1962,7 @@ class MreRegn(MelRecord):
         Tree: bool = flag(6)
         hugeRock: bool = flag(7)
 
-    class sdflags(Flags):
+    class _SdFlags(Flags):
         pleasant: bool = flag(0)
         cloudy: bool = flag(1)
         rainy: bool = flag(2)
@@ -1970,23 +1971,23 @@ class MreRegn(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelStruct(b'RCLR', [u'3B', u's'],'mapRed','mapBlue','mapGreen','unused1'),
+        MelStruct(b'RCLR', ['3B', 's'], 'mapRed', 'mapBlue', 'mapGreen',
+                  'unused1'),
         MelFid(b'WNAM','worldspace'),
         MelGroups('areas',
             MelUInt32(b'RPLI', 'edgeFalloff'),
             MelArray('points',
-                MelStruct(b'RPLD', [u'2f'], 'posX', 'posY'),
+                MelStruct(b'RPLD', ['2f'], 'posX', 'posY'),
             ),
         ),
         MelSorted(MelGroups('entries',
-            MelStruct(b'RDAT', [u'I', u'2B', u'2s'], 'entryType', (rdatFlags, 'flags'),
-                      'priority', 'unused1'),
+            MelStruct(b'RDAT', ['I', '2B', '2s'], 'entryType',
+                      (_RdatFlags, 'flags'), 'priority', 'unused1'),
             MelRegnEntrySubrecord(2, MelArray('objects',
-                MelStruct(b'RDOT',
-                    [u'I', u'H', u'2s', u'f', u'4B', u'2H', u'5f', u'3H',
-                     u'2s', u'4s'], (FID, 'objectId'), 'parentIndex',
+                MelStruct(b'RDOT', ['I', 'H', '2s', 'f', '4B', '2H', '5f',
+                    '3H', '2s', '4s'], (FID, 'objectId'), 'parentIndex',
                     'unk1', 'density', 'clustering', 'minSlope',
-                    'maxSlope', (obflags, 'flags'), 'radiusWRTParent',
+                    'maxSlope', (_ObFlags, 'flags'), 'radiusWRTParent',
                     'radius', 'minHeight', 'maxHeight', 'sink', 'sinkVar',
                     'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
                     'unk2', 'unk3'),
@@ -1995,15 +1996,15 @@ class MreRegn(MelRecord):
             # MelRegnEntrySubrecord(5, MelIcon()),
             MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
             MelRegnEntrySubrecord(6, MelSorted(MelArray('grasses',
-                MelStruct(b'RDGS', [u'I', u'4s'], (FID, 'grass'), 'unknown'),
+                MelStruct(b'RDGS', ['I', '4s'], (FID, 'grass'), 'unknown'),
             ), sort_by_attrs='grass')),
             MelRegnEntrySubrecord(7, MelUInt32(b'RDMD', 'musicType')),
             MelRegnEntrySubrecord(7, MelSorted(MelArray('sounds',
-                MelStruct(b'RDSD', [u'3I'], (FID, 'sound'), (sdflags, 'flags'),
+                MelStruct(b'RDSD', ['3I'], (FID, 'sound'), (_SdFlags, 'flags'),
                           'chance'),
             ), sort_by_attrs='sound')),
             MelRegnEntrySubrecord(3, MelSorted(MelArray('weatherTypes',
-                MelStruct(b'RDWT', [u'2I'], (FID, u'weather'), u'chance')
+                MelStruct(b'RDWT', ['2I'], (FID, 'weather'), 'chance')
             ), sort_by_attrs='weather')),
         ), sort_by_attrs='entryType'),
     )
@@ -2016,8 +2017,8 @@ class MreRoad(MelRecord):
     rec_sig = b'ROAD'
 
     melSet = MelSet(
-        MelBase(b'PGRP','points_p'),
-        MelBase(b'PGRR','connections_p'),
+        MelBase(b'PGRP', 'points_p'),
+        MelBase(b'PGRR', 'connections_p'),
     )
 
 #------------------------------------------------------------------------------
@@ -2027,7 +2028,7 @@ class MreSbsp(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', [u'3f'],'sizeX','sizeY','sizeZ'),
+        MelStruct(b'DNAM', ['3f'], 'sizeX', 'sizeY', 'sizeZ'),
     )
 
 #------------------------------------------------------------------------------
@@ -2054,7 +2055,7 @@ class MreSgst(MreHasEffects, MelRecord):
         MelScript(),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
-        MelStruct(b'DATA', [u'B', u'I', u'f'],'uses','value','weight'),
+        MelStruct(b'DATA', ['B', 'I', 'f'], 'uses', 'value', 'weight'),
     ).with_distributor(_effects_distributor)
 
 #------------------------------------------------------------------------------
@@ -2067,11 +2068,12 @@ class MreSkil(MelRecord):
         MelSInt32(b'INDX', 'skill'),
         MelDescription(),
         MelIcon(),
-        MelStruct(b'DATA', [u'2i', u'I', u'2f'],'action','attribute','specialization',('use0',1.0),'use1'),
-        MelString(b'ANAM','apprentice'),
-        MelString(b'JNAM','journeyman'),
-        MelString(b'ENAM','expert'),
-        MelString(b'MNAM','master'),
+        MelStruct(b'DATA', ['2i', 'I', '2f'], 'action', 'attribute',
+                  'specialization', 'use0', 'use1'),
+        MelString(b'ANAM', 'apprentice'),
+        MelString(b'JNAM', 'journeyman'),
+        MelString(b'ENAM', 'expert'),
+        MelString(b'MNAM', 'master'),
     )
 
 #------------------------------------------------------------------------------
@@ -2086,7 +2088,7 @@ class MreSlgm(MelRecord):
         MelIcon(),
         MelScript(),
         MelValueWeight(),
-        MelUInt8(b'SOUL', u'soul'),
+        MelUInt8(b'SOUL', 'soul'),
         MelUInt8(b'SLCP', 'capacity'),
     )
 
@@ -2096,7 +2098,7 @@ class MreSoun(MelRecord):
     rec_sig = b'SOUN'
     _has_duplicate_attrs = True # SNDD is an older version of SNDX
 
-    class _flags(Flags):
+    class _SounFlags(Flags):
         randomFrequencyShift: bool
         playAtRandom: bool
         environmentIgnored: bool
@@ -2111,47 +2113,40 @@ class MreSoun(MelRecord):
         MelString(b'FNAM','soundFile'),
         # This is the old format of SNDX - read it, but dump SNDX only
         MelReadOnly(
-            MelStruct(b'SNDD', [u'2B', u'b', u's', u'H', u'2s'], u'minDistance', u'maxDistance',
-                u'freqAdjustment', u'unused1', (_flags, u'flags'),
-                u'unused2')
+            MelStruct(b'SNDD', ['2B', 'b', 's', 'H', '2s'], 'minDistance',
+                'maxDistance', 'freqAdjustment', 'unused1',
+                (_SounFlags, 'flags'), 'unused2')
         ),
-        MelStruct(b'SNDX', [u'2B', u'b', u's', u'H', u'2s', u'H', u'2B'], u'minDistance', u'maxDistance',
-            u'freqAdjustment', u'unused1', (_flags, u'flags'),
-            u'unused2', u'staticAtten', u'stopTime', u'startTime'),
+        MelStruct(b'SNDX', ['2B', 'b', 's', 'H', '2s', 'H', '2B'],
+            'minDistance', 'maxDistance', 'freqAdjustment', 'unused1',
+            (_SounFlags, 'flags'), 'unused2', 'staticAtten', 'stopTime',
+            'startTime'),
     )
 
 #------------------------------------------------------------------------------
 class MreSpel(MreHasEffects, MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
-    ##: use LowerDict and get rid of the lower() in callers
-    _spell_type_num_name = {None: u'NONE',
-                            0   : u'Spell',
-                            1   : u'Disease',
-                            2   : u'Power',
-                            3   : u'LesserPower',
-                            4   : u'Ability',
-                            5   : u'Poison'}
-    _spell_type_name_num = {y.lower(): x for x, y in
-                            _spell_type_num_name.items() if x is not None}
-    _level_type_num_name = {None : u'NONE',
-                            0    : u'Novice',
-                            1    : u'Apprentice',
-                            2    : u'Journeyman',
-                            3    : u'Expert',
-                            4    : u'Master'}
-    _level_type_name_num = {y.lower(): x for x, y in
-                            _level_type_num_name.items() if x is not None}
-    attr_csv_struct[u'level'][2] = \
+    _spell_type_name_num = LowerDict(
+        {'Spell': 0, 'Disease': 1, 'Power': 2, 'LesserPower': 3, 'Ability': 4,
+         'Poison': 5})
+    _spell_type_num_name = {y: x for x, y in _spell_type_name_num.items()}
+    _spell_type_num_name[None] = 'NONE'
+    _level_type_name_num = LowerDict(
+        {'Novice': 0, 'Apprentice': 1, 'Journeyman': 2, 'Expert': 3,
+         'Master': 4})
+    _level_type_num_name = {y: x for x, y in _level_type_name_num.items()}
+    _level_type_num_name[None] = 'NONE'
+    attr_csv_struct['level'][2] = \
         lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
-    attr_csv_struct[u'spellType'][2] = \
+    attr_csv_struct['spellType'][2] = \
         lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
-        MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
+        MelStruct(b'SPIT', ['3I', 'B', '3s'], 'spellType', 'cost', 'level',
                   (SpellFlags, 'spell_flags'), 'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
@@ -2159,15 +2154,14 @@ class MreSpel(MreHasEffects, MelRecord):
 
     @classmethod
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
-        attr_dict = super(MreSpel, cls).parse_csv_line(csv_fields, index_dict,
-                                                       reuse)
+        attr_dict = super().parse_csv_line(csv_fields, index_dict, reuse)
         try:
-            lvl = attr_dict[u'level'] # KeyError on 'detailed' pass
-            attr_dict[u'level'] = cls._level_type_name_num.get(lvl.lower(),
+            lvl = attr_dict['level'] # KeyError on 'detailed' pass
+            attr_dict['level'] = cls._level_type_name_num.get(lvl,
                 int_or_zero(lvl))
-            stype = attr_dict[u'spellType']
-            attr_dict[u'spellType'] = cls._spell_type_name_num.get(
-                stype.lower(), int_or_zero(stype))
+            stype = attr_dict['spellType']
+            attr_dict['spellType'] = cls._spell_type_name_num.get(stype,
+                int_or_zero(stype))
             attr_dict['spell_flags'] = SpellFlags(
                 attr_dict.get('spell_flags', 0))
         except KeyError:
@@ -2196,10 +2190,10 @@ class MreTree(MelRecord):
         MelSorted(MelArray('speedTree',
             MelUInt32(b'SNAM', 'seed'),
         ), sort_by_attrs='seed'),
-        MelStruct(b'CNAM', [u'5f', u'i', u'2f'], 'curvature','minAngle','maxAngle',
-                  'branchDim','leafDim','shadowRadius','rockSpeed',
-                  'rustleSpeed'),
-        MelStruct(b'BNAM', [u'2f'],'widthBill','heightBill'),
+        MelStruct(b'CNAM', ['5f', 'i', '2f'], 'curvature', 'minAngle',
+                  'maxAngle', 'branchDim', 'leafDim', 'shadowRadius',
+                  'rockSpeed', 'rustleSpeed'),
+        MelStruct(b'BNAM', ['2f'], 'widthBill', 'heightBill'),
     )
 
 class MelWatrData(MelTruncatedStruct):
@@ -2214,7 +2208,7 @@ class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
 
-    class _flags(Flags):
+    class _WatrFlags(Flags):
         causesDmg: bool
         reflective: bool
 
@@ -2222,25 +2216,19 @@ class MreWatr(MelRecord):
         MelEdid(),
         MelString(b'TNAM','texture'),
         MelUInt8(b'ANAM', 'opacity'),
-        MelUInt8Flags(b'FNAM', u'flags', _flags),
+        MelUInt8Flags(b'FNAM', 'flags', _WatrFlags),
         MelString(b'MNAM','material'),
         MelSound(),
         MelWatrData(b'DATA',
-            [u'11f', u'3B', u's', u'3B', u's', u'3B', u's', u'B', u'3s',
-             u'10f', u'H'], ('windVelocity', 0.100),
-            ('windDirection', 90.0), ('waveAmp', 0.5), ('waveFreq', 1.0),
-            ('sunPower', 50.0), ('reflectAmt', 0.5), ('fresnelAmt', 0.0250),
-            'xSpeed', 'ySpeed', ('fogNear', 27852.8),
-            ('fogFar', 163840.0), 'shallowRed', ('shallowGreen', 128),
-            ('shallowBlue', 128), 'unused1', 'deepRed',
-            'deepGreen', ('deepBlue', 25), 'unused2',
-            ('reflRed', 255), ('reflGreen', 255), ('reflBlue', 255),
-            'unused3', ('blend', 50), 'unused4',
-            ('rainForce', 0.1000), ('rainVelocity', 0.6000),
-            ('rainFalloff', 0.9850), ('rainDampner', 2.0000),
-            ('rainSize', 0.0100), ('dispForce', 0.4000),
-            ('dispVelocity', 0.6000), ('dispFalloff', 0.9850),
-            ('dispDampner', 10.0000), ('dispSize', 0.0500), 'damage',
+            ['11f', '3B', 's', '3B', 's', '3B', 's', 'B', '3s', '10f', 'H'],
+            'windVelocity', 'windDirection', 'waveAmp', 'waveFreq', 'sunPower',
+            'reflectAmt', 'fresnelAmt', 'xSpeed', 'ySpeed', 'fogNear',
+            'fogFar', 'shallowRed', 'shallowGreen', 'shallowBlue', 'unused1',
+            'deepRed', 'deepGreen', 'deepBlue', 'unused2', 'reflRed',
+            'reflGreen', 'reflBlue', 'unused3', 'blend', 'unused4',
+            'rainForce', 'rainVelocity', 'rainFalloff', 'rainDampner',
+            'rainSize', 'dispForce', 'dispVelocity', 'dispFalloff',
+            'dispDampner', 'dispSize', 'damage',
             old_versions={'11f3Bs3Bs3BsB3s6f2s', '11f3Bs3Bs3BsB3s2s',
                           '10f2s', '2s'}),
         MelSimpleArray('relatedWaters', MelFid(b'GNAM')),
@@ -2251,7 +2239,7 @@ class MreWeap(MelRecord):
     """Weapon."""
     rec_sig = b'WEAP'
 
-    class _flags(Flags):
+    class _WeapFlags(Flags):
         notNormalWeapon: bool
 
     melSet = MelSet(
@@ -2262,8 +2250,9 @@ class MreWeap(MelRecord):
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
-        MelStruct(b'DATA', [u'I', u'2f', u'3I', u'f', u'H'],'weaponType','speed','reach',(_flags, u'flags'),
-            'value','health','weight','damage'),
+        MelStruct(b'DATA', ['I', '2f', '3I', 'f', 'H'], 'weaponType', 'speed',
+                  'reach', (_WeapFlags, 'flags'), 'value', 'health', 'weight',
+                  'damage'),
     )
 
 #------------------------------------------------------------------------------
@@ -2273,7 +2262,7 @@ class MreWrld(AMreWrld):
     exterior_temp_extra = [b'LAND', b'PGRD']
     wrld_children_extra = [b'ROAD', b'CELL'] # CELL for the persistent block
 
-    class _flags(Flags):
+    class _WrldFlags(Flags):
         smallWorld: bool
         noFastTravel: bool
         oblivionWorldspace: bool
@@ -2282,13 +2271,13 @@ class MreWrld(AMreWrld):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid(b'WNAM','parent'),
-        MelFid(b'CNAM','climate'),
-        MelFid(b'NAM2','water'),
-        MelIcon(u'mapPath'),
-        MelStruct(b'MNAM', [u'2i', u'4h'], u'dimX', u'dimY', u'NWCellX', u'NWCellY',
-                  u'SECellX', u'SECellY'),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelFid(b'WNAM', 'parent'),
+        MelFid(b'CNAM', 'climate'),
+        MelFid(b'NAM2', 'water'),
+        MelIcon('mapPath'),
+        MelStruct(b'MNAM', ['2i', '4h'], 'dimX', 'dimY', 'NWCellX', 'NWCellY',
+                  'SECellX', 'SECellY'),
+        MelUInt8Flags(b'DATA', 'flags', _WrldFlags),
         MelWorldBounds(),
         MelUInt32(b'SNAM', 'music_type'),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
@@ -2301,23 +2290,20 @@ class MreWthr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString(b'CNAM','lowerLayer'),
-        MelString(b'DNAM','upperLayer'),
+        MelString(b'CNAM', 'lowerLayer'),
+        MelString(b'DNAM', 'upperLayer'),
         MelModel(),
-        MelArray('colors',
-            MelWthrColors(b'NAM0'),
-        ),
-        MelStruct(b'FNAM', [u'4f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar'),
-        MelStruct(b'HNAM', [u'14f'],
-            'eyeAdaptSpeed', 'blurRadius', 'blurPasses', 'emissiveMult',
-            'targetLum', 'upperLumClamp', 'brightScale', 'brightClamp',
-            'lumRampNoTex', 'lumRampMin', 'lumRampMax', 'sunlightDimmer',
-            'grassDimmer', 'treeDimmer'),
-        MelStruct(b'DATA', [u'15B'],
-            'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
-            'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
-            'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
-        MelGroups('sounds',
-            MelStruct(b'SNAM', [u'2I'], (FID, 'sound'), 'type'),
-        ),
+        MelArray('colors', MelWthrColors(b'NAM0')),
+        MelStruct(b'FNAM', ['4f'], 'fogDayNear', 'fogDayFar', 'fogNightNear',
+                  'fogNightFar'),
+        MelStruct(b'HNAM', ['14f'], 'eyeAdaptSpeed', 'blurRadius',
+                  'blurPasses', 'emissiveMult', 'targetLum', 'upperLumClamp',
+                  'brightScale', 'brightClamp', 'lumRampNoTex', 'lumRampMin',
+                  'lumRampMax', 'sunlightDimmer', 'grassDimmer', 'treeDimmer'),
+        MelStruct(b'DATA', ['15B'], 'windSpeed', 'lowerCloudSpeed',
+                  'upperCloudSpeed', 'transDelta', 'sunGlare', 'sunDamage',
+                  'rainFadeIn', 'rainFadeOut', 'boltFadeIn', 'boltFadeOut',
+                  'boltFrequency', 'weatherType', 'boltRed', 'boltBlue',
+                  'boltGreen'),
+        MelGroups('sounds', MelStruct(b'SNAM', ['2I'], (FID, 'sound'), 'type'))
     )

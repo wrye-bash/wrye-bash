@@ -32,7 +32,7 @@ from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    ItemLink, SeparatorLink, OneItemLink, UIList_Rename
+    ItemLink, SeparatorLink, OneItemLink
 from ..bolt import GPath, SubProgress, Path, FName
 from ..bosh import faces, _saves
 from ..brec import ShortFidWriteContext
@@ -884,16 +884,16 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
+            lf = LoadFactory(False, by_sig=[b'NPC_'])
             ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
                 subProgress(index, _(u'Scanning %s') % modName)
                 modInfo = bosh.modInfos[modName]
-                modFile = ModFile(modInfo, loadFactory)
+                modFile = ModFile(modInfo, lf)
                 try:
-                    modFile.load(True)
+                    modFile.load_plugin()
                 except ModError as x:
                     modErrors.append(f'{x}')
                     continue

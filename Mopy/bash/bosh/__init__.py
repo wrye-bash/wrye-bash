@@ -2815,7 +2815,7 @@ class ModInfos(FileInfos):
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
     def create_new_mod(self, newName, selected=(), wanted_masters=None,
-                       dir_path=empty_path, bashed_patch=False, esm_flag=False,
+                       dir_path=empty_path, is_bashed_patch=False, esm_flag=False,
                        esl_flag=False):
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
@@ -2823,7 +2823,7 @@ class ModInfos(FileInfos):
         newInfo = self.factory(dir_path.join(newName))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
-        if bashed_patch:
+        if is_bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         if esm_flag:
             newFile.tes4.flags1.esm_flag = True
@@ -2846,7 +2846,7 @@ class ModInfos(FileInfos):
             modName = f'Bashed Patch, {num}.esp'
             if modName not in self:
                 self.create_new_mod(modName, selected=selected_mods,
-                                    wanted_masters=[], bashed_patch=True)
+                                    wanted_masters=[], is_bashed_patch=True)
                 return FName(modName)
         return None
 

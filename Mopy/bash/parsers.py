@@ -107,7 +107,7 @@ class _TextParser(object):
         :return: An object representing the loaded plugin."""
         mod_file = ModFile(mod_info, load_fact or self._load_factory(
             keepAll, target_types))
-        mod_file.load(do_unpack=True)
+        mod_file.load_plugin()
         return mod_file
 
     def _load_factory(self, keepAll=True, target_types=None):
