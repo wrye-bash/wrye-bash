@@ -56,14 +56,10 @@ class _AMerger(ImportPatcher):
     _scan_inactive = True
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_AMerger, self).__init__(p_name, p_file, p_sources)
-        self.id_deltas = defaultdict(list)
-        merger_masters = set(chain.from_iterable(
-            p_file.p_file_minfos.recurse_masters(srcMod)
-            for srcMod in self.srcs))
-        self._masters_and_srcs = merger_masters | set(self.srcs)
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
+        super(_AMerger, self).__init__(p_name, p_file, p_sources)
+        self.id_deltas = defaultdict(list)
         self.mod_id_entries = {}
         self.touched = set()
         self.inventOnlyMods = {x for x in self.srcs if
@@ -78,22 +74,35 @@ class _AMerger(ImportPatcher):
 
     @property
     def _read_sigs(self):
-        return self._present_sigs
+        # isActive and no _present_sigs means we are in initData
+        return (self._present_sigs if self._present_sigs
+                else self._wanted_subrecord) if self.isActive else set()
+
+    def _process_sources(self, p_sources, p_file):
+        """We need to scan the masters recursively - add to p_file read
+        factories."""
+        self.srcs = [s for s in p_sources if s in p_file.all_plugins]
+        self._masters_and_srcs = {*chain.from_iterable( # merger_masters
+            p_file.p_file_minfos.recurse_masters(srcMod) for srcMod in
+            self.srcs), *self.srcs}
+        # self._update_patcher_factories(p_file, self._masters_and_srcs)
+        p_file.update_read_factories(self._read_sigs, self.srcs)
+        return bool(self.srcs)
 
     def initData(self,progress):
-        if not self.isActive or not self.srcs: return
-        # set loadFactory attribute to be used by _mod_file_read
-        self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
+        if not self.isActive: return
         progress.setFull(len(self.srcs))
-        minfs = self.patchFile.all_plugins
-        for index,srcMod in enumerate(self.srcs):
-            srcFile = self._filtered_mod_read(minfs[srcMod], self.patchFile)
+        present_sigs = set()
+        for srcMod in self.srcs:
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             for s, block in srcFile.iter_tops(self._wanted_subrecord):
-                self._present_sigs.add(s)
+                present_sigs.add(s)
                 for rid, _record in block.iter_present_records():
-                    if rid.mod_fn not in minfs: continue # or break filter mods
+                    if rid.mod_fn not in self.patchFile.all_plugins:
+                        continue  # or break filter mods
                     self.touched.add(rid)
             progress.plus()
+        self._present_sigs = present_sigs
         self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
@@ -309,32 +318,21 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        read_sigs = self._read_sigs
-        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
         mer_del = self.id_merged_deleted
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
-            if not (srcInfo := minfs.get(srcMod)):
-                continue
             tempData = {}
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
-            force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
+            force_add = 'Actors.AIPackagesForceAdd' in \
+                        srcFile.fileInfo.getBashTags()
             mod_tops = set()
-            for rsig, block in srcFile.iter_tops(read_sigs):
+            for rsig, block in srcFile.iter_tops(self._read_sigs):
                 mod_tops.add(rsig)
                 for rid, record in block.iter_present_records():
                     tempData[rid] = record.aiPackages
-            for master in reversed(srcInfo.masterNames):
-                if master not in minfs: continue # or break filter mods
-                try:
-                    masterFile = cachedMasters[master]
-                except KeyError:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+            for master in reversed(srcFile.fileInfo.masterNames):
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
                         if rid not in tempData: continue
@@ -423,10 +421,13 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         self._id_merged_deleted = {}
         # long_fid -> rec_sig
         self._spel_type = {}
+        self._indexed_mods = set()
 
     def _index_spells(self, modFile):
         """Helper method for indexing SPEL and LVSP types during initData."""
-        if bush.game.Esp.sort_lvsp_after_spel:
+        if bush.game.Esp.sort_lvsp_after_spel and \
+                modFile.fileInfo.fn_key not in self._indexed_mods:
+            self._indexed_mods.add(modFile.fileInfo.fn_key)
             spel_type = self._spel_type
             for spel_top_sig, block in modFile.iter_tops(self._spel_sigs):
                 for rid, record in block.iter_present_records():
@@ -438,34 +439,23 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        actor_sigs = self._actor_sigs
-        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
         mer_del = self._id_merged_deleted
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
             tempData = {}
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             self._index_spells(srcFile)
-            force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
+            force_add = 'Actors.SpellsForceAdd' in \
+                        srcFile.fileInfo.getBashTags()
             mod_tops = set()
-            for rsig, block in srcFile.iter_tops(actor_sigs):
+            for rsig, block in srcFile.iter_tops(self._actor_sigs):
                 mod_tops.add(rsig)
                 for rid, record in block.iter_present_records():
                     tempData[rid] = record.spells
-            for master in reversed(srcInfo.masterNames):
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    self._index_spells(masterFile)
-                    cachedMasters[master] = masterFile
+            for master in reversed(srcFile.fileInfo.masterNames):
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
+                self._index_spells(masterFile)
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
                         if rid not in tempData: continue
@@ -863,17 +853,12 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
 
     def initData(self, progress):
-        if not self.isActive or not self.srcs: return
-        self.loadFactory = self._patcher_read_fact()
+        if not self.isActive: return
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
-        for index, srcMod in enumerate(self.srcs):
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
+        for srcMod in self.srcs:
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             if b'RACE' not in srcFile.tops: continue
-            bashTags = srcInfo.getBashTags()
+            bashTags = srcFile.fileInfo.getBashTags()
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             change_spells = 'R.ChangeSpells' in bashTags
             add_spells = 'R.AddSpells' in bashTags
@@ -888,16 +873,10 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                     tmp_race_data[rid]['AddSpells'] = race.spells
                 if change_spells:
                     self.raceData[rid]['spellsOverride'] = race.spells
-            for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
-                    if b'RACE' not in masterFile.tops: continue
+            for master in srcFile.fileInfo.masterNames:
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
+                if b'RACE' not in masterFile.tops: continue
                 for rid, race in masterFile.tops[b'RACE'].iter_present_records():
                     if rid not in tmp_race_data: continue
                     tempRaceData = tmp_race_data[rid]

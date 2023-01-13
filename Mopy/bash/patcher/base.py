@@ -32,11 +32,11 @@ from this module outside of the patcher package."""
 from __future__ import annotations
 
 from collections.abc import Iterable
+from itertools import chain
 
 from . import getPatchesPath
 from .. import load_order
 from ..bolt import deprint, dict_sort, sig_to_str
-from ..mod_files import LoadFactory, ModFile
 from ..parsers import _HandleAliases
 
 #------------------------------------------------------------------------------
@@ -103,8 +103,13 @@ class ListPatcher(APatcher):
         """In addition to super implementation this defines the self.srcs
         ListPatcher attribute."""
         super(ListPatcher, self).__init__(p_name, p_file)
-        self.srcs = p_sources
-        self.isActive = bool(self.srcs)
+        self.isActive = self._process_sources(p_sources, p_file)
+
+    def _process_sources(self, p_sources, p_file):
+        """Filter srcs and update p_file read factories."""
+        self.srcs = [s for s in p_sources if s in p_file.all_plugins]
+        p_file.update_read_factories(self._read_sigs, self.srcs)
+        return bool(self.srcs)
 
     def _srcMods(self,log):
         """Logs the Source mods for this patcher."""
@@ -118,15 +123,18 @@ class ListPatcher(APatcher):
 class CsvListPatcher(_HandleAliases, ListPatcher):
     """List patcher with csv sources."""
 
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            try: self.read_csv(getPatchesPath(srcFile))
+    def _process_sources(self, p_sources, p_file):
+        # progress.setFull(len(self.srcs)) ## todo re-add progress
+        filtered_sources = []
+        for srcFile in p_sources:
+            try:
+                self.read_csv(getPatchesPath(srcFile))
+                filtered_sources.append(srcFile)
             except OSError: deprint(f'{srcFile} is no longer in patches set',
                                     traceback=True)
-            progress.plus()
+            # progress.plus()
+        self.srcs = filtered_sources
+        return bool(filtered_sources)
 
 #------------------------------------------------------------------------------
 # MultiTweakItem --------------------------------------------------------------
@@ -370,46 +378,25 @@ class ScanPatcher(APatcher):
         we've already copied this record or if we're not interested in it."""
         raise NotImplementedError
 
-class ModLoader(ScanPatcher): ##: this must go - WIP!
-    """Mixin for patchers loading mods"""
-    loadFactory = None
-
-    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
-        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
-
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo,
-                          self.loadFactory or self._patcher_read_fact())
-        modFile.load_plugin()
-        return modFile
-
-    # FIXME(inf) HACK until we've refactored initData to the point where we
-    #  can properly filter Filter-tagged plugins in one central place
-    def _filtered_mod_read(self, modInfo, patchFile):
-        modFile = self._mod_file_read(modInfo)
-        # The final refactored version should also check if it's inactive so we
-        # don't waste time doing nothing for active Filter plugins (since we
-        # already ensure those don't have missing masters before we even begin
-        # building the BP)
-        if 'Filter' in modInfo.getBashTags():
-            load_set = set(patchFile.load_dict)
-            # PatchFile does not have its load factory set up yet so we'd get a
-            # MobBase instance from it, which obviously can't do filtering. So
-            # use a temporary LoadFactory as a workaround
-            temp_factory = self.loadFactory or self._patcher_read_fact()
-            for top_grup_sig, filter_block in modFile.tops.items():
-                temp_block = temp_factory.getTopClass(top_grup_sig).empty_mob(
-                    temp_factory, top_grup_sig)
-                temp_block.merge_records(filter_block, load_set, set(), True)
-        return modFile
-
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(ListPatcher, ModLoader):
+class ImportPatcher(ListPatcher, ScanPatcher):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
     patcher_order = 20
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
+
+    def _process_sources(self, p_sources, p_file):
+        """Special processing for the ImportPatchers - csv and masters."""
+        # Split srcs based on CSV extension
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv' and s in
+                     p_file.all_plugins]
+        # most of the import patchers scan their sources' masters
+        mast = (p_file.all_plugins[s].masterNames for s in self.srcs)
+        sources = set(chain(self.srcs, *mast))
+        p_file.update_read_factories(self._read_sigs, sources)
+        return bool(self.srcs or self.csv_srcs) ##: move _parse_csv_sources here
 
     def _patchLog(self,log,type_count):
         log.setHeader(f'= {self._patcher_name}')

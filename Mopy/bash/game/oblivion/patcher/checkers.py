@@ -29,7 +29,6 @@ from itertools import chain
 from ._shared import ExSpecial, cobl_main
 from .... import bush
 from ....brec import FormId, RecordType, null4, null3, null2
-from ....patcher.base import ModLoader
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
@@ -155,7 +154,7 @@ class CoblCatalogsPatcher(ExSpecial):
 
 #------------------------------------------------------------------------------
 _ob_path = bush.game.master_file
-class SEWorldTestsPatcher(ExSpecial, ModLoader):
+class SEWorldTestsPatcher(ExSpecial):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _('SEWorld Tests')
     patcher_desc = _("Suspends Cyrodiil quests while in Shivering Isles. "
@@ -171,9 +170,11 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
     def __init__(self, p_name, p_file):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
-        if _ob_path in p_file.load_dict:
-            modInfo = self.patchFile.all_plugins[_ob_path]
-            modFile = self._mod_file_read(modInfo) # read Oblivion quests
+        p_file.update_read_factories(self._read_sigs, [_ob_path])
+
+    def initData(self,progress):
+        if _ob_path in self.patchFile.load_dict: # read Oblivion quests
+            modFile = self.patchFile.get_loaded_mod(_ob_path)
             for rid, record in modFile.tops[b'QUST'].iter_present_records():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:

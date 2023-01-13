@@ -67,7 +67,6 @@ class APreserver(ImportPatcher):
     _force_full_import_tag = None
 
     def __init__(self, p_name, p_file, p_sources):
-        super(APreserver, self).__init__(p_name, p_file, p_sources)
         #--(attribute-> value) dicts keyed by long fid.
         self.id_data = defaultdict(dict)
         self.srcs_sigs = set() #--Record signatures actually provided by src
@@ -96,10 +95,7 @@ class APreserver(ImportPatcher):
         else:
             all_attrs = chain.from_iterable(self.rec_type_attrs.values())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
-        # Split srcs based on CSV extension ##: move somewhere else?
-        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
-        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
-        self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
+        super().__init__(p_name, p_file, p_sources)
 
     # CSV helpers
     def _parse_csv_sources(self, progress):
@@ -129,7 +125,8 @@ class APreserver(ImportPatcher):
 
     @property
     def _read_sigs(self):
-        return self.srcs_sigs
+        return (self.srcs_sigs if self.srcs_sigs else self.rec_type_attrs) if \
+            self.isActive else ()
 
     def _init_data_loop(self, top_grup_sig, src_top, srcMod, mod_id_data,
                         mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
@@ -180,18 +177,15 @@ class APreserver(ImportPatcher):
         if not self.isActive: return
         id_data = self.id_data
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
         loaded_mods = self.patchFile.load_dict
+        srcs_sigs = set()
         for srcMod in self.srcs:
             mod_id_data = {}
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             mod_sigs = set()
-            mod_tags = srcInfo.getBashTags()
+            mod_tags = srcFile.fileInfo.getBashTags()
             for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
-                self.srcs_sigs.add(rsig)
+                srcs_sigs.add(rsig)
                 mod_sigs.add(rsig)
                 self._init_data_loop(rsig, block, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
@@ -201,14 +195,9 @@ class APreserver(ImportPatcher):
                 # filtering by masters, then move on to the next mod
                 id_data.update(mod_id_data)
                 continue
-            for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterFile = self._filtered_mod_read(minfs[master],
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+            for master in srcFile.fileInfo.masterNames:
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for rsig, block in masterFile.iter_tops(mod_sigs):
                     for rfid, record in block.iter_present_records():
                         if rfid not in mod_id_data: continue
@@ -221,6 +210,7 @@ class APreserver(ImportPatcher):
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
+        self.srcs_sigs = srcs_sigs
         if self._csv_parser:
             self._parse_csv_sources(progress)
         self.isActive = bool(self.srcs_sigs)
@@ -395,28 +385,23 @@ class ImportCellsPatcher(ImportPatcher):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
         self.recAttrs = bush.game.cellRecAttrs # dict[str, tuple[str]]
-        self.loadFactory = self._patcher_read_fact()
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
-            if srcMod not in minfs: continue
             # tempCellData maps long fids for cells in srcMod to dicts of
             # (attributes (among attrs) -> their values for this mod). It is
             # used to update cellData with cells that change those attributes'
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
-            srcInfo = minfs[srcMod]
+            srcInfo = self.patchFile.all_plugins[srcMod]
             bashTags = srcInfo.getBashTags()
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
-            cachedMasters[srcMod] = srcFile
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
             interior_attrs = attrs - bush.game.cell_skip_interior_attrs
@@ -440,13 +425,8 @@ class ImportCellsPatcher(ImportPatcher):
             # attribute values in temp cell data are then used to update these
             # records where the value is different.
             for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterFile = self._filtered_mod_read(minfs[master],
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for _sig, block in masterFile.iter_tops(self._read_sigs):
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
                         if cfid not in tempCellData: continue

@@ -27,7 +27,6 @@ from operator import attrgetter
 
 from ..base import APatcher, CsvListPatcher, ListPatcher, MultiTweakItem, \
     ScanPatcher
-from ..patch_files import PatchFile
 from ... import load_order
 from ...bolt import deprint
 from ...brec import RecordType
@@ -172,11 +171,9 @@ class MergePatchesPatcher(ListPatcher):
         'but some of its masters %(inactive_master)s are inactive.'),
         _('Please activate the inactive master(s) to fix this.')])
 
-    def __init__(self, p_name, p_file: PatchFile, p_sources):
-        super().__init__(p_name, p_file, p_sources)
-        if not self.isActive: return
+    def _process_sources(self, p_sources, p_file):
         # First, perform an error check for missing/inactive masters
-        for merge_src in self.srcs:
+        for merge_src in p_sources:
             if ((mm := p_file.active_mm.get(merge_src)) or  # should not happen
                     (mm := p_file.inactive_mm.get(merge_src))):
                 raise BPConfigError(self._missing_master_error % {
@@ -185,10 +182,12 @@ class MergePatchesPatcher(ListPatcher):
                 # It's present but inactive - that won't work for merging
                 raise BPConfigError(self._inactive_master_error % {
                     'merged_plugin': merge_src, 'inactive_master': mm})
+        self.srcs = p_sources
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
         # first - ensured through its group of 'General'
-        p_file.set_mergeable_mods(self.srcs)
+        p_file.set_mergeable_mods(p_sources)
+        return bool(p_sources)
 
 class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""

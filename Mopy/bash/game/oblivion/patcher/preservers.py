@@ -43,16 +43,17 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
+    def _process_sources(self, p_sources, p_file):
+        """No csvs and we don't scan masters (?)"""
+        return super(ImportPatcher, self)._process_sources(p_sources, p_file)
+
     def initData(self,progress):
-        """Get cells from source files."""
+        """Get roads from source files."""
         if not self.isActive: return
-        self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
-            if srcMod not in self.patchFile.all_plugins: continue
-            srcInfo = self.patchFile.all_plugins[srcMod]
-            src_wrld_block = self._filtered_mod_read(
-                srcInfo, self.patchFile).tops[b'WRLD']
-            for worldId, worldBlock in src_wrld_block.iter_present_records():
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
+            for worldId, worldBlock in srcFile.tops[
+                    b'WRLD'].iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
@@ -123,16 +124,13 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _parser_sigs = [b'FACT']
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
-    def __init__(self, p_name, p_file, p_sources):
-        super().__init__(p_name, p_file, p_sources)
-        if self.isActive:
-            if cobl_main in p_file.load_dict:
-                vers = self.patchFile.all_plugins[cobl_main].get_version()
-                maVersion = re.search(r'(\d+\.?\d*)', vers)
-                if maVersion:
-                    self.isActive = float(maVersion.group(1)) > 1.65
-                    return
-            self.isActive = False # COBL not loaded or its version is < 1.65
+    def _process_sources(self, p_sources, p_file):
+        if cobl_main in p_file.load_dict:
+            vers = self.patchFile.all_plugins[cobl_main].get_version()
+            maVersion = re.search(r'(\d+\.?\d*)', vers)
+            if maVersion and float(maVersion.group(1)) > 1.65:
+                return super()._process_sources(p_sources, p_file)
+        return False # COBL not loaded or its version is < 1.65
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -213,8 +211,11 @@ class MorphFactionsPatcher(_ExSpecialList):
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
-        self.isActive &= cobl_main in p_file.load_dict
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
+
+    def _process_sources(self, p_sources, p_file):
+        return cobl_main in p_file.load_dict and super()._process_sources(
+            p_sources, p_file)
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""

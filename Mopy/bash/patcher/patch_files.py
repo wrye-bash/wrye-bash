@@ -170,6 +170,10 @@ class PatchFile(ModFile):
                             k not in bush.game.modding_esm_size}
         self.p_file_minfos = pfile_minfos
         self.set_active_arrays(pfile_minfos)
+        # cache of mods loaded - eventually share between initData/scanModFile
+        self._loaded_mods = {}
+        # read signatures we need to load per plugin - updated by the patchers
+        self._read_signatures = defaultdict(set)
 
     def set_active_arrays(self, pfile_minfos):
         """Populate PatchFile data structures with info on active mods - must
@@ -276,11 +280,49 @@ class PatchFile(ModFile):
         #--Merge Factory
         self.mergeFactory = LoadFactory(False, by_sig=bush.game.mergeable_sigs)
 
+    def update_read_factories(self, sigs, mods):
+        """Let the patchers request loading the specified `sigs` for the
+        specified `mods` to use in its initData (eventually scanModFile)."""
+        for m in mods: self._read_signatures[m].update(sigs)
+
+    def get_loaded_mod(self, mod_name):
+        # get which signatures the patchers need to load for this mod
+        load_sigs = self._read_signatures.get(mod_name) or set()
+        if mod_name in self._loaded_mods:
+            loaded_mod: ModFile = self._loaded_mods[mod_name]
+            if loaded_mod.topsSkipped & load_sigs: # we need to reload
+                # never happens for initData but see mergeModFile
+                del self._loaded_mods[mod_name]
+            else:
+                return loaded_mod
+        elif mod_name not in self.all_plugins:
+            return None # (Filter tagged) mods with missing masters
+        lf = LoadFactory(False, by_sig=load_sigs)
+        mod_info = self.all_plugins[mod_name]
+        mod_file = ModFile(mod_info, lf)
+        mod_file.load_plugin()
+        # don't waste time for active Filter plugins, since we already ensure
+        # those don't have missing masters before we even begin building the BP
+        if mod_name not in self.load_dict and 'Filter' in \
+                mod_info.getBashTags():
+            load_set = set(self.load_dict)
+            # PatchFile does not have its load factory set up yet so we'd get a
+            # MobBase instance from it, which obviously can't do filtering. So
+            # use a temporary LoadFactory as a workaround
+            for top_grup_sig, filter_block in mod_file.tops.items():
+                temp_block = lf.getTopClass(top_grup_sig).empty_mob(
+                    lf, top_grup_sig)
+                temp_block.merge_records(filter_block, load_set, set(), True)
+        self._loaded_mods[mod_name] = mod_file
+        return mod_file
+
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""
         nullProgress = Progress()
         progress = progress.setFull(len(self.all_plugins))
         load_set = set(self.load_dict)
+        patchers_ord = sorted(self._patcher_instances,
+                              key=attrgetter('patcher_order'))
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             if modName in self.needs_filter_mods:
                 continue
@@ -319,8 +361,7 @@ class PatchFile(ModFile):
                     # we might still want to import filtered data, e.g. actor
                     # factions)
                     self.filter_plugin(modFile, load_set)
-                for patcher in sorted(self._patcher_instances,
-                        key=attrgetter('patcher_order')):
+                for patcher in patchers_ord:
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate, f'{modName}\n{patcher.getName()}')
                     patcher.scan_mod_file(modFile,nullProgress)
