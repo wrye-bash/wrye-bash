@@ -21,6 +21,7 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+import random
 import re
 
 from ...bolt import Flags, LowerDict, flag, int_or_none, int_or_zero, \
@@ -179,6 +180,8 @@ class _AMreLeveledListTes4(AMreLeveledList):
     two subrecords can be out of order in some plugins.
 
     See also wbLVLAfterLoad in xEdit's wbDefinitionsTES4.pas."""
+    lvl_chance_none: int
+
     def loadData(self, ins, endPos, *, file_offset=0):
         super().loadData(ins, endPos, file_offset=file_offset)
         if self.lvl_chance_none >= 128:
@@ -265,9 +268,8 @@ actor_values = [ # Human-readable names for each actor value
     'ResistWaterDamage',
 ]
 
-class MreHasEffects(object):
+class MreHasEffects(MelRecord):
     """Mixin class for magic items."""
-    __slots__ = ()
     _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
     _recipient_name_number = {y.lower(): x for x, y in
                               _recipient_number_name.items() if x is not None}
@@ -292,12 +294,13 @@ class MreHasEffects(object):
     attr_csv_struct['script_fid'] = [None, (_('Script Mod Name'),
         _('Script ObjectIndex')), lambda val:(
     '"None","None"' if val is None else '"%s","0x%06X"' % val)]
+    # typing to silence IDE's warnings - move to pyi stubs!
+    effects: list
 
     @classmethod
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
         effects_tuple = index_dict.pop('effects', None)
-        attr_dex = super(MreHasEffects, cls).parse_csv_line(csv_fields,
-                                                            index_dict, reuse)
+        attr_dex = super().parse_csv_line(csv_fields, index_dict, reuse)
         if effects_tuple is not None:
             effects_start, coerce_fid = effects_tuple
             attr_dex['effects'] = cls._read_effects(csv_fields[effects_start:],
@@ -424,9 +427,7 @@ class MreHasEffects(object):
         schoolTypeNumber_Name = cls._school_number_name
         recipientTypeNumber_Name = cls._recipient_number_name
         actorValueNumber_Name = cls._actor_val_number_name
-        effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
         scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
-        noscriptEffectFiller = ',"None","None","None","None","None","None"'
         output = []
         for effect in effects:
             efname, magnitude, area, duration, range_, actorvalue = \
@@ -434,8 +435,8 @@ class MreHasEffects(object):
                 effect.duration, effect.recipient, effect.actorValue
             range_ = recipientTypeNumber_Name.get(range_,range_)
             actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
-            output.append(effectFormat % (
-                efname,magnitude,area,duration,range_,actorvalue))
+            output.append(f',,"{efname}","{magnitude:d}","{area:d}",'
+                          f'"{duration:d}","{range_}","{actorvalue}"')
             if effect.scriptEffect: ##: #480 - setDefault commit - return None
                 se = effect.scriptEffect
                 longid, seschool, sevisual, seflags, sename = \
@@ -446,7 +447,7 @@ class MreHasEffects(object):
                 output.append(scriptEffectFormat % (*longid,
                     seschool, sevisual, bool(int(seflags)), sename))
             else:
-                output.append(noscriptEffectFiller)
+                output.append(',"None","None","None","None","None","None"')
         return ''.join(output)
 
     # Tweaks APIs -------------------------------------------------------------
@@ -527,9 +528,20 @@ class MreActi(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAlch(MreHasEffects, MelRecord):
+class _ObIcon(MelRecord):
+    _default_icons = None
+
+    def can_set_icon(self):
+        """Return True if we *can* tweak this record's icon."""
+        return not self.iconPath
+
+    def set_default_icon(self):
+        self.iconPath = self._default_icons
+
+class MreAlch(MreHasEffects, _ObIcon):
     """Potion."""
     rec_sig = b'ALCH'
+    _default_icons = 'Clutter\\Potions\\IconPotion01.dds'
 
     class _AlchFlags(Flags):
         autoCalc: bool
@@ -550,9 +562,10 @@ class MreAlch(MreHasEffects, MelRecord):
     ).with_distributor(_effects_distributor)
 
 #------------------------------------------------------------------------------
-class MreAmmo(MelRecord):
+class MreAmmo(_ObIcon):
     """Ammunition."""
     rec_sig = b'AMMO'
+    _default_icons = 'Weapons\\IronArrow.dds'
 
     class _AmmoFlags(Flags):
         notNormalWeapon: bool
@@ -581,9 +594,10 @@ class MreAnio(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAppa(MelRecord):
+class MreAppa(_ObIcon):
     """Alchemical Apparatus."""
     rec_sig = b'APPA'
+    _default_icons = 'Clutter\\IconMortarPestle.dds'
 
     melSet = MelSet(
         MelEdid(),
@@ -616,12 +630,43 @@ class _CommonBipedFlags(BipedFlags):
 
     _not_playable_flags = {'backWeapon', 'quiver', 'weapon', 'torch',
                            'rightRing', 'sideWeapon'}
-class _ObPlayable(MelRecord):
+
+class _ObPlayable(_ObIcon):
     not_playable_flag = ('biped_flags', 'notPlayable')
+    maleIconPath: str
+    femaleIconPath: str
+    biped_flags: _CommonBipedFlags
+
+    def can_set_icon(self):
+        return not self.is_not_playable() and not self.maleIconPath and not \
+            self.femaleIconPath
+
+    def set_default_icon(self):
+        # Choose based on body flags:
+        body_flags = self.biped_flags
+        if body_flags.upperBody:
+            return self._default_icons[0]
+        elif body_flags.lowerBody:
+            return self._default_icons[1]
+        elif body_flags.head or body_flags.hair:
+            return self._default_icons[2]
+        elif body_flags.hand:
+            return self._default_icons[3]
+        elif body_flags.foot:
+            return self._default_icons[4]
+        return None
 
 class MreArmo(_ObPlayable):
     """Armor."""
     rec_sig = b'ARMO'
+    _default_icons = (
+        ['Armor\\Iron\\M\\Cuirass.dds', 'Armor\\Iron\\F\\Cuirass.dds'],
+        ['Armor\\Iron\\M\\Greaves.dds', 'Armor\\Iron\\F\\Greaves.dds'],
+        ['Armor\\Iron\\M\\Helmet.dds'],
+        ['Armor\\Iron\\M\\Gauntlets.dds', 'Armor\\Iron\\F\\Gauntlets.dds'],
+        ['Armor\\Iron\\M\\Boots.dds'],
+        ['Armor\\Iron\\M\\Shield.dds'],
+        ['Armor\\Iron\\M\\Shield.dds'])  # Default Armor icon
 
     class _ArmoBipedFlags(_CommonBipedFlags):
         hideRings: bool = flag(16)
@@ -646,8 +691,21 @@ class MreArmo(_ObPlayable):
                   'weight'),
     )
 
+    def set_default_icon(self):
+        if not(ic := super().set_default_icon()):
+            ic = self._default_icons[5 if self.biped_flags.shield else
+                6] # Default icon, probably a token or somesuch
+        for att, val in zip(('maleIconPath', 'femaleIconPath'), ic):
+            setattr(self, att, val)
+
 #------------------------------------------------------------------------------
-class MreBook(MelRecord):
+class _RandIco(_ObIcon):
+    def set_default_icon(self):
+        # Just a random book icon - for class/birthsign as well.
+        random.seed(self.fid.object_dex) # make it deterministic
+        self.iconPath = f'Clutter\\iconbook{random.randint(1, 13):d}.dds'
+
+class MreBook(_RandIco):
     """Book."""
     rec_sig = b'BOOK'
 
@@ -669,7 +727,7 @@ class MreBook(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreBsgn(MelRecord):
+class MreBsgn(_RandIco):
     """Birthsign."""
     rec_sig = b'BSGN'
 
@@ -718,7 +776,7 @@ class MreCell(AMreCell):
     )
 
 #------------------------------------------------------------------------------
-class MreClas(MelRecord):
+class MreClas(_RandIco):
     """Class."""
     rec_sig = b'CLAS'
 
@@ -755,6 +813,16 @@ class MreClmt(MelRecord):
 class MreClot(_ObPlayable):
     """Clothing."""
     rec_sig = b'CLOT'
+    _default_icons = 'Clothes\\MiddleClass\\01\\%s.dds' # to wrap better
+    _default_icons = (
+        (_default_icons % 'M\\Shirt', _default_icons % 'F\\Shirt'),
+        (_default_icons % 'M\\Pants', _default_icons % 'F\\Pants'),
+        ('Clothes\\MythicDawnrobe\\hood.dds',),
+        ('Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds',),
+        (_default_icons % 'M\\Shoes', _default_icons % 'F\\Shoes'),
+        ('Clothes\\Ring\\RingNovice.dds',),
+        ('Clothes\\Amulet\\AmuletSilver.dds',)
+    )
 
     class _ClotBipedFlags(_CommonBipedFlags):
         hideRings: bool = flag(16)
@@ -776,6 +844,13 @@ class MreClot(_ObPlayable):
         MelIco2('femaleIconPath'),
         MelValueWeight(),
     )
+
+    def set_default_icon(self):
+        if not(ic := super().set_default_icon()):
+            ring = self.biped_flags.leftRing or self.biped_flags.rightRing
+            ic = self._default_icons[5 if ring else 6]
+        for att, val in zip(('maleIconPath', 'femaleIconPath'), ic):
+            setattr(self, att, val)
 
 #------------------------------------------------------------------------------
 class MreCont(AMreWithItems):
@@ -1115,9 +1190,10 @@ class MreInfo(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreIngr(MreHasEffects, MelRecord):
+class MreIngr(MreHasEffects, _ObIcon):
     """Ingredient."""
     rec_sig = b'INGR'
+    _default_icons = 'Clutter\\IconSeeds.dds'
 
     class _IngrFlags(Flags):
         ingr_no_auto_calc: bool
@@ -1138,9 +1214,10 @@ class MreIngr(MreHasEffects, MelRecord):
     ).with_distributor(_effects_distributor)
 
 #------------------------------------------------------------------------------
-class MreKeym(MelRecord):
+class MreKeym(_ObIcon):
     """Key."""
     rec_sig = b'KEYM'
+    _default_icons = ('Clutter\\Key\\Key.dds', 'Clutter\\Key\\Key02.dds')
 
     melSet = MelSet(
         MelEdid(),
@@ -1150,6 +1227,10 @@ class MreKeym(MelRecord):
         MelScript(),
         MelValueWeight(),
     )
+
+    def set_default_icon(self):
+        random.seed(self.fid.object_dex)  # make it deterministic
+        self.iconPath = self._default_icons[random.randint(0, 1)]
 
 #------------------------------------------------------------------------------
 class MreLand(MelRecord):
@@ -1161,9 +1242,10 @@ class MreLand(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLigh(MelRecord):
+class MreLigh(_ObIcon):
     """Light."""
     rec_sig = b'LIGH'
+    _default_icons = 'Lights\\IconTorch02.dds'
 
     class _LighFlags(Flags):
         light_dynamic: bool = flag(0)
@@ -1176,6 +1258,8 @@ class MreLigh(MelRecord):
         light_pulses_slow: bool = flag(8)
         light_spot_light: bool = flag(9)
         light_shadow_spotlight: bool = flag(10)
+
+    light_flags: _LighFlags
 
     melSet = MelSet(
         MelEdid(),
@@ -1191,6 +1275,9 @@ class MreLigh(MelRecord):
         MelLighFade(),
         MelSound(),
     )
+
+    def can_set_icon(self):
+        return self.light_flags.light_can_take and super().can_set_icon()
 
 #------------------------------------------------------------------------------
 class MreLscr(MelRecord):
@@ -1555,9 +1642,10 @@ class MreMgef(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMisc(MelRecord):
+class MreMisc(_ObIcon):
     """Misc. Item."""
     rec_sig = b'MISC'
+    _default_icons = 'Clutter\\Soulgems\\AzurasStar.dds'
 
     class HeaderFlags(MelRecord.HeaderFlags):
         @property
@@ -1588,6 +1676,7 @@ class MreMisc(MelRecord):
 class MreNpc_(AMreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
+    model: object
 
     class NpcFlags(Flags):
         female: bool = flag(0)
@@ -1741,9 +1830,11 @@ class MrePgrd(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreQust(MelRecord):
+class MreQust(_ObIcon):
     """Quest."""
     rec_sig = b'QUST'
+    _default_icons = 'Quest\\icon_miscellaneous.dds'
+    stages: list
 
     class _QustFlags(Flags):
         startGameEnabled: bool
@@ -1788,6 +1879,9 @@ class MreQust(MelRecord):
             b'CTDA': 'targets',
         },
     })
+
+    def can_set_icon(self):
+        return not self.stages
 
 #------------------------------------------------------------------------------
 class MreRace(AMreRace):
@@ -2045,9 +2139,10 @@ class MreScpt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSgst(MreHasEffects, MelRecord):
+class MreSgst(MreHasEffects, _ObIcon):
     """Sigil Stone."""
     rec_sig = b'SGST'
+    _default_icons = 'IconSigilStone.dds'
 
     melSet = MelSet(
         MelEdid(),
@@ -2080,9 +2175,10 @@ class MreSkil(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSlgm(MelRecord):
+class MreSlgm(_ObIcon):
     """Soul Gem."""
     rec_sig = b'SLGM'
+    _default_icons = 'Clutter\\Soulgems\\AzurasStar.dds'
 
     melSet = MelSet(
         MelEdid(),
@@ -2238,9 +2334,13 @@ class MreWatr(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreWeap(MelRecord):
+class MreWeap(_ObIcon):
     """Weapon."""
     rec_sig = b'WEAP'
+    _default_icons = ('Weapons\\IronDagger.dds', 'Weapons\\IronClaymore.dds',
+                      'Weapons\\IronMace.dds', 'Weapons\\IronBattleAxe.dds',
+                      'Weapons\\Staff.dds', 'Weapons\\IronBow.dds')
+    weaponType: int
 
     class _WeapFlags(Flags):
         notNormalWeapon: bool
@@ -2257,6 +2357,13 @@ class MreWeap(MelRecord):
                   'reach', (_WeapFlags, 'flags'), 'value', 'health', 'weight',
                   'damage'),
     )
+
+    def set_default_icon(self):
+        # Choose based on weapon type:
+        try:
+            self.iconPath = self._default_icons[self.weaponType]
+        except IndexError:  # just in case
+            self.iconPath = self._default_icons[0]
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld):

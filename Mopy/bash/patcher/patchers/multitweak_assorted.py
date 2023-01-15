@@ -26,13 +26,11 @@ to the Assorted Multitweaker - as well as the tweaker itself."""
 
 from __future__ import annotations
 
-import random
 import re
 
 from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bolt, bush
-from ...bolt import deprint
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -616,8 +614,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):
         return final_cost, final_cost * chosen_uses
 
 #------------------------------------------------------------------------------
-##: It's possible to simplify this further, but will require some effort
-##: Also, will have to become more powerful in the process if we want it to
+##: This will have to become more powerful in the process if we want it to
 # support FO3/FNV eventually ##: does it even make sense there?
 class AssortedTweak_DefaultIcons(MultiTweakItem):
     """Sets a default icon for any records that don't have any icon
@@ -627,112 +624,17 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                   u'icon assigned.')
     tweak_key = u'icons'
     tweak_choices = [(u'1', 1)]
-    _default_icons = {
-        b'ALCH': u'Clutter\\Potions\\IconPotion01.dds',
-        b'AMMO': u'Weapons\\IronArrow.dds',
-        b'APPA': u'Clutter\\IconMortarPestle.dds',
-        b'ARMO': ((u'Armor\\Iron\\M\\Cuirass.dds',
-                   u'Armor\\Iron\\F\\Cuirass.dds'),
-                 (u'Armor\\Iron\\M\\Greaves.dds',
-                  u'Armor\\Iron\\F\\Greaves.dds'),
-                 (u'Armor\\Iron\\M\\Helmet.dds',),
-                 (u'Armor\\Iron\\M\\Gauntlets.dds',
-                  u'Armor\\Iron\\F\\Gauntlets.dds'),
-                 (u'Armor\\Iron\\M\\Boots.dds',),
-                 (u'Armor\\Iron\\M\\Shield.dds',),
-                 (u'Armor\\Iron\\M\\Shield.dds',),), # Default Armor icon
-        b'BOOK': u'Clutter\\iconbook%d.dds',
-        b'BSGN': u'Clutter\\iconbook%d.dds',
-        b'CLAS': u'Clutter\\iconbook%d.dds',
-        b'CLOT': ((u'Clothes\\MiddleClass\\01\\M\\Shirt.dds',
-                   u'Clothes\\MiddleClass\\01\\F\\Shirt.dds'),
-                 (u'Clothes\\MiddleClass\\01\\M\\Pants.dds',
-                  u'Clothes\\MiddleClass\\01\\F\\Pants.dds'),
-                 (u'Clothes\\MythicDawnrobe\\hood.dds',),
-                 (u'Clothes\\LowerClass\\Jail\\M\\'
-                  u'JailShirtHandcuff.dds',),
-                 (u'Clothes\\MiddleClass\\01\\M\\Shoes.dds',
-                  u'Clothes\\MiddleClass\\01\\F\\Shoes.dds'),
-                 (u'Clothes\\Ring\\RingNovice.dds',),
-                 (u'Clothes\\Amulet\\AmuletSilver.dds',),),
-##                'FACT': u"", ToDo
-        b'INGR': u'Clutter\\IconSeeds.dds',
-        b'KEYM': (u'Clutter\\Key\\Key.dds', u'Clutter\\Key\\Key02.dds'),
-        b'LIGH': u'Lights\\IconTorch02.dds',
-        b'MISC': u'Clutter\\Soulgems\\AzurasStar.dds',
-        b'QUST': u'Quest\\icon_miscellaneous.dds',
-        b'SGST': u'IconSigilStone.dds',
-        b'SLGM': u'Clutter\\Soulgems\\AzurasStar.dds',
-        b'WEAP': (u'Weapons\\IronDagger.dds', u'Weapons\\IronClaymore.dds',
-                  u'Weapons\\IronMace.dds', u'Weapons\\IronBattleAxe.dds',
-                  u'Weapons\\Staff.dds', u'Weapons\\IronBow.dds',),
-    }
-    tweak_read_classes = tuple(_default_icons)
+    tweak_read_classes = (b'ALCH', b'AMMO', b'APPA', b'BOOK', b'BSGN', b'CLAS',  # ToDo 'FACT', / per game
+        b'INGR', b'KEYM', b'LIGH', b'MISC', b'QUST', b'SGST', b'SLGM', b'WEAP'
+    )
     tweak_log_msg = _(u'Default Icons Set: %(total_changed)d')
     default_enabled = True
 
     def wants_record(self, record):
-        rsig = record._rec_sig # we need a record mixin
-        if (rsig == b'LIGH' and not record.light_flags.light_can_take or
-            rsig == b'QUST' and not record.stages or rsig in (b'ARMO', b'CLOT')
-                and record.is_not_playable()): return False
-        return (not getattr(record, u'iconPath', None) and
-                not getattr(record, u'maleIconPath', None) and
-                not getattr(record, u'femaleIconPath', None))
-
-    @staticmethod
-    def _assign_icons(record, d_icons):
-        """Assigns the specified default icons to the specified record."""
-        try:
-            if isinstance(d_icons, tuple):
-                if len(d_icons) == 1:
-                    record.maleIconPath = d_icons[0]
-                else:
-                    record.maleIconPath, record.femaleIconPath = d_icons
-            else:
-                record.iconPath = d_icons
-        except ValueError:
-            deprint(u'Error while assigning default icons to %r' % record)
-            raise
+        return record.can_set_icon()
 
     def tweak_record(self, record):
-        curr_sig = record._rec_sig
-        d_icons = self._default_icons[curr_sig]
-        if isinstance(d_icons, tuple):
-            if curr_sig in (b'ARMO', b'CLOT'):
-                # Choose based on body flags:
-                body_flags = record.biped_flags
-                if body_flags.upperBody:
-                    d_icons = d_icons[0]
-                elif body_flags.lowerBody:
-                    d_icons = d_icons[1]
-                elif body_flags.head or body_flags.hair:
-                    d_icons = d_icons[2]
-                elif body_flags.hand:
-                    d_icons = d_icons[3]
-                elif body_flags.foot:
-                    d_icons = d_icons[4]
-                elif (curr_sig == b'ARMO' and body_flags.shield or
-                      curr_sig == b'CLOT' and (
-                              body_flags.leftRing or
-                              body_flags.rightRing)):
-                    d_icons = d_icons[5]
-                else: # Default icon, probably a token or somesuch
-                    d_icons = d_icons[6]
-            elif curr_sig == b'KEYM':
-                random.seed(record.fid.object_dex) # make it deterministic
-                d_icons = d_icons[random.randint(0, 1)]
-            elif curr_sig == b'WEAP':
-                # Choose based on weapon type:
-                try:
-                    d_icons = d_icons[record.weaponType]
-                except IndexError: # just in case
-                    d_icons = d_icons[0]
-        elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
-            # Just a random book icon - for class/birthsign as well.
-            random.seed(record.fid.object_dex) # make it deterministic
-            d_icons %= random.randint(1, 13)
-        self._assign_icons(record, d_icons)
+        record.set_default_icon()
 
 #------------------------------------------------------------------------------
 class _AAttenuationTweak(CustomChoiceTweak):
