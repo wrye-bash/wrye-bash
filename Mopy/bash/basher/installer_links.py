@@ -614,8 +614,12 @@ class Installer_Install(_NoMarkerLink):
     def _warn_nothing_installed(self):
         inst_packages = [self.idata[i] for i in self._installables]
         # See set_subpackage_checkmarks for the off-by-one explanation
+        # Note also we have to skip active FOMODs, otherwise install commands
+        # will break on them since they often have sub-packages but will pretty
+        # much never have any active ones.
         unconf_packages = [p for p in inst_packages
-                           if p.type == 2 and not any(p.subActives[1:])]
+                           if p.type == 2 and not any(p.subActives[1:]) and
+                           not p.extras_dict.get('fomod_active', False)]
         if unconf_packages:
             up_title = _('Installed unconfigured packages')
             up_msg2 = _(

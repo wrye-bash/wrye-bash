@@ -386,11 +386,10 @@ class Installer(ListInfo):
         """Create a copy of self -- works for subclasses too (assuming
         subclasses don't add new data members)."""
         clone = self.__class__(self.fn_key)
-        copier = copy.copy
         getter = object.__getattribute__ ##: is the object. necessary?
         setter = object.__setattr__ ##: is the object. necessary?
-        for attr in Installer.__slots__:
-            setter(clone,attr,copier(getter(self,attr)))
+        for attr in chain(Installer.persistent, Installer.volatile):
+            setter(clone, attr, copy.copy(getter(self, attr)))
         return clone
 
     #--refreshDataSizeCrc, err, framework -------------------------------------

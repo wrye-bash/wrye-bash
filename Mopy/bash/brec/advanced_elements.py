@@ -431,9 +431,10 @@ class MelSimpleArray(MelArray):
 
     def _load_array(self, record, ins, sub_type, size_, *debug_strs):
         entry_size = self._element_size
-        getattr(record, self.attr).extend(
-            self._element.load_bytes(ins, entry_size, *debug_strs) for _x in
-            range(size_ // entry_size))
+        load_element = self._element.load_bytes
+        getattr(record, self.attr).extend([
+            load_element(ins, entry_size, *debug_strs) for _x in
+            range(size_ // entry_size)])
 
     def _map_array_fids(self, record, function, save_fids):
         if self._element_has_fids:
