@@ -24,6 +24,7 @@
 together to create a GUI. In doing so, it is also responsible for making the
 rest of the gui modules work by chaining the _AComponent-based high-level
 components into actual wx calls."""
+from __future__ import annotations
 
 __author__ = u'nycz'
 

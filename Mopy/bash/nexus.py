@@ -80,7 +80,7 @@ import uuid
 import webbrowser
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable, Optional
+from typing import Iterable
 
 from . import bass
 from .exception import LimitReachedError, RequestError, \
@@ -93,7 +93,7 @@ _USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.platform()}; '
 _BASE_URL = 'https://api.nexusmods.com/v1/'
 
 # Typing-related things go here
-_OptStrDict = Optional[dict[str, str]] # PY3.10: Optional -> | None
+_OptStrDict = dict[str, str] | None
 
 # Internal API ----------------------------------------------------------------
 class _Op(Enum):

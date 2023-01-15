@@ -21,10 +21,9 @@
 #
 # =============================================================================
 """Components that can be in one of two states, checked or unchecked."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
-
-from typing import Union
 
 import wx as _wx
 
@@ -43,9 +42,7 @@ class _ACheckable(_AComponent):
       - on_hovered(hovered: _ACheckable): Posted when the user hovers over this
         component. The parameter is the instance of _ACheckable that was
         hovered over."""
-    ##: PY3.11: Check if we can use '|' here now (in py3.10 doing it with
-    # from __future__ import annotations breaks typing.get_type_hints)
-    _native_widget: Union[_wx.CheckBox, _wx.RadioButton]
+    _native_widget: _wx.CheckBox | _wx.RadioButton
 
     def __init__(self, *args, **kwargs):
         checked = kwargs.pop(u'checked', False)

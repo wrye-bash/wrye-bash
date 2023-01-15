@@ -802,13 +802,13 @@ def _rightPythonVersion():
     """Shows an error if the wrong Python version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
     sysVersion = sys.version_info[:3]
-    if sysVersion < (3, 10) or sysVersion >= (4,):
+    if sysVersion < (3, 11) or sysVersion >= (4,):
         from . import balt
         balt.showError(None, _(
             "Only Python %(min_py_ver)s and newer is supported "
             "(%(curr_py_ver)s detected). If you know what you're doing, "
             "install the Python version of Wrye Bash and edit this warning "
-            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.10',
+            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.11',
                                                 'curr_py_ver': sysVersion},
             title=_('Unsupported Python Version Detected'))
         return False

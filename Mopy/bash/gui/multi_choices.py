@@ -22,6 +22,7 @@
 # =============================================================================
 """Components that offer a choice from several possible values - whether
 through a list, a dropdown, or even a color picker."""
+from __future__ import annotations
 
 __author__ = u'nycz, Utumno'
 

@@ -22,6 +22,7 @@
 # =============================================================================
 """Houses DocumentViewer, a class for viewing various types of documents (e.g.
 webpages, text and PDFs)."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
 

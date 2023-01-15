@@ -27,9 +27,9 @@ import gettext
 import locale
 import os
 import sys
+import tomllib
 import traceback
 
-import tomli
 import wx as _wx
 
 from .. import bolt
@@ -53,10 +53,10 @@ def get_meta_value(base_file_path, meta_key):
     except KeyError:
         try:
             with open(meta_file, 'rb') as ins:
-                parsed_meta = _meta_cache[base_file_path] = tomli.load(ins)
+                parsed_meta = _meta_cache[base_file_path] = tomllib.load(ins)
         except FileNotFoundError:
             raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
-        except tomli.TOMLDecodeError:
+        except tomllib.TOMLDecodeError:
             traceback.print_exc()
             raise FailedTest(u'%s has malformed TOML syntax. Check the log '
                              u'for a traceback pointing to the '

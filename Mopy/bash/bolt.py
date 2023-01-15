@@ -48,7 +48,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import Iterable, ClassVar, Annotated, get_type_hints, Literal
+from typing import Iterable, ClassVar, Self, get_type_hints
 from urllib.parse import quote
 from zlib import crc32
 
@@ -357,7 +357,8 @@ class fast_cached_property:
         self._wrapped_attr = name
 
     def __get__(self, instance, owner=None):
-        ##: PY3.11: EAFP is slower here right now, test again with 0-cost-try
+        # Do *not* change this to EAFP without benchmarking. Even on 3.11, with
+        # zero-cost-try, a try here will make the BP slower.
         wrapped_val = instance.__dict__.get(self._wrapped_attr, _not_cached)
         if wrapped_val is _not_cached:
             # This whole branch is only done once, so can afford to be slower
@@ -1402,7 +1403,7 @@ class Flags:
         cls._names = names_dict
 
     #--Generation
-    def __init__(self, value: int | Flags = 0): # py 3.11: hint with int | Self
+    def __init__(self, value: int | Self = 0):
         """Set the internal int value."""
         object.__setattr__(self, u'_field', int(value))
 

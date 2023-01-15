@@ -37,7 +37,7 @@ import re
 import sys
 from collections import OrderedDict
 from functools import wraps
-from typing import Iterable, Optional, Type
+from typing import Iterable, Type
 #--Local
 from . import cosaves
 from ._mergeability import isPBashMergeable, is_esl_capable
@@ -3236,8 +3236,8 @@ class SaveInfos(FileInfos):
             return accepted_exts
 
     @classmethod
-    def _parse_save_path(cls, save_path: str) -> tuple[Optional[str],
-                                                       Optional[str]]:
+    def _parse_save_path(cls, save_path: str) -> tuple[str | None,
+                                                       str | None]:
         """Parses the specified save path into root and extension, returning
         them as a tuple. If the save path does not point to a valid save,
         returns two Nones instead."""

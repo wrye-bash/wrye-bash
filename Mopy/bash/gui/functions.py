@@ -22,6 +22,7 @@
 # =============================================================================
 """Houses functions and function-like objects (e.g. BusyCursor). Everything
 that isn't a component, basically."""
+from __future__ import annotations
 
 import wx as _wx
 

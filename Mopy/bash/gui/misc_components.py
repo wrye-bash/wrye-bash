@@ -22,6 +22,7 @@
 # =============================================================================
 """This module houses GUI classes that did not fit anywhere else. Once similar
 classes accumulate in here, feel free to break them out into a module."""
+from __future__ import annotations
 
 __author__ = u'nycz, Infernio, Utumno'
 

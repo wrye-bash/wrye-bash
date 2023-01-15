@@ -22,6 +22,7 @@
 # =============================================================================
 """Houses some high-level components that are formed by combining other
 components."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
 

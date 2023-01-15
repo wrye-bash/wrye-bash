@@ -23,6 +23,7 @@
 """This module contains all text-related GUI components. For example, text
 input components like TextArea and TextField, but also static components like
 Label reside here."""
+from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
 

@@ -21,6 +21,7 @@
 #
 # =============================================================================
 """High level API for implementing wizard dialogs."""
+from __future__ import annotations
 
 import wx as _wx
 

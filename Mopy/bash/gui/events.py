@@ -106,6 +106,7 @@ Return Values:
     3. EventResult.CANCEL: Indicates that the event should not be allowed to
        execute. Only events that explicitly mention it in their documentation
        can be canceled, all others will raise a RuntimeError instead."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
 

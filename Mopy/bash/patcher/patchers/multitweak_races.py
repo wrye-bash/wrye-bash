@@ -21,9 +21,9 @@
 #
 # =============================================================================
 """This module contains the MultiTweakItem classes that tweak RACE records."""
+from __future__ import annotations
 
 from collections import defaultdict
-from typing import Union, Optional
 
 from .base import MultiTweakItem, MultiTweaker, IndexingTweak, \
     CustomChoiceTweak
@@ -36,15 +36,14 @@ _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
 
 _FidList = list[tuple[Path, int]]
 _FacePartDict = defaultdict[str, _FidList]
-# PY3.11: Union -> |, can't do this here with __future__ annotations
-##: Also, we really need a less hacky solution than this 'mixed dict'
-_MixedDict = dict[Union[bytes, str], Union[_FidList, dict[str, _FidList]]]
+##: We really need a less hacky solution than this 'mixed dict'
+_MixedDict = dict[bytes | str, _FidList | dict[str, _FidList]]
 
 class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    tweak_races_data: Optional[_MixedDict] = None # sentinel, set by tweaker
+    tweak_races_data: _MixedDict | None = None # sentinel, set by tweaker
     _cached_changed_eyes: _FacePartDict
     _cached_changed_hairs: _FacePartDict
 

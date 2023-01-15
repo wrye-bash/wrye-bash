@@ -22,6 +22,7 @@
 # =============================================================================
 """A popup is a small dialog that asks the user for a single piece of
 information, e.g. a string, a number or just confirmation."""
+from __future__ import annotations
 
 import datetime
 

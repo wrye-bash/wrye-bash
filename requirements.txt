@@ -3,7 +3,8 @@ chardet==5.1.0
 lz4==4.3.2
 pywin32==305; sys_platform == 'win32'
 PyYAML==6.0
-wxPython==4.2.0
+wxPython==4.2.0; sys_platform != 'win32'
+https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.1a1-cp311-cp311-win_amd64.whl; sys_platform == 'win32'
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
 lxml==4.9.2
@@ -17,4 +18,3 @@ pygit2==1.11.1
 pyfiglet==0.8.post1
 pyinstaller==5.7.0
 pytest==7.2.1
-tomli==2.0.1

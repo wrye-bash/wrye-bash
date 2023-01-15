@@ -22,6 +22,7 @@
 # =============================================================================
 """This module defines buttons, offering several predefined templates (e.g. OK
 buttons, Cancel buttons, Save As... buttons, etc.)."""
+from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
 
