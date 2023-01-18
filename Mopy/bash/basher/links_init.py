@@ -539,7 +539,7 @@ def InitModLinks():
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_MarkMergeable())
-        ModList.context_links.append(Mod_Patch_Update())
+        ModList.context_links.append(Mod_RebuildPatch())
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_FlipEsm())
         if bush.game.has_esl:

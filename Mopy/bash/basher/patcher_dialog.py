@@ -36,7 +36,7 @@ from ..exception import BoltError, CancelError, FileEditError, \
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
-    CheckListBox, HorizontalLine, EventResult, FileOpen
+    CheckListBox, HorizontalLine, EventResult, FileOpen, BusyCursor
 from ..patcher import exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile
 
@@ -122,9 +122,10 @@ class PatchDialog(DialogWindow):
         self.patchConfigs = patchConfigs
         isFirstLoad = 0 == len(patchConfigs)
         self._load_config(patchConfigs, isFirstLoad, _decouple=True) ##: _decouple == True to short circuit _import_config
-        for patcher in self._gui_patchers:
-            patcher.GetConfigPanel(self, self.config_layout,
-                self.gTipText).visible = False
+        with BusyCursor(): # Constructs all the patcher panels, so takes a bit
+            for patcher in self._gui_patchers:
+                patcher.GetConfigPanel(self, self.config_layout,
+                    self.gTipText).visible = False
         initial_select = min(len(self._gui_patchers) - 1, 1)
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired

@@ -50,7 +50,7 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
            u'Mod_ListBashTags', u'Mod_CreateLOOTReport', u'Mod_CopyModInfo',
            u'Mod_AllowGhosting', u'Mod_GhostUnghost', u'Mod_MarkMergeable',
-           'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_EditorIds_Export',
+           'Mod_RebuildPatch', 'Mod_ListPatchConfig', 'Mod_EditorIds_Export',
            u'Mod_FullNames_Export', u'Mod_Prices_Export', u'Mod_Stats_Export',
            u'Mod_Factions_Export', u'Mod_ActorLevels_Export', u'Mod_Redate',
            u'Mod_FactionRelations_Export', u'Mod_IngredientDetails_Export',
@@ -912,7 +912,7 @@ class _Mod_BP_Link(OneItemLink):
         return super(_Mod_BP_Link, self)._enable() \
                and self._selected_info.isBP()
 
-class Mod_Patch_Update(_Mod_BP_Link):
+class Mod_RebuildPatch(_Mod_BP_Link):
     """Updates a Bashed Patch."""
     _text = _(u'Rebuild Patch...')
     _help = _(u'Rebuild the Bashed Patch')
