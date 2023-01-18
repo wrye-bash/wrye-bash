@@ -1344,9 +1344,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
 
     @balt.conversation
     def Execute(self):
-        if self._check_identical_content(
-                _(u'Please only select the installers this converter was made '
-                  u'for.')):
+        if self._check_identical_content(_(
+                'Please only select the packages this BCF was made for.')):
             return
         # all installers that this converter needs are present and unique
         crc_installer = {x.crc: x for x in self.iselected_infos()}
@@ -1378,8 +1377,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
     _text = _(u'Embedded BCF')
-    _help = _(u'Applies the BAIN converter files (BCFs) embedded in the '
-              u'selected installer(s).')
+    _help = _('Applies the BAIN conversion files (BCFs) embedded in the '
+              'selected package(s).')
     _dialog_title = _(u'Apply BCF...')
 
     @balt.conversation

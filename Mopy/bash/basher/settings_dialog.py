@@ -1046,6 +1046,9 @@ class ConfirmationsPage(_AFixedPage):
     ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
     # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
     # sense for non-SSE/FO4 games
+    ##: We should also enforce that a key is in here before allowing
+    # askContinue to proceed, so that we won't ever forget to add one here (or
+    # come up with a better way to store these)
     _confirmations = {
         _(u'[INI Edits] Applying an INI tweak'):
             u'bash.iniTweaks.continue',
@@ -1058,6 +1061,10 @@ class ConfirmationsPage(_AFixedPage):
             bush.game.nexusKey,
         _(u"[Installers] Opening a mod's page at TES Alliance"):
             u'bash.installers.openTESA.continue',
+        _('[Installers] Overwriting a package via drag and drop'):
+            'bash.installers.onDropFiles.overwrite_pkg.continue',
+        _('[Installers] Overwriting a BCF via drag and drop'):
+            'bash.installers.onDropFiles.overwrite_conv.continue',
         _(u'[Installers] Searching for a mod on Google'):
             u'bash.installers.opensearch.continue',
         _(u'[Installers] Trying to reorder installers, but Install Order '

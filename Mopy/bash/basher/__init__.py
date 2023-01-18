@@ -56,6 +56,7 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial, reduce
+from itertools import chain
 
 import wx
 
@@ -2771,13 +2772,12 @@ class InstallersList(balt.UIList):
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
 
-    def _askCopyOrMove(self, filenames):
+    def _askCopyOrMove(self, packages, converters):
         action = settings[u'bash.installers.onDropFiles.action']
         if action not in (u'COPY', u'MOVE'):
-            if filenames:
-                msg = _('You have dragged the following files into Wrye Bash:'
-                    ) + '\n\n * ' + '\n * '.join(f.s for f in filenames) + '\n'
-            else: msg = _('You have dragged some converters into Wrye Bash.')
+            msg = _('You have dragged the following files into Wrye '
+                    'Bash:') + '\n\n * ' + '\n * '.join(
+                f.stail for f in sorted(chain(packages, converters))) + '\n'
             msg += '\n' + _('What would you like to do with them?')
             action, remember = CopyOrMovePopup.display_dialog(self, msg,
                 sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
@@ -2785,34 +2785,73 @@ class InstallersList(balt.UIList):
                 settings[u'bash.installers.onDropFiles.action'] = action
         return action
 
+    def _overwrite_disallowed(self, target_file, is_package):
+        """Checks if a package or converter is being overwritten by a 'drop
+        files' action. If so, asks the user for confirmation. Returns True if
+        there is no overwrite or the user has allowed the overwrite, False
+        otherwise."""
+        if target_file.exists():
+            if is_package:
+                overwrite_msg = _(
+                    "A package with the name '%(target_fname)s' already "
+                    "exists. Do you want to overwrite it?")
+                overwrite_key = 'bash.installers.onDropFiles.overwrite_pkg'
+                overwrite_title = _('Overwrite Package?')
+            else:
+                overwrite_msg = _(
+                    "A BCF with the name '%(target_fname)s' already exists. "
+                    "Do you want to overwrite it?")
+                overwrite_key = 'bash.installers.onDropFiles.overwrite_conv'
+                overwrite_title = _('Overwrite BCF?')
+            return not balt.askContinue(self, overwrite_msg % {
+                'target_fname': target_file.stail},
+                f'{overwrite_key}.continue', title=overwrite_title)
+        return False
+
     @balt.conversation
     def OnDropFiles(self, x, y, filenames):
-        filenames = [GPath(x) for x in filenames]
-        dirs = {x for x in filenames if x.is_dir()}
-        omodnames = [x for x in filenames if
-                     not x in dirs and x.cext in archives.omod_exts]
-        converters = {x for x in filenames if
+        file_paths = [GPath(f) for f in filenames]
+        dirs = {f for f in file_paths if f.is_dir()}
+        omod_paths = [f for f in file_paths if
+                      f not in dirs and f.cext in archives.omod_exts]
+        converters = {c for c in file_paths if
                       bosh.converters.ConvertersData.validConverterName(
-                          FName(f'{x}'))}
-        filenames = [x for x in filenames if x in dirs
-                     or x.cext in archives.readExts and x not in converters]
-        if not (omodnames or converters or filenames): return
-        if omodnames:
+                          FName(f'{c}'))}
+        packages = {p for p in file_paths if p not in converters and
+                    (p in dirs or p.cext in archives.readExts)}
+        if not (omod_paths or converters or packages): return
+        if omod_paths:
             with balt.Progress(_(u'Extracting OMODs...'), abort=True) as prog:
-                self._extractOmods(omodnames, prog)
-        if filenames or converters:
-            action = self._askCopyOrMove(filenames)
-            if action in [u'COPY',u'MOVE']:
+                self._extractOmods(omod_paths, prog)
+        if packages or converters:
+            action = self._askCopyOrMove(packages, converters)
+            if action in ('COPY', 'MOVE'):
+                pkgs_dir = bass.dirs['installers']
+                pkgs_src, pkgs_dst = [], []
+                # Ask the user to confirm any overwrites
+                for candidate_pkg in packages:
+                    candidate_to = pkgs_dir.join(candidate_pkg.tail)
+                    if not self._overwrite_disallowed(candidate_to,
+                            is_package=True):
+                        pkgs_src.append(candidate_pkg)
+                        pkgs_dst.append(candidate_to)
+                convs_dir = bass.dirs['converters']
+                convs_src, convs_dst = [], []
+                for candidate_conv in list(converters):
+                    candidate_to = convs_dir.join(candidate_conv.tail)
+                    if not self._overwrite_disallowed(candidate_to,
+                            is_package=False):
+                        convs_src.append(candidate_conv)
+                        convs_dst.append(candidate_to)
+                if not (packages or converters):
+                    return # All overwrites disallowed by user, abort
                 with BusyCursor():
-                    installersJoin = bass.dirs[u'installers'].join
-                    convertersJoin = bass.dirs[u'converters'].join
-                    filesTo = [installersJoin(x.tail) for x in filenames]
-                    filesTo.extend(convertersJoin(x.tail) for x in converters)
-                    filenames.extend(converters)
                     try:
-                        (env.shellMove if action == 'MOVE' else env.shellCopy)(
-                            filenames, filesTo, parent=self._native_widget)
-                    except (CancelError,SkipError):
+                        shell_action = (env.shellMove if action == 'MOVE' else
+                                        env.shellCopy)
+                        shell_action(pkgs_src + convs_src,
+                            pkgs_dst + convs_dst, parent=self._native_widget)
+                    except (CancelError, SkipError):
                         pass
         self.panel.frameActivated = True
         self.panel.ShowPanel(focus_list=True)

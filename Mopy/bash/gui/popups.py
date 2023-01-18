@@ -63,10 +63,10 @@ class CopyOrMovePopup(DialogWindow):
         copy_button = Button(self, btn_label=_(u'Copy'), default=True)
         copy_button.on_clicked.subscribe(lambda: self._return_action(u'COPY'))
         VLayout(border=6, spacing=6, item_expand=True, items=[
-            HLayout(spacing=6, item_border=6, items=[
+            (HLayout(spacing=6, item_border=6, items=[
                 (staticBitmap(self), LayoutOptions(v_align=CENTER)),
                 (Label(self, message), LayoutOptions(expand=True))
-            ]),
+            ]), LayoutOptions(weight=1)),
             Stretch(),
             HorizontalLine(self),
             HLayout(spacing=4, item_expand=True, items=[
