@@ -30,7 +30,7 @@ from .bolt import LowerDict, CIstr, deprint, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict, ListInfo
 from .exception import AbstractError, CancelError, SkipError, BoltError
 
-_comment_start_re = re.compile(r'^\s*;\s*')
+_comment_start_re = re.compile(r'^\s*[;#]\s*')
 
 def _to_lower(ini_settings):
     """Transforms dict of dict to LowerDict of LowerDict, respecting
@@ -82,7 +82,7 @@ def _scan_ini(lines, scan_comments=False):
 class AIniFile(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
-    reComment = re.compile(';.*')
+    reComment = re.compile('[;#].*')
     reDeletedSetting = re.compile(r';-\s*(\w.*?)\s*(;.*$|=.*$|$)')
     reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
     reSetting = re.compile(r'(.+?)\s*=(.*)')

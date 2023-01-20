@@ -726,7 +726,7 @@ class TopComplexGrup(TopGrup):
                     # The child record got filtered out. If it was newly added,
                     # we need to remove it from this block again. Otherwise, we
                     # can just skip forward to the next child.
-                    del self.id_records[dest_record.group_key()]
+                    del self.id_records[src_fid]
                 continue
             # We're either not Filter-tagged or we want to keep this record
             filtered[src_fid] = src_rec
