@@ -1216,20 +1216,15 @@ class SaveInfo(FileInfo):
         return super(SaveInfo, self).do_update(raise_on_error) or \
                cosaves_changed
 
-    def write_masters(self):
-        """Rewrites masters of existing save file."""
+    def write_masters(self, master_map):
+        """Rewrites masters of existing save file and cosaves."""
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
+        self.header.remap_masters(master_map)
         with self.abs_path.open(u'rb') as ins:
             with self.abs_path.temp.open(u'wb') as out:
-                oldMasters = self.header.writeMasters(ins, out)
-        oldMasters = [FName(decoder(x)) for x in oldMasters]
+                self.header.write_header(ins, out)
         self.abs_path.untemp()
-        # Cosaves - note that we have to use self.header.masters since in
-        # FO4/SSE _get_masters() returns the correct interleaved order, but
-        # oldMasters has the 'regular first, then ESLs' order
-        master_map = {x: y for x, y in
-                      zip(oldMasters, self.header.masters) if x != y}
         if master_map:
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)

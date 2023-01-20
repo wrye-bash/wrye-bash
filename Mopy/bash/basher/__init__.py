@@ -2523,8 +2523,11 @@ class SaveDetails(_ModsSavesDetails):
             self.panel_uilist.try_rename(saveInfo, newName, to_del=to_del)
         #--Change masters?
         if changeMasters:
-            saveInfo.header.masters = self.uilist.GetNewMasters()
-            saveInfo.write_masters()
+            prev_masters = saveInfo.masterNames
+            curr_masters = self.uilist.GetNewMasters()
+            master_remaps = {m1: m2 for m1, m2
+                             in zip(prev_masters, curr_masters) if m1 != m2}
+            saveInfo.write_masters(master_remaps)
             saveInfo.setmtime(prevMTime)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
