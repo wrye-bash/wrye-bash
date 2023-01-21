@@ -2123,10 +2123,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         full_path = self.target_inis[selection]
         if full_path is None:
             # 'Browse...'
-            wildcard =  u'|'.join(
-                [_(u'Supported files') + u' (*.ini,*.cfg)|*.ini;*.cfg',
-                 _(u'INI files') + u' (*.ini)|*.ini',
-                 _(u'Config files') + u' (*.cfg)|*.cfg', ])
+            wildcard =  '|'.join([
+                _('Supported files') + ' (*.ini,*.cfg,*.toml)'
+                                       '|*.ini;*.cfg;*.toml',
+                _('INI files') + ' (*.ini)|*.ini',
+                _('Config files') + ' (*.cfg)|*.cfg',
+                _('TOML files') + ' (*.toml)|*.toml',
+            ])
             full_path = FileOpen.display_dialog(self, defaultDir=self.lastDir,
                                                 wildcard=wildcard)
             if full_path: self.lastDir = full_path.shead

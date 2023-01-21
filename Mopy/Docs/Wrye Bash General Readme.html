@@ -1543,6 +1543,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\INI Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
+<p>Supported file types are <code>.cfg</code>, <code>.ini</code> and
+    <code>.toml</code>. Note that only "INI-like" TOML files are currently
+    supported. That means some arrays and nested tables won't be correctly
+    parsed. See the <a href="https://toml.io/en/v1.0.0">TOML spec</a> for more
+    information on this terminology.</p>
 <p><strong>Warning:</strong> Incorrect INI settings in the game INI can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.</p>
 
 <h3 id="ini-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>

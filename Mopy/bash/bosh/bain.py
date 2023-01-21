@@ -47,7 +47,7 @@ from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
     forward_compat_path_to_fn, ListInfo
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
-from ..ini_files import OBSEIniFile
+from ..ini_files import OBSEIniFile, supported_ini_exts
 
 os_sep = os.path.sep
 
@@ -92,7 +92,8 @@ class Installer(ListInfo):
                 '.tgz', '.tar', '.gz', '.bz2', '.omod', '.fomod', '.tb2',
                 '.lzma', '.manifest', '.ckm', '.vortex_backup'}
     skipExts.update(set(readExts))
-    commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
+    commonlyEditedExts = {'.cfg', '.ini', '.modgroups', '.toml', '.txt',
+                          '.xml'}
     #--Regular game directories - needs update after bush.game has been set
     dataDirsPlus = screenshot_dirs | bush.game.Bain.wrye_bash_data_dirs | {
         'docs'}
@@ -2393,7 +2394,7 @@ class InstallersData(DataStore):
         installing the new inis then call _editTweaks() to populate the tweaks.
         """
         dest_files = (x for x in destFiles
-                if x[-4:].lower() in (u'.ini', u'.cfg')
+                if x[-4:].lower() in supported_ini_exts
                 # don't create ini tweaks for overridden ini tweaks...
                 and os.path.split(x)[0].lower() != u'ini tweaks')
         for relPath in dest_files:
@@ -2403,7 +2404,7 @@ class InstallersData(DataStore):
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
             co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \
-                      f'[{installer.fn_key}].ini'
+                      f'[{installer.fn_key}]{iniAbsDataPath.cext}'
             baseName = bass.dirs[u'ini_tweaks'].join(co_path)
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
@@ -2570,8 +2571,14 @@ class InstallersData(DataStore):
     @staticmethod
     def _is_ini_tweak(ci_relPath):
         parts = ci_relPath.lower().split(os_sep)
-        return len(parts) == 2 and parts[0] == u'ini tweaks' \
-           and parts[1][-4:] == u'.ini' and FName(parts[1])
+        # 1. Must have a single parent folder
+        # 2. That folder must be named 'ini tweaks'
+        # 3. The extension must be a valid INI-like extension
+        # If all that is true, return the filename as an FName
+        return (len(parts) == 2 and
+                parts[0] == 'ini tweaks' and
+                parts[1].rsplit('.', 1)[1] in supported_ini_exts and
+                FName(parts[1]))
 
     def _removeFiles(self, ci_removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data,

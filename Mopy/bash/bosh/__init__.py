@@ -57,7 +57,7 @@ from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     SaveHeaderError, SkipError, StateError, SkippedMergeablePluginsError, \
     FailedIniInferError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
-    get_ini_type_and_encoding, AIniFile
+    get_ini_type_and_encoding, AIniFile, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
@@ -1688,7 +1688,8 @@ class FileInfos(TableFileInfos):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile, AINIInfo):
-    _valid_exts_re = r'(\.(?:ini))'
+    _valid_exts_re = r'(\.(?:' + u'|'.join(
+        x[1:] for x in supported_ini_exts) + '))'
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
@@ -1758,13 +1759,15 @@ def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):
     :param load_cache: dummy param used in INIInfos#new_info factory call
     :rtype: INIInfo"""
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
-    ini_info_type = (inferred_ini_type is IniFile and INIInfo) or ObseIniInfo
+    ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
+                     else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
     :type data: dict[bolt.Path, IniInfo]"""
-    file_pattern = re.compile(r'\.ini$', re.I)
+    file_pattern = re.compile('|'.join(
+        f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in

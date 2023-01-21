@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import os
 import re
 import time
 from collections import OrderedDict, Counter
@@ -32,6 +33,9 @@ from .exception import AbstractError, CancelError, SkipError, \
     FailedIniInferError
 
 _comment_start_re = re.compile(r'^\s*[;#]\s*')
+
+# All extensions supported by this parser
+supported_ini_exts = {'.ini', '.cfg', '.toml'}
 
 def _to_lower(ini_settings):
     """Transforms dict of dict to LowerDict of LowerDict, respecting
@@ -53,6 +57,9 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
 
     :param fallback_type: If set, then if the INI type can't be detected,
         instead of raising an error, use this type."""
+    if os.path.splitext(abs_ini_path)[1] == '.toml':
+        # TOML must always use UTF-8, demanded by its specification
+        return TomlFile, 'utf-8'
     with open(abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
     detected_encoding, _confidence = getbestencoding(content)
@@ -93,12 +100,14 @@ class AIniFile(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*')
-    reDeletedSetting = re.compile(r';-\s*(\w.*?)\s*(;.*$|=.*$|$)')
+    reDeletedSetting = re.compile(r'^\s*[;#]-\s*(\w.*?)\s*([;#].*$|=.*$|$)')
     reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-    reSetting = re.compile(r'(.+?)\s*=(.*)')
+    reSetting = re.compile(r'^\s*(.+?)\s*=\s*(.+?)(\s*[;#].*)?$')
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
+    # The comment character to use when writing new comments into this file
+    _comment_char = ';'
 
     def __init__(self, filekey):
         ListInfo.__init__(self, filekey)
@@ -176,9 +185,8 @@ class AIniFile(ListInfo):
         section = self.__class__.defaultSection
         for i, line in enumerate(tweak_file.read_ini_content()):
             maDeletedSetting = reDeleted.match(line)
-            stripped = reComment.sub(u'', line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
+            maSection = reSection.match(line)
+            maSetting = reSetting.match(line)
             deleted = False
             setting = None
             value = u''
@@ -212,7 +220,7 @@ class AIniFile(ListInfo):
                     lineNo = ci_deletedSettings[section][setting]
                 deleted = True
             else:
-                if stripped:
+                if reComment.sub('', line).strip():
                     status = -10
             lines.append((line, section, setting, value, status, lineNo,
                           deleted))
@@ -305,34 +313,30 @@ class IniFile(AIniFile, AFile):
         ci_deleted_settings = DefaultLowerDict(LowerDict)
         default_section = self.__class__.defaultSection
         isCorrupted = u''
-        reComment = self.__class__.reComment
         reSection = self.__class__.reSection
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
         #--Read ini file
-        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
-            sectionSettings = None
-            section = None
-            for i,line in enumerate(iniFile.readlines()):
-                maDeleted = reDeleted.match(line)
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                if maSection:
-                    section = maSection.group(1)
-                    sectionSettings = ci_settings[section]
-                elif maSetting:
-                    if sectionSettings is None:
-                        sectionSettings = ci_settings[default_section]
-                        msg = _("Your %(tweak_ini)s should begin with a "
-                                "section header (e.g. '[General]'), but it "
-                                "does not.")
-                        isCorrupted = msg % {'tweak_ini': tweakPath}
-                    sectionSettings[maSetting.group(1)] = maSetting.group(
-                        2).strip(), i
-                elif maDeleted:
-                    if not section: continue
-                    ci_deleted_settings[section][maDeleted.group(1)] = i
+        sectionSettings = None
+        section = None
+        for i, line in enumerate(self.read_ini_content()):
+            maSection = reSection.match(line)
+            maDeleted = reDeleted.match(line)
+            maSetting = reSetting.match(line)
+            if maSection:
+                section = maSection.group(1)
+                sectionSettings = ci_settings[section]
+            elif maSetting:
+                if sectionSettings is None:
+                    sectionSettings = ci_settings[default_section]
+                    msg = _("Your %(tweak_ini)s should begin with a section "
+                            "header (e.g. '[General]'), but it does not.")
+                    isCorrupted = msg % {'tweak_ini': tweakPath}
+                sectionSettings[maSetting.group(1)] = (
+                    maSetting.group(2).strip(), i)
+            elif maDeleted:
+                if not section: continue
+                ci_deleted_settings[section][maDeleted.group(1)] = i
         return ci_settings, ci_deleted_settings, isCorrupted
 
     # Modify ini file ---------------------------------------------------------
@@ -346,63 +350,68 @@ class IniFile(AIniFile, AFile):
         u'The target ini must exist to apply a tweak to it.')):
         return self.abs_path.is_file()
 
-    def saveSettings(self,ini_settings,deleted_settings={}):
+    def saveSettings(self, ini_settings, deleted_settings=None):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs."""
         ini_settings = _to_lower(ini_settings)
         deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
-                                     deleted_settings.items())
+                                     (deleted_settings or {}).items())
         reDeleted = self.reDeletedSetting
-        reComment = self.reComment
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read init, write temp
         section = None
         sectionSettings = {}
-        with self._open_for_writing() as tmpFile:
-            tmpFileWrite = tmpFile.write
+        with self._open_for_writing() as tmp_ini:
             def _add_remaining_new_items():
                 if section in ini_settings: del ini_settings[section]
                 if not sectionSettings: return
                 for sett, val in sectionSettings.items():
-                    tmpFileWrite(f'{sett}={val}\n')
-                tmpFileWrite(u'\n')
+                    tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
+                tmp_ini.write('\n')
             for line in self.read_ini_content(as_unicode=True):
-                stripped = reComment.sub(u'', line).strip()
-                maSection = reSection.match(stripped)
+                maSection = reSection.match(line)
                 if maSection:
                     # 'new' entries still to be added from previous section
                     _add_remaining_new_items()
                     section = maSection.group(1)  # entering new section
                     sectionSettings = ini_settings.get(section, {})
                 else:
-                    match = reSetting.match(stripped) or reDeleted.match(
-                        line)  # note we run maDeleted on LINE
-                    if match:
+                    match_set = reSetting.match(line)
+                    match_del = reDeleted.match(line)
+                    if match := (match_set or match_del):
+                        ##: What about inline comments in deleted lines?
+                        comment = match_set.group(3) if match_set else ''
                         setting = match.group(1)
                         if setting in sectionSettings:
                             value = sectionSettings[setting]
-                            line = f'{setting}={value}'
+                            line = self._fmt_setting(setting, value)
+                            if comment:
+                                line += comment # preserve inline comments
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
-                            line = u';-' + line
-                tmpFileWrite(line + u'\n')
+                            line = f'{self._comment_char}-{line}'
+                tmp_ini.write(f'{line}\n')
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items()
             # Add remaining new entries
             for section, sectionSettings in list(ini_settings.items()):
                 # _add_remaining_new_items may modify ini_settings
                 if sectionSettings:
-                    tmpFileWrite(f'[{section}]\n')
+                    tmp_ini.write(f'[{section}]\n')
                     _add_remaining_new_items()
         #--Done
         self.abs_path.untemp()
+
+    def _fmt_setting(self, setting, value):
+        """Format a key-value setting appropriately for the current INI
+        format."""
+        return f'{setting}={value}'
 
     def applyTweakFile(self, tweak_lines):
         """Read ini tweak file and apply its settings to self (the target ini).
         """
         reDeleted = self.reDeletedSetting
-        reComment = self.reComment
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
@@ -410,10 +419,9 @@ class IniFile(AIniFile, AFile):
         deleted_settings = DefaultLowerDict(set)
         section = None
         for line in tweak_lines:
+            maSection = reSection.match(line)
             maDeleted = reDeleted.match(line)
-            stripped = reComment.sub(u'',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
+            maSetting = reSetting.match(line)
             if maSection:
                 section = maSection.group(1)
             elif maSetting:
@@ -429,7 +437,6 @@ class IniFile(AIniFile, AFile):
         this will only remove the first matching section. If you want to remove
         multiple, you will have to call this in a loop and check if the section
         still exists after each iteration."""
-        re_comment = self.reComment
         re_section = self.reSection
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
@@ -437,8 +444,7 @@ class IniFile(AIniFile, AFile):
         remove_current = None
         with self._open_for_writing() as out:
             for line in self.read_ini_content(as_unicode=True):
-                stripped = re_comment.sub(u'', line).strip()
-                match_section = re_section.match(stripped)
+                match_section = re_section.match(line)
                 if match_section:
                     section = match_section.group(1)
                     # Check if we need to remove this section
@@ -472,8 +478,6 @@ class DefaultIniFile(AIniFile):
                 current_line += 1
 
     def get_ci_settings(self, with_deleted=False):
-        """Trivial override to avoid the if checks in parent (that would
-        return False anyway)."""
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
@@ -486,6 +490,20 @@ class DefaultIniFile(AIniFile):
             return iter(self.lines) # do not modify return value directly
         # Add a newline at the end of the INI
         return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
+
+class TomlFile(IniFile):
+    """A TOML file. Encoding is always UTF-8 (demanded by spec). Note that
+    ini_files only supports INI-like TOML files right now. That means TOML
+    files must be tables of key-value pairs and the values may not be arrays or
+    inline tables."""
+    out_encoding = 'utf-8' # see above
+    reComment = re.compile('#.*')
+    reDeletedSetting = re.compile(r'^\s*#-\s*(\w.*?)\s*(#.*$|=.*$|$)')
+    reSetting = re.compile(r'^\s*(.+?)\s*=\s*(.+?)(\s*#.*)?$')
+    _comment_char = '#'
+
+    def _fmt_setting(self, setting, value):
+        return f'{setting} = {value}'
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
@@ -584,12 +602,12 @@ class OBSEIniFile(IniFile):
                           bool(maDeleted)))
         return lines
 
-    def saveSettings(self,ini_settings,deleted_settings={}):
+    def saveSettings(self, ini_settings, deleted_settings=None):
         """Apply dictionary of settings to self, latter must exist!
         Values in settings dictionary can be either actual values or
         full ini lines ending in newline char."""
         ini_settings = _to_lower(ini_settings)
-        deleted_settings = _to_lower(deleted_settings)
+        deleted_settings = _to_lower(deleted_settings or {})
         reDeleted = self.reDeleted
         reComment = self.reComment
         with self._open_for_writing() as tmpFile:
