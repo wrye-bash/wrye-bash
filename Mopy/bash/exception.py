@@ -76,6 +76,11 @@ class FileEditError(BoltError): ##: never raised?
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 
+class FailedIniInferError(FileError):
+    """Failed to infer INI type."""
+    def __init__(self, in_name):
+        super().__init__(in_name, 'Failed to infer INI type')
+
 # Mod I/O Errors --------------------------------------------------------------
 class ModError(FileError):
     """Mod Error: File is corrupted."""

@@ -109,6 +109,7 @@ class OblivionGameInfo(PatchGame):
         bsa_redirection_key = (u'Archive', u'sArchiveList')
         default_ini_file = u'Oblivion_default.ini'
         dropdown_inis = [u'Oblivion.ini']
+        has_obse_inis = True
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):

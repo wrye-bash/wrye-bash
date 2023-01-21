@@ -28,7 +28,8 @@ from . import env, bush
 from .bass import dirs
 from .bolt import LowerDict, CIstr, deprint, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict, ListInfo
-from .exception import AbstractError, CancelError, SkipError, BoltError
+from .exception import AbstractError, CancelError, SkipError, \
+    FailedIniInferError
 
 _comment_start_re = re.compile(r'^\s*[;#]\s*')
 
@@ -41,19 +42,25 @@ def _to_lower(ini_settings):
         return ret_type(input_dict)
     return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
 
-def get_ini_type_and_encoding(abs_ini_path):
+def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
     """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
     of the file at abs_ini_path. It reads the file and performs heuristics
     for detecting the encoding, then decodes and applies regexes to every
     line to detect the ini type. Those operations are somewhat expensive, so
     it would make sense to pass an encoding in, if we know that the ini file
     must have a specific encoding (for instance the game ini files that
-    reportedly must be cp1252). More investigation needed."""
+    reportedly must be cp1252). More investigation needed.
+
+    :param fallback_type: If set, then if the INI type can't be detected,
+        instead of raising an error, use this type."""
     with open(abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
+    detected_encoding, _confidence = getbestencoding(content)
+    # If the game does not have OBSE INIs, just the encoding suffices
+    if not bush.game.Ini.has_obse_inis:
+        return IniFile, detected_encoding
     ##: Add a 'return encoding' param to decoder to avoid the potential double
     # chardet here!
-    detected_encoding, _confidence = getbestencoding(content)
     decoded_content = decoder(content, detected_encoding)
     inferred_ini_type = _scan_ini(lines := decoded_content.splitlines())
     if inferred_ini_type is not None:
@@ -63,7 +70,10 @@ def get_ini_type_and_encoding(abs_ini_path):
     inferred_ini_type = _scan_ini(lines, scan_comments=True)
     if inferred_ini_type is not None:
         return inferred_ini_type, detected_encoding
-    raise BoltError(f'Failed to infer type for {abs_ini_path}')
+    # No settings even in the comments - if we have a fallback type, use that
+    if fallback_type is not None:
+        return fallback_type, detected_encoding
+    raise FailedIniInferError(abs_ini_path)
 
 def _scan_ini(lines, scan_comments=False):
     count = Counter()

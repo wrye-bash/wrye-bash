@@ -54,7 +54,8 @@ from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext, \
     FormIdWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
-    SaveHeaderError, SkipError, StateError, SkippedMergeablePluginsError
+    SaveHeaderError, SkipError, StateError, SkippedMergeablePluginsError, \
+    FailedIniInferError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
     get_ini_type_and_encoding, AIniFile
 from ..mod_files import ModFile, ModHeaderReader
@@ -1049,6 +1050,41 @@ def BestIniFile(abs_ini_path):
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
         abs_ini_path)
     return inferred_ini_type(abs_ini_path, detected_encoding)
+
+def best_ini_files(abs_ini_paths):
+    """Similar to BestIniFile, but takes an iterable of INI paths and returns a
+    dict mapping those paths to the created IniFile objects. The functional
+    difference is that this method can handle empty INI files, as long as all
+    other INIs passed in have the same INI type (i.e. no mixing of OBSE INIs
+    and regular INIs). Meant to be used if you have multiple versions of the
+    same INI and hence can guarantee that they have the same type too."""
+    ret = {}
+    found_types = set()
+    ambigous_paths = set()
+    for aip in abs_ini_paths:
+        game_ini = get_game_ini(aip)
+        if game_ini:
+            ret[aip] = game_ini
+            found_types.add(IniFile)
+            continue
+        try:
+            detected_type, detected_enc = get_ini_type_and_encoding(aip)
+        except FailedIniInferError:
+            # Come back to this later using the found types
+            ambigous_paths.add(aip)
+            continue
+        ret[aip] = detected_type(aip, detected_enc)
+        found_types.add(detected_type)
+    # Check if we've only found a single INI type - if so, it's safe to assume
+    # the remaining INIs have the same type too
+    single_found_type = None
+    if len(found_types) == 1:
+        single_found_type = next(iter(found_types))
+    for aip in ambigous_paths:
+        detected_type, detected_enc = get_ini_type_and_encoding(aip,
+            fallback_type=single_found_type)
+        ret[aip] = detected_type(aip, detected_enc)
+    return ret
 
 class AINIInfo(AIniFile):
     """Ini info, adding cached status and functionality to the ini files."""

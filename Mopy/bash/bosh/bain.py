@@ -36,7 +36,7 @@ from operator import itemgetter, attrgetter
 from typing import Iterable
 from zlib import crc32
 
-from . import bain_image_exts, DataStore, BestIniFile, InstallerConverter, \
+from . import bain_image_exts, DataStore, best_ini_files, InstallerConverter, \
     ModInfos
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
@@ -2426,11 +2426,14 @@ class InstallersData(DataStore):
         from . import iniInfos
         pseudosections = set(OBSEIniFile.ci_pseudosections.values())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
-            iniFile = BestIniFile(iniAbsDataPath)
+            # Pass in both INIs - they must have the same format, and at least
+            # one of them is almost certainly not empty
+            bif = best_ini_files([iniAbsDataPath, tweakPath])
+            data_ini, tweak_ini = bif[iniAbsDataPath], bif[tweakPath]
             currSection = None
             lines = []
             for (line_text, section, setting, value, status, lineNo,
-                 deleted) in iniFile.analyse_tweak(BestIniFile(tweakPath)):
+                 deleted) in data_ini.analyse_tweak(tweak_ini):
                 if not line_text.rstrip():
                     continue # possible empty lines at the start
                 if status in (10, -10):

@@ -305,6 +305,8 @@ class GameInfo(object):
         # first one *must* be the main INI!
         #  Example: [u'Oblivion.ini']
         dropdown_inis = []
+        # Whether or not this game supports the OBSE INI format
+        has_obse_inis = False
         # INI setting used to setup Save Profiles
         #  (section, key)
         save_profiles_key = (u'General', u'SLocalSavePath')
