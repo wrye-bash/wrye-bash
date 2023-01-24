@@ -24,6 +24,12 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
+from typing import TYPE_CHECKING, NewType
+
+if TYPE_CHECKING:
+    from .bolt import Path
+else:
+    Path = NewType('Path', str)
 
 # no imports
 
@@ -34,7 +40,7 @@ is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
-dirs = {}
+dirs: dict[str, Path] = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
 # dirs where various apps may be located - populated in initTooldirs()
@@ -61,7 +67,7 @@ def update_sys_argv(arg):
 
 #--Temp Files/Dirs - originally in Installer, probably belong to a new module
 ################################## DO NOT USE #################################
-_tempDir = None # type: bolt.Path | None
+_tempDir: Path | None = None
 
 def getTempDir():
     """Return current Temp Dir, generating one if needed."""

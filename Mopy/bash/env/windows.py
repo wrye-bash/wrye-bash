@@ -48,77 +48,102 @@ import win32gui
 
 from .common import _find_legendary_games, _get_language_paths, \
     _LegacyWinAppInfo, _LegacyWinAppVersionInfo
+from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
-from ..exception import AccessDeniedError, BoltError
-from ..exception import CancelError as _CancelError
-from ..exception import FileOperationError, SkipError
+from ..exception import BoltError, CancelError, SkipError
 
 # File operations -------------------------------------------------------------
 try:
-    from win32com.shell import shell, shellcon
-    from win32com.shell.shellcon import FO_COPY, FO_DELETE, FO_MOVE, \
-        FO_RENAME, FOF_NOCONFIRMMKDIR
-
-    # NOTE(lojack): AccessDenied can be a result of many error codes,
-    # According to
-    # https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
-    # If you receive an error code not on that list, then you assume it is
-    # one of the default WinError.h error codes, in this case 5 is
-    # `ERROR_ACCESS_DENIED`. I actually DO get error code 5, when the game
-    # detection for WS games wasn't including the language directories (
-    # which caused us to attempt one directory too high in the tree).
-    _file_op_error_map = {
-        # Returned for Windows Store games that need admin access
-        5: AccessDeniedError,    # ERROR_ACCESS_DENIED
-        17: AccessDeniedError,   # ERROR_INVALID_ACCESS
-        120: AccessDeniedError,  # DE_ACCESSDENIEDSRC -> source AccessDenied
-        # https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299-
-        1223: _CancelError,
-    }
-    def shfo(operation, source, target=None, allowUndo=True,
-             confirm=True, renameOnCollision=False, silent=False,
-             parent=None):
-        """Wrapper around (deprecated!) SHFileOperation."""
-        # flags
-        flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
-        flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
-        flgs |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
-        if allowUndo: flgs |= shellcon.FOF_ALLOWUNDO
-        if not confirm: flgs |= shellcon.FOF_NOCONFIRMATION
-        if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
-        if silent: flgs |= shellcon.FOF_SILENT
-        # null terminated strings
-        _source, _target = source, target # keep to display in debug messages
-        source = u'\x00'.join(source) # don't add a null! # + u'\x00'
-        target = u'\x00'.join(target)
-        # get the handle to parent window to feed to win api
-        parent = parent.GetHandle() if parent else None
-        # See SHFILEOPSTRUCT for deciphering return values
-        # result: a windows error code (or 0 for success)
-        # aborted: True if any operations aborted, False otherwise
-        # mapping: maps the old and new names of the renamed files
-        result, aborted, mapping = shell.SHFileOperation(
-            (parent, operation, source, target, flgs, None, None))
-        if result == 0:
-            if aborted: raise SkipError()
-            return dict(mapping)
-        elif result == 2 and operation == FO_DELETE:
-            # Delete failed because file didnt exist
-            return dict(mapping)
-        else:
-            if result == 124:
-                src_list = u'\n'.join(_source)
-                trg_list = u'\n'.join(_target)
-                _deprint(f'Invalid paths:\nsource: {src_list}\ntarget: '
-                         f'{trg_list}\nRetrying')
-                return None
-            raise _file_op_error_map.get(result, FileOperationError(result))
+    # Need to guard this import, since we get imported *before* the startup
+    # code check for required dependencies, and we want the nice error messages
+    # to be shown instead of an ImportError
+    import ifileoperation
+    from ifileoperation import FileOperationFlags, FileOperator
 except ImportError:
-    shell = shellcon = shfo = None
+    pass # We'll raise an error in bash.py
+from .common import FileOperationType, _StrPath
+
+def file_operation(operation: str | FileOperationType,
+        sources_dests: dict[_StrPath, _StrPath], allow_undo: bool = True,
+        ask_confirm: bool = True, rename_on_collision: bool = False,
+        silent: bool = False, parent=None) -> dict[str, str]:
+    """file_operation API. Performs a filesystem operation on the specified
+    files using the Windows API.
+
+    :param operation: One of the FileOperationType enum values, corresponding
+        to a move, copy, rename, or delete operation.
+    :param sources_dests: A mapping of source paths to destinations. The format
+        of destinations depends on the operation:
+        - For FileOperationTYpe.DELETE: destinations are ignored, they may be
+          anything.
+        - For FileOperationType.COPY, MOVE: destinations should be the path
+          to the full destination name (not the destination containing
+          directory).
+        - For FileOperationType.RENAME: destinations should be file names only,
+          without directories.
+        Destinations may be anythin supporting the os.PathLike interface: str,
+        bolt.Path, pathlib.Path, etc).
+    :param allow_undo: If possible, preserve undo information so the operation
+        can be undone. For deletions, this will attempt to use the recylce bin.
+    :param ask_confirm: If True, responds to any OS dialog boxes with "Yes to
+        All".
+    :param rename_on_collision: If True, automatically renames files on a move
+        or copy when collisions occcur.
+    :param silent: If True, do not display progress dialogs.
+    :param parent: The parent window for any dialogs.
+
+    :return: A mapping of source file paths to their final new path.  For a
+        deletion operation, the final path will be None."""
+    # Options for the file operation
+    op_flgs = FileOperationFlags.NO_CONFIRM_MKDIR
+    if allow_undo: op_flgs |= FileOperator.UNDO_FLAGS
+    if not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
+    if rename_on_collision: op_flgs |= FileOperationFlags.RENAMEONCOLLISION
+    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS
+    try:
+        with FileOperator(parent, op_flgs) as fo:
+            # Queue the operations
+            if operation == FileOperationType.DELETE:
+                for source in sources_dests:
+                    try:
+                        fo.delete_file(source)
+                    except FileNotFoundError:
+                        pass
+            elif operation in (FileOperationType.MOVE, FileOperationType.COPY):
+                queue_it =  fo.move_file if operation == FileOperationType.MOVE else fo.copy_file
+                for source, target in sources_dests.items():
+                    # Need to get destination directory, name for these operations
+                    target_dir = os.path.dirname(target)
+                    target_name = os.path.basename(target)
+                    queue_it(source, target_dir, target_name)
+            elif operation == FileOperationType.RENAME:
+                for source, target in sources_dests.items():
+                    fo.rename_file(source, os.fspath(target))
+            # Do the operations
+            fo.commit()
+        if fo.aborted:
+            raise SkipError()
+    except ifileoperation.errors.UserCancelledError as e:
+        # Convert to our own exception type
+        raise CancelError() from e
+    except ifileoperation.errors.InterfaceNotImplementedError as e:
+        # Most likely due to running on WINE
+        import warnings
+        warnings.warn(f'Exception in ifileoperation: {e}. If you are running on'
+            ' WINE this is expected, otherwise please report this issue. '
+            'Falling back to standard library implementation.')
+        return _default_file_operation(operation, sources_dests, allow_undo,
+            ask_confirm, rename_on_collision, silent,)
+    # Filter out deletions:
+    return {
+        source: target
+        for source, target in fo.results.items()
+        if target not in ('DELETED', 'RECYCLED')
+    }
 
 # API - Constants =============================================================
 _isUAC = False
@@ -1130,8 +1155,8 @@ def testUAC(gameDataPath):
     ##: ugh
     from . import shellDeletePass, shellMove
     try: # to move it into the Data directory
-        shellMove(tempFile, dest, silent=True)
-    except AccessDeniedError:
+        shellMove({tempFile: dest}, silent=True)
+    except PermissionError:
         global _isUAC
         _isUAC = True
     finally:

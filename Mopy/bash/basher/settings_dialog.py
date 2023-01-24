@@ -206,7 +206,7 @@ class _ASettingsPage(ATreeMixin):
                 title=_(u'Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
-            env.shellMove(old_fpath, new_fpath, parent=self._native_widget)
+            env.shellMove({old_fpath: new_fpath}, parent=self)
             return True
         except (exception.CancelError, exception.SkipError):
             return False # user canceled
@@ -910,8 +910,8 @@ class BackupsPage(_AFixedPage):
         """Deletes the currently selected backup."""
         settings_file = self._backup_dir.join(self._chosen_backup)
         try:
-            env.shellDelete(settings_file, parent=self._native_widget,
-                confirm=True, recycle=True)
+            env.shellDelete([settings_file], parent=self, ask_confirm=True,
+                recycle=True)
         except (exception.CancelError, exception.SkipError): pass
         finally:
             self._populate_backup_list()

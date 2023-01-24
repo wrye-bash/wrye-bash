@@ -37,7 +37,7 @@ from . import bolt
 from .bolt import FName, Path, deprint, readme_url
 from .env import BTN_CANCEL, BTN_NO, BTN_OK, BTN_YES, GOOD_EXITS, \
     TASK_DIALOG_AVAILABLE, TaskDialog
-from .exception import AccessDeniedError, CancelError, SkipError, StateError
+from .exception import CancelError, SkipError, StateError
 from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     CheckListBox, Color, DialogWindow, DirOpen, DocumentViewer, EventResult, \
     FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
@@ -1645,7 +1645,7 @@ class UIList(PanelWin):
         if not dd_ok or not dd_items: return
         try:
             self.data_store.delete(dd_items, recycle=dd_recycle)
-        except (AccessDeniedError, CancelError, SkipError): pass
+        except (PermissionError, CancelError, SkipError): pass
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def open_data_store(self):

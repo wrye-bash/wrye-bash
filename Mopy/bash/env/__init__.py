@@ -23,18 +23,19 @@
 """The env module encapsulates OS-specific classes and methods. This is the
 central import point, always import directly from here to get the right
 implementations for the current OS."""
+from __future__ import annotations
 
 import platform
-import shutil
+from collections.abc import Iterable
 
 # First import the shared API
 from .common import *
-from ..bolt import GPath, Path, deprint, os_name
-from ..exception import CancelError, DirectoryFileCollisionError, \
-    NonExistentDriveError
+from .common import file_operation as _default_file_operation
+from ..bolt import os_name
+
+_TShellWindow = '_AComponent | _Window | None'
 
 # Then check which OS we are running on and import *only* from there
-shfo = None
 op_system = platform.system()
 if op_system == u'Windows':
     from .windows import *
@@ -46,139 +47,51 @@ elif op_system == u'Darwin':
 else:
     raise ImportError(f'Wrye Bash does not support {op_system} yet')
 
-# File operations WIP ---------------------------------------------------------
-def __copyOrMove(operation, source, target, renameOnCollision, parent):
-    """WIP shutil move and copy adapted from #96"""
-    # renameOnCollision - if True auto-rename on moving collision, else ask
-    # TODO(241): renameOnCollision NOT IMPLEMENTED
-    doIt = shutil.copytree if operation == FO_COPY else shutil.move
-    for fileFrom, fileTo in zip(source, target):
-        if fileFrom.is_dir():
-            dest_dir = fileTo.join(fileFrom.tail)
-            if dest_dir.exists():
-                if not dest_dir.is_dir():
-                    raise DirectoryFileCollisionError(fileFrom, dest_dir)
-                # dir exists at target, copy contents individually/recursively
-                source_paths, dests = [], []
-                for content in os.listdir(fileFrom):
-                    source_paths.append(fileFrom.join(content))
-                    dests.append(dest_dir)
-                __copyOrMove(operation, source_paths, dests, renameOnCollision, parent)
-            else:  # dir doesn't exist at the target, copy it
-                doIt(fileFrom.s, fileTo.s)
-        # copy the file, overwrite as needed
-        elif fileFrom.is_file():  # or os.path.islink(file):
-            # move may not work if the target exists, copy instead and
-            # overwrite as needed
-            try:
-                shutil.copy2(fileFrom.s, fileTo.s)
-            except FileNotFoundError:
-                # probably directory path does not exist, create it.
-                fileTo.head.makedirs()
-                shutil.copy2(fileFrom.s, fileTo.s)
-            if operation == FO_MOVE: fileFrom.remove() # then remove original
-    return {} ##: the renames map ?
-
-def _fileOperation(operation, source, target=None, allowUndo=True,
-                   confirm=True, renameOnCollision=False, silent=False,
-                   parent=None, __shell=True):
-    """Docs WIP
-
-    See also: https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
-
-    :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
-    :param source: a Path, string or an iterable of those (yak, only accept
-       iterables)
-    :param target: as above, if iterable must have the same length as source
-    :param allowUndo: FOF_ALLOWUNDO: "Preserve undo information, if possible"
-    :param confirm: the opposite of FOF_NOCONFIRMATION ("Respond with Yes to
-        All for any dialog box that is displayed")
-    :param renameOnCollision: FOF_RENAMEONCOLLISION
-    :param silent: FOF_SILENT ("Do not display a progress dialog box")
-    :param parent: HWND to the dialog's parent window
-    """
-    if not source:
-        return {}
-    abspath = os.path.abspath
-    # source may be anything - see SHFILEOPSTRUCT - accepts list or item
-    if isinstance(source, (Path, (str, bytes))):
-        source = [abspath(f'{source}')]
-    else:
-        source = [abspath(f'{x}') for x in source]
-    # target may be anything ...
-    target = target if target else u'' # abspath(u''): cwd (must be Mopy/)
-    if isinstance(target, (Path, (str, bytes))):
-        target = [abspath(f'{target}')]
-    else:
-        target = [abspath(f'{x}') for x in target]
-    if __shell and shfo is not None:
-        res = shfo(operation, source, target, allowUndo, confirm,
-                   renameOnCollision, silent, parent)
-        return _fileOperation(operation, source, target, allowUndo, confirm,
-                              renameOnCollision, silent, parent,
-                              __shell=False) if res is None else res
-    else: # Use custom dialogs and such
-        # TODO(ut): local import, env should be above balt...
-        from .. import balt
-        source = [GPath(s) for s in source]
-        target = [GPath(s) for s in target]
-        if operation == FO_DELETE:
-            # allowUndo - no effect, can't use recycle bin this way
-            # confirm - ask if confirm is True
-            # renameOnCollision - no effect, deleting files
-            # silent - no real effect (we don't show visuals deleting this way)
-            if confirm:
-                message = _('Are you sure you want to permanently delete '
-                            'these %(item_cnt)d items?') % {
-                    'item_cnt': len(source)}
-                message += u'\n\n' + u'\n'.join([f' * {x}' for x in source])
-                if not balt.askYes(parent, message,
-                        _('Delete Multiple Items')):
-                    return {}
-            # Do deletion
-            for toDelete in source:
-                if not toDelete.exists(): continue
-                if toDelete.is_dir():
-                    toDelete.rmtree(toDelete.stail)
-                else:
-                    toDelete.remove()
-            return {}
-        # allowUndo - no effect, we're not going to manually track file moves
-        # confirm - no real effect when moving
-        # silent - no real effect, since we're not showing visuals
-        return __copyOrMove(operation, source, target, renameOnCollision,
-                            parent)
+def _resolve(parent: _TShellWindow):
+    """Resolve a parent window to a wx.Window for ifileoperation"""
+    try:
+        return parent._resolve(parent) # type: ignore
+    except AttributeError:
+        return parent   # type: ignore
 
 # Higher level APIs implemented by using the imported OS-specific ones above
-def shellDelete(files, parent=None, confirm=False, recycle=False):
+def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
+                ask_confirm=False, recycle=False, __shell=True):
+    operate = file_operation if __shell else _default_file_operation
+    srcs_dsts = dict.fromkeys(files, GPath(''))
     try:
-        return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
-                              confirm=confirm, renameOnCollision=True,
-                              silent=False, parent=parent)
+        return operate(FileOperationType.DELETE, srcs_dsts, allow_undo=recycle,
+            ask_confirm=ask_confirm, silent=False, parent=_resolve(parent))
     except CancelError:
-        if confirm:
+        if ask_confirm:
+            # The user selected to cancel the operation, so don't raise the
+            # error
             return None
         raise
 
-def shellDeletePass(node, parent=None):
+def shellDeletePass(node: Path, parent: _TShellWindow = None, __shell= True):
     """Delete tmp dirs/files - ignore errors (but log them)."""
     if node.exists():
-        try: shellDelete(node, parent=parent, confirm=False, recycle=False)
+        try: shellDelete([node], parent=parent, __shell=__shell)
         except OSError: deprint(f'Error deleting {node}:', traceback=True)
 
-def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
-              allowUndo=False, autoRename=False, silent=False):
-    return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
-                          confirm=askOverwrite, allowUndo=allowUndo,
-                          renameOnCollision=autoRename, silent=silent)
+def shellMove(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
+        ask_confirm: bool = False, allow_undo: bool = False,
+        auto_rename: bool = False, silent: bool = False, __shell: bool = True):
+    operate = file_operation if __shell else _default_file_operation
+    return operate(FileOperationType.MOVE, sources_dests,
+        parent=_resolve(parent), ask_confirm=ask_confirm, allow_undo=allow_undo,
+        rename_on_collision=auto_rename, silent=silent)
 
-def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
-              allowUndo=False, autoRename=False):
-    return _fileOperation(FO_COPY, filesFrom, filesTo, allowUndo=allowUndo,
-                          confirm=askOverwrite, renameOnCollision=autoRename,
-                          silent=False, parent=parent)
+def shellCopy(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
+        ask_confirm: bool = False, allow_undo: bool = False,
+        auto_rename: bool = False, __shell: bool = True):
+    operate = file_operation if __shell else _default_file_operation
+    return operate(FileOperationType.COPY, sources_dests,
+        allow_undo=allow_undo, ask_confirm=ask_confirm,
+        rename_on_collision=auto_rename, silent=False, parent=_resolve(parent))
 
-def shellMakeDirs(dirs, parent=None):
+def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
     if not dirs: return
     #--Skip dirs that already exist
     dirs = [x for x in dirs if not x.exists()]
@@ -186,11 +99,12 @@ def shellMakeDirs(dirs, parent=None):
     #  supposed to be on doesn't exist)
     errorPaths = [d for d in dirs if not drive_exists(d)]
     if errorPaths:
-        raise NonExistentDriveError(errorPaths)
+        raise NotADirectoryError(errorPaths)
     if os_name == 'posix':
         return # drive_exists creates the directories on posix
     #--Checks complete, start working
-    tempDirs, fromDirs, toDirs = [], [], []
+    move_dirs: dict[Path, Path] = {}
+    tempDirs: list[Path] = []
     try:
         for folder in dirs:
             # Attempt creating the directory via normal methods, only fall back
@@ -210,14 +124,11 @@ def shellMakeDirs(dirs, parent=None):
                 if not toMake:
                     continue
                 toMake.reverse()
-                base = tmpDir.join(toMake[0])
-                toDir = folder.join(toMake[0])
+                move_dirs[toMake[0]] = folder.join(toMake[0])
                 tmpDir.join(*toMake).makedirs()
-                fromDirs.append(base)
-                toDirs.append(toDir)
-        if fromDirs:
+        if move_dirs:
             # fromDirs will only get filled if folder.makedirs() failed
-            shellMove(fromDirs, toDirs, parent=parent)
+            shellMove(move_dirs, parent=parent)
     finally:
         for tmpDir in tempDirs:
             tmpDir.rmtree(safety=tmpDir.stail)

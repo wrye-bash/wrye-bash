@@ -243,7 +243,7 @@ class ModFile(object):
             filePath.temp.mtime = self.fileInfo.mtime
         # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
         #  permissions dialog is displayed (should display file in use)
-        env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!
+        env.shellMove({filePath.temp: filePath})
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):

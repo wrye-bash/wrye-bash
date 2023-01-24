@@ -128,7 +128,7 @@ class OmodFile(object):
         del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.values())
 
-    def extractToProject(self,outDir,progress=None):
+    def extractToProject(self, outDir: Path, progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
         progress = progress if progress else bolt.Progress()
         extractDir = stageBaseDir = Path.tempDir()
@@ -142,8 +142,8 @@ class OmodFile(object):
                 self._extract_omod(progress, extractDir, stageDir)
             progress(1, stail_ + _('Extracted'))
             # Move files to final directory
-            env.shellMove(stageDir, outDir.head, parent=None,
-                          askOverwrite=True, allowUndo=True, autoRename=True)
+            env.shellMove({stageDir: outDir}, ask_confirm=True, allow_undo=True,
+                auto_rename=True)
         except Exception:
             # Error occurred, see if final output dir needs deleting
             env.shellDeletePass(outDir, parent=progress.getParent())
@@ -225,7 +225,7 @@ class OmodFile(object):
         # parent dir into its subdir (duh), so just make a small temp subdir
         temp_extract = extractDir.join(u'out')
         archives.extract7z(self.omod_path, temp_extract)
-        env.shellMove(temp_extract, stageDir, parent=None)
+        env.shellMove({temp_extract: stageDir})
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)

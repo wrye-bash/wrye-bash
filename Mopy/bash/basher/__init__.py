@@ -55,6 +55,7 @@ import os
 import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
+from collections.abc import Iterable
 from functools import partial, reduce
 from itertools import chain
 
@@ -2736,7 +2737,7 @@ class InstallersList(balt.UIList):
                               "'%(omod_name)s'?") % {
                                 'omod_project': omod.sbody,
                                 'omod_name': om_name}):
-                        env.shellDelete(outDir, parent=self,
+                        env.shellDelete([outDir], parent=self,
                                         recycle=True)  # recycle
                     else: continue
                 try:
@@ -2809,7 +2810,7 @@ class InstallersList(balt.UIList):
         return False
 
     @balt.conversation
-    def OnDropFiles(self, x, y, filenames):
+    def OnDropFiles(self, x: int, y: int, filenames: Iterable[str]):
         file_paths = [GPath(f) for f in filenames]
         dirs = {f for f in file_paths if f.is_dir()}
         omod_paths = [f for f in file_paths if
@@ -2826,31 +2827,30 @@ class InstallersList(balt.UIList):
         if packages or converters:
             action = self._askCopyOrMove(packages, converters)
             if action in ('COPY', 'MOVE'):
+                sources_dests: dict[bolt.Path, bolt.Path] = {}
                 pkgs_dir = bass.dirs['installers']
-                pkgs_src, pkgs_dst = [], []
-                # Ask the user to confirm any overwrites
+                # Ask the user to confirm any overwrites for projects, for
+                # archives (converters, archive installers) we can let
+                # shellMove/Copy prompt for us
                 for candidate_pkg in packages:
                     candidate_to = pkgs_dir.join(candidate_pkg.tail)
-                    if not self._overwrite_disallowed(candidate_to,
-                            is_package=True):
-                        pkgs_src.append(candidate_pkg)
-                        pkgs_dst.append(candidate_to)
+                    if candidate_pkg.is_dir() and self._overwrite_disallowed(
+                        candidate_to, is_package=True):
+                        continue
+                    sources_dests[candidate_pkg] = candidate_to
                 convs_dir = bass.dirs['converters']
-                convs_src, convs_dst = [], []
-                for candidate_conv in list(converters):
-                    candidate_to = convs_dir.join(candidate_conv.tail)
-                    if not self._overwrite_disallowed(candidate_to,
-                            is_package=False):
-                        convs_src.append(candidate_conv)
-                        convs_dst.append(candidate_to)
-                if not (packages or converters):
+                sources_dests |= {
+                    candidate_conv: convs_dir.join(candidate_conv.tail)
+                    for candidate_conv in converters
+                }
+                if not sources_dests:
                     return # All overwrites disallowed by user, abort
                 with BusyCursor():
                     try:
                         shell_action = (env.shellMove if action == 'MOVE' else
                                         env.shellCopy)
-                        shell_action(pkgs_src + convs_src,
-                            pkgs_dst + convs_dst, parent=self._native_widget)
+                        shell_action(sources_dests, parent=self,
+                            ask_confirm=True, allow_undo=True)
                     except (CancelError, SkipError):
                         pass
         self.panel.frameActivated = True
@@ -3060,7 +3060,7 @@ class InstallersDetails(_SashDetailsPanel):
         self._update_fomod_state()
         #--Espms
         # sorted list of the displayed installer espm names - esms sorted first
-        self.espm_checklist_fns = [] # type: list[FName]
+        self.espm_checklist_fns: list[FName] = []
         self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
@@ -3505,7 +3505,7 @@ class InstallersPanel(BashTab):
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
             # Delete extracted omods
-            def _del(files): env.shellDelete(files, parent=self._native_widget)
+            def _del(files): env.shellDelete(files, parent=self)
             try:
                 _del(omodRemoves)
             except (CancelError, SkipError):
@@ -3526,12 +3526,12 @@ class InstallersPanel(BashTab):
                         if omod_path.exists():
                             bosh.omods.failedOmods.add(FName(omod_path.stail))
             # Move bad omods
-            def _move_omods(failed):
-                dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
-                         for omod in failed]
-                env.shellMove(failed, dests, parent=self._native_widget)
+            def _move_omods(failed: Iterable[bolt.Path]):
+                env.shellMove({
+                    omod: dirInstallersJoin('Bash', 'Failed OMODs', omod.tail)
+                    for omod in failed
+                }, parent=self)
             try:
-                omodMoves = list(omodMoves)
                 env.shellMakeDirs([dirInstallersJoin('Bash', 'Failed OMODs')])
                 _move_omods(omodMoves)
             except (CancelError, SkipError):

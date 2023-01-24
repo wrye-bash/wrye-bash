@@ -145,6 +145,12 @@ def _import_deps():
         if bolt.os_name == u'nt':
             deps_msg += u'- pywin32\n'
     try:
+        import ifileoperation
+    except ImportError:
+        # Only a dependency on Windows, so skip on other operating systems
+        if bolt.os_name == 'nt':
+            deps_msg += '- ifileoperation\n'
+    try:
         import yaml
     except ImportError:
         deps_msg += u'- PyYAML\n'
@@ -270,6 +276,11 @@ def dump_environment(wxver=None):
     except ImportError:
         websocket_client_ver = 'not found (optional)'
     wx_ver = wxver or 'not found'
+    try:
+        import ifileoperation
+        ifileoperation_ver = ifileoperation.__version__
+    except ImportError:
+        ifileoperation_ver = 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     fse = bolt.Path.sys_fs_enc
@@ -281,6 +292,8 @@ def dump_environment(wxver=None):
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet_ver}',
+        (f' - ifileoperation: {ifileoperation_ver}'
+         if bolt.os_name == 'nt' else ''),
         f' - lxml: {lxml_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',

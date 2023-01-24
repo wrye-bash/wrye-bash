@@ -1211,8 +1211,7 @@ class Installer(ListInfo):
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
         mods, inis, bsas = set(), set(), set()
-        source_paths, dests = [], []
-        add_source, add_dest = source_paths.append, dests.append
+        sources_dests = {}
         installer_plugins = self.espms
         is_ini_tweak = InstallersData._is_ini_tweak
         join_data_dir = bass.dirs[u'mods'].join
@@ -1228,16 +1227,15 @@ class Installer(ListInfo):
             elif dest_fname.fn_ext == bsa_ext:
                 bsas.add(dest_fname)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
-            add_source(srcDirJoin(src))
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
-            add_dest(join_data_dir(norm_ghostGet(dest, dest)))
+            sources_dests[srcDirJoin(src)] = join_data_dir(norm_ghostGet(dest, dest))
             subprogressPlus()
         #--Now Move
         try:
             if data_sizeCrcDate_update:
                 fs_operation = env.shellMove if unpackDir else env.shellCopy
-                fs_operation(source_paths, dests, progress.getParent())
+                fs_operation(sources_dests, progress.getParent())
         finally:
             #--Clean up unpack dir if we're an archive
             if unpackDir: bass.rmTempDir()

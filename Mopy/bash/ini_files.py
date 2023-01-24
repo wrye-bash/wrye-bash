@@ -758,8 +758,8 @@ class GameIni(IniFile):
                 bush.game.template_dir, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
-            except (env.AccessDeniedError, CancelError, SkipError):
+                env.shellCopy({source: aiBsa}, allow_undo=True, auto_rename=True)
+            except (PermissionError, CancelError, SkipError):
                 return
         sArchives = self.getSetting(br_section, br_key, u'')
         #--Strip existing redirectors out

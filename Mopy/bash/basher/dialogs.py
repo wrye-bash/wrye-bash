@@ -254,14 +254,15 @@ class CreateNewProject(DialogWindow):
             tempProject.join(u'Docs').makedirs()
         # HACK: shellMove fails unless it has at least one file - means
         # creating an empty project fails silently unless we make one
+        # TODO: See if this is still necessary with IFileOperation
         has_files = bool([*tempProject.ilist()])
-        if not has_files: tempProject.join(u'temp_hack').makedirs()
+        if not has_files: tempProject.join('temp_hack').makedirs()
         # Move into the target location
         # TODO(inf) de-wx! Investigate further
-        env.shellMove(tempProject, projectDir, parent=self._native_widget)
+        env.shellMove({tempProject: projectDir}, parent=self)
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
-            projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
+            projectDir.join('temp_hack').rmtree(safety='temp_hack')
         fn_result_proj = FName(projectDir.stail)
         new_installer_order = 0
         sel_installers = self._parent.GetSelectedInfos()

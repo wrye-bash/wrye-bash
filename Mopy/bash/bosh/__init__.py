@@ -301,7 +301,7 @@ class FileInfo(AFile, ListInfo):
                 # if cosave exists while its backup not, delete it on restoring
                 tup[1].remove()
                 backup_paths.remove(tup)
-        env.shellCopy(*list(zip(*backup_paths)))
+        env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
         self.get_store().new_info(self.fn_key, notify_bain=True)
@@ -1414,7 +1414,7 @@ class DataStore(DataDict):
             # saves) shellMove will offer to skip and raise SkipError
             if tup[0] == tup[1] or not tup[0].exists():
                 rename_paths.remove(tup)
-        env.shellMove(*list(zip(*rename_paths)))
+        env.shellMove(dict(rename_paths))
         old_key = member_info.fn_key
         ##: Make sure we pass FName in, then drop this FName call
         member_info.fn_key = FName(newName)
@@ -1438,7 +1438,7 @@ class DataStore(DataDict):
     def move_infos(self, sources, destinations, window, bash_frame):
         # hasty hack for Files_Unhide, must absorb move_info
         try:
-            env.shellMove(sources, destinations, parent=window)
+            env.shellMove(dict(zip(sources, destinations)), parent=window)
         except (CancelError, SkipError):
             pass
         return forward_compat_path_to_fn_list(

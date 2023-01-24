@@ -33,7 +33,7 @@ from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs
-from .exception import BoltError, NonExistentDriveError
+from .exception import BoltError
 
 ##: we need to import LOOTParser after defining this as LOOTParser imports bush
 # (via loot_conditions) - a solution is to make dirs pathlib.Paths so this
@@ -265,8 +265,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             wanted_dir = dirs[dir_key]
             deprint(f' - {wanted_dir}')
             shellMakeDirs([wanted_dir])
-    except NonExistentDriveError as e:
-        # NonExistentDriveError is thrown by shellMakeDirs if any of the
+    except NotADirectoryError as e:
+        # NotADirectoryError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive (in posix if permission is denied). Find which keys are
         # causing the errors

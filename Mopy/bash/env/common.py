@@ -30,10 +30,13 @@ import datetime
 import functools
 import json
 import os
+import shutil
 import stat
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import Callable, TypeVar
 
-from .. import bolt
+from ..bolt import GPath, Path, deprint
 
 # Internals ===================================================================
 @functools.cache
@@ -54,20 +57,20 @@ def _find_legendary_games():
         with open(lgd_installed_path, 'r', encoding='utf-8') as ins:
             lgd_installed_data = json.load(ins)
         for lgd_game in lgd_installed_data.values():
-            found_lgd_games[lgd_game['app_name']] = bolt.GPath(
+            found_lgd_games[lgd_game['app_name']] = GPath(
                 lgd_game['install_path'])
     except FileNotFoundError:
         pass # Legendary is not installed or no games are installed
     except (json.JSONDecodeError, KeyError):
-        bolt.deprint('Failed to parse Legendary manifest file', traceback=True)
+        deprint('Failed to parse Legendary manifest file', traceback=True)
     return found_lgd_games
 
 # Windows store dataclasses
 @dataclass(slots=True)
 class _LegacyWinAppVersionInfo:
     full_name: str
-    install_location: bolt.Path
-    mutable_location: bolt.Path
+    install_location: Path
+    mutable_location: Path
     # NOTE: the version parsed here is from the package name or app manifest
     # which do not agree in general with the canonical "game version" found in
     # the executable.  We store it only as a fallback in case the Windows Store
@@ -109,7 +112,7 @@ class _LegacyWinAppInfo:
                 f'versions=<{len(self.versions)} version(s)>)')
 
 def _get_language_paths(language_dirs: list[str],
-        main_location: bolt.Path) -> list[bolt.Path]:
+        main_location: Path) -> list[Path]:
     """Utility function that checks a list of language dirs for a game and, if
     that list isn't empty, joins a main location path with all those dirs and
     returns a list of all such present language paths. If the list is empty, it
@@ -135,11 +138,11 @@ def get_game_version_fallback(test_path, ws_info):
     warn_msg = _(u'Warning: %(game_file)s could not be parsed for version '
                  u'information.') % {'game_file': test_path}
     if ws_info.installed:
-        bolt.deprint(warn_msg + u' ' +
+        deprint(warn_msg + u' ' +
             _(u'A fallback has been used, but may not be accurate.'))
         return ws_info.get_installed_version()._version
     else:
-        bolt.deprint(warn_msg + u' ' +
+        deprint(warn_msg + u' ' +
             _('This is not a legacy Windows Store game, your system likely '
               'needs to be configured for file permissions. See the Wrye Bash '
               'General Readme for more information.'))
@@ -172,3 +175,156 @@ def get_egs_game_paths(submod):
                 return _get_language_paths(submod.Eg.egs_language_dirs,
                     egs_games[egs_an])
     return []
+
+# API - Filesystem methods ====================================================
+_StrPath = TypeVar('_StrPath', str, os.PathLike[str], covariant=True)
+T = TypeVar('T')
+
+class FileOperationType(Enum):
+    MOVE = 'MOVE'
+    COPY = 'COPY'
+    RENAME = 'RENAME'
+    DELETE = 'DELETE'
+
+def _retry(operation: Callable[[], T], folder_to_make: Path) -> T:
+    """Helper to auto-retry an operation if it fails due to a missing folder."""
+    try:
+        return operation()
+    except FileNotFoundError:
+        folder_to_make.makedirs()
+        return operation()
+
+def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
+        ask_confirm: bool, parent, move: bool) -> dict[str, str]:
+    """Copy files using shutil"""
+    # NOTE 1: Using stdlib methods we can't support `allow_undo`
+    # NOTE 2: progress dialogs: NOT IMPLEMENTED (so `silent` is ignored)
+    # TODO(241): rename_on_collision NOT IMPLEMENTED
+    operation_results: dict[str, str] = {}
+    for from_path, to_path in sources_dests.items():
+        if from_path.is_dir():
+            # Copying a directory: check for collision
+            if to_path.is_file():
+                raise NotADirectoryError(str(to_path))
+            elif to_path.is_dir():
+                # Collision: merge contents
+                sub_items = {
+                    from_path.join(sub_item): to_path.join(sub_item)
+                    for sub_item in os.listdir(from_path)
+                }
+                sub_results = __copy_or_move(sub_items, rename_on_collision,
+                                             ask_confirm, parent, move)
+                if sub_results:
+                    # At least some of the sub-items were copied
+                    operation_results[os.fspath(from_path)] = os.fspath(to_path)
+            else:
+                # No Collision, let shutil do the work
+                if move:
+                    # NOTE: shutil.move: if the destination is a directory, the
+                    # source is moved inside the directory. For moving a
+                    # directory, this is always the case
+                    shutil.move(from_path, to_path.head)
+                else:
+                    operation = functools.partial(shutil.copytree,
+                                                  from_path, to_path)
+                    _retry(operation, to_path.head)
+                operation_results[os.fspath(from_path)] = os.fspath(to_path)
+        elif from_path.is_file():
+            # Copying a file: check for collisions if the user wants prompts
+            if ask_confirm:
+                from .. import balt
+                if to_path.is_file():
+                    msg = _('Overwrite %(destination)s with %(source)s?') % {
+                        'destination': os.fspath(to_path),
+                        'source': os.fspath(from_path)
+                    }
+                    if not balt.askYes(parent, msg, _('Overwrite file?')):
+                        continue
+            # Perform the copy/move
+            if move:
+                # Move already makes intermediate directories
+                shutil.move(from_path, to_path)
+            else:
+                operation = functools.partial(shutil.copy2, from_path, to_path)
+                _retry(operation, to_path.head)
+            operation_results[os.fspath(from_path)] = os.fspath(to_path)
+        else:
+            raise FileNotFoundError(os.fspath(from_path))
+    return operation_results
+
+def file_operation(operation: str | FileOperationType,
+        sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
+        ask_confirm=False, rename_on_collision=False,
+        silent = False, parent=None) -> dict[str, str]:
+    """file_operation API. Performs a filesystem operation on the specified
+    files.
+
+    NOTE: This generic version is still WIP: it doesn't support all the optional
+    features, and returns an empty mapping for the results.
+
+    :param operation: One of the FileOperationType enum values, corresponding to
+        a move, copy, rename, or delete operation.
+    :param sources_dests: A mapping of source paths to destinations. The format
+        of destinations depends on the operation:
+        - For FileOperationTYpe.DELETE: destinations are ignored, they may be
+          anything.
+        - For FileOperationType.COPY, MOVE: destinations should be the path to
+          the full destination name (not the destination containing directory).
+        - For FileOperationType.RENAME: destinations should be file names only,
+          without directories.
+        Destinations may be anything supporting the os.PathLike interface: str,
+        bolt.Path, pathlib.Path, etc).  Parent directories for moves and copies
+        will be created for you, without prompting.
+    :param allow_undo: If possible, preserve undo information so the operation
+        can be undone. For deletions, this will attempt to use the recylce bin.
+    :param ask_confirm: If False, responds to any OS dialog boxes with
+        "Yes to All".
+    :param rename_on_collision: If True, automatically renames files on a move
+        or copy when collisions occcur.
+    :param silent: If True, do not display progress dialogs.
+    :param parent: The parent window for any dialogs.
+
+    :return: A mapping of source file paths to their final new path.  For a
+        deletion operation, the final path will be None.
+        TOOD: Implement this.
+    """
+    if not sources_dests: # Nothing to operate on
+        return {}
+    abspath = os.path.abspath
+    if operation is FileOperationType.DELETE:
+        # allow_undo: no effect, can't use the recylce bin with standard lib
+        # confirm: show custom prompts if True
+        # rename_on_collision: NOT IMPLEMENTED
+        # silent: no real effect (no progress dialog in the implementation)
+        source_paths = [GPath(abspath(x)) for x in sources_dests]
+        if ask_confirm:
+             # TODO(ut): local import, env should be above balt...
+            from .. import balt
+            message = _('Are you sure you want to permanently delete '
+                        'these %(item_cnt)d items?') % {
+                'item_cnt': len(source_paths)}
+            message += u'\n\n' + u'\n'.join([f' * {x}' for x in source_paths])
+            if not balt.askYes(parent, message,
+                    _('Delete Multiple Items')):
+                return {}
+        # Do deletion
+        for to_delete in source_paths:
+            if not to_delete.exists(): continue
+            if to_delete.is_dir():
+                to_delete.rmtree(to_delete.stail)
+            else:
+                to_delete.remove()
+        return {}
+    if operation is FileOperationType.RENAME:
+        # We use move for renames, so convert the new name to a full path
+        srcs_dsts = {
+            (source_path := GPath(abspath(source))): source_path.head.join(target)
+            for source, target in sources_dests.items()
+        }
+    else:
+        srcs_dsts = {
+            GPath(abspath(source)): GPath(abspath(target))
+            for source, target in sources_dests.items()
+        }
+    return __copy_or_move(srcs_dsts, rename_on_collision, ask_confirm, parent,
+                          move=(operation is FileOperationType.MOVE))

@@ -134,32 +134,6 @@ class ModSigMismatchError(ModError):
                        f'could lead to crashes.'
         super(ModSigMismatchError, self).__init__(in_name, message_form)
 
-# Shell (OS) File Operation exceptions ----------------------------------------
-class FileOperationError(OSError):  ##: revisit uses - use builtin exceptions
-    def __init__(self, error_code, message=None):
-        # type: (int, str) -> None
-        self._error_code = error_code ##: unused
-        Exception.__init__(self,
-                           f'FileOperationError: {message or error_code}')
-
-class AccessDeniedError(FileOperationError):
-    def __init__(self):
-        super(AccessDeniedError, self).__init__(5, u'Access Denied')
-
-class InvalidPathsError(FileOperationError):
-    def __init__(self, source, target): # type: (str, str) -> None
-        super(InvalidPathsError, self).__init__(
-            124, f'Invalid paths:\nsource: {source}\ntarget: {target}')
-
-class DirectoryFileCollisionError(FileOperationError):
-    def __init__(self, source, dest):  ## type: (Path, Path) -> None
-        super(DirectoryFileCollisionError, self).__init__(
-            -1, f'collision: moving {source} to {dest}')
-
-class NonExistentDriveError(FileOperationError):
-    def __init__(self, failed_paths):  ## type: (List[Path]) -> None
-        self.failed_paths = failed_paths
-        super(NonExistentDriveError, self).__init__(-1, u'non existent drive')
 
 # BSA exceptions --------------------------------------------------------------
 class BSAError(FileError): pass

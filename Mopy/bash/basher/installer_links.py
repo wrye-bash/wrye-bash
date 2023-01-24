@@ -278,9 +278,11 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
             src_folder = sel_package.abs_path
         dst_folder = bass.dirs['installers'].join(pr_path)
         dst_folder.makedirs()
-        src = [src_folder.join(s) for s in ret.install_files.keys()]
-        dst = [dst_folder.join(d) for d in ret.install_files.values()]
-        env.shellCopy(src, dst, parent=self.window)
+        srcs_dsts = {
+            src_folder.join(s): dst_folder.join(d)
+            for s, d in ret.install_files.items()
+        }
+        env.shellCopy(srcs_dsts, parent=self.window)
         if working_on_archive:
             # We no longer need the temp directory since we copied everything
             # to the final project, so clean it up
