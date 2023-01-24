@@ -46,7 +46,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Self, TypeVar, get_type_hints
+from typing import ClassVar, Self, TypeVar, get_type_hints, overload
 from urllib.parse import quote
 from zlib import crc32
 
@@ -121,7 +121,7 @@ def getbestencoding(bitstream):
     #print('%s: %s (%s)' % (repr(bitstream),encoding,confidence))
     return encoding_,confidence
 
-def decoder(byte_str, encoding=None, avoidEncodings=()):
+def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, str) or byte_str is None: return byte_str
     # Try the user specified encoding first
@@ -724,14 +724,18 @@ def top_level_items(directory):
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-_gpaths = {}
+_gpaths: dict[str | os.PathLike[str], Path] = {}
 
-def GPath(str_or_uni):
+@overload
+def GPath(str_or_uni: None) -> None: ...
+@overload
+def GPath(str_or_uni: str | os.PathLike[str]) -> Path: ...
+def GPath(str_or_uni: str | os.PathLike[str] | None) -> Path | None:
     """Path factory and cache.
 
     :rtype: Path"""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if not str_or_uni: return Path('') # needed, os.path.normpath('') = '.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
@@ -805,6 +809,17 @@ class Path(os.PathLike):
     #  variations of it.
     __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
                  '_cext', '_sbody', '_hash')
+    # Since these are made on-the-fly, most type-checkers / IDEs will not
+    # be able to infer the correct return type from .s, .cs, etc without these
+    # hints.
+    _cs: str
+    _sroot: str
+    _shead: str
+    _stail: str
+    _ext: str
+    _cext: str
+    _sbody: str
+    _hash: int
 
     def __init__(self, norm_str: str):
         """Initialize with unicode - call only in GPath."""
@@ -926,12 +941,12 @@ class Path(os.PathLike):
     @property
     def temp(self):
         """Temp file path."""
-        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+        baseDir = GPath(tempfile.gettempdir()).join('WryeBash_temp')
         baseDir.makedirs()
         return baseDir.join(self.tail + u'.tmp')
 
     @staticmethod
-    def tempDir(prefix=u'WryeBash_'):
+    def tempDir(prefix='WryeBash_'):
         return GPath(tempfile.mkdtemp(prefix=prefix))
 
     @staticmethod
@@ -971,7 +986,7 @@ class Path(os.PathLike):
         return os.path.getmtime(self._s)
     def _setmtime(self, mtime):
         os.utime(self._s, (self.atime, mtime))
-    mtime = property(_getmtime, _setmtime, doc=u'Time file was last modified.')
+    mtime = property(_getmtime, _setmtime, doc='Time file was last modified.')
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
@@ -1017,7 +1032,7 @@ class Path(os.PathLike):
     def __add__(self,other):
         # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
-    def join(*args):
+    def join(*args: str | os.PathLike[str]):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
