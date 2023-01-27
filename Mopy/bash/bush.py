@@ -25,22 +25,20 @@ current session. Exports the somewhat unfortunately named `game` GameInfo
 instance, which encapsulates static info on current game for the rest of
 Bash to use, so must be imported and run high up in the booting sequence.
 """
-
-# Imports ---------------------------------------------------------------------
 from __future__ import annotations
 
 import collections
-from configparser import ConfigParser
 import pkgutil
 import textwrap
+from configparser import ConfigParser
 
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
-from .env import get_registry_game_paths, get_legacy_ws_game_paths, \
-    get_legacy_ws_game_info, get_egs_game_paths, get_ws_game_paths
+from .env import get_egs_game_paths, get_legacy_ws_game_info, \
+    get_legacy_ws_game_paths, get_registry_game_paths, get_ws_game_paths
 from .exception import BoltError
-from .initialization import get_path_from_ini
 from .game import GameInfo, patch_game
+from .initialization import get_path_from_ini
 
 # Game detection --------------------------------------------------------------
 game: 'patch_game.PatchGame' | None = None

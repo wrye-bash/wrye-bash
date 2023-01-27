@@ -25,12 +25,12 @@ import shlex
 import subprocess
 import webbrowser
 
-from . import BashStatusBar, BashFrame
-from .frames import PluginChecker, DocBrowser
+from . import BashFrame, BashStatusBar
+from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
-from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
-from ..env import getJava, get_game_version_fallback
+from .. import balt, bass, bolt, bosh, bush, load_order
+from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
+from ..env import get_game_version_fallback, getJava
 from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 

@@ -29,6 +29,7 @@ import time
 
 import wx as _wx
 
+##: Is this bolt import needed for some reason or is it unused?
 from .. import bolt
 from ..localize import setup_locale
 

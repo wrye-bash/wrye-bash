@@ -25,16 +25,16 @@ import re
 import string
 from collections import OrderedDict
 
-from .. import bass, balt, bosh, bolt, load_order
+from .. import balt, bass, bolt, bosh, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath, FName
-from ..bosh import mods_metadata, empty_path, omods
+from ..bolt import FName, GPath
+from ..bosh import empty_path, mods_metadata, omods
 from ..exception import StateError
-from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
-    LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
-    web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar, \
-    VerticalLine
+from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
+    FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
+    SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
+    VerticalLine, VLayout, WindowFrame, bell, copy_text_to_clipboard, \
+    web_viewer_available
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""

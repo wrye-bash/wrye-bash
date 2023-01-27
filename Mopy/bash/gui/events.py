@@ -112,7 +112,8 @@ __author__ = u'Infernio'
 
 from enum import Enum
 
-from ..exception import UnknownListener, ListenerBound
+from ..exception import ListenerBound, UnknownListener
+
 # no other imports, everything else needs to be able to import this
 
 def null_processor(_event):

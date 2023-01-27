@@ -26,14 +26,13 @@ absorb all of them under the _APreserver base class."""
 from __future__ import annotations
 
 import operator
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from itertools import chain
 
-# Internal
 from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
-from ...bolt import attrgetter_cache, deprint, setattr_deep, combine_dicts
+from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
 from ...brec import RecordType
 from ...exception import ModSigMismatchError
 

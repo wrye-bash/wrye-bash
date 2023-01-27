@@ -27,17 +27,17 @@ coded for rest of the games."""
 import array
 from collections import Counter, defaultdict
 from io import BytesIO
-from itertools import starmap, repeat
+from itertools import repeat, starmap
 
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, flag, deprint, encode, SubProgress, unpack_many, \
-    unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache, unpack_str8, dict_sort, sig_to_str
-from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, FormId, \
-    ShortFidWriteContext, RecordType
-from ..exception import ModError, StateError, AbstractError
-from ..mod_files import ModFile, LoadFactory
+from ..bolt import Flags, SubProgress, deprint, dict_sort, encode, flag, \
+    pack_byte, pack_int, pack_short, sig_to_str, struct_unpack, \
+    structs_cache, unpack_int, unpack_many, unpack_short, unpack_str8
+from ..brec import FormId, ModReader, MreRecord, RecordType, \
+    ShortFidWriteContext, int_unpacker, unpack_header
+from ..exception import AbstractError, ModError, StateError
+from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------

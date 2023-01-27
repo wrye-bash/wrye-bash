@@ -23,7 +23,7 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
-from ..gui import ImageWrapper, DEFAULT_POSITION
+from ..gui import DEFAULT_POSITION, ImageWrapper
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {

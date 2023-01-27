@@ -48,59 +48,42 @@ representing external data structures (the plugins.txt file and the Data and
 Saves directories respectively). Persistent storage for the app is primarily
 provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
-
-# Imports ---------------------------------------------------------------------
 from __future__ import annotations
 
-#--Python
 import collections
 import os
 import sys
 import time
-from collections import OrderedDict, namedtuple, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial, reduce
 from typing import List
 
-#--wxPython
 import wx
 
-#--Local
-from .. import bush, bosh, bolt, bass, env, load_order, archives, \
-    initialization
-from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, os_name, str_to_sig, FName, forward_compat_path_to_fn, \
-    to_unix_newlines, to_win_newlines
-from ..bosh import omods, ModInfo
+# basher-local imports - maybe work towards dropping (some of) these?
+from .constants import colorInfo, settingDefaults
+from .dialogs import CreateNewPlugin, CreateNewProject
+from .frames import DocBrowser
+from .gui_patchers import initPatchers
+from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
+    load_order
+from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
+    INIListCtrl, InstallerColorChecks, ItemLink, Link, Links, ListBoxes, \
+    NotebookPanel, Resources, SeparatorLink, colors, images
+from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
+    forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
+    to_unix_newlines, to_win_newlines, top_level_items
+from ..bosh import ModInfo, omods
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
+from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
+    CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
+    EventResult, FileOpen, GlobalMenu, HLayout, ImageWrapper, Label, \
+    LayoutOptions, ListBox, MultiChoicePopup, PanelWin, Picture, \
+    PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
+    TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
+    get_shift_down, read_files_from_clipboard_cb
 from ..localize import format_date
-
-startupinfo = bolt.startupinfo
-
-#--Balt
-from .. import balt
-from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, Resources, \
-    AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, NotebookPanel, \
-    images, colors, Links, ItemLink, InstallerColorChecks
-
-from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
-    SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
-    WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
-    Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
-    GlobalMenu, CopyOrMovePopup, ListBox, PureImageButton, CENTER, \
-    MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen, DateAndTimeDialog
-
-# Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults
-
-# BAIN wizard support, requires PyWin32, so import will fail if it's not installed
-try:
-    from .. import belt
-    bEnableWizard = True
-except ImportError:
-    bEnableWizard = False
-    deprint(u'Error initializing installer wizards:', traceback=True)
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 _env_path = os.environ[u'PATH']
@@ -1128,7 +1111,6 @@ class ModList(_ModsUIList):
         modInfo = self._get_info_clicked(lb_dex_and_flags)
         if not modInfo: return
         if not Link.Frame.docBrowser:
-            from .frames import DocBrowser
             DocBrowser().show_frame()
             settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.SetMod(modInfo.fn_key) ##: will GPath it
@@ -1199,8 +1181,6 @@ class ModList(_ModsUIList):
                 self.new_bashed_patch()
             else:
                 # Ctrl+N - Create a new plugin
-                ##: drop this local import
-                from .dialogs import CreateNewPlugin
                 CreateNewPlugin.display_dialog(self)
         super(ModList, self)._handle_key_up(wrapped_evt)
 
@@ -2893,8 +2873,6 @@ class InstallersList(balt.UIList):
                 self.addMarker()
             else:
                 # Ctrl+N - Create a new project
-                ##: drop this local import
-                from .dialogs import CreateNewProject
                 CreateNewProject.display_dialog(self)
         super(InstallersList, self)._handle_key_up(wrapped_evt)
 
@@ -3877,8 +3855,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     @staticmethod
     def tabLinks(menu):
-        for key in BashNotebook._tabOrder(): # use tabOrder here - it is used in
-            # InitLinks which runs _before_ settings[u'bash.tabs.order'] is set!
+        # use tabOrder here - it is used in InitLinks which runs *before*
+        # settings['bash.tabs.order'] is set!
+        for key in BashNotebook._tabOrder():
             canDisable = bool(key != u'Mods')
             menu.append(_Tab_Link(key, canDisable))
         return menu
@@ -4540,7 +4519,6 @@ class BashApp(object):
             deprint(u'Done rescanning mergeability')
 
 # Initialization --------------------------------------------------------------
-from .gui_patchers import initPatchers
 def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
     bosh.initSettings()
@@ -4665,4 +4643,5 @@ def InitImages():
     images['doc_browser.24'] = _svg('book.svg', 24, invertible=True)
     images['doc_browser.32'] = _svg('book.svg', 32, invertible=True)
 
+##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

@@ -23,12 +23,13 @@
 
 import io
 import re
+
 from . import SaveInfo
-from ._saves import SreNPC, SaveFile
+from ._saves import SaveFile, SreNPC
 from .. import bush
-from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
-    pack_byte, structs_cache
-from ..brec import RecHeader, null2, int_unpacker, FormId, RecordType
+from ..bolt import Flags, Path, encode, pack_byte, pack_int, struct_pack, \
+    struct_unpack, structs_cache
+from ..brec import FormId, RecHeader, RecordType, int_unpacker, null2
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 

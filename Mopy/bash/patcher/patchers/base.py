@@ -25,11 +25,10 @@
 from collections import Counter, defaultdict
 from operator import attrgetter
 
-# Internal
-from ..base import AMultiTweakItem, APatcher, ListPatcher, CsvListPatcher, \
+from ..base import AMultiTweakItem, APatcher, CsvListPatcher, ListPatcher, \
     ScanPatcher
 from ..patch_files import PatchFile
-from ... import load_order, bush
+from ... import bush, load_order
 from ...bolt import deprint
 from ...brec import RecordType
 from ...exception import BPConfigError

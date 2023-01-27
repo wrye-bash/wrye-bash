@@ -26,7 +26,7 @@ import re
 from collections import defaultdict
 from itertools import chain
 
-from ._shared import cobl_main, ExSpecial
+from ._shared import ExSpecial, cobl_main
 from .... import bush
 from ....brec import FormId, RecordType
 from ....patcher.base import ModLoader

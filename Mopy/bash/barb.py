@@ -40,12 +40,10 @@ import os
 import pickle
 from os.path import join as jo
 
-from . import archives
 from . import bass # for settings (duh!)
-from . import bolt
-from . import initialization
-from .bass import dirs, AppVersion
-from .bolt import GPath, deprint, top_level_files, FName
+from . import archives, bolt, initialization
+from .bass import AppVersion, dirs
+from .bolt import FName, GPath, deprint, top_level_files
 from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):

@@ -31,34 +31,36 @@ import os
 import re
 import sys
 import winreg
+from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
+    c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
+    c_wchar_p, sizeof, windll, wintypes, wstring_at
+from ctypes.wintypes import MAX_PATH as _MAX_PATH
+from uuid import UUID
+
 try:
     from lxml import etree # lxml is optional
 except ImportError:
     from xml.etree import ElementTree as etree
-from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
-    wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
-    c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
-from uuid import UUID
 
 import win32api
 import win32com.client as win32client
 import win32gui
 
-from .common import _LegacyWinAppInfo, _LegacyWinAppVersionInfo, \
-    _find_legendary_games, _get_language_paths
+from .common import _find_legendary_games, _get_language_paths, \
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
+from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
-from ..exception import AccessDeniedError, BoltError, SkipError, \
-    FileOperationError
+from ..exception import AccessDeniedError, BoltError
 from ..exception import CancelError as _CancelError
+from ..exception import FileOperationError, SkipError
 
 # File operations -------------------------------------------------------------
 try:
     from win32com.shell import shell, shellcon
-    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
+    from win32com.shell.shellcon import FO_COPY, FO_DELETE, FO_MOVE, \
         FO_RENAME, FOF_NOCONFIRMMKDIR
 
     # NOTE(lojack): AccessDenied can be a result of many error codes,
@@ -121,7 +123,7 @@ except ImportError:
 # API - Constants =============================================================
 _isUAC = False
 
-from ctypes.wintypes import MAX_PATH
+MAX_PATH_LEN = _MAX_PATH
 
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
@@ -942,7 +944,7 @@ class _SHSTOCKICONINFO(Structure):
                 (u'hIcon', c_void_p),
                 (u'iSysImageIndex', c_int),
                 (u'iIcon', c_int),
-                (u'szPath', c_wchar*MAX_PATH)]
+                (u'szPath', c_wchar * _MAX_PATH)]
 
 #------------------------------------------------------------------------------
 
@@ -1125,7 +1127,8 @@ def testUAC(gameDataPath):
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
-    from . import shellMove, shellDeletePass ##: ugh
+    ##: ugh
+    from . import shellDeletePass, shellMove
     try: # to move it into the Data directory
         shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:

@@ -28,13 +28,13 @@ from collections import defaultdict
 from .. import balt, bass, bolt, bush, env
 from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
-from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
-    InstallerOption, InstallerPage, GroupType, OptionType
-from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
-    LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
-    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage, \
-    DialogWindow, HorizontalLine, OkButton, CancelButton, Button, \
-    copy_text_to_clipboard, TOP
+from ..fomod import FailedCondition, FomodInstaller, GroupType, \
+    InstallerGroup, InstallerOption, InstallerPage, OptionType
+from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
+    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
+    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
+    TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
+    copy_text_to_clipboard
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')

@@ -22,9 +22,9 @@
 # =============================================================================
 import re
 
-from .. import balt, bass, bosh, bolt, exception
-from ..balt import ItemLink, ChoiceLink, OneItemLink, AppendableLink
-from ..gui import BusyCursor, copy_text_to_clipboard, DateAndTimeDialog
+from .. import balt, bass, bolt, bosh, exception
+from ..balt import AppendableLink, ChoiceLink, ItemLink, OneItemLink
+from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',

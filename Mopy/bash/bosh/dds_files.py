@@ -38,7 +38,8 @@ __author__ = u'Infernio'
 import copy
 from collections import defaultdict
 from struct import Struct
-from ..bolt import Flags, flag, unpack_4s, unpack_int, AFile
+
+from ..bolt import AFile, Flags, flag, unpack_4s, unpack_int
 from ..exception import DDSError
 
 # Constants

@@ -20,15 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """The data model, complete with initialization functions. Main hierarchies
 are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
-
 from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-#--Python
 import collections
 import io
 import os
@@ -38,26 +34,28 @@ import sys
 from collections import OrderedDict
 from functools import wraps
 from typing import Iterable, Type
-#--Local
-from . import cosaves
-from ._mergeability import isPBashMergeable, is_esl_capable
+
+# bosh-local imports - maybe work towards dropping (some of) these?
+from . import bsa_files, converters, cosaves
+from ._mergeability import is_esl_capable, isPBashMergeable
+from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
-from .save_headers import get_save_header_type, SaveFileHeader
-from .. import bass, bolt, balt, bush, env, load_order, initialization, \
-    archives
+from .save_headers import SaveFileHeader, get_save_header_type
+from .. import archives, balt, bass, bolt, bush, env, initialization, \
+    load_order
 from ..bass import dirs, inisettings
-from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    struct_error, dict_sort, top_level_files, os_name, FName, FNDict, \
-    forward_compat_path_to_fn_list, forward_compat_path_to_fn, ListInfo
-from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext, \
-    FormIdWriteContext
+from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
+    decoder, deprint, dict_sort, forward_compat_path_to_fn, \
+    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
+from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
+    RemapWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
-    CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
-    SaveHeaderError, SkipError, StateError, SkippedMergeablePluginsError, \
-    FailedIniInferError
-from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
-    get_ini_type_and_encoding, AIniFile, supported_ini_exts
+    CancelError, FailedIniInferError, FileError, ModError, PluginsFullError, \
+    SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
+    StateError
+from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
+    OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
@@ -1540,7 +1538,6 @@ class TableFileInfos(DataStore):
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
         """Note that all of these parameters need to be absolute paths!"""
         if self.__class__._bain_notify:
-            from .bain import InstallersData
             InstallersData.notify_external(deleted=deleted, altered=altered,
                                            renamed=renamed)
 
@@ -3369,8 +3366,6 @@ class SaveInfos(FileInfos):
         if refreshSaveInfos: self.refresh()
 
 #------------------------------------------------------------------------------
-from . import bsa_files
-
 class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     # BSAs that have versions other than the one expected for the current game
@@ -3487,14 +3482,16 @@ class ScreenInfos(FileInfos):
     def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
 
 #------------------------------------------------------------------------------
-from . import converters
-from .converters import InstallerConverter
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter
 # See InstallerConverter.__reduce__()
 # noinspection PyRedeclaration
 class InstallerConverter(InstallerConverter): pass
-# same hack for Installers.dat...
-from .bain import InstallerArchive, InstallerMarker, InstallerProject
+
+##: This hides a circular dependency (__init__ -> bain -> __init__)
+from .bain import Installer, InstallerArchive, InstallerMarker, \
+    InstallerProject, InstallersData
+
+# Same hack for Installers.dat...
 # noinspection PyRedeclaration
 class InstallerArchive(InstallerArchive): pass
 # noinspection PyRedeclaration
@@ -3695,7 +3692,6 @@ def initBosh(bashIni, game_ini_path):
                     bush.game.Ini.dropdown_inis[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
-    from .bain import Installer
     Installer.init_bain_dirs()
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',

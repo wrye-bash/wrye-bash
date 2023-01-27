@@ -31,10 +31,10 @@ __author__ = 'Infernio'
 import copy
 from itertools import chain
 
-from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
-    MelSequential, MelNum
-from ..bolt import structs_cache, attrgetter_cache, deprint
-from ..exception import AbstractError, ModSizeError, ArgumentError
+from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
+    MelSequential, MelStruct
+from ..bolt import attrgetter_cache, deprint, structs_cache
+from ..exception import AbstractError, ArgumentError, ModSizeError
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):

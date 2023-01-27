@@ -23,4 +23,5 @@
 """This module lists the files installed in the Data folder in a completely
 vanilla Skyrim VR setup."""
 
+# noinspection PyUnresolvedReferences
 from ..skyrim.vanilla_files import vanilla_files

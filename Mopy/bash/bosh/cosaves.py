@@ -34,11 +34,11 @@ import string
 from typing import Type, get_type_hints
 from zlib import crc32
 
-from ..bolt import decoder, encode, struct_unpack, unpack_int, unpack_short, \
-    unpack_4s, unpack_byte, unpack_str16, unpack_float, unpack_double, \
-    unpack_int_signed, unpack_str32, AFile, unpack_spaced_string, pack_int, \
-    pack_short, pack_double, pack_byte, pack_int_signed, pack_float, pack_4s, \
-    struct_error, GPath, struct_pack, deprint, Path
+from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
+    pack_byte, pack_double, pack_float, pack_int, pack_int_signed, \
+    pack_short, struct_error, struct_pack, struct_unpack, unpack_4s, \
+    unpack_byte, unpack_double, unpack_float, unpack_int, unpack_int_signed, \
+    unpack_short, unpack_spaced_string, unpack_str16, unpack_str32
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 

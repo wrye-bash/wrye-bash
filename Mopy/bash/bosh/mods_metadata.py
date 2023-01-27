@@ -24,10 +24,10 @@ import io
 from collections import defaultdict
 
 from ._mergeability import is_esl_capable
-from .. import balt, bolt, bush, bass, load_order
-from ..bolt import dict_sort, structs_cache, SubProgress, sig_to_str
-from ..brec import ModReader, SubrecordBlob, RecordHeader, unpack_header, \
-    ShortFidWriteContext, RecordType
+from .. import balt, bass, bolt, bush, load_order
+from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
+from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
+    SubrecordBlob, unpack_header
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 

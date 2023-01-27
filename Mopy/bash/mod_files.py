@@ -25,16 +25,18 @@ through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from collections import defaultdict
 from typing import Iterable
-from zlib import decompress as zlib_decompress, error as zlib_error
+from zlib import decompress as zlib_decompress
+from zlib import error as zlib_error
 
 from . import bolt, bush, env
-from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str, \
-    MasterSet
+from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
+    struct_error
 # first import of brec for games with patchers - _dynamic_import_modules
-from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
-    MobBase, TopGrup, unpack_header, FastModReader, Subrecord, int_unpacker, \
-    FormIdReadContext, FormIdWriteContext, ZERO_FID, RecordType
-from .exception import MasterMapError, ModError, StateError, ModReadError
+from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
+    FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
+    RecordHeader, RecordType, Subrecord, TopGrup, int_unpacker, null1, \
+    unpack_header
+from .exception import MasterMapError, ModError, ModReadError, StateError
 from .load_order import get_ordered
 
 class MasterMap(object):

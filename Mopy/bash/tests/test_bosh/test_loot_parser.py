@@ -22,8 +22,8 @@
 # =============================================================================
 from pytest import fail
 
-from ...loot_parser import _process_condition_string
 from ...exception import LexerError, ParserError
+from ...loot_parser import _process_condition_string
 
 # Conditions: Canonical representation tests ----------------------------------
 class _ATestCanonical(object):

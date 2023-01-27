@@ -27,11 +27,11 @@ from io import BytesIO
 
 # no local imports beyond this, imported everywhere in brec
 from . import utils_constants
-from .utils_constants import int_unpacker, group_types, null1, FormId, FID, \
-    ZERO_FID
+from .utils_constants import FID, ZERO_FID, FormId, group_types, \
+    int_unpacker, null1
 from .. import bolt, bush
-from ..bolt import decoder, struct_pack, struct_unpack, structs_cache, \
-    sig_to_str
+from ..bolt import decoder, sig_to_str, struct_pack, struct_unpack, \
+    structs_cache
 from ..exception import ModError, ModReadError, ModSizeError, StateError
 
 #------------------------------------------------------------------------------

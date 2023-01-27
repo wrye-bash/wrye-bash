@@ -29,21 +29,23 @@ import traceback
 from collections import defaultdict
 from itertools import chain
 
-# Local
 from .constants import settingDefaults
 from .dialogs import ExportScriptsDialog
-from .files_links import File_Redate, File_Duplicate
+from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
-from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
-    TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
+from .. import balt, bass, bolt, bosh, bush, load_order
+from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
+    ItemLink, Link, ListBoxes, MenuLink, OneItemLink, SeparatorLink, \
+    TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import AbstractError, BoltError, CancelError
-from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
+from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
-from ..parsers import CsvParser
+from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
+    FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
+    ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -1596,8 +1598,6 @@ class Mod_SetVersion(OneItemLink):
 # Import/Export submenus ------------------------------------------------------
 #------------------------------------------------------------------------------
 #--Import only
-from ..parsers import FidReplacer, _AParser
-
 class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
     _text = _(u'Form IDs...')
@@ -1794,8 +1794,6 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             self.__class__.continueKey, self.__class__.progressTitle)
 
 #--Links ----------------------------------------------------------------------
-from ..parsers import ActorLevels
-
 class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
     askTitle = _(u'Export NPC levels to:')
@@ -1832,8 +1830,6 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     _parser_class = ActorLevels
 
 #------------------------------------------------------------------------------
-from ..parsers import FactionRelations
-
 class Mod_FactionRelations_Export(_Mod_Export_Link):
     """Export faction relations from mod to text file."""
     askTitle = _(u'Export faction relations to:')
@@ -1861,8 +1857,6 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     _parser_class = FactionRelations
 
 #------------------------------------------------------------------------------
-from ..parsers import ActorFactions
-
 class Mod_Factions_Export(_Mod_Export_Link):
     """Export factions from mod to text file."""
     askTitle = _(u'Export factions to:')
@@ -1894,8 +1888,6 @@ class Mod_Factions_Import(_Mod_Import_Link):
         self._showLog('\n'.join(log_out))
 
 #------------------------------------------------------------------------------
-from ..parsers import ScriptText
-
 class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
     """Export scripts from mod to text file."""
     _text = _(u'Scripts...')
@@ -1976,8 +1968,6 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         self._showLog('\n\n'.join(log_msg), title=_('Import Scripts'))
 
 #------------------------------------------------------------------------------
-from ..parsers import ItemStats
-
 class Mod_Stats_Export(_Mod_Export_Link):
     """Exports stats from the selected plugin to a CSV file (for the record
     types specified in bush.game.stats_attrs)."""
@@ -2009,8 +1999,6 @@ class Mod_Stats_Import(_Mod_Import_Link):
         self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
-from ..parsers import ItemPrices
-
 class Mod_Prices_Export(_Mod_Export_Link):
     """Export item prices from mod to text file."""
     askTitle = _(u'Export prices to:')
@@ -2042,8 +2030,6 @@ class Mod_Prices_Import(_Mod_Import_Link):
         self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
-from ..parsers import SigilStoneDetails
-
 class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     """Export Sigil Stone details from mod to text file."""
     askTitle = _(u'Export Sigil Stone details to:')
@@ -2076,8 +2062,6 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
-from ..parsers import SpellRecords
-
 class _SpellRecords_Link(ItemLink):
     """Common code from Mod_SpellRecords_{Ex,Im}port."""
     _do_what = progressTitle = u'OVERRIDE' # avoid pycharm warnings
@@ -2125,8 +2109,6 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
         self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
-from ..parsers import IngredientDetails
-
 class Mod_IngredientDetails_Export(_Mod_Export_Link):
     """Export Ingredient details from mod to text file."""
     askTitle = _(u'Export Ingredient details to:')
@@ -2158,8 +2140,6 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
         self._showLog('\n'.join(msg))
 
 #------------------------------------------------------------------------------
-from ..parsers import EditorIds
-
 class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
     askTitle = _(u'Export eids to:')
@@ -2228,8 +2208,6 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             self._showWarning(f'{e!r}')
 
 #------------------------------------------------------------------------------
-from ..parsers import FullNames
-
 class Mod_FullNames_Export(_Mod_Export_Link):
     """Export full names from mod to text file."""
     askTitle = _(u'Export names to:')

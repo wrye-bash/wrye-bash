@@ -23,6 +23,7 @@
 """This module contains all custom exceptions for Wrye Bash."""
 
 import platform
+
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
 
 class BoltError(Exception):

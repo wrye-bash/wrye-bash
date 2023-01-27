@@ -35,8 +35,8 @@ from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
     VLayout
 from .misc_components import HorizontalLine
 from .multi_choices import ListBox
-from .text_components import Label, HyperlinkLabel
-from .top_level_windows import _APageComponent, PanelWin
+from .text_components import HyperlinkLabel, Label
+from .top_level_windows import PanelWin, _APageComponent
 from ..bolt import dict_sort
 
 class DoubleListBox(PanelWin):

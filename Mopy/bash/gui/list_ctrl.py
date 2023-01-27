@@ -32,7 +32,7 @@ import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler
-from .base_components import WithMouseEvents, WithCharEvents
+from .base_components import WithCharEvents, WithMouseEvents
 from .. import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):

@@ -29,7 +29,7 @@ __author__ = u'Utumno, Infernio'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, Color, scaled
+from .base_components import Color, _AComponent, scaled
 from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying

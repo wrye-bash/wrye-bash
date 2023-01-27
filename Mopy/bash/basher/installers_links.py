@@ -27,9 +27,9 @@ from itertools import chain
 
 from . import Installers_Link
 from .dialogs import CreateNewProject
-from .. import bass, bosh, balt, bush, load_order
-from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
-    EnabledLink, SeparatorLink
+from .. import balt, bass, bosh, bush, load_order
+from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
+    ListBoxes, SeparatorLink
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'Installers_SortActive', u'Installers_SortProjects',

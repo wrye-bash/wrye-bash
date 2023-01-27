@@ -25,18 +25,19 @@ import os
 import subprocess
 import webbrowser
 from collections import defaultdict
+
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import colors, Link, Resources, showOk
-from ..bolt import deprint, readme_url, os_name, dict_sort
-from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
-    ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
-    LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
-    WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
-    TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
-    VBoxedLayout, FileOpen, FileSave, DirOpen
+from ..balt import Link, Resources, colors, showOk
+from ..bolt import deprint, dict_sort, os_name, readme_url
+from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
+    CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
+    DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
+    HLayout, HorizontalLine, Label, LayoutOptions, ListBox, OkButton, \
+    OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
+    ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
+    VBoxedLayout, VLayout, WrappingTextMixin
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):

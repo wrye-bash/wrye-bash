@@ -28,10 +28,10 @@ from __future__ import annotations
 
 import random
 import re
-# Internal
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
-    IndexingTweak
-from ... import bush, load_order, bolt
+
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
+from ... import bolt, bush
 from ...bolt import deprint
 
 #------------------------------------------------------------------------------

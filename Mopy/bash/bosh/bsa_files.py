@@ -36,19 +36,18 @@ import typing
 import zlib
 from collections import defaultdict
 from functools import partial
-from itertools import groupby, chain
+from itertools import chain, groupby
 from operator import itemgetter
 from struct import unpack_from as _unpack_from
 
 import lz4.frame
 
 from .dds_files import DDSFile, mk_dxgi_fmt
-from ..bolt import deprint, Progress, struct_unpack, unpack_byte, unpack_int, \
-    Flags, AFile, structs_cache, struct_calcsize, struct_error
+from ..bolt import AFile, Flags, Progress, deprint, struct_calcsize, \
+    struct_error, struct_unpack, structs_cache, unpack_byte, unpack_int
 from ..env import convert_separators
-from ..exception import AbstractError, BSAError, BSADecodingError, \
-    BSAFlagError, BSACompressionError, BSADecompressionError, \
-    BSADecompressionSizeError
+from ..exception import AbstractError, BSACompressionError, BSADecodingError, \
+    BSADecompressionError, BSADecompressionSizeError, BSAError, BSAFlagError
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 path_sep = u'\\'

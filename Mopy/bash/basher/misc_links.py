@@ -25,12 +25,11 @@ from collections import defaultdict
 
 from . import SaveDetails
 from .settings_dialog import SettingsDialog
-from .. import bass, balt, bosh, bush
-from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink, \
-    Link
+from .. import balt, bass, bosh, bush
+from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
+    ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
 from ..bolt import GPath
-from ..gui import ImageWrapper, BusyCursor
+from ..gui import BusyCursor, ImageWrapper
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',

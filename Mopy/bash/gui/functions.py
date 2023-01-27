@@ -26,9 +26,6 @@ from __future__ import annotations
 
 import wx as _wx
 
-from .base_components import _AComponent
-from .. import bass
-
 class _OpenClipboard(object):
     """Internal wrapper around wx.TheClipboard for use with Python's 'with'
     statement. Ensures that the clipboard is always opened and closed

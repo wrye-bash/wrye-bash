@@ -24,39 +24,40 @@
 import operator
 
 from ...bolt import Flags, flag
-from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
-    MelStruct, MelNull, MelSimpleArray, AMreLeveledList, MelFid, MelAttx, \
-    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
-    MelArray, AMreFlst, MelLLFlags, MelSorted, MelGroups, MelShortName, \
-    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
-    MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
-    MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
-    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, MelFids, \
-    MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
-    MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
-    MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
-    MelUInt32Flags, BipedFlags, MelArmaShared, MelEnchantment, MelObject, \
-    MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
-    MelArtType, MelAspcRdat, MelAspcBnam, PartialLoadDecider, MelSeasons, \
-    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
-    MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
-    MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
-    MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
-    MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
-    MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, \
-    AMreImad, MelPartialCounter, perk_distributor, MelImgsCinematic, \
-    MelImgsTint, MelIngrEnit, MelDecalData, MelIpctTextureSets, \
-    MelIpctSounds, MelIpctHazard, MelIpdsPnam, MelSequential, MelLandShared, \
-    MelLandMpcd, MelIdleAnimations, MelIdleAnimationCount, AMreCell, \
-    MelLctnShared, MelLensShared, lens_distributor, MelWeight, gen_color, \
-    gen_color3, MelDalc, MelLighFade, MelLighLensFlare, MelLscrCameraPath, \
-    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLGlobal, \
-    MelLLChanceNone, MelMatoPropertyData, MelMattShared, VWDFlag, \
-    NavMeshFlags, NotPlayableFlag, AMreWithKeywords
+from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
+    AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreWithItems, \
+    AMreWithKeywords, ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, \
+    FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, \
+    MelArmaShared, MelArray, MelArtType, MelAspcBnam, MelAspcRdat, MelAttx, \
+    MelBamt, MelBase, MelBaseR, MelBids, MelBookDescription, MelBookText, \
+    MelBounds, MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, \
+    MelCobjOutput, MelColor, MelColorO, MelConditionList, MelConditions, \
+    MelContData, MelCounter, MelCpthShared, MelDalc, MelDecalData, \
+    MelDescription, MelDoorFlags, MelEdid, MelEffects, MelEnchantment, \
+    MelEquipmentType, MelEqupPnam, MelFactFids, MelFactFlags, MelFactRanks, \
+    MelFactVendorInfo, MelFid, MelFids, MelFloat, MelFlstFids, MelFull, \
+    MelFurnMarkerData, MelGrasData, MelGroup, MelGroups, MelHdptShared, \
+    MelIco2, MelIcon, MelIcons, MelIcons2, MelIdleAnimationCount, \
+    MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
+    MelIdleTimerSetting, MelIdlmFlags, MelImageSpaceMod, MelImgsCinematic, \
+    MelImgsTint, MelIngredient, MelIngrEnit, MelInteractionKeyword, \
+    MelInventoryArt, MelIpctHazard, MelIpctSounds, MelIpctTextureSets, \
+    MelIpdsPnam, MelKeywords, MelLandMpcd, MelLandShared, MelLctnShared, \
+    MelLensShared, MelLighFade, MelLighLensFlare, MelLLChanceNone, \
+    MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, MelLscrRotation, \
+    MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
+    MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
+    MelObjectTemplate, MelOptStruct, MelPartialCounter, MelPerkData, \
+    MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
+    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
+    MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, \
+    MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
+    MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
+    MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
+    MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
+    MelWeight, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
+    PerkEpdfDecider, VWDFlag, gen_color, gen_color3, lens_distributor, \
+    perk_distributor, perk_effect_key
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.

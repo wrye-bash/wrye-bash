@@ -26,8 +26,8 @@ from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_displayName, set_game
 from ... import bush
 from ...bolt import LogFile, Rounder
-from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
-    _xSEChunk, _xSEModListChunk, _xSEChunkPLGN, _Remappable, PluggyCosave
+from ...bosh.cosaves import PluggyCosave, _Remappable, _xSEChunk, \
+    _xSEChunkPLGN, _xSEHeader, _xSEModListChunk, get_cosave_types, xSECosave
 from ...exception import AbstractError
 
 # Helper functions ------------------------------------------------------------

@@ -24,28 +24,28 @@
 now. See #190, its code should be refactored and land in basher and/or gui."""
 from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-from . import bass # for dirs - try to avoid
-from . import bolt
-from .bolt import deprint, readme_url, Path, FName
-from .exception import AbstractError, AccessDeniedError, CancelError, \
-    SkipError, StateError
-#--Python
-import time
 import threading
+import time
 from functools import partial, wraps
 from typing import Iterable
-#--wx
+
 import wx
 import wx.adv
-#--gui
-from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
-    web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
-    ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, FileSave, \
-    DirOpen, scaled
+
+from . import bass # for dirs - try to avoid
+from . import bolt
+from .bolt import FName, Path, deprint, readme_url
+from .env import BTN_CANCEL, BTN_NO, BTN_OK, BTN_YES, GOOD_EXITS, \
+    TASK_DIALOG_AVAILABLE, TaskDialog
+from .exception import AbstractError, AccessDeniedError, CancelError, \
+    SkipError, StateError
+from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
+    CheckListBox, Color, DialogWindow, DirOpen, DocumentViewer, EventResult, \
+    FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
+    HLayout, HorizontalLine, ImageWrapper, Label, LayoutOptions, ListBox, \
+    OkButton, PanelWin, Stretch, TextArea, UIListCtrl, VLayout, WindowFrame, \
+    WrappingTextMixin, bell, copy_files_to_clipboard, scaled, \
+    web_viewer_available
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -335,8 +335,6 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
-from .env import TASK_DIALOG_AVAILABLE, TaskDialog, BTN_OK, BTN_CANCEL, \
-    BTN_YES, BTN_NO, GOOD_EXITS
 canVista = TASK_DIALOG_AVAILABLE
 
 def vistaDialog(parent, message, title, checkBoxTxt=None,

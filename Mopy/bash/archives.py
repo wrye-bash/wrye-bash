@@ -24,7 +24,7 @@ import os
 import re
 
 from . import bass
-from .bolt import FName, deprint, popen_common, os_name
+from .bolt import FName, deprint, os_name, popen_common
 from .exception import StateError
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'

@@ -34,14 +34,15 @@ from __future__ import annotations
 __author__ = 'Infernio'
 
 import re
-import yaml
 from collections import deque
 from copy import deepcopy
 
-from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
-    ConditionFunc, ConditionNot, ConditionOr, is_regex
-from .bolt import deprint, Path, AFile, FNDict, FName
-from .exception import LexerError, ParserError, BoltError, EvalError
+import yaml
+
+from .bolt import AFile, FName, FNDict, Path, deprint
+from .exception import BoltError, EvalError, LexerError, ParserError
+from .loot_conditions import Comparison, ConditionAnd, ConditionFunc, \
+    ConditionNot, ConditionOr, _ACondition, is_regex
 
 # Typing
 _RTags = tuple[set[str], set[str]] # 'returned tags'

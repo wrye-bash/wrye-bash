@@ -21,18 +21,20 @@
 #
 # =============================================================================
 from __future__ import annotations
+
 import time
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from itertools import chain, count
 from operator import attrgetter
+
 from .. import bolt # for type hints
 from .. import bush # for game etc
-from .. import load_order, bass
-from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url
-from ..brec import RecHeader, FormId, RecordType
+from .. import bass, load_order
+from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url
+from ..brec import FormId, RecHeader, RecordType
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
-from ..mod_files import ModFile, LoadFactory
+from ..mod_files import LoadFactory, ModFile
 
 class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""

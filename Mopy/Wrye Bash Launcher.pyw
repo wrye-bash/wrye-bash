@@ -25,6 +25,6 @@
 """This module starts the Wrye Bash application in GUI mode."""
 
 if __name__ == '__main__':
-    from bash import bash, barg
+    from bash import barg, bash
     opts = barg.parse()
     bash.main(opts)

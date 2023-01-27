@@ -26,8 +26,8 @@ from __future__ import annotations
 import wx as _wx
 
 from .buttons import BackButton, CancelButton, NextButton, OkButton
-from .misc_components import HorizontalLine
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout
+from .misc_components import HorizontalLine
 from .top_level_windows import DialogWindow, PanelWin
 from ..exception import AbstractError
 

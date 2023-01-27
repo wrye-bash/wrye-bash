@@ -34,9 +34,8 @@ import re
 import time
 from collections import defaultdict
 
-# Local
 from . import bass, bolt, env, exception
-from .bolt import dict_sort, FName, Path
+from .bolt import FName, Path, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing

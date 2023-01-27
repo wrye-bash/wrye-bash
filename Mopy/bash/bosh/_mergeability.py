@@ -26,7 +26,7 @@ import os
 from .. import bush
 from ..bolt import sig_to_str
 from ..exception import ModError
-from ..mod_files import LoadFactory, ModHeaderReader, ModFile
+from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 
 def _is_mergeable_no_load(modInfo, reasons):
     verbose = reasons is not None

@@ -27,11 +27,11 @@ from __future__ import annotations
 from typing import BinaryIO
 
 from . import utils_constants
-from .utils_constants import FID, null1, FixedString, int_unpacker, \
-    get_structs, ZERO_FID
+from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
+    int_unpacker, null1
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
-    sig_to_str, attrgetter_cache, struct_error
+from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
+    struct_calcsize, struct_error, structs_cache
 
 #------------------------------------------------------------------------------
 class MelObject(object):

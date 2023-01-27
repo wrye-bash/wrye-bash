@@ -26,8 +26,8 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 
 import random
 import re
-# Internal
-from .base import MultiTweakItem, MultiTweaker, is_templated
+
+from .base import MultiTweaker, MultiTweakItem, is_templated
 from ... import bass, bush
 from ...exception import AbstractError
 

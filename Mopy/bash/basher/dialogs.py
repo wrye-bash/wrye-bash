@@ -20,17 +20,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import bEnableWizard
-from .. import bass, balt, bosh, bolt, bush, env, load_order
-from ..balt import colors, ImageWrapper
-from ..bolt import FName, top_level_dirs, text_wrap
-from ..bosh import faces, ModInfo, InstallerProject
+from .. import balt, bass, bolt, bosh, bush, env, load_order
+from ..balt import ImageWrapper, colors
+from ..bolt import FName, text_wrap, top_level_dirs
+from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
-from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
-    HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
-    VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
-    HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar, bell, EventResult, Spacer
+from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
+    CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
+    GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
+    OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
+    TextAlignment, TextField, VBoxedLayout, VLayout, bell
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -157,10 +156,6 @@ class CreateNewProject(DialogWindow):
         for checkbox in (self._check_esp, self._check_esp_masterless,
                          self._check_wizard):
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
-        if not bEnableWizard:
-            # pywin32 not installed
-            self._check_wizard.enabled = False
-            self._check_wizard_images.enabled = False
         # Panel Layout
         self.ok_button = OkButton(self)
         self.ok_button.on_clicked.subscribe(self.OnClose)

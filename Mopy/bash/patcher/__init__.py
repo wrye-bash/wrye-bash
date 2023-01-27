@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import bolt, bass, gui
+from .. import bass, bolt, gui
 
 def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'

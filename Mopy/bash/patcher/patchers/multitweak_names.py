@@ -28,11 +28,10 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-# Internal
-from .base import MultiTweakItem, IndexingTweak, MultiTweaker, \
-    CustomChoiceTweak
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
 from ... import bush
-from ...bolt import build_esub, RecPath, setattr_deep
+from ...bolt import RecPath, build_esub, setattr_deep
 from ...exception import AbstractError, BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')

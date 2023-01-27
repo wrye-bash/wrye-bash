@@ -20,11 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-#--Standard
 import collections
 import copy
 import datetime
@@ -48,7 +45,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import Iterable, ClassVar, Self, get_type_hints
+from typing import ClassVar, Iterable, Self, get_type_hints
 from urllib.parse import quote
 from zlib import crc32
 
@@ -57,7 +54,6 @@ try:
 except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
-# Internal
 from . import exception
 from .exception import AbstractError
 

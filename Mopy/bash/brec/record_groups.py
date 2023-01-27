@@ -25,16 +25,16 @@
 __author__ = 'Utumno'
 
 # Python imports
-from collections import deque, defaultdict
+from collections import defaultdict, deque
 from functools import wraps
 from itertools import chain
 
 # Wrye Bash imports
 from . import MelRecord
-from .mod_io import GrupHeader, RecordHeader, TopGrupHeader, \
-    ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
-from .utils_constants import DUMMY_FID, group_types, FormId
-from ..bolt import attrgetter_cache, sig_to_str, dict_sort, deprint, MasterSet
+from .mod_io import ChildrenGrupHeader, ExteriorGrupHeader, FastModReader, \
+    GrupHeader, RecordHeader, TopGrupHeader, unpack_header
+from .utils_constants import DUMMY_FID, FormId, group_types
+from ..bolt import MasterSet, attrgetter_cache, deprint, dict_sort, sig_to_str
 from ..exception import AbstractError, ModError
 
 class _AMobBase:

@@ -29,8 +29,9 @@ from itertools import chain
 from typing import Callable, Type
 
 from .. import bolt
-from ..bolt import cstrip, decoder, Flags, flag, structs_cache, attrgetter_cache
-from ..exception import StateError, AbstractError
+from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
+    structs_cache
+from ..exception import AbstractError, StateError
 
 # no local imports, imported everywhere in brec
 

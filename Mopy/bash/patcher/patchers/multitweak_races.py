@@ -25,10 +25,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .base import MultiTweakItem, MultiTweaker, IndexingTweak, \
-    CustomChoiceTweak
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
 from ... import bush, load_order
-from ...bolt import attrgetter_cache, Path
+from ...bolt import Path, attrgetter_cache
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',

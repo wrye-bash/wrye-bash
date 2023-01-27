@@ -27,16 +27,15 @@ import re
 import time
 from datetime import timedelta
 
-from . import BashFrame  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
-from ..bolt import SubProgress, Path, GPath_no_norm
-from ..exception import BoltError, CancelError, FileEditError, \
-    PluginsFullError, SkipError, BPConfigError
-from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
+from ..bolt import GPath_no_norm, Path, SubProgress
+from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
+    PluginsFullError, SkipError
+from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
+    DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
-    SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
-    CheckListBox, HorizontalLine, EventResult, FileOpen, BusyCursor
+    SaveAsButton, SelectAllButton, Stretch, VLayout
 from ..patcher import exportConfig, list_patches_dir
 
 # Final lists of gui patcher classes instances, initialized in
@@ -255,7 +254,7 @@ class PatchDialog(DialogWindow):
                 # would not detect the crc change. That's a general problem
                 # with crc cache - API limits
                 info.calculate_crc(recalculate=True)
-            BashFrame.modList.RefreshUI(refreshSaves=bool(count))
+            self.parent.RefreshUI(refreshSaves=bool(count))
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

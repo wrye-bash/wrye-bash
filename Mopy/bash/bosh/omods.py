@@ -25,10 +25,11 @@ import io
 import lzma
 import re
 import subprocess
-from .. import env, bolt, bass, archives
-from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
-    pack_byte, pack_int_signed, popen_common
+
+from .. import archives, bass, bolt, env
+from ..bolt import Path, decoder, encode, pack_byte, pack_byte_signed, \
+    pack_int_signed, popen_common, startupinfo, unpack_byte, \
+    unpack_int64_signed, unpack_int_signed, unpack_short
 from ..exception import StateError
 
 def _readNetString(open_file):

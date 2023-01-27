@@ -23,45 +23,46 @@
 """This module contains the skyrim record classes."""
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, sig_to_str
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
-    MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
-    AMreFlst, MelLString, MelMODS, AMreImad, MelRegions, MelIdleAnimations, \
-    MelUnion, AttrValDecider, MelRegnEntrySubrecord, MelIdleTimerSetting, \
-    PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
-    MelPartialCounter, MelBounds, null3, null4, MelSequential, MelKeywords, \
-    MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
-    MelFull, MelArray, MelWthrColors, MelFactions, MelReadOnly, MelRelations, \
-    AMreActor, AMreWithItems, MelRef3D, MelXlod, MelActiFlags, AMelNvnm, \
-    MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
-    MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
-    MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelTxstFlags, \
-    MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, MelImgsTint, \
-    MelActorSounds, MelFactRanks, MelSorted, MelReflectedRefractedBy, \
-    perk_effect_key, MelValueWeight, MelSound, MelWaterType, MelIdlmFlags, \
-    MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
-    MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
-    MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
-    MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
-    MelArmaShared, MelBamt, MelTemplateArmor, MelArtType, MelGrasData, \
-    MelAspcRdat, MelAspcBnam, MelBookText, MelImpactDataset, MelFlstFids, \
-    MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
-    MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
-    MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
-    MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
-    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
-    MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    perk_distributor, MelImgsCinematic, MelInfoResponsesFo3, MelIngrEnit, \
-    MelIpctTextureSets, MelIpctSounds, MelIpctHazard, MelIpdsPnam, \
-    MelLandShared, MelLandMpcd, MelIdleAnimationCountOld, MelLighLensFlare, \
-    MelIdleAnimationCount, AMreCell, AMreWrld, MelLctnShared, gen_color, \
-    MelDalc, gen_ambient_lighting, MelLighFade, MelLscrCameraPath, \
-    MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
-    MelLLChanceNone, MelLLGlobal, MelMatoPropertyData, gen_color3, \
-    MelMattShared, VWDFlag, NavMeshFlags, NotPlayableFlag, MelCombatStyle, \
-    MelDeathItem, AMreWithKeywords, AMreWthr, AMreRace
+from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
+    AMreActor, AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, \
+    AMreRace, AMreWithItems, AMreWithKeywords, AMreWrld, AMreWthr, \
+    ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, FlagDecider, \
+    MelActiFlags, MelActionFlags, MelActivateParents, MelActorSounds, \
+    MelAddnDnam, MelAlchEnit, MelArmaShared, MelArray, MelArtType, \
+    MelAspcBnam, MelAspcRdat, MelAttx, MelBamt, MelBase, MelBaseR, MelBids, \
+    MelBookDescription, MelBookText, MelBounds, MelClmtTextures, \
+    MelClmtTiming, MelClmtWeatherTypes, MelCobjOutput, MelColor, MelColorO, \
+    MelCombatStyle, MelConditionList, MelConditions, MelContData, MelCounter, \
+    MelCpthShared, MelDalc, MelDeathItem, MelDecalData, MelDescription, \
+    MelDoorFlags, MelEdid, MelEffects, MelEnableParent, MelEnchantment, \
+    MelEquipmentType, MelEqupPnam, MelExtra, MelFactFids, MelFactFlags, \
+    MelFactions, MelFactRanks, MelFactVendorInfo, MelFid, MelFids, \
+    MelFixedString, MelFloat, MelFlstFids, MelFull, MelFurnMarkerData, \
+    MelGrasData, MelGroup, MelGroups, MelHdptShared, MelIco2, MelIcon, \
+    MelIcons, MelIcons2, MelIdleAnimationCount, MelIdleAnimationCountOld, \
+    MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
+    MelIdleTimerSetting, MelIdlmFlags, MelImageSpaceMod, MelImgsCinematic, \
+    MelImgsTint, MelImpactDataset, MelInfoResponsesFo3, MelIngredient, \
+    MelIngrEnit, MelInteractionKeyword, MelInventoryArt, MelIpctHazard, \
+    MelIpctSounds, MelIpctTextureSets, MelIpdsPnam, MelKeywords, MelLandMpcd, \
+    MelLandShared, MelLctnShared, MelLighFade, MelLighLensFlare, \
+    MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, \
+    MelLscrRotation, MelLString, MelLtexGrasses, MelLtexSnam, MelMapMarker, \
+    MelMatoPropertyData, MelMattShared, MelMdob, MelMODS, MelNextPerk, \
+    MelNodeIndex, MelNull, MelOptStruct, MelOwnership, MelPartialCounter, \
+    MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, \
+    MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, \
+    MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
+    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
+    MelSimpleArray, MelSInt8, MelSInt16, MelSInt32, MelSkipInterior, \
+    MelSorted, MelSound, MelSoundActivation, MelSoundClose, MelSoundLooping, \
+    MelSoundPickupDrop, MelSpells, MelString, MelStruct, MelTemplateArmor, \
+    MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
+    MelUInt32, MelUInt32Flags, MelUnion, MelUnloadEvent, MelUnorderedGroups, \
+    MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
+    MelXlod, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
+    PerkEpdfDecider, VWDFlag, gen_ambient_lighting, gen_color, gen_color3, \
+    null3, null4, perk_distributor, perk_effect_key
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')

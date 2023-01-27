@@ -37,16 +37,16 @@ import webbrowser
 from collections import defaultdict
 from itertools import chain
 
-from . import Installers_Link, BashFrame, INIList
+from . import BashFrame, INIList, Installers_Link
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
-from .. import bass, bolt, bosh, bush, balt, archives, env
-from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
-    UIList_Rename, UIList_Hide
+from .. import archives, balt, bass, bolt, bosh, bush, env
+from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
+    UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import FName, SubProgress, LogFile, round_size, text_wrap, deprint
-from ..bosh import InstallerArchive, InstallerProject, InstallerConverter
-from ..exception import CancelError, SkipError, StateError, AbstractError, \
+from ..bolt import FName, LogFile, SubProgress, deprint, round_size, text_wrap
+from ..bosh import InstallerArchive, InstallerConverter, InstallerProject
+from ..exception import AbstractError, CancelError, SkipError, StateError, \
     XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 

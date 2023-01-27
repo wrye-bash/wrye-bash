@@ -29,10 +29,10 @@ import pickle
 from collections import defaultdict
 from itertools import chain
 
-from .. import bolt, archives, bass, balt
+from .. import archives, balt, bass, bolt
 from ..archives import defaultExt, readExts
-from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
-    forward_compat_path_to_fn_list
+from ..bolt import DataDict, Path, PickleDict, SubProgress, \
+    forward_compat_path_to_fn_list, top_level_files
 from ..exception import ArgumentError, StateError
 
 converters_dir: Path | None = None

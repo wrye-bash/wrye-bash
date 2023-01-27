@@ -29,9 +29,10 @@ __author__ = u'nycz, Utumno'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, Color, WithCharEvents, \
-    WithMouseEvents
-from .misc_components import Font ##: de-wx, then move to base_components
+from .base_components import Color, WithCharEvents, WithMouseEvents, \
+    _AComponent
+##: de-wx, then move to base_components
+from .misc_components import Font
 
 class DropDown(_AComponent):
     """Shows a dropdown with multiple options to pick one from. Often called a

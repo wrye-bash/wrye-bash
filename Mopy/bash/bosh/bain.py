@@ -31,22 +31,21 @@ import re
 import sys
 import time
 from functools import partial, wraps
-from itertools import groupby, chain
-from operator import itemgetter, attrgetter
+from itertools import chain, groupby
+from operator import attrgetter, itemgetter
 from typing import Iterable
 from zlib import crc32
 
-from . import bain_image_exts, DataStore, best_ini_files, InstallerConverter, \
-    ModInfos
-from .. import balt, gui # YAK!
-from .. import bush, bass, bolt, env, archives
-from ..archives import readExts, defaultExt, list_archive, compress7z, \
-    extract7z
-from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    AFile, dict_sort, top_level_items, FName, forward_compat_path_to_fn_list, \
-    forward_compat_path_to_fn, ListInfo
+from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
+    best_ini_files
+from .. import archives, balt, bass, bolt, bush, env, gui # YAK!
+from ..archives import compress7z, defaultExt, extract7z, list_archive, \
+    readExts
+from ..bolt import AFile, CIstr, FName, GPath, ListInfo, Path, SubProgress, \
+    deprint, dict_sort, forward_compat_path_to_fn, \
+    forward_compat_path_to_fn_list, round_size, top_level_items
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
-    InstallerArchiveError, SkipError, StateError, FileError
+    FileError, InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
 
 os_sep = os.path.sep
@@ -1265,7 +1264,7 @@ class Installer(ListInfo):
         :rtype: tuple"""
         old_key = super(InstallersData, idata_).rename_operation(self, name_new)
         #--Update the iniInfos & modInfos for 'installer'
-        from . import modInfos, iniInfos
+        from . import iniInfos, modInfos
         mods_inis = []
         for store in (modInfos, iniInfos):
             storet = store.table
@@ -1806,7 +1805,7 @@ class InstallersData(DataStore):
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
         #--Archive invalidation
-        from . import oblivionIni, InstallerMarker, modInfos
+        from . import InstallerMarker, modInfos, oblivionIni
         if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
@@ -2477,7 +2476,7 @@ class InstallersData(DataStore):
         refresh_ui[0] |= bool(mods)
         refresh_ui[1] |= bool(inis)
         # refresh modInfos, iniInfos adding new/modified mods
-        from . import bsaInfos, modInfos, iniInfos
+        from . import bsaInfos, iniInfos, modInfos
         for mod in mods.copy(): # size may change during iteration
             try:
                 modInfos.new_info(mod, owner=installer.fn_key)
@@ -2706,7 +2705,7 @@ class InstallersData(DataStore):
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
             # Set the 'installer' column in mod and ini tables
-            from . import modInfos, iniInfos
+            from . import iniInfos, modInfos
             for ikey, owned_files in cede_ownership.items():
                 for fn_key in owned_files:
                     if modInfos.rightFileType(fn_key):

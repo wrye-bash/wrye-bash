@@ -30,16 +30,16 @@ from io import BytesIO
 from itertools import chain
 from typing import Type
 
-from .advanced_elements import MelUnion, PartialLoadDecider, AttrValDecider, \
-    MelTruncatedStruct, SignatureDecider, MelCounter, MelPartialCounter
-from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
-    MelString, MelSequential, MelUInt32, MelFid, MelGroup, MelObject, \
-    MelOptStruct, MelBaseR, MelUnorderedGroups
+from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
+    MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider
+from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
+    MelObject, MelOptStruct, MelReadOnly, MelSequential, MelString, \
+    MelStruct, MelUInt32, MelUnorderedGroups
 from .common_subrecords import MelFull
-from .utils_constants import get_structs, FID, ZERO_FID
+from .utils_constants import FID, ZERO_FID, get_structs
 from .. import bolt
-from ..bolt import pack_int, pack_byte, attrgetter_cache, Flags, struct_pack, \
-    struct_unpack, unpack_str16, pack_short, pack_int_signed, pack_float
+from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
+    pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
 from ..exception import AbstractError, ModError
 
 # Shared helpers --------------------------------------------------------------

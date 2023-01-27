@@ -24,7 +24,7 @@
 
 from os.path import join as _j
 
-from .. import GameInfo, WS_COMMON_FILES
+from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
@@ -794,10 +794,10 @@ class Fallout4GameInfo(PatchGame):
 
     @classmethod
     def _import_records(cls, package_name, plugin_form_vers=131):
-        from ... import brec as _brec_
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
+        from ... import brec as _brec_
         _brec_.RecordHeader.skip_form_version_upgrade = {b'DMGT'}
         # package name is fallout4 here
         super()._import_records(package_name, plugin_form_vers)

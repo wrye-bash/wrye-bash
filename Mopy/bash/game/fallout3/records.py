@@ -25,37 +25,37 @@ __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
 
 from ... import bush
-from ...bolt import Flags, flag, structs_cache, TrimmedFlags, struct_calcsize
-from ...brec import MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
-    MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
-    MelReferences, MelIdleTimerSetting, MelIdleRelatedAnims, MelAnimations, \
-    MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
-    MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
-    MelRaceVoices, MelBounds, null2, MelScriptVars, MelSorted, MelSequential, \
-    MelTruncatedStruct, PartialLoadDecider, MelReadOnly, MelSkipInterior, \
-    MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
-    MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, MelRef3D, \
-    MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
-    MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, MelRaceData, MelRegions, MelDoorFlags, \
-    MelClmtWeatherTypes, MelFactRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
-    MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
-    MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
-    MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
-    MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdleAnimations, AMreImad, \
-    perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
-    MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
-    gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
-    MelLLChanceNone, MelLLGlobal, NavMeshFlags, VWDFlag, MelCombatStyle, \
-    MelDeathItem, AMreWthr, AMreRace
-from ...brec import MelRecord as _BaseMelRecord
+from ...bolt import Flags, TrimmedFlags, flag, struct_calcsize, structs_cache
+from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
+    AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreRace, AMreWithItems, \
+    AMreWrld, AMreWthr, AttrValDecider, BipedFlags, MelActionFlags, \
+    MelActivateParents, MelActorSounds, MelAddnDnam, MelAnimations, MelArray, \
+    MelAspcRdat, MelBase, MelBaseR, MelBodyParts, MelBookText, MelBounds, \
+    MelClmtWeatherTypes, MelCombatStyle, MelConditionsFo3, MelContData, \
+    MelCpthShared, MelDeathItem, MelDecalData, MelDescription, MelDoorFlags, \
+    MelEdid, MelEffectsFo3, MelEnableParent, MelEnchantment, MelExtra, \
+    MelFactions, MelFactRanks, MelFid, MelFids, MelFloat, MelFlstFids, \
+    MelFull, MelGrasData, MelGroup, MelGroups, MelHairFlags, MelIco2, \
+    MelIcon, MelIcons, MelIcons2, MelIdleAnimationCountOld, \
+    MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
+    MelIdlmFlags, MelImageSpaceMod, MelImpactDataset, MelInfoResponsesFo3, \
+    MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, MelLists, \
+    MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, \
+    MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
+    MelNull, MelObject, MelOptStruct, MelOwnership, MelPartialCounter, \
+    MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, MelRaceParts, \
+    MelRaceVoices, MelReadOnly, MelRecord, MelRef3D, MelReferences, \
+    MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
+    MelRelations, MelScript, MelScriptVars, MelSequential, MelSet, \
+    MelShortName, MelSimpleArray, MelSInt8, MelSInt16, MelSInt32, \
+    MelSkipInterior, MelSorted, MelSound, MelSoundActivation, MelSoundClose, \
+    MelSoundLooping, MelSoundPickupDrop, MelSpells, MelString, MelStruct, \
+    MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
+    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, MelUnorderedGroups, \
+    MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
+    MelXlod, NavMeshFlags, PartialLoadDecider, PerkEpdfDecider, SizeDecider, \
+    SpellFlags, VWDFlag, gen_color, gen_color3, null2, perk_distributor, \
+    perk_effect_key
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -72,10 +72,11 @@ def fnv_only(fnv_obj):
     explicitly when using it."""
     return if_fnv(fo3_version=None, fnv_version=fnv_obj)
 
-class MelRecord(_BaseMelRecord):
-    class HeaderFlags(_BaseMelRecord.HeaderFlags):
-        # Track down which records use this (it's not currently referenced
-        # in ours or xEdit's code).
+# noinspection PyRedeclaration
+class MelRecord(MelRecord):
+    class HeaderFlags(MelRecord.HeaderFlags):
+        ##: Track down which records use this (it's not currently referenced
+        # in ours or xEdit's code) and drop the redefinition
         no_voice_filter: bool = flag(13)
 
 # Common Flags

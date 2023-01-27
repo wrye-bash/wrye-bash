@@ -30,20 +30,19 @@ others barely even fit into the pattern at all (e.g. FidReplacer)."""
 
 import csv
 import re
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from functools import partial
 from operator import itemgetter
 
-# Internal
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
-    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import RecordType, RecHeader, attr_csv_struct, null3, FormId, \
-    MelObject
+from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
+    int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
+from .brec import FormId, MelObject, RecHeader, RecordType, attr_csv_struct, \
+    null3
 from .exception import AbstractError
-from .mod_files import ModFile, LoadFactory
+from .mod_files import LoadFactory, ModFile
 
 ##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
 # backwards compatibility code. See TrustedBinariesPage._import_lists, we could

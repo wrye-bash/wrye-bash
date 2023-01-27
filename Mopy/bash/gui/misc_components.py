@@ -35,8 +35,8 @@ import wx as _wx
 import wx.adv as _adv
 from wx.grid import Grid
 
-from .base_components import _AComponent, Color, WithMouseEvents, \
-    ImageWrapper, WithCharEvents
+from .base_components import Color, ImageWrapper, WithCharEvents, \
+    WithMouseEvents, _AComponent
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from ..bolt import Path, dict_sort
@@ -433,7 +433,8 @@ class GlobalMenu(_AComponent):
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*
         # to be on Link.Frame, even if that looks weird.
-        from ..balt import Link ##: de-wx! move links to gui
+        ##: de-wx! move links to gui
+        from ..balt import Link
         menu_processor = lambda event: [event.GetMenu()]
         self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
@@ -470,7 +471,8 @@ class GlobalMenu(_AComponent):
         """Internal callback, does the heavy lifting. Also handles status bar
         text resetting, because wxPython does not permit more than one event
         handler."""
-        from ..balt import Link ##: de-wx! move links to gui
+        ##: de-wx! move links to gui
+        from ..balt import Link
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
@@ -492,5 +494,6 @@ class GlobalMenu(_AComponent):
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
-            from ..balt import Link ##: de-wx! move links to gui
+            ##: de-wx! move links to gui
+            from ..balt import Link
             Link.Popup = None

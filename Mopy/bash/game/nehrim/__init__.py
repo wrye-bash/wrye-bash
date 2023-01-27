@@ -21,8 +21,6 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct as _struct
-
 from ..oblivion import OblivionGameInfo
 from ... import bolt
 

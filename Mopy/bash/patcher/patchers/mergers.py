@@ -26,9 +26,9 @@ entries from multiple tagged plugins to create a final merged list. The goal is
 to eventually absorb all of them under the _AMerger base class."""
 
 import copy
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from itertools import chain
-# Internal
+
 from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName

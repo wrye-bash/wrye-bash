@@ -34,7 +34,7 @@ import sys
 
 from .. import resource_to_displayName, set_game
 from ... import bush
-from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader
+from ...bosh.cosaves import _xSEHeader, get_cosave_types, xSECosave
 
 def generate_meta_bsa(target_file):
     print(u"Skipping '%s': bsa .meta generation not implemented yet" %

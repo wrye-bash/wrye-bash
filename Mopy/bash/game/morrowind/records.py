@@ -25,14 +25,14 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 
 from ...bolt import Flags, flag
-from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
-    AMreHeader, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
-    MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO, \
-    MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, MelIcons, \
-    MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, FixedString, \
-    AutoFixedString, AMreLeveledList, MelUInt16, SizeDecider, MelLists, \
-    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags, AMreCell, \
-    gen_color, gen_color3, MelLLFlagsTes3, MelLLChanceNoneTes3
+from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
+    FixedString, MelArray, MelBase, MelBookText, MelColor, MelColorO, \
+    MelCounter, MelDescription, MelEffectsTes3, MelFixedString, MelFloat, \
+    MelGroup, MelGroups, MelIcons, MelLists, MelLLChanceNoneTes3, \
+    MelLLFlagsTes3, MelNull, MelOptStruct, MelRecord, MelRef3D, MelRefScale, \
+    MelSequential, MelSet, MelSInt32, MelString, MelStrings, MelStruct, \
+    MelTruncatedStruct, MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, \
+    MelUnion, SaveDecider, SizeDecider, gen_color, gen_color3
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------

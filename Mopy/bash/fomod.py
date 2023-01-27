@@ -45,8 +45,8 @@ __author__ = u'Ganda'
 import functools
 from enum import Enum
 
-from . import bass, bush, env, bosh # for modInfos
-from .bolt import GPath, Path, LooseVersion, FName
+from . import bass, bosh, bush, env # for modInfos
+from .bolt import FName, GPath, LooseVersion, Path
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active

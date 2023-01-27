@@ -25,16 +25,16 @@ definitions for some commonly needed subrecords."""
 from itertools import chain
 from typing import Type
 
-from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter, \
-    FidNotNullDecider, MelPartialCounter
-from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
-    MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
-    MelStrings, MelUInt8, MelUInt16Flags
-from .utils_constants import int_unpacker, FID, null1, ZERO_FID, gen_color, \
-    gen_color3, gen_ambient_lighting
-from ..bolt import Flags, flag, encode, struct_pack, dict_sort, TrimmedFlags, \
+from .advanced_elements import AttrValDecider, FidNotNullDecider, \
+    FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
+    MelSorted, MelTruncatedStruct, MelUnion
+from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
+    MelGroups, MelLString, MelNull, MelOptStruct, MelReadOnly, MelSequential, \
+    MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
+    MelUInt16Flags, MelUInt32, MelUInt32Flags
+from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
+    gen_color3, int_unpacker, null1
+from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
 

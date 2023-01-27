@@ -24,10 +24,10 @@
 
 from os.path import join as _j
 
-from .. import GameInfo, WS_COMMON_FILES
+from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
-from ...bolt import classproperty, FName, DefaultFNDict
+from ...bolt import DefaultFNDict, FName, classproperty
 
 class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
@@ -1199,9 +1199,9 @@ class Fallout3GameInfo(PatchGame):
 
     @classmethod
     def _import_records(cls, package_name, plugin_form_vers=15):
-        from ... import brec as _brec_
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too
+        from ... import brec as _brec_
         _brec_.RecordHeader.skip_form_version_upgrade = {b'IMGS'}
         super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {b'CELL', b'DIAL', b'WRLD',

@@ -38,12 +38,13 @@ from functools import partial
 import lz4.block
 
 from .. import bolt
-from ..bolt import decoder, cstrip, unpack_int, unpack_str8, unpack_short, \
-    unpack_float, unpack_str16, unpack_byte, unpack_str_int_delim, \
-    unpack_str16_delim, unpack_str_byte_delim, unpack_many, encode, \
-    struct_unpack, pack_int, pack_byte, pack_short, pack_float, pack_str8, \
-    pack_bzstr8, structs_cache, struct_error, remove_newlines, deprint, FName
-from ..exception import SaveHeaderError, AbstractError
+from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
+    pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
+    remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
+    unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
+    unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
+    unpack_str_int_delim
+from ..exception import AbstractError, SaveHeaderError
 
 # Utilities -------------------------------------------------------------------
 def _unpack_fstr8(ins) -> bytes:

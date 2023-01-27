@@ -23,9 +23,9 @@
 """This seems to belong in test_bolt, but it imports from bosh and really tests
 bosh functionality."""
 from ... import archives
-from ...bosh import ModInfo
 from ...bolt import ListInfo
-from ...bosh.bain import InstallerProject, InstallerArchive, InstallerMarker
+from ...bosh import ModInfo
+from ...bosh.bain import InstallerArchive, InstallerMarker, InstallerProject
 
 class TestListInfo(object):
     def test_validate_filename_str(self):

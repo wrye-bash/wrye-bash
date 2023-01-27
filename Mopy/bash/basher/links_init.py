@@ -24,8 +24,9 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
-from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
-    BSAList, ScreensList, MasterList, bEnableWizard, BashStatusBar
+
+from . import BashStatusBar, BSAList, INIList, InstallersList, \
+    InstallersPanel, MasterList, ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
@@ -39,8 +40,8 @@ from .mods_links import *
 from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
-from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, images, \
-    UIList_OpenStore, UIList_Hide, UIList_Delete, UIList_Rename
+from ..balt import MenuLink, SeparatorLink, UIList_Delete, UIList_Hide, \
+    UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
 from ..env import init_app_links
 from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
@@ -228,8 +229,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(Installers_Enabled())
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_AutoAnneal())
-    if bEnableWizard:
-        InstallersList.column_links.append(Installers_AutoWizard())
+    InstallersList.column_links.append(Installers_AutoWizard())
     InstallersList.column_links.append(Installers_AutoRefreshProjects())
     InstallersList.column_links.append(Installers_IgnoreFomod())
     InstallersList.column_links.append(Installers_ValidateFomod())
@@ -285,7 +285,7 @@ def InitInstallerLinks():
             fomod_menu.links.append(SeparatorLink())
             fomod_menu.links.append(Installer_EditFomod())
             installMenu.links.append(fomod_menu)
-        if bEnableWizard: #--Wizards
+        if True: #--Wizards
             wizardMenu = MenuLink(_('Wizard Installer..'))
             wizardMenu.links.append(Installer_Wizard(auto_wizard=False))
             wizardMenu.links.append(Installer_Wizard(auto_wizard=True))
@@ -376,8 +376,7 @@ def InitInstallerLinks():
     settings_menu.append(Installers_AvoidOnStart())
     settings_menu.append(SeparatorLink())
     settings_menu.append(Installers_AutoAnneal())
-    if bEnableWizard:
-        settings_menu.append(Installers_AutoWizard())
+    settings_menu.append(Installers_AutoWizard())
     settings_menu.append(Installers_AutoRefreshProjects())
     settings_menu.append(Installers_IgnoreFomod())
     settings_menu.append(Installers_ValidateFomod())

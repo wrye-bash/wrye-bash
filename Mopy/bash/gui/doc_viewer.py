@@ -26,6 +26,20 @@ from __future__ import annotations
 
 __author__ = u'Infernio'
 
+import webbrowser
+from enum import Enum
+from urllib.parse import urljoin
+from urllib.request import pathname2url
+
+import wx as _wx
+
+from .base_components import _AComponent
+from .buttons import PureImageButton
+from .layouts import VLayout
+from .text_components import TextArea
+from ..bolt import decoder, deprint, redirect_stdout_to_deprint
+from ..exception import StateError
+
 # Try to import html2 webview, may not be available everywhere
 try:
     import wx.html2 as _wx_html2
@@ -38,24 +52,10 @@ except ImportError:
 # Try to import the PDF viewer, may not be available everywhere
 try:
     # wx.lib.pdfviewer uses a raw print statment, UGH!
-    from ..bolt import redirect_stdout_to_deprint
     with redirect_stdout_to_deprint():
         from wx.lib.pdfviewer import pdfViewer as _PdfViewer
 except ImportError:
     _PdfViewer = None
-import wx as _wx
-
-import webbrowser
-from enum import Enum
-from urllib.request import pathname2url
-from urllib.parse import urljoin
-
-from .base_components import _AComponent
-from .buttons import PureImageButton
-from .text_components import TextArea
-from .layouts import VLayout
-from ..bolt import decoder, deprint
-from ..exception import StateError
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we

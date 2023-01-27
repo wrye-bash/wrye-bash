@@ -44,10 +44,9 @@ import math
 import sys
 import time
 
-# Internal
-from . import bass, bolt, exception
 from . import _games_lo # LoGame instance providing load order operations API
-from .bolt import sig_to_str, forward_compat_path_to_fn_list
+from . import bass, bolt, exception
+from .bolt import forward_compat_path_to_fn_list, sig_to_str
 
 _game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None

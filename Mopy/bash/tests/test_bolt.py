@@ -24,9 +24,9 @@ import copy
 
 import pytest
 
-from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding, GPath, Path, Rounder, SigToStr, StrToSig, \
-    LooseVersion, FName, FNDict, os_name, CIstr, GPath_no_norm, DefaultFNDict
+from ..bolt import CIstr, DefaultFNDict, DefaultLowerDict, FName, FNDict, \
+    GPath, GPath_no_norm, LooseVersion, LowerDict, OrderedLowerDict, Path, \
+    Rounder, SigToStr, StrToSig, decoder, encode, getbestencoding, os_name
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -280,6 +280,7 @@ class TestLowerDict(object):
         a = self.dict_type()
         a.update(dict(sape=4139, guido=4127, jack=4098))
         # Needed for the eval below, not unused!
+        # noinspection PyUnresolvedReferences
         from ..bolt import CIstr
         assert eval(repr(a)) == a
 

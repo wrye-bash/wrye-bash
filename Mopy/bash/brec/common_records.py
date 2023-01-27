@@ -29,19 +29,20 @@ from operator import attrgetter
 from typing import Type
 
 from . import utils_constants
-from .advanced_elements import AttrValDecider, MelUnion, MelSorted, \
-    MelSimpleArray
-from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
-    MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
-    MelUnicode, unpackSubHeader, MelUInt32Flags, MelString, MelUInt8Flags
-from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
-    MelColor, MelDebrData, MelFull, MelIcon, MelBounds, MelColorInterpolator, \
+from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
+    MelUnion
+from .basic_elements import MelBase, MelFid, MelFids, MelFixedString, \
+    MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
+    MelStruct, MelUInt8Flags, MelUInt32, MelUInt32Flags, MelUnicode, \
+    unpackSubHeader
+from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
+    MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, NotPlayableFlag
 from .. import bolt, exception
-from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, flag, \
-    remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
+from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
+    struct_pack, structs_cache, to_unix_newlines, to_win_newlines
 
 #------------------------------------------------------------------------------
 # Mixins ----------------------------------------------------------------------

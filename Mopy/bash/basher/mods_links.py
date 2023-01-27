@@ -22,16 +22,16 @@
 # =============================================================================
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
+
 from .dialogs import CreateNewPlugin
 from .frames import PluginChecker
-from .. import bass, bosh, balt, load_order
 from .. import bush # for _Mods_ActivePluginsData, Mods_ActivePlugins
-from .. import exception
-from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, SeparatorLink, \
-    Link, MultiLink, AppendableLink, MenuLink
-from ..bolt import FName, dict_sort, fast_cached_property, deprint
-from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
-    get_ctrl_down
+from .. import balt, bass, bosh, exception, load_order
+from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
+    ItemLink, Link, MenuLink, MultiLink, SeparatorLink
+from ..bolt import FName, deprint, dict_sort, fast_cached_property
+from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
+    get_shift_down
 from ..parsers import CsvParser
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_ActivePlugins', u'Mods_SelectedFirst',

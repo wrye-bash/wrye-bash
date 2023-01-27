@@ -20,22 +20,24 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 from __future__ import annotations
 
 import re
 from collections import defaultdict
 from itertools import chain
-# Internal
-from .. import bass, bosh, bush, balt, load_order, bolt, exception
-from ..balt import Links, SeparatorLink, CheckLink
-from ..bolt import FName, text_wrap, dict_sort, \
-    forward_compat_path_to_fn_list, forward_compat_path_to_fn
-from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
-    Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
-    CheckListBox, DeselectAllButton, SelectAllButton, FileOpenMultiple, \
-    SearchBar
-from ..patcher import patches_set, base
+
+from .patcher_dialog import all_gui_patchers
+from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from ..balt import CheckLink, Links, SeparatorLink
+from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
+    forward_compat_path_to_fn_list, text_wrap
+from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
+    EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
+    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout
+from ..patcher import base, patches_set
+from ..patcher.patchers import base, checkers, mergers, multitweak_actors, \
+    multitweak_assorted, multitweak_clothes, multitweak_names, \
+    multitweak_races, multitweak_settings, preservers
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
@@ -1010,12 +1012,6 @@ class _AListPanelCsv(_ListPatcherPanel):
 # GUI Patcher classes
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
-from ..patcher.patchers import base
-from ..patcher.patchers import checkers, mergers, preservers
-from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
-    multitweak_clothes, multitweak_names, multitweak_settings, \
-    multitweak_races
-
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
     _config_key = u'AliasesPatcher'
@@ -1442,9 +1438,6 @@ class TimescaleChecker(_PatcherPanel):
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
-from .patcher_dialog import all_gui_patchers
-# Dynamically create game specific UI patcher classes and add them to module's
-# scope
 # Patchers with no options
 for gsp_name, gsp_class in bush.game.gameSpecificPatchers.items():
     globals()[gsp_name] = type(gsp_name, (_PatcherPanel,),
@@ -1466,7 +1459,6 @@ for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
         gsp_bases += (_AListPanelCsv,)
     globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 
-# Init Patchers
 def initPatchers():
     group_order = {p_grp: i for i, p_grp in enumerate( # PY3: enum?
         (u'General', u'Importers', u'Tweakers', u'Special'))}

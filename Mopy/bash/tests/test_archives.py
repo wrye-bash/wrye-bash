@@ -25,7 +25,7 @@ import os
 import tempfile
 
 from ..archives import compress7z, extract7z
-from ..bolt import GPath, FName
+from ..bolt import FName, GPath
 
 _utils_dir = GPath(os.path.join(os.path.dirname(__file__), 'utils'))
 

@@ -23,11 +23,12 @@
 """This module contains the falloutnv record classes."""
 from ..fallout3.records import MelDestructible, MelModel
 from ...bolt import Flags, flag
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelSimpleArray, AMreHeader, MelFloat, MelEdid, \
-    MelUInt32, MelBounds, MelTruncatedStruct, MelIcons, MelIcon, MelUInt8, \
-    MelFull, MelNull, MelScript, MelDescription, MelSoundPickupDrop, MelIco2, \
-    MelUInt8Flags, MelSInt32, MelSorted, MelValueWeight, MelConditionsFo3
+from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
+    MelDescription, MelEdid, MelFid, MelFids, MelFloat, MelFull, MelGroups, \
+    MelIco2, MelIcon, MelIcons, MelNull, MelRecord, MelScript, MelSet, \
+    MelSimpleArray, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
+    MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
+    MelValueWeight
 
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------

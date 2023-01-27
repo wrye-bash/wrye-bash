@@ -23,14 +23,14 @@
 import os
 import re
 import time
-from collections import OrderedDict, Counter
+from collections import Counter, OrderedDict
 
-from . import env, bush
+from . import bush, env
 from .bass import dirs
-from .bolt import LowerDict, CIstr, deprint, DefaultLowerDict, decoder, \
-    getbestencoding, AFile, OrderedLowerDict, ListInfo
-from .exception import AbstractError, CancelError, SkipError, \
-    FailedIniInferError
+from .bolt import AFile, CIstr, DefaultLowerDict, ListInfo, LowerDict, \
+    OrderedLowerDict, decoder, deprint, getbestencoding
+from .exception import AbstractError, CancelError, FailedIniInferError, \
+    SkipError
 
 _comment_start_re = re.compile(r'^\s*[;#]\s*')
 

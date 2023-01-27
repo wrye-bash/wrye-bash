@@ -24,11 +24,11 @@ import re
 from collections import Counter
 from operator import itemgetter
 
-from ._shared import cobl_main, ExSpecial
+from ._shared import ExSpecial, cobl_main
 from .... import load_order
-from ....brec import null4, FormId
+from ....brec import FormId, null4
 from ....parsers import _HandleAliases
-from ....patcher.base import ImportPatcher, ListPatcher, CsvListPatcher
+from ....patcher.base import CsvListPatcher, ImportPatcher, ListPatcher
 
 class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     """Imports roads."""

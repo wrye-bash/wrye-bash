@@ -22,7 +22,7 @@
 # =============================================================================
 """Module providing a mixin class to set some common defaults for Windows Store
 games."""
-from . import GameInfo, WS_COMMON_FILES
+from . import WS_COMMON_FILES, GameInfo
 from ..bolt import classproperty
 
 class WindowsStoreMixin:

@@ -27,17 +27,16 @@ import os
 import traceback
 from collections import OrderedDict, defaultdict
 
-from . import ScriptParser  # generic parser class
-from . import bass, bolt, bosh, bush, load_order
-from .ScriptParser import error
+from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .balt import ItemLink, Links, images, staticBitmap
-from .bolt import FNDict, FName
+from .bolt import FName, FNDict
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
-from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, PictureWithCursor, WizardDialog, WizardPage
+from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
+    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
+    PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
+from .ScriptParser import error
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")

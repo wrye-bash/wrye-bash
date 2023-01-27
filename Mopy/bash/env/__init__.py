@@ -26,12 +26,12 @@ implementations for the current OS."""
 
 import platform
 import shutil
-from ..bolt import Path, GPath, deprint, os_name
-from ..exception import CancelError, DirectoryFileCollisionError, \
-    NonExistentDriveError
 
 # First import the shared API
 from .common import *
+from ..bolt import GPath, Path, deprint, os_name
+from ..exception import CancelError, DirectoryFileCollisionError, \
+    NonExistentDriveError
 
 # Then check which OS we are running on and import *only* from there
 shfo = None
@@ -118,7 +118,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                               renameOnCollision, silent, parent,
                               __shell=False) if res is None else res
     else: # Use custom dialogs and such
-        from .. import balt # TODO(ut): local import, env should be above balt...
+        # TODO(ut): local import, env should be above balt...
+        from .. import balt
         source = [GPath(s) for s in source]
         target = [GPath(s) for s in target]
         if operation == FO_DELETE:

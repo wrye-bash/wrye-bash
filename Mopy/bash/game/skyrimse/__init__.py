@@ -23,9 +23,9 @@
 """GameInfo override for TES V: Skyrim Special Edition."""
 import importlib
 
+from .. import GOG_COMMON_FILES, WS_COMMON_FILES
 from ..gog_game import GOGMixin
 from ..skyrim import SkyrimGameInfo
-from .. import GOG_COMMON_FILES, WS_COMMON_FILES
 from ..windows_store_game import WindowsStoreMixin
 from ...bolt import classproperty
 

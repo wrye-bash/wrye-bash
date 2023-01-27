@@ -59,20 +59,9 @@ Some terminology:
                   English spelling (colour) here for consistency with the API,
                   whereas all other parts of WB use the American English
                   spelling (color)"""
-
 from __future__ import annotations
 
 __author__ = 'Ganda, Infernio'
-
-# First see if we even have the dependencies necessary to use the Nexus API
-try:
-    import requests
-except ImportError as e:
-    raise ImportError('requests missing, Nexus API unavailable') from e
-try:
-    from websocket import create_connection
-except ImportError as e:
-    raise ImportError('websocket-client missing, Nexus API unavailable') from e
 
 import json
 import platform
@@ -83,8 +72,18 @@ from enum import Enum
 from typing import Iterable
 
 from . import bass
-from .exception import LimitReachedError, RequestError, \
-    EndorsedWithoutDownloadError, EndorsedTooSoonError
+from .exception import EndorsedTooSoonError, EndorsedWithoutDownloadError, \
+    LimitReachedError, RequestError
+
+# First see if we even have the dependencies necessary to use the Nexus API
+try:
+    import requests
+except ImportError as e:
+    raise ImportError('requests missing, Nexus API unavailable') from e
+try:
+    from websocket import create_connection
+except ImportError as e:
+    raise ImportError('websocket-client missing, Nexus API unavailable') from e
 
 _USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.platform()}; '
                f'{platform.architecture()[0]}) '

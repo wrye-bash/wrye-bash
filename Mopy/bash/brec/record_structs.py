@@ -34,8 +34,8 @@ from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader, RecordHeader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
-from ..bolt import decoder, flag, struct_pack, sig_to_str
-from ..bolt import float_or_none, int_or_zero, str_or_none
+from ..bolt import decoder, flag, float_or_none, int_or_zero, sig_to_str, \
+    str_or_none, struct_pack
 
 def _str_to_bool(value, __falsy=frozenset(
     ['', 'none', 'false', 'no', '0', '0.0'])):

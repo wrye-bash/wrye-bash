@@ -24,8 +24,8 @@
 FO4VR."""
 
 from ...bolt import flag
-from ...brec import AMreHeader, MelSet, MelStruct, MelBase, MelFid, \
-    MelSimpleArray, MelNull, MelGroups, MelUInt32
+from ...brec import AMreHeader, MelBase, MelFid, MelGroups, MelNull, MelSet, \
+    MelSimpleArray, MelStruct, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4

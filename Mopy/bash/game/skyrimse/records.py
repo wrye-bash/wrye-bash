@@ -22,7 +22,7 @@
 # =============================================================================
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
-from ...brec import MelRecord, MelSet, MelFloat, MelEdid, MelLensShared, \
+from ...brec import MelEdid, MelFloat, MelLensShared, MelRecord, MelSet, \
     lens_distributor
 
 #------------------------------------------------------------------------------

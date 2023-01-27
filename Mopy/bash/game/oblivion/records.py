@@ -23,30 +23,30 @@
 """This module contains the oblivion record classes."""
 import re
 
-from ...bolt import Flags, flag, int_or_zero, structs_cache, str_or_none, \
-    int_or_none, str_to_sig, sig_to_str, LowerDict
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
-    AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    AMreHeader, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
-    MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
-    MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, MelRace, \
-    MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
-    MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MelEffectsTes4, AMreActor, AMreWithItems, \
-    MelReadOnly, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, MelObme, \
-    MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
-    MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
-    MelClmtWeatherTypes, MelFactRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
-    MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
-    MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
-    MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
-    MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade, MelLtexSnam, \
-    MelLtexGrasses, MelLLFlags, MelLLChanceNone, MelCombatStyle, \
-    MelDeathItem, AMreWthr, AMreRace
+from ...bolt import Flags, LowerDict, flag, int_or_none, int_or_zero, \
+    sig_to_str, str_or_none, str_to_sig, structs_cache
+from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
+    AMreHeader, AMreLeveledList, AMreRace, AMreWithItems, AMreWrld, AMreWthr, \
+    AttrValDecider, BipedFlags, FlagDecider, MelActionFlags, MelActorSounds, \
+    MelAnimations, MelArray, MelBase, MelBaseR, MelBodyParts, MelBookText, \
+    MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, MelCombatStyle, \
+    MelConditionsTes4, MelContData, MelDeathItem, MelDescription, \
+    MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
+    MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
+    MelFids, MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, \
+    MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
+    MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
+    MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
+    MelObme, MelOptStruct, MelOwnership, MelPartialCounter, MelRace, \
+    MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
+    MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
+    MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
+    MelSeasons, MelSequential, MelSet, MelSimpleArray, MelSInt16, MelSInt32, \
+    MelSkipInterior, MelSorted, MelSound, MelSoundClose, MelSoundLooping, \
+    MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
+    MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
+    MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
+    SpellFlags, attr_csv_struct, gen_color, null2, null4
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------

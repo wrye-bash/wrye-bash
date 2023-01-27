@@ -28,18 +28,18 @@ import datetime
 
 import wx as _wx
 
-from .base_components import _AComponent, Color
-from .buttons import Button, CancelButton, DeselectAllButton, \
-    SelectAllButton, OkButton
+from .base_components import Color, _AComponent
+from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
+    SelectAllButton
 from .checkables import CheckBox
-from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VLayout, \
-    VBoxedLayout
-from .misc_components import HorizontalLine, DatePicker, TimePicker
+from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
+    VLayout
+from .misc_components import DatePicker, HorizontalLine, TimePicker
 from .multi_choices import CheckListBox
 from .text_components import Label, SearchBar, TextAlignment, TextField
 from .top_level_windows import DialogWindow
-from ..bolt import dict_sort
-from ..bolt import GPath ##: remove this it's for file dialogs
+##: Remove GPath, it's for file dialogs
+from ..bolt import GPath, dict_sort
 from ..exception import AbstractError
 
 class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
@@ -50,7 +50,8 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
 
     def __init__(self, parent, message, sizes_dict):
         super().__init__(parent, sizes_dict=sizes_dict)
-        from ..balt import staticBitmap ##: yuck
+        ##: yuck, decouple!
+        from ..balt import staticBitmap
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
         move_button = Button(self, btn_label=_(u'Move'))

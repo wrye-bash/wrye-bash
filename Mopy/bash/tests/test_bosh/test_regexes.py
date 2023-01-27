@@ -23,7 +23,7 @@
 """Tests for complex regexes used in bosh."""
 import re
 
-from ...bosh import reVersion, reTesNexus
+from ...bosh import reTesNexus, reVersion
 
 class _ATestRe:
     """Base class for regex tests."""

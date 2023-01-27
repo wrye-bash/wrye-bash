@@ -22,25 +22,26 @@
 # =============================================================================
 """Encapsulates Linux-specific classes and methods."""
 
+import functools
 import os
 import subprocess
 import sys
-import functools
 
-from .common import _LegacyWinAppInfo, _find_legendary_games
+from .common import _find_legendary_games, _LegacyWinAppInfo
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
+from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..bolt import structs_cache, dict_sort
+from ..bolt import dict_sort, structs_cache
 from ..exception import EnvError
 
 # API - Constants =============================================================
 try:
-    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/'])) # 1024 on mac!
+    MAX_PATH_LEN = int(subprocess.check_output(
+        ['getconf', 'PATH_MAX', '/'])) # 1024 on mac!
 except (ValueError, subprocess.CalledProcessError, OSError):
-    _deprint(u'calling getconf failed - error:', traceback=True)
-    MAX_PATH = 4096
+    _deprint('calling getconf failed - error:', traceback=True)
+    MAX_PATH_LEN = 4096
 
 FO_MOVE = 1
 FO_COPY = 2

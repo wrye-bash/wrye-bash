@@ -24,8 +24,8 @@
 to the Settings Multitweaker - as well as the tweaker itself."""
 from __future__ import annotations
 
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
-from ... import bush  # for game
+from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
+from ... import bush # for game
 
 class _ASettingsTweak(MultiTweakItem):
     """Shared code of GLOB and GMST tweaks."""

@@ -23,7 +23,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the tweaker itself."""
-from .base import MultiTweaker, MultiTweakItem, CustomChoiceTweak
+from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
 
 # Patchers: 30 ----------------------------------------------------------------
 class _AClothesTweak(MultiTweakItem):

@@ -29,7 +29,7 @@ from itertools import chain
 from os.path import join as _j
 
 from .. import bolt
-from ..bolt import fast_cached_property, FNDict
+from ..bolt import FNDict, fast_cached_property
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------

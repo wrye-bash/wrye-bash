@@ -20,12 +20,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module starts the Wrye Bash application in console mode. Basically,
 it runs some initialization functions and then starts the main application
 loop."""
-
-# Imports ---------------------------------------------------------------------
 
 import atexit
 import locale
@@ -35,8 +32,9 @@ import shutil
 import sys
 import traceback
 from configparser import ConfigParser
-# Local
+
 from . import bass, bolt, exception
+
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -140,7 +138,8 @@ def _import_deps():
     except ImportError:
         deps_msg += u'- python-lz4\n'
     try:
-        import win32api, win32com
+        import win32api
+        import win32com
     except ImportError:
         # Only a dependency on Windows, so skip on other operating systems
         if bolt.os_name == u'nt':
@@ -369,9 +368,8 @@ def _main(opts, wx_locale, wxver):
     :param opts: command line arguments
     :param wx_locale: The wx.Locale object that we ended up using."""
     # Initialize gui, our wrapper above wx (also balt, temp module) and
-    # load the window icon resources
-    from . import gui, balt
-    # Now we have an App instance we can init Resources
+    # load the window icon resources now that we have an app instance
+    from . import balt, gui
     balt.load_app_icons()
     # Check for some non-critical dependencies (e.g. lz4) and warn if
     # they're missing now that we can show nice app icons
@@ -391,7 +389,9 @@ def _main(opts, wx_locale, wxver):
         msg2 = _('Done')
         try: print(msg1)
         except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
-        from . import belt ##: belt does bolt.codebox = WryeParser.codebox - FIXME decouple!
+        ##: belt does bolt.codebox = WryeParser.codebox - FIXME decouple!
+        # noinspection PyUnresolvedReferences
+        from . import belt
         bolt.WryeText.genHtml(opts.genHtml)
         try: print(msg2)
         except UnicodeError: print(msg2.encode(bolt.Path.sys_fs_enc))
@@ -571,8 +571,8 @@ def _show_boot_popup(msg, is_critical=True):
         _close_dialog_windows()
     try:
         from .balt import Resources
-        from .gui import CancelButton, Color, LayoutOptions, \
-            StartupDialog, TextArea, VLayout, CENTER
+        from .gui import CENTER, CancelButton, Color, LayoutOptions, \
+            StartupDialog, TextArea, VLayout
         class MessageBox(StartupDialog):
             def __init__(self, msg):
                 popup_title = (_(u'Wrye Bash Error') if is_critical else
@@ -640,13 +640,12 @@ class _AppReturnCode(object):
     def set(self, value): self.value = value
 
 def _select_game_popup(game_infos):
-    from .balt import Resources, ImageWrapper
-    from .gui import Label, TextAlignment, WindowFrame, VLayout, \
-        ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
-        HLayout, ImageButton, HorizontalLine, Stretch, DropDown, CENTER, \
-        CancelButton
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
+    from .balt import ImageWrapper, Resources
+    from .gui import CENTER, CancelButton, DropDown, HLayout, HorizontalLine, \
+        ImageButton, ImageDropDown, Label, LayoutOptions, SearchBar, Stretch, \
+        TextAlignment, TextField, VBoxedLayout, VLayout, WindowFrame
     class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 

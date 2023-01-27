@@ -24,14 +24,15 @@
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
 from __future__ import annotations
+
 import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
-from .env import get_personal_path, get_local_app_data_path, \
-    get_legacy_ws_game_info, shellMakeDirs
+from .env import get_legacy_ws_game_info, get_local_app_data_path, \
+    get_personal_path, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
 
 ##: we need to import LOOTParser after defining this as LOOTParser imports bush

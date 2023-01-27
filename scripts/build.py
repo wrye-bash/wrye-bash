@@ -42,13 +42,12 @@ import re
 import shutil
 import sys
 import tempfile
-import zipfile
 import winreg
+import zipfile
 from contextlib import contextmanager, suppress
 
 import pygit2
 import PyInstaller.__main__
-
 import update_taglist
 import utils
 from utils import LooseVersion

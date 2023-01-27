@@ -32,8 +32,9 @@ import operator
 import os
 import re
 
-from . import bass, bush ##: drop the bush import!
-from .bolt import FName, Path, deprint, LooseVersion
+##: drop the bush import!
+from . import bass, bush
+from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import AbstractError, EvalError, FileError
 ##: below is too tight coupling with Bash internals - pass those as
@@ -299,6 +300,7 @@ def _fn_is_master(file_name: str) -> bool:
 
     :param file_name: The file path to check."""
     from .bosh import modInfos
+
     # Need to check if it's on disk first, otherwise modInfos[x] errors
     return file_name in modInfos and modInfos[file_name].in_master_block()
 

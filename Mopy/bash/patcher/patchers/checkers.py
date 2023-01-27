@@ -26,7 +26,7 @@ notices a problem."""
 
 import random
 import re
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from itertools import chain
 
 from .base import is_templated

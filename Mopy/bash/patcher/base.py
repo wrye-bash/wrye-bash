@@ -35,7 +35,7 @@ from typing import Iterable
 
 from . import getPatchesPath
 from .. import load_order
-from ..bolt import dict_sort, sig_to_str, deprint
+from ..bolt import deprint, dict_sort, sig_to_str
 from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 

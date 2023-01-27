@@ -23,4 +23,5 @@
 """This module lists the files installed in the Data folder in a completely
 vanilla Fallout 4 VR setup."""
 
+# noinspection PyUnresolvedReferences
 from ..fallout4.vanilla_files import vanilla_files
