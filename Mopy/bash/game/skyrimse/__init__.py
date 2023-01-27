@@ -282,8 +282,12 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    statsTypes = SkyrimGameInfo.statsTypes | {
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    stats_csv_attrs = SkyrimGameInfo.stats_csv_attrs | {
         b'AMMO': ('eid', 'value', 'damage', 'weight'),
+    }
+    stats_attrs = SkyrimGameInfo.stats_attrs | {
+        b'AMMO': ('value', 'damage', 'weight'),
     }
 
     #--------------------------------------------------------------------------

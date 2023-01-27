@@ -60,7 +60,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelDalc, gen_ambient_lighting, MelLighFade, MelLscrCameraPath, \
     MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
     MelLLChanceNone, MelLLGlobal, MelMatoPropertyData, gen_color3, \
-    MelMattShared, VWDFlag, NavMeshFlags, NotPlayableFlag
+    MelMattShared, VWDFlag, NavMeshFlags, NotPlayableFlag, MelCombatStyle, \
+    MelDeathItem, AMreWithKeywords, AMreWthr, AMreRace
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -462,7 +463,7 @@ class MreAchr(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreActi(MelRecord):
+class MreActi(AMreWithKeywords):
     """Activator."""
     rec_sig = b'ACTI'
 
@@ -509,7 +510,7 @@ class MreAddn(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAlch(MelRecord):
+class MreAlch(AMreWithKeywords):
     """Ingestible."""
     rec_sig = b'ALCH'
 
@@ -530,7 +531,7 @@ class MreAlch(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAmmo(MelRecord):
+class MreAmmo(AMreWithKeywords):
     """Ammunition."""
     rec_sig = b'AMMO'
 
@@ -610,7 +611,7 @@ class MreArma(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreArmo(MelRecord):
+class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
 
@@ -703,7 +704,7 @@ class MreAvif(MelRecord):
     })
 
 #------------------------------------------------------------------------------
-class MreBook(MelRecord):
+class MreBook(AMreWithKeywords):
     """Book."""
     rec_sig = b'BOOK'
 
@@ -1303,7 +1304,7 @@ class MreFact(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreFlor(MelRecord):
+class MreFlor(AMreWithKeywords):
     """Flora."""
     rec_sig = b'FLOR'
 
@@ -1332,7 +1333,7 @@ class MreFlst(AMreFlst):
     )
 
 #------------------------------------------------------------------------------
-class MreFurn(MelRecord):
+class MreFurn(AMreWithKeywords):
     """Furniture."""
     rec_sig = b'FURN'
 
@@ -1557,7 +1558,7 @@ class MreImgs(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreIngr(MelRecord):
+class MreIngr(AMreWithKeywords):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -1605,7 +1606,7 @@ class MreIpds(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreKeym(MelRecord):
+class MreKeym(AMreWithKeywords):
     """Key."""
     rec_sig = b'KEYM'
 
@@ -1656,7 +1657,7 @@ class MreLcrt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLctn(MelRecord):
+class MreLctn(AMreWithKeywords):
     """Location"""
     rec_sig = b'LCTN'
 
@@ -1881,7 +1882,7 @@ class MreMesg(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMgef(MelRecord):
+class MreMgef(AMreWithKeywords):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
@@ -1941,7 +1942,7 @@ class MreMgef(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMisc(MelRecord):
+class MreMisc(AMreWithKeywords):
     """Misc. Item."""
     rec_sig = b'MISC'
 
@@ -2080,7 +2081,7 @@ class MreNavm(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreNpc_(AMreActor):
+class MreNpc_(AMreActor, AMreWithKeywords):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
@@ -2147,7 +2148,7 @@ class MreNpc_(AMreActor):
                   (_TemplateFlags, u'templateFlags'), 'healthOffset',
                   'bleedoutOverride',),
         MelFactions(),
-        MelFid(b'INAM', 'deathItem'),
+        MelDeathItem(),
         MelFid(b'VTCK', 'voice'),
         MelFid(b'TPLT', 'template'),
         MelRace(),
@@ -2190,7 +2191,7 @@ class MreNpc_(AMreActor):
             'farawaymodeldistance','gearedupweapons','dnamUnused2'),
         MelSorted(MelFids('head_part_addons', MelFid(b'PNAM'))),
         MelFid(b'HCLF', u'hair_color'),
-        MelFid(b'ZNAM', u'combatStyle'),
+        MelCombatStyle(),
         MelFid(b'GNAM', u'gifts'),
         MelBase(b'NAM5', u'nam5_p'),
         MelFloat(b'NAM6', u'height'),
@@ -2231,6 +2232,7 @@ class MreOtft(MelRecord):
     )
 
     def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
         self.items = [i for i in self.items if i.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
@@ -2303,7 +2305,7 @@ class MrePack(MelRecord):
             MelIdleAnimations(),
             MelBase(b'IDLB', 'unknown1'),
         ),
-        MelFid(b'CNAM', 'combatStyle',),
+        MelCombatStyle(b'CNAM'),
         MelFid(b'QNAM', 'owner_quest'),
         MelStruct(b'PKCU', [u'3I'], 'dataInputCount', (FID, 'packageTemplate'),
                   'versionCount'),
@@ -2366,7 +2368,7 @@ class MrePack(MelRecord):
     ).with_distributor({
         b'PKDT': {
             b'CTDA|CIS1|CIS2': u'conditions',
-            b'CNAM': u'combatStyle',
+            b'CNAM': 'combat_style',
             b'QNAM': u'owner_quest',
             b'ANAM': (u'data_input_values', {
                 b'BNAM|CNAM|PDTO': u'data_input_values',
@@ -2491,7 +2493,7 @@ class MreProj(MelRecord):
             'explosionAltTrigerTimer', (FID, u'explosion'),
             (FID, u'sound'), 'muzzleFlashDuration',
             'fadeDuration', 'impactForce',
-            (FID, u'soundCountDown'), (FID, u'soundDisable'),
+            (FID, 'sound_countdown'), (FID, 'sound_disable'),
             (FID, u'defaultWeaponSource'), 'coneSpread',
             'collisionRadius', 'lifetime',
             'relaunchInterval', (FID, u'decalData'),
@@ -2700,7 +2702,7 @@ class _RaceDataFlags1(TrimmedFlags):
         if self.overlay_head_part_list and self.override_head_part_list:
             self.overlay_head_part_list = False
 
-class MreRace(MelRecord):
+class MreRace(AMreRace, AMreWithKeywords):
     """Race."""
     rec_sig = b'RACE'
 
@@ -3347,7 +3349,7 @@ class MreScen(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreScrl(MelRecord):
+class MreScrl(AMreWithKeywords):
     """Scroll."""
     rec_sig = b'SCRL'
 
@@ -3387,7 +3389,7 @@ class MreShou(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSlgm(MelRecord):
+class MreSlgm(AMreWithKeywords):
     """Soul Gem."""
     rec_sig = b'SLGM'
 
@@ -3541,7 +3543,7 @@ class MreSoun(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSpel(MelRecord):
+class MreSpel(AMreWithKeywords):
     """Spell."""
     rec_sig = b'SPEL'
 
@@ -3614,7 +3616,7 @@ class MreStat(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreTact(MelRecord):
+class MreTact(AMreWithKeywords):
     """Talking Activator."""
     rec_sig = b'TACT'
 
@@ -3780,7 +3782,7 @@ class MreWatr(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreWeap(MelRecord):
+class MreWeap(AMreWithKeywords):
     """Weapon"""
     rec_sig = b'WEAP'
 
@@ -3979,7 +3981,7 @@ class MreWrld(AMreWrld):
 
 #------------------------------------------------------------------------------
 # Many Things Marked MelBase that need updated
-class MreWthr(MelRecord):
+class MreWthr(AMreWthr):
     """Weather"""
     rec_sig = b'WTHR'
 

@@ -721,8 +721,8 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    # The contents of these tuples has to stay fixed because of CSV parsers
-    statsTypes = {
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    stats_csv_attrs = {
         b'ALCH': ('eid', 'weight', 'value'),
         b'AMMO': ('eid', 'value', 'damage'),
         b'APPA': ('eid', 'weight', 'value'),
@@ -735,42 +735,53 @@ class SkyrimGameInfo(PatchGame):
         b'LIGH': ('eid', 'weight', 'value', 'duration'),
         b'MISC': ('eid', 'weight', 'value'),
         b'SLGM': ('eid', 'weight', 'value'),
+        # criticalEffect at the end since it's a FormID, to mirror how
+        # APreserver will join the tuples
         b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
                   'enchantPoints', 'stagger', 'criticalDamage',
                   'criticalMultiplier', 'criticalEffect'),
+    }
+    stats_attrs = {r: tuple(x for x in a if x != 'eid')
+                   for r, a in stats_csv_attrs.items()} | {
+        b'WEAP': ('weight', 'value', 'damage', 'speed', 'reach',
+                  'enchantPoints', 'stagger', 'criticalDamage',
+                  'criticalMultiplier'),
+    }
+    stats_fid_attrs = {
+        b'WEAP': ('criticalEffect',),
     }
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
     soundsTypes = {
-        b'ACTI': ('sound', 'soundActivation'),
+        b'ACTI': ('sound', 'sound_activation'),
         b'ADDN': ('sound',),
-        b'ALCH': ('dropSound', 'pickupSound', 'soundConsume'),
-        b'AMMO': ('pickupSound', 'dropSound'),
-        b'APPA': ('pickupSound', 'dropSound'),
+        b'ALCH': ('sound_pickup', 'sound_drop', 'sound_consume'),
+        b'AMMO': ('sound_pickup', 'sound_drop'),
+        b'APPA': ('sound_pickup', 'sound_drop'),
         b'ARMA': ('footstep_sound',),
-        b'ARMO': ('pickupSound', 'dropSound'),
+        b'ARMO': ('sound_pickup', 'sound_drop'),
         b'ASPC': ('sound', 'use_sound_from_region', 'environment_type'),
-        b'BOOK': ('pickupSound', 'dropSound'),
+        b'BOOK': ('sound_pickup', 'sound_drop'),
         b'CONT': ('sound', 'sound_close'),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'EFSH': ('sound_ambient',),
         b'EXPL': ('expl_sound_level', 'expl_sound1', 'expl_sound2'),
         b'FLOR': ('sound',),
         b'HAZD': ('hazd_sound',),
-        b'INGR': ('pickupSound', 'dropSound'),
+        b'INGR': ('sound_pickup', 'sound_drop'),
         b'IPCT': ('ipct_sound_level', 'sound', 'ipct_sound2'),
-        b'KEYM': ('pickupSound', 'dropSound'),
+        b'KEYM': ('sound_pickup', 'sound_drop'),
         b'LIGH': ('sound',),
         #Needs to loop over all the sounds
         b'MGEF': ('sounds', 'casting_sound_level'),
         # b'REGN': ('entries',),
-        b'MISC': ('pickupSound', 'dropSound'),
+        b'MISC': ('sound_pickup', 'sound_drop'),
         b'MSTT': ('sound',),
-        b'PROJ': ('sound', 'soundCountDown', 'soundDisable', 'soundLevel'),
-        b'SCRL': ('pickupSound', 'dropSound'),
-        b'SLGM': ('pickupSound', 'dropSound'),
+        b'PROJ': ('sound', 'sound_countdown', 'sound_disable', 'soundLevel'),
+        b'SCRL': ('sound_pickup', 'sound_drop'),
+        b'SLGM': ('sound_pickup', 'sound_drop'),
         b'SNCT': ('parent', 'staticVolumeMultiplier'),
         # Sounds does not need to loop here
         b'SNDR': ('descriptor_category', 'output_model', 'sound_files',
@@ -787,7 +798,7 @@ class SkyrimGameInfo(PatchGame):
         b'TACT': ('sound',),
         b'TREE': ('sound',),
         b'WATR': ('sound',),
-        b'WEAP': ('pickupSound', 'dropSound', 'sound', 'attackSound2D',
+        b'WEAP': ('sound_pickup', 'sound_drop', 'sound', 'attackSound2D',
                   'attackLoopSound', 'attackFailSound', 'idleSound',
                   'equipSound', 'unequipSound', 'detectionSoundLevel'),
         #Needs to loop over all the sounds
@@ -1066,8 +1077,6 @@ class SkyrimGameInfo(PatchGame):
                               'assistance', 'attack', 'confidence',
                               'energyLevel', 'mood', 'responsibility', 'warn',
                               'warnAttack'),
-            'Actors.CombatStyle': ('combatStyle',),
-            'Actors.DeathItem': ('deathItem',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Stats': ('alchemySO', 'alchemySV', 'alterationSO',
                              'alterationSV', 'blockSO', 'blockSV',
@@ -1082,6 +1091,12 @@ class SkyrimGameInfo(PatchGame):
                              'smithingSO', 'smithingSV', 'sneakSO', 'sneakSV',
                              'speechcraftSO', 'speechcraftSV', 'stamina',
                              'twoHandedSO', 'twoHandedSV'),
+        },
+    }
+    actor_importer_fid_attrs = {
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
             'Actors.Voice': ('voice',),
             'NPC.AIPackageOverrides': ('spectator', 'observe', 'guardWarn',
                                        'combat'),
@@ -1090,16 +1105,23 @@ class SkyrimGameInfo(PatchGame):
             'NPC.CrimeFaction': ('crime_faction',),
             'NPC.DefaultOutfit': ('default_outfit',),
             'NPC.Race': ('race',),
-        },
+        }
     }
     spell_types = (b'LVSP', b'SPEL')
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
     #--------------------------------------------------------------------------
+    # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = ('eid', 'cost', 'spellType', 'charge_time',
                          'cast_type', 'spell_target_type', 'castDuration',
-                         'range', 'halfCostPerk', 'dataFlags')
+                         'range', 'dataFlags')
+    spell_stats_fid_attrs = ('halfCostPerk',)
+    # halfCostPerk at the end since it's a FormID, to mirror how APreserver
+    # will join the tuples
+    spell_stats_csv_attrs = ('eid', 'cost', 'spellType', 'charge_time',
+                             'cast_type', 'spell_target_type', 'castDuration',
+                             'range', 'dataFlags', 'halfCostPerk')
     spell_stats_types = {b'SCRL', b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -1212,8 +1234,8 @@ class SkyrimGameInfo(PatchGame):
         'model.modPath': r'Clutter\Coin01.nif',
         'model.alternateTextures': None,
         'iconPath': r'Clutter\Coin01.dds',
-        'pickupSound': self.master_fid(0x03E952), # ITMGoldUpSD
-        'dropSound': self.master_fid(0x03E955), # ITMGoldDownSD
+        'sound_pickup': self.master_fid(0x03E952), # ITMGoldUpSD
+        'sound_drop': self.master_fid(0x03E955), # ITMGoldDownSD
         'keywords': [self.master_fid(0x0914E9)], # VendorItemClutter
         'value': 1,
         'weight': 0.0,
@@ -1319,20 +1341,21 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
                         'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time', 'base_enchantment',
-                        'worn_restrictions')
+                        'enchantment_type', 'charge_time')
+    ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
     # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = (
-        'flags', 'base_cost', 'associated_item', 'magic_skill', 'resist_value',
-        'taper_weight', 'minimum_skill_level', 'spellmaking_area',
-        'spellmaking_casting_time', 'taper_curve', 'taper_duration',
-        'second_av_weight', 'effect_archetype', 'actorValue', 'casting_type',
-        'delivery', 'second_av', 'skill_usage_multiplier', 'equip_ability',
-        'perk_to_apply', 'script_effect_ai_score',
+        'flags', 'base_cost', 'magic_skill', 'resist_value', 'taper_weight',
+        'minimum_skill_level', 'spellmaking_area', 'spellmaking_casting_time',
+        'taper_curve', 'taper_duration', 'second_av_weight',
+        'effect_archetype', 'actorValue', 'casting_type', 'delivery',
+        'second_av', 'skill_usage_multiplier', 'script_effect_ai_score',
         'script_effect_ai_delay_time')
+    mgef_stats_fid_attrs = ('associated_item', 'equip_ability',
+                            'perk_to_apply')
 
     #--------------------------------------------------------------------------
     # Import Races
@@ -1347,6 +1370,10 @@ class SkyrimGameInfo(PatchGame):
                         'starting_stamina', 'base_carry_weight',
                         'health_regen', 'magicka_regen', 'stamina_regen',
                         'unarmed_damage', 'unarmed_reach'),
+        },
+    }
+    import_races_fid_attrs = {
+        b'RACE': {
             'R.Voice-F': ('femaleVoice',),
             'R.Voice-M': ('maleVoice',),
         },

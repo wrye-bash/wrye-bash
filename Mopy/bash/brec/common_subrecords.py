@@ -166,7 +166,7 @@ class MelAlchEnit(MelStruct):
     def __init__(self):
         super().__init__(b'ENIT', ['i', '2I', 'f', 'I'], 'value',
             (self._enit_flags, 'flags'), (FID, 'addiction'), 'addictionChance',
-            (FID, 'soundConsume'))
+            (FID, 'sound_consume'))
 
 #------------------------------------------------------------------------------
 class MelAnimations(MelSorted): ##: case insensitive
@@ -331,6 +331,12 @@ class MelColorO(MelOptStruct):
             'unused_alpha')
 
 #------------------------------------------------------------------------------
+class MelCombatStyle(MelFid):
+    """Handles the common ZNAM/CNAM (Combat Style) subrecord."""
+    def __init__(self, cs_sig=b'ZNAM'):
+        super().__init__(cs_sig, 'combat_style')
+
+#------------------------------------------------------------------------------
 class MelContData(MelStruct):
     """Handles the CONT subrecord DATA (Data)."""
     # Flags 1 & 3 introduced in Skyrim, treat as unknown for earlier games
@@ -361,6 +367,12 @@ class MelDalc(MelTruncatedStruct):
     def __init__(self):
         super().__init__(b'DALC', ['28B', 'f'],
             *gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
+
+#------------------------------------------------------------------------------
+class MelDeathItem(MelFid):
+    """Handles the common INAM (Death Item) subrecord."""
+    def __init__(self):
+        super().__init__(b'INAM', 'death_item')
 
 #------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
@@ -1467,7 +1479,7 @@ class MelSound(MelFid):
 class MelSoundActivation(MelFid):
     """Handles the ACTI subrecord VNAM (Sound - Activation)."""
     def __init__(self):
-        super().__init__(b'VNAM', 'soundActivation')
+        super().__init__(b'VNAM', 'sound_activation')
 
 #------------------------------------------------------------------------------
 class MelSoundClose(MelFid):
@@ -1487,8 +1499,8 @@ class MelSoundPickupDrop(MelSequential):
     They always occur together."""
     def __init__(self):
         super().__init__(
-            MelFid(b'YNAM', 'pickupSound'),
-            MelFid(b'ZNAM', 'dropSound'),
+            MelFid(b'YNAM', 'sound_pickup'),
+            MelFid(b'ZNAM', 'sound_drop'),
         )
 
 #------------------------------------------------------------------------------

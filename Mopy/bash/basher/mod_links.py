@@ -953,10 +953,9 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # Create the PatchFile instance
         bashed_patch = PatchFile(patch_info, mod_infos)
         #--Check if we should be deactivating some plugins
-        if not bush.game.check_esl:
-            if self._ask_deactivate_mergeable(bashed_patch):
-                # we might have de-activated plugins so recalculate active sets
-                bashed_patch.set_active_arrays(bosh.modInfos)
+        if self._ask_deactivate_mergeable(bashed_patch):
+            # we might have de-activated plugins so recalculate active sets
+            bashed_patch.set_active_arrays(bosh.modInfos)
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
         if missing or delinquent:
             error_msg = _(
@@ -984,7 +983,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         merge, noMerge, deactivate = [], [], []
         for mod in bashed_patch.load_dict:
             tags = bosh.modInfos[mod].getBashTags()
-            if mod in bosh.modInfos.mergeable:
+            if not bush.game.check_esl and mod in bosh.modInfos.mergeable:
                 if u'MustBeActiveIfImported' in tags:
                     continue
                 if u'NoMerge' in tags: noMerge.append(mod)
@@ -1981,7 +1980,7 @@ from ..parsers import ItemStats
 
 class Mod_Stats_Export(_Mod_Export_Link):
     """Exports stats from the selected plugin to a CSV file (for the record
-    types specified in bush.game.statsTypes)."""
+    types specified in bush.game.stats_attrs)."""
     askTitle = _(u'Export stats to:')
     csvFile = u'_Stats.csv'
     progressTitle = _(u'Export Stats')

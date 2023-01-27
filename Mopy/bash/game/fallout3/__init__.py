@@ -565,8 +565,8 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    # The contents of these tuples has to stay fixed because of CSV parsers
-    statsTypes = {
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    stats_csv_attrs = {
         b'ALCH': ('eid', 'weight', 'value'),
         b'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
         b'ARMA': ('eid', 'weight', 'value', 'health', 'dr'),
@@ -592,38 +592,51 @@ class Fallout3GameInfo(PatchGame):
             'semiAutomaticFireDelayMax', 'criticalDamage',
             'criticalMultiplier'),
     }
+    stats_attrs = {r: tuple(x for x in a if x != 'eid')
+                   for r, a in stats_csv_attrs.items()}
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = {
-        b'ACTI': ('sound', 'soundActivation'),
-        b'ADDN': ('sound',),
-        b'ALCH': ('dropSound', 'pickupSound', 'soundConsume'),
-        b'ARMO': ('pickupSound', 'dropSound'),
-        b'ASPC': ('sound', 'use_sound_from_region', 'environment_type'),
-        b'COBJ': ('pickupSound', 'dropSound'),
-        b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('footWeight', 'inheritsSoundsFrom', 'sounds'),
-        b'DOOR': ('sound', 'sound_close', 'sound_looping'),
-        b'EXPL': ('expl_sound_level', 'expl_sound1', 'expl_sound2'),
-        b'IPCT': ('ipct_sound_level', 'sound', 'ipct_sound2'),
-        b'LIGH': ('sound',),
-        b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
-        b'NOTE': ('pickupSound', 'dropSound', 'sound'),
-        b'PROJ': ('sound', 'soundCountDown', 'soundDisable', 'soundLevel'),
-    #    b'REGN': ('entries.sounds',),
+    sounds_attrs = {
+        b'ASPC': ('environment_type',),
+        ##: see sounds_attrs note in oblivion/__init__.py
+        b'CREA': ('footWeight', 'sounds'),
+        b'EXPL': ('expl_sound_level',),
+        b'IPCT': ('ipct_sound_level',),
+        b'PROJ': ('soundLevel',),
         b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
                   'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
                   'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
                   'yLoc'),
-        b'TACT': ('sound',),
-        b'WATR': ('sound',),
-        b'WEAP': ('pickupSound', 'dropSound', 'sound', 'soundGunShot2D',
-                  'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
-                  'soundBlock', 'idleSound', 'equipSound', 'unequipSound',
-                  'soundLevel'),
+        b'WEAP': ('soundLevel',),
+        # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
+    }
+    sounds_fid_attrs = {
+        b'ACTI': ('sound', 'sound_activation'),
+        b'ADDN': ('sound',),
+        b'ALCH': ('sound_pickup', 'sound_drop', 'sound_consume'),
+        b'ARMO': ('sound_pickup', 'sound_drop'),
+        b'ASPC': ('sound', 'use_sound_from_region'),
+        b'COBJ': ('sound_pickup', 'sound_drop'),
+        b'CONT': ('sound', 'sound_close'),
+        b'CREA': ('inheritsSoundsFrom',),
+        b'DOOR': ('sound', 'sound_close', 'sound_looping'),
+        b'EXPL': ('expl_sound1', 'expl_sound2'),
+        b'IPCT': ('sound', 'ipct_sound2'),
+        b'KEYM': ('sound_pickup', 'sound_drop'),
+        b'LIGH': ('sound',),
+        b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
+        b'MISC': ('sound_pickup', 'sound_drop'),
+        b'NOTE': ('sound_pickup', 'sound_drop', 'sound'),
+        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
+        b'TACT': ('sound',),
+        b'TERM': ('sound',),
+        b'WATR': ('sound',),
+        b'WEAP': ('sound_pickup', 'sound_drop', 'sound', 'soundGunShot2D',
+                  'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
+                  'soundBlock', 'idleSound', 'equipSound', 'unequipSound'),
     }
 
     #--------------------------------------------------------------------------
@@ -789,6 +802,7 @@ class Fallout3GameInfo(PatchGame):
         b'LSCR': ('description',),
         b'MESG': ('description',),
         b'MGEF': ('description',),
+        ##: This one *might* be a FormID. How on earth do we handle this?
         b'NOTE': ('textTopic',),
         b'PERK': ('description',),
         # omit RACE - covered by R.Description
@@ -870,19 +884,13 @@ class Fallout3GameInfo(PatchGame):
                               'responsibility', 'services', 'trainLevel',
                               'trainSkill'),
             'Actors.Anims': ('animations',),
-            'Actors.CombatStyle': ('combatStyle',),
-            'Actors.DeathItem': ('deathItem',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
             'Actors.Stats': ('agility', 'charisma', 'combatSkill', 'damage',
                              'endurance', 'health', 'intelligence', 'luck',
                              'magicSkill', 'perception', 'stealthSkill',
                              'strength'),
-            'Actors.Voice': ('voice',),
-            'Creatures.Blood': ('impact_dataset',),
             'Creatures.Type': ('creatureType',),
-            'NPC.Class': (),
-            'NPC.Race': (),
         },
         b'NPC_': {
             'Actors.ACBS': ('barterGold', 'calcMax', 'calcMin', 'dispositionBase',
@@ -900,15 +908,27 @@ class Fallout3GameInfo(PatchGame):
                               'responsibility', 'services', 'trainLevel',
                               'trainSkill'),
             'Actors.Anims': ('animations',),
-            'Actors.CombatStyle': ('combatStyle',),
-            'Actors.DeathItem': ('deathItem',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
             'Actors.Stats': ('attributes', 'health', 'skillOffsets',
                              'skillValues'),
+            'Creatures.Type': (),
+        },
+    }
+    actor_importer_fid_attrs = {
+        b'CREA': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
+            'Actors.Voice': ('voice',),
+            'Creatures.Blood': ('impact_dataset',),
+            'NPC.Class': (),
+            'NPC.Race': (),
+        },
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
             'Actors.Voice': ('voice',),
             'Creatures.Blood': (),
-            'Creatures.Type': (),
             'NPC.Class': ('iclass',),
             'NPC.Race': ('race',),
         },
@@ -918,7 +938,9 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Spell Stats
     #--------------------------------------------------------------------------
-    spell_stats_attrs = ('eid', 'cost', 'level', 'spellType', 'spell_flags')
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    spell_stats_attrs = spell_stats_csv_attrs = (
+        'eid', 'cost', 'level', 'spellType', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors
@@ -954,8 +976,8 @@ class Fallout3GameInfo(PatchGame):
         'model.alternateTextures': None,
         'model.facegen_model_flags': None,
         'iconPath': r'Interface\Icons\PipboyImages\Items\items_nuka_cola_cap.dds',
-        'pickupSound': self.master_fid(0x0864D8), # ITMBottlecapsUp
-        'dropSound': self.master_fid(0x0864D7), # ITMBottlecapsDown
+        'sound_pickup': self.master_fid(0x0864D8), # ITMBottlecapsUp
+        'sound_drop': self.master_fid(0x0864D7), # ITMBottlecapsDown
         'value': 1,
         'weight': 0.0,
     }
@@ -1043,9 +1065,10 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Effect Stats
     #--------------------------------------------------------------------------
-    mgef_stats_attrs = ('flags', 'base_cost', 'associated_item', 'school',
-                        'resist_value', 'projectileSpeed', 'cef_enchantment',
-                        'cef_barter', 'effect_archetype', 'actorValue')
+    mgef_stats_attrs = ('flags', 'base_cost', 'school', 'resist_value',
+                        'projectileSpeed', 'cef_enchantment', 'cef_barter',
+                        'effect_archetype', 'actorValue')
+    mgef_stats_fid_attrs = ('associated_item',)
 
     #--------------------------------------------------------------------------
     # Import Races
@@ -1060,8 +1083,10 @@ class Fallout3GameInfo(PatchGame):
             'R.Body-Size-M': ('maleHeight', 'maleWeight'),
             'R.Description': ('description',),
             'R.Ears': ('maleEars', 'femaleEars'),
+            # eyes has FormIDs, but will be filtered in AMreRace.keep_fids
             'R.Eyes': ('eyes', 'femaleLeftEye', 'femaleRightEye',
                        'maleLeftEye', 'maleRightEye'),
+            # hairs has FormIDs, but will be filtered in AMreRace.keep_fids
             'R.Hair': ('hairs',),
             'R.Head': ('femaleHead', 'maleHead',),
             'R.Mouth': ('maleMouth', 'femaleMouth', 'maleTongue',
@@ -1069,6 +1094,10 @@ class Fallout3GameInfo(PatchGame):
             'R.Skills': ('skills',),
             'R.Teeth': ('femaleTeethLower', 'femaleTeethUpper',
                         'maleTeethLower', 'maleTeethUpper'),
+        },
+    }
+    import_races_fid_attrs = {
+        b'RACE': {
             'R.Voice-F': ('femaleVoice',),
             'R.Voice-M': ('maleVoice',),
         },

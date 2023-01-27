@@ -56,7 +56,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     gen_color3, MelDalc, MelLighFade, MelLighLensFlare, MelLscrCameraPath, \
     MelLscrRotation, MelLscrNif, MelLtexGrasses, MelLtexSnam, MelLLGlobal, \
     MelLLChanceNone, MelMatoPropertyData, MelMattShared, VWDFlag, \
-    NavMeshFlags, NotPlayableFlag
+    NavMeshFlags, NotPlayableFlag, AMreWithKeywords
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -335,7 +335,7 @@ class MreAact(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreActi(MelRecord):
+class MreActi(AMreWithKeywords):
     """Activator."""
     rec_sig = b'ACTI'
 
@@ -421,7 +421,7 @@ class MreAech(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAlch(MelRecord):
+class MreAlch(AMreWithKeywords):
     """Ingestible."""
     rec_sig = b'ALCH'
 
@@ -461,7 +461,7 @@ class MreAmdl(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAmmo(MelRecord):
+class MreAmmo(AMreWithKeywords):
     """Ammunition."""
     rec_sig = b'AMMO'
 
@@ -541,7 +541,7 @@ class MreArma(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreArmo(MelRecord):
+class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
 
@@ -583,7 +583,7 @@ class MreArmo(MelRecord):
     ).with_distributor(_object_template_distributor)
 
 #------------------------------------------------------------------------------
-class MreArto(MelRecord):
+class MreArto(AMreWithKeywords):
     """Art Object."""
     rec_sig = b'ARTO'
 
@@ -661,7 +661,7 @@ class MreBnds(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreBook(MelRecord):
+class MreBook(AMreWithKeywords):
     """Book."""
     rec_sig = b'BOOK'
 
@@ -883,11 +883,12 @@ class MreCobj(MelRecord):
     )
 
     def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
         self.cobj_components = [c for c in self.cobj_components
                                 if c.component_fid.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
-class MreCont(AMreWithItems):
+class MreCont(AMreWithItems, AMreWithKeywords):
     """Container."""
     rec_sig = b'CONT'
 
@@ -1026,7 +1027,7 @@ class MreDobj(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreDoor(MelRecord):
+class MreDoor(AMreWithKeywords):
     """Door."""
     rec_sig = b'DOOR'
 
@@ -1291,7 +1292,7 @@ class MreFact(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreFlor(MelRecord):
+class MreFlor(AMreWithKeywords):
     """Flora."""
     rec_sig = b'FLOR'
     _has_duplicate_attrs = True # RNAM is an older version of ATTX
@@ -1369,7 +1370,7 @@ class MelFurnMarkerParams(MelArray):
             arr_entry.__slots__ = entry_slots
             load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
 
-class MreFurn(AMreWithItems):
+class MreFurn(AMreWithItems, AMreWithKeywords):
     """Furniture."""
     rec_sig = b'FURN'
 
@@ -1528,7 +1529,7 @@ class MreIdle(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreIdlm(MelRecord):
+class MreIdlm(AMreWithKeywords):
     """Idle Marker."""
     rec_sig = b'IDLM'
 
@@ -1677,7 +1678,7 @@ class MreInfo(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreIngr(MelRecord):
+class MreIngr(AMreWithKeywords):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -1748,7 +1749,7 @@ class MreIpds(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreKeym(MelRecord):
+class MreKeym(AMreWithKeywords):
     """Key."""
     rec_sig = b'KEYM'
 
@@ -1835,7 +1836,7 @@ class MreLcrt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLctn(MelRecord):
+class MreLctn(AMreWithKeywords):
     """Location."""
     rec_sig = b'LCTN'
 
@@ -1891,7 +1892,7 @@ class MreLgtm(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLigh(MelRecord):
+class MreLigh(AMreWithKeywords):
     """Light."""
     rec_sig = b'LIGH'
 

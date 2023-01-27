@@ -913,10 +913,10 @@ class ItemStats(_HandleAliases):
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
         if self._called_from_patcher:
-            self.sig_stats_attrs = {r: tuple(x for x in a if x != u'eid') for
-                                    r, a in bush.game.statsTypes.items()}
+            self.sig_stats_attrs = {r: tuple(x for x in a if x != 'eid') for
+                                    r, a in bush.game.stats_csv_attrs.items()}
         else:
-            self.sig_stats_attrs = bush.game.statsTypes
+            self.sig_stats_attrs = bush.game.stats_csv_attrs
         self._parser_sigs = set(self.sig_stats_attrs)
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
@@ -1235,7 +1235,8 @@ class SpellRecords(_UsesEffectsMixin):
 
     def __init__(self, aliases_=None, detailed=False,
                  called_from_patcher=False):
-        atts = (bush.game.spell_stats_attrs if called_from_patcher
+        ##: Drop this if check now and always use the game var?
+        atts = (bush.game.spell_stats_csv_attrs if called_from_patcher
                 else self._csv_attrs)
         if detailed:
             extra_attrs = self.__class__._extra_attrs

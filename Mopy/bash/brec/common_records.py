@@ -44,24 +44,64 @@ from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, flag, \
     remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
 
 #------------------------------------------------------------------------------
-# Base classes ----------------------------------------------------------------
+# Mixins ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class AMreWithItems(MelRecord):
-    """Base class for record types that contain a list of items (see
+    """Mixin class for record types that contain a list of items (see
     common_subrecords.AMelItems)."""
-
     def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
         self.items = [i for i in self.items if i.item.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
-class AMreActor(AMreWithItems):
-    """Base class for Creatures and NPCs."""
-
+class AMreWithKeywords(MelRecord):
+    """Mixin class for record types that contain a list of keywords (see
+    common_subrecords.MelKeywords)."""
     def keep_fids(self, keep_plugins):
         super().keep_fids(keep_plugins)
-        self.spells = [x for x in self.spells if x.mod_fn in keep_plugins]
-        self.factions = [x for x in self.factions if
-                         x.faction.mod_fn in keep_plugins]
+        self.keywords = [k for k in self.keywords if k.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class AMreActor(AMreWithItems):
+    """Mixin class for Creatures and NPCs."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.spells = [s for s in self.spells if s.mod_fn in keep_plugins]
+        self.factions = [f for f in self.factions if
+                         f.faction.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+# Base classes ----------------------------------------------------------------
+#------------------------------------------------------------------------------
+class AMreCell(MelRecord):
+    """Base class for CELL records."""
+    rec_sig = b'CELL'
+    # All 'reference' types, i.e. record types that occur in CELL/WLRD groups
+    # and place some sort of thing into the cell (e.g. ACHR, REFR, PMIS, etc.)
+    ref_types = set()
+    interior_temp_extra = set()
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        persistent: bool = flag(10)
+        off_limits: bool = flag(17) # interior CELL
+        cant_wait: bool = flag(19)
+
+    def getBsb(self):
+        """Returns tesfile block and sub-block indices for cells in this group.
+        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
+        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
+        #--Interior cell
+        if self.flags.isInterior:
+            baseFid = self.fid.object_dex
+            return baseFid % 10, baseFid % 100 // 10
+        #--Exterior cell
+        else:
+            x, y = self.posX or 0, self.posY or 0  # posXY can be None
+            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {*cls.ref_types, *cls.interior_temp_extra}
 
 #------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
@@ -80,6 +120,7 @@ class AMreFlst(MelRecord):
         self.re_records = None # unused, needed by patcher
 
     def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
         self.formIDInList = [f for f in self.formIDInList if
                              f.mod_fn in keep_plugins]
 
@@ -391,6 +432,7 @@ class AMreLeveledList(MelRecord):
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
     def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
         self.entries = [entry for entry in self.entries if
                         entry.listId.mod_fn in keep_plugins]
 
@@ -473,39 +515,17 @@ class AMreLeveledList(MelRecord):
             self.mergeSources = [otherMod]
         self.setChanged(self.mergeOverLast)
 
-# Complex records -------------------------------------------------------------
-class AMreCell(MelRecord):
-    """Cell."""
-    rec_sig = b'CELL'
-    # All 'reference' types, i.e. record types that occur in CELL/WLRD groups
-    # and place some sort of thing into the cell (e.g. ACHR, REFR, PMIS, etc.)
-    ref_types = set()
-    interior_temp_extra = set()
+#------------------------------------------------------------------------------
+class AMreRace(MelRecord):
+    """Base class for RACE records."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.eyes = [e for e in self.eyes if e.mod_fn in keep_plugins]
+        self.hairs = [h for h in self.hairs if h.mod_fn in keep_plugins]
 
-    class HeaderFlags(MelRecord.HeaderFlags):
-        persistent: bool = flag(10)
-        off_limits: bool = flag(17) # interior CELL
-        cant_wait: bool = flag(19)
-
-    def getBsb(self):
-        """Returns tesfile block and sub-block indices for cells in this group.
-        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
-        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
-        #--Interior cell
-        if self.flags.isInterior:
-            baseFid = self.fid.object_dex
-            return baseFid % 10, baseFid % 100 // 10
-        #--Exterior cell
-        else:
-            x, y = self.posX or 0, self.posY or 0  # posXY can be None
-            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
-
-    @classmethod
-    def nested_records_sigs(cls):
-        return {*cls.ref_types, *cls.interior_temp_extra}
-
+#------------------------------------------------------------------------------
 class AMreWrld(MelRecord):
-    """Worldspace."""
+    """Base class for WRLD records."""
     rec_sig = b'WRLD'
     ref_types = set() # same as AMreCell
     exterior_temp_extra = [] # exterior cell temp cell references
@@ -518,6 +538,14 @@ class AMreWrld(MelRecord):
     def nested_records_sigs(cls):
         return {*cls.ref_types, *cls.exterior_temp_extra,
                 *cls.wrld_children_extra}
+
+#------------------------------------------------------------------------------
+class AMreWthr(MelRecord):
+    """Base class for WTHR records."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.sounds = [s for s in self.sounds
+                       if s.sound.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 # Full classes ----------------------------------------------------------------

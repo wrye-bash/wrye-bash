@@ -87,7 +87,7 @@ class _AMerger(ImportPatcher):
         progress.setFull(len(self.srcs))
         minfs = self.patchFile.all_plugins
         for index,srcMod in enumerate(self.srcs):
-            srcFile = self._mod_file_read(minfs[srcMod])
+            srcFile = self._filtered_mod_read(minfs[srcMod], self.patchFile)
             for s, block in srcFile.iter_tops(self._wanted_subrecord):
                 self._present_sigs.add(s)
                 for rid, _record in block.iter_present_records():
@@ -319,7 +319,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             if not (srcInfo := minfs.get(srcMod)):
                 continue
             tempData = {}
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
             force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
             mod_tops = set()
             for rsig, block in srcFile.iter_tops(read_sigs):
@@ -332,7 +332,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 except KeyError:
                     masterInfo = minfs[master]
-                    masterFile = self._mod_file_read(masterInfo)
+                    masterFile = self._filtered_mod_read(masterInfo,
+                        self.patchFile)
                     cachedMasters[master] = masterFile
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
@@ -447,7 +448,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
             self._index_spells(srcFile)
             force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
             mod_tops = set()
@@ -461,7 +462,8 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = self._mod_file_read(masterInfo)
+                    masterFile = self._filtered_mod_read(masterInfo,
+                        self.patchFile)
                     self._index_spells(masterFile)
                     cachedMasters[master] = masterFile
                 for rsig, block in masterFile.iter_tops(mod_tops):
@@ -870,12 +872,14 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         for index, srcMod in enumerate(self.srcs):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
             if b'RACE' not in srcFile.tops: continue
             bashTags = srcInfo.getBashTags()
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             change_spells = 'R.ChangeSpells' in bashTags
             add_spells = 'R.AddSpells' in bashTags
+            ##: This should be detected earlier and raise a BPConfigError so
+            # we abort with a nice, visible error message
             if change_spells and add_spells:
                 raise BoltError(f'WARNING mod {srcMod} has both R.AddSpells '
                                 f'and R.ChangeSpells tags - only one of '
@@ -891,7 +895,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = self._mod_file_read(masterInfo)
+                    masterFile = self._filtered_mod_read(masterInfo,
+                        self.patchFile)
                     cachedMasters[master] = masterFile
                     if b'RACE' not in masterFile.tops: continue
                 for rid, race in masterFile.tops[b'RACE'].iter_present_records():

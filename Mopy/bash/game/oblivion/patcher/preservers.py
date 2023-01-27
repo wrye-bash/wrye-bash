@@ -51,7 +51,8 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.all_plugins: continue
             srcInfo = self.patchFile.all_plugins[srcMod]
-            src_wrld_block = self._mod_file_read(srcInfo).tops[b'WRLD']
+            src_wrld_block = self._filtered_mod_read(
+                srcInfo, self.patchFile).tops[b'WRLD']
             for worldId, worldBlock in src_wrld_block.iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()

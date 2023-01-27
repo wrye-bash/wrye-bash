@@ -321,7 +321,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    statsTypes = Fallout3GameInfo.statsTypes | {
+    stats_csv_attrs = Fallout3GameInfo.stats_csv_attrs | {
         b'AMMO': ('eid', 'weight', 'value', 'speed', 'clipRounds',
                   'projPerShot'),
         b'ARMA': ('eid', 'weight', 'value', 'health', 'dr', 'dt'),
@@ -340,17 +340,29 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             'killImpulse', 'impulseDist', 'skillReq', 'criticalDamage',
             'criticalMultiplier', 'vatsSkill', 'vatsDamMult', 'vatsAp'),
     }
+    stats_attrs = {r: tuple(x for x in a if x != 'eid')
+                   for r, a in stats_csv_attrs.items()}
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = Fallout3GameInfo.soundsTypes | {
+    sounds_attrs = Fallout3GameInfo.sounds_attrs | {
+        b'STAT': ('passthroughSound',),
+    }
+    sounds_fid_attrs = Fallout3GameInfo.sounds_fid_attrs | {
+        b'ASPC': ('sound_dawn_default_loop', 'sound_afternoon', 'sound_dusk',
+                  'sound_night', 'sound_walla', 'use_sound_from_region'),
         b'CONT': ('sound', 'sound_close', 'sound_random_looping'),
-        b'WEAP': ('pickupSound', 'dropSound', 'sound', 'soundGunShot2D',
+        b'KEYM': ('sound_pickup', 'sound_drop', 'sound_random_looping'),
+        b'MISC': ('sound_pickup', 'sound_drop', 'sound_random_looping'),
+        b'STAT': ('sound_random_looping',),
+        b'WEAP': ('sound_pickup', 'sound_drop', 'sound',
+                  'sound_gun_shoot_dist', 'soundGunShot2D',
                   'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
                   'soundBlock', 'idleSound', 'equipSound', 'unequipSound',
-                  'soundMod1Shoot3Ds', 'soundMod1Shoot2D', 'soundLevel'),
+                  'soundMod1Shoot3Ds', 'soundMod1Shoot2D'),
     }
+    sounds_fid_attrs[b'WEAP'] = ()
 
     #--------------------------------------------------------------------------
     # Import Graphics

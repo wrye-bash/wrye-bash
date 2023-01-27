@@ -344,6 +344,15 @@ def float_or_none(uni_str):
     except ValueError:
         return None
 
+def combine_dicts(dict_a: dict, dict_b: dict, f) -> dict:
+    """Merge two dictionaries, but combine their values (as opposed to the
+    last-added value overwriting all earlier values with the same key).
+
+    :param f: A function taking one value from dict_a and one from dict_b and
+        returning the combined result."""
+    return {**dict_a, **dict_b,
+            **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
+
 _not_cached = object()
 
 class fast_cached_property:

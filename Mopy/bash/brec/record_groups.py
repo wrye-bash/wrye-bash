@@ -105,7 +105,7 @@ class _RecordsGrup(_AMobBase):
         raise AbstractError('keepRecords not implemented')
 
     def merge_records(self, block, loaded_mods: set | None, mergeIds,
-                      iiSkipMerge):
+                      skip_merge: bool):
         """Merges records from the specified block into this block.
 
         :param block: The block to merge records from.
@@ -114,8 +114,8 @@ class _RecordsGrup(_AMobBase):
             filtering on missing masters.
         :param mergeIds: A set into which the fids of all records that will be
             merged by this operation will be added.
-        :param iiSkipMerge: If True, skip merging and only perform merge
-            filtering. Used by IIM mode."""
+        :param skip_merge: If True, skip merging and only perform merge
+            filtering. Used by IIM mode and Filter plugins."""
         raise AbstractError(f'{self}: merge_records not implemented')
 
     def updateRecords(self, srcBlock, mergeIds):
@@ -322,7 +322,7 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
                 copy_to_self(record)
                 merge_ids_discard(rid)
 
-    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, block, loaded_mods, mergeIds, skip_merge):
         filtered = {}
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
@@ -333,9 +333,7 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
                 continue
             # We're either not Filter-tagged or we want to keep this record
             filtered[rkey := src_rec.group_key()] = src_rec
-            # If we're IIM-tagged and this is not one of the IIM-approved
-            # record types, skip merging
-            if not iiSkipMerge:
+            if not skip_merge:
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(rkey)
@@ -409,7 +407,7 @@ class _Nested(_RecordsGrup):
         return chain(recs, *(v.iter_records(skip_flagged=skip_flagged) for v in
                              self._mob_objects.values()))
 
-    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, src_block, loaded_mods, mergeIds, skip_merge):
         mergeIdsAdd = mergeIds.add
         for rsig, src_rec in src_block._stray_recs.items():
             if rsig in self._merged_strays:
@@ -421,15 +419,14 @@ class _Nested(_RecordsGrup):
                     # Filtered out, discard this record and skip to next
                     src_block._stray_recs[rsig] = None
                     continue
-                # In IIM, skip all merging (duh)
-                if not iiSkipMerge:
+                if not skip_merge:
                     # We're past all hurdles - stick a copy of this record into
                     # ourselves and mark it as merged
                     mergeIdsAdd(src_rec.fid)
                     self._stray_recs[rsig] = src_rec.getTypeCopy()
         for gt, block_mob in src_block._mob_objects.items():
             self._mob_objects[gt].merge_records(block_mob, loaded_mods,
-                                                mergeIds, iiSkipMerge)
+                                                mergeIds, skip_merge)
 
     def updateRecords(self, srcBlock, mergeIds):
         for gt, chg in self._mob_objects.items():
@@ -602,7 +599,7 @@ class _ComplexRec(_Nested):
             mergeIds.discard(src_rec.fid)
             return True # call super
 
-    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, src_block, loaded_mods, mergeIds, skip_merge):
         mergeIdsAdd = mergeIds.add
         # First, check the main record
         src_rec = src_block.master_record
@@ -615,16 +612,16 @@ class _ComplexRec(_Nested):
                 # Discard this record (and, by extension, all its children)
                 self.master_record = None  # will drop us from parent
                 return
-            # In IIM, we can't just return here since we also need to filter
-            # the children that came with this complex record
-            if not iiSkipMerge:
+            # In skip merge mode, we can't just return here since we also need
+            # to filter the children that came with this complex record
+            if not skip_merge:
                 # We're past all hurdles - mark the record as merged, and stick
                 # a copy into ourselves
                 mergeIdsAdd(src_rec.fid)
                 self.master_record = src_rec.getTypeCopy()
-            # Now we're ready to filter and merge the children
+            # Now we're ready to filter and/or merge the children
             super().merge_records(src_block, loaded_mods, mergeIds,
-                                  iiSkipMerge)
+                                  skip_merge)
 
     def __str__(self):
         mr = mr.fid if (mr := self.master_record) else \
@@ -705,7 +702,7 @@ class TopComplexGrup(TopGrup):
             if dest_rec:
                 dest_rec.updateRecords(complex_rec, mergeIds)
 
-    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, block, loaded_mods, mergeIds, skip_merge):
         lookup_rec = self.id_records.get
         filtered = {}
         for src_fid, src_rec in block.iter_present_records():
@@ -716,12 +713,9 @@ class TopComplexGrup(TopGrup):
                 dest_record = self.setRecord(src_rec.master_record)
             # Delegate merging to the (potentially newly added) child record
             dest_record.merge_records(src_rec, loaded_mods, mergeIds,
-                                      iiSkipMerge)
-            # In IIM, skip all merging - note that we need to remove the child
-            # record again if it was newly added in IIM mode.
-            if iiSkipMerge or (loaded_mods is not None and
-                self._masters_miss_after_filtering(src_rec, loaded_mods,
-                                                   perform_filtering=False)):
+                                      skip_merge)
+            if loaded_mods is not None and self._masters_miss_after_filtering(
+                    src_rec, loaded_mods, perform_filtering=False):
                 if was_newly_added:
                     # The child record got filtered out. If it was newly added,
                     # we need to remove it from this block again. Otherwise, we
@@ -730,6 +724,10 @@ class TopComplexGrup(TopGrup):
                 continue
             # We're either not Filter-tagged or we want to keep this record
             filtered[src_fid] = src_rec
+            # In skip merge mode, note that we need to remove the child record
+            # again if it was newly added
+            if skip_merge and was_newly_added:
+                del self.id_records[src_fid]
         # Apply any merge filtering we've done above to the record block
         block.id_records = filtered
 
@@ -845,7 +843,7 @@ class TempRefs(CellRefs):
     _children_grup_type = 9
     _sort_overrides = {} # (in|ex)terior_temp_extra -> other temporary refs
 
-    def merge_records(self, block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, block, loaded_mods, mergeIds, skip_merge):
         special_recs = {} # these records are merged based on record signature
         filtered = {}
         for sig in self._sort_overrides:
@@ -859,10 +857,10 @@ class TempRefs(CellRefs):
                     src_rec, loaded_mods):
                 continue # we deleted it above
             filtered[k] = src_rec
-            if not iiSkipMerge:
+            if not skip_merge:
                 mergeIds.add(k)
                 self.setRecord(src_rec)
-        super().merge_records(block, loaded_mods, mergeIds, iiSkipMerge)
+        super().merge_records(block, loaded_mods, mergeIds, skip_merge)
         # add to the block the possibly filtered PGRD/LAND etc
         block.id_records = {**filtered, **block.id_records}
 
@@ -1146,7 +1144,7 @@ class WorldChildren(CellChildren):
             if pcell := self._stray_recs[b'CELL']:
                 pcell.updateRecords(src_cell, mergeIds)
 
-    def merge_records(self, src_block, loaded_mods, mergeIds, iiSkipMerge):
+    def merge_records(self, src_block, loaded_mods, mergeIds, skip_merge):
         if src_cell := src_block._stray_recs[b'CELL']:
             # Otherwise we'll try to do this again in super
             self._merged_strays.add(b'CELL')
@@ -1157,17 +1155,17 @@ class WorldChildren(CellChildren):
                                                             cell=src_cell)
             # Delegate merging to the (potentially newly added) block
             self._stray_recs[b'CELL'].merge_records(src_cell, loaded_mods,
-                mergeIds, iiSkipMerge)
-            # In IIM, skip all merging - note that we need to remove the world
-            # cell block again if it was newly added in IIM mode.
-            if iiSkipMerge or (loaded_mods is not None and
+                mergeIds, skip_merge)
+            # In skip merge mode, note that we need to remove the world
+            # cell block again if it was newly added
+            if skip_merge or (loaded_mods is not None and
                 self._masters_miss_after_filtering(self._stray_recs[b'CELL'],
                     loaded_mods, perform_filtering=False)):
                 # The cell block got filtered out. If it was newly added,
                 # we need to remove it from this block again.
                 if was_newly_added:
                     self._stray_recs[b'CELL'] = None
-        super().merge_records(src_block, loaded_mods, mergeIds, iiSkipMerge)
+        super().merge_records(src_block, loaded_mods, mergeIds, skip_merge)
 
     @_process_rec(b'CELL', after=False)
     def keepRecords(self, p_keep_ids):

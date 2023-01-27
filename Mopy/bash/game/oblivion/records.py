@@ -45,7 +45,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
     MelSeasons, MelIngredient, MelGrasData, MelIdleRelatedAnims, \
     MelLandShared, AMreCell, AMreWrld, gen_color, MelLighFade, MelLtexSnam, \
-    MelLtexGrasses, MelLLFlags, MelLLChanceNone
+    MelLtexGrasses, MelLLFlags, MelLLChanceNone, MelCombatStyle, \
+    MelDeathItem, AMreWthr, AMreRace
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -826,7 +827,7 @@ class MreCrea(AMreActor):
                   (_CreaFlags, 'flags'), 'baseSpell', 'fatigue', 'barterGold',
                   'level_offset', 'calcMin', 'calcMax'),
         MelFactions(),
-        MelFid(b'INAM', 'deathItem'),
+        MelDeathItem(),
         MelScript(),
         MelAidt(),
         MelFids('aiPackages', MelFid(b'PKID')),
@@ -837,7 +838,7 @@ class MreCrea(AMreActor):
                   'intelligence', 'willpower', 'agility', 'speed', 'endurance',
                   'personality', 'luck'),
         MelUInt8(b'RNAM', 'attackReach'),
-        MelFid(b'ZNAM', 'combatStyle'),
+        MelCombatStyle(),
         MelFloat(b'TNAM', 'turningSpeed'),
         MelFloat(b'BNAM', 'baseScale'),
         MelFloat(b'WNAM', 'footWeight'),
@@ -1180,11 +1181,11 @@ class MreLigh(MelRecord):
         MelScript(),
         MelFull(),
         MelIcon(),
-        MelTruncatedStruct(b'DATA', ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I',
-                                     'f'], 'duration', 'light_radius',
-            *gen_color('light_color'), (_LighFlags, 'light_flags'),
-            'light_falloff', 'light_fov', 'value', 'weight',
-            old_versions={'iI3BsI2f'}),
+        MelTruncatedStruct(b'DATA',
+            ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I', 'f'], 'duration',
+            'light_radius', *gen_color('light_color'),
+            (_LighFlags, 'light_flags'), 'light_falloff', 'light_fov',
+            'value', 'weight', old_versions={'iI3BsI2f'}),
         MelLighFade(),
         MelSound(),
     )
@@ -1612,7 +1613,7 @@ class MreNpc_(AMreActor):
                   'baseSpell', 'fatigue', 'barterGold', 'level_offset',
                   'calcMin', 'calcMax'),
         MelFactions(),
-        MelFid(b'INAM','deathItem'),
+        MelDeathItem(),
         MelRace(),
         MelSpellsTes4(),
         MelScript(),
@@ -1630,7 +1631,7 @@ class MreNpc_(AMreActor):
         MelFid(b'ENAM', 'eye'),
         MelStruct(b'HCLR', ['3B', 's'], 'hairRed', 'hairBlue', 'hairGreen',
                   'unused3'),
-        MelFid(b'ZNAM','combatStyle'),
+        MelCombatStyle(),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
         MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
         MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
@@ -1787,7 +1788,7 @@ class MreQust(MelRecord):
     })
 
 #------------------------------------------------------------------------------
-class MreRace(MelRecord):
+class MreRace(AMreRace):
     """Race."""
     rec_sig = b'RACE'
 
@@ -2284,7 +2285,7 @@ class MreWrld(AMreWrld):
     )
 
 #------------------------------------------------------------------------------
-class MreWthr(MelRecord):
+class MreWthr(AMreWthr):
     """Weather."""
     rec_sig = b'WTHR'
 

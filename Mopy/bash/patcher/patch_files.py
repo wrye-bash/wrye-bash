@@ -289,8 +289,8 @@ class PatchFile(ModFile):
             if modName in self.needs_filter_mods:
                 continue
             # Check some commonly needed properties of the current plugin
-            bashTags = modInfo.getBashTags()
             is_merged = modName in self.mergeSet
+            is_filter = 'Filter' in modInfo.getBashTags()
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = modName in self.ii_mode
@@ -310,14 +310,19 @@ class PatchFile(ModFile):
                 if is_merged:
                     # If the plugin is to be merged, merge it
                     progress(pstate, f'{modName}\n' + _('Merging...'))
-                    self.mergeModFile(modFile, # signal we won't "filter"
-                        load_set if 'Filter' in bashTags else None, iiMode)
+                    self.mergeModFile(modFile,
+                        # loaded_mods = None -> signal we won't "filter"
+                        load_set if is_filter else None, iiMode)
                 elif modName in self.load_dict:
-                    # Else, if the plugin is active, update records from it. If
-                    # the plugin is inactive, we only want to import from it,
-                    # so do nothing here
+                    # Else, if the plugin is active, update records from it
                     progress(pstate, f'{modName}\n' + _('Scanning...'))
                     self.update_patch_records_from_mod(modFile)
+                elif is_filter:
+                    # Else, if the plugin is a Filter plugin, filter it but
+                    # don't merge any of its contents (since it's inactive, but
+                    # we might still want to import filtered data, e.g. actor
+                    # factions)
+                    self.filter_plugin(modFile, load_set)
                 for patcher in sorted(self._patcher_instances,
                         key=attrgetter('patcher_order')):
                     if iiMode and not patcher.iiMode: continue
@@ -343,6 +348,19 @@ class PatchFile(ModFile):
             iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
             self.tops[top_grup_sig].merge_records(block, loaded_mods,
                                                   self.mergeIds, iiSkipMerge)
+
+    def filter_plugin(self, modFile, loaded_mods):
+        """Filters the specified plugin according to the specified loaded
+        plugins. Does nothing else."""
+        read_fact = self.readFactory
+        for top_grup_sig, block in modFile.tops.items():
+            if top_grup_sig in read_fact.topTypes:
+                ##: Same ugly hack as in _filtered_mod_read, figure out a
+                # better way (can't just use self.tops since that uses
+                # loadFactory rather than readFactory)
+                temp_block = read_fact.getTopClass(top_grup_sig).empty_mob(
+                    read_fact, top_grup_sig)
+                temp_block.merge_records(block, loaded_mods, set(), True)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""

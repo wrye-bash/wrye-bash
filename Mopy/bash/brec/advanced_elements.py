@@ -77,7 +77,7 @@ class _MelDistributor(MelNull):
                 resolved_entry = scope[signature_str]
                 if not resolved_entry:
                     self._raise_syntax_error(f'Mapped values may not be empty '
-                        f'(offending value: {resolved_entry})')
+                        f'(offending value: {resolved_entry!r})')
                 # Delete the 'A|B' entry, not needed anymore
                 del scope[signature_str]
                 for signature in split_sigs:

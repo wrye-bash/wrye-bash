@@ -53,7 +53,8 @@ from ...brec import MelGroups, MelStruct, FID, MelGroup, \
     perk_distributor, MelInfoResponsesFo3, MelIpctTextureSets, MelIpctSounds, \
     MelLandShared, MelIdleAnimationCountOld, AMreCell, AMreWrld, gen_color, \
     gen_color3, MelLighFade, MelLtexGrasses, MelLtexSnam, MelLLFlags, \
-    MelLLChanceNone, MelLLGlobal, NavMeshFlags, VWDFlag
+    MelLLChanceNone, MelLLGlobal, NavMeshFlags, VWDFlag, MelCombatStyle, \
+    MelDeathItem, AMreWthr, AMreRace
 from ...brec import MelRecord as _BaseMelRecord
 from ...exception import ModSizeError
 
@@ -96,6 +97,21 @@ class aiService(Flags):
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
+class AMreActorFo3(AMreActor):
+    """Creatures and NPCs."""
+    class TemplateFlags(Flags):
+        useTraits: bool
+        useStats: bool
+        useFactions: bool
+        useActorEffectList: bool
+        useAIData: bool
+        useAIPackages: bool
+        useModelAnimation: bool
+        useBaseData: bool
+        useInventory: bool
+        useScript: bool
+
+#------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
     typeSets = {
@@ -134,21 +150,6 @@ class MelActivationPrompt(MelString):
     """Handles the common XATO subrecord, introduced in FNV."""
     def __init__(self):
         super().__init__(b'XATO', 'activation_prompt')
-
-#------------------------------------------------------------------------------
-class MreActor(AMreActor):
-    """Creatures and NPCs."""
-    class TemplateFlags(Flags):
-        useTraits: bool
-        useStats: bool
-        useFactions: bool
-        useActorEffectList: bool
-        useAIData: bool
-        useAIPackages: bool
-        useModelAnimation: bool
-        useBaseData: bool
-        useInventory: bool
-        useScript: bool
 
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
@@ -493,7 +494,7 @@ class MreAlch(MelRecord):
         MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
                   u'unused1', (FID, u'withdrawalEffect'),
-                  u'addictionChance', (FID, u'soundConsume')),
+                  'addictionChance', (FID, 'sound_consume')),
         MelEffectsFo3(),
     )
 
@@ -626,15 +627,27 @@ class MreAspc(MelRecord):
         MelBounds(),
         if_fnv(
             fo3_version=MelSound(),
-            # Technically five subrecords with the same signature, but it's
-            # easier to load them like this than with a distributor
-            fnv_version=MelFids('sound', MelFid(b'SNAM')),
+            fnv_version=MelSequential(
+                MelFid(b'SNAM', 'sound_dawn_default_loop'),
+                MelFid(b'SNAM', 'sound_afternoon'),
+                MelFid(b'SNAM', 'sound_dusk'),
+                MelFid(b'SNAM', 'sound_night'),
+                MelFid(b'SNAM', 'sound_walla'),
+            ),
         ),
         fnv_only(MelUInt32(b'WNAM', 'walla_trigger_count')),
         MelAspcRdat(),
         MelUInt32(b'ANAM', 'environment_type'),
         fnv_only(MelUInt32(b'INAM', 'aspc_is_interior')),
-    )
+    ).with_distributor(fnv_only({
+        b'SNAM': [
+            (b'SNAM', 'sound_dawn_default_loop'),
+            (b'SNAM', 'sound_afternoon'),
+            (b'SNAM', 'sound_dusk'),
+            (b'SNAM', 'sound_night'),
+            (b'SNAM', 'sound_walla'),
+        ],
+    }))
 
 #------------------------------------------------------------------------------
 class MreAvif(MelRecord):
@@ -893,7 +906,7 @@ class MreCpth(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCrea(MreActor):
+class MreCrea(AMreActorFo3):
     """Creature."""
     rec_sig = b'CREA'
 
@@ -943,9 +956,9 @@ class MreCrea(MreActor):
         MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'h', u'H'],(_flags, u'flags'),'fatigue',
             'barterGold',('level_offset',1),'calcMin','calcMax','speedMultiplier',
             'karma', 'dispositionBase',
-            (MreActor.TemplateFlags, 'templateFlags')),
+            (AMreActorFo3.TemplateFlags, 'templateFlags')),
         MelFactions(),
-        MelFid(b'INAM','deathItem'),
+        MelDeathItem(),
         MelFid(b'VTCK','voice'),
         MelFid(b'TPLT','template'),
         MelDestructible(),
@@ -963,7 +976,7 @@ class MreCrea(MreActor):
             'perception','endurance','charisma','intelligence','agility',
             'luck'),
         MelUInt8(b'RNAM', 'attackReach'),
-        MelFid(b'ZNAM','combatStyle'),
+        MelCombatStyle(),
         MelFid(b'PNAM','bodyPartData'),
         MelFloat(b'TNAM', 'turningSpeed'),
         MelFloat(b'BNAM', 'baseScale'),
@@ -1882,7 +1895,7 @@ class _MelNpcDecider(SizeDecider):
     def decide_dump(self, record):
         return len(record.attributes) + 4
 
-class MreNpc_(MreActor):
+class MreNpc_(AMreActorFo3):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
@@ -1920,9 +1933,9 @@ class MreNpc_(MreActor):
         MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'2H'],
             (_flags, u'flags'),'fatigue','barterGold',
             ('level_offset',1),'calcMin','calcMax','speedMultiplier','karma',
-            'dispositionBase', (MreActor.TemplateFlags, u'templateFlags')),
+            'dispositionBase', (AMreActorFo3.TemplateFlags, u'templateFlags')),
         MelFactions(),
-        MelFid(b'INAM','deathItem'),
+        MelDeathItem(),
         MelFid(b'VTCK','voice'),
         MelFid(b'TPLT','template'),
         MelRace(),
@@ -1951,7 +1964,7 @@ class MreNpc_(MreActor):
         MelFloat(b'LNAM', u'hairLength'),
         MelFid(b'ENAM', 'eye'),
         MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen','unused3'),
-        MelFid(b'ZNAM','combatStyle'),
+        MelCombatStyle(),
         MelUInt32(b'NAM4', u'impactMaterialType'),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
         MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
@@ -2082,7 +2095,7 @@ class MrePack(MelRecord):
         ),
         MelBase(b'PKED','eatMarker'),
         MelUInt32(b'PKE2', 'escortDistance'),
-        MelFid(b'CNAM','combatStyle'),
+        MelCombatStyle(b'CNAM'),
         MelFloat(b'PKFD', 'followStartLocationTrigerRadius'),
         MelBase(b'PKPT','patrolFlags'), # byte or short
         MelOptStruct(b'PKW3', [u'I', u'B', u'B', u'3H', u'f', u'f', u'4s'],'weaponFlags','fireRate','fireCount','numBursts',
@@ -2283,8 +2296,8 @@ class MreProj(MelRecord):
                     'tracerChance', 'explosionAltTrigerProximity',
                     'explosionAltTrigerTimer', (FID, 'explosion'),
                     (FID, 'sound'), 'muzzleFlashDuration', 'fadeDuration',
-                    'impactForce', (FID, 'soundCountDown'),
-                    (FID, 'soundDisable'), (FID, 'defaultWeaponSource')]
+                    'impactForce', (FID, 'sound_countdown'),
+                    (FID, 'sound_disable'), (FID, 'defaultWeaponSource')]
 
     melSet = MelSet(
         MelEdid(),
@@ -2407,7 +2420,7 @@ class MelRaceFaceGen(MelGroup):
             MelBase(b'FGTS', u'fgts_p'), # FaceGen Texture  - Symmetric
             MelStruct(b'SNAM', [u'2s'], u'snam_p'))
 
-class MreRace(MelRecord):
+class MreRace(AMreRace):
     """Race."""
     rec_sig = b'RACE'
 
@@ -2901,7 +2914,7 @@ class MreTerm(MelRecord):
         MelScript(),
         MelDestructible(),
         MelDescription(),
-        MelSound(), ##: Why aren't we patching this in Import Sounds?
+        MelSound(),
         MelFid(b'PNAM','passwordNote'),
         MelTruncatedStruct(b'DNAM', [u'3B', u's'], 'baseHackingDifficulty',
                            (_flags,'flags'), 'serverType', 'unused1',
@@ -3027,6 +3040,7 @@ class MreWatr(MelRecord):
         ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
         ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
     _fmts = [u'10f', u'3B', u's', u'3B', u's', u'3B', u's', u'I',]
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -3143,10 +3157,8 @@ class MreWeap(MelRecord):
             MelFid(b'WMI2', 'mod2'),
             MelFid(b'WMI3', 'mod3'),
         )),
-        if_fnv(
-            fo3_version=MelSound(),
-            fnv_version=MelFids('sound', MelFid(b'SNAM')),
-        ),
+        MelSound(),
+        fnv_only(MelFid(b'SNAM', 'sound_gun_shoot_dist')),
         MelFid(b'XNAM','soundGunShot2D'),
         MelFid(b'NAM7','soundGunShot3DLooping'),
         MelFid(b'TNAM','soundMeleeSwingGunNoAmmo'),
@@ -3193,7 +3205,15 @@ class MreWeap(MelRecord):
             'vats_mod_required', 'weapVats1', old_versions={'I3f'},
             is_optional=True)),
         MelBase(b'VNAM','soundLevel'),
-    )
+    ).with_distributor(fnv_only({
+        b'SNAM': ('sound', {
+            b'SNAM': 'sound_gun_shoot_dist',
+        }),
+    }))
+
+    def keep_fids(self, keep_plugins):
+        if _is_fnv:
+            self.sounds = [s for s in self.sounds if s.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld):
@@ -3301,7 +3321,7 @@ class MelWthrColorsFnv(MelArray):
                                self._old_sizes[sub_type])
             raise ModSizeError(ins.inName, debug_strs, _expected_sizes, size_)
 
-class MreWthr(MelRecord):
+class MreWthr(AMreWthr):
     """Weather."""
     rec_sig = b'WTHR'
 

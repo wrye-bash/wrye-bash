@@ -546,10 +546,11 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    # The contents of these tuples has to stay fixed because of CSV parsers
-    statsTypes = {
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    stats_csv_attrs = {
         b'ALCH': ('eid', 'weight', 'value'),
-        b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
+        b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed',
+                  'enchantPoints'),
         b'APPA': ('eid', 'weight', 'value', 'quality'),
         b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
         b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
@@ -565,22 +566,30 @@ class OblivionGameInfo(PatchGame):
         b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed',
                   'reach', 'enchantPoints'),
     }
+    stats_attrs = {r: tuple(x for x in a if x != 'eid')
+                   for r, a in stats_csv_attrs.items()}
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = {
+    sounds_attrs = {
+        ##: sounds here has FormIDs, but I don't think filtering it is wise?
+        # The structure is complex and I don't know if a sound type entry
+        # without any sounds would be valid or not. Leaving as is for now
+        b'CREA': ('footWeight', 'sounds'),
+        b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
+                  'staticAtten', 'stopTime', 'startTime'),
+        # Has FormIDs, but will be filtered in AMreWthr.keep_fids
+        b'WTHR': ('sounds',),
+    }
+    sounds_fid_attrs = {
         b'ACTI': ('sound',),
         b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('footWeight', 'inheritsSoundsFrom', 'sounds'),
+        b'CREA': ('inheritsSoundsFrom',),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'LIGH': ('sound',),
         b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
-    #    b'REGN': ('entries.sounds',),
-        b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
-                  'staticAtten', 'stopTime', 'startTime'),
         b'WATR': ('sound',),
-        b'WTHR': ('sounds',),
     }
 
     #--------------------------------------------------------------------------
@@ -800,8 +809,6 @@ class OblivionGameInfo(PatchGame):
                               'responsibility', 'services', 'trainLevel',
                               'trainSkill'),
             'Actors.Anims': ('animations',),
-            'Actors.CombatStyle': ('combatStyle',),
-            'Actors.DeathItem': ('deathItem',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
             'Actors.Stats': ('agility', 'attackDamage', 'combatSkill',
@@ -810,8 +817,6 @@ class OblivionGameInfo(PatchGame):
                              'speed', 'strength', 'willpower'),
             'Creatures.Blood': ('bloodDecalPath', 'bloodSprayPath'),
             'Creatures.Type': ('creatureType',),
-            'NPC.Class': (),
-            'NPC.Race': (),
         },
         b'NPC_': {
             'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
@@ -824,16 +829,26 @@ class OblivionGameInfo(PatchGame):
                               'responsibility', 'services', 'trainSkill',
                               'trainLevel'),
             'Actors.Anims': ('animations',),
-            'Actors.CombatStyle': ('combatStyle',),
-            'Actors.DeathItem': ('deathItem',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
             'Actors.Stats': ('attributes', 'health', 'skills',),
             'Creatures.Blood': (),
             'Creatures.Type': (),
+        },
+    }
+    actor_importer_fid_attrs = {
+        b'CREA': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
+            'NPC.Class': (),
+            'NPC.Race': (),
+        },
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
             'NPC.Class': ('iclass',),
             'NPC.Race': ('race',),
-        },
+        }
     }
     actor_types = (b'CREA', b'NPC_')
     spell_types = (b'LVSP', b'SPEL')
@@ -841,7 +856,9 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Spell Stats
     #--------------------------------------------------------------------------
-    spell_stats_attrs = ('eid', 'cost', 'level', 'spellType', 'spell_flags')
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    spell_stats_attrs = spell_stats_csv_attrs = (
+        'eid', 'cost', 'level', 'spellType', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors
@@ -1031,9 +1048,9 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Effect Stats
     #--------------------------------------------------------------------------
-    mgef_stats_attrs = ('flags', 'base_cost', 'associated_item', 'school',
-                        'resist_value', 'projectileSpeed', 'cef_enchantment',
-                        'cef_barter')
+    mgef_stats_attrs = ('flags', 'base_cost', 'school', 'resist_value',
+                        'projectileSpeed', 'cef_enchantment', 'cef_barter')
+    mgef_stats_fid_attrs = ('associated_item',)
 
     #--------------------------------------------------------------------------
     # Tweak Assorted
@@ -1098,12 +1115,18 @@ class OblivionGameInfo(PatchGame):
             'R.Body-Size-M': ('maleHeight', 'maleWeight'),
             'R.Description': ('description',),
             'R.Ears': ('maleEars', 'femaleEars'),
+            # eyes has FormIDs, but will be filtered in AMreRace.keep_fids
             'R.Eyes': ('eyes', 'leftEye', 'rightEye'),
+            # hairs has FormIDs, but will be filtered in AMreRace.keep_fids
             'R.Hair': ('hairs',),
             'R.Head': ('head',),
             'R.Mouth': ('mouth', 'tongue'),
             'R.Skills': ('skills',),
             'R.Teeth': ('teethLower', 'teethUpper'),
+        },
+    }
+    import_races_fid_attrs = {
+        b'RACE': {
             'R.Voice-F': ('femaleVoice',),
             'R.Voice-M': ('maleVoice',),
         },

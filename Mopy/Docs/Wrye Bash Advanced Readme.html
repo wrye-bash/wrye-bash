@@ -2886,7 +2886,7 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Keywords</td>
+            <td id="tag-keywords">Keywords</td>
             <td>Modifies the lists of keywords attached to things.</td>
             <td>
                 Addition or removal of keywords (KWDA / KSIZ subrecord combo) for the following record types:
@@ -5099,7 +5099,12 @@ C.Location, -C.LockList
                     </li>
                     <li>(ASPC) Acoustic Space:
                         <ul>
-                            <li>(SNAM) Sound - Looping</li>
+                            <li>(SNAM) Sound - Looping - <strong>Fallout 3 only</strong></li>
+                            <li>(SNAM) Dawn / Default Loop - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(SNAM) Afternoon - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(SNAM) Dusk - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(SNAM) Night - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(SNAM) Walla - <strong>Fallout&colon; New Vegas only</strong></li>
                             <li>(RDAT) Use Sound From Region (Interiors Only)</li>
                             <li>(ANAM) Environment Type (reverb)</li>
                         </ul>
@@ -5155,6 +5160,13 @@ C.Location, -C.LockList
                             <li>(NAM1) Sound 2</li>
                         </ul>
                     </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>Sound - Pick Up</li>
+                            <li>Sound - Drop</li>
+                            <li>(RNAM) Sound - Random/Looping - <strong>Fallout&colon; New Vegas only</strong></li>
+                        </ul>
+                    </li>
                     <li>(LIGH) Light:
                         <ul>
                             <li>(SNAM) Sound</li>
@@ -5170,6 +5182,13 @@ C.Location, -C.LockList
                                     <li>Area Sound</li>
                                 </ul>
                             </li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Drop</li>
+                            <li>(RNAM) Sound - Random/Looping - <strong>Fallout&colon; New Vegas only</strong></li>
                         </ul>
                     </li>
                     <li>(NOTE) Note:
@@ -5197,7 +5216,18 @@ C.Location, -C.LockList
                             <li>(SNDD) Sound Data</li>
                         </ul>
                     </li>
+                    <li>(STAT) Static:
+                        <ul>
+                            <li>(BRUS) Passthrough Sound - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(RNAM) Sound - Random/Looping - <strong>Fallout&colon; New Vegas only</strong></li>
+                        </ul>
+                    </li>
                     <li>(TACT) Talking Activator:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(TERM) Terminal:
                         <ul>
                             <li>(SNAM) Sound</li>
                         </ul>
@@ -5212,6 +5242,7 @@ C.Location, -C.LockList
                             <li>(YNAM) Sound - Pick Up</li>
                             <li>(ZNAM) Sound - Drop</li>
                             <li>(SNAM) Sound - Gun - Shoot 3D</li>
+                            <li>(SNAM) Sound - Gun - Shoot Dist - <strong>Fallout&colon; New Vegas only</strong></li>
                             <li>(XNAM) Sound - Gun - Shoot 2D</li>
                             <li>(NAM7) Sound - Gun - Shoot 3D Looping</li>
                             <li>(TNAM) Sound - Melee - Swing/Gun - No ammo</li>
@@ -6421,7 +6452,6 @@ C.Location, -C.LockList
                                 <ul>
                                     <li>Damage</li>
                                     <li>Multiplier</li>
-                                    <li>Effect</li>
                                 </ul>
                             </li>
                         </ul>
@@ -6608,10 +6638,14 @@ C.Location, -C.LockList
         therefore very important that all the desired plugins are active when
         the Bashed Patch is built.</li>
     <li>Filtering is mostly limited to the top level, i.e. if the plugin a
-        record is from is missing, the record will be skipped. However, if a
-        record references another record, and the latter's plugin is missing,
-        the former will not be skipped, and the Bashed Patch will end up
-        dependent on the latter's plugin being installed.</li>
+        record is from is missing, the record will be skipped. Similarly, if a
+        patcher imports FormID data (e.g.
+        <a href="Wrye%20Bash%20General%20Readme.html#patch-import-scripts">Import Scripts</a>)
+        and the FormIDs that will be imported are missing, the import from that
+        record will be skipped. However, if a record references another record
+        in non-imported data and the latter's plugin is missing, the record
+        will not be skipped, and the Bashed Patch will end up dependent on the
+        latter's plugin being installed.</li>
     <li>There are a few exceptions to the above limitation. The following table
         lists subrecords that contain lists of FormIDs. Any entries in such
         lists that do not map back to a loaded mods are simply filtered out by
@@ -6624,15 +6658,29 @@ C.Location, -C.LockList
 <table>
     <thead>
         <tr>
-            <th colspan="3">Filtered Subrecords</th>
+            <th colspan="4">Filtered Subrecords</th>
         </tr>
         <tr>
             <th>Record Type</th>
             <th>Subrecords</th>
             <th>Available For</th>
+            <th>Notes</th>
         </tr>
     </thead>
     <tbody>
+        <tr>
+            <td>All records</td>
+            <td>
+                <ul>
+                    <li>(KWDA) Keywords</li>
+                </ul>
+            </td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon;
+                Special Edition &amp; Fallout 4</td>
+            <td>Available for all record types that have a (KWDA) Keywords
+                section at the top level. See the
+                <a href="#tag-keywords">Keywords</a> tag for a full list.</td>
+        </tr>
         <tr>
             <td>(COBJ) Constructible Object</td>
             <td>
@@ -6642,6 +6690,7 @@ C.Location, -C.LockList
             </td>
             <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
                 Special Edition</td>
+            <td></td>
         </tr>
         <tr>
             <td>(COBJ) Constructible Object</td>
@@ -6651,6 +6700,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>Fallout 4</td>
+            <td></td>
         </tr>
         <tr>
             <td>(CONT) Container</td>
@@ -6660,6 +6710,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>All games</td>
+            <td></td>
         </tr>
         <tr>
             <td>(CREA) Creature</td>
@@ -6670,7 +6721,9 @@ C.Location, -C.LockList
                     <li>(SPLO) Spells</li>
                 </ul>
             </td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+            <td></td>
         </tr>
         <tr>
             <td>(LVLC) Leveled Creature</td>
@@ -6679,7 +6732,9 @@ C.Location, -C.LockList
                     <li>(LVLO) Entries</li>
                 </ul>
             </td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+            <td></td>
         </tr>
         <tr>
             <td>(LVLI) Leveled Item</td>
@@ -6689,6 +6744,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>All games</td>
+            <td></td>
         </tr>
         <tr>
             <td>(LVLN) Leveled Non-Player Character</td>
@@ -6698,6 +6754,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>All but Oblivion</td>
+            <td></td>
         </tr>
         <tr>
             <td>(LVSP) Leveled Spell</td>
@@ -6707,6 +6764,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>All but Fallout 3, Fallout&colon; New Vegas</td>
+            <td></td>
         </tr>
         <tr>
             <td>(NPC_) Non-Player Character</td>
@@ -6718,6 +6776,7 @@ C.Location, -C.LockList
                 </ul>
             </td>
             <td>All but Fallout 4</td>
+            <td></td>
         </tr>
         <tr>
             <td>(OTFT) Outfit</td>
@@ -6728,6 +6787,28 @@ C.Location, -C.LockList
             </td>
             <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
                 Special Edition</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>(RACE) Race</td>
+            <td>
+                <ul>
+                    <li>(ENAM) Eyes</li>
+                    <li>(HNAM) Hairs</li>
+                </ul>
+            </td>
+            <td>All but Fallout 4</td>
+            <td>These subrecords seem to be unused in Skyrim.</td>
+        </tr>
+        <tr>
+            <td>(WTHR) Weather</td>
+            <td>
+                <ul>
+                    <li>(SNAM) Sounds</li>
+                </ul>
+            </td>
+            <td>All but Fallout 4</td>
+            <td></td>
         </tr>
     </tbody>
 </table>

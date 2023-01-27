@@ -106,12 +106,15 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    statsTypes = {}
+    stats_csv_attrs = {}
+    stats_fid_attrs = {}
+    stats_attrs = {}
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = {}
+    sounds_attrs = {}
+    sounds_fid_attrs = {}
 
     #--------------------------------------------------------------------------
     # Import Cells
@@ -173,6 +176,7 @@ class PatchGame(GameInfo):
     # Import Actors
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
+    actor_importer_fid_attrs = {}
     actor_types = (b'NPC_',)
     spell_types = (b'SPEL',)
 
@@ -180,6 +184,8 @@ class PatchGame(GameInfo):
     # Import Spell Stats
     #--------------------------------------------------------------------------
     spell_stats_attrs = ()
+    spell_stats_fid_attrs = ()
+    spell_stats_csv_attrs = ()
     spell_stats_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -213,11 +219,13 @@ class PatchGame(GameInfo):
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
     ench_stats_attrs = ()
+    ench_stats_fid_attrs = ()
 
     #--------------------------------------------------------------------------
     # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = ()
+    mgef_stats_fid_attrs = ()
 
     #--------------------------------------------------------------------------
     # Import Enchantments
@@ -244,6 +252,7 @@ class PatchGame(GameInfo):
     # Import Races
     #--------------------------------------------------------------------------
     import_races_attrs = {}
+    import_races_fid_attrs = {}
 
     #--------------------------------------------------------------------------
     # Tweak Races

@@ -25,6 +25,7 @@ carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
 from __future__ import annotations
 
+import operator
 from collections import defaultdict, Counter
 from itertools import chain
 
@@ -32,7 +33,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
-from ...bolt import attrgetter_cache, deprint, setattr_deep
+from ...bolt import attrgetter_cache, deprint, setattr_deep, combine_dicts
 from ...brec import RecordType
 from ...exception import ModSigMismatchError
 
@@ -52,8 +53,8 @@ class APreserver(ImportPatcher):
     # of level_offset and pcLevelOffset
     rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]] = {}
     # Record attributes that are FormIDs. These will be checked to see if their
-    # FormID is valid before being imported
-    ##: set for more patchers?
+    # FormID is valid before being imported. Set this or Filter plugins will
+    # not work correctly when importing FormID data
     _fid_rec_attrs = {}
     # True if this importer is a multi-tag importer. That means its rec_attrs
     # must map record signatures to dicts mapping the tags to a tuple of the
@@ -76,17 +77,18 @@ class APreserver(ImportPatcher):
         self._fid_rec_attrs_class = (defaultdict(dict) if self._multi_tag
                                      else defaultdict(tuple))
         self._fid_rec_attrs_class.update(self._fid_rec_attrs)
-        # We want FormID attrs in the full recAttrs as well. They're only
+        # We want FormID attrs in the full rec_type_attrs as well. They're only
         # separate for checking before we import
-        if self._multi_tag: ##: This is hideous
-            def collect_attrs(r, tag_dict):
-                return {t: a + self._fid_rec_attrs.get(r, {}).get(t, ())
-                        for t, a in tag_dict.items()}
+        if self._multi_tag:
+            def _combine_attrs(tag_dict_a: dict[str, tuple[str, ...]],
+                    tag_dict_b: dict[str, tuple[str, ...]]):
+                return combine_dicts(tag_dict_a, tag_dict_b, operator.add)
         else:
-            def collect_attrs(r, a):
-                return a + self._fid_rec_attrs.get(r, ())
-        self.rec_type_attrs = {r: collect_attrs(r, a)
-                               for r, a in self.rec_attrs.items()}
+            def _combine_attrs(attrs_a: tuple[str, ...],
+                    attrs_b: tuple[str, ...]):
+                return attrs_a + attrs_b
+        self.rec_type_attrs = combine_dicts(
+            self.rec_attrs, self._fid_rec_attrs, _combine_attrs)
         # Check if we need to use setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
@@ -152,7 +154,7 @@ class APreserver(ImportPatcher):
             rec_attrs = _merge_attrs(rec_attrs)
             fid_attrs = _merge_attrs(fid_attrs)
         # Faster than a dict since we save the items() call in the (very hot)
-        # loop below
+        # loop below ##: Measure again now that we're on 3.11
         ra_getters = [(a, __attrgetters[a]) for a in rec_attrs]
         fa_getters = [__attrgetters[a] for a in fid_attrs]
         # If we have FormID attributes, check those before importing - since
@@ -186,7 +188,7 @@ class APreserver(ImportPatcher):
             mod_id_data = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
             mod_sigs = set()
             mod_tags = srcInfo.getBashTags()
             for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
@@ -205,7 +207,8 @@ class APreserver(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterFile = self._mod_file_read(minfs[master])
+                    masterFile = self._filtered_mod_read(minfs[master],
+                        self.patchFile)
                     cachedMasters[master] = masterFile
                 for rsig, block in masterFile.iter_tops(mod_sigs):
                     for rfid, record in block.iter_present_records():
@@ -277,57 +280,61 @@ class APreserver(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportActorsPatcher(APreserver):
     rec_attrs = bush.game.actor_importer_attrs
+    _fid_rec_attrs = bush.game.actor_importer_fid_attrs
     _multi_tag = True
 
 #------------------------------------------------------------------------------
 class ImportActorsFacesPatcher(APreserver):
-    logMsg = u'\n=== '+_(u'Faces Patched')
+    logMsg = '\n=== ' + _('Faces Patched')
     rec_attrs = {b'NPC_': {
-        u'NPC.Eyes': (),
-        u'NPC.FaceGen': (u'fggs_p', u'fgga_p', u'fgts_p'),
-        u'NPC.Hair': (u'hairLength', u'hairRed', u'hairBlue', u'hairGreen'),
-        u'NpcFacesForceFullImport': (u'fggs_p', u'fgga_p', u'fgts_p',
-                                     u'hairLength', u'hairRed', u'hairBlue',
-                                     u'hairGreen'),
+        'NPC.FaceGen': ('fggs_p', 'fgga_p', 'fgts_p'),
+        'NPC.Hair': ('hairLength', 'hairRed', 'hairBlue', 'hairGreen'),
+        'NpcFacesForceFullImport': (
+            'fggs_p', 'fgga_p', 'fgts_p', 'hairLength', 'hairRed', 'hairBlue',
+            'hairGreen'),
     }}
     _fid_rec_attrs = {b'NPC_': {
-        u'NPC.Eyes': (u'eye',),
-        u'NPC.FaceGen': (),
-        u'NPC.Hair': (u'hair',),
-        u'NpcFacesForceFullImport': (u'eye', u'hair'),
+        'NPC.Eyes': ('eye',),
+        'NPC.Hair': ('hair',),
+        'NpcFacesForceFullImport': ('eye', 'hair'),
     }}
     _multi_tag = True
-    _force_full_import_tag = u'NpcFacesForceFullImport'
+    _force_full_import_tag = 'NpcFacesForceFullImport'
 
 #------------------------------------------------------------------------------
 class ImportActorsFactionsPatcher(APreserver):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
 
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
+    ##: Has FormIDs, filter these in keep_fids?
     rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
 class ImportEffectsStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
+    _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentsPatcher(APreserver):
     """Preserves changes to EITM (enchantment/object effect) subrecords."""
-    rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
+    _fid_rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
+    _fid_rec_attrs = {b'ENCH': bush.game.ench_stats_fid_attrs}
 
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
+    # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
     rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
 
 #------------------------------------------------------------------------------
@@ -344,12 +351,13 @@ class ImportObjectBoundsPatcher(APreserver):
 
 #------------------------------------------------------------------------------
 class ImportScriptsPatcher(APreserver):
-    rec_attrs = {x: (u'script_fid',) for x in bush.game.scripts_types}
+    _fid_rec_attrs = {x: ('script_fid',) for x in bush.game.scripts_types}
 
 #------------------------------------------------------------------------------
 class ImportSoundsPatcher(APreserver):
     """Imports sounds from source mods into patch."""
-    rec_attrs = bush.game.soundsTypes
+    rec_attrs = bush.game.sounds_attrs
+    _fid_rec_attrs = bush.game.sounds_fid_attrs
 
 #------------------------------------------------------------------------------
 class ImportSpellStatsPatcher(APreserver):
@@ -357,6 +365,8 @@ class ImportSpellStatsPatcher(APreserver):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: bush.game.spell_stats_attrs
                  for x in bush.game.spell_stats_types}
+    _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
+                      for x in bush.game.spell_stats_types}
     _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
         else None
 
@@ -366,10 +376,8 @@ class ImportStatsPatcher(APreserver):
     patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
     logMsg = u'\n=== ' + _(u'Imported Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    # Don't patch Editor IDs - those are only in statsTypes for the
-    # Export/Import links
-    rec_attrs = {r: tuple(x for x in a if x != u'eid')
-                 for r, a in bush.game.statsTypes.items()}
+    rec_attrs = bush.game.stats_attrs
+    _fid_rec_attrs = bush.game.stats_fid_attrs
     _csv_parser = parsers.ItemStats
 
 #------------------------------------------------------------------------------
@@ -408,7 +416,7 @@ class ImportCellsPatcher(ImportPatcher):
             bashTags = srcInfo.getBashTags()
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
-            srcFile = self._mod_file_read(srcInfo)
+            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
             cachedMasters[srcMod] = srcFile
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
@@ -437,7 +445,8 @@ class ImportCellsPatcher(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterFile = self._mod_file_read(minfs[master])
+                    masterFile = self._filtered_mod_read(minfs[master],
+                        self.patchFile)
                     cachedMasters[master] = masterFile
                 for _sig, block in masterFile.iter_tops(self._read_sigs):
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
@@ -542,6 +551,7 @@ class ImportGraphicsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportRacesPatcher(APreserver):
     rec_attrs = bush.game.import_races_attrs
+    _fid_rec_attrs = bush.game.import_races_fid_attrs
     _multi_tag = True
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,

@@ -365,6 +365,26 @@ class ModLoader(ScanPatcher): ##: this must go - WIP!
         modFile.load_plugin()
         return modFile
 
+    # FIXME(inf) HACK until we've refactored initData to the point where we
+    #  can properly filter Filter-tagged plugins in one central place
+    def _filtered_mod_read(self, modInfo, patchFile):
+        modFile = self._mod_file_read(modInfo)
+        # The final refactored version should also check if it's inactive so we
+        # don't waste time doing nothing for active Filter plugins (since we
+        # already ensure those don't have missing masters before we even begin
+        # building the BP)
+        if 'Filter' in modInfo.getBashTags():
+            load_set = set(patchFile.load_dict)
+            # PatchFile does not have its load factory set up yet so we'd get a
+            # MobBase instance from it, which obviously can't do filtering. So
+            # use a temporary LoadFactory as a workaround
+            temp_factory = self.loadFactory or self._patcher_read_fact()
+            for top_grup_sig, filter_block in modFile.tops.items():
+                temp_block = temp_factory.getTopClass(top_grup_sig).empty_mob(
+                    temp_factory, top_grup_sig)
+                temp_block.merge_records(filter_block, load_set, set(), True)
+        return modFile
+
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(ListPatcher, ModLoader):
     """Subclass for patchers in group Importer."""

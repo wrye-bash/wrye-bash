@@ -1056,8 +1056,10 @@ class ImportActors(_ImporterPatcherPanel):
     """Merges changes to actors."""
     patcher_name = _(u'Import Actors')
     patcher_desc = _('Import various actor attributes from source plugins.')
-    autoKey = set(chain.from_iterable(
-        d for d in bush.game.actor_importer_attrs.values()))
+    autoKey = set(chain(
+        chain.from_iterable(bush.game.actor_importer_attrs.values()),
+        chain.from_iterable(bush.game.actor_importer_fid_attrs.values()),
+    ))
     _config_key = u'ActorImporter'
     patcher_type = preservers.ImportActorsPatcher
 
@@ -1196,8 +1198,10 @@ class ImportRaces(_ImporterPatcherPanel):
     patcher_name = _(u'Import Races')
     patcher_desc = _('Import race eyes, hair, body, voice, etc. from source '
                      'plugins.')
-    autoKey = set(chain.from_iterable(d for d in
-        bush.game.import_races_attrs.values()))
+    autoKey = set(chain(
+        chain.from_iterable(bush.game.import_races_attrs.values()),
+        chain.from_iterable(bush.game.import_races_fid_attrs.values()),
+    ))
     _config_key = u'ImportRaces'
     patcher_type = preservers.ImportRacesPatcher
 

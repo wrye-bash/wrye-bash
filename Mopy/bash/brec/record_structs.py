@@ -27,7 +27,7 @@ import copy
 import io
 import zlib
 from collections import defaultdict
-from typing import Any
+from typing import Self
 
 from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
@@ -228,15 +228,20 @@ class MelSet(object):
         for element in self._sort_elements:
             element.sort_subrecord(record)
 
-    def with_distributor(self, distributor_config):
-        # type: (dict) -> MelSet
+    def with_distributor(self, distributor_config: dict) -> Self:
         """Adds a distributor to this MelSet. See _MelDistributor for more
         information. Convenience method that avoids having to import and
         explicitly construct a _MelDistributor. This is supposed to be chained
         immediately after MelSet.__init__.
 
-        :param distributor_config: The config to pass to the distributor.
+        :param distributor_config: The config to pass to the distributor. If
+            this is None, no distributor will be set and self will be returned
+            unmodified.
         :return: self, for ease of construction."""
+        if distributor_config is None:
+            # Happens when using fnv_only etc. to have a decider for only one
+            # game
+            return self
         # Make a copy, that way one distributor config can be used for multiple
         # record classes. _MelDistributor may modify its parameter, so not
         # making a copy wouldn't be safe in such a scenario.
