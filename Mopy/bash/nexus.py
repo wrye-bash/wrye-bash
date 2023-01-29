@@ -64,7 +64,6 @@ from __future__ import annotations
 __author__ = 'Ganda, Infernio'
 
 import json
-import platform
 import uuid
 import webbrowser
 from collections.abc import Iterable
@@ -72,68 +71,20 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from . import bass
+from .bolt import JsonParsable, json_remap
 from .exception import EndorsedTooSoonError, EndorsedWithoutDownloadError, \
     LimitReachedError, RequestError
+from .web import ARestHandler
 
 # First see if we even have the dependencies necessary to use the Nexus API
 try:
-    import requests
-except ImportError as e:
-    raise ImportError('requests missing, Nexus API unavailable') from e
-try:
     from websocket import create_connection
-except ImportError as e:
-    raise ImportError('websocket-client missing, Nexus API unavailable') from e
+except ImportError as i_err:
+    raise ImportError('websocket-client missing, nexus API '
+                      'unavailable') from i_err
 
-_USER_AGENT = (f'WryeBash/{bass.AppVersion} ({platform.platform()}; '
-               f'{platform.architecture()[0]}) '
-               f'{platform.python_implementation()}/'
-               f'{platform.python_version()}')
-_BASE_URL = 'https://api.nexusmods.com/v1/'
-
-# Typing-related things go here
-_OptStrDict = dict[str, str] | None
-
-# Internal API ----------------------------------------------------------------
-class _Op(Enum):
-    """HTTP request methods."""
-    DELETE = 'DELETE'
-    GET = 'GET'
-    POST = 'POST'
-
-class _JsonParsable:
-    """Base class for classes that will be parsed from JSON based on their type
-    annotations and a special '_parsers' class var (see below). Call
-    parse_from_json to create instances."""
-    # Specifies special handling for any number of attributes in the parsed
-    # JSON dict. Each 'parser' is a function taking the JSON dict and the
-    # attribute being parsed and returning the parsed object
-    _parsers: dict = {}
-
-    def __init__(self, **_kwargs): # To make PyCharm shut up
-        super().__init__()
-
-    @classmethod
-    def parse_from_json(cls, json_dict: dict):
-        if json_dict is None:
-            return None # Handle optional parsables
-        inst_args = {}
-        for cls_attr, cls_type_str in cls.__annotations__.items():
-            attr_parser = cls._parsers.get(cls_attr)
-            if attr_parser is None:
-                # No special parser, access JSON dict directly
-                parsed_obj = json_dict[cls_attr]
-            else:
-                parsed_obj = attr_parser(json_dict, cls_attr)
-            inst_args[cls_attr] = parsed_obj
-        return cls(**inst_args)
-
-def _remap(remap_attr: str):
-    """Simple parser that uses a different attribute for accessing the JSON
-    dict. Used to avoid bad names (e.g. name) and builtins (e.g. id)."""
-    def _remap_func(json_dict, _cls_attr):
-        return json_dict[remap_attr]
-    return _remap_func
+# Constants -------------------------------------------------------------------
+_NEXUS_API_URL = 'https://api.nexusmods.com/v1/'
 
 # Public API ------------------------------------------------------------------
 class FileCategory(Enum):
@@ -151,8 +102,8 @@ class UpdatePeriod(Enum):
     ONE_WEEK = '1w'
     ONE_MONTH = '1m'
 
-@dataclass
-class NxModUpdate(_JsonParsable):
+@dataclass(slots=True)
+class NxModUpdate(JsonParsable):
     """Represents a recent update to a mod."""
     # The ID of the mod that has been updated
     mod_id: int
@@ -161,11 +112,11 @@ class NxModUpdate(_JsonParsable):
     # The timestamp on which the last edit to the mod's page was made
     latest_mod_activity: int
 
-@dataclass
-class NxUploadUser(_JsonParsable):
+@dataclass(slots=True)
+class NxUploadUser(JsonParsable):
     """Represents a user who uploaded a mod."""
     _parsers = {
-        'user_name': _remap('name'),
+        'user_name': json_remap('name'),
     }
     # The ID of the user who uploaded the mod
     member_id: int
@@ -174,12 +125,12 @@ class NxUploadUser(_JsonParsable):
     # The screen name of the user
     user_name: str
 
-@dataclass
-class NxModEndorsement(_JsonParsable):
+@dataclass(slots=True)
+class NxModEndorsement(JsonParsable):
     """Represents a user's endorsement relative to a mod."""
     _parsers = {
-        'endorse_timestamp': _remap('timestamp'),
-        'endorse_version': _remap('version'),
+        'endorse_timestamp': json_remap('timestamp'),
+        'endorse_version': json_remap('version'),
     }
     # One of 'Undecided', 'Endorsed' or 'Abstained'
     endorse_status: str
@@ -189,20 +140,20 @@ class NxModEndorsement(_JsonParsable):
     ##: Seems to always be None, Pickysaurus said it may be unused
     endorse_version: str | None
 
-@dataclass
-class NxMod(_JsonParsable):
+@dataclass(slots=True)
+class NxMod(JsonParsable):
     _parsers = {
-        'mod_display_name': _remap('name'),
-        'mod_summary': _remap('summary'),
-        'mod_description': _remap('description'),
-        'mod_uid': _remap('uid'),
-        'nx_game_id': _remap('game_id'),
-        'mod_version': _remap('version'),
-        'created_by': _remap('author'),
-        'mod_status': _remap('status'),
-        'mod_available': _remap('available'),
-        'upload_user': lambda d, a: NxUploadUser.parse_from_json(d['user']),
-        'endorsement': lambda d, a: NxModEndorsement.parse_from_json(d[a]),
+        'mod_display_name': json_remap('name'),
+        'mod_summary': json_remap('summary'),
+        'mod_description': json_remap('description'),
+        'mod_uid': json_remap('uid'),
+        'nx_game_id': json_remap('game_id'),
+        'mod_version': json_remap('version'),
+        'created_by': json_remap('author'),
+        'mod_status': json_remap('status'),
+        'mod_available': json_remap('available'),
+        'upload_user': lambda d, a: NxUploadUser.parse_single(d['user']),
+        'endorsement': lambda d, a: NxModEndorsement.parse_single(d[a]),
     }
     # The user-visible name for this mod
     mod_display_name: str
@@ -259,21 +210,21 @@ class NxMod(_JsonParsable):
     # Information about the endorsement of this mod by the current user
     endorsement: NxModEndorsement | None
 
-@dataclass
-class NxFile(_JsonParsable):
+@dataclass(slots=True)
+class NxFile(JsonParsable):
     """Represents details about a file (aka a package, aka the actual things
     you download from the Nexus)."""
     _parsers = {
-        'nx_file_ids': _remap('id'),
-        'nx_file_uid': _remap('uid'),
-        'nx_file_id': _remap('file_id'),
-        'file_display_name': _remap('name'),
-        'nx_file_version': _remap('version'),
-        'raw_size': _remap('size'),
-        'uploaded_file_name': _remap('file_name'),
-        'parent_mod_version': _remap('mod_version'),
-        'file_description': _remap('description'),
-        'file_md5': lambda d, a: d.get('md5'),
+        'nx_file_ids': json_remap('id'),
+        'nx_file_uid': json_remap('uid'),
+        'nx_file_id': json_remap('file_id'),
+        'file_display_name': json_remap('name'),
+        'nx_file_version': json_remap('version'),
+        'raw_size': json_remap('size'),
+        'uploaded_file_name': json_remap('file_name'),
+        'parent_mod_version': json_remap('mod_version'),
+        'file_description': json_remap('description'),
+        'file_md5': lambda d, a: d.get('md5'), # May be absent, see below
     }
     # A list of IDs that uniquely identify this file - seems to be file ID and
     # game ID
@@ -326,20 +277,20 @@ class NxFile(_JsonParsable):
     # part of an MD5 search
     file_md5: str | None
 
-@dataclass
-class NxDownloadedFile(_JsonParsable):
+@dataclass(slots=True)
+class NxDownloadedFile(JsonParsable):
     """Represents a file that the user has downloaded."""
     _parsers = {
-        'dl_mod': lambda d, a: NxMod.parse_from_json(d['mod']),
-        'dl_file': lambda d, a: NxFile.parse_from_json(d['file_details']),
+        'dl_mod': lambda d, a: NxMod.parse_single(d['mod']),
+        'dl_file': lambda d, a: NxFile.parse_single(d['file_details']),
     }
     # The mod from which the file was downloaded
     dl_mod: NxMod
     # Details about the downloaded file
     dl_file: NxFile
 
-@dataclass
-class NxFileUpdate(_JsonParsable):
+@dataclass(slots=True)
+class NxFileUpdate(JsonParsable):
     """Represents a single file update, i.e. a point at which a newer file has
     replaced/obsoleted an older file."""
     # File ID of the old file
@@ -357,14 +308,12 @@ class NxFileUpdate(_JsonParsable):
     # Same as uploaded_timestamp, but as a human-readable date
     uploaded_time: str
 
-@dataclass
-class NxModFiles(_JsonParsable):
+@dataclass(slots=True)
+class NxModFiles(JsonParsable):
     """Represents files from a mod's Files tab."""
     _parsers = {
-        'files_list': lambda d, a: [NxFile.parse_from_json(e)
-                                    for e in d['files']],
-        'file_updates': lambda d, a: [NxFileUpdate.parse_from_json(e)
-                                      for e in d[a]]
+        'files_list': lambda d, a: NxFile.parse_many(d['files']),
+        'file_updates': lambda d, a: NxFileUpdate.parse_many(d[a]),
     }
     # The files on this mod's Files tab (potentially subject to filters, e.g.
     # only the Main Files)
@@ -373,11 +322,11 @@ class NxModFiles(_JsonParsable):
     # updates to which older files
     file_updates: list[NxFileUpdate]
 
-@dataclass
-class NxCategory(_JsonParsable):
+@dataclass(slots=True)
+class NxCategory(JsonParsable):
     """Represents a category that can be used for mods."""
     _parsers = {
-        'category_name': _remap('name'),
+        'category_name': json_remap('name'),
     }
     # The internal ID used for this category
     category_id: int
@@ -387,17 +336,16 @@ class NxCategory(_JsonParsable):
     # that the category has no parent
     parent_category: int | bool
 
-@dataclass
-class NxGame(_JsonParsable):
+@dataclass(slots=True)
+class NxGame(JsonParsable):
     """Represents a game on the Nexus."""
     _parsers = {
-        'num_authors': _remap('authors'),
-        'game_categories': lambda d, a: [NxCategory.parse_from_json(e)
-                                         for e in d['categories']],
-        'num_downloads': _remap('downloads'),
-        'nx_game_id': _remap('id'),
-        'game_display_name': _remap('name'),
-        'num_mods': _remap('mods'),
+        'num_authors': json_remap('authors'),
+        'game_categories': lambda d, a: NxCategory.parse_many(d['categories']),
+        'num_downloads': json_remap('downloads'),
+        'nx_game_id': json_remap('id'),
+        'game_display_name': json_remap('name'),
+        'num_mods': json_remap('mods'),
     }
     # The date on which this game was approved by Nexus
     approved_date: int
@@ -428,13 +376,13 @@ class NxGame(_JsonParsable):
     # The Nexus URL of this game
     nexusmods_url: str
 
-@dataclass
-class NxUser(_JsonParsable):
+@dataclass(slots=True)
+class NxUser(JsonParsable):
     """Represents a Nexus user."""
     _parsers = {
-        'user_api_key': _remap('key'),
-        'user_name': _remap('name'),
-        'user_email': _remap('email'),
+        'user_api_key': json_remap('key'),
+        'user_name': json_remap('name'),
+        'user_email': json_remap('email'),
     }
     # The ID of the user
     user_id: int
@@ -452,21 +400,21 @@ class NxUser(_JsonParsable):
     # The URL to the user's profile *picture*
     profile_url: str
 
-@dataclass
-class NxTrackedMod(_JsonParsable):
+@dataclass(slots=True)
+class NxTrackedMod(JsonParsable):
     """Represents a tracked mod on the Nexus."""
     # The game-relatively unique ID of the tracked mod
     mod_id: int
     # The Nexus domain name for this game (e.g. 'skyrim')
     domain_name: str
 
-@dataclass
-class NxEndorsement(_JsonParsable):
+@dataclass(slots=True)
+class NxEndorsement(JsonParsable):
     """Represents a user's endorsement of a mod."""
     _parsers = {
-        'endorsement_date': _remap('date'),
-        'endorsement_version': _remap('version'),
-        'endorsement_status': _remap('status'),
+        'endorsement_date': json_remap('date'),
+        'endorsement_version': json_remap('version'),
+        'endorsement_status': json_remap('status'),
     }
     # The game-relatively unique ID of the endorsed mod
     mod_id: int
@@ -480,12 +428,12 @@ class NxEndorsement(_JsonParsable):
     # endorsement is still active
     endorsement_status: str
 
-@dataclass
-class NxColourScheme(_JsonParsable):
+@dataclass(slots=True)
+class NxColourScheme(JsonParsable):
     """Represents a Nexus colour scheme."""
     _parsers = {
-        'colour_scheme_id': _remap('id'),
-        'colour_scheme_name': _remap('name'),
+        'colour_scheme_id': json_remap('id'),
+        'colour_scheme_name': json_remap('name'),
     }
     # The internal ID used by the colour scheme
     colour_scheme_id: int
@@ -498,77 +446,67 @@ class NxColourScheme(_JsonParsable):
     # The 'darker' colour used for the colour scheme
     darker_colour: str
 
-class Nexus:
+class Nexus(ARestHandler):
     """The main class used for connecting to the Nexus API. Requires an API key
     from your Nexus account."""
+    _base_url = _NEXUS_API_URL
+    # The total number of allowed requests in the current hour
+    _hourly_limit: int | None
+    # The total number of remaining allowed requests in the current hour
+    _hourly_remaining: int | None
+    # The point in time at which the hourly limit will be reset, as a string in
+    # ISO 8601 format
+    _hourly_reset: str | None
+    # The total number of allowed requests in the current day
+    _daily_limit: int | None
+    # The total number of remaining allowed requests in the current day
+    _daily_remaining: int | None
+    # The point in time at which the daily limit will be reset, as a string in
+    # ISO 8601 format
+    _daily_reset: str | None
+
     def __init__(self, api_key: str):
-        self._session = requests.Session()
-        self._session.headers.update({
-            'user-agent': _USER_AGENT,
+        super().__init__(extra_headers={
+            'accept': 'application/json',
             'apikey': api_key,
-            'content-type': 'application/json',
             # See the Nexus docs, they request these two always be present:
             # https://help.nexusmods.com/article/114-api-acceptable-use-policy
             'application-name': 'Wrye Bash',
             'application-version': bass.AppVersion,
         })
-        # Rate limiting information - set to -1 (= unknown) by default
-        self._hourly_limit = -1
-        self._hourly_remaining = -1
-        self._daily_limit = -1
-        self._daily_remaining = -1
+        # Rate limiting information - set to None (= unknown) by default
+        self._hourly_limit = None
+        self._hourly_remaining = None
+        self._hourly_reset = None
+        self._daily_limit = None
+        self._daily_remaining = None
+        self._daily_reset = None
 
-    # Internal API ------------------------------------------------------------
-    def _make_request(self, req_op: _Op, req_endpoint: str,
-            req_payload: _OptStrDict = None, req_data: _OptStrDict = None,
-            req_headers: _OptStrDict = None):
-        """Performs an actual web request via the current session.
-
-        :param req_op: The HTTP request method to use. See _Op.
-        :param req_endpoint: The API endpoint to use. See API docs.
-        :param req_payload: The parameters to send in the request's query
-            string.
-        :param req_data: The data to send in the body of the request.
-        :param req_headers: The HTTP headers to send with the request."""
-        if req_payload is None:
-            req_payload = {}
-        if req_data is None:
-            req_data = {}
-        if req_headers is None:
-            req_headers = {}
-        response = self._session.request(req_op.value,
-            _BASE_URL + req_endpoint, params=req_payload, data=req_data,
-            headers=req_headers, timeout=30)
+    # Abstract API ------------------------------------------------------------
+    def _handle_error_response(self, response):
+        if response.status_code == 429:
+            raise LimitReachedError()
         try:
-            self._update_rate_limit_info(response.headers)
+            msg = response.json()['message']
         except KeyError:
-            # This will get logged below with status code and message
-            pass
-        status_code = response.status_code
-        if status_code not in (200, 201):
-            if status_code == 429:
-                raise LimitReachedError()
-            else:
-                try:
-                    msg = response.json()['message']
-                except KeyError:
-                    msg = response.json()['error']
-                raise RequestError(status_code, msg)
-        return response.json()
+            msg = response.json()['error']
+        raise RequestError(response.status_code, msg)
 
     def _update_rate_limit_info(self, response_headers):
-        """Updates the cached rate limit information from this new response."""
         self._hourly_limit = int(response_headers['x-rl-hourly-limit'])
         self._hourly_remaining = int(response_headers['x-rl-hourly-remaining'])
+        self._hourly_reset = response_headers['x-rl-hourly-reset']
         self._daily_limit = int(response_headers['x-rl-daily-limit'])
         self._daily_remaining = int(response_headers['x-rl-daily-remaining'])
+        self._daily_reset = response_headers['x-rl-daily-reset']
 
+    # Internal API ------------------------------------------------------------
     def _mod_endorse_shared(self, game_domain: str, mod_id: int,
             endpoint_file: str):
         """Shared code of mod_endorse and mod_disendorse."""
         try:
-            self._make_request(_Op.POST,
-                f'games/{game_domain}/mods/{mod_id}/{endpoint_file}.json')
+            self._send_post(f'games/{game_domain}/mods/{mod_id}/'
+                            f'{endpoint_file}.json')
         except RequestError as e:
             if e.status_code == 403:
                 if e.orig_msg == 'NOT_DOWNLOADED_MOD':
@@ -604,30 +542,30 @@ class Nexus:
 
         :param game_domain: A string with the Nexus game domain.
         :param period: The period for which to return updated mods."""
-        return [NxModUpdate.parse_from_json(d) for d in self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/updated.json',
-            req_payload={'period': period.value})]
+        return NxModUpdate.parse_many(self._send_get(
+            f'games/{game_domain}/mods/updated.json',
+            req_payload={'period': period.value}))
 
     def mods_latest_added(self, game_domain: str) -> list[NxMod]:
         """Retrieve the 10 latest added mods for a specified game.
 
         :param game_domain: A string with the Nexus game domain."""
-        return [NxMod.parse_from_json(d) for d in self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/latest_added.json')]
+        return NxMod.parse_many(self._send_get(
+            f'games/{game_domain}/mods/latest_added.json'))
 
     def mods_latest_updated(self, game_domain: str) -> list[NxMod]:
         """Retrieve 10 latest updated mods for a specified game.
 
         :param game_domain: A string with the Nexus game domain."""
-        return [NxMod.parse_from_json(d) for d in self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/latest_updated.json')]
+        return NxMod.parse_many(self._send_get(
+            f'games/{game_domain}/mods/latest_updated.json'))
 
     def mods_trending(self, game_domain: str) -> list[NxMod]:
         """Retrieve 10 trending mods for a specified game.
 
         :param game_domain: A string with the Nexus game domain."""
-        return [NxMod.parse_from_json(d) for d in self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/trending.json')]
+        return NxMod.parse_many(self._send_get(
+            f'games/{game_domain}/mods/trending.json'))
 
     # Mod - operations on a single mod ----------------------------------------
     def mod_changelogs(self, game_domain: str,
@@ -649,7 +587,7 @@ class Nexus:
 
         :param game_domain: A string with the Nexus game domain.
         :param mod_id: A Nexus mod id."""
-        return self._make_request(_Op.GET,
+        return self._send_get(
             f'games/{game_domain}/mods/{mod_id}/changelogs.json')
 
     def mod_details(self, game_domain: str, mod_id: int) -> NxMod:
@@ -657,8 +595,8 @@ class Nexus:
 
         :param game_domain: A string with the Nexus game domain.
         :param mod_id: A Nexus mod id."""
-        return NxMod.parse_from_json(self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/{mod_id}.json'))
+        return NxMod.parse_single(self._send_get(
+            f'games/{game_domain}/mods/{mod_id}.json'))
 
     def mod_search(self, game_domain: str,
             md5_hash: str) -> list[NxDownloadedFile]:
@@ -670,10 +608,8 @@ class Nexus:
            hashlib.md5.hexdigest() or something similar."""
         # lower() because letters (A-F) must be lowercased, otherwise the Nexus
         # API will fail to find the mod in question
-        return [NxDownloadedFile.parse_from_json(d) for d in
-                self._make_request(_Op.GET,
-                    f'games/{game_domain}/mods/md5_search/'
-                    f'{md5_hash.lower()}.json')]
+        return NxDownloadedFile.parse_many(self._send_get(
+            f'games/{game_domain}/mods/md5_search/{md5_hash.lower()}.json'))
 
     def mod_endorse(self, game_domain: str, mod_id: int):
         """Endorse a mod. May fail if a mod is endorsed without having been
@@ -708,8 +644,8 @@ class Nexus:
             mf_payload = None
         else:
             mf_payload = {'category': ','.join(c.value for c in categories)}
-        return NxModFiles.parse_from_json(self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/{mod_id}/files.json',
+        return NxModFiles.parse_single(self._send_get(
+            f'games/{game_domain}/mods/{mod_id}/files.json',
             req_payload=mf_payload))
 
     def mod_files_details(self, game_domain: str, mod_id: int,
@@ -719,9 +655,8 @@ class Nexus:
         :param game_domain: A string with the Nexus game domain.
         :param mod_id: A Nexus mod id.
         :param file_id: A string with the file id."""
-        return NxFile.parse_from_json(self._make_request(
-            _Op.GET, f'games/{game_domain}/mods/{mod_id}/files/'
-                     f'{file_id}.json'))
+        return NxFile.parse_single(self._send_get(
+            f'games/{game_domain}/mods/{mod_id}/files/{file_id}.json'))
 
     def mod_files_generate_link(self, game_domain: str, mod_id: int,
             file_id: int, nxm_key: str | None = None,
@@ -741,7 +676,7 @@ class Nexus:
             mfdl_payload = None
         else:
             mfdl_payload = {'key': nxm_key, 'expires': expiry}
-        return self._make_request(_Op.GET,
+        return self._send_get(
             f'games/{game_domain}/mods/{mod_id}/files/{file_id}/'
             f'download_link.json', req_payload=mfdl_payload)
 
@@ -752,35 +687,32 @@ class Nexus:
         :param include_unapproved: A boolean on whether to include unapproved
             games."""
         ia_string = 'true' if include_unapproved else 'false'
-        req_raw = self._make_request(_Op.GET, 'games.json',
-            req_payload={'include_unapproved': ia_string})
-        return [NxGame.parse_from_json(d) for d in req_raw]
+        return NxGame.parse_many(self._send_get('games.json',
+            req_payload={'include_unapproved': ia_string}))
 
     # Game - operations on a single game --------------------------------------
     def game_details(self, game_domain: str) -> NxGame:
         """Returns details for the specified game.
 
         :param game_domain: A string with the Nexus game domain."""
-        return NxGame.parse_from_json(self._make_request(
-            _Op.GET, f'games/{game_domain}.json'))
+        return NxGame.parse_single(self._send_get(f'games/{game_domain}.json'))
 
     # User - operations on the currently logged in user -----------------------
     def user_details(self) -> NxUser:
         """Checks that an API key is valid and returns the user's details."""
-        return NxUser.parse_from_json(self._make_request(
-            _Op.GET, 'users/validate.json'))
+        return NxUser.parse_single(self._send_get('users/validate.json'))
 
     def user_tracked_mods(self) -> list[NxTrackedMod]:
         """Returns a list of all the mods being tracked by the current user."""
-        return [NxTrackedMod.parse_from_json(d) for d in self._make_request(
-            _Op.GET, 'user/tracked_mods.json')]
+        return NxTrackedMod.parse_many(self._send_get(
+            'user/tracked_mods.json'))
 
     def user_track_mod(self, game_domain: str, mod_id: int):
         """Tracks this mod with the current user.
 
         :param game_domain: A string with the Nexus game domain.
         :param mod_id: A Nexus mod id."""
-        self._make_request(_Op.POST, 'user/tracked_mods.json',
+        self._send_post('user/tracked_mods.json',
             req_payload={'domain_name': game_domain},
             req_data={'mod_id': str(mod_id)},
             req_headers={'content-type': 'application/x-www-form-urlencoded'})
@@ -790,19 +722,18 @@ class Nexus:
 
         :param game_domain: A string with the Nexus game domain.
         :param mod_id: A Nexus mod id."""
-        self._make_request(_Op.DELETE, 'user/tracked_mods.json',
+        self._send_delete('user/tracked_mods.json',
             req_payload={'domain_name': game_domain},
             req_data={'mod_id': str(mod_id)},
             req_headers={'content-type': 'application/x-www-form-urlencoded'})
 
     def user_endorsements(self) -> list[NxEndorsement]:
         """Returns a list of all endorsements for the current user."""
-        return [NxEndorsement.parse_from_json(d) for d in self._make_request(
-            _Op.GET, 'user/endorsements.json')]
+        return NxEndorsement.parse_many(self._send_get(
+            'user/endorsements.json'))
 
     # Colour Schemes ----------------------------------------------------------
     def colour_schemes(self) -> list[NxColourScheme]:
         """Returns a list of all colour schemes, including the primary,
         secondary and 'darker' colours."""
-        return [NxColourScheme.parse_from_json(d) for d in self._make_request(
-            _Op.GET, 'colourschemes.json')]
+        return NxColourScheme.parse_many(self._send_get('colourschemes.json'))

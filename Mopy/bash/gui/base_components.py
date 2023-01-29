@@ -33,6 +33,7 @@ import textwrap
 from typing import get_type_hints
 
 import wx as _wx
+import wx.lib.newevent as _newevent
 import wx.svg as _svg
 
 from .events import EventHandler, null_processor
@@ -135,6 +136,23 @@ class _AComponent:
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)
+
+    def _make_custom_event(self, callback):
+        """Creates a wrapper around a custom event.
+
+        :param callback: The method to call when the event is posted.
+        :return: A method that will pass whatever kwargs are given to it along
+            to the callback."""
+        event_cls, binder = _newevent.NewEvent()
+        def _receiver(event):
+            received_kwargs = {a: getattr(event, a)
+                               for a in getattr(event, '_kwargs', [])}
+            callback(**received_kwargs)
+        self._native_widget.Bind(binder, _receiver)
+        def _sender(**kwargs):
+            _wx.PostEvent(self._native_widget, event_cls(**kwargs,
+                _kwargs=list(kwargs))) # So that we can access them again
+        return _sender
 
     @staticmethod
     def _escape(s): # FIXME(inf) remove once && fixup is merged

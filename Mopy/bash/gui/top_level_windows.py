@@ -159,7 +159,7 @@ class WindowFrame(_TopLevelWin):
 
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
-    title = u'OVERRIDE'
+    title: str
     _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,

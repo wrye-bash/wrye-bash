@@ -63,7 +63,7 @@ import wx
 
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
-from .dialogs import CreateNewPlugin, CreateNewProject
+from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification
 from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
@@ -85,6 +85,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
     get_shift_down, read_files_from_clipboard_cb
 from ..localize import format_date
+from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 _env_path = os.environ[u'PATH']
@@ -1128,7 +1129,6 @@ class ModList(_ModsUIList):
         if not modInfo: return
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.SetMod(modInfo.fn_key) ##: will GPath it
         Link.Frame.docBrowser.raise_frame()
 
@@ -4184,9 +4184,14 @@ class BashFrame(WindowFrame):
         bass.update_sys_argv([u'--no-uac'])
         # restart
         bass.is_restarting = True
-        ##: This breaks on py3 + wx4.1, use sys.exit + manual save for now
+        self.exit_wb()
+
+    def exit_wb(self):
+        """Closes Wrye Bash as if the X in the upper right corner had been
+        pressed. That means it includes saving settings etc."""
+        ##: This breaks on py3 + wx4.2, use sys.exit + manual save for now
         #self.close_win(True)
-        Link.Frame.SaveSettings()
+        self.SaveSettings()
         sys.exit(0)
 
     def set_bash_frame_title(self):
@@ -4492,6 +4497,19 @@ class BashFrame(WindowFrame):
         show_gm = bass.settings[u'bash.show_global_menu'] and os_name == u'nt'
         self._native_widget.SetMenuBar(self.global_menu._native_widget
                                        if show_gm else None)
+
+    def start_update_check(self):
+        """Starts the background update check by creating a new thread and
+        passing along a custom event sender that will call
+        _on_update_check_done once it's done."""
+        version_sender = self._make_custom_event(self._on_update_check_done)
+        UCThread(version_sender).start()
+
+    def _on_update_check_done(self, *, newer_version: LatestVersion | None):
+        """Internal callback, called from the update checking thread via custom
+        event once it has completed its work."""
+        if newer_version:
+            UpdateNotification.display_dialog(self, newer_version)
 
 #------------------------------------------------------------------------------
 class BashApp(object):

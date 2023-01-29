@@ -185,6 +185,10 @@ settingDefaults = { # keep current naming format till refactored
     'bash.pluginEncoding': 'cp1252',    # Western European
     'bash.show_internal_keys': False,
     'bash.restore_scroll_positions': True,
+    #--Update Check on Boot
+    'bash.update_check.enabled': True,
+    'bash.update_check.cooldown': 1,
+    'bash.update_check.last_checked': 0,
     #--Appearance
     'bash.useAltName': True,
     'bash.use_reverse_icons': False,
@@ -288,7 +292,6 @@ settingDefaults = { # keep current naming format till refactored
         'Current Index': 50,
     },
     #--Wrye Bash: Mod Docs
-    'bash.modDocs.show': False,
     'bash.modDocs.dir': None,
     #--Installers
     'bash.installers.cols': ['Package', 'Order', 'Modified', 'Size', 'Files'],

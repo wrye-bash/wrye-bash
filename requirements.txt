@@ -11,8 +11,9 @@ https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2
 lxml==4.9.2
 # For PDF support in the doc browser
 PyMuPDF==1.21.1
-# For Nexus Mods integration
+# For various Internet-based functionality
 requests==2.28.2
+# For Nexus Mods integration
 websocket-client==1.5.1
 # Compile/Build-time ----------------------------------------------------------
 isort==5.12.0

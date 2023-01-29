@@ -316,7 +316,8 @@ class DocumentViewer(_AComponent):
         self.update_layout()
 
     def get_buttons(self):
-        """Returns the three navigation buttons as a tuple."""
+        """Returns the three navigation buttons as a tuple. Order is prev,
+        next, reload."""
         return self._prev_button, self._next_button, self._reload_button
 
     def try_load_html(self, file_path):

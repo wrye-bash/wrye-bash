@@ -28,6 +28,7 @@ from collections import defaultdict
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
+from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import Link, Resources, colors, showOk
 from ..bolt import deprint, dict_sort, os_name, readme_url
@@ -37,8 +38,9 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     HLayout, HorizontalLine, Label, LayoutOptions, ListBox, OkButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
-    VBoxedLayout, VLayout, WrappingLabel
+    VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner
 from ..localize import dump_translator
+from ..update_checker import UpdateChecker, can_check_updates
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -1272,7 +1274,8 @@ class GeneralPage(_AScrollablePage):
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.items()}
     _setting_ids = {'global_menu_on', 'res_scroll_on', 'managed_game',
-                    'plugin_encoding', 'uac_restart'}
+                    'plugin_encoding', 'update_check_enabled',
+                    'update_check_cooldown', 'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1285,6 +1288,35 @@ class GeneralPage(_AScrollablePage):
                 'Changes the encoding Wrye Bash will use to read and write '
                 'plugins.'))
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
+        # Update checking-related things begin here
+        ##: Change to WrappingLabel after inf-190-bye-listboxes?
+        uc_error_label = Label(self, _("'requests' not installed, update "
+                                       "checking disabled."))
+        uc_error_label.set_foreground_color(balt.colors['default.warn'])
+        uc_error_label.visible = not can_check_updates
+        update_check_on = bass.settings['bash.update_check.enabled']
+        self._update_check_enable = CheckBox(self, _('Check on Startup'),
+            chkbx_tooltip=_('Whether or not Wrye Bash should check to see if '
+                            'a newer version is available when it is '
+                            'launched.'), checked=update_check_on)
+        self._update_check_enable.on_checked.subscribe(self._on_update_checked)
+        self._update_check_enable.enabled = can_check_updates
+        self._update_check_cooldown = Spinner(self,
+            spin_tip=_('Do not check for updates again until this many hours '
+                       'have elapsed since the last check. Set to 0 to '
+                       'check on every startup.'),
+            max_num=24 * 7 * 4, # Four weeks as maximum, high values break wx
+            initial_num=bass.settings['bash.update_check.cooldown'])
+        self._update_check_cooldown.on_spun.subscribe(self._on_update_cooldown)
+        self._uc_cooldown_label = Label(self, _('Cooldown (hours):'))
+        # Disable both of these immediately if update checking is disabled
+        uc_cooldown_enable = can_check_updates and update_check_on
+        self._update_check_cooldown.enabled = uc_cooldown_enable
+        self._uc_cooldown_label.enabled = uc_cooldown_enable
+        check_now_btn = Button(self, _('Check for Updates'),
+            btn_tooltip=_('Check for Wrye Bash updates right now.'))
+        check_now_btn.on_clicked.subscribe(self._on_check_now)
+        check_now_btn.enabled = can_check_updates
         ##: Replace with a dropdown that lets you disable the global menu, the
         # column menus, or neither
         self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
@@ -1321,6 +1353,15 @@ class GeneralPage(_AScrollablePage):
                     Label(self, _(u'Plugin Encoding:')), self._plugin_encoding,
                 ]),
             ]),
+            VBoxedLayout(self, title=_('Updates'), spacing=6, items=[
+                uc_error_label,
+                HLayout(spacing=6, item_v_align=CENTER, items=[
+                    self._update_check_enable,
+                    (VerticalLine(self), LayoutOptions(expand=True)),
+                    self._uc_cooldown_label, self._update_check_cooldown,
+                ]),
+                check_now_btn,
+            ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
                 self._global_menu_checkbox, self._restore_scroll_checkbox,
                 self._uac_restart_checkbox,
@@ -1336,8 +1377,8 @@ class GeneralPage(_AScrollablePage):
             checked != bass.settings[u'bash.show_global_menu'])
 
     def _on_res_scroll(self, checked):
-        self._mark_setting_changed(u'res_scroll_on', checked != bass.settings[
-            u'bash.restore_scroll_positions'])
+        self._mark_setting_changed('res_scroll_on',
+            checked != bass.settings['bash.restore_scroll_positions'])
 
     def _on_managed_game(self, new_game):
         self._mark_setting_changed(u'managed_game',
@@ -1346,6 +1387,28 @@ class GeneralPage(_AScrollablePage):
     def _on_plugin_enc(self, new_enc):
         self._mark_setting_changed(u'plugin_encoding',
             new_enc != self._current_encoding)
+
+    def _on_update_checked(self, checked: bool):
+        self._mark_setting_changed('update_check_enabled',
+            checked != bass.settings['bash.update_check.enabled'])
+        # Also disable the cooldown info if the update check is disabled
+        self._update_check_cooldown.enabled = checked
+        self._uc_cooldown_label.enabled = checked
+
+    def _on_update_cooldown(self, new_cooldown: int):
+        self._mark_setting_changed('update_check_cooldown',
+            new_cooldown != bass.settings['bash.update_check.cooldown'])
+
+    def _on_check_now(self):
+        with BusyCursor():
+            newer_version = UpdateChecker().check_for_updates(force_check=True)
+        if newer_version:
+            UpdateNotification.display_dialog(self, newer_version)
+        else:
+            balt.showInfo(self,
+                _('You are already using the newest version of Wrye Bash, '
+                  'version %(wb_version)s.') % {'wb_version': bass.AppVersion},
+                title=_('No Newer Version Available'))
 
     def _on_uac_restart(self, checked):
         self._mark_setting_changed(u'uac_restart', checked)
@@ -1372,6 +1435,14 @@ class GeneralPage(_AScrollablePage):
             bolt.pluginEncoding = internal_encoding
             # Request a restart so that alrady loaded plugins can be reparsed
             self._request_restart(_(u'Plugin Encoding: %s') % chosen_encoding)
+        # Check on Startup
+        if self._is_changed('update_check_enabled'):
+            new_uc_on = self._update_check_enable.is_checked
+            bass.settings['bash.update_check.enabled'] = new_uc_on
+        # Cooldown (hours)
+        if self._is_changed('update_check_cooldown'):
+            new_cooldown = self._update_check_cooldown.spinner_value
+            bass.settings['bash.update_check.cooldown'] = new_cooldown
         # Show Global Menu
         if self._is_changed(u'global_menu_on'):
             new_gm_on = self._global_menu_checkbox.is_checked

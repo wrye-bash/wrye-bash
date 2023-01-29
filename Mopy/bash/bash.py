@@ -521,6 +521,9 @@ def _main(opts, wx_locale, wxver):
     frame = bapp.Init() # Link.Frame is set here !
     frame.ensureDisplayed()
     frame.bind_refresh()
+    # Start the update check in the background and pass control to wx's event
+    # loop so that the daemon can send its event to the main thread
+    frame.start_update_check()
     bash_app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):

@@ -349,7 +349,6 @@ class DocBrowser(WindowFrame):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
-        bass.settings[u'bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
         super(DocBrowser, self).on_closing(destroy)
 

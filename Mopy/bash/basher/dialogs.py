@@ -20,6 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import webbrowser
+
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import ImageWrapper, colors
 from ..bolt import CIstr, FName, text_wrap, top_level_dirs
@@ -30,7 +32,8 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
     TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
-    MLEList
+    MLEList, DocumentViewer, RadioButton
+from ..update_checker import LatestVersion
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -600,3 +603,102 @@ class MonitorExternalInstallationEditor(_ABainMLE):
         super().__init__(parent, data_desc=mei_desc,
             list_data=[newf_data, changedf_data, touchedf_data, deletedf_data],
             ok_label=ok_btn_label, cancel_label=cancel_btn_label)
+
+#------------------------------------------------------------------------------
+_uc_css = """body {
+    max-width: 650px;
+    line-height: 1.5;
+    font-size: 16px;
+    color: #444;
+}
+h1, h2, h3 { line-height: 1.2 }
+a:link { text-decoration: none; }
+a:hover { text-decoration: underline; }
+"""
+
+class UpdateNotification(DialogWindow):
+    """A notification dialog showing the user information about a new version
+    of Wrye Bash."""
+    title = _('New Version Available!')
+    _min_size = (400, 400)
+    _def_size = (500, 500)
+
+    def __init__(self, parent, new_version: LatestVersion):
+        super().__init__(parent, icon_bundle=balt.Resources.bashBlue,
+            sizes_dict=balt.sizes)
+        self._do_quit = False
+        new_ver_msg = _('A new version of Wrye Bash, version %(new_wb_ver)s, '
+                        'is available! You are currently using version '
+                        '%(curr_wb_ver)s.') % {
+            'new_wb_ver': new_version.wb_version,
+            'curr_wb_ver': bass.AppVersion,
+        }
+        # Ensure the temp dir is empty, then write the changelog into it
+        bass.rmTempDir()
+        temp_dir = bass.getTempDir()
+        wb_changes = temp_dir.join('wb_changes.html')
+        with open(wb_changes, 'w', encoding='utf-8') as out:
+            out.write(bolt.html_start % (self.title, _uc_css))
+            out.write(new_version.wb_changes)
+            out.write(bolt.html_end)
+        self._changes_viewer = DocumentViewer(self, balt.get_dv_bitmaps())
+        self._changes_viewer.try_load_html(wb_changes)
+        back_btn, forward_btn, reload_btn = self._changes_viewer.get_buttons()
+        # Generate the download location radio buttons
+        self._download_url = ''
+        self._dl_btn_to_url = {}
+        self._url_buttons = []
+        for i, download_info in enumerate(new_version.wb_downloads):
+            dl_name = download_info.download_name
+            dl_url = download_info.download_url
+            if is_first := (i == 0):
+                # The first one is the default
+                self._download_url = dl_url
+                rbtn = RadioButton(self, dl_name, is_group=True)
+                rbtn.is_checked = True
+            else:
+                rbtn = RadioButton(self, dl_name)
+            rbtn.tooltip = _('Download from %(dl_name)s (%(dl_url)s).') % {
+                'dl_name': dl_name, 'dl_url': dl_url}
+            rbtn.on_checked.subscribe(self._on_download_opt_changed)
+            self._url_buttons.append(rbtn)
+            self._dl_btn_to_url[rbtn] = dl_url
+        quit_btn = OkButton(self, _('Quit and Download'),
+            btn_tooltip=_('Close Wrye Bash and open the selected download '
+                          'option in your default web browser.'))
+        quit_btn.on_clicked.subscribe(self._on_quit_and_download)
+        VLayout(border=4, spacing=6, item_expand=True, items=[
+            ##: Make this a WrappingLabel, depends on inf-190-bye-listboxes
+            (Label(self, new_ver_msg), LayoutOptions(h_align=CENTER)),
+            (HBoxedLayout(self, title=_('Release Notes'), item_expand=True,
+                items=[(self._changes_viewer, LayoutOptions(weight=1))]),
+             LayoutOptions(weight=1)),
+            HBoxedLayout(self, title=_('Download Options'), spacing=6,
+                items=self._url_buttons),
+            HLayout(spacing=6, item_expand=True, items=[
+                back_btn, forward_btn, reload_btn, Stretch(), quit_btn,
+                CancelButton(self, _('Ignore')),
+            ]),
+        ]).apply_to(self)
+
+    def _on_download_opt_changed(self, _checked):
+        """Internal callback, called when one of the radio buttons for the
+        download locations is changed."""
+        for url_btn in self._url_buttons:
+            if url_btn.is_checked:
+                self._download_url = self._dl_btn_to_url[url_btn]
+                break
+
+    def _on_quit_and_download(self):
+        """Internal callback, called when the Quit and Download button is
+        pressed."""
+        webbrowser.open(self._download_url)
+        self._do_quit = True
+
+    def show_modal(self):
+        super().show_modal()
+        # Clean up the temp dir we created up above and quit WB if the Quit
+        # button was pressed
+        bass.rmTempDir()
+        if self._do_quit:
+            balt.Link.Frame.exit_wb()

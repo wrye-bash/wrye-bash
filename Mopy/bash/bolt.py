@@ -387,6 +387,52 @@ class classproperty:
     def __get__(self, obj, owner):
         return self.fget(owner)
 
+# JSON parsing ----------------------------------------------------------------
+class JsonParsable:
+    """Base class for classes that will be parsed from JSON based on their type
+    annotations and a special '_parsers' class var (see below). Call
+    parse_single or parse_many to create instances.
+
+    Note: this *MUST* be used together with @dataclass!"""
+    # Specifies special handling for any number of attributes in the parsed
+    # JSON dict. Each 'parser' is a function taking the JSON dict and the
+    # attribute being parsed and returning the parsed object
+    _parsers: dict[str, callable] = {}
+    __slots__ = ()
+
+    def __init__(self, **_kwargs): # To make PyCharm shut up
+        super().__init__()
+
+    @classmethod
+    def parse_single(cls, json_dict: dict) -> Self:
+        """Parses an instance of this JSON parsable from the specified
+        JSON-sourced dict."""
+        if json_dict is None:
+            return None # Handle optional parsables
+        inst_args = {}
+        for cls_attr, cls_type_str in cls.__annotations__.items():
+            attr_parser = cls._parsers.get(cls_attr)
+            if attr_parser is None:
+                # No special parser, access JSON dict directly
+                parsed_obj = json_dict[cls_attr]
+            else:
+                parsed_obj = attr_parser(json_dict, cls_attr)
+            inst_args[cls_attr] = parsed_obj
+        return cls(**inst_args)
+
+    @classmethod
+    def parse_many(cls, json_list: list[dict]) -> list[Self]:
+        """Parses multiple instances of this JSON parsable from the specified
+        JSON-sourced list of dicts."""
+        return [cls.parse_single(d) for d in json_list]
+
+def json_remap(remap_attr: str):
+    """Simple JSON parser that uses a different attribute for accessing the
+    JSON dict. Used to avoid bad names (e.g. name) and builtins (e.g. id)."""
+    def _remap_func(json_dict, _cls_attr):
+        return json_dict[remap_attr]
+    return _remap_func
+
 # LowStrings ------------------------------------------------------------------
 class CIstr(str):
     """See: http://stackoverflow.com/q/43122096/281545"""
@@ -2792,8 +2838,42 @@ def readme_url(mopy, advanced=False, skip_local=False):
     return readme.replace(u' ', u'%20')
 
 # WryeText --------------------------------------------------------------------
+html_start = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <title>%s</title>
+        <style type="text/css">%s</style>
+    </head>
+    <body>
+"""
+html_end = """    </body>
+</html>
+"""
+default_css = """
+h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+a:link { text-decoration:none; }
+a:hover { text-decoration:underline; }
+p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+p.empty {}
+p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+.code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
+pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
+body { background-color: #ffffcc; }
+"""
+
 codebox = None
-class WryeText(object):
+class WryeText:
     """This class provides a function for converting wtxt text files to html
     files.
 
@@ -2833,39 +2913,6 @@ class WryeText(object):
     Contents
     {{CONTENTS=NN}} Where NN is the desired depth of contents (1 for single level,
     2 for two levels, etc.).
-    """
-
-    # Data ------------------------------------------------------------------------
-    htmlHead = u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <title>%s</title>
-    <style type="text/css">%s</style>
-    </head>
-    <body>
-    """
-    defaultCss = u"""
-    h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
-    h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
-    h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
-    a:link { text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    p.empty {}
-    p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
-    p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
-    p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
-    p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
-    p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
-    p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
-    pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
-    code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
-    td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
-    body { background-color: #ffffcc; }
     """
 
     # Conversion ---------------------------------------------------------------
@@ -3134,7 +3181,7 @@ class WryeText(object):
             outLines.append(line)
         #--Get Css -----------------------------------------------------------
         if not cssName:
-            css = WryeText.defaultCss
+            css = default_css
         else:
             if cssName.ext != u'.css':
                 raise exception.BoltError(f'Invalid Css file: {cssName}')
@@ -3148,7 +3195,7 @@ class WryeText(object):
             if u'<' in css:
                 raise exception.BoltError(f'Non css tag in {cssPath}')
         #--Write Output ------------------------------------------------------
-        outWrite(WryeText.htmlHead % (title,css))
+        outWrite(html_start % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -3162,7 +3209,7 @@ class WryeText(object):
                     didContents = True
             else:
                 outWrite(line)
-        outWrite(u'</body>\n</html>\n')
+        outWrite(html_end)
         #--Close files?
         if srcPath:
             ins.close()

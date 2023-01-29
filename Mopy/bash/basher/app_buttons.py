@@ -561,7 +561,7 @@ class Game_Button(_ExeButton):
                     exe_path = (exe_xse if exe_xse.is_file() else exe_path)
             self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
-            Link.Frame.close_win(True)
+            Link.Frame.exit_wb()
 
     @property
     def version(self):
@@ -760,7 +760,6 @@ class App_DocBrowser(StatusBar_Button):
     def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            bass.settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------

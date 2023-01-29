@@ -391,20 +391,32 @@ class HyperlinkLabel(_ALabel):
             lambda event: [event.GetURL()])
 
 # Spinner - technically text, just limited to digits --------------------------
-# Unused right now, but don't remove - I have some plans that will need it
 class Spinner(_AComponent):
     """A field for entering integers. Features small arrow buttons on the right
-    to decrement and increment the value.
+    to increment and decrement the value.
 
     Events:
-      - on_spun(): Posted when a new value is entered into the spinner (whether
-        manually or through the buttons)."""
+      - on_spun(new_num: int): Posted when a new value is entered into the
+        spinner (whether manually or through the buttons)."""
     _native_widget: _wx.SpinCtrl
 
-    def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
-        super(Spinner, self).__init__(parent, style=_wx.SP_ARROW_KEYS,
-                                      min=min_val, max=max_val)
-        self.on_spun = self._evt_handler(_wx.EVT_SPINCTRL)
+    def __init__(self, parent, initial_num: int = 0, min_num: int = 0,
+            max_num: int = 100, spin_tip: str = ''):
+        """Initializes a new Spinner with the specified parameters.
+
+        :param parent: The object that this spinner belongs to. May be a wx
+            object or a component.
+        :param initial_num: The initial number displayed in this spinner.
+        :param min_num: The minimum number that may be entered via this
+            spinner.
+        :param max_num: The maximum number that may be entered via this
+            spinner.
+        :param spin_tip: If set to a nonempty string, the tooltip displayed
+            when hovering over this spinner."""
+        super().__init__(parent, style=_wx.SP_ARROW_KEYS, min=min_num,
+            max=max_num, initial=initial_num)
+        self.on_spun = self._evt_handler(_wx.EVT_SPINCTRL,
+            lambda event: [event.GetPosition()])
         if spin_tip: self.tooltip = spin_tip
 
     @property
