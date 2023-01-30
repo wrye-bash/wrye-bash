@@ -218,6 +218,18 @@ class SearchBar(TextField):
         ##: Not sure what the difference between SetHint and SetDescriptiveText
         # is supposed to be, but this one works while SetHint does not...
         self._native_widget.SetDescriptiveText(hint)
+        # Implement behavior for the small cancel button: show or hide based on
+        # text content (present if text is present and vice versa)
+        def _update_clear_btn_visibility(new_text: str):
+            self._native_widget.ShowCancelButton(bool(new_text))
+        self.on_text_changed.subscribe(_update_clear_btn_visibility)
+        # And implement the button's actual behavior when clicked: clear the
+        # search bar (which will then hide the button since this posts the
+        # on_text_changed event)
+        on_cancel = self._evt_handler(_wx.EVT_SEARCHCTRL_CANCEL_BTN)
+        def _clear_search_bar():
+            self.text_content = ''
+        on_cancel.subscribe(_clear_search_bar)
 
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):
