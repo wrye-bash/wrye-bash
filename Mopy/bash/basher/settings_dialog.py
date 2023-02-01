@@ -498,9 +498,8 @@ class LanguagePage(_AScrollablePage):
         # comparisons
         self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
-            choices=localized_langs, auto_tooltip=False)
-        self._lang_dropdown.tooltip = _(u'Changes the language that Wrye Bash '
-                                        u'will be displayed in.')
+            choices=localized_langs, dd_tooltip=_(
+                'Changes the language that Wrye Bash will be displayed in.'))
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
         self._l10n_list = ListBox(self, isSort=True, isHScroll=True,
             onSelect=self._handle_select_l10n)
@@ -722,9 +721,8 @@ class StatusBarPage(_AScrollablePage):
         self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
             value=str(bass.settings[u'bash.statusbar.iconSize']),
-            choices=(u'16', u'24', u'32'), auto_tooltip=False)
-        self._icon_size_dropdown.tooltip = _(u'Sets the status bar icons to '
-                                             u'the selected size in pixels.')
+            choices=('16', '24', '32'), dd_tooltip=_(
+                'Sets the status bar icons to the selected size in pixels.'))
         self._icon_size_dropdown.on_combo_select.subscribe(
             self._handle_icon_size)
         ##: Create a variant of DoubleListBox that can actually show the icons
@@ -1147,10 +1145,9 @@ class ConfirmationsPage(_AFixedPage):
             isHScroll=True)
         self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
-            choices=sorted(self._label_to_action), auto_tooltip=False)
-        self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '
-                                             u'that are dropped onto the '
-                                             u'Installers tab.')
+            choices=sorted(self._label_to_action), dd_tooltip=_(
+                'Choose what to do with files that are dropped onto the '
+                'Installers tab.'))
         self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
         self._populate_confirmations()
         VLayout(border=6, spacing=4, item_expand=True, items=[
@@ -1267,15 +1264,13 @@ class GeneralPage(_AScrollablePage):
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
         self._managed_game = DropDown(self, value=bush.game.displayName,
-            choices=sorted(bush.foundGames), auto_tooltip=False)
-        self._managed_game.tooltip = _(u'Changes which game Wrye Bash is '
-                                       u'managing.')
+            choices=sorted(bush.foundGames), dd_tooltip=_(
+                'Changes which game Wrye Bash is managing.'))
         self._managed_game.on_combo_select.subscribe(self._on_managed_game)
         self._plugin_encoding = DropDown(self, value=self._current_encoding,
-            choices=sorted(self._all_encodings), auto_tooltip=False)
-        self._plugin_encoding.tooltip = _(u'Changes the encoding Wrye Bash '
-                                          u'will use to read and write '
-                                          u'plugins.')
+            choices=sorted(self._all_encodings), dd_tooltip=_(
+                'Changes the encoding Wrye Bash will use to read and write '
+                'plugins.'))
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
         ##: Replace with a dropdown that lets you disable the global menu, the
         # column menus, or neither
