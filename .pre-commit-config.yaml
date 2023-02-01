@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+        types: [python]
+      - id: end-of-file-fixer
+        types: [python]
+      - id: check-yaml
+      - id: check-toml

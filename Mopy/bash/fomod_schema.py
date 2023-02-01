@@ -171,7 +171,7 @@ schema_string = br"""<?xml version="1.0" encoding="utf-8"?>
             </xs:choice>
         </xs:sequence>
     </xs:group>
-    
+
     <xs:complexType name="compositeDependency">
         <xs:annotation>
             <xs:documentation>A dependency that is made up of one or more dependencies.</xs:documentation>
