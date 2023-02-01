@@ -138,7 +138,8 @@ class FixInfo(object):
         return bool(
             self.act_removed or self.act_added or self.act_duplicates or
             self.act_reordered or self.act_order_differs_from_load_order or
-            self.master_not_active or self.missing_must_be_active)
+            self.master_not_active or self.missing_must_be_active or
+            self.selectedExtra)
 
     def lo_deprint(self):
         self.warn_lo()

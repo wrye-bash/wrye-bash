@@ -29,7 +29,7 @@ from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .balt import ItemLink, Links, images, staticBitmap
-from .bolt import FName, FNDict
+from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback
 from .exception import AbstractError
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
@@ -975,7 +975,8 @@ class WryeParser(ScriptParser.Parser):
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs[u'app'].join(ver_file)
                 if ver_path.exists(): break
-            return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
+            ret = self._TestVersion(self._TestVersion_Want(seWant), ver_path)
+            return ret[0]
         else:
             # No script extender available for this game
             return 1
@@ -990,7 +991,7 @@ class WryeParser(ScriptParser.Parser):
 
     def fnCompareWBVersion(self, wbWant):
         wbHave = bass.AppVersion
-        return bolt.cmp_(float(wbHave), float(wbWant))
+        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(wbWant))
 
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
@@ -1533,11 +1534,7 @@ class WryeParser(ScriptParser.Parser):
         else:
             bGEOk = True
             geHave = u'None'
-        try:
-            bWBOk = float(wbHave) >= float(wbWant)
-        except ValueError:
-            # Error converting to float, just assume it's OK
-            bWBOk = True
+        bWBOk = LooseVersion(wbHave) >= LooseVersion(wbWant)
         if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
             self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
@@ -1566,18 +1563,20 @@ class WryeParser(ScriptParser.Parser):
         if not have and file_ and file_.exists():
             have = get_file_version(file_.s)
         if have:
-            ver = u'.'.join([str(i) for i in have])
-            if need == u'None':
-                return [1, ver]
-            elif have > need:
-                return [1, ver]
-            elif have < need:
-                return [-1, ver]
+            have_fmt = '.'.join([str(i) for i in have])
+            if need == 'None':
+                return [1, have_fmt]
+            need_ver = LooseVersion('.'.join([str(i) for i in need]))
+            have_ver = LooseVersion(have_fmt)
+            if have_ver > need_ver:
+                return [1, have_fmt]
+            elif have_ver < need_ver:
+                return [-1, have_fmt]
             else:
-                return [0, ver]
-        elif need == u'None':
-            return [0, u'None']
-        return [-1, u'None']
+                return [0, have_fmt]
+        elif need == 'None':
+            return [0, 'None']
+        return [-1, 'None']
 
     def kwdReturn(self):
         self.page = PageFinish(self._wiz_parent, self.sublist,
