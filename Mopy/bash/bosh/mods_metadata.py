@@ -499,7 +499,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             log(u'* ' + _(u'%s from %s, colliding versions:')
                 % (proper_fid, coll_plugin))
         for ver_eid, ver_sig, ver_orig_plugin in coll_versions:
-            fmt_record = u'%s [%s:%s]' % (ver_eid, ver_sig, proper_fid)
+            fmt_record = f'[{sig_to_str(ver_sig)}:{proper_fid}]'
+            if ver_eid:
+                fmt_record = f'{ver_eid} {fmt_record}'
             # Mark the base record if the record wasn't injected
             if not coll_inj and ver_orig_plugin == coll_plugin:
                 log(u'  * ' + _(u'%s from %s (base record)') % (

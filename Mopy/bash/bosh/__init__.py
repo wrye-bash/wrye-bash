@@ -2755,7 +2755,8 @@ class ModInfos(FileInfos):
         missing plugins. Returns an error/warning message or an empty
         string."""
         partial_set = set(partial_actives)
-        missing_plugins = partial_set - set(self)
+        present_plugins = set(self)
+        missing_plugins = partial_set - present_plugins
         wip_actives = partial_set - missing_plugins
         def _add_masters(target_plugin):
             """Recursively adds the target and its masters (and their masters,
@@ -2768,7 +2769,8 @@ class ModInfos(FileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives |= load_order.must_be_active_if_present()
+        wip_actives |= (load_order.must_be_active_if_present() &
+                        present_plugins)
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
         trim_regular, trim_esl = load_order.check_active_limit(ordered_wip)
