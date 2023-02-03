@@ -21,7 +21,7 @@
 #
 # =============================================================================
 import io
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bass, bolt, bush, load_order
@@ -238,6 +238,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     record_type_collisions = {}
     # fid -> (orig_plugin, list[(eid, sig, plugin)])
     probable_injected_collisions = {}
+    duplicate_formids = defaultdict(dict) # fid -> plugin -> int
     all_hitmes = defaultdict(list) # fn_key -> list[fid]
     if scan_plugins:
         progress = None
@@ -335,12 +336,13 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             # We can't get an accurate progress bar here, because the loop
             # below is far too hot. Instead, at least make sure the progress
             # bar updates on each collision by bumping the state.
-            collision_progress.setFull(len(all_active_plugins))
+            collision_progress.setFull(len(all_record_versions))
             prog_msg = f'{_("Looking for collisions...")}\n%s'
             num_collisions = 0
             collision_progress(num_collisions, prog_msg % game_master_name)
             for r_fid, r_versions in all_record_versions.items():
                 first_eid, first_sig, first_plugin = r_versions[0]
+                duplicates_counter = Counter()
                 # These FormIDs are whole-LO and HITMEs are truncated, so this
                 # is safe
                 orig_plugin = full_acti[r_fid >> 24]
@@ -350,28 +352,33 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 is_injected = orig_plugin != first_plugin
                 definite_collision = False
                 probable_collision = False
-                for r_eid, r_sig, _r_plugin in r_versions[1:]:
+                duplicates_counter[first_plugin] = 1
+                for r_eid, r_sig, r_plugin in r_versions[1:]:
+                    # Keep track of duplicate FormIDs in all record versions
+                    duplicates_counter[r_plugin] += 1
                     if first_sig != r_sig:
                         # At least one override has a different record type,
                         # this is for sure a collision.
                         definite_collision = True
-                        break
                     if is_injected and first_eid != r_eid:
                         # This is an injected record and at least one override
                         # has a different EDID, this is probably a collision.
-                        # However, we can't break because there might also be
-                        # definite collision with a version after this one.
                         probable_collision = True
+                # Keep only duplicate FormIDs when we actually have >1
+                trimmed_counter = {p: c for p, c in duplicates_counter.items()
+                                   if c > 1}
+                if trimmed_counter:
+                    duplicate_formids[r_fid] = trimmed_counter
                 if definite_collision:
                     num_collisions += 1
                     record_type_collisions[r_fid] = (is_injected, orig_plugin,
                                                      r_versions)
-                    collision_progress(num_collisions, prog_msg % orig_plugin)
+                    collision_progress(num_collisions, prog_msg % first_plugin)
                 elif probable_collision:
                     num_collisions += 1
                     probable_injected_collisions[r_fid] = (orig_plugin,
                                                            r_versions)
-                    collision_progress(num_collisions, prog_msg % orig_plugin)
+                    collision_progress(num_collisions, prog_msg % first_plugin)
         except CancelError:
             scanning_canceled = True
         finally:
@@ -631,21 +638,38 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
         })
         log_plugin_messages(old_weaps)
     if hitmes:
-        log.setHeader(u'=== ' + u'HITMEs')
-        log(_(u'The following plugins have HITMEs (%(hitme_acronym)s), which '
-              u'most commonly occur when the %(ck_name)s or an advanced mode '
-              u'of %(xedit_name)s were used to improperly remove a master. '
-              u'The behavior of these plugins is undefined and may lead to '
-              u'them not working correctly or causing CTDs. Such a plugin is '
-              u'usually beyond saving and mod authors should revert to a '
-              u'backup from before the HITMEs corrupted the plugin. The '
-              u'safest course of action for a user is to uninstall it.') % {
-            u'hitme_acronym': u'__H__igher __I__ndex __T__han __M__asterlist '
-                              u'__E__ntries',
-            u'ck_name': bush.game.Ck.long_name,
-            u'xedit_name': bush.game.Xe.full_name,
+        log.setHeader('=== ' + 'HITMEs')
+        log(_('The following plugins have HITMEs (%(hitme_acronym)s), which '
+              'most commonly occur when the %(ck_name)s or an advanced mode '
+              'of %(xedit_name)s were used to improperly remove a master. '
+              'The behavior of these plugins is undefined and may lead to '
+              'them not working correctly or causing CTDs. Such a plugin is '
+              'usually beyond saving and mod authors should revert to a '
+              'backup from before the plugin was corrupted. The safest course '
+              'of action for a user is to uninstall it.') % {
+            'hitme_acronym': '__H__igher __I__ndex __T__han __M__asterlist '
+                             '__E__ntries',
+            'ck_name': bush.game.Ck.long_name,
+            'xedit_name': bush.game.Xe.full_name,
         })
         log_plugin_messages(hitmes)
+    if duplicate_formids:
+        log.setHeader('=== ' + _('Duplicate FormIDs'))
+        log(_('The following FormIDs occur twice (or more) in the listed '
+              'plugins. This is undefined behavior and may result in CTDs or '
+              'unpredictable issues at runtime. Such problems can only be '
+              'fixed manually, which should usually be done by the mod '
+              'author. Failing that, the safest course of action is to '
+              'uninstall the plugin.'))
+        fids_in_log = True
+        for orig_fid, duplicates_counter in duplicate_formids.items():
+            for orig_plugin, dupe_count in duplicates_counter.items():
+                log('* ' + _('%(full_fid)s in %(orig_plugin)s: '
+                             'occurs %(num_duplicates)d times') % {
+                    'full_fid': format_fid(orig_fid, orig_plugin),
+                    'orig_plugin': orig_plugin,
+                    'num_duplicates': dupe_count,
+                })
     if record_type_collisions:
         log.setHeader(u'=== ' + _(u'Record Type Collisions'))
         log(_(u'The following records override each other, but have different '
@@ -654,7 +678,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'manually, which should usually be done by the mod author. '
               u'Failing that, the safest course of action is to uninstall the '
               u'plugin.'))
-        fids_in_log = True # PY3: nonlocal, move this into log_collision
+        fids_in_log = True
         for orig_fid, (is_inj, orig_plugin, coll_info) in dict_sort(
                 record_type_collisions):
             log_collision(orig_fid, is_inj, orig_plugin, coll_info)
