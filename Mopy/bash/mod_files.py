@@ -162,7 +162,7 @@ class ModFile(object):
 
     def load_plugin(self, progress=None, loadStrings=True, catch_errors=True,
                     do_map_fids=True):
-        ##: track uses and decide on exception handling and setChanged behavior
+        ##: track uses and decide on exception handling
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
@@ -221,10 +221,6 @@ class ModFile(object):
                         raise
                 progress(insTell())
         if not do_map_fids: return
-        # Done reading - mark all records as changed so we'll write out any
-        # changes we make to them
-        for target_top in self.tops.values():
-            target_top.set_records_changed()
 
     def __load_strs(self, ins, loadStrings, progress):
         # Check if we need to handle strings
@@ -266,8 +262,6 @@ class ModFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll:
             raise StateError('Insufficient data to write file.')
-        for target_top in self.tops.values():
-            target_top.set_records_changed()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
@@ -313,7 +307,7 @@ class ModFile(object):
         hostile_recs = set()
         nonhostile_recs = set()
         if b'MGEF' in self.tops:
-            for _rid, record in self.tops[b'MGEF'].getActiveRecords():
+            for _rid, record in self.tops[b'MGEF'].iter_present_records():
                 ##: Skip OBME records, at least for now
                 if record.obme_record_version is not None: continue
                 m_school[record.eid] = record.school

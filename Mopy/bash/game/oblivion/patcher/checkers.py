@@ -75,11 +75,11 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         mod, but won't alter it."""
         patch_books = self.patchFile.tops[b'BOOK']
         id_books = patch_books.id_records
-        for book_rid, record in modFile.tops[b'BOOK'].getActiveRecords():
+        for book_rid, record in modFile.tops[b'BOOK'].iter_present_records():
             if book_rid in _book_fids and book_rid not in id_books:
                 patch_books.setRecord(record, do_copy=False)
         id_ingred = self.id_ingred
-        for rid, record in modFile.tops[b'INGR'].getActiveRecords():
+        for rid, record in modFile.tops[b'INGR'].iter_present_records():
             if not record.full: continue #--Ingredient must have name!
             if record.obme_record_version is not None:
                 continue ##: Skips OBME records - rework to support them
@@ -108,9 +108,8 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             book = patch_books.id_records[book_fid]
             book.book_text = '<div align="left"><font face=3 color=4444>'
             book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
-            book.changed = True
-            keep(book_fid)
-            return book
+            if keep(book_fid, book):
+                return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         for (num, objectId, full) in _ingred_alchem:
@@ -178,7 +177,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         if _ob_path in p_file.loadSet:
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = self._mod_file_read(modInfo) # read Oblivion quests
-            for rid, record in modFile.tops[b'QUST'].getActiveRecords():
+            for rid, record in modFile.tops[b'QUST'].iter_present_records():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:
                         self.cyrodiilQuests.add(rid)
@@ -189,7 +188,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         if modFile.fileInfo.fn_key == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
         patchBlock = self.patchFile.tops[b'QUST']
-        for rid, record in modFile.tops[b'QUST'].getActiveRecords():
+        for rid, record in modFile.tops[b'QUST'].iter_present_records():
             if rid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
@@ -200,10 +199,9 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         cyrodiilQuests = self.cyrodiilQuests
-        patchFile = self.patchFile
-        keep = patchFile.getKeeper()
+        keep = self.patchFile.getKeeper()
         patched = []
-        for rid, record in patchFile.tops[b'QUST'].getActiveRecords():
+        for rid, record in self.patchFile.tops[b'QUST'].id_records.items():
             if rid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
@@ -215,7 +213,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 condition.param2 = condition.param1 = b'\x00' * 4
                 condition.compValue = 0.0
                 record.conditions.insert(0,condition)
-                keep(rid)
-                patched.append(record.eid)
+                if keep(rid, record):
+                    patched.append(record.eid)
         log.setHeader(f'= {self._patcher_name}')
         log('===' + _('Quests Patched') + f': {len(patched)}')

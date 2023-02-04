@@ -50,8 +50,8 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            for worldId, worldBlock in srcFile.tops[b'WRLD'].id_records.items():
+            src_wrld_block = self._mod_file_read(srcInfo).tops[b'WRLD']
+            for worldId, worldBlock in src_wrld_block.iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
@@ -60,7 +60,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         """Add lists from modFile."""
         if b'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.tops[b'WRLD']
-        for worldId, worldBlock in modFile.tops[b'WRLD'].id_records.items():
+        for worldId, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
             if worldBlock.road:
                 patch_world_block = patchWorlds.setRecord(
                     worldBlock.master_record)
@@ -71,15 +71,16 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldId, worldBlock in self.patchFile.tops[b'WRLD'].id_records.items():
+        for worldId, worldBlock in self.patchFile.tops[
+                b'WRLD'].id_records.items():
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
                     or curRoad.connections_p != newRoad.connections_p):
-                worldBlock.road = newRoad
-                keep(worldId)
-                keep(newRoad.fid)
-                worldsPatched.add((worldId.mod_fn, worldBlock.master_record.eid))
+                if keep(worldId, worldBlock) and keep(newRoad.fid, newRoad): ##: setChanged
+                    worldBlock.road = newRoad
+                    worldsPatched.add(
+                        (worldId.mod_fn, worldBlock.master_record.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
@@ -138,7 +139,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
         id_info = self.id_stored_data[b'FACT']
-        for rid, record in modFile.tops[b'SPEL'].getActiveRecords():
+        for rid, record in modFile.tops[b'SPEL'].iter_present_records():
             if record.spellType == 2 and rid in id_info:
                 patchRecords.setRecord(record)
 
@@ -173,7 +174,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
-            keep(rid)
+            keep(rid, record)
             count[rid.mod_fn] += 1
         #--Log
         self._pLog(log, count)
@@ -219,7 +220,7 @@ class MorphFactionsPatcher(_ExSpecialList):
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record)
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+        for rid, record in modFile.tops[b'FACT'].iter_present_records():
             if rid in id_info:
                 patchBlock.setRecord(record)
 
@@ -228,11 +229,10 @@ class MorphFactionsPatcher(_ExSpecialList):
         if not self.isActive: return
         mFactLong = self.mFactLong
         id_info = self.id_stored_data[b'FACT']
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         changes_counts = Counter()
         mFactable = []
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+        for rid, record in self.patchFile.tops[b'FACT'].id_records.items():
             if rid not in id_info: continue
             if rid == mFactLong: continue
             mFactable.append(rid)
@@ -256,10 +256,10 @@ class MorphFactionsPatcher(_ExSpecialList):
                         # if rank_level was not present it will be None
                         dds_ = f'generic{rank.rank_level or 0:02d}.dds'
                         rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
-                keep(rid)
+                keep(rid, record)
                 changes_counts[rid.mod_fn] += 1
         #--MFact record
-        record = modFile.tops[b'FACT'].getRecord(mFactLong)
+        record = self.patchFile.tops[b'FACT'].getRecord(mFactLong)
         if record:
             relations = record.relations
             del relations[:]
@@ -268,5 +268,5 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
-            keep(record.fid)
+            keep(mFactLong, record)
         self._pLog(log, changes_counts)

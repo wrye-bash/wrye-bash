@@ -182,7 +182,16 @@ class PatchFile(ModFile):
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
-        return self.keepIds.add
+        def _patch_keeper(rec_formid, rec):
+            """Keep rec_formid if rec is not ignored/deleted - setChanged on
+            rec."""
+            if rec.should_skip():
+                deprint(f'Record {rec!r} should have been skipped')
+                return 0
+            self.keepIds.add(rec_formid)
+            rec.setChanged() ##: this here may be a _ComplexRec
+            return 1
+        return _patch_keeper
 
     def create_record(self, new_rec_sig: bytes, new_rec_fid: FormId = None):
         """Creates a new record with the specified record signature (and
@@ -196,6 +205,7 @@ class PatchFile(ModFile):
             RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
         self.keepIds.add(new_rec_fid)
         self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
+        new_rec.setChanged()
         return new_rec
 
     def new_gmst(self, gmst_eid, gmst_val):
@@ -296,7 +306,7 @@ class PatchFile(ModFile):
         if b'MGEF' in modFile.tops:
             shared_rec_types.discard(b'MGEF')
             add_mgef_to_patch = self.tops[b'MGEF'].setRecord
-            for _rid, record in modFile.tops[b'MGEF'].getActiveRecords():
+            for _rid, record in modFile.tops[b'MGEF'].iter_present_records():
                 add_mgef_to_patch(record)
         # Update all other record types
         for block_type in shared_rec_types:

@@ -54,16 +54,6 @@ class _AMobBase:
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
 
-    ##: This should be dropped later once we ensure we correctly call
-    # setChanged() on all non-BP uses of ModFile where we modify records and
-    # make the BP call setChanged() during its record trimming phase on all
-    # keepIds - hard right now due to having to trace ModFile.load() calls.
-    def set_records_changed(self):
-        """Mark all records in this record group as changed."""
-        if type(self) != MobBase: # ugh
-            for r in self.iter_records():
-                r.setChanged()
-
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         for record in self.iter_records():
@@ -83,14 +73,14 @@ class _AMobBase:
         """Dumps record header and data into output file stream."""
         raise AbstractError
 
-    def iter_present_records(self, rec_sig=None, *, include_ignored=False,
-                             rec_key='fid', __attrgetters=attrgetter_cache):
+    def iter_present_records(self, rec_sig=None):
         """Filters iter_records, returning only records that have not set
-        the deleted flag and/or the ignore flag if include_ignored is False."""
-        key_get = __attrgetters[rec_key]
-        return ((key_get(r), r) for r in self.iter_records() if not
-                r.flags1.deleted and (include_ignored or not r.flags1.ignored)
-                and (not rec_sig or r._rec_sig == rec_sig))
+        the deleted or the ignored flag(s)."""
+        if rec_sig is None: # iterate our top record blocks
+            return ((k, r) for k, r in self.id_records.items() if
+                    not r.should_skip())
+        return ((r.group_key(), r) for r in self.iter_records() if
+                r._rec_sig == rec_sig and not r.should_skip())
 
     def get_all_signatures(self):
         """Returns a set of all signatures actually contained in this block."""
@@ -246,11 +236,6 @@ class MobObjects(MobBase):
 
     def __bool__(self): return bool(self.id_records)
 
-    def getActiveRecords(self, rec_sig=None):
-        """Returns non-ignored records - XXX what about isKeyedByEid?"""
-        return [(rec_key, r) for rec_key, r in self.id_records.items() if
-                not r.flags1.ignored]
-
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self - if empty return 0."""
         num_recs = len(self.id_records)
@@ -309,7 +294,7 @@ class MobObjects(MobBase):
         merge_ids_discard = mergeIds.discard
         copy_to_self = self.setRecord
         dest_rec_fids = self.id_records
-        for rid, record in srcBlock.getActiveRecords():
+        for rid, record in srcBlock.iter_present_records():
             if rid in dest_rec_fids:
                 copy_to_self(record)
                 merge_ids_discard(rid)
@@ -321,7 +306,7 @@ class MobObjects(MobBase):
         loadSetIsSuperset = loadSet.issuperset
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
-        for rid, src_rec in block.getActiveRecords():
+        for rid, src_rec in block.iter_present_records():
             if rid == self._bad_form: continue
             #--Include this record?
             if doFilter:
@@ -699,15 +684,6 @@ class TopComplexGrup(TopGrup):
     def _group_element(self, header, ins, do_unpack=True, **kwargs) -> _ComplexRec:
         return self._top_rec_class(self._load_f, ins, **kwargs)
 
-    def getActiveRecords(self, rec_sig=None):
-        """Returns non-ignored records - XXX what about isKeyedByEid?"""
-        if rec_sig is None: # iterate our top record blocks
-            return [(k, r) for k, r in self.id_records.items() if
-                    not r.master_record.flags1.ignored]
-        # iterate all records - top or nested - keeping rec_sig ones
-        return [(r.group_key(), r) for r in self.iter_records() if
-                r._rec_sig == rec_sig and not r.flags1.ignored]
-
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self - if empty return 0."""
         if not self: return 0
@@ -749,25 +725,25 @@ class TopComplexGrup(TopGrup):
 
     def updateRecords(self, srcBlock, mergeIds):
         lookup_rec = self.id_records.get
-        for dfid, src_rec in srcBlock.id_records.items():
+        for complex_rec_key, complex_rec in srcBlock.iter_present_records():
             # Check if we have a corresponding record in the destination
-            dest_rec = lookup_rec(dfid)
+            dest_rec = lookup_rec(complex_rec_key)
             if dest_rec:
-                dest_rec.updateRecords(src_rec, mergeIds)
+                dest_rec.updateRecords(complex_rec, mergeIds)
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
         lookup_rec = self.id_records.get
-        filtered_recs = {}
+        filtered = {}
         loadSetIsSuperset = loadSet.issuperset
-        for src_fid, src_record in block.id_records.items():
+        for src_fid, src_rec in block.iter_present_records():
             # Check if we already have a record with that FormID
             dest_record = lookup_rec(src_fid)
             if was_newly_added := not dest_record:
                 # We do not, add it and get it - will typeCopy the rec
-                dest_record = self.setRecord(src_record.master_record)
+                dest_record = self.setRecord(src_rec.master_record)
             # Delegate merging to the (potentially newly added) child record
-            dest_record.merge_records(src_record, loadSet, mergeIds,
+            dest_record.merge_records(src_rec, loadSet, mergeIds,
                 iiSkipMerge, doFilter)
             # In IIM, skip all merging - note that we need to remove the child
             # record again if it was newly added in IIM mode.
@@ -778,7 +754,7 @@ class TopComplexGrup(TopGrup):
             # If we're Filter-tagged, check if the record got filtered out
             if doFilter:
                 masterset = MasterSet()
-                src_record.updateMasters(masterset.add)
+                src_rec.updateMasters(masterset.add)
                 if not loadSetIsSuperset(masterset):
                     # The child record got filtered out. If it was newly added,
                     # we need to remove it from this block again. Otherwise, we
@@ -787,9 +763,9 @@ class TopComplexGrup(TopGrup):
                         del self.id_records[dest_record.group_key()]
                     continue
             # We're either not Filter-tagged or we want to keep this record
-            filtered_recs[src_fid] = src_record
+            filtered[src_fid] = src_rec
         # Apply any merge filtering we've done above to the record block
-        block.id_records = filtered_recs
+        block.id_records = filtered
 
 #------------------------------------------------------------------------------
 class MobDial(_ComplexRec):
@@ -1163,9 +1139,6 @@ class _ExteriorCells(MobCells):
 
     def keepRecords(self, p_keep_ids):
         return TopComplexGrup.keepRecords(self, p_keep_ids)
-
-    def getActiveRecords(self, rec_sig=None):
-        return TopComplexGrup.getActiveRecords(self, rec_sig)
 
     def updateRecords(self, srcBlock, mergeIds):
         TopComplexGrup.updateRecords(self, srcBlock, mergeIds)

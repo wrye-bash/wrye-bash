@@ -1275,7 +1275,7 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
                 orphans = (b'WRLD' in modFile.tops) and modFile.tops[b'WRLD'].orphansSkipped
                 if orphans:
                     progress(0.1, _(u'Saving %s.') % fileInfo)
-                    modFile.safeSave()
+                    modFile.safeSave() ##: todo setChanged?
                 progress(1.0,_(u'Done.'))
             #--Log
             if orphans:
@@ -1422,6 +1422,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                             removed.append(record.eid)
                         else:
                             # don't bother with record.group_key() for 'SCPT'
+                            record.setChanged()
                             newRecords[rfid] = record
                     scpt_grp.id_records = newRecords
                     scpt_grp.setChanged()
