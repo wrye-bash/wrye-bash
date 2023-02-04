@@ -693,7 +693,7 @@ class SaveSpells(_SaveData):
             deprint(f'skipped mod due to read error ({err})')
             return
         spells = {rid: record for rid, record in
-                  modFile.tops[b'SPEL'].getActiveRecords()}
+                  modFile.tops[b'SPEL'].iter_present_records()}
         modInfo.extras['bash.spellList'] = {k.long_fid: v for k, v in
                                             spells.items()}
         self.allSpells.update(spells)

@@ -299,11 +299,11 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         super().init(_package_name or __name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=44):
+    def _import_records(cls, package_name, plugin_form_vers=44):
         # first import our records from skyrimse.records
         importlib.import_module('.records', package=__name__)
         # package name is skyrim here
-        super()._validate_records(package_name, plugin_form_vers)
+        super()._import_records(package_name, plugin_form_vers)
 
 class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
     """GameInfo override for the Windows Store version of Skyrim SE."""

@@ -421,30 +421,29 @@ class TweakRacesPatcher(MultiTweaker):
     """Tweaks race things."""
     _tweak_classes = {globals()[t] for t in bush.game.race_tweaks}
 
-    def initData(self, progress):
-        super(TweakRacesPatcher, self).initData(progress)
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super().__init__(p_name, p_file, enabled_tweaks)
         if bush.game.race_tweaks_need_collection:
             self.collected_tweak_data: _MixedDict = {b'EYES': [], b'HAIR': []}
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         if bush.game.race_tweaks_need_collection:
             # Need to gather EYES/HAIR data for the tweaks
             tweak_data = self.collected_tweak_data
-            for tweak_type in (b'EYES', b'HAIR'):
-                if tweak_type not in modFile.tops: continue
+            for tweak_type, block in modFile.iter_tops({b'EYES', b'HAIR'}):
                 type_data = tweak_data[tweak_type]
                 type_data_set = set(type_data)
-                for rid, record in modFile.tops[tweak_type].getActiveRecords():
+                for rid, _r in block.iter_present_records():
                     if rid not in type_data_set:
                         type_data.append(rid)
-        super(TweakRacesPatcher, self).scanModFile(modFile, progress)
+        super().scanModFile(modFile, progress, scan_sigs)
 
     def buildPatch(self, log, progress):
         if (bush.game.race_tweaks_need_collection
                 and b'RACE' in self.patchFile.tops):
             # Need to gather RACE data for the tweaks
             tweak_data = self.collected_tweak_data
-            for _rid, record in self.patchFile.tops[b'RACE'].getActiveRecords():
+            for record in self.patchFile.tops[b'RACE'].id_records.values():
                 ##: Are these checks needed for the tweak data collection?
                 # if not record.eyes:
                 #     continue  # Sheogorath. Assume is handled correctly.

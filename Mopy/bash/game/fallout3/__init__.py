@@ -1166,18 +1166,18 @@ class Fallout3GameInfo(PatchGame):
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
-        cls._validate_records(__name__)
+        cls._import_records(__name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=15):
-        from .. import brec
+    def _import_records(cls, package_name, plugin_form_vers=15):
+        from ... import brec as _brec_
         # We can't upgrade IMGS\DNAM (see definition), so skip upgrading form
         # version too
-        brec.RecordHeader.skip_form_version_upgrade = {b'IMGS'}
-        super()._validate_records(package_name, plugin_form_vers)
+        _brec_.RecordHeader.skip_form_version_upgrade = {b'IMGS'}
+        super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {b'CELL', b'DIAL', b'WRLD',
                                                     b'NAVI'}
-        brec.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
+        _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
 # Language dirs, shared by EGS and WS versions
 FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',

@@ -130,7 +130,7 @@ class APreserver(ImportPatcher):
     def _read_sigs(self):
         return self.srcs_sigs
 
-    def _init_data_loop(self, top_grup_sig, srcFile, srcMod, mod_id_data,
+    def _init_data_loop(self, top_grup_sig, src_top, srcMod, mod_id_data,
                         mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
         rec_attrs = self.rec_type_attrs[top_grup_sig]
         fid_attrs = self._fid_rec_attrs_class[top_grup_sig]
@@ -155,7 +155,6 @@ class APreserver(ImportPatcher):
         # loop below
         ra_getters = [(a, __attrgetters[a]) for a in rec_attrs]
         fa_getters = [__attrgetters[a] for a in fid_attrs]
-        src_top = srcFile.tops[top_grup_sig]
         # If we have FormID attributes, check those before importing - since
         # this is constant for the entire loop, duplicate the loop to save the
         # overhead in the no-FormIDs case
@@ -181,23 +180,22 @@ class APreserver(ImportPatcher):
         id_data = self.id_data
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
-        loaded_mods = self.patchFile.loadSet
+        minfs = self.patchFile.all_plugins
+        loaded_mods = self.patchFile.load_dict
         for srcMod in self.srcs:
             mod_id_data = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
             mod_sigs = set()
-            mod_tags = srcFile.fileInfo.getBashTags() if self._multi_tag else None
-            for rsig in self.rec_type_attrs:
-                if rsig not in srcFile.tops: continue
+            mod_tags = srcInfo.getBashTags()
+            for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
                 self.srcs_sigs.add(rsig)
                 mod_sigs.add(rsig)
-                self._init_data_loop(rsig, srcFile, srcMod, mod_id_data,
+                self._init_data_loop(rsig, block, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
             if (self._force_full_import_tag and
-                    self._force_full_import_tag in srcInfo.getBashTags()):
+                    self._force_full_import_tag in mod_tags):
                 # We want to force-import - copy the temp data without
                 # filtering by masters, then move on to the next mod
                 id_data.update(mod_id_data)
@@ -209,10 +207,8 @@ class APreserver(ImportPatcher):
                 else:
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
-                for rsig in self.rec_type_attrs:
-                    if rsig not in masterFile.tops or rsig not in mod_sigs:
-                        continue
-                    for rfid, record in masterFile.tops[rsig].iter_present_records():
+                for rsig, block in masterFile.iter_tops(mod_sigs):
+                    for rfid, record in block.iter_present_records():
                         if rfid not in mod_id_data: continue
                         for attr, val in mod_id_data[rfid].items():
                             try:
@@ -227,22 +223,13 @@ class APreserver(ImportPatcher):
             self._parse_csv_sources(progress)
         self.isActive = bool(self.srcs_sigs)
 
-    def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
-        id_data = self.id_data
-        for rsig in self.srcs_sigs:
-            if rsig not in modFile.tops: continue
-            patchBlock = self.patchFile.tops[rsig]
-            # Records that have been copied into the BP once will automatically
-            # be updated by update_patch_records_from_mod/mergeModFile
-            copied_records = patchBlock.id_records.copy()
-            for rfid, record in modFile.tops[rsig].iter_present_records():
-                # Skip if we've already copied this record or if we're not
-                # interested in it
-                if rfid in copied_records or rfid not in id_data: continue
-                for attr, val in id_data[rfid].items():
-                    if __attrgetters[attr](record) != val:
-                        patchBlock.setRecord(record.getTypeCopy())
-                        break
+    def _add_to_patch(self, rid, record, top_sig, *,
+                      __attrgetters=attrgetter_cache):
+        if rid not in self.id_data or rid in self.patchFile.tops[
+            top_sig].id_records: return False # see parent docs
+        for att, val in self.id_data[rid].items():
+            if __attrgetters[att](record) != val:
+                return True
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
@@ -262,18 +249,15 @@ class APreserver(ImportPatcher):
                 else:
                     # This is a regular attribute, so we just need to assign it
                     loop_setattr(record, attr, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
-        modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        for rsig in self.srcs_sigs:
-            if rsig not in modFileTops: continue
-            present_recs = modFileTops[rsig].iter_present_records(
-                include_ignored=True) ##: why include_ignored?
+        for rsig, block in self.patchFile.iter_tops(self.srcs_sigs):
+            present_recs = block.iter_present_records()
             self._inner_loop(keep, present_recs, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
@@ -395,11 +379,9 @@ class ImportTextPatcher(APreserver):
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
 #------------------------------------------------------------------------------
-##: absorbing this one will be hard - hint: getActiveRecords only exists on
-# MobObjects, iter_records works for all Mob* classes, so attack that part of
-# _APreserver
+##: absorbing this one will be hard - or not :P
 class ImportCellsPatcher(ImportPatcher):
-    logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
+    logMsg = '\n=== ' + _('Cells/Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
@@ -412,42 +394,9 @@ class ImportCellsPatcher(ImportPatcher):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
-        def importCellBlockData(cellBlock):
-            """
-            Add attribute values from source mods to a temporary cache.
-            These are used to filter for required records by formID and
-            to update the attribute values taken from the master files
-            when creating cell_data.
-            """
-            if not cellBlock.cell.flags1.ignored:
-                cfid = cellBlock.cell.fid
-                # If we're in an interior, see if we have to ignore any attrs
-                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
-                                if cellBlock.cell.flags.isInterior else attrs)
-                for attr in actual_attrs:
-                    tempCellData[cfid][attr] = __attrgetters[attr](
-                        cellBlock.cell)
-        def checkMasterCellBlockData(cellBlock):
-            """
-            Add attribute values from record(s) in master file(s).
-            Only adds records where a matching formID is found in temp
-            cell data.
-            The attribute values in temp cell data are then used to
-            update these records where the value is different.
-            """
-            if not cellBlock.cell.flags1.ignored:
-                cfid = cellBlock.cell.fid
-                if cfid not in tempCellData: return
-                # If we're in an interior, see if we have to ignore any attrs
-                actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
-                                if cellBlock.cell.flags.isInterior else attrs)
-                for attr in actual_attrs:
-                    master_attr = __attrgetters[attr](cellBlock.cell)
-                    if tempCellData[cfid][attr] != master_attr:
-                        cellData[cfid][attr] = tempCellData[cfid][attr]
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        minfs = self.patchFile.p_file_minfos
+        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
             if srcMod not in minfs: continue
             # tempCellData maps long fids for cells in srcMod to dicts of
@@ -463,15 +412,26 @@ class ImportCellsPatcher(ImportPatcher):
             cachedMasters[srcMod] = srcFile
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
-            if b'CELL' in srcFile.tops:
-                for cellBlock in srcFile.tops[b'CELL'].id_cellBlock.values():
-                    importCellBlockData(cellBlock)
-            if b'WRLD' in srcFile.tops:
-                for worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.values():
-                    for cellBlock in worldBlock.id_cellBlock.values():
-                        importCellBlockData(cellBlock)
-                    if worldBlock.worldCellBlock:
-                        importCellBlockData(worldBlock.worldCellBlock)
+            interior_attrs = attrs - bush.game.cell_skip_interior_attrs
+            # Add attribute values from source mods to a temporary cache. These
+            # are used to filter for required records by formID and to update
+            # the attribute values taken from the master files when creating
+            # cell_data.
+            for _sig, block in srcFile.iter_tops(self._read_sigs):
+                # for the WRLD block iter_present_records will return
+                # exterior cells and the persistent cell - previous code
+                # did not differentiate either
+                for cfid, cell_rec in block.iter_present_records(b'CELL'):
+                    # If we're in an interior, see if we have to ignore
+                    # any attrs
+                    actual_attrs = interior_attrs if \
+                        cell_rec.flags.isInterior else attrs
+                    for att in actual_attrs:
+                        tempCellData[cfid][att] = __attrgetters[att](cell_rec)
+            # Add attribute values from record(s) in master file(s). Only adds
+            # records where a matching formID is found in temp cell data. The
+            # attribute values in temp cell data are then used to update these
+            # records where the value is different.
             for master in srcInfo.masterNames:
                 if master not in minfs: continue # or break filter mods
                 if master in cachedMasters:
@@ -479,43 +439,33 @@ class ImportCellsPatcher(ImportPatcher):
                 else:
                     masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
-                if b'CELL' in masterFile.tops:
-                    for cellBlock in masterFile.tops[b'CELL'].id_cellBlock.values():
-                        checkMasterCellBlockData(cellBlock)
-                if b'WRLD' in masterFile.tops:
-                    for worldBlock in masterFile.tops[b'WRLD'].id_worldBlocks.values():
-                        for cellBlock in worldBlock.id_cellBlock.values():
-                            checkMasterCellBlockData(cellBlock)
-                        if worldBlock.worldCellBlock:
-                            checkMasterCellBlockData(worldBlock.worldCellBlock)
+                for _sig, block in masterFile.iter_tops(self._read_sigs):
+                    for cfid, cell_rec in block.iter_present_records(b'CELL'):
+                        if cfid not in tempCellData: continue
+                        attrs1 = interior_attrs if cell_rec.flags.isInterior\
+                            else attrs
+                        for att in attrs1:
+                            master_attr = __attrgetters[att](cell_rec)
+                            if tempCellData[cfid][att] != master_attr:
+                                cellData[cfid][att] = tempCellData[cfid][att]
             progress.plus()
 
-    def scanModFile(self, modFile, progress): # scanModFile0
-        """Add lists from modFile."""
-        if not (b'CELL' in modFile.tops or b'WRLD' in modFile.tops):
-            return
-        cellData = self.cellData
-        patchCells = self.patchFile.tops[b'CELL']
-        patchWorlds = self.patchFile.tops[b'WRLD']
-        if b'CELL' in modFile.tops:
-            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
-                if cfid in cellData:
-                    patchCells.setCell(cellBlock.cell)
-        if b'WRLD' in modFile.tops:
-            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
-                patchWorlds.setWorld(worldBlock.world)
-                curr_pworld = patchWorlds.id_worldBlocks[wfid]
-                for cfid, cellBlock in worldBlock.id_cellBlock.items():
-                    if cfid in cellData:
-                        curr_pworld.setCell(cellBlock.cell)
-                pers_cell_block = worldBlock.worldCellBlock
-                if pers_cell_block and pers_cell_block.cell.fid in cellData:
-                    curr_pworld.set_persistent_cell(pers_cell_block.cell)
+    def _add_to_patch(self, rid, cell_wrld_block, top_sig):
+        """Handle CELL and WRLD top blocks here."""
+        if top_sig == b'CELL' and rid in self.cellData:
+            self.patchFile.tops[b'CELL'].setRecord(
+                cell_wrld_block.master_record)
+        elif top_sig == b'WRLD':
+            curr_pworld = self.patchFile.tops[b'WRLD'].setRecord(
+                cell_wrld_block.master_record)
+            for rid, cell_rec in cell_wrld_block.iter_present_records(b'CELL'):
+                if rid in self.cellData:
+                    curr_pworld.set_cell(cell_rec)
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
         if not self.isActive: return
-        def handlePatchCellBlock(patchCellBlock):
+        def handlePatchCellBlock():
             """This function checks if an attribute or flag in CellData has
             a value which is different to the corresponding value in the
             bash patch file.
@@ -525,36 +475,28 @@ class ImportCellsPatcher(ImportPatcher):
             to the bash patch, and the cell is flagged as modified.
             Modified cell Blocks are kept, the other are discarded."""
             cell_modified = False
-            patch_cell = patchCellBlock.cell
-            patch_cell_fid = patch_cell.fid
-            for attr, val in cellData[patch_cell_fid].items():
+            for attr, val in cellData[cell_fid].items():
                 if val != __attrgetters[attr](patch_cell):
                     setattr_deep(patch_cell, attr, val)
                     cell_modified = True
             if cell_modified:
-                patch_cell.setChanged()
-                keep(patch_cell_fid)
+                keep(cell_fid, patch_cell)
             return cell_modified
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
-            if cell_fid in cellData and handlePatchCellBlock(cellBlock):
+        for cell_fid, patch_cell in self.patchFile.tops[b'CELL'
+                ].iter_present_records(b'CELL'):
+            if cell_fid in cellData and handlePatchCellBlock():
                 count[cell_fid.mod_fn] += 1
         for worldId, worldBlock in self.patchFile.tops[
-            b'WRLD'].id_worldBlocks.items():
+            b'WRLD'].id_records.items():
             keepWorld = False
-            for cell_fid, cellBlock in worldBlock.id_cellBlock.items():
-                if cell_fid in cellData and handlePatchCellBlock(cellBlock):
-                    count[cell_fid.mod_fn] += 1
-                    keepWorld = True
-            if worldBlock.worldCellBlock:
-                cell_fid = worldBlock.worldCellBlock.cell.fid
-                if cell_fid in cellData and handlePatchCellBlock(
-                        worldBlock.worldCellBlock):
+            for cell_fid, patch_cell in worldBlock.get_cells():
+                if cell_fid in cellData and handlePatchCellBlock():
                     count[cell_fid.mod_fn] += 1
                     keepWorld = True
             if keepWorld:
-                keep(worldId)
+                keep(worldId, worldBlock)
         self.cellData.clear()
         self._patchLog(log, count)
 
@@ -594,7 +536,7 @@ class ImportGraphicsPatcher(APreserver):
             else: continue
             for attr, val in id_data[rfid].items():
                 setattr(record, attr, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
@@ -620,5 +562,5 @@ class ImportRacesPatcher(APreserver):
             else: continue
             for att, val in id_data[rfid].items():
                 loop_setattr(record, att, val)
-            keep(rfid)
+            keep(rfid, record)
             type_count[top_mod_rec] += 1

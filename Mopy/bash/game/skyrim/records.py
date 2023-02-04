@@ -2230,8 +2230,8 @@ class MreOtft(MelRecord):
         MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
     )
 
-    def mergeFilter(self, modSet):
-        self.items = [i for i in self.items if i.mod_fn in modSet]
+    def keep_fids(self, keep_plugins):
+        self.items = [i for i in self.items if i.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class MrePack(MelRecord):

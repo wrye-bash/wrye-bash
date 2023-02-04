@@ -30,16 +30,23 @@ from collections import defaultdict, Counter
 from itertools import chain
 
 from .base import is_templated
-from ..base import Patcher, ModLoader
-from ... import bush, bolt
+from ..base import ModLoader, ScanPatcher
+from ... import bush
 from ...bolt import FName, dict_sort, sig_to_str
 from ...brec import FormId
 from ...mod_files import LoadFactory
 
-class ContentsCheckerPatcher(Patcher):
+class _Checker(ScanPatcher):
+    """Common checkers code."""
+    patcher_group = 'Special'
+    patcher_order = 40
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid not in self.patchFile.tops[top_sig].id_records
+
+class ContentsCheckerPatcher(_Checker):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    patcher_group = u'Special'
     patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
@@ -55,32 +62,23 @@ class ContentsCheckerPatcher(Patcher):
     def active_write_sigs(self):
         return tuple(self.contTypes) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
         # types, otherwise we want to remove it.
         id_type = self.fid_to_type
-        for entry_type in self.entryTypes:
-            if entry_type not in modFile.tops: continue
-            for rid, _record in modFile.tops[entry_type].getActiveRecords():
+        for entry_type, block in modFile.iter_tops(self.entryTypes):
+            for rid, _record in block.iter_present_records():
                 if rid not in id_type:
                     id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
         # types we may end up patching
-        for cont_type in self.contTypes:
-            if cont_type not in modFile.tops: continue
-            patchBlock = self.patchFile.tops[cont_type]
-            pb_add_record = patchBlock.setRecord
-            id_records = patchBlock.id_records
-            for rid, record in modFile.tops[cont_type].getActiveRecords():
-                if rid not in id_records:
-                    pb_add_record(record.getTypeCopy())
+        super().scanModFile(modFile, progress, self.contTypes)
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         fid_to_type = self.fid_to_type
         id_eid = self.id_eid
@@ -101,14 +99,13 @@ class ContentsCheckerPatcher(Patcher):
             entry_attr = cc_pass[2] if needs_entry_attr else None
             # First entry in the pass is always the record types this pass
             # applies to
-            for rec_type in cc_pass[0]:
-                if rec_type not in modFile.tops: continue
+            for rec_type, block in self.patchFile.iter_tops(cc_pass[0]):
                 # Set up a dict to track which entries we have removed per fid
                 id_removed = defaultdict(list)
                 # Grab the types that are actually valid for our current record
                 # types
                 valid_types = set(self.contType_entryTypes[rec_type])
-                for rid, record in modFile.tops[rec_type].id_records.items():
+                for rid, record in block.id_records.items():
                     # Set up two lists, one containing the current record
                     # contents, and a second one that we will be filling with
                     # only valid entries.
@@ -138,7 +135,7 @@ class ContentsCheckerPatcher(Patcher):
                     # lists have diverged and, if so, keep the changed record
                     if len(new_entries) != len(current_entries):
                         setattr(record, group_attr, new_entries)
-                        keep(rid)
+                        keep(rid, record)
                 # Log the result if we removed at least one entry
                 if id_removed:
                     log(f'\n=== {sig_to_str(rec_type)}')
@@ -149,32 +146,20 @@ class ContentsCheckerPatcher(Patcher):
                                 f'{removedId.object_dex:06X}')
 
 #------------------------------------------------------------------------------
-class RaceCheckerPatcher(Patcher):
-    patcher_group = u'Special'
-    patcher_order = 40 # Run after Tweak Races
+class RaceCheckerPatcher(_Checker): # patcher_order 40 to run after Tweak Races
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
-
-    def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].getActiveRecords():
-                if rid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        keep = patchFile.getKeeper()
+        if b'RACE' not in self.patchFile.tops: return
+        keep = self.patchFile.getKeeper()
         racesSorted = []
         eyeNames = {k: x.full for k, x in
-                    patchFile.tops[b'EYES'].id_records.items()}
+                    self.patchFile.tops[b'EYES'].id_records.items()}
         hairNames = {k: x.full for k, x in
-                     patchFile.tops[b'HAIR'].id_records.items()}
+                     self.patchFile.tops[b'HAIR'].id_records.items()}
         skip_race_fid = bush.game.master_fid(0x038010)
-        for rid, race in patchFile.tops[b'RACE'].id_records.items():
+        for rid, race in self.patchFile.tops[b'RACE'].id_records.items():
             if (race.flags.playable or rid == skip_race_fid) and race.eyes:
                 prev_hairs = race.hairs[:]
                 race.hairs.sort(key=lambda x: hairNames.get(x) or '')
@@ -182,7 +167,7 @@ class RaceCheckerPatcher(Patcher):
                 race.eyes.sort(key=lambda x: eyeNames.get(x) or '')
                 if race.hairs != prev_hairs or race.eyes != prev_eyes:
                     racesSorted.append(race.eid)
-                    keep(rid)
+                    keep(rid, race)
         log.setHeader(f'= {self._patcher_name}')
         log(f'\n=== {_("Eyes/Hair Sorted")}')
         if not racesSorted:
@@ -207,25 +192,12 @@ def _find_vanilla_eyes():
         ret[new_key] = new_val
     return ret
 
-class NpcCheckerPatcher(Patcher):
-    """Race patcher."""
-    patcher_group = u'Special'
-    patcher_order = 40
+class NpcCheckerPatcher(_Checker):
     _read_sigs = (b'HAIR', b'NPC_', b'RACE')
 
     def __init__(self, p_name, p_file):
         super(NpcCheckerPatcher, self).__init__(p_name, p_file)
         self.vanilla_eyes = _find_vanilla_eyes()
-
-    def scanModFile(self, modFile, progress):
-        """Add appropriate records from modFile."""
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for rid, record in modFile.tops[pb_sig].getActiveRecords():
-                if rid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -270,18 +242,18 @@ class NpcCheckerPatcher(Patcher):
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             raceHair = (
                 (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             if not npc.hairLength:
                 npc.hairLength = random.random()
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         if mod_npcsFixed:
@@ -291,7 +263,7 @@ class NpcCheckerPatcher(Patcher):
 
 #------------------------------------------------------------------------------
 class TimescaleCheckerPatcher(ModLoader):
-    patcher_group = u'Special'
+    patcher_group = 'Special'
     patcher_order = 40
     _read_sigs = (b'GRAS',)
 
@@ -300,15 +272,9 @@ class TimescaleCheckerPatcher(ModLoader):
         # We want to use _mod_file_read for GLOB records, not GRAS records
         self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
 
-    def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patch_block = self.patchFile.tops[pb_sig]
-            id_records = patch_block.id_records
-            for rfid, record in modFile.tops[pb_sig].iter_present_records():
-                if rfid in id_records: continue
-                if record.wave_period == 0.0: continue # type: bolt.Rounder
-                patch_block.setRecord(record.getTypeCopy())
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid not in self.patchFile.tops[top_sig].id_records \
+            and record.wave_period != 0.0
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
@@ -318,8 +284,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # timescale
         def find_timescale(glob_file):
             if b'GLOB' not in glob_file.tops: return None
-            for glob_eid, glob_rec in glob_file.tops[
-                b'GLOB'].iter_present_records(rec_key=u'eid'):
+            glob_recs = glob_file.tops[b'GLOB'].iter_present_records()
+            for glob_eid, glob_rec in ((r.eid, r) for _gkey, r in glob_recs):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value
             return None
@@ -328,9 +294,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # override the timescale and look for the last override (hence the
         # reversed order)
         if final_timescale is None:
-            pf_minfs = self.patchFile.p_file_minfos
-            relevant_plugins = [pf_minfs[p] for p
-                                in self.patchFile.merged_or_loaded_ord]
+            relevant_plugins = [v for v in
+                                self.patchFile.merged_or_loaded_ord.values()]
             for r_plugin in reversed(relevant_plugins):
                 final_timescale = find_timescale(self._mod_file_read(r_plugin))
                 if final_timescale is not None:
@@ -348,12 +313,12 @@ class TimescaleCheckerPatcher(ModLoader):
         # doing, e.g. changing timescale from 30 to 20 -> multiply wave period
         # by 1.5 (= 30/20)
         wp_multiplier = def_timescale / final_timescale
-        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
+        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].id_records.items():
             grass_rec.wave_period *= wp_multiplier
             grasses_changed[grass_fid.mod_fn] += 1
-            keep(grass_fid)
+            keep(grass_fid, grass_rec)
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:
             log(u'\n=== ' + _(u'Wave Periods changed'))
             for src_mod, num_fixed in dict_sort(grasses_changed):
-                log(u'* %s: %d' % (src_mod, num_fixed))
+                log(f'* {src_mod}: {num_fixed:d}')

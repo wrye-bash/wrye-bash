@@ -28,29 +28,30 @@ from this module outside of the patcher package."""
 # classes and the patching process. Once this is done we should delete the (
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
-# instance Patcher.buildPatch() apparently is NOT always overridden
+# instance APatcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
+
+from typing import Iterable
 
 from . import getPatchesPath
 from .. import load_order
 from ..bolt import dict_sort, sig_to_str, deprint
-from ..exception import AbstractError, BPConfigError
+from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
-# Abstract_Patcher and subclasses ---------------------------------------------
+# APatcher and subclasses -----------------------------------------------------
 #------------------------------------------------------------------------------
-class Abstract_Patcher(object):
+class APatcher:
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO (method resolution order), just before object"""
     patcher_group = u'UNDEFINED'
     patcher_order = 10
     iiMode = False
-    _read_sigs = () # top group signatures this patcher patches ##: type: tuple | set
-
-    def getName(self):
-        """Return patcher name passed in by the gui, needed for logs."""
-        return self._patcher_name
+    _read_sigs: Iterable[bytes] = () #top group signatures this patcher patches
+    # Whether this patcher will get inactive plugins passed to its scanModFile
+    ##: Once _AMerger is rewritten, this may become obsolete
+    _scan_inactive = False
 
     def __init__(self, p_name, p_file):
         """Initialization of common values to defaults."""
@@ -58,13 +59,9 @@ class Abstract_Patcher(object):
         self.patchFile = p_file
         self._patcher_name = p_name
 
-class Patcher(Abstract_Patcher):
-    """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # Whether or not this patcher will get inactive plugins passed to its
-    # scanModFile method
-    ##: Once _AMerger is rewritten, this may become obsolete
-    _scan_inactive = False
+    def getName(self):
+        """Return patcher name passed in by the gui, needed for logs."""
+        return self._patcher_name
 
     @property
     def active_read_sigs(self):
@@ -92,13 +89,12 @@ class Patcher(Abstract_Patcher):
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it. If adds record, should first convert it to
-        long fids."""
+        mod, but won't alter it."""
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class ListPatcher(Patcher):
+class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
@@ -131,37 +127,6 @@ class CsvListPatcher(ListPatcher):
             except OSError: deprint(f'{srcFile} is no longer in patches set',
                                     traceback=True)
             progress.plus()
-
-class AMultiTweaker(Abstract_Patcher):
-    """Combines a number of sub-tweaks which can be individually enabled and
-    configured through a choice menu."""
-    patcher_group = u'Tweakers'
-    patcher_order = 30
-    _tweak_classes = set() # override in implementations
-
-    def __init__(self, p_name, p_file, enabled_tweaks: list[AMultiTweakItem]):
-        super(AMultiTweaker, self).__init__(p_name, p_file)
-        for e_tweak in enabled_tweaks:
-            if e_tweak.custom_choice:
-                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
-                validation_err = e_tweak.validate_values(e_values)
-                # We've somehow ended up with a custom value that is not
-                # accepted by the tweak itself, this will almost certainly fail
-                # at runtime so abort the BP process now with a more
-                # informative error message
-                if validation_err is not None:
-                    err_header = e_tweak.validation_error_header(e_values)
-                    raise BPConfigError(err_header + '\n\n' + validation_err)
-        self.enabled_tweaks = enabled_tweaks
-        self.isActive = bool(enabled_tweaks)
-
-    @classmethod
-    def tweak_instances(cls):
-        # Sort alphabetically first for aesthetic reasons
-        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
-        # After that, sort to make tweaks instantiate & run in the right order
-        tweak_classes.sort(key=lambda c: c.tweak_order)
-        return [t() for t in tweak_classes]
 
 #------------------------------------------------------------------------------
 # AMultiTweakItem(object) -----------------------------------------------------
@@ -356,8 +321,7 @@ class AMultiTweakItem(object):
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
-        specified record. Must be implemented by every PBash tweak that
-        supports pooling (see MultiTweakItem.supports_pooling)."""
+        specified record."""
         raise AbstractError(u'wants_record not implemented')
 
     def tweak_record(self, record):
@@ -367,11 +331,28 @@ class AMultiTweakItem(object):
         before this call. Note that there is no taking that back: right after
         this call, keep() will be called and the record will be kept as an
         override in the BP. So make sure wants_record *never* lets ITMs and
-        ITPOs through! Must be implemented by every PBash tweak that supports
-        pooling (see MultiTweakItem.supports_pooling)."""
+        ITPOs through!"""
         raise AbstractError(u'tweak_record not implemented')
 
-class ModLoader(Patcher):
+class ScanPatcher(APatcher):
+    """WIP class to encapsulate scanModFile common logic."""
+
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """Add records from modFile."""
+        for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
+            patchBlock = self.patchFile.tops[top_sig]
+            for rid, rec in block.iter_present_records():
+                if self._add_to_patch(rid, rec, top_sig):
+                    patchBlock.setRecord(rec)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        """Decide if this record should be added to the patch top_sig block.
+        Records that have been copied into the BP once will automatically
+        be updated by update_patch_records_from_mod/mergeModFile so skip if
+        we've already copied this record or if we're not interested in it."""
+        raise AbstractError
+
+class ModLoader(ScanPatcher): ##: this must go - WIP!
     """Mixin for patchers loading mods"""
     loadFactory = None
 

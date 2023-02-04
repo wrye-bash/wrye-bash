@@ -692,6 +692,13 @@ class ModInfo(FileInfo):
         self.header.setChanged()
         self.writeHeader()
 
+    def get_version(self):
+        """Extract and return version number from self.header.description."""
+        if not self.header: ##: header not always present?
+            return ''
+        desc_match = reVersion.search(self.header.description)
+        return (desc_match and desc_match.group(2)) or ''
+
     #--Helpers ----------------------------------------------------------------
     def isBP(self):
         return self.header.author == u'BASHED PATCH'
@@ -2524,11 +2531,9 @@ class ModInfos(FileInfos):
             else:
                 prefix = f'{bul}{sImported}'
             log_str = f'{prefix}  {mname}'
-            if showVersion:
-                version = self.getVersion(mname)
-                if version:
-                    log_str += '  ' + _('[Version %(plugin_ver)s]') % {
-                        'plugin_ver': version}
+            if showVersion and (vers := self.getVersion(mname)):
+                log_str += '  ' + _('[Version %(plugin_ver)s]') % {
+                    'plugin_ver': vers}
             if showCRC:
                 log_str += '  ' + _('[CRC: %(plugin_crc)s]') % {
                     'plugin_crc': self[mname].crc_string()}
@@ -3013,21 +3018,9 @@ class ModInfos(FileInfos):
         if save_lo_cache: self.cached_lo_save_lo()
 
     #--Mod info/modify --------------------------------------------------------
-    def getVersion(self, fileName): ##: move to ModInfo?
-        """Extracts and returns version number for fileName from header.hedr.description."""
-        if not fileName in self or not self[fileName].header: ##: header not always present?
-            return u''
-        desc_match = reVersion.search(self[fileName].header.description)
-        return (desc_match and desc_match.group(2)) or ''
-
-    def getVersionFloat(self,fileName):
-        """Extracts and returns version number for fileName from header.hedr.description."""
-        version = self.getVersion(fileName)
-        maVersion = re.search(r'(\d+\.?\d*)', version)
-        if maVersion:
-            return float(maVersion.group(1))
-        else:
-            return 0
+    def getVersion(self, fileName):
+        """Check we have a fileInfo for fileName and call get_version on it."""
+        return self[fileName].get_version() if fileName in self else ''
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def _retry(self, old, new):  ##: we should check *before* writing the patch

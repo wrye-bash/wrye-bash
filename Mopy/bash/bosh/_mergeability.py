@@ -114,8 +114,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
     newblocks = []
     self_name = modInfo.fn_key
     for top_type,block in modFile.tops.items():
-        for rfid, record in block.iter_present_records(): # skip deleted/ignored
-            if rfid.mod_fn == self_name:
+        for candidate_rec in block.iter_records(): # skip deleted/ignored
+            if candidate_rec.group_key().mod_fn == self_name:
                 if not verbose: return False
                 newblocks.append(top_type)
                 break

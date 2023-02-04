@@ -882,9 +882,9 @@ class MreCobj(MelRecord):
             'cobj_priority', old_versions={'H'}),
     )
 
-    def mergeFilter(self, modSet):
+    def keep_fids(self, keep_plugins):
         self.cobj_components = [c for c in self.cobj_components
-                                if c.component_fid.mod_fn in modSet]
+                                if c.component_fid.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class MreCont(AMreWithItems):

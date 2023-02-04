@@ -1394,16 +1394,16 @@ class SkyrimGameInfo(PatchGame):
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
-        cls._validate_records(__name__)
+        cls._import_records(__name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=43):
+    def _import_records(cls, package_name, plugin_form_vers=43):
         # package name is skyrim here
-        super()._validate_records(package_name, plugin_form_vers)
+        super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {
             b'RGDL', b'SCPT', b'CELL', b'SCEN', b'SCOL', b'HAIR', b'CLDC',
             b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
-        from .. import brec
-        brec.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
+        from ... import brec as _brec_
+        _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
 GAME_TYPE = SkyrimGameInfo

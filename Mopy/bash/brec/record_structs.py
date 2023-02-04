@@ -31,7 +31,7 @@ from typing import Any
 
 from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
-from .mod_io import ModReader
+from .mod_io import ModReader, RecordHeader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, flag, struct_pack, sig_to_str
@@ -301,7 +301,7 @@ class MreRecord(metaclass=RecordType):
         ignored: bool = flag(12)
         compressed: bool = flag(18)
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=True):
         self.header = header # type: RecHeader
         self._rec_sig: bytes = header.recType
         self.fid: utils_constants.FormId = header.fid
@@ -336,6 +336,12 @@ class MreRecord(metaclass=RecordType):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
+    # Group element API -------------------------------------------------------
+    def should_skip(self):
+        """Returns True if this record should be skipped by most processing,
+        i.e. if it is ignored or deleted."""
+        return self.flags1.ignored or self.flags1.deleted
+
     def group_key(self): ##: we need an MreRecord mixin - too many ifs
         """Return a key for indexing the record on the parent (MobObjects)
         grup."""
@@ -343,6 +349,11 @@ class MreRecord(metaclass=RecordType):
         if self.isKeyedByEid and record_id.is_null():
             record_id = self.eid
         return record_id
+
+    @staticmethod
+    def get_num_headers():
+        """Hacky way of simplifying _AMobBase API."""
+        return 1
 
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
@@ -356,11 +367,11 @@ class MreRecord(metaclass=RecordType):
         myCopy.data = None
         return myCopy
 
-    def mergeFilter(self, modSet):
-        """This method is called by the bashed patch mod merger. The
-        intention is to allow a record to be filtered according to the
-        specified modSet. E.g. for a list record, items coming from mods not
-        in the modSet could be removed from the list."""
+    def keep_fids(self, keep_plugins):
+        """Filter specific record elements that contain fids to only keep
+        those whose fids come from keep_plugins. E.g. for a list record
+        element, items coming from mods not in keep_plugins will be removed
+        from the list."""
 
     def getDecompressed(self, *, __unpacker=int_unpacker):
         """Return (decompressed if necessary) record data wrapped in BytesIO.
@@ -407,8 +418,9 @@ class MreRecord(metaclass=RecordType):
         self.changed = value
 
     def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
+        """Return size of self.data, (after, if necessary, packing it) PLUS the
+        size of the record header."""
+        if not self.changed: return self.size + RecordHeader.rec_header_size
         #--Pack data and return size.
         out = io.BytesIO()
         self._sort_subrecords()
@@ -420,7 +432,7 @@ class MreRecord(metaclass=RecordType):
             self.data = struct_pack('=I', dataLen) + comp
         self.size = len(self.data)
         self.setChanged(False)
-        return self.size
+        return self.size + RecordHeader.rec_header_size
 
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version
@@ -492,7 +504,7 @@ class MelRecord(MreRecord):
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=True):
         if self.__class__.rec_sig != header.recType:
             raise ValueError(f'Initialize {type(self)} with header.recType '
                              f'{header.recType}')

@@ -133,17 +133,16 @@ class MorrowindGameInfo(PatchGame):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
         # Setting RecordHeader class variables - Morrowind is special
-        from ... import brec
-        header_type = brec.RecordHeader
+        from ... import brec as _brec_
+        header_type = _brec_.RecordHeader
         header_type.rec_header_size = 16
         header_type.rec_pack_format_str = '=4sIII'
         header_type.header_unpack = bolt.structs_cache['=4sIII'].unpack
-        from ...brec import Subrecord
-        Subrecord.sub_header_fmt = u'=4sI'
-        Subrecord.sub_header_unpack = _struct.Struct(
-            Subrecord.sub_header_fmt).unpack
-        Subrecord.sub_header_size = 8
-        cls._validate_records(__name__)
+        sub = _brec_.Subrecord
+        sub.sub_header_fmt = '=4sI'
+        sub.sub_header_unpack = _struct.Struct(sub.sub_header_fmt).unpack
+        sub.sub_header_size = 8
+        cls._import_records(__name__)
 
 class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
     """GameInfo override for the Windows Store version of Morrowind."""

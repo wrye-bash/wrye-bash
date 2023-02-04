@@ -1535,6 +1535,19 @@ class TrimmedFlags(Flags):
         return super().dump()
 
 #------------------------------------------------------------------------------
+class MasterSet(set):
+    """Set of master names."""
+    __slots__ = ()
+
+    def add(self, element):
+        """Add a long fid's mod name."""
+        try:
+            super().add(element.mod_fn)
+        except AttributeError:
+            if element is not None:
+                raise
+
+#------------------------------------------------------------------------------
 class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
     dictionary is its '_data' attribute."""

@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import re
 from collections import Counter
 from operator import itemgetter
 
@@ -37,7 +38,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
-    _read_sigs = (b'CELL', b'WRLD', b'ROAD')
+    _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -48,38 +49,39 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         if not self.isActive: return
         self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
-            if srcMod not in self.patchFile.p_file_minfos: continue
-            srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            for worldId, worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.items():
+            if srcMod not in self.patchFile.all_plugins: continue
+            srcInfo = self.patchFile.all_plugins[srcMod]
+            src_wrld_block = self._mod_file_read(srcInfo).tops[b'WRLD']
+            for worldId, worldBlock in src_wrld_block.iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
 
-    def scanModFile(self, modFile, progress): # scanModFile3 ?
-        """Add lists from modFile."""
-        if b'WRLD' not in modFile.tops: return
-        patchWorlds = self.patchFile.tops[b'WRLD']
-        for worldId, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
-            if worldBlock.road:
-                road = worldBlock.road.getTypeCopy()
-                patchWorlds.setWorld(worldBlock.world)
-                patchWorlds.id_worldBlocks[worldId].road = road
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        super().scanModFile(modFile, progress, [b'WRLD'])
+
+    def _add_to_patch(self, rid, worldBlock, top_sig):
+        """We deal with a worldBlock - do the update here."""
+        if worldBlock.road:
+            patch_world_block = self.patchFile.tops[b'WRLD'].setRecord(
+                worldBlock.master_record)
+            patch_world_block.road = worldBlock.road.getTypeCopy()
 
     def buildPatch(self,log,progress): # buildPatch3: one type
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldId, worldBlock in self.patchFile.tops[b'WRLD'].id_worldBlocks.items():
+        for worldId, worldBlock in self.patchFile.tops[
+                b'WRLD'].id_records.items():
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
             if newRoad and (not curRoad or curRoad.points_p != newRoad.points_p
                     or curRoad.connections_p != newRoad.connections_p):
-                worldBlock.road = newRoad
-                keep(worldId)
-                keep(newRoad.fid)
-                worldsPatched.add((worldId.mod_fn, worldBlock.world.eid))
+                if keep(worldId, worldBlock) and keep(newRoad.fid, newRoad):
+                    worldBlock.road = newRoad
+                    worldsPatched.add(
+                        (worldId.mod_fn, worldBlock.master_record.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
@@ -122,9 +124,15 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
     def __init__(self, p_name, p_file, p_sources):
-        super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
-        self.isActive &= (cobl_main in p_file.loadSet and
-            self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
+        super().__init__(p_name, p_file, p_sources)
+        if self.isActive:
+            if cobl_main in p_file.load_dict:
+                vers = self.patchFile.all_plugins[cobl_main].get_version()
+                maVersion = re.search(r'(\d+\.?\d*)', vers)
+                if maVersion:
+                    self.isActive = float(maVersion.group(1)) > 1.65
+                    return
+            self.isActive = False # COBL not loaded or its version is < 1.65
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -135,12 +143,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         return int(csv_fields[3])
 
-    def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
-        patchRecords = self.patchFile.tops[b'SPEL']
-        id_info = self.id_stored_data[b'FACT']
-        for rid, record in modFile.tops[b'SPEL'].getActiveRecords():
-            if record.spellType == 2 and rid in id_info:
-                patchRecords.setRecord(record.getTypeCopy())
+    def _add_to_patch(self, rid, record, top_sig):
+        return record.spellType == 2 and rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -173,7 +177,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             scriptEffect.flags.hostile = False
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
-            keep(rid)
+            keep(rid, record)
             count[rid.mod_fn] += 1
         #--Log
         self._pLog(log, count)
@@ -208,31 +212,29 @@ class MorphFactionsPatcher(_ExSpecialList):
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
-        self.isActive &= cobl_main in p_file.loadSet
+        self.isActive &= cobl_main in p_file.load_dict
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
-        id_info = self.id_stored_data[b'FACT']
-        patchBlock = self.patchFile.tops[b'FACT']
         if modFile.fileInfo.fn_key == cobl_main:
-            record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
+            record = modFile.tops[b'FACT'].id_records.get(self.mFactLong)
             if record:
-                patchBlock.setRecord(record.getTypeCopy())
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
-            if rid in id_info:
-                patchBlock.setRecord(record.getTypeCopy())
+                self.patchFile.tops[b'FACT'].setRecord(record)
+        super().scanModFile(modFile, progress, scan_sigs)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
         mFactLong = self.mFactLong
         id_info = self.id_stored_data[b'FACT']
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         changes_counts = Counter()
         mFactable = []
-        for rid, record in modFile.tops[b'FACT'].getActiveRecords():
+        for rid, record in self.patchFile.tops[b'FACT'].id_records.items():
             if rid not in id_info: continue
             if rid == mFactLong: continue
             mFactable.append(rid)
@@ -256,10 +258,10 @@ class MorphFactionsPatcher(_ExSpecialList):
                         # if rank_level was not present it will be None
                         dds_ = f'generic{rank.rank_level or 0:02d}.dds'
                         rank.insignia_path = rf'Menus\Stats\Cobl\{dds_}'
-                keep(rid)
+                keep(rid, record)
                 changes_counts[rid.mod_fn] += 1
         #--MFact record
-        record = modFile.tops[b'FACT'].getRecord(mFactLong)
+        record = self.patchFile.tops[b'FACT'].id_records.get(mFactLong)
         if record:
             relations = record.relations
             del relations[:]
@@ -268,5 +270,5 @@ class MorphFactionsPatcher(_ExSpecialList):
                 relation.faction = faction
                 relation.mod = 10
                 relations.append(relation)
-            keep(record.fid)
+            keep(mFactLong, record)
         self._pLog(log, changes_counts)

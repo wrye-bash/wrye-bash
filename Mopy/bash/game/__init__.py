@@ -28,7 +28,7 @@ import importlib
 from itertools import chain
 from os.path import join as _j
 
-from .. import brec, bolt
+from .. import bolt
 from ..bolt import fast_cached_property, FNDict
 
 class GameInfo(object):
@@ -159,6 +159,7 @@ class GameInfo(object):
         try:
             return cls.__master_fids[object_id]
         except KeyError:
+            from .. import brec
             return cls.__master_fids.setdefault(object_id,
                 brec.FormId.from_tuple((cls.master_file, object_id)))
 
@@ -502,10 +503,12 @@ class GameInfo(object):
     # and would make editing the constants a miserable experience if included
     # (see e.g. skyrim/vanilla_files.py).
     vanilla_files = set()
+    # property fields set in _init_records to avoid brec import
+    _plugin_header_rec_type = None
 
     @property
     def plugin_header_class(self):
-        return brec.RecordType.sig_to_class[self.Esp.plugin_header_sig]
+        return self._plugin_header_rec_type
 
     @fast_cached_property
     def modding_esm_size(self):

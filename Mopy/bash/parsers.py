@@ -110,7 +110,7 @@ class _TextParser(object):
         mod_file.load_plugin()
         return mod_file
 
-    def _load_factory(self, keepAll=True, target_types=None):
+    def _load_factory(self, keepAll, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
     # Write plugin ------------------------------------------------------------
@@ -678,7 +678,8 @@ class EditorIds(_HandleAliases):
             else:
                 return newWord
         #--Scripts
-        scpt_recs = modFile.tops[b'SCPT'].iter_present_records(rec_key=u'eid')
+        scpt_recs = modFile.tops[b'SCPT'].iter_present_records()
+        scpt_recs = [(r.eid, r) for _gkey, r in scpt_recs]
         for reid, script_rec in sorted(scpt_recs, key=itemgetter(0)): # by eid
             if not script_rec.script_source: continue
             newText = reWord.sub(subWord,script_rec.script_source)
@@ -689,7 +690,8 @@ class EditorIds(_HandleAliases):
                 script_rec.setChanged()
                 changed_stats.append((_('Script'), reid))
         #--Quest Scripts
-        qust_recs = modFile.tops[b'QUST'].iter_present_records(rec_key=u'eid')
+        qust_recs = modFile.tops[b'QUST'].iter_present_records()
+        qust_recs = [(r.eid, r) for _gkey, r in qust_recs]
         for reid, quest in sorted(qust_recs, key=itemgetter(0)): # sort by eid
             questChanged = False
             for stage in quest.stages:

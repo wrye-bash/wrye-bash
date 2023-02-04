@@ -469,9 +469,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         super().init(_package_name or __name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None):
+    def _import_records(cls, package_name, plugin_form_vers=None):
         # import our records from falloutnv.records as it imports fallout3 ones
-        super()._validate_records(__name__)
+        super()._import_records(__name__)
 
 class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     """GameInfo override for the Windows Store version of Fallout NV."""

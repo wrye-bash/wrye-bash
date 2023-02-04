@@ -24,7 +24,7 @@
 """This module contains the patcher classes
 
 # Patchers 1 ------------------------------------------------------------------
-In patchers/base.py except Patcher which is in patcher/base.py
+In patchers/base.py except APatcher which is in patcher/base.py
 
 # Patchers 10 -----------------------------------------------------------------
 In patchers/base.py

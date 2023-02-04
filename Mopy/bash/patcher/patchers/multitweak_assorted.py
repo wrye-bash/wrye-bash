@@ -152,7 +152,7 @@ class _APlayableTweak(MultiTweakItem):
         return record.biped_flags.any_body_flag_set
 
     @staticmethod
-    def _should_skip(test_str):
+    def _playable_skip(test_str):
         """Small helper method for wants_record, checks if the specified string
         (either from a FULL or EDID subrecord) indicates that the record it
         comes from should remain nonplayable."""
@@ -167,10 +167,10 @@ class _APlayableTweak(MultiTweakItem):
                 getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
-        if clothing_eid and self._should_skip(clothing_eid.lower()):
+        if clothing_eid and self._playable_skip(clothing_eid.lower()):
             return False
         clothing_name = record.full
-        return clothing_name and not self._should_skip(clothing_name.lower())
+        return clothing_name and not self._playable_skip(clothing_name.lower())
 
     def tweak_record(self, record):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
@@ -277,11 +277,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
     tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
     # Probably not needed on newer games, so default-enable only on TES4
     default_enabled = bush.game.fsName == u'Oblivion'
-    supports_pooling = False
-    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
-    # patcher to run in the same group as Import Cells, so we'll have to
-    # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
-    ##: Does this even make sense without CBash now?
+    tweak_read_classes = b'CELL',
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0
@@ -289,29 +285,10 @@ class AssortedTweak_FogFix(MultiTweakItem):
             fog_val = getattr(record, fog_attr)
             if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
                 return False
-        return True
+        return not record.should_skip()
 
     def tweak_record(self, record):
         record.fogNear = 0.0001
-
-    def tweak_scan_file(self, mod_file, patch_file):
-        if b'CELL' not in mod_file.tops: return
-        should_add_cell = self.wants_record
-        add_cell = patch_file.tops[b'CELL'].setCell
-        for cell_block in mod_file.tops[b'CELL'].id_cellBlock.values():
-            current_cell = cell_block.cell
-            if should_add_cell(current_cell):
-                add_cell(current_cell)
-
-    def tweak_build_patch(self, log, count, patch_file):
-        """Adds merged lists to patchfile."""
-        keep = patch_file.getKeeper()
-        for cfid, cellBlock in patch_file.tops[b'CELL'].id_cellBlock.items():
-            cell = cellBlock.cell
-            if self.wants_record(cell):
-                self.tweak_record(cell)
-                keep(cfid)
-                count[cfid.mod_fn] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):

@@ -29,7 +29,7 @@ from itertools import chain
 from ._shared import cobl_main, ExSpecial
 from .... import bush
 from ....brec import FormId, RecordType
-from ....patcher.base import ModLoader, Patcher
+from ....patcher.base import ModLoader
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
@@ -47,7 +47,7 @@ _effect_alchem = (
 _book_fids = {FormId.from_tuple((cobl_main, book_data[1]))
               for book_data in chain(_ingred_alchem, _effect_alchem)}
 
-class CoblCatalogsPatcher(Patcher, ExSpecial):
+class CoblCatalogsPatcher(ExSpecial):
     """Updates COBL alchemical catalogs."""
     patcher_name = _(u'Cobl Catalogs')
     patcher_desc = u'\n\n'.join(
@@ -63,29 +63,26 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
 
     def __init__(self, p_name, p_file):
         super(CoblCatalogsPatcher, self).__init__(p_name, p_file)
-        self.isActive = cobl_main in p_file.loadSet
+        self.isActive = cobl_main in p_file.load_dict
         self.id_ingred = {}
 
     @property
     def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
-    def scanModFile(self,modFile,progress):
+    def _add_to_patch(self, rid, record, top_sig):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
-        patch_books = self.patchFile.tops[b'BOOK']
-        id_books = patch_books.id_records
-        for book_rid, record in modFile.tops[b'BOOK'].getActiveRecords():
-            if book_rid in _book_fids and book_rid not in id_books:
-                patch_books.setRecord(record)
-        id_ingred = self.id_ingred
-        for rid, record in modFile.tops[b'INGR'].getActiveRecords():
-            if not record.full: continue #--Ingredient must have name!
-            if record.obme_record_version is not None:
-                continue ##: Skips OBME records - rework to support them
-            effects = record.getEffects()
-            if not (b'SEFF', 0) in effects:
-                id_ingred[rid] = (record.eid, record.full, effects)
+        if top_sig == b'BOOK':
+            if rid in _book_fids and rid not in self.patchFile.tops[
+                b'BOOK'].id_records:
+                self.patchFile.tops[b'BOOK'].setRecord(record, do_copy=False) ##: todo do_copy.... else we would just return True
+        if top_sig == b'INGR': ##: Skips OBME records - rework to support them
+            #--Ingredient must have name!
+            if record.full and record.obme_record_version is None:
+                effects = record.getEffects()
+                if not (b'SEFF', 0) in effects:
+                    self.id_ingred[rid] = (record.eid, record.full, effects)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -108,9 +105,8 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             book = patch_books.id_records[book_fid]
             book.book_text = '<div align="left"><font face=3 color=4444>'
             book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
-            book.changed = True
-            keep(book_fid)
-            return book
+            if keep(book_fid, book):
+                return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         for (num, objectId, full) in _ingred_alchem:
@@ -175,35 +171,31 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
     def __init__(self, p_name, p_file):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
-        if _ob_path in p_file.loadSet:
-            modInfo = self.patchFile.p_file_minfos[_ob_path]
+        if _ob_path in p_file.load_dict:
+            modInfo = self.patchFile.all_plugins[_ob_path]
             modFile = self._mod_file_read(modInfo) # read Oblivion quests
-            for rid, record in modFile.tops[b'QUST'].getActiveRecords():
+            for rid, record in modFile.tops[b'QUST'].iter_present_records():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:
                         self.cyrodiilQuests.add(rid)
                         break
         self.isActive = bool(self.cyrodiilQuests)
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         if modFile.fileInfo.fn_key == _ob_path: return
-        cyrodiilQuests = self.cyrodiilQuests
-        patchBlock = self.patchFile.tops[b'QUST']
-        for rid, record in modFile.tops[b'QUST'].getActiveRecords():
-            if rid not in cyrodiilQuests: continue
-            for condition in record.conditions:
-                if condition.ifunc == 365: break #--365: playerInSeWorld
-            else:
-                patchBlock.setRecord(record.getTypeCopy())
+        super().scanModFile(modFile, progress, scan_sigs)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        return rid in self.cyrodiilQuests and all(  #--365: playerInSeWorld
+            condition.ifunc != 365 for condition in record.conditions)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         cyrodiilQuests = self.cyrodiilQuests
-        patchFile = self.patchFile
-        keep = patchFile.getKeeper()
+        keep = self.patchFile.getKeeper()
         patched = []
-        for rid, record in patchFile.tops[b'QUST'].getActiveRecords():
+        for rid, record in self.patchFile.tops[b'QUST'].id_records.items():
             if rid not in cyrodiilQuests: continue
             for condition in record.conditions:
                 if condition.ifunc == 365: break #--365: playerInSeWorld
@@ -215,7 +207,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 condition.param2 = condition.param1 = b'\x00' * 4
                 condition.compValue = 0.0
                 record.conditions.insert(0,condition)
-                keep(rid)
-                patched.append(record.eid)
+                if keep(rid, record):
+                    patched.append(record.eid)
         log.setHeader(f'= {self._patcher_name}')
         log('===' + _('Quests Patched') + f': {len(patched)}')

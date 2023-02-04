@@ -261,15 +261,16 @@ class PatchGame(GameInfo):
     default_wp_timescale = 10
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None, *,
-                          __unp=structs_cache['I'].unpack):
-        """Performs validation on the record syntax for all decoded records.
-
+    def _import_records(cls, package_name, plugin_form_vers=None, *,
+                        __unp=structs_cache['I'].unpack):
+        """Import the records, perform validation on the record syntax for
+        all decoded records and have the RecordType class variables updated.
         :param plugin_form_vers: if not None set RecordHeader variable"""
-        # import the records and have the RecordType class variables updated
         importlib.import_module('.records', package=package_name)
-        from .. import brec
-        rtype, rec_head = brec.RecordType, brec.RecordHeader
+        from .. import brec as _brec_
+        rtype, rec_head = _brec_.RecordType, _brec_.RecordHeader
+        _sig_class = rtype.sig_to_class
+        cls._plugin_header_rec_type = _sig_class[cls.Esp.plugin_header_sig]
         if plugin_form_vers is not None:
             rec_head.plugin_form_version = plugin_form_vers
         rec_head.top_grup_sigs = {k: k for k in cls.top_groups}
@@ -277,8 +278,8 @@ class PatchGame(GameInfo):
         ##: complex_groups should not be needed but added due to fo4 DIAL (?)
         valid_header_sigs = {cls.Esp.plugin_header_sig, *cls.top_groups,
                              *rtype.nested_to_top, *cls.complex_groups}
-        for rec_sig, rec_class in list(rtype.sig_to_class.items()):
-            if issubclass(rec_class, brec.MelRecord):
+        for rec_sig, rec_class in list(_sig_class.items()):
+            if issubclass(rec_class, _brec_.MelRecord):
                 # when emulating startup in tests, an earlier loaded game may
                 # override the rec_class in sig_to_class with a stub (for
                 # instance <class 'bash.game.fallout4.records.MreCell'>)
@@ -286,13 +287,33 @@ class PatchGame(GameInfo):
                     bolt.deprint(f'{rec_class}: no melSet')
                     continue
                 rec_class.validate_record_syntax()
-        if miss := [s for s in valid_header_sigs if
-                    s not in rtype.sig_to_class]:
+        if miss := [s for s in valid_header_sigs if s not in _sig_class]:
             bolt.deprint(f'Signatures {miss} lack an implementation - '
                          f'defaulting to MreRecord')
-            rtype.sig_to_class.update(dict.fromkeys(miss, brec.MreRecord))
-        rtype.sig_to_class = {k: v for k, v in rtype.sig_to_class.items() if
+            _sig_class.update(dict.fromkeys(miss, _brec_.MreRecord))
+        rtype.sig_to_class = {k: v for k, v in _sig_class.items() if
                               k in valid_header_sigs}
-        rec_head.sig_to_class = rtype.sig_to_class
+        rec_head.valid_record_sigs = valid_header_sigs
+        from ..mod_files import LoadFactory as Lf
+        Lf.grup_class = dict.fromkeys(cls.top_groups, _brec_.TopGrup)
+        Lf.grup_class[b'DIAL'] = _brec_.MobDials
+        Lf.grup_class[b'CELL'] = _brec_.MobICells
+        Lf.grup_class[b'WRLD'] = _brec_.MobWorlds
         # that's the case for most games so do it here and override if needed
         rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups
+        # set GRUP class variables
+        mobs = _brec_.record_groups
+        cell_class = _sig_class[b'CELL']
+        mobs.CellRefs._accepted_sigs = cell_class.ref_types
+        mobs.TempRefs._accepted_sigs = mobs.CellChildren._accepted_sigs = {
+            *cell_class.ref_types, *(ite := cell_class.interior_temp_extra)}
+        mobs.TempRefs._sort_overrides = {s: j for j, s in enumerate(ite)}
+        wrld_class = _sig_class[b'WRLD']
+        wrld_cell = {*wrld_class.ref_types,
+                     *(ete := wrld_class.exterior_temp_extra)}
+        mobs.WrldTempRefs._accepted_sigs = \
+            mobs.ExtCellChildren._accepted_sigs = wrld_cell
+        mobs.WrldTempRefs._sort_overrides = {s: j for j, s in enumerate(ete)}
+        mobs.WorldChildren._accepted_sigs = {*wrld_cell,
+                                             *wrld_class.wrld_children_extra}
+        mobs.WorldChildren._extra_records = wrld_class.wrld_children_extra

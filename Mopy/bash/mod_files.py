@@ -27,27 +27,15 @@ from collections import defaultdict
 from typing import Iterable
 from zlib import decompress as zlib_decompress, error as zlib_error
 
-from . import bolt, bush, env, load_order
-from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
+from . import bolt, bush, env
+from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str, \
+    MasterSet
+# first import of brec for games with patchers - _dynamic_import_modules
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
-    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
-    unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
-    FormIdWriteContext, ZERO_FID, RecordType
+    MobBase, TopGrup, unpack_header, FastModReader, Subrecord, int_unpacker, \
+    FormIdReadContext, FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
-
-class MasterSet(set):
-    """Set of master names."""
-    def add(self,element):
-        """Add a long fid's mod index."""
-        try:
-            super().add(element.mod_fn)
-        except AttributeError:
-            if element is not None:
-                raise
-
-    def getOrdered(self):
-        """Returns masters in proper load order."""
-        return load_order.get_ordered(self)
+from .load_order import get_ordered
 
 class MasterMap(object):
     """Serves as a map between two sets of masters."""
@@ -78,6 +66,9 @@ class MasterMap(object):
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record
     signature."""
+    grup_class = {} # map top record group signatures to class loading them
+    __slots__ = ('keepAll', 'topTypes', 'sig_to_type', 'all_sigs')
+
     def __init__(self, keepAll, *, by_sig: Iterable[bytes] = (),
                  generic: Iterable[bytes] = ()):
         """Pass a collection of signatures to load - either by their
@@ -85,14 +76,18 @@ class LoadFactory:
         :param by_sig: pass an iterable of top group signatures to unpack
         :param generic: top group signatures to load as generic MreRecord"""
         self.keepAll = keepAll
-        self.recTypes = set()
         self.topTypes = set()
         self.sig_to_type = defaultdict(lambda: MreRecord if keepAll else None)
+        self.all_sigs = set()
         # no generic classes if we keep all (we return MreRecord anyway)
         self.add_class(*by_sig, generic=() if keepAll else generic)
 
     def add_class(self, *by_sig, generic: Iterable[bytes] = ()):
         """Adds specified record types - see __init__."""
+        all_sigs = {*by_sig, *generic}
+        if all_sigs - RecHeader.valid_record_sigs:
+            raise ModError(None, f'Unknown signatures: '
+                                 f'{all_sigs - RecHeader.valid_record_sigs}')
         #--Don't replace complex class with default (MreRecord) class
         if generic:
             self.sig_to_type = {**dict.fromkeys(generic, MreRecord),
@@ -100,7 +95,7 @@ class LoadFactory:
         if by_sig:
             self.sig_to_type.update(
                 (k, RecordType.sig_to_class[k]) for k in by_sig)
-        self.recTypes.update(all_sigs := (*by_sig, *generic))
+        self.all_sigs = {*self.all_sigs, *all_sigs}
         #--Top type
         for class_sig in all_sigs:
             if class_sig in RecordType.nested_to_top:
@@ -108,32 +103,18 @@ class LoadFactory:
             if class_sig in RecordHeader.top_grup_sigs:
                 self.topTypes.add(class_sig) # b'CELL' appears in both
 
-    def getCellTypeClass(self):
-        """Returns type_class dictionary for cell objects."""
-        return {r: self.sig_to_type[r] for r in (
-            b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD')}
-
-    def getUnpackCellBlocks(self,topType):
-        """Returns whether cell blocks should be unpacked or not. Only relevant
-        if CELL and WRLD top types are expanded."""
-        return self.keepAll or (
-                self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD'}) or (
-                       topType == b'WRLD' and b'LAND' in self.recTypes)
-
-    def getTopClass(self, top_rec_type):
-        """Return top block class for top block type, or None.
-
-        :rtype: type[MobBase]"""
-        if top_rec_type in self.topTypes:
-            if   top_rec_type == b'DIAL': return MobDials
-            elif top_rec_type == b'CELL': return MobICells
-            elif top_rec_type == b'WRLD': return MobWorlds
-            else: return MobObjects
-        return MobBase if self.keepAll else None
+    def getTopClass(self, top_rec_type) -> type[MobBase | TopGrup] | None:
+        """Return top block class for top block type, or None."""
+        try:
+            mob_type = self.grup_class[top_rec_type]
+            return mob_type if top_rec_type in self.topTypes else (
+                MobBase if self.keepAll else None)
+        except KeyError:
+            raise ModError(None, f'Invalid top group signature {top_rec_type}')
 
     def __repr__(self):
-        return f'<LoadFactory: load {len(self.recTypes)} types ' \
-               f'({", ".join(map(sig_to_str, self.recTypes))}), ' \
+        return f'<LoadFactory: load {len(self.sig_to_type)} types ' \
+               f'({", ".join(map(sig_to_str, self.sig_to_type))}), ' \
                f'{"keep" if self.keepAll else "discard"} others>'
 
 class _TopGroupDict(dict):
@@ -147,14 +128,13 @@ class _TopGroupDict(dict):
     def __missing__(self, top_grup_sig):
         """Return top block of specified topType, creating it first.
         :raise ModError"""
-        top_head = TopGrupHeader(0, top_grup_sig, 0) # raises if sig is invalid
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
                 f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
                 f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass(top_head, self._mod_file.loadFactory)
-        self[top_grup_sig].setChanged()
+        self[top_grup_sig] = topClass.empty_mob(self._mod_file.loadFactory,
+                                                top_grup_sig)
         return self[top_grup_sig]
 
 class ModFile(object):
@@ -173,7 +153,7 @@ class ModFile(object):
 
     def load_plugin(self, progress=None, loadStrings=True, catch_errors=True,
                     do_map_fids=True):
-        ##: track uses and decide on exception handling and setChanged behavior
+        ##: track uses and decide on exception handling
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
@@ -197,14 +177,12 @@ class ModFile(object):
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
-                        load_fully = topClass != MobBase
-                        new_top = topClass(g_head, self.loadFactory, ins,
-                                           load_fully)
+                        new_top = topClass(g_head, self.loadFactory, ins)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if top_grup_sig not in self.tops:
                             self.tops[top_grup_sig] = new_top
-                        elif not load_fully:
+                        elif hasattr(new_top, 'grup_blob'):
                             # Duplicate top-level group and we can't merge due
                             # to not loading it fully. Log and replace the
                             # existing one
@@ -218,7 +196,7 @@ class ModFile(object):
                                     f'{sig_to_str(top_grup_sig)} group, '
                                     f'merging')
                             self.tops[top_grup_sig].merge_records(new_top,
-                                set(), set(), False, False)
+                                None, set(), False)
                     else:
                         self.topsSkipped.add(top_grup_sig)
                         g_head.skip_blob(ins)
@@ -232,10 +210,6 @@ class ModFile(object):
                         raise
                 progress(insTell())
         if not do_map_fids: return
-        # Done reading - mark all records as changed so we'll write out any
-        # changes we make to them
-        for target_top in self.tops.values():
-            target_top.set_records_changed()
 
     def __load_strs(self, ins, loadStrings, progress):
         # Check if we need to handle strings
@@ -277,8 +251,6 @@ class ModFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll:
             raise StateError('Insufficient data to write file.')
-        for target_top in self.tops.values():
-            target_top.set_records_changed()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
@@ -290,7 +262,7 @@ class ModFile(object):
                                 self.tes4.version) as out:
             #--Mod Record
             self.tes4.setChanged()
-            self.tes4.numRecords = sum(block.getNumRecords()
+            self.tes4.numRecords = sum(block.get_num_headers()
                                        for block in self.tops.values())
             self.tes4.getSize()
             self.tes4.dump(out)
@@ -304,6 +276,10 @@ class ModFile(object):
         """List of plugin masters with the plugin's own name appended."""
         return [*self.tes4.masters, self.fileInfo.fn_key]
 
+    def iter_tops(self, top_sigs):
+        return ((top_sig, t) for top_sig, t in self.tops.items() if
+                top_sig in top_sigs)
+
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
         masters_set = MasterSet([bush.game.master_file])
@@ -311,7 +287,7 @@ class ModFile(object):
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here
         masters_set.discard(self.fileInfo.fn_key)
-        return masters_set.getOrdered()
+        return get_ordered(masters_set)
 
     def _index_mgefs(self):
         """Indexes and cache all MGEF properties and stores them for retrieval
@@ -324,7 +300,7 @@ class ModFile(object):
         hostile_recs = set()
         nonhostile_recs = set()
         if b'MGEF' in self.tops:
-            for _rid, record in self.tops[b'MGEF'].getActiveRecords():
+            for _rid, record in self.tops[b'MGEF'].iter_present_records():
                 ##: Skip OBME records, at least for now
                 if record.obme_record_version is not None: continue
                 m_school[record.eid] = record.school

@@ -68,7 +68,8 @@ class OblivionGameInfo(PatchGame):
         ##: Could we adapt this for FO3/FNV?
         mod_fn_key = modFile.fileInfo.fn_key
         if b'SCPT' in modFile.tops and mod_fn_key != cls.master_file:
-            gls = modFile.tops[b'SCPT'].getRecord(cls.master_fid(0x00025811))
+            gls = modFile.tops[b'SCPT'].id_records.get(
+                cls.master_fid(0x00025811))
             if gls and gls.compiled_size == 4 and gls.last_index == 0:
                 patch_file.compiledAllMods.append(mod_fn_key)
 
@@ -1164,8 +1165,8 @@ class OblivionGameInfo(PatchGame):
         cls.readClasses = (b'MGEF', b'SCPT')
         cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
-        from ... import brec
-        header_type = brec.RecordHeader
+        from ... import brec as _brec_
+        header_type = _brec_.RecordHeader
         header_type.rec_header_size = 20
         header_type.rec_pack_format_str = '=4sIIII'
         header_type.header_unpack = bolt.structs_cache['=4sIIII'].unpack
@@ -1174,14 +1175,13 @@ class OblivionGameInfo(PatchGame):
             {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
         header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
         header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
-        cls._validate_records(__name__)
+        cls._import_records(__name__, _brec=_brec_)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=None):
-        from .. import brec
-        super()._validate_records(package_name) # package name is oblivion here
+    def _import_records(cls, package_name, plugin_form_vers=None, _brec=None):
+        super()._import_records(package_name) # package name is oblivion here
         # in Oblivion we get them all except the TES4 record
-        cls.mergeable_sigs = {*cls.top_groups, *brec.RecordType.nested_to_top}
+        cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""

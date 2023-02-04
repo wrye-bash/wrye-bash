@@ -386,7 +386,7 @@ class PCFaces(object):
         #--Mod File
         modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
         faces = {}
-        for _rid, npc in modFile.tops[b'NPC_'].getActiveRecords():
+        for _rid, npc in modFile.tops[b'NPC_'].iter_present_records():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
             for att in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
@@ -407,7 +407,7 @@ class PCFaces(object):
         """Returns an array of Race Faces from a mod file."""
         modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'RACE'])
         faces = {}
-        for _rid, race in modFile.tops[b'RACE'].getActiveRecords():
+        for _rid, race in modFile.tops[b'RACE'].iter_present_records():
             face = PCFaces.PCFace()
             face.face_masters = []
             for field in (u'eid',u'fggs_p',u'fgga_p',u'fgts_p'):
@@ -431,7 +431,7 @@ class PCFaces(object):
             tes4.masters.append(bush.game.master_file)
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
-        npcEids = {r.eid for r in modFile.tops[b'NPC_'].iter_records()}
+        npcEids = {r.eid for r in modFile.tops[b'NPC_'].iter_records(skip_flagged=False)}
         eidForm = u''.join(('sg', bush.game.raceShortNames.get(face.race, 'Unk'),
             (face.gender and 'a' or 'u'), re.sub(r'\W', '', face.pcName), '%02d'))
         count,eid = 0, eidForm % 0
