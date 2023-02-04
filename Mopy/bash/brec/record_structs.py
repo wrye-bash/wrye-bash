@@ -31,7 +31,7 @@ from typing import Any
 
 from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
-from .mod_io import ModReader
+from .mod_io import ModReader, RecordHeader
 from .utils_constants import int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, flag, struct_pack, sig_to_str
@@ -336,6 +336,11 @@ class MreRecord(metaclass=RecordType):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
+    def should_skip(self):
+        """Returns True if this record should be skipped by most processing,
+        i.e. if it is ignored or deleted."""
+        return self.flags1.ignored or self.flags1.deleted
+
     def group_key(self): ##: we need an MreRecord mixin - too many ifs
         """Return a key for indexing the record on the parent (MobObjects)
         grup."""
@@ -407,8 +412,9 @@ class MreRecord(metaclass=RecordType):
         self.changed = value
 
     def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
+        """Return size of self.data, (after, if necessary, packing it) PLUS the
+        size of the record header."""
+        if not self.changed: return self.size + RecordHeader.rec_header_size
         #--Pack data and return size.
         out = io.BytesIO()
         self._sort_subrecords()
@@ -420,7 +426,7 @@ class MreRecord(metaclass=RecordType):
             self.data = struct_pack('=I', dataLen) + comp
         self.size = len(self.data)
         self.setChanged(False)
-        return self.size
+        return self.size + RecordHeader.rec_header_size
 
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version

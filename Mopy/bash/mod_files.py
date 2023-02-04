@@ -30,9 +30,8 @@ from zlib import decompress as zlib_decompress, error as zlib_error
 from . import bolt, bush, env, load_order
 from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
-    TopGrupHeader, MobBase, MobDials, MobICells, TopGrup, MobWorlds, \
-    unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
-    FormIdWriteContext, ZERO_FID, RecordType
+    MobBase, TopGrup, unpack_header, FastModReader, Subrecord, int_unpacker, \
+    FormIdReadContext, FormIdWriteContext, ZERO_FID, RecordType
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
@@ -78,6 +77,9 @@ class MasterMap(object):
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record
     signature."""
+    grup_class = {} # map top record group signatures to class loading them
+    __slots__ = ('keepAll', 'topTypes', 'sig_to_type')
+
     def __init__(self, keepAll, *, by_sig: Iterable[bytes] = (),
                  generic: Iterable[bytes] = ()):
         """Pass a collection of signatures to load - either by their
@@ -85,7 +87,6 @@ class LoadFactory:
         :param by_sig: pass an iterable of top group signatures to unpack
         :param generic: top group signatures to load as generic MreRecord"""
         self.keepAll = keepAll
-        self.recTypes = set()
         self.topTypes = set()
         self.sig_to_type = defaultdict(lambda: MreRecord if keepAll else None)
         # no generic classes if we keep all (we return MreRecord anyway)
@@ -93,6 +94,10 @@ class LoadFactory:
 
     def add_class(self, *by_sig, generic: Iterable[bytes] = ()):
         """Adds specified record types - see __init__."""
+        all_sigs = {*by_sig, *generic}
+        if all_sigs - RecHeader.valid_record_sigs:
+            raise ModError(None, f'Unknown signatures: '
+                                 f'{all_sigs - RecHeader.valid_record_sigs}')
         #--Don't replace complex class with default (MreRecord) class
         if generic:
             self.sig_to_type = {**dict.fromkeys(generic, MreRecord),
@@ -100,7 +105,6 @@ class LoadFactory:
         if by_sig:
             self.sig_to_type.update(
                 (k, RecordType.sig_to_class[k]) for k in by_sig)
-        self.recTypes.update(all_sigs := (*by_sig, *generic))
         #--Top type
         for class_sig in all_sigs:
             if class_sig in RecordType.nested_to_top:
@@ -108,30 +112,18 @@ class LoadFactory:
             if class_sig in RecordHeader.top_grup_sigs:
                 self.topTypes.add(class_sig) # b'CELL' appears in both
 
-    def getCellTypeClass(self):
-        """Returns type_class dictionary for cell objects."""
-        return {r: self.sig_to_type[r] for r in (
-            b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD')}
-
-    def getUnpackCellBlocks(self,topType):
-        """Returns whether cell blocks should be unpacked or not. Only relevant
-        if CELL and WRLD top types are expanded."""
-        return self.keepAll or (
-                self.recTypes & {b'REFR', b'ACHR', b'ACRE', b'PGRD'}) or (
-                       topType == b'WRLD' and b'LAND' in self.recTypes)
-
     def getTopClass(self, top_rec_type) -> type[MobBase | TopGrup] | None:
         """Return top block class for top block type, or None."""
-        if top_rec_type in self.topTypes:
-            if   top_rec_type == b'DIAL': return MobDials
-            elif top_rec_type == b'CELL': return MobICells
-            elif top_rec_type == b'WRLD': return MobWorlds
-            else: return TopGrup
-        return MobBase if self.keepAll else None
+        try:
+            mob_type = self.grup_class[top_rec_type]
+            return mob_type if top_rec_type in self.topTypes else (
+                MobBase if self.keepAll else None)
+        except KeyError:
+            raise ModError(None, f'Invalid top group signature {top_rec_type}')
 
     def __repr__(self):
-        return f'<LoadFactory: load {len(self.recTypes)} types ' \
-               f'({", ".join(map(sig_to_str, self.recTypes))}), ' \
+        return f'<LoadFactory: load {len(self.sig_to_type)} types ' \
+               f'({", ".join(map(sig_to_str, self.sig_to_type))}), ' \
                f'{"keep" if self.keepAll else "discard"} others>'
 
 class _TopGroupDict(dict):
@@ -145,14 +137,13 @@ class _TopGroupDict(dict):
     def __missing__(self, top_grup_sig):
         """Return top block of specified topType, creating it first.
         :raise ModError"""
-        top_head = TopGrupHeader(0, top_grup_sig, 0) # raises if sig is invalid
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
             raise ModError(self._mod_file.fileInfo.fn_key,
                 f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
                 f' load factory is {self._mod_file.loadFactory!r}')
-        self[top_grup_sig] = topClass(top_head, self._mod_file.loadFactory)
-        self[top_grup_sig].setChanged()
+        self[top_grup_sig] = topClass.empty_mob(self._mod_file.loadFactory,
+                                                top_grup_sig)
         return self[top_grup_sig]
 
 class ModFile(object):

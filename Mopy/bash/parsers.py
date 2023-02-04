@@ -110,7 +110,7 @@ class _TextParser(object):
         mod_file.load_plugin()
         return mod_file
 
-    def _load_factory(self, keepAll=True, target_types=None):
+    def _load_factory(self, keepAll, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
     # Write plugin ------------------------------------------------------------

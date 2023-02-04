@@ -790,17 +790,17 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
-        cls._validate_records(__name__)
+        cls._import_records(__name__)
 
     @classmethod
-    def _validate_records(cls, package_name, plugin_form_vers=131):
+    def _import_records(cls, package_name, plugin_form_vers=131):
         from .. import brec
         # DMGT\DNAM changed completely in Form Version 78 and it's not possible
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
         brec.RecordHeader.skip_form_version_upgrade = {b'DMGT'}
         # package name is fallout4 here
-        super()._validate_records(package_name, plugin_form_vers)
+        super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL',
             b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',

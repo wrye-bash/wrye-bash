@@ -143,7 +143,7 @@ class MorrowindGameInfo(PatchGame):
         Subrecord.sub_header_unpack = _struct.Struct(
             Subrecord.sub_header_fmt).unpack
         Subrecord.sub_header_size = 8
-        cls._validate_records(__name__)
+        cls._import_records(__name__)
 
 class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
     """GameInfo override for the Windows Store version of Morrowind."""
