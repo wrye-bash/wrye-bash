@@ -31,7 +31,7 @@ from this module outside of the patcher package."""
 # instance APatcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from . import getPatchesPath
 from .. import load_order

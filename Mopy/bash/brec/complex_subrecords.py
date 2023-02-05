@@ -28,7 +28,6 @@ from collections import defaultdict
 from copy import deepcopy
 from io import BytesIO
 from itertools import chain
-from typing import Type
 
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
     MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider
@@ -916,7 +915,7 @@ class AMelNvnm(MelBase):
     custom code. Needs to be subclassed per game to set things like the game's
     maxinum NVNM version - see also ANvnmContext."""
     # A class holding necessary context when reading/writing records
-    _nvnm_context_class: Type[ANvnmContext]
+    _nvnm_context_class: type[ANvnmContext]
 
     def __init__(self):
         super().__init__(b'NVNM', 'navmesh_geometry')
@@ -2097,7 +2096,7 @@ class AMelVmad(MelBase):
     Note that this code is somewhat heavily optimized for performance, so
     expect lots of inlines and other non-standard or ugly code."""
     # A class holding necessary context when reading/writing records
-    _vmad_context_class: Type[AVmadContext]
+    _vmad_context_class: type[AVmadContext]
     # The special handlers used by various record types
     _handler_map: dict[bytes, type | _AVmadComponent] = {
         b'INFO': _VmadHandlerINFO,

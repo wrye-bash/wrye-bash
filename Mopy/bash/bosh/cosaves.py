@@ -31,7 +31,7 @@ __author__ = u'Infernio'
 
 import io
 import string
-from typing import Type, get_type_hints
+from typing import get_type_hints
 from zlib import crc32
 
 from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
@@ -1683,7 +1683,7 @@ class PluggyCosave(ACosave):
 
 # Factory
 def get_cosave_types(game_fsName, parse_save_path, cosave_tag,
-        cosave_ext) -> list[Type[ACosave]]:
+        cosave_ext) -> list[type[ACosave]]:
     """Factory method for retrieving the cosave types for the current game.
     Also sets up some class variables for xSE and Pluggy signatures.
 

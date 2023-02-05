@@ -67,9 +67,9 @@ import json
 import platform
 import uuid
 import webbrowser
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable
 
 from . import bass
 from .exception import EndorsedTooSoonError, EndorsedWithoutDownloadError, \

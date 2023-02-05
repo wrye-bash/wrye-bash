@@ -40,12 +40,13 @@ import tempfile
 import textwrap
 import traceback as _traceback
 import webbrowser
+from collections.abc import Iterable
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Iterable, Self, get_type_hints
+from typing import ClassVar, Self, get_type_hints
 from urllib.parse import quote
 from zlib import crc32
 

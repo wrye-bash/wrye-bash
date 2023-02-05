@@ -23,7 +23,6 @@
 """Builds on the basic elements defined in base_elements.py to provide
 definitions for some commonly needed subrecords."""
 from itertools import chain
-from typing import Type
 
 from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
@@ -181,7 +180,7 @@ class MelArmaShared(MelSequential):
     class _weight_slider_flags(Flags):
         slider_enabled: bool = flag(1)
 
-    def __init__(self, mel_model: Type[MelBase]):
+    def __init__(self, mel_model: type[MelBase]):
         super().__init__(
             MelStruct(b'DNAM', ['4B', '2s', 'B', 's', 'f'],
                 'male_priority', 'female_priority',

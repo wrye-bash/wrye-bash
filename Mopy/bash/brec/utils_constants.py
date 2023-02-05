@@ -24,9 +24,9 @@
 almost all other parts of brec."""
 from __future__ import annotations
 
+from collections.abc import Callable
 from contextlib import suppress
 from itertools import chain
-from typing import Callable, Type
 
 from .. import bolt
 from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
@@ -275,7 +275,7 @@ NONE_FID = _NoneFid()
 # Global FormId class used to wrap all formids of currently loading mod. It
 # must be set by the mod reader context manager based on the currently loading
 # plugin
-FORM_ID: Type[FormId] | None = None
+FORM_ID: type[FormId] | None = None
 
 # Global short mapper function. It must be set by the mod output context
 # manager for mapping the fids based on the masters of the currently dumped plugin

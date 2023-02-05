@@ -32,8 +32,8 @@ import pickle
 import re
 import sys
 from collections import OrderedDict
+from collections.abc import Iterable
 from functools import wraps
-from typing import Iterable, Type
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -91,7 +91,7 @@ bain_image_exts = _common_image_exts | {'.webp'}
 ss_image_exts = _common_image_exts | {'.tga'}
 
 #--Typing
-_CosaveDict = dict[Type[cosaves.ACosave], cosaves.ACosave]
+_CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------

@@ -24,7 +24,7 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from collections import defaultdict
-from typing import Iterable
+from collections.abc import Iterable
 from zlib import decompress as zlib_decompress
 from zlib import error as zlib_error
 

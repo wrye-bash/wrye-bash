@@ -26,8 +26,8 @@ from __future__ import annotations
 
 import threading
 import time
+from collections.abc import Iterable
 from functools import partial, wraps
-from typing import Iterable
 
 import wx
 import wx.adv

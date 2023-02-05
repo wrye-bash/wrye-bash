@@ -56,7 +56,6 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial, reduce
-from typing import List
 
 import wx
 
@@ -3006,7 +3005,7 @@ class InstallersDetails(_SashDetailsPanel):
         self._update_fomod_state()
         #--Espms
         # sorted list of the displayed installer espm names - esms sorted first
-        self.espm_checklist_fns = [] # type: List[FName]
+        self.espm_checklist_fns = [] # type: list[FName]
         self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(

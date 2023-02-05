@@ -26,7 +26,6 @@ some commonly needed records."""
 from collections import defaultdict
 from itertools import chain
 from operator import attrgetter
-from typing import Type
 
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
@@ -398,7 +397,7 @@ class AMreImad(MelRecord):
         (b'\x14IAD', 'unknown_14_mult'),
         (b'\x54IAD', 'unknown_54_add'),
     ]
-    special_impls: defaultdict[bytes, Type[MelBase]] = defaultdict(
+    special_impls: defaultdict[bytes, type[MelBase]] = defaultdict(
         lambda: MelValueInterpolator)
     # Doing it this way avoids PyCharm complaining about type mismatch
     special_impls[b'TNAM'] = MelColorInterpolator

@@ -30,10 +30,10 @@ import os
 import re
 import sys
 import time
+from collections.abc import Iterable
 from functools import partial, wraps
 from itertools import chain, groupby
 from operator import attrgetter, itemgetter
-from typing import Iterable
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
