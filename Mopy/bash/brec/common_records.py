@@ -180,7 +180,7 @@ class AMreHeader(MelRecord):
             loaders[b'MAST'] = loaders[b'DATA'] = self
 
         def getSlotsUsed(self):
-            return (u'masters', u'master_sizes')
+            return 'masters', 'master_sizes'
 
         def setDefault(self, record):
             record.masters = []

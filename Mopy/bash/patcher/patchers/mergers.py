@@ -315,7 +315,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         cachedMasters = {}
         mer_del = self.id_merged_deleted
         minfs = self.patchFile.all_plugins
-        for index,srcMod in enumerate(self.srcs):
+        for srcMod in self.srcs:
             if not (srcInfo := minfs.get(srcMod)):
                 continue
             tempData = {}

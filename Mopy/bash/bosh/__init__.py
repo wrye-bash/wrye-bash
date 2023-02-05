@@ -207,10 +207,8 @@ class FileInfo(AFile, ListInfo):
     @property
     def mtime(self): return self._file_mod_time
     #--------------------------------------------------------------------------
-    def setmtime(self, set_time=0.0, crc_changed=False):
-        """Sets mtime. Defaults to current value (i.e. reset).
-
-        :type set_time: int|float"""
+    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
+        """Sets mtime. Defaults to current value (i.e. reset)."""
         set_time = set_time or self.mtime
         self.abs_path.mtime = set_time
         self._file_mod_time = set_time
@@ -502,9 +500,9 @@ class ModInfo(FileInfo):
         Indices column."""
         return modInfos.real_index_strings[self.fn_key]
 
-    def setmtime(self, set_time=0.0, crc_changed=False):
+    def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Set mtime and if crc_changed is True recalculate the crc."""
-        set_time = FileInfo.setmtime(self, set_time)
+        set_time = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
             self.set_table_prop(u'crc_mtime', set_time)
@@ -1750,11 +1748,13 @@ class DefaultIniInfo(DefaultIniFile, AINIInfo):
         return dirs['ini_tweaks']
 
 # noinspection PyUnusedLocal
-def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):
+def ini_info_factory(fullpath, load_cache=u'Ignored',
+        itsa_ghost=False) -> INIInfo:
     """INIInfos factory
-    :param fullpath: fullpath to the ini file to wrap
-    :param load_cache: dummy param used in INIInfos#new_info factory call
-    :rtype: INIInfo"""
+
+    :param fullpath: Full path to the INI file to wrap
+    :param load_cache: Dummy param used in INIInfos.new_info factory call
+    :param itsa_ghost: Cached ghost status information, ignored for INIs"""
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
     ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
                      else INIInfo)

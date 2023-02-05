@@ -384,8 +384,8 @@ class Save_Renumber(EnabledLink):
     def Execute(self):
         nfn_number = self._askNumber(
             _(u'Enter new number to start numbering the selected saves at.'),
-            prompt=_(u'Save Number'), title=_('Renumber Saves'), value=1,
-            min=1, max=10000)
+            prompt=_(u'Save Number'), title=_('Renumber Saves'), initial_num=1,
+            min_num=1, max_num=10000)
         if nfn_number is None: return
         old_names = set()
         new_names = set()
@@ -596,7 +596,7 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
               'custom made enchantments.') + '\n' + _(
             '(Enter 0 for unlimited uses)')
         dialog = self._askNumber(msg, prompt=_('Uses'), title=_(
-            'Number of Uses'), value=50, min=0, max=10000)
+            'Number of Uses'), initial_num=50, min_num=0, max_num=10000)
         if dialog is None: return
         Enchantments = _saves.SaveEnchantments(self._selected_info)
         Enchantments.load_data()

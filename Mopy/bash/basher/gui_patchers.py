@@ -26,7 +26,7 @@ import re
 from collections import defaultdict
 from itertools import chain
 
-from .patcher_dialog import all_gui_patchers
+from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, exception, load_order
 from ..balt import CheckLink, Links, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
@@ -34,10 +34,13 @@ from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout
-from ..patcher import base, patches_set
-from ..patcher.patchers import base, checkers, mergers, multitweak_actors, \
+from ..patcher import patches_set
+from ..patcher.base import AMultiTweakItem, APatcher
+from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
+from ..patcher.patchers.base import AliasModNamesPatcher, \
+    MergePatchesPatcher, MultiTweaker, ReplaceFormIDsPatcher
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
@@ -48,7 +51,7 @@ class _PatcherPanel(object):
     # These are sometimes quite ugly - backwards compat leftover from when
     # those were the class names and got written directly into the configs
     _config_key: str = None
-    patcher_type: base.APatcher = None
+    patcher_type: APatcher = None
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
     selectCommands = True # whether this panel displays De/Select All
@@ -84,11 +87,8 @@ class _PatcherPanel(object):
     def _GetIsFirstLoad(self):
         return getattr(self, u'is_first_load', False)
 
-    def GetConfigPanel(self, parent, config_layout, gTipText):
-        """Show config.
-
-        :type parent: basher.patcher_dialog.PatchDialog
-        """
+    def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
+        """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         self.patch_dialog = parent
         self.gTipText = gTipText
@@ -188,11 +188,10 @@ class _AliasesPatcherPanel(_PatcherPanel):
     patcher_name = _(u'Alias Mod Names')
     patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
 
-    def GetConfigPanel(self, parent, config_layout, gTipText):
+    def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_AliasesPatcherPanel, self).GetConfigPanel(parent,
-            config_layout, gTipText)
+        gConfigPanel = super().GetConfigPanel(parent, config_layout, gTipText)
         #gExample = Label(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
@@ -280,11 +279,10 @@ class _ListPatcherPanel(_PatcherPanel):
         # _populate_item_list in turn
         self._item_search.text_content = ''
 
-    def GetConfigPanel(self, parent, config_layout, gTipText):
+    def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(
-            parent, config_layout, gTipText)
+        gConfigPanel = super().GetConfigPanel(parent, config_layout, gTipText)
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
         if self.forceItemCheck:
@@ -595,20 +593,19 @@ def _custom_label(label_text, val): # edit label text with value
 
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
-    patcher_type: base.AMultiTweaker
+    patcher_type: MultiTweaker
 
     def __init__(self):
         super().__init__()
         # List of all tweaks that this tweaker can house
-        self._all_tweaks: list[base.AMultiTweakItem] = []
+        self._all_tweaks: list[AMultiTweakItem] = []
         # List of tweaks that are currently visible (according to the search)
-        self._curr_tweaks: list[base.AMultiTweakItem] = []
+        self._curr_tweaks: list[AMultiTweakItem] = []
 
-    def GetConfigPanel(self, parent, config_layout, gTipText):
+    def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(
-            parent, config_layout, gTipText)
+        gConfigPanel = super().GetConfigPanel(parent, config_layout, gTipText)
         self.gTweakList = CheckListBox(gConfigPanel)
         self.gTweakList.on_box_checked.subscribe(self.TweakOnListCheck)
         self._tweak_search = SearchBar(gConfigPanel, hint=_('Search Tweaks'))
@@ -793,7 +790,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 new = balt.askNumber(
                     self.gConfigPanel, msg, prompt=_('Value'),
                     title=tweak.tweak_name + _(u' - Custom Tweak Value'),
-                    value=tweak.choiceValues[index][i], min=-10000, max=10000)
+                    initial_num=tweak.choiceValues[index][i], min_num=-10000,
+                    max_num=10000)
                 if new is None: #user hit cancel
                     return
                 values.append(new)
@@ -919,10 +917,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             sorted(i[0] for i in self.configChoices.get(item, ()) if i))
         return f'{item}{f" [{choice}]" if choice else ""}'
 
-    def GetConfigPanel(self, parent, config_layout, gTipText):
+    def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_ListsMergerPanel, self).GetConfigPanel(
-            parent, config_layout, gTipText)
+        gConfigPanel = super().GetConfigPanel(parent, config_layout, gTipText)
         self._bind_mouse_events(self.gList)
         return gConfigPanel
 
@@ -1015,7 +1012,7 @@ class _AListPanelCsv(_ListPatcherPanel):
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
     _config_key = u'AliasesPatcher'
-    patcher_type = base.AliasModNamesPatcher
+    patcher_type = AliasModNamesPatcher
 
 class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""
@@ -1023,7 +1020,7 @@ class MergePatches(_ListPatcherPanel):
     patcher_name = _(u'Merge Patches')
     patcher_desc = _('Merge patch plugins into the Bashed Patch.')
     _config_key = u'PatchMerger'
-    patcher_type = base.MergePatchesPatcher
+    patcher_type = MergePatchesPatcher
 
     def _valid_auto_mod(self, mod, minf):
         return mod in self._bp.bp_mergeable
@@ -1347,7 +1344,7 @@ class ReplaceFormIDs(_AListPanelCsv):
                      u'Bashed Patch.')
     _csv_key = u'Formids'
     _config_key = u'UpdateReferences'
-    patcher_type = base.ReplaceFormIDsPatcher
+    patcher_type = ReplaceFormIDsPatcher
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------

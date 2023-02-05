@@ -1465,8 +1465,8 @@ class MreMgef(MelRecord):
         b'ZZOM': [1, _('Summon Zombie'), 16.67],
     }
     mgef_school = {x: y for x, [y, z, a] in _magic_effects.items()}
-    mgef_name = {x: z for x, [y, z, a] in _magic_effects.items()}
-    mgef_basevalue = {x: a for x, [y, z, a] in _magic_effects.items()}
+    mgef_name = {x: z for x, [y, z, b] in _magic_effects.items()}
+    mgef_basevalue = {x: c for x, [y, z, c] in _magic_effects.items()}
 
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
     # generic name.

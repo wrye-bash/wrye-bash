@@ -82,6 +82,7 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
     that absolute paths are returned, as the intended use case of this method
     is for testing AFile-based classes.
 
+    :param resource_subfolder: The subfolder to test_resources to iterate.
     :param filter_by_game: If nonempty, limits yielded resources to ones from
         that game's subfolder only."""
     full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),

@@ -97,7 +97,7 @@ def download_file(url, fpath):
             percentage = file_size_dl * 100.0 / file_size
             status = f'{file_name:>20}  -----  [{percentage:6.2f}%] ' \
                      f'{convert_bytes(file_size_dl):>10}/{converted_size}'
-            status = status + chr(8) * (len(status) + 1)
+            status += chr(8) * (len(status) + 1)
             print(status, end=u' ')
     print()
 

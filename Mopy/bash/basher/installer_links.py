@@ -84,7 +84,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         return self._askNumber(
             _(u'Use what maximum size for each solid block?') + u'\n' + _(
                 u"Enter '0' to use 7z's default size."), prompt=u'MB',
-            title=title, value=default_size, min=0, max=102400)
+            title=title, initial_num=default_size, min_num=0, max_num=102400)
 
     def _pack(self, archive_path, installer, project, release=False):
         #--Archive configuration options

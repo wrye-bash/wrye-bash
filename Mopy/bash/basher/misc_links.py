@@ -139,8 +139,8 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
         self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
-        quality = self._askNumber(_(u'JPEG Quality'), value=self.quality,
-                                  min=0, max=100)
+        quality = self._askNumber(_(u'JPEG Quality'), initial_num=self.quality,
+                                  min_num=0, max_num=100)
         if quality is None: return
         self.quality = quality
         bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality

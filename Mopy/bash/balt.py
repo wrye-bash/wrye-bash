@@ -327,10 +327,11 @@ def askText(parent, message, title=u'', default=u'', strip=True):
         return txt.strip() if strip else txt
 
 #------------------------------------------------------------------------------
-def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
+def askNumber(parent, message, prompt='', title='', initial_num=0, min_num=0,
+        max_num=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
     with wx.NumberEntryDialog(_AComponent._resolve(parent), message, prompt,
-                              title, value, min, max) as dialog:
+                              title, initial_num, min_num, max_num) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
         return dialog.GetValue()
 
@@ -1038,7 +1039,9 @@ class UIList(PanelWin):
 
         :param itemDex: the index of the item in the list - must be given if
         item is None
-        :param item: an FName or an int (Masters), the key in self.data"""
+        :param item: an FName or an int (Masters), the key in self.data
+        :param target_ini_setts: Cached information about the INI settings.
+            Used on the INI Edits tab"""
         insert = False
         gl_set_item = self.__gList._native_widget.SetItem
         allow_cols = self.allowed_cols # property, calculate once
@@ -1634,7 +1637,7 @@ class UIList(PanelWin):
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _promptDelete(self, items, dialogTitle, order, recycle):
-        if not items: return (items,)
+        if not items: return items,
         message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
         if order: items.sort()
         message.extend(items)
@@ -1858,9 +1861,10 @@ class Link(object):
         if not title: title = self._text
         WryeLog(self.window, logText, title, asDialog, log_icons=lg_icons)
 
-    def _askNumber(self, message, prompt='', title='', value=0, min=0,
-                   max=10000):
-        return askNumber(self.window, message, prompt, title, value, min, max)
+    def _askNumber(self, message, prompt='', title='', initial_num=0,
+            min_num=0, max_num=10000):
+        return askNumber(self.window, message, prompt, title, initial_num,
+            min_num, max_num)
 
     # De-wx'd File/dir dialogs
     def _askOpen(self, title='', defaultDir='', defaultFile='', wildcard=''):

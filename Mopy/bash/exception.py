@@ -221,9 +221,8 @@ class DDSError(Exception): pass
 # Lexing/Parsing exceptions ---------------------------------------------------
 class _ALPError(Exception):
     """Abstract base class for lexer and parser errors."""
-    def __init__(self, err_msg, target_str=None, start_pos=-1, end_pos=-1,
-                 line_num=-1):
-        # type: (str, str, int, int) -> None
+    def __init__(self, err_msg: str, target_str: str | None = None,
+            start_pos: int = -1, end_pos: int = -1, line_num: int = -1):
         """Creates a new error with the specified properties. All but err_msg
         are optional, and will simply add more details about where the error
         occurred.

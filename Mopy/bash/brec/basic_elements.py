@@ -383,8 +383,8 @@ class MelGroup(MelSequential):
 
     def getLoaders(self,loaders):
         super(MelGroup, self).getLoaders(self.loaders)
-        for type in self.loaders:
-            loaders[type] = self
+        for loader_type in self.loaders:
+            loaders[loader_type] = self
 
     def getSlotsUsed(self):
         return self.attr,

@@ -433,11 +433,10 @@ settingDefaults = { # keep current naming format till refactored
     'BOSS.ClearLockTimes': True,
     'BOSS.UseGUI': False,
     'LOOT.AutoSort': False,
+    # No need to store defaults for all the xEdits for all games
+    bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing': False,
+    bush.game.Xe.xe_key_prefix + '.skip_bsas': False,
 }
-
-# No need to store defaults for all the xEdits for all games
-settingDefaults[bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing'] = False
-settingDefaults[bush.game.Xe.xe_key_prefix + '.skip_bsas'] = False
 
 if bush.game.has_esl: # Enable Index columns by default for ESL games
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')

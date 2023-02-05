@@ -506,8 +506,7 @@ class App_LOOT(_AApp_LOManager):
         self.mainMenu.append(_Mods_LOOTAutoSort())
 
     def Execute(self):
-        curr_args = []
-        curr_args.append(f'--game={bush.game.loot_game_name}')
+        curr_args = [f'--game={bush.game.loot_game_name}']
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
         self.extraArgs = tuple(curr_args)

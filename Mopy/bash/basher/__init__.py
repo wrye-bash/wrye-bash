@@ -1174,7 +1174,7 @@ class ModList(_ModsUIList):
                                          len(toActivate) == len(selected)
                              else toActivate)
             self._toggle_active_state(*toggle_target)
-        if (wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N')):
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+N - Create a new Bashed Patch
                 self.new_bashed_patch()
@@ -2866,7 +2866,7 @@ class InstallersList(balt.UIList):
 
     def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
-        if (wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N')):
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N'):
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+N - Add a marker
                 self.addMarker()

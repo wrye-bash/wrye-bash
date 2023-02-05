@@ -55,6 +55,7 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
     must have a specific encoding (for instance the game ini files that
     reportedly must be cp1252). More investigation needed.
 
+    :param abs_ini_path: The full path to the INI file in question.
     :param fallback_type: If set, then if the INI type can't be detected,
         instead of raising an error, use this type."""
     if os.path.splitext(abs_ini_path)[1] == '.toml':

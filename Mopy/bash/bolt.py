@@ -40,13 +40,13 @@ import tempfile
 import textwrap
 import traceback as _traceback
 import webbrowser
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Self, get_type_hints
+from typing import ClassVar, Self, TypeVar, get_type_hints
 from urllib.parse import quote
 from zlib import crc32
 
@@ -70,6 +70,10 @@ os_name = os.name ##: usages probably belong to env
 if os_name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+# Typing ----------------------------------------------------------------------
+K = TypeVar('K')
+V = TypeVar('V')
 
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
@@ -341,10 +345,13 @@ def float_or_none(uni_str):
     except ValueError:
         return None
 
-def combine_dicts(dict_a: dict, dict_b: dict, f) -> dict:
+def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
+        f: Callable[[V, V], V]) -> dict[K, V]:
     """Merge two dictionaries, but combine their values (as opposed to the
     last-added value overwriting all earlier values with the same key).
 
+    :param dict_a: The first dict to merge.
+    :param dict_b: The second dict to merge.
     :param f: A function taking one value from dict_a and one from dict_b and
         returning the combined result."""
     return {**dict_a, **dict_b,
@@ -1611,9 +1618,11 @@ class AFile(object):
         consider the file deleted and return True except if raise_on_error is
         True, whereupon raise the OSError we got in stat(). If raise_on_error
         is False user must check if file exists.
-        :param itsa_ghost: in ModInfos if we have the ghosting info available
-                           skip recalculating it.
-        """
+
+        :param raise_on_error: If True, rase on errors instead of just
+            resetting the cache and returning.
+        :param itsa_ghost: In ModInfos, if we have the ghosting info available,
+            skip recalculating it."""
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?

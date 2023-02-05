@@ -507,7 +507,7 @@ class Installer(ListInfo):
             """Small helper for splitting up file_relative into parent
             directory and file name."""
             fr_split = file_relative.rsplit(os_sep, 1)
-            return (('', fr_split[0]) if len(fr_split) == 1 else fr_split)
+            return ('', fr_split[0]) if len(fr_split) == 1 else fr_split
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
             maReadMe = reReadMeMatch(fileLower)
             if maReadMe and not self.hasReadme:
@@ -1139,7 +1139,7 @@ class Installer(ListInfo):
         finally:
             self.tempList.remove()
 
-    def _do_sync_data(self, proj_dir, delta_files, progress):
+    def _do_sync_data(self, proj_dir, delta_files: set[CIstr], progress):
         """Performs a Sync from Data on the specified project directory with
         the specified missing or mismatched files."""
         data_dir_join = bass.dirs[u'mods'].join
@@ -1275,12 +1275,12 @@ class Installer(ListInfo):
                 storet[i]['installer'] = '%s' % name_new
         return True, *map(bool, mods_inis)
 
-    def sync_from_data(self, delta_files, progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress):
         """Updates this installer according to the specified files in the Data
         directory.
 
         :param delta_files: The missing or mismatched files to sync.
-        :type delta_files: set[bolt.CIstr]"""
+        :param progress: A progress dialog to use when syncing."""
         raise AbstractError
 
     # Factory -----------------------------------------------------------------
@@ -1563,7 +1563,7 @@ class InstallerArchive(Installer):
         return self._extract_wizard_files(self.has_fomod_conf,
                                           _(u'Extracting FOMOD files...'))
 
-    def sync_from_data(self, delta_files, progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress):
         # Extract to a temp project, then perform the sync as if it were a
         # regular project and finally repack
         unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
@@ -1699,7 +1699,7 @@ class InstallerProject(Installer):
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
-    def sync_from_data(self, delta_files, progress):
+    def sync_from_data(self, delta_files: set[CIstr], progress):
         return self._do_sync_data(self.abs_path, delta_files, progress)
 
     @staticmethod
@@ -1912,22 +1912,19 @@ class InstallersData(DataStore):
         return moved
 
     # Getters
-    def sorted_pairs(self, package_keys=None, reverse=False):
+    def sorted_pairs(self, package_keys: Iterable[Path] | None = None,
+            reverse=False) -> Iterable[tuple[Path, Installer]]:
         """Return pairs of key, installer for package_keys in self, sorted by
-        install order.
-        :type package_keys: None | collections.Iterable[Path]
-        :rtype: list[(Path, Installer)]
-        """
+        install order."""
         pairs = self if package_keys is None else {k: self[k] for k in
                                                    package_keys}
         return dict_sort(pairs, key_f=lambda k: pairs[k].order,
                          reverse=reverse)
 
-    def sorted_values(self, package_keys=None, reverse=False):
-        """Return installers for package_keys in self, sorted by install order.
-        :type package_keys: None | collections.Iterable[Path]
-        :rtype: list[Installer]
-        """
+    def sorted_values(self, package_keys: Iterable[Path] | None = None,
+            reverse=False) -> list[Installer]:
+        """Return installers for package_keys in self, sorted by install
+        order."""
         if package_keys is None: values = self.values()
         else: values = [self[k] for k in package_keys]
         return sorted(values, key=attrgetter('order'), reverse=reverse)
@@ -2841,7 +2838,7 @@ class InstallersData(DataStore):
         :param active_bsas: The dict of currently active BSAs. Can be retrieved
             via bosh.modInfos.get_active_bsas(). Only needed if BSA conflicts
             are enabled (i.e. include_bsas is True).
-        :Param bsa_cause: The dict of reasons BSAs were loaded. Retrieve
+        :param bsa_cause: The dict of reasons BSAs were loaded. Retrieve
             alongside active_bsas from bosh.modInfos.get_active_bsas(). Only
             needed if BSA conflicts are enabled.
         :param list_overrides: Whether to list overrides (True) or underrides
