@@ -29,7 +29,7 @@ from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
     ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
 from ..bolt import GPath
-from ..gui import BusyCursor, ImageWrapper
+from ..gui import AutoSize, BusyCursor, ImageWrapper
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
@@ -272,34 +272,38 @@ class _Column(CheckLink, EnabledLink):
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
+class _AAutoWidthLink(RadioLink):
+    """Base class for links that change the automatic column width sizing."""
+    _auto_type: int
+
+    def _check(self):
+        return self._auto_type == self.window.auto_col_widths
+
+    def Execute(self):
+        self.window.auto_col_widths = self._auto_type
+        self.window.autosizeColumns()
+
+class _FitManual(_AAutoWidthLink):
+    _text = _('Manual')
+    _help = _('Allow manual resizing of the columns.')
+    _auto_type = AutoSize.FIT_MANUAL
+
+class _FitContents(_AAutoWidthLink):
+    _text = _('Fit Contents')
+    _help = _('Fit columns to their content.')
+    _keyboard_hint = 'Ctrl+Num +'
+    _auto_type = AutoSize.FIT_CONTENTS
+
+class _FitHeader(_AAutoWidthLink):
+    _text = _('Fit Header')
+    _help = _('Fit columns to their content, keep header always visible.')
+    _auto_type = AutoSize.FIT_HEADER
+
 class ColumnsMenu(ChoiceMenuLink):
     """Customize visible columns."""
     _text = _('Columns..')
     choiceLinkType = _Column
-
-    class _AutoWidth(RadioLink):
-        wxFlag = 0
-        def _check(self): return self.wxFlag == self.window.autoColWidths
-        def Execute(self):
-            self.window.autoColWidths = self.wxFlag
-            self.window.autosizeColumns()
-
-    class _Manual(_AutoWidth):
-        _text = _(u'Manual')
-        _help = _(
-            u'Allow to manually resize columns. Applies to all Bash lists')
-
-    class _Contents(_AutoWidth):
-        _text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
-        _help = _(u'Fit columns to their content. Applies to all Bash lists.'
-                 u' You can hit Ctrl + Numpad+ to the same effect')
-
-    class _Header(_AutoWidth):
-        _text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
-        _help = _(u'Fit columns to their content, keep header always visible. '
-                 u' Applies to all Bash lists')
-
-    extraItems = [_Manual(), _Contents(), _Header(), SeparatorLink()]
+    extraItems = [_FitManual(), _FitContents(), _FitHeader(), SeparatorLink()]
 
     @property
     def _choices(self): return self.window.all_allowed_cols

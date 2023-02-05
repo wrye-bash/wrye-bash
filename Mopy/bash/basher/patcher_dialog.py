@@ -416,7 +416,7 @@ class PatchDialog(DialogWindow):
 
     def _on_char(self, wrapped_evt):
         """Keyboard input to the patchers list box"""
-        # Ctrl+'A' - select all items of the current patchers (or deselect them
+        # Ctrl+A - select all items of the current patchers (or deselect them
         # if Shift is also held)
         if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
             patcher = self.currentPatcher

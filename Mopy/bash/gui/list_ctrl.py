@@ -32,7 +32,7 @@ import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler
-from .base_components import WithCharEvents, WithMouseEvents
+from .base_components import WithCharEvents, WithMouseEvents, _auto_size_to_wx
 from .. import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
@@ -319,6 +319,9 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def lc_set_column_width(self, evt_col, column_width):
         self._native_widget.SetColumnWidth(evt_col, column_width)
+
+    def lc_set_auto_column_width(self, evt_col, auto_col: int):
+        self._native_widget.SetColumnWidth(evt_col, _auto_size_to_wx[auto_col])
 
     def lc_item_count(self):
         return self._native_widget.GetItemCount()

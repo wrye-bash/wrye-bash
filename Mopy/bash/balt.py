@@ -45,7 +45,7 @@ from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     HLayout, HorizontalLine, ImageWrapper, Label, LayoutOptions, ListBox, \
     OkButton, PanelWin, Stretch, TextArea, UIListCtrl, VLayout, WindowFrame, \
     WrappingTextMixin, bell, copy_files_to_clipboard, scaled, \
-    web_viewer_available
+    web_viewer_available, AutoSize
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -1013,10 +1013,12 @@ class UIList(PanelWin):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
-    def autoColWidths(self):
-        return _settings[u'bash.autoSizeListColumns']
-    @autoColWidths.setter
-    def autoColWidths(self, val): _settings[u'bash.autoSizeListColumns'] = val
+    def auto_col_widths(self):
+        return _settings.get(self.keyPrefix + '.auto_size_columns',
+            AutoSize.FIT_MANUAL)
+    @auto_col_widths.setter
+    def auto_col_widths(self, val):
+        _settings[self.keyPrefix + '.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
@@ -1230,14 +1232,23 @@ class UIList(PanelWin):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
-        elif self.__class__._editLabels and kcode == wx.WXK_F2: self.Rename()
-        elif kcode in _wx_delete:
+        elif self.__class__._editLabels and kcode == wx.WXK_F2: # F2 - rename
+            self.Rename()
+        elif kcode in _wx_delete: # Del - delete selected file(s)
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
         elif cmd_down and kcode == ord(u'O'): # Ctrl+O - open data folder
             self.open_data_store()
-        if cmd_down and kcode == ord('S'): # Ctrl+S - save data
+        elif cmd_down and kcode == ord('S'): # Ctrl+S - save data
             with BusyCursor():
                 Link.Frame.SaveSettings()
+        # Ctrl+Num + - auto-size columns to fit contents
+        elif cmd_down and kcode == wx.WXK_NUMPAD_ADD:
+            self.auto_col_widths = AutoSize.FIT_CONTENTS
+            ##: On Windows, this happens automatically (probably due to it
+            # being a native widget), check if this happens on other platforms
+            # too or if this check is necessary
+            if wx.Platform != '__WXMSW__':
+                self.autosizeColumns()
         # Ctrl+C - copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
@@ -1263,10 +1274,10 @@ class UIList(PanelWin):
 
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
-        if self.autoColWidths:
+        if self.auto_col_widths != AutoSize.FIT_MANUAL:
             colCount = range(self.__gList.lc_get_columns_count())
             for i in colCount:
-                self.__gList.lc_set_column_width(i, -self.autoColWidths)
+                self.__gList.lc_set_auto_column_width(i, self.auto_col_widths)
 
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass

@@ -558,3 +558,18 @@ class ImageWrapper:
         # This only has an effect on jpegs, so it's ok to do it on every kind
         bitmap.SetOption(_wx.IMAGE_OPTION_QUALITY, quality)
         return bitmap
+
+# Automatic column sizing -----------------------------------------------------
+class AutoSize:
+    """Represents the different types of automatic sizing of columns supported
+    by WB. Can't use an enum here because we need to store these ints into our
+    settings."""
+    FIT_MANUAL = 0
+    FIT_CONTENTS = 1
+    FIT_HEADER = 2
+
+_auto_size_to_wx = {
+    AutoSize.FIT_MANUAL: 0,
+    AutoSize.FIT_CONTENTS: _wx.LIST_AUTOSIZE,
+    AutoSize.FIT_HEADER: _wx.LIST_AUTOSIZE_USEHEADER,
+}

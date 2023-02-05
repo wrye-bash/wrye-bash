@@ -185,7 +185,6 @@ settingDefaults = { # keep current naming format till refactored
     'bash.pluginEncoding': 'cp1252',    # Western European
     'bash.show_internal_keys': False,
     'bash.restore_scroll_positions': True,
-    'bash.autoSizeListColumns': 0,
     #--Appearance
     'bash.useAltName': True,
     'bash.use_reverse_icons': False,
