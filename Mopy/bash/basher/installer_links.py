@@ -44,7 +44,7 @@ from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import FName, LogFile, SubProgress, deprint, round_size, text_wrap
+from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerArchive, InstallerConverter, InstallerProject
 from ..exception import AbstractError, CancelError, SkipError, StateError, \
     XMLParsingError
@@ -432,9 +432,9 @@ class Installer_Wizard(_Installer_AWizardLink):
                                                   detail_item=lastApplied)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = text_wrap(_(u'The following INI Tweaks were not '
-                                  u'automatically applied.  Be sure to apply '
-                                  u'them after installing the package.'))
+            message = _('The following INI Tweaks were not automatically '
+                        'applied. Be sure to apply them after installing the '
+                        'package.')
             message += u'\n\n'
             message += u'\n'.join([u' * %s\n   TO: %s' % (x[0].stail, x[1])
                                    for x in manuallyApply])

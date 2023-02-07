@@ -352,7 +352,7 @@ def update_file_version(version, commit=False):
     tmpdir = tempfile.mkdtemp()
     bck_path = os.path.join(tmpdir, fname)
     cpy(orig_path, bck_path)
-    with open(orig_path, u'r+') as fopen:
+    with open(orig_path, 'r+', encoding='utf-8') as fopen:
         content = fopen.read().replace(f"\nAppVersion = '{bass.AppVersion}'",
                                        f"\nAppVersion = '{version}'")
         fopen.seek(0)
@@ -431,7 +431,7 @@ def taglists_need_update():
     argument."""
     last_ml_ver = u'0.0'
     try:
-        with open(TAGINFO, u'r') as ins:
+        with open(TAGINFO, 'r', encoding='utf-8') as ins:
             last_ml_ver = ins.read()
     except OSError: pass # we'll have to update
     latest_ml_ver = update_taglist.MASTERLIST_VERSION
@@ -469,7 +469,7 @@ def main(args):
             if args.force_tl_update or taglists_need_update():
                 update_taglist.main()
                 # Remember the last LOOT version we generated taglists for
-                with open(TAGINFO, u'w') as out:
+                with open(TAGINFO, 'w', encoding='utf-8') as out:
                     out.write(update_taglist.MASTERLIST_VERSION)
             if args.manual:
                 LOGGER.info(u'Creating python source distributable...')

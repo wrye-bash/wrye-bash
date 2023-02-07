@@ -105,6 +105,6 @@ if __name__ == u'__main__':
     utils.setup_common_parser(argparser)
     setup_parser(argparser)
     parsed_args = argparser.parse_args()
-    open(parsed_args.logfile, u'w').close()
+    open(parsed_args.logfile, 'w', encoding='utf-8').close()
     main(parsed_args.verbosity, parsed_args.logfile,
          parsed_args.masterlist_version)
