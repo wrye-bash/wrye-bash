@@ -488,10 +488,10 @@ class ActorFactions(_AParser):
         return {f.faction: f.rank for f in record.factions}
 
     def _write_record_2(self, record, new_data, cur_info):
-        for faction, rank in set(new_data.items()) - set(cur_info.items()):
+        for fa, rank in set(new_data.items()) - set(cur_info.items()):
             # Check if this an addition or a change
             for entry in record.factions:
-                if entry.faction == faction:
+                if entry.faction == fa:
                     # Just a change, use the existing faction
                     target_entry = entry
                     break
@@ -500,7 +500,7 @@ class ActorFactions(_AParser):
                 target_entry = record.getDefault('factions')
                 record.factions.append(target_entry)
             # Actually write out the attributes from new_info
-            target_entry.faction = faction
+            target_entry.faction = fa
             target_entry.rank = rank
             target_entry.unused1 = b'ODB'
 
@@ -522,17 +522,17 @@ class ActorFactions(_AParser):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
         return '\n'.join([f'"{top_grup}","{actorEid}",{_fid_str(aid)},'
-                          f'"{fac_eid}",{_fid_str(faction)},"{rank}"' for
-            faction, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
+                          f'"{fac_eid}",{_fid_str(fa)},"{rank}"' for
+            fa, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
     """id_stored_data differs here - _key1 is a mod:
     id_stored_data[fn_mod][longid] = levels_dict"""
-    _csv_header = (_(u'Source Mod'), _(u'Actor Eid'), _(u'Actor Mod'),
-        _(u'Actor Object'), _(u'Offset'), _(u'CalcMin'), _(u'CalcMax'),
-        _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
-        _(u'Old CalcMax'))
+    _csv_header = (
+        _('Source Mod'), _('Actor Eid'), _('Actor Mod'), _('Actor Object'),
+        _('Offset'), _('CalcMin'), _('CalcMax'), _('Old IsPCLevelOffset'),
+        _('Old Offset'), _('Old CalcMin'), _('Old CalcMax'))
     _parser_sigs = [b'NPC_']
     _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
     _key2_getter = itemgetter(2, 3)
@@ -1038,13 +1038,12 @@ class ScriptText(_TextParser):
         """Reads scripts from specified mod."""
         eid_data = self.eid_data
         modFile = self._load_plugin(modInfo)
-        with Progress(_(u'Export Scripts')) as progress:
+        with Progress(_('Export Scripts')) as progress:
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
             for z, (rfid, record) in enumerate(present_recs):
-                progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
-                eid_data[record.eid] = (record.script_source.splitlines(),
-                                        rfid)
+                progress((0.5 / y) * z, _('Reading scripts in %s.') % modInfo)
+                eid_data[record.eid] = record.script_source.splitlines(), rfid
 
     _changed_type = list
     def writeToMod(self, modInfo, makeNew=False):

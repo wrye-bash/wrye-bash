@@ -943,7 +943,7 @@ class UIList(PanelWin):
         self.keyPrefix = keyPrefix
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
-        self._colDict = {} # used in setting column sort indicator
+        self._col_index = {} # used in setting column sort indicator
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
                                   self.__class__._sunkenBorder,
@@ -957,19 +957,18 @@ class UIList(PanelWin):
         checkboxesIL = self._icons.GetImageList()
         self.sm_up = checkboxesIL.Add(images['arrow.up.16'].get_bitmap())
         self.sm_dn = checkboxesIL.Add(images['arrow.down.16'].get_bitmap())
-        self.__gList._native_widget.SetImageList(checkboxesIL,
-                                                 wx.IMAGE_LIST_SMALL)
+        self.__gList.set_image_list(checkboxesIL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
             self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
         # gList callbacks
         self.__gList.on_lst_col_rclick.subscribe(self.DoColumnMenu)
         self.__gList.on_context_menu.subscribe(self.DoItemMenu)
-        self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
+        self.__gList.on_lst_col_click.subscribe(self._on_column_click)
         self.__gList.on_key_up.subscribe(self._handle_key_up)
         self.__gList.on_key_down.subscribe(self._handle_key_down)
         #--Events: Columns
-        self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
+        self.__gList.on_lst_col_end_drag.subscribe(self._on_column_resize)
         #--Events: Items
         self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
         self.__gList.on_item_selected.subscribe(self._handle_select)
@@ -998,30 +997,30 @@ class UIList(PanelWin):
     def all_allowed_cols(self):
         return [c for c in self.allCols if c not in self.banned_columns]
     @property
-    def colWidths(self): return _settings[self.keyPrefix + u'.colWidths']
+    def colWidths(self): return _settings[f'{self.keyPrefix}.colWidths']
     @property
     def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings[self.keyPrefix + u'.colReverse']
+        return _settings[f'{self.keyPrefix}.colReverse']
     @property
-    def cols(self): return _settings[self.keyPrefix + u'.cols']
+    def cols(self): return _settings[f'{self.keyPrefix}.cols']
     @property
     def allowed_cols(self):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
     def auto_col_widths(self):
-        return _settings.get(self.keyPrefix + '.auto_size_columns',
+        return _settings.get(f'{self.keyPrefix}.auto_size_columns',
             AutoSize.FIT_MANUAL)
     @auto_col_widths.setter
     def auto_col_widths(self, val):
-        _settings[self.keyPrefix + '.auto_size_columns'] = val
+        _settings[f'{self.keyPrefix}.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(self.keyPrefix + u'.sort', self._default_sort_col)
+        return _settings.get(f'{self.keyPrefix}.sort', self._default_sort_col)
     @sort_column.setter
-    def sort_column(self, val): _settings[self.keyPrefix + u'.sort'] = val
+    def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
 
     def _handle_select(self, item_key):
         self._select(item_key)
@@ -1042,13 +1041,12 @@ class UIList(PanelWin):
         :param target_ini_setts: Cached information about the INI settings.
             Used on the INI Edits tab"""
         insert = False
-        gl_set_item = self.__gList._native_widget.SetItem
         allow_cols = self.allowed_cols # property, calculate once
         if not allow_cols:
             return # No visible columns, nothing to do
         if item is not None:
             try:
-                itemDex = self.GetIndex(item)
+                itemDex = self._get_uil_index(item)
             except KeyError: # item is not present, so inserting
                 itemDex = self.item_count # insert at the end
                 insert = True
@@ -1065,15 +1063,16 @@ class UIList(PanelWin):
         else:
             # The item is already in the UIList, so we only need to redecorate
             # and set text for all labels
-            gItem = self.__gList._native_widget.GetItem(itemDex)
+            gItem = self.__gList.get_item_data(itemDex)
             self.__setUI(item, target_ini_setts, gItem)
             # Piggyback off the SetItem call we need for __setUI to also set
             # the first column's text
             gItem.SetText(str_label)
-            gl_set_item(gItem)
+            self.__gList.set_item_data(gItem)
         for col_index, col in enumerate(allow_cols[1:], start=1):
             ##: HACK, same as above
-            gl_set_item(itemDex, col_index, f'{self.labels[col](self, item)}')
+            self.__gList.set_item_data(itemDex, col_index,
+                                       f'{self.labels[col](self, item)}')
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -1103,7 +1102,7 @@ class UIList(PanelWin):
         if df.text_key:
             gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
         else:
-            gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
+            gItem.SetTextColour(self.__gList.get_text_color())
         if df.back_key:
             gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
@@ -1151,7 +1150,7 @@ class UIList(PanelWin):
             # the GUI lag
             with self.pause_drawing():
                 for d in to_del:
-                    self.__gList.RemoveItemAt(self.GetIndex(d))
+                    self.__gList.RemoveItemAt(self._get_uil_index(d))
                 for upd in redraw:
                     self.PopulateItem(item=upd)
                 #--Sort
@@ -1252,11 +1251,11 @@ class UIList(PanelWin):
                 [x.abs_path.s for x in self.GetSelectedInfos()])
 
     # Columns callbacks
-    def OnColumnClick(self, evt_col):
-        """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[evt_col],u'INVERT')
+    def _on_column_click(self, evt_col):
+        """Column header was left-clicked on. Sort on that column."""
+        self.SortItems(self.cols[evt_col], 'INVERT')
 
-    def OnColumnResize(self, evt_col):
+    def _on_column_resize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
         colName = self.cols[evt_col]
         width = self.__gList.lc_get_column_width(evt_col)
@@ -1264,7 +1263,7 @@ class UIList(PanelWin):
             width = self._min_column_width
             self.__gList.lc_set_column_width(evt_col, self._min_column_width)
             # if we do not veto the column will be resized anyway!
-            self.__gList._native_widget.resizeLastColumn(0) # resize last column to fill
+            self.__gList.resize_last_col() # resize last column to fill
             self.colWidths[colName] = width
             return EventResult.CANCEL
         self.colWidths[colName] = width
@@ -1378,23 +1377,19 @@ class UIList(PanelWin):
         return self.data_store[item_key] if item_key else item_key
 
     #--Item selection ---------------------------------------------------------
-    def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
-                      __state_selected=wx.LIST_STATE_SELECTED):
+    def _get_selected(self, items=False):
+        """Return the list of indexes highlighted in the interface in
+        display order - if items is True return the list of items instead."""
         listCtrl, selected_list = self.__gList, []
-        i = listCtrl._native_widget.GetNextItem(-1, __next_all, __state_selected)
+        i = listCtrl.get_selected_index()
         while i != -1:
-            selected_list.append(lam(i))
-            i = listCtrl._native_widget.GetNextItem(i, __next_all, __state_selected)
-        return selected_list
+            selected_list.append(i)
+            i = listCtrl.get_selected_index(i)
+        return [*map(self.GetItem, selected_list)] if items else selected_list
 
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
-        return self._get_selected(lam=self.GetItem)
-
-    def GetSelectedIndexes(self):
-        """Return list of indexes highlighted in the interface in display
-        order."""
-        return self._get_selected()
+        return self._get_selected(items=True)
 
     def GetSelectedInfos(self, selected=None):
         """Return list of infos selected (highlighted) in the interface."""
@@ -1406,7 +1401,7 @@ class UIList(PanelWin):
             selected or self.GetSelected())]
 
     def SelectItem(self, item, deselectOthers=False):
-        dex = self.GetIndex(item)
+        dex = self._get_uil_index(item)
         if deselectOthers: self.ClearSelected()
         else: #we must deselect the item and then reselect for callbacks to run
             self.__gList.lc_select_item_at_index(dex, select=False)
@@ -1428,19 +1423,16 @@ class UIList(PanelWin):
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
-    def EnsureVisibleItem(self, itm_name, focus=False):
-        self.EnsureVisibleIndex(self.GetIndex(itm_name), focus=focus)
-
     def EnsureVisibleIndex(self, dex, focus=False):
         if focus:
-            self.__gList._native_widget.Focus(dex)
+            self.__gList.focus_index(dex)
         else:
-            self.__gList._native_widget.EnsureVisible(dex)
+            self.__gList.ensure_visible_index(dex)
         self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
         self.SelectItem(item, deselectOthers=deselectOthers)
-        self.EnsureVisibleItem(item, focus=focus)
+        self.EnsureVisibleIndex(self._get_uil_index(item), focus=focus)
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
@@ -1467,12 +1459,19 @@ class UIList(PanelWin):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        column, reverse, oldcol = self._GetSortSettings(column, reverse)
+        column, reverse, oldcol = self._get_sort_settings(column, reverse)
         items = self._SortItems(column, reverse)
         self.__gList.ReorderDisplayed(items)
-        self._setColumnSortIndicator(column, oldcol, reverse)
+        # check if old column is present then clear the sort indicator - not
+        # needed if column stays the same (set_col_image will replace the icon)
+        if column != oldcol and oldcol in self._col_index:
+            self.__gList.clear_col_image(self._col_index[oldcol])
+        # set column sort image - runs also on disabling columns
+        if column in self._col_index: # check if the column was not just hidden
+            self.__gList.set_col_image(self._col_index[column],
+                                       self.sm_dn if reverse else self.sm_up)
 
-    def _GetSortSettings(self, column, reverse):
+    def _get_sort_settings(self, column, reverse):
         """Return parsed col, reverse arguments. Used by SortItems.
         col: sort variable.
           Defaults to last sort. (self.sort)
@@ -1517,24 +1516,12 @@ class UIList(PanelWin):
             for lamda in self._extra_sortings: lamda(self, items)
         return items
 
-    def _setColumnSortIndicator(self, col, oldcol, reverse):
-        # set column sort image
-        try:
-            listCtrl = self.__gList
-            try: listCtrl._native_widget.ClearColumnImage(self._colDict[oldcol])
-            except KeyError:
-                pass # if old column no longer is active this will fail but
-                #  not a problem since it doesn't exist anyways.
-            listCtrl._native_widget.SetColumnImage(self._colDict[col],
-                                    self.sm_dn if reverse else self.sm_up)
-        except KeyError: pass
-
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self, index) -> FName | int:
         """Return item (key in self.data_store) for specified list index."""
         return self.__gList.FindItemAt(index)
 
-    def GetIndex(self,item):
+    def _get_uil_index(self, item):
         """Return index for item, raise KeyError if item not present."""
         return self.__gList.FindIndexOf(item)
 
@@ -1542,14 +1529,12 @@ class UIList(PanelWin):
     def _clean_column_settings(self):
         """Removes columns that no longer exist from settings files."""
         valid_columns = set(self.allCols)
-        # Clean the widths/reverse dictionaries - extracted into helper method
-        def clean_dict(dict_key):
-            stored_dict = _settings[self.keyPrefix + dict_key]
+        # Clean the widths/reverse dictionaries
+        for dict_key in ('.colWidths', '.colReverse'):
+            stored_dict = _settings[f'{self.keyPrefix}{dict_key}']
             invalid_columns = set(stored_dict) - valid_columns
             for c in invalid_columns:
                 del stored_dict[c]
-        clean_dict(u'.colWidths')
-        clean_dict(u'.colReverse')
         # Clean the list of enabled columns for this UIList
         stored_cols = self.cols
         invalid_columns = set(stored_cols) - valid_columns
@@ -1566,7 +1551,7 @@ class UIList(PanelWin):
         allow_cols = self.allowed_cols
         numCols = len(allow_cols)
         names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
-        self._colDict.clear()
+        self._col_index.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = allow_cols[colDex]
@@ -1588,7 +1573,7 @@ class UIList(PanelWin):
                 else: # New column
                     listCtrl.lc_insert_column(colDex, colName)
                     listCtrl.lc_set_column_width(colDex, colWidth)
-            self._colDict[colKey] = colDex
+            self._col_index[colKey] = colDex
             colDex += 1
         while listCtrl.lc_get_columns_count() > numCols:
             listCtrl.lc_delete_column(numCols)
@@ -1604,22 +1589,22 @@ class UIList(PanelWin):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[self.keyPrefix + u'.scrollPos'] = self.__gList._native_widget.GetScrollPos(
-            wx.VERTICAL if isVertical else wx.HORIZONTAL)
+        _settings[f'{self.keyPrefix}.scrollPos'] = self.__gList.get_scroll_pos(
+            isVertical)
 
     def SetScrollPosition(self):
         if _settings['bash.restore_scroll_positions']:
             with self.__gList.pause_drawing():
-                self.__gList._native_widget.ScrollLines(
-                    _settings.get(self.keyPrefix + '.scrollPos', 0))
+                self.__gList.set_scroll_pos(
+                    _settings.get(f'{self.keyPrefix}.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
         if not selected: selected = self.GetSelected()
         if selected:
-            index = self.GetIndex(selected[0])
+            index = self._get_uil_index(selected[0])
             if index != -1:
-                self.__gList._native_widget.EditLabel(index)
+                self.__gList.edit_label(index)
 
     @conversation
     def DeleteItems(self, wrapped_evt=None, items=None,

@@ -778,20 +778,18 @@ class MelUnion(MelBase):
     # unique attributes on the records
     _union_index = 0
 
-    def __init__(self, element_mapping, decider: ADecider=SignatureDecider(),
-                 fallback=None):
+    def __init__(self, element_mapping: dict[object, MelBase],
+                 decider: ADecider = SignatureDecider(),
+                 fallback: MelBase | None = None):
         """Creates a new MelUnion with the specified element mapping and
         optional parameters. See the class docstring for extensive information
         on MelUnion usage.
 
         :param element_mapping: The element mapping.
-        :type element_mapping: dict[object, MelBase]
         :param decider: An ADecider instance to use. Defaults to
             SignatureDecider.
-        :type decider: ADecider
         :param fallback: The fallback element to use. Defaults to None, which
-            will raise an error if the decider returns an unknown value.
-        :type fallback: MelBase"""
+            will raise an error if the decider returns an unknown value."""
         # Decide on the decider
         if not isinstance(decider, ADecider):
             raise ArgumentError('decider must be an ADecider')
@@ -813,9 +811,8 @@ class MelUnion(MelBase):
         self.decider_result_attr = f'_union_type_{MelUnion._union_index}'
         MelUnion._union_index += 1
         self.fallback = fallback
-        self._possible_sigs = {s for element
-                               in self.element_mapping.values()
-                               for s in element.signatures}
+        self._possible_sigs = {*chain.from_iterable(element.signatures for
+                               element in self.element_mapping.values())}
         if self.fallback:
             self._possible_sigs.update(self.fallback.signatures)
 
@@ -1080,19 +1077,19 @@ class MelExtra(_MelWrapper):
 class MelSorted(_MelWrapper):
     """Wraps a MelBase-derived element with a list as its single attribute and
     sorts that list right after loading and right before dumping."""
-    def __init__(self, sorted_mel, sort_by_attrs=(), sort_special=None):
+
+    def __init__(self, sorted_mel: MelBase, sort_by_attrs=(),
+                 sort_special: callable = None):
         """Creates a new MelSorted instance with the specified parameters.
 
         :param sorted_mel: The element that needs sorting.
-        :type sorted_mel: MelBase
         :param sort_by_attrs: May either be a tuple or a string. Specifies the
             attribute(s) of the list entries that should be used as the sort
             key(s). If left empty, the entire list entry will be used as the
             sort key (same as specifying key=None for a sort).
         :param sort_special: Allows specifying a completely custom key function
-            for sorting.
-        :type sort_special: callable"""
-        super(MelSorted, self).__init__(sorted_mel)
+            for sorting."""
+        super().__init__(sorted_mel)
         if sort_special:
             # Special key function given, use that
             self._attr_key_func = sort_special

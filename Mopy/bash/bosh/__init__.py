@@ -1682,7 +1682,7 @@ class FileInfos(TableFileInfos):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile, AINIInfo):
-    _valid_exts_re = r'(\.(?:' + u'|'.join(
+    _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
 
     def _reset_cache(self, stat_tuple, load_cache):

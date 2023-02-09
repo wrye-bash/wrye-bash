@@ -1155,7 +1155,7 @@ class ModList(_ModsUIList):
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
-            chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
+            chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
             for dex in indexes:
                 if previous != -1 and previous + 1 != dex:
@@ -2892,7 +2892,7 @@ class InstallersList(balt.UIList):
             moveMod = 1 if kcode in balt.wxArrowDown else -1 # move down or up
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
-            visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
+            visibleIndex = self._get_uil_index(sorted_[0]) + moveMod * 2
             maxPos = max(x.order for x in self.data_store.values())
             for thisFile in sorted_:
                 newPos = self.data_store[thisFile].order + moveMod
@@ -2954,13 +2954,13 @@ class InstallersList(balt.UIList):
             max_order = sorted_inst[-1].order + 1 #place it after last selected
         else:
             max_order = None
-        new_marker = FName(u'====')
+        new_marker = FName('====')
         try:
-            index = self.GetIndex(new_marker)
+            index = self._get_uil_index(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
             self.data_store.add_marker(new_marker, max_order)
             self.RefreshUI() # need to redraw all items cause order changed
-            index = self.GetIndex(new_marker)
+            index = self._get_uil_index(new_marker)
         if index != -1:
             self.SelectAndShowItem(new_marker, deselectOthers=True,
                                    focus=True)
