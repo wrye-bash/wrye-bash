@@ -1367,9 +1367,10 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         if not destArchive: return
         with balt.Progress(_('Converting to Archive...')) as progress:
             #--Perform the conversion
-            msg = f'{destArchive}: ' + _(
-                u'An error occurred while applying an Auto-BCF.')
-            msg += _(u'Maybe the BCF was packed for another installer ?')
+            msg = _('%(dest_archive)s: An error occurred while applying a '
+                    'BCF. This can occur if the BCF is applied to an already '
+                    'BCF-converted archive. More details about the error '
+                    'follow:') % {'dest_archive': destArchive}
             new_archive_order = self.idata[self.selected[-1]].order + 1
             try:
                 self.idata.apply_converter(self.converter, destArchive,

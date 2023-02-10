@@ -2042,9 +2042,10 @@ class InstallersData(DataStore):
             else:
                 self.irefresh(what=u'I', pending=[destArchive])
                 return iArchive
-        except StateError:
+        except StateError as e:
             deprint(msg, traceback=True)
-            if show_warning: show_warning(msg)
+            if show_warning:
+                show_warning(msg + f'\n\n{e.message}')
             raise # UI expects that
 
     def scan_installers_dir(self, folders, files, fullRefresh=False, *,

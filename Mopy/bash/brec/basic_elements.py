@@ -485,7 +485,7 @@ class MelUnorderedGroups(MelGroups):
         )
 
         MelUnorderedGroups('subs',
-            MelFloat(b'SUB1', 'sub1'),
+            MelUInt32(b'SUB1', 'sub1'),
             MelFloat(b'SUB2', 'sub2'),
         )
 

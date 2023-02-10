@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import io
+import os
 import pickle
 from collections import defaultdict
 from itertools import chain
@@ -374,28 +375,29 @@ class InstallerConverter(object):
                 self.convertedFiles):
             srcDir, srcFile = srcDir_File
             #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
-            srcFile = tempJoin((f'{srcDir:08X}' if isinstance(srcDir, int)
-                                else srcDir), srcFile)
-            destFile = destJoin(destFile)
-            if not srcFile.exists():
-                raise StateError(
-                    f'{self.fullPath.stail}: Missing source file:\n{srcFile}')
+            srcDir = f'{srcDir:08X}' if isinstance(srcDir, int) else srcDir
+            src_rel = os.path.join(srcDir, srcFile)
+            src_full = tempJoin(src_rel)
+            if not src_full.exists():
+                raise StateError(_('%(bcf_rel)s: Missing source file:') % {
+                    'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
             if destFile is None:
-                raise StateError(
-                    f'{self.fullPath.stail}: Unable to determine file '
-                    f'destination for:\n{srcFile}')
+                raise StateError(_('%(bcf_rel)s: Unable to determine file '
+                                   'destination for:') % {
+                    'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
             #--This allows files to be moved whenever possible, speeding
             # file operations up
+            dest_full = destJoin(destFile)
             if numDupes > 1:
-                progress(index, _(u'Copying file...') + u'\n' + destFile.stail)
+                progress(index, _('Copying file...') + f'\n{destFile}')
                 dupes[crcValue] = numDupes - 1
-                srcFile.copyTo(destFile)
+                src_full.copyTo(dest_full)
             else:
-                progress(index, _(u'Moving file...') + u'\n' + destFile.stail)
-                srcFile.moveTo(destFile)
+                progress(index, _('Moving file...') + f'\n{destFile}')
+                src_full.moveTo(dest_full)
         #--Done with unpacked directory
         tmpDir.rmtree(safety=tmpDir.s)
 
