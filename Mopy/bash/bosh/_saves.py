@@ -36,7 +36,7 @@ from ..bolt import Flags, SubProgress, deprint, dict_sort, encode, flag, \
     structs_cache, unpack_int, unpack_many, unpack_short, unpack_str8
 from ..brec import FormId, ModReader, MreRecord, RecordType, \
     ShortFidWriteContext, int_unpacker, unpack_header
-from ..exception import AbstractError, ModError, StateError
+from ..exception import ModError, StateError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
@@ -649,7 +649,7 @@ class _SaveData:
         self.saveFile = SaveFile(self.saveInfo)
         self.saveFile.load(progress)
 
-    def load_data(self, progress=None): raise AbstractError
+    def load_data(self, progress=None): raise NotImplementedError
 
 class SaveSpells(_SaveData):
     """Player spells of a savegame."""

@@ -28,7 +28,6 @@ from ... import bush
 from ...bolt import LogFile, Rounder
 from ...bosh.cosaves import PluggyCosave, _Remappable, _xSEChunk, \
     _xSEChunkPLGN, _xSEHeader, _xSEModListChunk, get_cosave_types, xSECosave
-from ...exception import AbstractError
 
 # Helper functions ------------------------------------------------------------
 _xse_cosave_exts = (u'.obse', u'.fose', u'.nvse', u'.skse', u'.f4se')
@@ -231,7 +230,7 @@ class ATest_xSEChunk(object):
     def _get_remapping(self, curr_chunk: _xSEChunk) -> dict:
         """Returns a dictionary that can be passed to cchunk.remap_plugins.
         Must increase the size of exactly one master by exactly one byte."""
-        raise AbstractError(u'_get_remapping not implemented')
+        raise NotImplementedError
 
     def _map_chunks(self, map_func):
         """Maps the specified functions over all chunks with signature

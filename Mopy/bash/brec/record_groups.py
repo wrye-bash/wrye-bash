@@ -35,7 +35,7 @@ from .mod_io import ChildrenGrupHeader, ExteriorGrupHeader, FastModReader, \
     GrupHeader, RecordHeader, TopGrupHeader, unpack_header
 from .utils_constants import DUMMY_FID, FormId, group_types
 from ..bolt import MasterSet, attrgetter_cache, deprint, dict_sort, sig_to_str
-from ..exception import AbstractError, ModError
+from ..exception import ModError
 
 class _AMobBase:
     """Group of records and/or subgroups."""
@@ -52,22 +52,22 @@ class _AMobBase:
     # Abstract methods --------------------------------------------------------
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by __init__()."""
-        raise AbstractError('_load_rec_group not implemented')
+        raise NotImplementedError
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        raise AbstractError
+        raise NotImplementedError
 
     def get_num_headers(self):
         """Return the number of record and GRUP headers contained in this
         group."""
-        raise AbstractError
+        raise NotImplementedError
 
     def dump(self, out):
         """Dumps record header and data into output file stream."""
-        raise AbstractError
+        raise NotImplementedError
 
-    def __bool__(self): raise AbstractError
+    def __bool__(self): raise NotImplementedError
 
 class _RecordsGrup(_AMobBase):
     """Record group unpacked into records."""
@@ -76,7 +76,7 @@ class _RecordsGrup(_AMobBase):
         """Flattens the structure of this record block into a linear sequence
         of records. Works as an iterator for memory reasons.
         :param skip_flagged: skip records flagged as ignored/deleted."""
-        raise AbstractError('iter_records not implemented')
+        raise NotImplementedError
 
     def iter_present_records(self, rec_sig=None):
         """Filters iter_records, returning only records that have not set
@@ -102,7 +102,7 @@ class _RecordsGrup(_AMobBase):
     # Patch API
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        raise AbstractError('keepRecords not implemented')
+        raise NotImplementedError
 
     def merge_records(self, block, loaded_mods: set | None, mergeIds,
                       skip_merge: bool):
@@ -116,14 +116,14 @@ class _RecordsGrup(_AMobBase):
             merged by this operation will be added.
         :param skip_merge: If True, skip merging and only perform merge
             filtering. Used by IIM mode and Filter plugins."""
-        raise AbstractError(f'{self}: merge_records not implemented')
+        raise NotImplementedError
 
     def updateRecords(self, srcBlock, mergeIds):
         """Update the contents of records inside the BP to ones from a
         source plugin. We never add new records into the BP here. That's
         only done by importers (using setRecord) or by merging files (via
         merge_records)."""
-        raise AbstractError('updateRecords not implemented')
+        raise NotImplementedError
 
     # Helpers -----------------------------------------------------------------
     @staticmethod
@@ -202,14 +202,14 @@ class MobBase(_HeadedGrup):
     def getSize(self):
         """Returns size (including size of any group headers)."""
         if self.grup_blob is None:
-            raise AbstractError(f'{self!r} was not loaded')
+            raise NotImplementedError(f'{self!r} was not loaded')
         return self.size
 
     def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
         there's no subrecords, in which case, it returns 0."""
         if self.grup_blob is None:
-            raise AbstractError(f'{self!r} was not loaded')
+            raise NotImplementedError(f'{self!r} was not loaded')
         elif self._num_headers > -1: #--Cached value.
             return self._num_headers
         elif not self.grup_blob: #--No data >> no records, not even self.
@@ -232,7 +232,7 @@ class MobBase(_HeadedGrup):
     def dump(self, out):
         """Dumps record header and data into output file stream."""
         if self.grup_blob is None:
-            raise AbstractError(f'{self!r} was not loaded')
+            raise NotImplementedError(f'{self!r} was not loaded')
         if self.grup_blob:
             self._write_header(out)
             out.write(self.grup_blob)

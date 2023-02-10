@@ -73,8 +73,8 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items
 from ..bosh import ModInfo, omods
-from ..exception import AbstractError, BoltError, CancelError, FileError, \
-    SkipError, UnknownListener
+from ..exception import BoltError, CancelError, FileError, SkipError, \
+    UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, ImageWrapper, Label, \
@@ -985,7 +985,7 @@ class ModList(_ModsUIList):
         #--Save and Refresh
         try:
             bosh.modInfos.cached_lo_save_all()
-        except BoltError as e:
+        except (BoltError, NotImplementedError) as e:
             balt.showError(self, f'{e}')
         first_impacted = load_order.cached_lo_tuple()[first_index]
         self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
@@ -1263,7 +1263,7 @@ class ModList(_ModsUIList):
                     deactivated = [x for x in deactivated if x != act]
                     changes[self.__deactivated_key][act] = \
                         load_order.get_ordered(deactivated)
-            except BoltError as e:
+            except (BoltError, NotImplementedError) as e:
                 balt.showError(self, f'{e}')
         # Activate ?
         # Track illegal activations for the return value
@@ -1284,7 +1284,7 @@ class ModList(_ModsUIList):
                 if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
-            except BoltError as e:
+            except (BoltError, NotImplementedError) as e:
                 balt.showError(self, f'{e}')
                 break
         # Show warnings to the user if they attempted to deactivate mods that
@@ -1378,11 +1378,11 @@ class _DetailsMixin(object):
     @property
     def file_info(self): return self.file_infos.get(self.displayed_item, None)
     @property
-    def displayed_item(self): raise AbstractError
+    def displayed_item(self): raise NotImplementedError
     @property
-    def file_infos(self): raise AbstractError
+    def file_infos(self): raise NotImplementedError
 
-    def _resetDetails(self): raise AbstractError
+    def _resetDetails(self): raise NotImplementedError
 
     # Details panel API
     def SetFile(self, fileName=_same_file):
@@ -1422,7 +1422,7 @@ class _EditableMixin(_DetailsMixin):
 
     # Abstract edit methods
     @property
-    def allowDetailsEdit(self): raise AbstractError
+    def allowDetailsEdit(self): raise NotImplementedError
 
     def SetEdited(self):
         if not self.displayed_item: return
@@ -1431,7 +1431,7 @@ class _EditableMixin(_DetailsMixin):
             self._save_btn.enabled = True
         self._cancel_btn.enabled = True
 
-    def DoSave(self): raise AbstractError
+    def DoSave(self): raise NotImplementedError
 
     def DoCancel(self): self.SetFile()
 
@@ -1440,7 +1440,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     _max_filename_chars = 256
     _min_controls_width = 128
     @property
-    def file_info(self): raise AbstractError
+    def file_info(self): raise NotImplementedError
     @property
     def displayed_item(self):
         return self.file_info.fn_key if self.file_info else None
@@ -1543,7 +1543,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         super(_ModsSavesDetails, self).ShowPanel(**kwargs)
         self.uilist.autosizeColumns()
 
-    def testChanges(self): raise AbstractError
+    def testChanges(self): raise NotImplementedError
 
 class _ModMasterList(MasterList):
     """Override to avoid doing size checks on save master lists."""

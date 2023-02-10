@@ -44,7 +44,6 @@ from .text_components import Label, SearchBar, TextAlignment, TextField, \
 from .top_level_windows import DialogWindow
 ##: Remove GPath, it's for file dialogs
 from ..bolt import GPath, dict_sort
-from ..exception import AbstractError
 
 class CopyOrMovePopup(DialogWindow):
     """A popup that allows the user to choose between moving or copying a file
@@ -179,11 +178,11 @@ class MultiChoicePopup(_TransientPopup):
 
     def on_item_checked(self, choice_name: str, choice_checked: bool):
         """Called when a single item has been checked or unchecked."""
-        raise AbstractError('on_item_checked not implemented')
+        raise NotImplementedError
 
     def on_mass_select(self, curr_choices: list[str], choices_checked: bool):
         """Called when multiple items have been checked or unchecked."""
-        raise AbstractError('on_mass_select not implemented')
+        raise NotImplementedError
 
 # File Dialogs ----------------------------------------------------------------
 class _FileDialog(_AComponent):

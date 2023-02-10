@@ -39,8 +39,8 @@ from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
     pack_short, struct_error, struct_pack, struct_unpack, unpack_4s, \
     unpack_byte, unpack_double, unpack_float, unpack_int, unpack_int_signed, \
     unpack_short, unpack_spaced_string, unpack_str16, unpack_str32
-from ..exception import AbstractError, BoltError, CosaveError, \
-    InvalidCosaveError, UnsupportedCosaveError
+from ..exception import BoltError, CosaveError, InvalidCosaveError, \
+    UnsupportedCosaveError
 
 # TODO(inf) All the chunk_length stuff needs to be reworked: first encode all
 #  unicode strings, then measure the length of the byte sequence, then dump.
@@ -80,7 +80,7 @@ class _Remappable(object):
         :param plugin_renames: A dictionary containing the renames: key is the
             name of the plugin before the renaming, value is the name
             afterwards."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class _Dumpable(object):
     """Mixin for objects inside cosaves that can be dumped to a log."""
@@ -92,7 +92,7 @@ class _Dumpable(object):
         :param log: A bolt.Log instance to write to.
         :param save_masters_: A list of the masters of the save file that this
             object's cosave belongs to."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class _ChunkEntry(object):
     """Base class for chunk entries, which are an abstraction layer over a
@@ -107,7 +107,7 @@ class _ChunkEntry(object):
         implemented.
 
         :param out: The output stream to write to."""
-        raise AbstractError()
+        raise NotImplementedError
 
     def entry_length(self) -> int:
         """Calculates the length of this entry, i.e. the length of the data
@@ -116,7 +116,7 @@ class _ChunkEntry(object):
         this would be meaningful.
 
         :return: The calculated length (in bytes)."""
-        raise AbstractError()
+        raise NotImplementedError
 
 #------------------------------------------------------------------------------
 # Headers
@@ -254,7 +254,7 @@ class _xSEChunk(_AChunk):
         :return: The calculated length (in bytes)."""
         # Let's be defensive here - will minimally slow us down to check this,
         # but enforcing your API is good practice
-        if self.fully_decoded: raise AbstractError()
+        if self.fully_decoded: raise NotImplementedError
         return len(self.chunk_data)
 
     def __repr__(self):
@@ -840,7 +840,7 @@ class _PluggyBlock(_AChunk, _Dumpable):
         exception are the array blocks, since they may occur multiple times.
 
         :return: A human-understandable, unique identifier for this block."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class _PluggyPluginBlock(_PluggyBlock, _Remappable):
     """The plugin records block of a pluggy cosave. Contains a list of the
@@ -1366,7 +1366,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
         :param ins: The input stream to read from.
         :param light: Whether or not to only load the first chunk of the file
             (and, if applicable, only the first cunk of that chunk)."""
-        raise AbstractError()
+        raise NotImplementedError
 
     def _add_cosave_chunk(self, cosave_chunk):
         """Adds a new chunk to this cosave. Appends the specified chunk to the

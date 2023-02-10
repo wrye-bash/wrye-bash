@@ -34,7 +34,7 @@ from itertools import chain
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct
 from ..bolt import attrgetter_cache, deprint, structs_cache
-from ..exception import AbstractError, ArgumentError, ModSizeError
+from ..exception import ArgumentError, ModSizeError
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -315,7 +315,7 @@ class MelArray(MelBase):
             before the repeating element."""
         try:
             self._element_size = element.static_size
-        except AbstractError:
+        except NotImplementedError:
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'have a static size')
         if len(element.signatures) != 1:
@@ -343,7 +343,7 @@ class MelArray(MelBase):
         self._prelude_has_fids = False
         try:
             self._prelude_size = prelude.static_size if prelude else 0
-        except AbstractError:
+        except NotImplementedError:
             raise SyntaxError(u'MelArray preludes must have a static size')
 
     def getSlotsUsed(self):
@@ -521,7 +521,7 @@ class MelTruncatedStruct(MelStruct):
     def static_size(self):
         # We behave just like a regular struct if we don't have any old formats
         if len(self._all_unpackers) != 1:
-            raise AbstractError()
+            raise NotImplementedError
         return super(MelTruncatedStruct, self).static_size
 
 #------------------------------------------------------------------------------
@@ -577,7 +577,7 @@ class ADecider(object):
         :type rec_size: int
         :return: Any value this decider deems fitting for the parameters it is
             given."""
-        raise AbstractError()
+        raise NotImplementedError
 
     def decide_dump(self, record):
         """Called during dumpData.
@@ -586,7 +586,7 @@ class ADecider(object):
         :return: Any value this decider deems fitting for the parameters it is
             given."""
         if self.can_decide_at_dump:
-            raise AbstractError()
+            raise NotImplementedError
 
 class ACommonDecider(ADecider):
     """Abstract class for deciders that can decide at both load and dump-time,
@@ -602,7 +602,7 @@ class ACommonDecider(ADecider):
 
     def _decide_common(self, record):
         """Performs the actual decisions for both loading and dumping."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function
@@ -720,7 +720,7 @@ class PartialLoadDecider(ADecider):
 
     def decide_dump(self, record):
         if not self.can_decide_at_dump:
-            raise AbstractError()
+            raise NotImplementedError
         # We can simply delegate here without doing anything else, since the
         # record has to have been loaded since then
         return self._decider.decide_dump(record)
@@ -960,7 +960,7 @@ class MelUnion(MelBase):
             all_elements.append(self.fallback)
         first_size = all_elements[0].static_size # pick arbitrary element size
         if any(element.static_size != first_size for element in all_elements):
-            raise AbstractError() # The sizes are not all identical
+            raise NotImplementedError # The sizes are not all identical
         return first_size
 
 #------------------------------------------------------------------------------
@@ -1071,7 +1071,7 @@ class MelExtra(_MelWrapper):
         # Check if the wrapped element is static-sized and store the size if so
         try:
             self._wrapped_size = wrapped_mel.static_size
-        except AbstractError:
+        except NotImplementedError:
             self._wrapped_size = None
         self._extra_attr = extra_attr
 

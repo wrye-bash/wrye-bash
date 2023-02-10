@@ -32,7 +32,7 @@ from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bush
 from ...bolt import RecPath, build_esub, setattr_deep
-from ...exception import AbstractError, BPConfigError
+from ...exception import BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
 
@@ -145,7 +145,7 @@ class _ANamesTweak(CustomChoiceTweak):
 
     def _exec_rename(self, record):
         """Does the actual renaming, returning the new name as its result."""
-        raise AbstractError(u'_exec_rename not implemented')
+        raise NotImplementedError
 
 class _AMgefNamesTweak(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
@@ -174,7 +174,7 @@ class _AEffectsTweak(_ANamesTweak):
         """Returns the school for this record as a single letter, based on its
         first effect (e.g. 'D' for a spell where the first effect belongs to
         the school of Destruction)."""
-        raise AbstractError('_get_spell_school not implemented')
+        raise NotImplementedError
 
     def _get_spell_level(self, record):
         """Returns the level for this spell as an integer:
@@ -192,7 +192,7 @@ class _AEffectsTweak(_ANamesTweak):
           2: Adept (level 50)
           3: Expert (level 75)
           4: Master (level 100)"""
-        raise AbstractError('_get_spell_level not implemented')
+        raise NotImplementedError
 
 class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
     """Oblivion implementation of _AEffectsTweak's API."""

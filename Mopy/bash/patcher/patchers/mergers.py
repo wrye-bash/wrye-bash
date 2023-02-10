@@ -32,7 +32,7 @@ from itertools import chain
 from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName
-from ...exception import AbstractError, BoltError, ModSigMismatchError
+from ...exception import BoltError, ModSigMismatchError
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
@@ -809,7 +809,7 @@ class _AListsMerger(ListPatcher):
     def _get_entries(self, target_list):
         """Retrieves a list of the items in the specified list. No default
         implementation, every patcher needs to override this."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class LeveledListsPatcher(_AListsMerger):
     """Merges leveled lists."""

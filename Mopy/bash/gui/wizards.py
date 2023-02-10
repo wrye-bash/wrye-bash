@@ -29,7 +29,6 @@ from .buttons import BackButton, CancelButton, NextButton, OkButton
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout
 from .misc_components import HorizontalLine
 from .top_level_windows import DialogWindow, PanelWin
-from ..exception import AbstractError
 
 class WizardDialog(DialogWindow):
     """A wizard dialog, which can show multiple WizardPage instances."""
@@ -124,29 +123,29 @@ class WizardDialog(DialogWindow):
     def _has_next_page(self):
         """Returns True if there is a next page that the wizard can be moved
         to."""
-        raise AbstractError(u'_has_next_page not implemented')
+        raise NotImplementedError
 
     def _has_prev_page(self):
         """Returns True if there is a previous page that the wizard can be
         moved to."""
-        raise AbstractError(u'_has_prev_page not implemented')
+        raise NotImplementedError
 
     def _get_next_page(self):
         """Returns a WizardPage to move to next when moving forwards. Returns
         None if _has_next_page would return False right now, i.e. there is no
         next page to move to."""
-        raise AbstractError(u'_get_next_page not implemented')
+        raise NotImplementedError
 
     def _get_prev_page(self):
         """Returns a WizardPage to move to next when moving backwards. Returns
         None if _has_prev_page would return False right now, i.e. there is no
         previous page to move to."""
-        raise AbstractError(u'_get_prev_page not implemented')
+        raise NotImplementedError
 
     def _cancel_wizard(self):
         """Called when the wizard is cancelled via the Cancel button or via the
         'X' window button."""
-        raise AbstractError(u'_cancel_wizard not implemented')
+        raise NotImplementedError
 
 class WizardPage(PanelWin):
     """A single wizard page."""

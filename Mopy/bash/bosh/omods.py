@@ -41,7 +41,7 @@ def _readNetString(open_file):
         strLen = unpack_short(open_file)
         strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
         if strLen > 0x7FFF:
-            raise NotImplementedError(u'String too long to convert.')
+            raise NotImplementedError('String too long to convert.')
     return open_file.read(strLen)
 
 def _writeNetString(open_file, string):
@@ -50,7 +50,7 @@ def _writeNetString(open_file, string):
     if strLen < 128:
         pack_byte_signed(open_file, strLen)
     elif strLen > 0x7FFF: #--Actually probably fails earlier.
-        raise NotImplementedError(u'String too long to convert.')
+        raise NotImplementedError('String too long to convert.')
     else:
         strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
         pack_byte_signed(open_file, strLen)

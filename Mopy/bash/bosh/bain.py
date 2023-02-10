@@ -44,8 +44,8 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bolt import AFile, CIstr, FName, GPath, ListInfo, Path, SubProgress, \
     deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items
-from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
-    FileError, InstallerArchiveError, SkipError, StateError
+from ..exception import ArgumentError, BSAError, CancelError, FileError, \
+    InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
 
 os_sep = os.path.sep
@@ -326,7 +326,7 @@ class Installer(ListInfo):
 
     def __reduce__(self):
         """Used by pickler to save object state."""
-        raise AbstractError(f'{type(self)} must define __reduce__')
+        raise NotImplementedError(f'{type(self)} must define __reduce__')
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
@@ -1175,9 +1175,9 @@ class Installer(ListInfo):
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
-    def _open_txt_file(self, rel_path): raise AbstractError
-    def wizard_file(self): raise AbstractError
-    def fomod_file(self): raise AbstractError
+    def _open_txt_file(self, rel_path): raise NotImplementedError
+    def wizard_file(self): raise NotImplementedError
+    def fomod_file(self): raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -1188,7 +1188,7 @@ class Installer(ListInfo):
         avoid recalculating crc's.
         :param recalculate_project_crc: only used in InstallerProject override
         """
-        raise AbstractError
+        raise NotImplementedError
 
     def install(self, destFiles, progress=None):
         """Install specified files to Data directory."""
@@ -1201,7 +1201,7 @@ class Installer(ListInfo):
         return self._install(dest_src, progress)
 
     def _install(self, dest_src, progress):
-        raise AbstractError
+        raise NotImplementedError
 
     def _fs_install(self, dest_src, srcDirJoin, progress,
                     subprogressPlus, unpackDir):
@@ -1254,7 +1254,7 @@ class Installer(ListInfo):
         return log.out.getvalue()
 
     @staticmethod
-    def _list_package(apath, log): raise AbstractError
+    def _list_package(apath, log): raise NotImplementedError
 
     def renameInstaller(self, name_new, idata_):
         """Rename installer and return a three tuple specifying if a refresh in
@@ -1281,7 +1281,7 @@ class Installer(ListInfo):
 
         :param delta_files: The missing or mismatched files to sync.
         :param progress: A progress dialog to use when syncing."""
-        raise AbstractError
+        raise NotImplementedError
 
     # Factory -----------------------------------------------------------------
     @classmethod

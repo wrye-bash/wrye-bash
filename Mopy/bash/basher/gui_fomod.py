@@ -27,7 +27,6 @@ from collections import defaultdict
 
 from .. import balt, bass, bolt, bush, env
 from ..balt import EnabledLink, Links, colors
-from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
@@ -569,7 +568,7 @@ class _GroupLink(EnabledLink):
 
     def _should_enable(self, checkable):
         """Returns True if the specified checkable should be enabled."""
-        raise AbstractError('_should_enable not implemented')
+        raise NotImplementedError
 
 class _Group_SelectAll(_GroupLink):
     """Select all options in the selected group."""

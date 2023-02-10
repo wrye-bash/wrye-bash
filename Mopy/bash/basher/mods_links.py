@@ -106,7 +106,7 @@ class _Mods_ActivateAll(_AMods_ActivePlugins):
                              'activate all mergeable plugins, so some were '
                              'skipped.'),
                 title=_('Too Many Plugins'))
-        except exception.BoltError as e:
+        except (exception.BoltError, NotImplementedError) as e:
             deprint('Error while activating plugins', traceback=True)
             self._showError(f'{e}')
         self._refresh_mods_ui()
@@ -521,7 +521,7 @@ class Mods_ImportBashTags(_Mods_BashTags):
         self.plugins_imported = []
         try:
             self.read_csv(imp_path)
-        except exception.BoltError:
+        except (exception.BoltError, NotImplementedError):
             self._showError(_(u'The selected file is not a valid '
                               u'bash tags CSV export.'))
             return

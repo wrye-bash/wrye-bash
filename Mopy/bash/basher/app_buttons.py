@@ -31,7 +31,6 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
 from ..env import get_game_version_fallback, getJava
-from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
@@ -634,7 +633,7 @@ class _StatefulButton(StatusBar_Button):
     _default_state = True
 
     @property
-    def sb_button_tip(self): raise AbstractError
+    def sb_button_tip(self): raise NotImplementedError
 
     def SetState(self, state=None):
         """Set state related info. If newState != None, sets to new state

@@ -44,7 +44,7 @@ from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
     unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_str_int_delim
-from ..exception import AbstractError, SaveHeaderError
+from ..exception import SaveHeaderError
 
 # Utilities -------------------------------------------------------------------
 def _unpack_fstr8(ins) -> bytes:
@@ -113,7 +113,7 @@ class SaveFileHeader(object):
         self._decode_masters()
 
     def dump_header(self, out):
-        raise AbstractError
+        raise NotImplementedError
 
     def load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)

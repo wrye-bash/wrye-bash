@@ -36,7 +36,6 @@ from collections.abc import Iterable
 from . import getPatchesPath
 from .. import load_order
 from ..bolt import deprint, dict_sort, sig_to_str
-from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 from ..parsers import _HandleAliases
 
@@ -323,7 +322,7 @@ class MultiTweakItem:
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
         specified record."""
-        raise AbstractError(u'wants_record not implemented')
+        raise NotImplementedError
 
     def prepare_for_tweaking(self, patch_file):
         """Gives this tweak a chance to prepare for the phase where it gets
@@ -340,7 +339,7 @@ class MultiTweakItem:
         this call, keep() will be called and the record will be kept as an
         override in the BP. So make sure wants_record *never* lets ITMs and
         ITPOs through!"""
-        raise AbstractError(u'tweak_record not implemented')
+        raise NotImplementedError
 
     def finish_tweaking(self, patch_file):
         """Gives this tweak a chance to clean up and do any work after the
@@ -365,7 +364,7 @@ class ScanPatcher(APatcher):
         Records that have been copied into the BP once will automatically
         be updated by update_patch_records_from_mod/mergeModFile so skip if
         we've already copied this record or if we're not interested in it."""
-        raise AbstractError
+        raise NotImplementedError
 
 class ModLoader(ScanPatcher): ##: this must go - WIP!
     """Mixin for patchers loading mods"""

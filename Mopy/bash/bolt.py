@@ -56,7 +56,6 @@ except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
 from . import exception
-from .exception import AbstractError
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -1731,7 +1730,7 @@ class ListInfo:
 
     @classmethod
     def get_store(cls):
-        raise AbstractError(f'{type(cls)} does not provide a data store')
+        raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
     def get_rename_paths(self, newName):
@@ -2612,10 +2611,10 @@ class _ARP_Subpath(object):
 
     # See RecPath for documentation of these methods
     def rp_eval(self, record) -> list:
-        raise exception.AbstractError('rp_eval not implemented')
+        raise NotImplementedError
 
     def rp_map(self, record, func, *args) -> None:
-        raise exception.AbstractError('rp_map not implemented')
+        raise NotImplementedError
 
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next

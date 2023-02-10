@@ -29,8 +29,7 @@ from . import bush, env
 from .bass import dirs
 from .bolt import AFile, CIstr, DefaultLowerDict, ListInfo, LowerDict, \
     OrderedLowerDict, decoder, deprint, getbestencoding
-from .exception import AbstractError, CancelError, FailedIniInferError, \
-    SkipError
+from .exception import CancelError, FailedIniInferError, SkipError
 
 _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 
@@ -143,7 +142,7 @@ class AIniFile(ListInfo):
     def get_ci_settings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        raise AbstractError
+        raise NotImplementedError
 
     def _get_ci_settings(self, tweakPath):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
@@ -153,14 +152,14 @@ class AIniFile(ListInfo):
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
-        raise AbstractError
+        raise NotImplementedError
 
     def read_ini_content(self, as_unicode=True):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
         Note we strip line endings at the end of the line in unicode mode.
         :rtype: list[str]|bytes"""
-        raise AbstractError
+        raise NotImplementedError
 
     def analyse_tweak(self, tweak_file):
         """Analyse the tweak lines based on self settings and type. Return a

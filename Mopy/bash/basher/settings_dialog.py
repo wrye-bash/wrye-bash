@@ -1011,7 +1011,7 @@ class BackupsPage(_AFixedPage):
             except ValueError:
                 pass
             Link.Frame.Restart([u'--restore'], [u'--filename', backup_dir.s])
-        except exception.BoltError as e:
+        except (exception.BoltError, NotImplementedError) as e:
             deprint(u'Restore settings failed:', traceback=True)
             restore_.warn_message(balt, e.message)
         finally:

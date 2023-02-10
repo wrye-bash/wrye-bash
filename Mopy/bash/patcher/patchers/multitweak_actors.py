@@ -29,7 +29,6 @@ import re
 
 from .base import MultiTweaker, MultiTweakItem, is_templated
 from ... import bass, bush
-from ...exception import AbstractError
 
 class _AActorTweak(MultiTweakItem):
     """Base for all actor tweaks."""
@@ -68,7 +67,7 @@ class _ASkeletonTweak(_ANpcTweak):
     def _get_target_skeleton(self, record):
         """Returns the skeleton path that we want to change the skeleton of the
         specified record to."""
-        raise AbstractError(u'_get_target_skeleton not implemented')
+        raise NotImplementedError
 
     def wants_record(self, record):
         chosen_gender = self.choiceValues[self.chosen][0]

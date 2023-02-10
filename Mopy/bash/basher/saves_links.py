@@ -36,7 +36,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
-from ..exception import AbstractError, ArgumentError, BoltError, ModError
+from ..exception import ArgumentError, BoltError, ModError
 from ..gui import BusyCursor, FileSave, ImageWrapper
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
@@ -230,7 +230,7 @@ class _Save_ChangeLO(OneItemLink):
             self._showError(errorMessage, self._selected_item)
 
     def _lo_operation(self):
-        raise AbstractError(u'_lo_operation not implemented')
+        raise NotImplementedError
 
 class Save_ActivateMasters(_Save_ChangeLO):
     """Sets the active mods to the save game's masters."""
@@ -794,7 +794,7 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
         return bool(self._cosave)
 
     def _get_cosave(self):
-        raise AbstractError(u'_get_cosave not implemented')
+        raise NotImplementedError
 
     def Execute(self):
         with BusyCursor():

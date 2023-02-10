@@ -37,8 +37,7 @@ from . import bolt
 from .bolt import FName, Path, deprint, readme_url
 from .env import BTN_CANCEL, BTN_NO, BTN_OK, BTN_YES, GOOD_EXITS, \
     TASK_DIALOG_AVAILABLE, TaskDialog
-from .exception import AbstractError, AccessDeniedError, CancelError, \
-    SkipError, StateError
+from .exception import AccessDeniedError, CancelError, SkipError, StateError
 from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     CheckListBox, Color, DialogWindow, DirOpen, DocumentViewer, EventResult, \
     FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
@@ -554,16 +553,16 @@ class ListEditorData(object):
     #--List
     def getItemList(self):
         """Returns item list in correct order."""
-        raise AbstractError # return []
+        raise NotImplementedError # return []
     def add(self):
         """Performs add operation. Return new item on success."""
-        raise AbstractError # return None
+        raise NotImplementedError # return None
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
-        raise AbstractError # return False
+        raise NotImplementedError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
-        raise AbstractError # return False
+        raise NotImplementedError # return False
 
     #--Info box
     def getInfo(self,item):
@@ -571,7 +570,7 @@ class ListEditorData(object):
         return u''
     def setInfo(self, item, info_text):
         """Sets string info on specified item."""
-        raise AbstractError
+        raise NotImplementedError
 
     #--Save/Cancel
     def save(self):
@@ -1322,7 +1321,7 @@ class UIList(PanelWin):
 
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
-        raise AbstractError
+        raise NotImplementedError
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1600,8 +1599,8 @@ class UIList(PanelWin):
         if event: event.Veto()
         return False
 
-    def OnDropFiles(self, x, y, filenames): raise AbstractError
-    def OnDropIndexes(self, indexes, newPos): raise AbstractError
+    def OnDropFiles(self, x, y, filenames): raise NotImplementedError
+    def OnDropIndexes(self, indexes, newPos): raise NotImplementedError
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
@@ -1676,7 +1675,7 @@ class UIList(PanelWin):
         self.data_store.delete_refresh(hidden_, None, check_existence=True)
 
     @staticmethod
-    def _unhide_wildcard(): raise AbstractError
+    def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
         srcDir = self.data_store.hidden_dir
         wildcard = self._unhide_wildcard()
@@ -1938,7 +1937,7 @@ class ItemLink(Link):
 
     def Execute(self):
         """Event: link execution."""
-        raise AbstractError(u'Execute not implemented')
+        raise NotImplementedError
 
     @staticmethod
     def ShowHelp(event): # <wx._core.MenuEvent>
@@ -2050,7 +2049,7 @@ class TransLink(Link):
 
     def _decide(self, window, selection):
         """Return a Link subclass instance to call AppendToMenu on."""
-        raise AbstractError
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         return self._decide(window, selection).AppendToMenu(menu, window,
@@ -2074,7 +2073,7 @@ class AppendableLink(Link):
 
     def _append(self, window):
         """"Override as needed to append or not the menu item."""
-        raise AbstractError
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         if not self._append(window): return
@@ -2085,7 +2084,7 @@ class MultiLink(Link):
     """A link that resolves to several links when appended."""
     def _links(self):
         """Returns the list of links that this link resolves to."""
-        raise AbstractError(u'_links not implemented')
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         last_ret = None
@@ -2129,7 +2128,7 @@ class OneItemLink(EnabledLink):
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK
 
-    def _check(self): raise AbstractError
+    def _check(self): raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         menuItem = super(CheckLink, self).AppendToMenu(menu, window, selection)
@@ -2464,7 +2463,7 @@ class INIListCtrl(wx.ListCtrl):
     def fit_column_to_header(self, column):
         self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
 
-    def _get_selected_line(self, index): raise AbstractError
+    def _get_selected_line(self, index): raise NotImplementedError
 
 # Status bar ------------------------------------------------------------------
 # TODO(inf) de_wx! Wrap wx.StatusBar
@@ -2484,8 +2483,8 @@ class DnDStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
-    def UpdateIconSizes(self, skip_refresh=False): raise AbstractError
-    def GetLink(self,uid=None,index=None,button=None): raise AbstractError
+    def UpdateIconSizes(self, skip_refresh=False): raise NotImplementedError
+    def GetLink(self,uid=None,index=None,button=None): raise NotImplementedError
 
     @property
     def iconsSize(self): # +8 as each button has 4 px border on left and right

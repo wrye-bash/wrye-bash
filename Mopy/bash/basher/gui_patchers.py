@@ -35,7 +35,7 @@ from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout
 from ..patcher import patches_set
-from ..patcher.base import MultiTweakItem, APatcher
+from ..patcher.base import APatcher, MultiTweakItem
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
@@ -585,7 +585,7 @@ class _ChoiceMenuMixin(object):
         else:
             self.mouse_pos = None
 
-    def ShowChoiceMenu(self, lb_selection_dex): raise exception.AbstractError
+    def ShowChoiceMenu(self, lb_selection_dex): raise NotImplementedError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label_text, val): # edit label text with value

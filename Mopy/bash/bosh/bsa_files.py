@@ -46,7 +46,7 @@ from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import AFile, Flags, Progress, deprint, struct_calcsize, \
     struct_error, struct_unpack, structs_cache, unpack_byte, unpack_int
 from ..env import convert_separators
-from ..exception import AbstractError, BSACompressionError, BSADecodingError, \
+from ..exception import BSACompressionError, BSADecodingError, \
     BSADecompressionError, BSADecompressionSizeError, BSAError, BSAFlagError
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
@@ -67,7 +67,7 @@ class _BsaCompressionType(object):
         """Compresses the specified record data. Raises a BSAError if the
         underlying compression library raises an error. Returns the resulting
         compressed data."""
-        raise AbstractError()
+        raise NotImplementedError
 
     @staticmethod
     def decompress_rec(compressed_data, decompressed_size, bsa_name):
@@ -75,7 +75,7 @@ class _BsaCompressionType(object):
         number of bytes of decompressed data and raises a BSAError if a
         mismatch occurs or if the underlying compression library raises an
         error. Returns the resulting decompressed data."""
-        raise AbstractError()
+        raise NotImplementedError
 
 # Note that I mirrored BSArch here by simply leaving zlib and lz4 at their
 # defaults for compression
@@ -574,8 +574,8 @@ class ABsa(AFile):
         return folder_to_assets
 
     # Abstract
-    def _load_bsa(self): raise AbstractError()
-    def _load_bsa_light(self): raise AbstractError()
+    def _load_bsa(self): raise NotImplementedError
+    def _load_bsa_light(self): raise NotImplementedError
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):

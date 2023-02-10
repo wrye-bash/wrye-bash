@@ -41,7 +41,6 @@ from .bolt import DefaultFNDict, FName, attrgetter_cache, deprint, dict_sort, \
     int_or_none, setattr_deep, sig_to_str, str_or_none, str_to_sig
 from .brec import FormId, MelObject, RecHeader, RecordType, attr_csv_struct, \
     null3
-from .exception import AbstractError
 from .mod_files import LoadFactory, ModFile
 
 ##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
@@ -90,10 +89,10 @@ class _TextParser(object):
             self._write_rows(out)
 
     def _write_rows(self, out):
-        raise AbstractError(f'{type(self)} must implement _write_rows')
+        raise NotImplementedError(f'{type(self)} must implement _write_rows')
 
     def _header_row(self, out):
-        raise AbstractError(f'{type(self)} must implement _header_row')
+        raise NotImplementedError(f'{type(self)} must implement _header_row')
 
     # Load plugin -------------------------------------------------------------
     def _load_plugin(self, mod_info, keepAll=False, target_types=None,
@@ -168,7 +167,7 @@ class CsvParser(_TextParser):
         return bool(id_data) and [sig_to_str(top_grup_sig)]
 
     def _row_out(self, lfid, stored_data, top_grup):
-        raise AbstractError(f'{type(self)} must implement _row_out')
+        raise NotImplementedError(f'{type(self)} must implement _row_out')
 
     # Read csv functionality --------------------------------------------------
     def read_csv(self, csv_path):
@@ -198,7 +197,7 @@ class CsvParser(_TextParser):
         id_stored_data - both id and stored_data vary in type and meaning.
 
         :param csv_fields: A line in a CSV file, already split into fields."""
-        raise AbstractError(f'{type(self)} must implement _parse_line')
+        raise NotImplementedError(f'{type(self)} must implement _parse_line')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         return RecordType.sig_to_class[top_grup_sig].parse_csv_line(csv_fields,
@@ -362,7 +361,7 @@ class _AParser(_HandleAliases):
         :param record: The record to read.
         :return: Whatever representation you want to convert this record
             into."""
-        raise AbstractError(u'_read_record_fp not implemented')
+        raise NotImplementedError
 
     # Reading from plugin - second pass
     def _read_plugin_sp(self, loaded_mod):
@@ -388,7 +387,7 @@ class _AParser(_HandleAliases):
 
         :param record: The record in question.
         :return: True if information for the record should be stored."""
-        raise AbstractError(u'_is_record_useful not implemented')
+        raise NotImplementedError
 
     def _read_record_sp(self, record):
         """Performs the actual parser-specific second pass code on the
@@ -400,7 +399,7 @@ class _AParser(_HandleAliases):
         :param record: The record to read.
         :return: Whatever representation you want to convert this record
             into."""
-        raise AbstractError(u'_read_record_sp not implemented')
+        raise NotImplementedError
 
     # Note the non-PEP8 names - those point to refactored pseudo-API methods
     def readFromMod(self, mod_info):
@@ -435,7 +434,7 @@ class _AParser(_HandleAliases):
         :param record: The record to write to.
         :param new_data: The new record info.
         :param cur_info: The current record info."""
-        raise AbstractError(u'_write_record_2 not implemented')
+        raise NotImplementedError
 
     _changed_type = Counter
     def _write_record(self, record, new_data, changed_stats):

@@ -174,7 +174,7 @@ class MelBase(Subrecord):
 
     def getDefault(self):
         """Returns a default copy of object."""
-        raise exception.AbstractError()
+        raise NotImplementedError
 
     def getLoaders(self,loaders):
         """Adds self as loader for type."""
@@ -216,7 +216,7 @@ class MelBase(Subrecord):
     def mapFids(self, record, function, save_fids=False):
         """Applies function to fids. If save is True, then fid is set
         to result of function - see ReplaceFormIDsPatcher."""
-        raise exception.AbstractError(
+        raise NotImplementedError(
             f'mapFids called on subrecord without FormIDs (signatures: '
             f'{sorted(self.signatures)})')
 
@@ -241,7 +241,7 @@ class MelBase(Subrecord):
         """Returns an integer denoting the number of bytes this element is
         going to take. Raises an AbstractError if the element can't know this
         (e.g. MelBase or MelNull)."""
-        raise exception.AbstractError()
+        raise NotImplementedError
 
 # -----------------------------------------------------------------------------
 class MelBaseR(MelBase):
@@ -470,7 +470,7 @@ class MelGroups(MelGroup):
 
     @property
     def static_size(self):
-        raise exception.AbstractError()
+        raise NotImplementedError
 
 #------------------------------------------------------------------------------
 class MelUnorderedGroups(MelGroups):

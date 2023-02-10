@@ -9,7 +9,6 @@ exclude_lines = [
     # __repr__s are often debug-only, so ignore those
     'def __repr__',
     # Ignore defensive exceptions that will likely never be raised during tests
-    'raise (exception\.)?AbstractError',
     'raise NotImplementedError',
     # Ignore lines only run by type-checkers
     'if (typing\.)?TYPE_CHECKING:',

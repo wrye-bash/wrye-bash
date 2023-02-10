@@ -31,7 +31,7 @@ from itertools import chain
 from .. import bolt
 from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
     structs_cache
-from ..exception import AbstractError, StateError
+from ..exception import StateError
 
 # no local imports, imported everywhere in brec
 
@@ -194,7 +194,7 @@ class FormId:
         return self # immutable
 
     def __getstate__(self):
-        raise AbstractError("You can't pickle a FormId")
+        raise NotImplementedError("You can't pickle a FormId")
 
     def __str__(self):
         if isinstance(self.long_fid, tuple):
@@ -288,7 +288,7 @@ class _DummyFid(_Tes4Fid):
     """Used by setDefault (yak) - will blow on dump, make sure you replace
     it with a proper FormId."""
     def dump(self):
-        raise AbstractError('Dumping a dummy fid')
+        raise NotImplementedError('Dumping a dummy fid')
 DUMMY_FID = _DummyFid(0)
 
 # Random stuff ----------------------------------------------------------------

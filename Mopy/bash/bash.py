@@ -406,7 +406,8 @@ def _main(opts, wx_locale, wxver):
             restore_.extract_backup()
             # get the bash.ini from the backup, or None - use in _detect_game
             bash_ini_path = restore_.backup_ini_path()
-        except (exception.BoltError, exception.StateError, OSError):
+        except (exception.BoltError, exception.StateError, OSError,
+                NotImplementedError):
             bolt.deprint(u'Failed to restore backup', traceback=True)
             restore_ = None
     # The rest of backup/restore functionality depends on setting the game
@@ -420,7 +421,8 @@ def _main(opts, wx_locale, wxver):
                     bush_game.bash_root_prefix, bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
-            except (exception.BoltError, OSError, shutil.Error):
+            except (exception.BoltError, OSError, shutil.Error,
+                    NotImplementedError):
                 bolt.deprint(u'Failed to restore backup', traceback=True)
                 restore_.restore_ini()
                 # reset the game and ini - bush was already imported by
@@ -436,7 +438,7 @@ def _main(opts, wx_locale, wxver):
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
         from . import basher
-    except (exception.BoltError, ImportError, OSError):
+    except (exception.BoltError, ImportError, OSError, NotImplementedError):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc()])

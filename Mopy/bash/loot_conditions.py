@@ -36,7 +36,7 @@ import re
 from . import bass, bush
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
-from .exception import AbstractError, EvalError, FileError
+from .exception import EvalError, FileError
 ##: below is too tight coupling with Bash internals - pass those as
 # parameters along with modInfos currently imported locally
 from .load_order import cached_active_tuple, cached_is_active
@@ -158,7 +158,7 @@ class _ACondition(object):
 
     def evaluate(self) -> bool:
         """Evaluates this condition, resolving it to a boolean value."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class ConditionAnd(_ACondition):
     """Combines two conditions, evaluates to True iff both conditions evaluate

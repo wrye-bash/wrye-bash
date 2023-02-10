@@ -50,8 +50,8 @@ from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
-from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
-    CancelError, FailedIniInferError, FileError, ModError, PluginsFullError, \
+from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
+    FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
@@ -243,7 +243,7 @@ class FileInfo(AFile, ListInfo):
         and G-pathing are expensive.
 
         :return: A list of the masters of this file, as paths."""
-        raise AbstractError()
+        raise NotImplementedError
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
@@ -1389,7 +1389,7 @@ class DataStore(DataDict):
                 check_existence=True)
 
     def files_to_delete(self, filenames, **kwargs):
-        raise AbstractError
+        raise NotImplementedError
 
     def _delete_operation(self, paths, delete_info, *, recycle=True):
         env.shellDelete(paths, recycle=recycle)
@@ -1401,9 +1401,9 @@ class DataStore(DataDict):
         return fn_items
 
     def delete_refresh(self, deleted, deleted2, check_existence):
-        raise AbstractError
+        raise NotImplementedError
 
-    def refresh(self): raise AbstractError
+    def refresh(self): raise NotImplementedError
     def save(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName):
@@ -1427,7 +1427,7 @@ class DataStore(DataDict):
     def bash_dir(self):
         """Return the folder where Bash persists its data - create it on init!
         :rtype: bolt.Path"""
-        raise AbstractError
+        raise NotImplementedError
 
     @property
     def hidden_dir(self):
@@ -1869,7 +1869,7 @@ class INIInfos(TableFileInfos):
                 except UnicodeDecodeError:
                     deprint(f'Failed to read {tweak_path}', traceback=True)
                     continue
-                except BoltError as e:
+                except (BoltError, NotImplementedError) as e:
                     deprint(e.message)
                     continue
                 _added.add(new_tweak)
@@ -2742,7 +2742,7 @@ class ModInfos(FileInfos):
                         if p in self.mergeable: _add_to_actives(p)
                 except PluginsFullError as e:
                     raise SkippedMergeablePluginsError() from e
-        except BoltError:
+        except (BoltError, NotImplementedError):
             wip_actives.clear() # Don't save, something went wrong
             raise
         finally:

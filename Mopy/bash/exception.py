@@ -34,11 +34,6 @@ class BoltError(Exception):
         return self.message
 
 # Code errors -----------------------------------------------------------------
-class AbstractError(BoltError):
-    """Coding Error: Abstract code section called."""
-    def __init__(self, message=u'Abstract section called.'):
-        super(AbstractError, self).__init__(message)
-
 class ArgumentError(BoltError):
     """Coding Error: Argument out of allowed range of values."""
     def __init__(self, message=u'Argument is out of allowed ranged of values.'):

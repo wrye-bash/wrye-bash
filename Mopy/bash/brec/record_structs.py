@@ -415,7 +415,7 @@ class MreRecord(metaclass=RecordType):
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        raise exception.AbstractError(
+        raise NotImplementedError(
             f'updateMasters called on skipped type {self.rec_str}')
 
     def setChanged(self,value=True):

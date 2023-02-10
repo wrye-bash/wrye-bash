@@ -40,7 +40,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
-from ..exception import AbstractError, BoltError, CancelError
+from ..exception import BoltError, CancelError
 from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
@@ -1072,7 +1072,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _DirtyLink(ItemLink):
-    def _ignoreDirty(self, fileInfo): raise AbstractError
+    def _ignoreDirty(self, fileInfo): raise NotImplementedError
 
     def Execute(self):
         for fileName, fileInfo in self.iselected_pairs():
@@ -1428,9 +1428,9 @@ class _Esm_Esl_Flip(EnabledLink):
     _add_flag = _remove_flag = u''
 
     @property
-    def _already_flagged(self): raise AbstractError()
+    def _already_flagged(self): raise NotImplementedError
 
-    def _exec_flip(self): raise AbstractError()
+    def _exec_flip(self): raise NotImplementedError
 
     @property
     def link_text(self):
@@ -1712,7 +1712,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
             parser.write_text_file(textPath)
             progress(1.0, _(u'Done.'))
 
-    def _parser(self): raise AbstractError
+    def _parser(self): raise NotImplementedError
 
 class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u'No changes required.')
@@ -2203,7 +2203,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                         buff.append(f"  '{badEid}'")
                 log_text = '\n'.join(buff)
                 self._showLog(f'{log_text}\n', title=_('Objects Changed'))
-        except BoltError as e:
+        except (BoltError, NotImplementedError) as e:
             self._showWarning(f'{e!r}')
 
 #------------------------------------------------------------------------------

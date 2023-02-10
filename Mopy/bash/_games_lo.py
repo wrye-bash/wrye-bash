@@ -341,11 +341,11 @@ class LoGame(object):
     def has_load_order_conflict_active(self, mod_name, active): return False
     # force installation last - only for timestamp games
     def get_free_time(self, start_time, end_time=None):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def active_changed(self): return self._plugins_txt_modified()
 
@@ -372,36 +372,36 @@ class LoGame(object):
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
         active plugins list."""
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _backup_load_order(self):
         """This method should make a backup of whatever file is storing the
         load order plugins list."""
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _fetch_load_order(self, cached_load_order: _LoTuple | None,
             cached_active: _LoTuple):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _fetch_active_plugins(self) -> list[FName]:
-        raise exception.AbstractError # no override for AsteriskGame
+        raise NotImplementedError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active, *, _cleaned=False):
         """Persist the fixed lord to disk - will break conflicts for
         timestamp games.
         :param _cleaned: internal, used in AsteriskGame - whether lists are
             already cleaned."""
-        raise exception.AbstractError(f'{type(self)} does not define '
-                                      f'_persist_load_order')
+        raise NotImplementedError(f'{type(self)} does not define '
+                                  f'_persist_load_order')
 
     def _persist_active_plugins(self, active, lord):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
         # Override for fallout4 to write the file once and oblivion to save
         # active only if needed. Both active and lord must not be None.
-        raise exception.AbstractError
+        raise NotImplementedError
 
     # MODFILES PARSING --------------------------------------------------------
     def _parse_modfile(self, path, do_raise=False) -> _ParsedLo:
@@ -863,12 +863,12 @@ class INIGame(LoGame):
         return super().get_lo_file()
 
     def _set_acti_file(self, new_acti_file):
-        raise exception.AbstractError(u'INIGame does not support'
-                                      u'_set_acti_file right now')
+        raise NotImplementedError('INIGame does not support'
+                                  '_set_acti_file right now')
 
     def _set_lo_file(self, new_lo_file):
-        raise exception.AbstractError(u'INIGame does not support _set_lo_file '
-                                      u'right now')
+        raise NotImplementedError('INIGame does not support _set_lo_file '
+                                  'right now')
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification

@@ -39,7 +39,7 @@ from .utils_constants import FID, ZERO_FID, get_structs
 from .. import bolt
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
-from ..exception import AbstractError, ModError
+from ..exception import ModError
 
 # Shared helpers --------------------------------------------------------------
 ##: These should probably go somewhere else
@@ -613,11 +613,11 @@ class _AMelNvnmComponent:
 
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
         """Loads this component from the specified input stream.."""
-        raise AbstractError('load_comp not implemented')
+        raise NotImplementedError
 
     def dump_comp(self, out, nvnm_ctx: ANvnmContext):
         """Dumps this component to the specified output stream."""
-        raise AbstractError('dump_comp not implemented')
+        raise NotImplementedError
 
     def map_fids(self, map_function, save_fids=False):
         """Maps fids for this component. Does nothing by default, you *must*

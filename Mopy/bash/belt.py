@@ -31,7 +31,6 @@ from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .balt import ItemLink, Links, images, staticBitmap
 from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback
-from .exception import AbstractError
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
     PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
@@ -269,7 +268,7 @@ class _PageLink(ItemLink):
     def _should_enable(self, check_state):
         """Returns True if a checkbox with the specified state should be
         enabled."""
-        raise AbstractError('_should_enable not implemented')
+        raise NotImplementedError
 
 class _Page_SelectAll(_PageLink):
     """Select all options on this page."""

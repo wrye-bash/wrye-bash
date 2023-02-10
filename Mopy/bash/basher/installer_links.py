@@ -47,8 +47,7 @@ from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerArchive, InstallerConverter, InstallerProject
-from ..exception import AbstractError, CancelError, SkipError, StateError, \
-    XMLParsingError
+from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
@@ -234,7 +233,7 @@ class _Installer_ARunFomod(_Installer_AFomod):
             self.iPanel.RefreshUIMods(*ui_refresh)
 
     def _execute_action(self, sel_package, ret, ui_refresh):
-        raise AbstractError('_execute_action not implemented')
+        raise NotImplementedError
 
 class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
     """Runs the FOMOD installer and installs the output via BAIN."""
@@ -784,7 +783,7 @@ class _Installer_OpenAt(_InstallerLink):
     _open_at_title: str
 
     def _url(self):
-        raise AbstractError('_url not implemented')
+        raise NotImplementedError
 
     def Execute(self):
         if self._askContinue(self._open_at_message, self._open_at_key,
