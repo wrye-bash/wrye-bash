@@ -1212,7 +1212,7 @@ class ConfirmationsPage(_AFixedPage):
         sorted_confs = sorted(self._confirmations.items(),
                               key=lambda x: x[0])
         if self._show_keys_checkbox.is_checked:
-            conf_names = [u'%s (%s)' % c for c in sorted_confs]
+            conf_names = [f'{m} ({k})' for m, k in sorted_confs]
         else:
             conf_names = [c[0] for c in sorted_confs]
         self._confirmation_list.lb_set_items(conf_names)

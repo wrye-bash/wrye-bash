@@ -94,11 +94,11 @@ def read_files_from_clipboard_cb(files_callback):
             _wx.TheClipboard.GetData(clip_data)
             _wx.CallAfter(files_callback, clip_data.GetFilenames())
 
-def get_ctrl_down(): # type: () -> bool
+def get_ctrl_down() -> bool:
     """Returns True if the Ctrl key is currently down."""
     return _wx.GetKeyState(_wx.WXK_CONTROL)
 
-def get_key_down(key_char): # type: (str) -> bool
+def get_key_down(key_char: str) -> bool:
     """Returns True if the key corresponding to the specified character is
     currently down."""
     return _wx.GetKeyState(ord(key_char))

@@ -311,30 +311,30 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return self.__ec() is not None
 
     ##: column wrappers - belong to a superclass that wraps ListCtrl
-    def lc_get_columns_count(self):
+    def lc_get_columns_count(self) -> int:
         return self._native_widget.GetColumnCount()
 
-    def lc_get_column_width(self, evt_col):
+    def lc_get_column_width(self, evt_col: int) -> int:
         return self._native_widget.GetColumnWidth(evt_col)
 
-    def lc_set_column_width(self, evt_col, column_width):
+    def lc_set_column_width(self, evt_col: int, column_width: int):
         self._native_widget.SetColumnWidth(evt_col, column_width)
 
-    def lc_set_auto_column_width(self, evt_col, auto_col: int):
+    def lc_set_auto_column_width(self, evt_col: int, auto_col: int):
         self._native_widget.SetColumnWidth(evt_col, _auto_size_to_wx[auto_col])
 
-    def lc_item_count(self):
+    def lc_item_count(self) -> int:
         return self._native_widget.GetItemCount()
 
-    def lc_get_column(self, colDex):
+    def lc_get_column(self, colDex: int):
         return self._native_widget.GetColumn(colDex)
 
-    def lc_insert_column(self, colDex, colName):
+    def lc_insert_column(self, colDex: int, colName: str):
         self._native_widget.InsertColumn(colDex, colName)
 
-    def lc_delete_column(self, colDex):
+    def lc_delete_column(self, colDex: int):
         self._native_widget.DeleteColumn(colDex)
 
-    def lc_select_item_at_index(self, index, select=True,
-                          __select=_wx.LIST_STATE_SELECTED):
+    def lc_select_item_at_index(self, index: int, select=True,
+                                __select=_wx.LIST_STATE_SELECTED):
         self._native_widget.SetItemState(index, select * __select, __select)

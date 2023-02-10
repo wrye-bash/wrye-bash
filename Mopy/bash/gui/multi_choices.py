@@ -44,7 +44,7 @@ class DropDown(_AComponent):
        selected. The parameter is the new value of selection."""
     _native_widget: _wx.ComboBox
 
-    def __init__(self, parent, value, choices, dd_tooltip: str = ''):
+    def __init__(self, parent, value: str, choices: list[str], dd_tooltip=''):
         """Creates a new DropDown with the specified properties.
 
         :param parent: The object that this dropdown belongs to. May be a wx
@@ -64,7 +64,7 @@ class DropDown(_AComponent):
         self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
             lambda event: [event.GetString()])
 
-    def set_choices(self, dd_choices):
+    def set_choices(self, dd_choices: list[str]):
         """Set the choices shown in this dropdown."""
         self._native_widget.SetItems(dd_choices)
 
@@ -72,7 +72,7 @@ class DropDown(_AComponent):
         """Set the choice that is currently selected in this dropdown."""
         self._native_widget.SetSelection(dd_selection)
 
-    def get_value(self):
+    def get_value(self) -> str:
         """Get the value of the choice that is currently selected in this
         dropdown."""
         return self._native_widget.GetValue()
@@ -102,10 +102,10 @@ class ColorPicker(_AComponent):
         self.on_color_picker_evt = self._evt_handler(
             _wx.EVT_COLOURPICKER_CHANGED)
 
-    def get_color(self): # type: () -> Color
+    def get_color(self) -> Color:
         return Color.from_wx(self._native_widget.GetColour())
 
-    def set_color(self, color): # type: (Color) -> None
+    def set_color(self, color: Color):
         self._native_widget.SetColour(color.to_rgba_tuple())
 
 class ListBox(WithMouseEvents):
@@ -135,36 +135,35 @@ class ListBox(WithMouseEvents):
                 lambda event: [event.GetSelection(), event.GetString()])
             self.on_list_box.subscribe(onSelect)
 
-    def lb_select_index(self, lb_selection_dex):
+    def lb_select_index(self, lb_selection_dex: int | None):
         self._native_widget.SetSelection( # clear selection if dex is None
             _wx.NOT_FOUND if lb_selection_dex is None else lb_selection_dex)
 
-    def lb_insert(self, str_item, lb_selection_dex):
+    def lb_insert(self, str_item: str, lb_selection_dex: int):
         self._native_widget.Insert(str_item, lb_selection_dex)
 
-    def lb_insert_items(self, items, pos):
-        self._native_widget.InsertItems(items, pos)
-
-    def lb_set_items(self, items):
+    def lb_set_items(self, items: list[str]):
         """Replace all the items in the control"""
         self._native_widget.Set(items)
 
-    def lb_set_label_at_index(self, lb_selection_dex, str_item):
+    def lb_set_label_at_index(self, lb_selection_dex: int, str_item: str):
         """Set the label for the given item"""
         self._native_widget.SetString(lb_selection_dex, str_item)
 
-    def lb_delete_at_index(self, lb_selection_dex):
+    def lb_delete_at_index(self, lb_selection_dex: int):
         """Delete the item at specified index."""
         self._native_widget.Delete(lb_selection_dex)
 
-    def lb_scroll_lines(self, scroll): self._native_widget.ScrollLines(scroll)
+    def lb_scroll_lines(self, scroll: int):
+        self._native_widget.ScrollLines(scroll)
 
-    def lb_append(self, str_item): self._native_widget.Append(str_item)
+    def lb_append(self, str_item: str):
+        self._native_widget.Append(str_item)
 
     def lb_clear(self): self._native_widget.Clear()
 
-    def lb_style_font_at_index(self, lb_selection_dex, bold=False,
-                               slant=False):
+    def lb_style_font_at_index(self, lb_selection_dex: int, bold: bool = False,
+                               slant: bool = False):
         curr_font = self._native_widget.GetFont()
         styled_font = Font.Style(curr_font, bold=bold, slant=slant)
         self._native_widget.SetItemFont(lb_selection_dex, styled_font)
@@ -176,22 +175,23 @@ class ListBox(WithMouseEvents):
     def lb_get_str_items(self) -> list[str]:
         return self._native_widget.GetStrings()
 
-    def lb_get_selections(self): return self._native_widget.GetSelections()
+    def lb_get_selections(self) -> list[int]:
+        return self._native_widget.GetSelections()
 
-    def lb_index_for_str_item(self, str_item):
+    def lb_index_for_str_item(self, str_item) -> int | None:
         # return self._native_widget.FindString(str_item) ##: fails on mac check on windows
         try:
             return self.lb_get_str_items().index(str_item)
         except ValueError:
             return None
 
-    def lb_get_vertical_scroll_pos(self):
+    def lb_get_vertical_scroll_pos(self) -> int:
         return self._native_widget.GetScrollPos(_wx.VERTICAL)
 
-    def lb_get_items_count(self):
+    def lb_get_items_count(self) -> int:
         return self._native_widget.GetCount()
 
-    def lb_get_selected_strings(self):
+    def lb_get_selected_strings(self) -> list[str]:
         return [self.lb_get_str_item_at_index(i)
                 for i in self.lb_get_selections()]
 
@@ -231,10 +231,10 @@ class CheckListBox(ListBox, WithCharEvents):
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
                                             lambda event: [self])
 
-    def lb_check_at_index(self, lb_selection_dex, do_check):
+    def lb_check_at_index(self, lb_selection_dex: int, do_check: bool):
         self._native_widget.Check(lb_selection_dex, do_check)
 
-    def lb_is_checked_at_index(self, lb_selection_dex):
+    def lb_is_checked_at_index(self, lb_selection_dex: int) -> bool:
         return self._native_widget.IsChecked(lb_selection_dex)
 
     def get_checked_strings(self) -> tuple[str, ...]:
@@ -245,7 +245,7 @@ class CheckListBox(ListBox, WithCharEvents):
         do_check = not self.lb_is_checked_at_index(lb_selection_dex)
         self.lb_check_at_index(lb_selection_dex, do_check)
 
-    def set_all_checkmarks(self, checked):
+    def set_all_checkmarks(self, checked: bool):
         """Sets all checkmarks to the specified state - checked if True,
         unchecked if False."""
         with self.pause_drawing():
@@ -257,9 +257,8 @@ class CheckListBox(ListBox, WithCharEvents):
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
         with self.pause_drawing():
-            self.lb_clear()
-            for i, (k, v) in enumerate(keys_values.items()):
-                self.lb_append(k)
+            self.lb_set_items(list(keys_values))
+            for i, v in enumerate(keys_values.values()):
                 self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate

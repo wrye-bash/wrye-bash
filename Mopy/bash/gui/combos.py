@@ -27,6 +27,7 @@ from __future__ import annotations
 __author__ = u'Infernio'
 
 from itertools import chain
+from collections.abc import Iterable
 
 import wx as _wx
 
@@ -45,8 +46,8 @@ class DoubleListBox(PanelWin):
     """A combination of two ListBoxes and left/right buttons to move items
     between the two lists. Note that this implementation currently only works
     with sorted ListBoxes."""
-    def __init__(self, parent, left_label, right_label, left_btn_tooltip=u'',
-            right_btn_tooltip=u''):
+    def __init__(self, parent, left_label: str, right_label: str,
+            left_btn_tooltip='', right_btn_tooltip=''):
         super(DoubleListBox, self).__init__(parent)
         self._left_list = ListBox(self, isSort=True, isHScroll=True,
             onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
@@ -211,12 +212,13 @@ class TreePanel(_APageComponent):
     class _LinkPage(ATreeMixin, PanelWin):
         """A panel with links to each subpage, that will take the user there
         when they click on them."""
-        def __init__(self, parent, page_desc, select_page_callback,
-                parent_page_name, sub_pages):
+        def __init__(self, parent, page_desc: str, select_page_callback,
+                parent_page_name: str, sub_pages: Iterable[str]):
             super().__init__(parent)
-            def make_link(subpage_name):
-                new_link = HyperlinkLabel(self, subpage_name, u'%s/%s' % (
-                    parent_page_name, subpage_name), always_unvisited=True)
+            def make_link(subpage_name: str):
+                new_link = HyperlinkLabel(self, subpage_name,
+                    f'{parent_page_name}/{subpage_name}',
+                    always_unvisited=True)
                 new_link.on_link_clicked.subscribe(select_page_callback)
                 return new_link
             self._page_desc_label = WrappingLabel(self, page_desc)
@@ -252,7 +254,7 @@ class TreePanel(_APageComponent):
                     subpage_val = page_val[subpage_name]
                     if subpage_val.should_appear():
                         new_subpage = subpage_val(self, page_descriptions.get(
-                            u'%s/%s' % (page_name, subpage_name), u''))
+                            f'{page_name}/{subpage_name}', ''))
                         self._all_leaf_pages.append(new_subpage)
                         self.add_sub_page(new_subpage, subpage_name)
             else:
@@ -325,7 +327,7 @@ class TreePanel(_APageComponent):
                 subchild_name = tree_ctrl.GetItemText(curr_subchild)
                 if tree_ctrl.IsSelected(curr_subchild):
                     # Found it as a subchild, separate them with a slash
-                    return u'%s/%s' % (child_name, subchild_name)
+                    return f'{child_name}/{subchild_name}'
                 curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
                     curr_child, sub_cookie)
             # None of the subchildren of this child are selected, move on to

@@ -55,14 +55,14 @@ class _ACheckable(_AComponent):
         # on_checked needs to be done by subclasses, since the wx event differs
 
     @property
-    def is_checked(self): # type: () -> bool
+    def is_checked(self) -> bool:
         """Return True if this component is checked.
 
         :return: True if this checkbox is checked."""
         return self._native_widget.GetValue()
 
     @is_checked.setter
-    def is_checked(self, new_state): # type: (bool) -> None
+    def is_checked(self, new_state: bool):
         """Mark this component as either checked or unchecked, depending on the
         value of new_state.
 
@@ -86,7 +86,7 @@ class CheckBox(_ACheckable):
     docstrings."""
     _native_widget: _wx.CheckBox
 
-    def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
+    def __init__(self, parent, label='', chkbx_tooltip='', checked=False):
         """Creates a new CheckBox with the specified properties.
 
         :param parent: The object that this checkbox belongs to. May be a wx
@@ -95,7 +95,7 @@ class CheckBox(_ACheckable):
         :param chkbx_tooltip: A tooltip to show when the user hovers over this
                               checkbox.
         :param checked: The initial state of the checkbox."""
-        super(CheckBox, self).__init__(parent, label=label, checked=checked)
+        super().__init__(parent, label=self._escape(label), checked=checked)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
@@ -105,7 +105,7 @@ class CheckBox(_ACheckable):
         super(CheckBox, self).block_user(block_user_func)
         self.on_checked.subscribe(self._do_block_user)
 
-    def _do_block_user(self, checked):
+    def _do_block_user(self, checked: bool):
         """Internal event handler to implement the block_user parameter."""
         # Undo the change, then call the function if it was set.
         self.is_checked = not checked
@@ -120,8 +120,8 @@ class RadioButton(_ACheckable):
     _native_widget: _wx.RadioButton
 
     def __init__(self, parent, label, is_group=False):
-        super(RadioButton, self).__init__(parent, label=label,
-                                          style=is_group and _wx.RB_GROUP)
+        super().__init__(parent, label=self._escape(label),
+            style=is_group and _wx.RB_GROUP)
         self.on_checked = self._evt_handler(_wx.EVT_RADIOBUTTON,
                                             lambda event: [event.IsChecked()])
 
@@ -129,6 +129,6 @@ class RadioButton(_ACheckable):
         super(RadioButton, self).block_user(block_user_func)
         self.on_checked.subscribe(self._do_block_user)
 
-    def _do_block_user(self, checked):
+    def _do_block_user(self, checked: bool):
         self.is_checked = not checked
         self._block_user_func(self)

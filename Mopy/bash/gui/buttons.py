@@ -208,14 +208,14 @@ class ImageButton(Button):
         self.image = wx_bitmap
 
     @property
-    def image(self): # type: () -> _wx.Bitmap
+    def image(self) -> _wx.Bitmap:
         """Returns the image that is shown on this button.
 
         :return: The image on this button."""
         return self._native_widget.GetBitmap()
 
     @image.setter
-    def image(self, new_image): # type: (_wx.Bitmap) -> None
+    def image(self, new_image: _wx.Bitmap):
         """Changes the image that is shown on this button to the specified
         image.
 

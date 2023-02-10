@@ -591,7 +591,7 @@ class ModInfo(FileInfo):
         self.writeDescription(desc_)
         return True
 
-    def getBashTags(self):
+    def getBashTags(self) -> set[str]:
         """Returns any Bash flag keys. Drops obsolete tags."""
         ret_tags = self.get_table_prop(u'bashTags', set())
         fixed_tags = process_tags(ret_tags, drop_unknown=False)
@@ -1000,7 +1000,7 @@ tag_aliases = {
     'Voice-M': {'R.Voice-M'},
 }
 
-def process_tags(tag_set, drop_unknown=True):
+def process_tags(tag_set: set[str], drop_unknown=True) -> set[str]:
     """Removes obsolete tags from and resolves any tag aliases in the
     specified set of tags. See the comments above for more information. If
     drop_unknown is True, also removes any unknown tags (tags that are not

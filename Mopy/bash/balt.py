@@ -650,7 +650,7 @@ class ListEditor(DialogWindow):
         if newItem and newItem not in self._list_items:
             self._list_items = self._listEditorData.getItemList()
             index = self._list_items.index(newItem)
-            self.listBox.lb_insert_items([newItem], index)
+            self.listBox.lb_insert(newItem, index)
 
     def SetItemsTo(self, items):
         if self._listEditorData.setTo(items):
@@ -1771,7 +1771,7 @@ class Link(object):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
-        specify text as a class attribute (or set in it _initData()). Used by
+        specify text as a class attribute (or set it via link_text). Used by
         ChoiceLink however, so it *is* still used."""
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
