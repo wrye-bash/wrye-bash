@@ -44,6 +44,7 @@ _V_ALIGNS = {None: _wx.ALIGN_CENTER_VERTICAL,
              BOTTOM: _wx.ALIGN_BOTTOM}
 ##: Figure out a nicer way to do this
 _res_parent = _AComponent._resolve
+_esc_label = _AComponent._escape
 
 class Spacer(object):
     """A fixed-size space in a layout."""
@@ -85,9 +86,10 @@ class LayoutOptions(object):
     __slots__ = (u'border', u'expand', u'weight', u'h_align', u'v_align',
                  u'col_span', u'row_span')
 
-    def __init__(self, border=None, expand=None, weight=None,
-                 h_align=None, v_align=None, col_span=None, row_span=None):
-        # type: (int, bool, int, str, str, int, int) -> None
+    def __init__(self, border: int | None = None, expand: bool | None = None,
+            weight: int | None = None, h_align: str | None = None,
+            v_align: str | None = None, col_span: int | None = None,
+            row_span: int | None = None):
         self.border = border
         self.expand = expand
         self.weight = weight
@@ -238,16 +240,18 @@ class VLayout(_ASimpleLayout):
 
 class _ABoxedLayout(_ALineLayout):
     """Base class for layouts with a border and an optional title."""
-    def __init__(self, parent, title='', **kwargs):
-        self._static_box = _wx.StaticBox(_res_parent(parent), label=title)
+    def __init__(self, parent, title: str = '', **kwargs):
+        self._static_box = _wx.StaticBox(_res_parent(parent),
+            label=_esc_label(title))
         bl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
         super().__init__(_wx.StaticBoxSizer(self._static_box, bl_orientation),
             **kwargs)
 
     def set_title(self, new_title_text: str):
         """Changes this layout's title to the specified string."""
-        if self._static_box.GetLabel() != new_title_text:
-            self._static_box.SetLabel(new_title_text)
+        esc_new_tt = _esc_label(new_title_text)
+        if self._static_box.GetLabel() != esc_new_tt:
+            self._static_box.SetLabel(esc_new_tt)
 
     def set_title_color(self, new_color):
         """Changes the foreground color of this layout's title to the specified

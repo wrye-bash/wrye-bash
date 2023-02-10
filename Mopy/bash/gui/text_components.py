@@ -244,7 +244,7 @@ class _ALabel(_AComponent):
         """Returns the text of this label as a string.
 
         :return: The text of this label."""
-        return self._native_widget.GetLabel()
+        return self._unescape(self._native_widget.GetLabel())
 
     @label_text.setter
     def label_text(self, new_text: str):
@@ -253,7 +253,7 @@ class _ALabel(_AComponent):
         :param new_text: The new text to use."""
         # Check first to avoid GUI flicker when setting to identical text
         if self.label_text != new_text:
-            self._native_widget.SetLabel(new_text)
+            self._native_widget.SetLabel(self._escape(new_text))
 
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
@@ -266,8 +266,8 @@ class Label(_ALabel):
         :param parent: The object that this label belongs to.
         :param init_text: The initial text of this label.
         :param alignment: The alignment of text in this component."""
-        super(Label, self).__init__(parent, label=init_text,
-                                    style=_ta_to_wx[alignment])
+        super().__init__(parent, label=self._escape(init_text),
+            style=_ta_to_wx[alignment])
 
     def wrap(self, max_length: int):
         """Wraps this label's text so that each line is at most max_length
@@ -372,7 +372,8 @@ class HyperlinkLabel(_ALabel):
         clicked on by the user."""
     _native_widget: _adv.HyperlinkCtrl
 
-    def __init__(self, parent, init_text, url, always_unvisited=False):
+    def __init__(self, parent, init_text: str, url: str,
+            always_unvisited: bool = False):
         """Creates a new HyperlinkLabel with the specified parent, text and
         URL.
 
@@ -389,6 +390,16 @@ class HyperlinkLabel(_ALabel):
                 self._native_widget.GetNormalColour())
         self.on_link_clicked = self._evt_handler(_adv.EVT_HYPERLINK,
             lambda event: [event.GetURL()])
+
+    # No escaping needed for wx.adv.HyperlinkCtrl, doing this would just double
+    # all ampersands
+    @staticmethod
+    def _escape(s):
+        return s
+
+    @staticmethod
+    def _unescape(s):
+        return s
 
 # Spinner - technically text, just limited to digits --------------------------
 class Spinner(_AComponent):

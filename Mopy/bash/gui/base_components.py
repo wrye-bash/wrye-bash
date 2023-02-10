@@ -155,11 +155,20 @@ class _AComponent:
         return _sender
 
     @staticmethod
-    def _escape(s): # FIXME(inf) remove once && fixup is merged
+    def _escape(s):
+        """Because someone somewhere thought that making us escape every single
+        ampersand ever passed to a widget's label was a good idea. We don't use
+        them for accelerators, why can't we just disable this behavior
+        altogether?
+
+        Call this whenever accepting a string from the rest of WB into gui that
+        will be used for a widget's label."""
         return s.replace('&', '&&')
 
     @staticmethod
-    def _unescape(s): # FIXME(inf) remove once && fixup is merged
+    def _unescape(s):
+        """Inverse of _escape. Call this whenever passing a string that went
+        through _escape from gui to the rest of WB."""
         return s.replace('&&', '&')
 
     @staticmethod

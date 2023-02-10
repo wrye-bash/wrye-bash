@@ -338,14 +338,13 @@ class PageFinish(PageInstaller):
                                   u'will apply the following settings:'))
         textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(self, choices=subs, ampersand=True)
+        self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if sublist[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
-                                             ampersand=True)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index, (key, do_enable) in enumerate(plugin_enabled.items()):
             if do_enable:
@@ -1326,8 +1325,7 @@ class WryeParser(ScriptParser.Parser):
             #this select
             self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'EndSelect'])
             return
-        # Escape ampersands, since they're treated as escape characters by wx
-        main_desc = args.pop(0).replace(u'&', u'&&')
+        main_desc = args.pop(0)
         if len(args) % 3:
             error(MISSING_ARGS % name_)
         images_ = []

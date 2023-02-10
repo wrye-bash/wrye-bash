@@ -366,8 +366,6 @@ class Installer_Wizard(_Installer_AWizardLink):
                 idetails.refreshCurrent(sel_package)
                 # Check the plugins that were selected by the wizard
                 espm_strs = idetails.gEspmList.lb_get_str_items()
-                # don't chop off the leading star if there but replace && ##: do this in lb_get_str_items
-                espm_strs = [x.replace(u'&&',u'&') for x in espm_strs]
                 sel_package.espmNots = set()
                 for index, espm in enumerate(idetails.espm_checklist_fns):
                     do_check = espm_strs[index] in ret.select_plugins or bool(

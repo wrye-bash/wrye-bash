@@ -46,8 +46,9 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     _default_label = u''
 
-    def __init__(self, parent, btn_label=u'', btn_tooltip=u'', default=False,
-                 exact_fit=False, no_border=False):
+    def __init__(self, parent, btn_label: str = '', btn_tooltip: str = '',
+            default: bool = False, exact_fit: bool = False,
+            no_border: bool = False):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -69,8 +70,8 @@ class Button(_AComponent):
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        super(Button, self).__init__(parent, self.__class__._id,
-                                     label=btn_label, style=btn_style)
+        super().__init__(parent, self.__class__._id, style=btn_style,
+            label=self._escape(btn_label))
         if default:
             self._native_widget.SetDefault()
         if btn_tooltip:

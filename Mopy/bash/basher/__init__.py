@@ -3302,8 +3302,7 @@ class InstallersDetails(_SashDetailsPanel):
             self.refreshCurrent(self.file_info)
 
     def get_espm(self, lb_selection_dex):
-        plugin_name = self.gEspmList.lb_get_str_item_at_index(
-            lb_selection_dex).replace(u'&&', u'&')
+        plugin_name = self.gEspmList.lb_get_str_item_at_index(lb_selection_dex)
         if plugin_name[0] == u'*':
             plugin_name = plugin_name[1:]
         return FName(plugin_name)

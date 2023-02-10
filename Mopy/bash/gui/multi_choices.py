@@ -119,16 +119,17 @@ class ListBox(WithMouseEvents):
     bind_motion = bind_rclick_down = bind_rclick_up = True
     _native_widget: _wx.ListBox
 
-    def __init__(self, parent, choices=None, isSingle=True, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None):
+    def __init__(self, parent, choices: list[str] | None = None,
+            isSingle: bool = True, isSort: bool = False,
+            isHScroll: bool = False, isExtended: bool = False, onSelect=None):
         style = 0
         if isSingle: style |= _wx.LB_SINGLE
         if isSort: style |= _wx.LB_SORT
         if isHScroll: style |= _wx.LB_HSCROLL
         if isExtended: style |= _wx.LB_EXTENDED
         kwargs_ = {u'style': style}
-        if choices: kwargs_[u'choices'] = choices
-        super(ListBox, self).__init__(parent, **kwargs_)
+        if choices: kwargs_['choices'] = choices
+        super().__init__(parent, **kwargs_)
         if onSelect:
             self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
                 lambda event: [event.GetSelection(), event.GetString()])
@@ -169,7 +170,7 @@ class ListBox(WithMouseEvents):
         self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access
-    def lb_get_str_item_at_index(self, lb_selection_dex): ##: && ->& ?
+    def lb_get_str_item_at_index(self, lb_selection_dex: int) -> str:
         return self._native_widget.GetString(lb_selection_dex)
 
     def lb_get_str_items(self) -> list[str]:
@@ -220,12 +221,11 @@ class CheckListBox(ListBox, WithCharEvents):
     _native_widget: _wx.CheckListBox
 
     # note isSingle=False by default
-    def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 ampersand=False):
-        if ampersand: choices = [x.replace(u'&', u'&&') for x in choices]
-        super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
-                                           isHScroll, isExtended, onSelect)
+    def __init__(self, parent, choices: list[str] | None = None,
+            isSingle: bool = False, isSort: bool = False,
+            isHScroll: bool = False, isExtended: bool = False, onSelect=None):
+        super().__init__(parent, choices, isSingle, isSort, isHScroll,
+            isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
             lambda event: [event.GetSelection()])
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
@@ -252,7 +252,7 @@ class CheckListBox(ListBox, WithCharEvents):
             for i in range(self.lb_get_items_count()):
                 self.lb_check_at_index(i, checked)
 
-    def set_all_items(self, keys_values): ##: & ->  &&
+    def set_all_items(self, keys_values: dict[str, bool]):
         """Completely clears the list and repopulates it using the specified
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
@@ -263,7 +263,7 @@ class CheckListBox(ListBox, WithCharEvents):
                 self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate
-    def set_all_items_keep_pos(self, keys_values):
+    def set_all_items_keep_pos(self, keys_values: dict[str, bool]):
         """Convenience method for setting a bunch of wxCheckListBox items. The
         main advantage of this is that it doesn't clear the list unless it
         needs to, which is good if you want to preserve the scroll position
@@ -274,7 +274,6 @@ class CheckListBox(ListBox, WithCharEvents):
             return
         with self.pause_drawing():
             for index, (lab, ch) in enumerate(keys_values.items()):
-                lab = lab.replace('&', '&&')
                 if index >= self.lb_get_items_count():
                     self.lb_append(lab)
                 else:

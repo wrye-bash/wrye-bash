@@ -1917,10 +1917,10 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
-        full_link_text = self.link_text
+        full_link_text = _AComponent._escape(self.link_text)
         if self._keyboard_hint:
             full_link_text += f'\t{self._keyboard_hint}'
+        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
         menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
         Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())

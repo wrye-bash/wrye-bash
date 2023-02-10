@@ -443,12 +443,13 @@ class GlobalMenu(_AComponent):
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
 
-    def categories_equal(self, new_categories):
+    def categories_equal(self, new_categories: list[str]):
         """Checks if the categories currently shown in the GUI match the
         specified ones."""
-        return new_categories == [x[1] for x in self._native_widget.GetMenus()]
+        return new_categories == [self._unescape(x[1])
+                                  for x in self._native_widget.GetMenus()]
 
-    def register_category_handler(self, cat_label, cat_handler):
+    def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
         handler should be a callback that will be given a _GMCategory instance,
         which it should populate with links."""
@@ -460,11 +461,11 @@ class GlobalMenu(_AComponent):
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
 
-    def set_categories(self, all_categories):
+    def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
         ones in the process. It has to be done like this to avoid changing the
         GUI's layout while categories are added to/removed from it."""
-        self._native_widget.SetMenus([(self._GMCategory(c), c)
+        self._native_widget.SetMenus([(self._GMCategory(c), self._escape(c))
                                       for c in all_categories])
 
     def _handle_menu_opened(self, wx_menu):
@@ -488,8 +489,8 @@ class GlobalMenu(_AComponent):
             try:
                 self._category_handlers[wx_menu.category_label](wx_menu)
             except KeyError:
-                raise RuntimeError(u"A GlobalMenu handler is missing for "
-                                   u"category '%s'." % wx_menu.category_label)
+                raise RuntimeError(f"A GlobalMenu handler is missing for "
+                                   f"category '{wx_menu.category_label}'.")
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""

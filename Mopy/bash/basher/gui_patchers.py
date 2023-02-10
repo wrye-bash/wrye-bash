@@ -520,8 +520,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        ret_label = u'%s' % item # Path or string - YAK
-        return ret_label.replace(u'&', u'&&') # escape & - thanks wx
+        return f'{item}' # Path or string - YAK
 
     def _get_auto_items(self):
         """Returns list of items to be used for automatic configuration."""
