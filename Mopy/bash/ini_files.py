@@ -32,7 +32,7 @@ from .bolt import AFile, CIstr, DefaultLowerDict, ListInfo, LowerDict, \
 from .exception import AbstractError, CancelError, FailedIniInferError, \
     SkipError
 
-_comment_start_re = re.compile(r'^\s*[;#]\s*')
+_comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 
 # All extensions supported by this parser
 supported_ini_exts = {'.ini', '.cfg', '.toml'}
@@ -100,9 +100,12 @@ class AIniFile(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*')
-    reDeletedSetting = re.compile(r'^\s*[;#]-\s*(\w.*?)\s*([;#].*$|=.*$|$)')
-    reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-    reSetting = re.compile(r'^\s*(.+?)\s*=\s*(.+?)(\s*[;#].*)?$')
+    # These are horrible - Perl's \h (horizontal whitespace) sorely missed
+    reDeletedSetting = re.compile(r'^[^\S\r\n]*[;#]-[^\S\r\n]*(\w.*?)'
+                                  r'[^\S\r\n]*([;#].*$|=.*$|$)')
+    reSection = re.compile(r'^\[[^\S\r\n]*(.+?)[^\S\r\n]*\]$')
+    reSetting = re.compile(r'^[^\S\r\n]*(.+?)[^\S\r\n]*=[^\S\r\n]*(.*?)'
+                           r'([^\S\r\n]*[;#].*)?$')
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     defaultSection = u'General'
@@ -498,8 +501,10 @@ class TomlFile(IniFile):
     inline tables."""
     out_encoding = 'utf-8' # see above
     reComment = re.compile('#.*')
-    reDeletedSetting = re.compile(r'^\s*#-\s*(\w.*?)\s*(#.*$|=.*$|$)')
-    reSetting = re.compile(r'^\s*(.+?)\s*=\s*(.+?)(\s*#.*)?$')
+    reDeletedSetting = re.compile(r'^[^\S\r\n]*#-[^\S\r\n]*(\w.*?)[^\S\r\n]*'
+                                  r'(#.*$|=.*$|$)')
+    reSetting = re.compile(r'^[^\S\r\n]*(.+?)[^\S\r\n]*=[^\S\r\n]*(.+?)'
+                           r'([^\S\r\n]*#.*)?$')
     _comment_char = '#'
 
     def _fmt_setting(self, setting, value):
@@ -508,10 +513,13 @@ class TomlFile(IniFile):
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
-    reDeleted = re.compile(r';-(\w.*?)$', re.U)
-    reSet     = re.compile(r'\s*set\s+(.+?)\s+to\s+(.*)', re.I | re.U)
-    reSetGS   = re.compile(r'\s*setGS\s+(.+?)\s+(.*)', re.I | re.U)
-    reSetNGS  = re.compile(r'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I | re.U)
+    reDeleted = re.compile(r';-(\w.*?)$')
+    reSet     = re.compile(r'[^\S\r\n]*set[^\S\r\n]+(.+?)[^\S\r\n]+to'
+                           r'[^\S\r\n]+(.*)', re.I)
+    reSetGS   = re.compile(r'[^\S\r\n]*setGS[^\S\r\n]+(.+?)[^\S\r\n]+'
+                           r'(.*)', re.I)
+    reSetNGS  = re.compile(r'[^\S\r\n]*SetNumericGameSetting[^\S\r\n]+(.+?)'
+                           r'[^\S\r\n]+(.*)', re.I)
     out_encoding = 'utf-8' # FIXME: ask
     formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that

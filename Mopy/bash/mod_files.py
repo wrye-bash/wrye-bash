@@ -414,6 +414,8 @@ class ModHeaderReader(object):
         with mod_info.abs_path.open(u'rb') as ins:
             initial_bytes = ins.read()
         with FastModReader(plugin_fn, initial_bytes) as ins:
+            # PY3.12: Check if removing these is faster now - on py3.11 it is
+            # *slower*, even though it really should be faster!
             # More local methods to avoid repeated dot access
             ins_tell = ins.tell
             ins_seek = ins.seek
