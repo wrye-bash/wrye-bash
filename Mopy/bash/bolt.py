@@ -191,38 +191,23 @@ def encode_complex_string(string_val: str, max_size: int | None = None,
     apply.
 
     :param string_val: The unicode string to encode.
-    :param max_size: The maximum size of the unicode string. If string_val is
-        longer than this, it will be truncated.
-    :param min_size: The minimum size of the encoded string. If the result of
-        encoding string_val is shorter than this, it will be right-padded with
-        null bytes.
+    :param max_size: The maximum size (in bytes) of the encoded string. If the
+        result of encoding string_val is longer than this, it will be
+        truncated.
+    :param min_size: The minimum size (in bytes) of the encoded string. If the
+        result of encoding string_val is shorter than this, it will be
+        right-padded with null bytes.
     :param preferred_encoding: The encoding to try first. Defaults to
         bolt.pluginEncoding.
     :return: The encoded string."""
     preferred_encoding = preferred_encoding or pluginEncoding
-    if max_size:
-        string_val = to_win_newlines(string_val.rstrip())
-        truncated_size = min(max_size, len(string_val))
-        test, tested_encoding = encode(string_val,
-                                       firstEncoding=preferred_encoding,
-                                       returnEncoding=True)
-        extra_encoded = len(test) - max_size
-        if extra_encoded > 0:
-            total = 0
-            i = -1
-            while total < extra_encoded:
-                total += len(string_val[i].encode(tested_encoding))
-                i -= 1
-            truncated_size += i + 1
-            string_val = string_val[:truncated_size]
-            string_val = encode(string_val, firstEncoding=tested_encoding)
-        else:
-            string_val = test
-    else:
-        string_val = encode(string_val, firstEncoding=preferred_encoding)
-    if min_size and (missing := min_size - len(string_val)) > 0:
-        string_val += b'\x00' * missing
-    return string_val
+    bytes_val = encode(to_win_newlines(string_val.rstrip()),
+        firstEncoding=preferred_encoding)
+    if max_size is not None:
+        bytes_val = bytes_val[:max_size]
+    if min_size is not None and (num_nulls := min_size - len(bytes_val)) > 0:
+        bytes_val += b'\x00' * num_nulls
+    return bytes_val
 
 class Tee:
     """Similar to the Unix utility tee, this class redirects writes etc. to two

@@ -594,7 +594,7 @@ class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
 
-    def __init__(self, mel_sig, attr, maxSize=0, *, encoding=None,
+    def __init__(self, mel_sig, attr, maxSize=None, *, encoding=None,
                  set_default=None):
         super(MelUnicode, self).__init__(mel_sig, attr, maxSize,
                                          set_default=set_default)

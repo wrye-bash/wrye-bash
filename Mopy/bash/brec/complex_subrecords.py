@@ -29,13 +29,14 @@ from copy import deepcopy
 from io import BytesIO
 from itertools import chain
 
+from . import utils_constants
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
     MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider
 from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
     MelObject, MelReadOnly, MelSequential, MelString, MelStruct, MelUInt32, \
     MelUnorderedGroups
 from .common_subrecords import MelFull
-from .utils_constants import FID, ZERO_FID, get_structs
+from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
 from .. import bolt
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
@@ -395,6 +396,60 @@ class _MelEffectsScit(MelTruncatedStruct):
                 unpacked_val = (0,) # Discard bogus MS40TestSpell fid
         return super()._pre_process_unpacked(unpacked_val)
 
+class _MelMgefCode(MelStruct):
+    """Handles the nonsense that is MGEF codes in Oblivion. This is necessary
+    because we use the code, which is actually a FourCC and so really should be
+    treated as 4 bytes, as a string all over the codebase. On top of that, OBME
+    means that this stupid thing can be a FormID too, depending on its value as
+    an integer."""
+    def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements,
+            mgef_code_attr: str, emulated_attr: str | None = None):
+        """"""
+        super().__init__(mel_sig, struct_formats, *elements)
+        self._mgef_code_attr = mgef_code_attr
+        self._mgef_int_attr = f'_{self._mgef_code_attr}_as_int'
+        self._emulated_attr = emulated_attr
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        mgef_code = getattr(record, self._mgef_code_attr)
+        # Emulate the regular API the rest of WB expects if needed
+        if self._emulated_attr:
+            setattr(record, self._emulated_attr, bolt.decoder(mgef_code[:4],
+                encoding=bolt.pluginEncoding,
+                avoidEncodings=('utf8', 'utf-8')))
+        setattr(record, self._mgef_int_attr, int_unpacker(mgef_code)[0])
+        if getattr(record, self._mgef_int_attr) >= 0x80000000:
+            # This is actually an OBME FormID, not a normal MGEF code. Note
+            # that OBME stores them as big endian for some godforsaken reason
+            setattr(record, self._mgef_code_attr,
+                FID(bolt.struct_unpack('>I', mgef_code)[0]))
+
+    def pack_subrecord_data(self, record):
+        if getattr(record, self._mgef_int_attr) >= 0x80000000:
+            mgef_code = getattr(record, self._mgef_code_attr)
+            # Skip the harcoded/engine object index check for these FormIDs,
+            # they don't appear to obey this check
+            ##: Figure out some way to actually verify that
+            setattr(record, self._mgef_code_attr, bolt.struct_pack('>I',
+                utils_constants.short_mapper_no_engine(mgef_code)))
+        return super().pack_subrecord_data(record)
+
+    def hasFids(self, formElements):
+        formElements.add(self)
+
+    def mapFids(self, record, function, save_fids=False):
+        if getattr(record, self._mgef_int_attr) >= 0x80000000:
+            mc_result = function(getattr(record, self._mgef_code_attr))
+            if save_fids:
+                setattr(record, self._mgef_code_attr, mc_result)
+
+    def getSlotsUsed(self):
+        ret_slots = super().getSlotsUsed()
+        if self._emulated_attr is not None:
+            ret_slots += (self._emulated_attr,)
+        return ret_slots + (self._mgef_int_attr,)
+
 # API - TES3 ------------------------------------------------------------------
 class MelEffectsTes3(MelGroups):
     """Handles the list of ENAM structs present on several records."""
@@ -424,7 +479,8 @@ class MelEffectsTes4(MelSequential):
             # maybe rework to assign attributes on the spot
             MelGroups('effects',
                 # REHE is Restore target's Health - EFID.effect_sig
-                # must be the same as EFIT.effect_sig
+                # must be the same as EFIT.effect_sig. No need for _MelMgefCode
+                # here because we know we don't have OBME on this record
                 MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
                 MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
                     'magnitude', 'area', 'duration', 'recipient',
@@ -444,7 +500,8 @@ class MelEffectsTes4(MelSequential):
                 MelObme(b'EFME', extra_format=['2B'],
                     extra_contents=['efit_param_info', 'efix_param_info'],
                     reserved_byte_count=10),
-                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
+                _MelMgefCode(b'EFID', ['4s'], ('effect_sig', b'REHE'),
+                    mgef_code_attr='effect_sig'),
                 MelUnion({
                     0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
                         'magnitude', 'area', 'duration', 'recipient',
@@ -453,31 +510,25 @@ class MelEffectsTes4(MelSequential):
                     (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
                         'magnitude', 'area', 'duration', 'recipient',
                         (FID, 'efit_param')),
-                    ##: This case needs looking at, OBME docs say this about
-                    # efit_param in case 2: 'If >= 0x80000000 lowest byte is
-                    # Mod Index, otherwise no resolution'
-                    2: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
+                    2: _MelMgefCode(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
                         'magnitude', 'area', 'duration', 'recipient',
-                        ('efit_param', b'REHE')),
+                        ('efit_param', b'REHE'), mgef_code_attr='efit_param'),
                 }, decider=AttrValDecider('efit_param_info')),
                 _MelObmeScitGroup('scriptEffect',
                     ##: Test! xEdit has all this in EFIX, but it also
                     #  hard-crashes when I try to add EFIX subrecords... this
                     #  is adapted from OBME's official docs, but those could be
-                    #  wrong. Also, same notes as above for case 2 and 3.
+                    #  wrong. Also, same note as above for case 3.
                     MelUnion({
                         0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
                             'efix_param', 'school', 'visual',
                             se_fl := (self.se_flags, 'flags'), 'unused1'),
-                        1: MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
+                        (1, 3): MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
                             (FID, 'efix_param'), 'school', 'visual', se_fl,
                             'unused1'),
-                        2: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                        2: _MelMgefCode(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
                             ('efix_param', b'REHE'), 'school', 'visual', se_fl,
-                            'unused1'),
-                        3: MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
-                            (FID, 'efit_param'), 'school', 'visual', se_fl,
-                            'unused1'),
+                            'unused1', mgef_code_attr='efix_param'),
                     }, decider=AttrValDecider('efix_param_info')),
                     MelFull(),
                 ),
@@ -550,6 +601,14 @@ class MelEffectsTes4ObmeFull(MelString):
     OBME is an awfully hacky mess?"""
     def __init__(self):
         super().__init__(b'FULL', 'obme_full')
+
+class MelMgefEdidTes4(_MelMgefCode):
+    """Handles EDID for Oblivion's MGEF - we can't just use MelEdid because
+    this can, of course, be a FormID thanks to OBME."""
+    def __init__(self):
+        # Always 4 bytes for the magic effect code plus a null terminator
+        super().__init__(b'EDID', ['4s', 's'], 'mgef_edid', '_mgef_edid_null',
+            mgef_code_attr='mgef_edid', emulated_attr='eid')
 
 # API - FO3 and FNV -----------------------------------------------------------
 class MelEffectsFo3(MelGroups):

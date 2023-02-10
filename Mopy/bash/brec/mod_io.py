@@ -416,14 +416,15 @@ class FormIdWriteContext:
         context."""
         return {mname: i for i, mname in enumerate(self._augmented_masters)}
 
-    def _get_short_mapper(self):
+    def _get_short_mapper(self, skip_engine=False):
         # Set utils_constants.short_mapper based on this mod's masters
         indices = self._get_indices()
         has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if (has_expanded_range and len(self._augmented_masters) > 1 and
-                self._plugin_header_ver >= 1.0):
+        if skip_engine or (has_expanded_range and
+                           len(self._augmented_masters) > 1 and
+                           self._plugin_header_ver >= 1.0):
             # Plugin has at least one master, it may freely use the
-            # expanded (0x000-0x800) range
+            # expanded (0x000-0x800) range (or we want to skip the check)
             def _short_mapper(formid):
                 return (indices[formid.mod_fn] << 24) | formid.object_dex
         else:
@@ -435,11 +436,14 @@ class FormIdWriteContext:
 
     def __enter__(self, __head_unpack=unpack_header):
         utils_constants.short_mapper = self._get_short_mapper()
+        utils_constants.short_mapper_no_engine = self._get_short_mapper(
+            skip_engine=True)
         self.__out = self._out_path and self._out_path.open('wb')
         return self.__out
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         utils_constants.short_mapper = None
+        utils_constants.short_mapper_no_engine = None
         if self._out_path: self.__out.close()
 
 class RemapWriteContext(FormIdWriteContext):
@@ -467,7 +471,8 @@ class ShortFidWriteContext(FormIdWriteContext):
     when we do not actually write out but have to use clunky APIs like
     getSize."""
 
-    def _get_short_mapper(self): return lambda formid: formid.short_fid
+    def _get_short_mapper(self, skip_engine=False):
+        return lambda formid: formid.short_fid
 
 class FastModReader(BytesIO):
     """BytesIO-derived class that mimics ModReader, but runs at lightning

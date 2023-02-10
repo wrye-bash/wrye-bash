@@ -47,7 +47,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, gen_color, null2, null4
+    SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1613,7 +1613,7 @@ class MreMgef(MelRecord):
     }
 
     melSet = MelSet(
-        MelEdid(),
+        MelMgefEdidTes4(),
         MelObme(extra_format=['2B', '2s', '4s', 'I', '4s'], extra_contents=[
             'obme_param_a_info', 'obme_param_b_info', 'obme_unused_mgef',
             'obme_handler', (_ObmeFlagOverrides, 'obme_flag_overrides'),

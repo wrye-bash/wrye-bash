@@ -280,6 +280,7 @@ FORM_ID: type[FormId] | None = None
 # Global short mapper function. It must be set by the mod output context
 # manager for mapping the fids based on the masters of the currently dumped plugin
 short_mapper: Callable | None = None
+short_mapper_no_engine: Callable | None = None
 
 # Used by Mel classes to wrap fid elements.
 FID = lambda x: FORM_ID(x)
@@ -300,7 +301,7 @@ class FixedString(str):
     __slots__ = ('str_length',)
     _str_encoding = bolt.pluginEncoding
 
-    def __new__(cls, str_length, target_str=''):
+    def __new__(cls, str_length, target_str: str | bytes = ''):
         if isinstance(target_str, str):
             decoded_str = target_str
         else:
