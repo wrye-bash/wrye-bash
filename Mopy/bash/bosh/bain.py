@@ -1907,9 +1907,57 @@ class InstallersData(DataStore):
         self.irefresh(what=u'I', pending=moved)
         return moved
 
+    def reorder_packages(self, partial_order: list[FName]) -> str:
+        """Changes the BAIN package order to match the specified partial order
+        as much as possible. Heavily based on lo_reorder. Does not refresh, you
+        will have to do that afterwards.
+
+        :return: An error message to be shown to the user, or an empty string
+            if nothing noteworthy happened."""
+        present_packages = set(self)
+        partial_packages = set(partial_order)
+        # Packages in the partial order that are missing from the Bash
+        # Installers folder
+        excess_packages = partial_packages - present_packages
+        filtered_order = [p for p in partial_order if p not in excess_packages]
+        remaining_packages = present_packages - set(filtered_order)
+        current_order = self.sorted_keys()
+        collected_packages = []
+        left_off = 0
+        while remaining_packages:
+            for i, curr_package in enumerate(current_order[left_off:]):
+                # Look for continuous segments that are missing from the
+                # filtered partial package order
+                if curr_package in remaining_packages:
+                    collected_packages.append(curr_package)
+                    remaining_packages.remove(curr_package)
+                elif collected_packages:
+                    # We've hit a package that's common between current and
+                    # filtered orders after a continuous segment, look up the
+                    # shared package and insert the packages in the same order
+                    # they have in the current order into the filtered order
+                    index_in_filtered = filtered_order.index(curr_package)
+                    for coll_package in reversed(collected_packages):
+                        filtered_order.insert(index_in_filtered, coll_package)
+                    left_off += i + 1
+                    collected_packages = []
+                    break # Restart the for loop
+            else:
+                # Exited the loop without breaking -> some extra plugins should
+                # be appended at the end
+                filtered_order.extend(collected_packages)
+        for i, p in enumerate(filtered_order):
+            self[p].order = i
+        message = ''
+        if excess_packages:
+            message += _('Some packages could not be found and were '
+                         'skipped:') + '\n* '
+            message += '\n* '.join(excess_packages)
+        return message
+
     # Getters
-    def sorted_pairs(self, package_keys: Iterable[Path] | None = None,
-            reverse=False) -> Iterable[tuple[Path, Installer]]:
+    def sorted_pairs(self, package_keys: Iterable[FName] | None = None,
+            reverse=False) -> Iterable[tuple[FName, Installer]]:
         """Return pairs of key, installer for package_keys in self, sorted by
         install order."""
         pairs = self if package_keys is None else {k: self[k] for k in
@@ -1917,7 +1965,14 @@ class InstallersData(DataStore):
         return dict_sort(pairs, key_f=lambda k: pairs[k].order,
                          reverse=reverse)
 
-    def sorted_values(self, package_keys: Iterable[Path] | None = None,
+    def sorted_keys(self, package_keys: Iterable[FName] | None = None,
+            reverse=False) -> list[FName]:
+        """Return FName keys for package_keys in self, sorted by install
+        order."""
+        p_keys = package_keys or self
+        return sorted(p_keys, key=lambda k: self[k].order, reverse=reverse)
+
+    def sorted_values(self, package_keys: Iterable[FName] | None = None,
             reverse=False) -> list[Installer]:
         """Return installers for package_keys in self, sorted by install
         order."""
@@ -3039,21 +3094,17 @@ class InstallersData(DataStore):
         log(u'[/spoiler]')
         return log.out.getvalue()
 
-    def filterInstallables(self, installerKeys):
+    def filterInstallables(self, installerKeys: Iterable[FName]):
         """Return a sublist of installerKeys that can be installed -
         installerKeys must be in data or a KeyError is raised.
-        :param installerKeys: an iterable of bolt.Path
-        :return: a list of installable packages/projects bolt.Path
-        """
+
+        :return: A list of installable packages/projects"""
         # type -> 0: unset/invalid; 1: simple; 2: complex
         return [k for k in self.ipackages(installerKeys) if
                 self[k].type in (1, 2)]
 
-    def ipackages(self, installerKeys):
-        """Remove markers from installerKeys.
-        :type installerKeys: collections.Iterable[bolt.FName]
-        :rtype: list[bolt.FName]
-        """
+    def ipackages(self, installerKeys: Iterable[FName]) -> Iterable[FName]:
+        """Remove markers from installerKeys."""
         return (x for x in installerKeys if not self[x].is_marker)
 
     def createFromData(self, projectPath, ci_files, progress):

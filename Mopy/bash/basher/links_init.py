@@ -216,6 +216,9 @@ def InitInstallerLinks():
     InstallersList.column_links.append(Installers_FullRefresh())
     InstallersList.column_links.append(Installers_MonitorExternalInstallation())
     InstallersList.column_links.append(SeparatorLink())
+    InstallersList.column_links.append(Installers_ExportOrder())
+    InstallersList.column_links.append(Installers_ImportOrder())
+    InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_ListPackages())
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_AnnealAll())
@@ -361,6 +364,9 @@ def InitInstallerLinks():
     edit_menu.append(SeparatorLink())
     edit_menu.append(Installers_RefreshData())
     edit_menu.append(Installers_FullRefresh())
+    edit_menu.append(SeparatorLink())
+    edit_menu.append(Installers_ExportOrder())
+    edit_menu.append(Installers_ImportOrder())
     # View Menu
     view_menu = InstallersList.global_links[_('View')]
     view_menu.append(SortByMenu(

@@ -28,10 +28,11 @@ from itertools import chain
 from . import Installers_Link
 from .dialogs import CreateNewProject, CleanDataEditor, \
     MonitorExternalInstallationEditor
-from .. import balt, bass, bosh, bush, load_order
+from .. import balt, bass, bolt, bosh, bush, exception, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
 from ..gui import copy_text_to_clipboard
+from ..parsers import CsvParser
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            u'Installers_RefreshData', u'Installers_AddMarker',
@@ -50,7 +51,8 @@ __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
            u'Installers_GlobalRedirects', u'Installers_FullRefresh',
            'Installers_IgnoreFomod', 'Installers_ValidateFomod',
-           'Installers_SimpleFirst']
+           'Installers_SimpleFirst', 'Installers_ExportOrder',
+           'Installers_ImportOrder']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -183,8 +185,8 @@ class Installers_AnnealAll(Installers_Link):
 #------------------------------------------------------------------------------
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
-    _text = _(u'Uninstall All Packages')
-    _help = _(u'This will uninstall all packages.')
+    _text = _('Uninstall All Packages')
+    _help = _('Uninstall all files from all installed packages.')
 
     @balt.conversation
     def Execute(self):
@@ -236,8 +238,8 @@ class Installers_CleanData(Installers_Link):
     files. For safety just moved to Game Mods/Bash Installers/Bash/Data
     Folder Contents (date/time)."""
     _text = _('Clean Data...')
-    _help = _('This will remove all mod files that are not linked to an '
-              'active installer out of the %(data_folder)s folder.') % {
+    _help = _('Move all files that are not linked to an active installer '
+              'out of the %(data_folder)s folder.') % {
         'data_folder': bush.game.mods_dir}
     _full_msg = (_('Clean %(data_folder)s folder?') % {
         'data_folder': bush.game.mods_dir} + f' {_help}\n\n' + _(
@@ -282,6 +284,100 @@ class Installers_CreateNewProject(ItemLink):
     @balt.conversation
     def Execute(self):
         CreateNewProject.display_dialog(self.window)
+
+#------------------------------------------------------------------------------
+class _AInstallers_Order(Installers_Link, CsvParser):
+    """Base class for export/import package order links."""
+    _csv_header = _('Package'), (_('Installed? (%(inst_y)s/%(inst_n)s)')
+                                 % {'inst_y': 'Y', 'inst_n': 'N'})
+
+class Installers_ExportOrder(_AInstallers_Order):
+    """Export order and installation status for all packages."""
+    _text = _('Export Order...')
+    _help = _('Export the order and installation status of all packages.')
+
+    def Execute(self):
+        if not self._askContinue(_(
+            'Note that Export Order will only export the order of all '
+            'packages and whether or not they have been installed. It does '
+            'not export, for example, which sub-packages you enabled. If you '
+            'care about preserving such information, you may want to make a '
+            'backup instead (see Settings > Global Settings... > Backups).'),
+            'bash.installers.export_order.continue',
+                title=_('Export Order - Note')): return
+        exp_path = self._askSave(title=_('Export Order - Choose Destination'),
+            defaultDir=bass.dirs['patches'], defaultFile='PackageOrder.csv',
+            wildcard='*.csv')
+        if not exp_path: return
+        self.packages_exported = 0
+        self.write_text_file(exp_path)
+        self._showInfo(_('Exported order and installation status for '
+                         '%(exp_num)d package(s) to %(exp_path)s.') % {
+            'exp_num': self.packages_exported, 'exp_path': exp_path},
+            title=_('Export Order - Done'))
+
+    def _write_rows(self, out):
+        # Order is indicated by the order in which the rows are written
+        for fn_pkg, curr_pkg in self.idata.sorted_pairs():
+            # Do not translate these. We want them to be human-readable, so
+            # we use Y/N (see also the header), but we also need to be able to
+            # import from any language later (e.g. if someone using WB in
+            # Spanish shares a file with a friend who uses WB in English)
+            pkg_installed = 'Y' if curr_pkg.is_active else 'N'
+            out.write(f'"{fn_pkg}","{pkg_installed}"\n')
+            self.packages_exported += 1
+
+#------------------------------------------------------------------------------
+class Installers_ImportOrder(_AInstallers_Order):
+    """Import order and installation status for a subset of all packages from a
+    previous export."""
+    _text = _('Import Order...')
+    _help = _('Import the order and installation status of packages from a '
+              'previous export.')
+
+    def Execute(self):
+        if not self._askWarning(
+            _('This will reorder and change the installation status of all'
+              'packages from the chosen CSV file. It will not change the '
+              'contents of the Data folder, you will have to manuall install '
+              'or uninstall affected packages for that. Packages that are '
+              'not listed in the CSV file will not be touched.') + '\n\n' +
+            _('Are you sure you want to proceed?'),
+                title=_('Import Order - Warning')): return
+        imp_path = self._askOpen(title=_('Import Order - Choose Source'),
+            defaultDir=bass.dirs['patches'], defaultFile='PackageOrder.csv',
+            wildcard='*.csv')
+        if not imp_path: return
+        self.first_line = True
+        self.partial_package_order = []
+        try:
+            self.read_csv(imp_path)
+        except (exception.BoltError, NotImplementedError):
+            self._showError(_('The selected file is not a valid '
+                              'package order CSV export.'),
+                title=_('Import Order - Invalid CSV'))
+            return
+        reorder_err = self.idata.reorder_packages(self.partial_package_order)
+        self.idata.irefresh(what='NS')
+        self.window.RefreshUI()
+        if reorder_err:
+            self._showError(reorder_err, title=_('Import Order - Error'))
+        else:
+            self._showInfo(_('Imported order and installation status for '
+                             '%(total_imported)d package(s).') % {
+                'total_imported': len(self.partial_package_order)},
+                title=_('Import Order - Done'))
+
+    def _parse_line(self, csv_fields):
+        if self.first_line: # header validation
+            self.first_line = False
+            if len(csv_fields) != 2:
+                raise exception.BoltError(f'Header error: {csv_fields}')
+            return
+        pkg_fstr, pkg_installed_yn = csv_fields
+        if (pkg_fname := bolt.FName(pkg_fstr)) in self.idata:
+            self.idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
+            self.partial_package_order.append(pkg_fname)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

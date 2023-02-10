@@ -1056,6 +1056,8 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.iniTweaks.continue',
         _(u'[Installers, Screenshots] Opening a lot of items'):
             u'bash.maxItemsOpen.continue',
+        _('[Installers] Exporting package order'):
+            'bash.installers.export_order.continue',
         _('[Installers] Installing unconfigured complex packages'):
             'bash.installers.nothing_installed.continue',
         _("[Installers] Opening a mod's page at the %(target_nexus_name)s") % {
