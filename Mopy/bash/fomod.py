@@ -346,9 +346,9 @@ class FomodInstaller(object):
     receive a mapping of 'file source string' -> 'file destination string'.
     These are the files to be installed. This installer does not install or
     provide any way to do so, leaving that at your discretion."""
-    __slots__ = (u'fomod_tree', u'fomod_name', u'file_list', u'dst_dir',
-                 u'game_version', u'_current_page', u'_previous_pages',
-                 u'_has_finished', u'installer_root')
+    __slots__ = ('fomod_tree', 'fomod_name', 'file_list', 'dst_dir',
+                 'game_version', '_current_page', '_all_pages',
+                 '_previous_pages', '_has_finished', 'installer_root')
 
     def __init__(self, mc_path, file_list, inst_root, dst_dir, game_version):
         """Creates a new FomodInstaller with the specified properties.
@@ -371,6 +371,7 @@ class FomodInstaller(object):
         self.dst_dir = dst_dir
         self.game_version = game_version
         self._current_page = None
+        self._all_pages: dict[int, InstallerPage] = {}
         self._previous_pages: dict[InstallerPage, list[InstallerOption]] = {}
         self._has_finished = False
 
@@ -407,21 +408,25 @@ class FomodInstaller(object):
             ordered_pages = [] # no installSteps -> no pages
         if self._current_page is not None:
             # We already have a page, use the index of the current one
-            current_index = ordered_pages.index(self._current_page.page_object)
+            current_index = ordered_pages.index(
+                self._current_page.page_object) + 1
         else:
             # We're at the start of the wizard, consider the first page too
-            current_index = -1
-        for next_page in ordered_pages[current_index + 1:]:
+            current_index = 0
+        for next_page in ordered_pages[current_index:]:
             try:
                 # We have a page, but need to check if it's actually visible
                 page_conditions = next_page.find(u'visible')
                 if page_conditions is not None:
                     self.test_conditions(page_conditions)
             except FailedCondition:
-                continue
+                # The page is not visible, but we still have to construct it to
+                # check for alwaysInstall and installIfUsable
+                self._all_pages[current_index] = InstallerPage(self, next_page)
             else:
                 # We have a visible page, wrap it and return that
                 self._current_page = InstallerPage(self, next_page)
+                self._all_pages[current_index] = self._current_page
                 return self._current_page
         else:
             # We have no visible pages, finish the entire wizard
@@ -451,11 +456,13 @@ class FomodInstaller(object):
                 is_usable=True)
             collected_files.extend(con_files)
             collected_files.extend(req_files)
-        for pre_page, options in self._previous_pages.items():
+        for pre_page in self._all_pages.values():
             # All options that were available on this page
             all_options = [option for grp in pre_page for option in grp]
-            # Set of only the option objects that the user actually selected
-            selected_options = set(options)
+            # Set of only the option objects that the user actually selected.
+            # If the page was not shown, then this will be empty and so we will
+            # only install the alwaysInstall/installIfUsable options
+            selected_options = set(self._previous_pages.get(pre_page, []))
             for option in all_options:
                 option_files = option.option_object.find('files')
                 if option_files is not None:
@@ -473,22 +480,15 @@ class FomodInstaller(object):
                 u'conditionalFileInstalls/patterns/pattern'):
             dep_conditions = cond_pattern.find(u'dependencies')
             cond_files = cond_pattern.find(u'files')
-            # We also have to worry about the con/req split here
-            ##: I'm unsure about what to do with is_usable here. The schema
-            # says that installIfUsable 'should always be installed if the
-            # plugin is not NotUsable, regardless of whether or not the plugin
-            # has been selected', but this is outside the plugins and
-            # outside the requiredInstallFiles, so... should we raise an error?
-            # Ignore the attribute? Respect it? I went with respecting it to be
-            # safe
+            # We do not have to worry about the con/req split here, the
+            # conditions for this section are the only thing that matters
             con_files, req_files = _FomodFileInfo.process_files(
                 cond_files, self.file_list, self.installer_root,
                 is_usable=True)
-            collected_files.extend(req_files)
             try:
                 self.test_conditions(dep_conditions)
-                # Only include the conditional files if the condition check
-                # passes successfully
+                # Only include any files at all if the check passed
+                collected_files.extend(req_files)
                 collected_files.extend(con_files)
             except FailedCondition:
                 pass
