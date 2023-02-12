@@ -1089,7 +1089,6 @@ class OblivionGameInfo(PatchGame):
         'AssortedTweak_AttackSpeedStavesMinimum',
         'AssortedTweak_AttackSpeedStavesMaximum',
     }
-    not_playable_flag = ('biped_flags', 'notPlayable')
     staff_condition = ('weaponType', 4)
     static_attenuation_rec_type = b'SOUN'
 

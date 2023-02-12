@@ -130,9 +130,9 @@ class CsvListPatcher(_HandleAliases, ListPatcher):
             progress.plus()
 
 #------------------------------------------------------------------------------
-# AMultiTweakItem(object) -----------------------------------------------------
+# MultiTweakItem --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class AMultiTweakItem(object):
+class MultiTweakItem:
     """A tweak item, optionally with configuration choices. See tweak_
     attribute comments below for information on how to specify names, tooltips,
     dropdown choices, etc."""
@@ -271,7 +271,7 @@ class AMultiTweakItem(object):
         else: value = None
         configs[self.tweak_key] = self.isEnabled,value
 
-    # Methods particular to AMultiTweakItem
+    # Methods particular to MultiTweakItem
     def _raise_tweak_syntax_error(self, err_msg):
         """Small helper method to aid in validation. Raises a SyntaxError with
         the specified error message and some information that should make
@@ -319,10 +319,18 @@ class AMultiTweakItem(object):
                   "'%(t_name)s' tweak.") % {'t_val': t_val,
                                             't_name': self.tweak_name})
 
+    # Tweaking API ------------------------------------------------------------
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
         specified record."""
         raise AbstractError(u'wants_record not implemented')
+
+    def prepare_for_tweaking(self, patch_file):
+        """Gives this tweak a chance to prepare for the phase where it gets
+        its tweak_record calls using the specified patch file instance. At this
+        point, all relevant files have been scanned, wanted records have been
+        forwarded into the BP, MGEFs have been indexed, etc. Default
+        implementation does nothing."""
 
     def tweak_record(self, record):
         """This is where each tweak gets a chance to change the specified
@@ -333,6 +341,13 @@ class AMultiTweakItem(object):
         override in the BP. So make sure wants_record *never* lets ITMs and
         ITPOs through!"""
         raise AbstractError(u'tweak_record not implemented')
+
+    def finish_tweaking(self, patch_file):
+        """Gives this tweak a chance to clean up and do any work after the
+        tweak_records phase is over using the specified patch file instance. At
+        this point, all tweak_record calls for all tweaks belonging to the
+        parent 'tweaker' have been executed. Default implementation does
+        nothing."""
 
 class ScanPatcher(APatcher):
     """WIP class to encapsulate scanModFile common logic."""

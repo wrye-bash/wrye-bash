@@ -308,9 +308,7 @@ class _ANamesTweak_Body(_ANamesTweak):
     _tweak_body_tags = u'' # Set in TweakNamesPatcher.__init__
 
     def wants_record(self, record):
-        if self._is_nonplayable(record):
-            return False
-        return super(_ANamesTweak_Body, self).wants_record(record)
+        return not record.is_not_playable() and super().wants_record(record)
 
 class _ANamesTweak_Body_Tes4(_ANamesTweak_Body):
     def _exec_rename(self, record):
@@ -763,8 +761,7 @@ class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
         for flst_rec in self._indexed_records[b'FLST'].values():
             ma_flst = _re_flst_ammo_weight.match(flst_rec.eid)
             if ma_flst:
-                flst_weight = float(u'%s.%s' % (ma_flst.group(1),
-                                                ma_flst.group(2)))
+                flst_weight = float(f'{ma_flst.group(1)}.{ma_flst.group(2)}')
                 for ammo_fid in flst_rec.formIDInList:
                     luw[ammo_fid] = flst_weight
 
@@ -982,7 +979,7 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 if not body_part_tags:
-                    raise BPConfigError(_("'Body Part Codes' must be enabled "
-                                          "when using the '%s' tweak.")
-                                        % names_tweak.tweak_name)
+                    msg = _("'Body Part Codes' must be enabled when using the "
+                            "'%s' tweak.")
+                    raise BPConfigError(msg % names_tweak.tweak_name)
                 names_tweak._tweak_body_tags = body_part_tags

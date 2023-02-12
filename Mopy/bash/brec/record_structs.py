@@ -508,6 +508,9 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
+    # The record attribute and flag name needed to find out if a piece of armor
+    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
+    not_playable_flag = ('flags1', 'not_playable')
 
     def __init__(self, header, ins=None, *, do_unpack=True):
         if self.__class__.rec_sig != header.recType:
@@ -595,3 +598,14 @@ class MelRecord(MreRecord):
         masterset_add(self.fid)
         for element in self.__class__.melSet.formElements:
             element.mapFids(self, masterset_add)
+
+    # Hacky patcher API - these should really be mixins in the record hierarchy
+    def is_not_playable(self):
+        """Return True if this record is marked as nonplayable."""
+        np_flag_attr, np_flag_name = self.not_playable_flag
+        return getattr(getattr(self, np_flag_attr), np_flag_name)
+
+    def set_playable(self):
+        """Set the _not playable flag_ to _False_ - there."""
+        np_flag_attr, np_flag_name = self.not_playable_flag
+        setattr(getattr(self, np_flag_attr), np_flag_name, False)

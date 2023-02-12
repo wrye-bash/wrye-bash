@@ -41,7 +41,7 @@ class _AShowsTweak(MultiTweakItem):
 
     def wants_record(self, record):
         return (record.biped_flags[self._hides_bit] and
-                not self._is_nonplayable(record))
+                not record.is_not_playable())
 
     def tweak_record(self, record):
         record.biped_flags[self._hides_bit] = False
@@ -162,9 +162,8 @@ class _APlayableTweak(MultiTweakItem):
 
     def wants_record(self, record):
         # 'script_fid' does not exist for later games, so use getattr
-        if (not self._is_nonplayable(record) or
-            not self._any_body_flag_set(record) or
-                getattr(record, u'script_fid', None)): return False
+        if (not record.is_not_playable() or not self._any_body_flag_set(record)
+                or getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
         if clothing_eid and self._playable_skip(clothing_eid.lower()):
@@ -173,8 +172,7 @@ class _APlayableTweak(MultiTweakItem):
         return clothing_name and not self._playable_skip(clothing_name.lower())
 
     def tweak_record(self, record):
-        np_flag_attr, np_flag_name = bush.game.not_playable_flag
-        setattr(getattr(record, np_flag_attr), np_flag_name, False) # yuck
+        record.set_playable()
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(_APlayableTweak):
@@ -674,11 +672,10 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
     default_enabled = True
 
     def wants_record(self, record):
-        rsig = record._rec_sig
+        rsig = record._rec_sig # we need a record mixin
         if (rsig == b'LIGH' and not record.light_flags.light_can_take or
-                rsig == b'QUST' and not record.stages or
-                rsig in (b'ARMO', b'CLOT') and
-                self._is_nonplayable(record)): return False
+            rsig == b'QUST' and not record.stages or rsig in (b'ARMO', b'CLOT')
+                and record.is_not_playable()): return False
         return (not getattr(record, u'iconPath', None) and
                 not getattr(record, u'maleIconPath', None) and
                 not getattr(record, u'femaleIconPath', None))

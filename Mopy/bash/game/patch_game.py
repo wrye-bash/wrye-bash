@@ -236,9 +236,6 @@ class PatchGame(GameInfo):
     # Tweak Assorted
     #--------------------------------------------------------------------------
     assorted_tweaks = set()
-    # The record attribute and flag name needed to find out if a piece of armor
-    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
-    not_playable_flag = ('flags1', 'not_playable')
     # Tuple containing the name of the attribute and the value it has to be set
     # to in order for a weapon to count as a staff for reweighing purposes
     staff_condition = ()

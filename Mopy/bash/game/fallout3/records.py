@@ -538,7 +538,10 @@ class MreAnio(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreArma(MelRecord):
+class _Fo3Playable(MelRecord):
+    not_playable_flag = ('generalFlags', 'notPlayable')
+
+class MreArma(_Fo3Playable):
     """Armor Addon."""
     rec_sig = b'ARMA'
 
@@ -569,7 +572,7 @@ class MreArma(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreArmo(MelRecord):
+class MreArmo(_Fo3Playable):
     """Armor."""
     rec_sig = b'ARMO'
 

@@ -616,8 +616,10 @@ class _CommonBipedFlags(BipedFlags):
 
     _not_playable_flags = {'backWeapon', 'quiver', 'weapon', 'torch',
                            'rightRing', 'sideWeapon'}
+class _ObPlayable(MelRecord):
+    not_playable_flag = ('biped_flags', 'notPlayable')
 
-class MreArmo(MelRecord):
+class MreArmo(_ObPlayable):
     """Armor."""
     rec_sig = b'ARMO'
 
@@ -750,7 +752,7 @@ class MreClmt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreClot(MelRecord):
+class MreClot(_ObPlayable):
     """Clothing."""
     rec_sig = b'CLOT'
 

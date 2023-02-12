@@ -35,7 +35,7 @@ from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout
 from ..patcher import patches_set
-from ..patcher.base import AMultiTweakItem, APatcher
+from ..patcher.base import MultiTweakItem, APatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
@@ -598,9 +598,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def __init__(self):
         super().__init__()
         # List of all tweaks that this tweaker can house
-        self._all_tweaks: list[AMultiTweakItem] = []
+        self._all_tweaks: list[MultiTweakItem] = []
         # List of tweaks that are currently visible (according to the search)
-        self._curr_tweaks: list[AMultiTweakItem] = []
+        self._curr_tweaks: list[MultiTweakItem] = []
 
     def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""

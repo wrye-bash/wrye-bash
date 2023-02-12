@@ -1410,7 +1410,6 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                             record.setChanged()
                             newRecords[rfid] = record
                     scpt_grp.id_records = newRecords
-                    scpt_grp.setChanged()
                 if len(removed) >= 50 or badGenericLore:
                     modFile.safeSave()
                     m =(_(u'Scripts removed: %d.') + u'\n' +

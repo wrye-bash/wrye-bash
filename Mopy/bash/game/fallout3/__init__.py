@@ -1048,7 +1048,6 @@ class Fallout3GameInfo(PatchGame):
         'AssortedTweak_GunsUseISAnimation',
         'AssortedTweak_BookWeight',
     }
-    not_playable_flag = ('generalFlags', 'notPlayable')
     static_attenuation_rec_type = b'SOUN'
 
     #--------------------------------------------------------------------------

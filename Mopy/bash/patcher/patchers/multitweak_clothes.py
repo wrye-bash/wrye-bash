@@ -48,7 +48,7 @@ class _AClothesTweak(MultiTweakItem):
         self.type_flags = self.clothes_flags[type_key]
 
     def wants_record(self, record):
-        if self._is_nonplayable(record):
+        if record.is_not_playable():
             return False
         rec_type_flags = int(record.biped_flags) & 0xFFFF
         my_type_flags = self.type_flags

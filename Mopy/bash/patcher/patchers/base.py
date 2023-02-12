@@ -25,10 +25,10 @@
 from collections import Counter, defaultdict
 from operator import attrgetter
 
-from ..base import AMultiTweakItem, APatcher, CsvListPatcher, ListPatcher, \
+from ..base import APatcher, CsvListPatcher, ListPatcher, MultiTweakItem, \
     ScanPatcher
 from ..patch_files import PatchFile
-from ... import bush, load_order
+from ... import load_order
 from ...bolt import deprint
 from ...brec import RecordType
 from ...exception import BPConfigError
@@ -36,29 +36,6 @@ from ...mod_files import LoadFactory, ModFile
 from ...parsers import FidReplacer
 
 # Patchers 1 ------------------------------------------------------------------
-class MultiTweakItem(AMultiTweakItem):
-
-    def prepare_for_tweaking(self, patch_file):
-        """Gives this tweak a chance to use prepare for the phase where it gets
-        its tweak_record calls using the specified patch file instance. At this
-        point, all relevant files have been scanned, wanted records have been
-        forwarded into the BP, MGEFs have been indexed, etc. Default
-        implementation does nothing."""
-
-    def finish_tweaking(self, patch_file):
-        """Gives this tweak a chance to clean up and do any work after the
-        tweak_records phase is over using the specified patch file instance. At
-        this point, all tweak_record calls for all tweaks belonging to the
-        parent 'tweaker' have been executed. Default implementation does
-        nothing."""
-
-    @staticmethod
-    def _is_nonplayable(record):
-        """Returns True if the specified record is marked as nonplayable."""
-        ##: yuck, this whole thing is just hacky
-        np_flag_attr, np_flag_name = bush.game.not_playable_flag
-        return getattr(getattr(record, np_flag_attr), np_flag_name)
-
 # HACK - and what an ugly one - we need a general API to express to the BP that
 # a patcher/tweak wants it to index all records for certain record types in
 # some central place (and NOT by forwarding all records into the BP!)
