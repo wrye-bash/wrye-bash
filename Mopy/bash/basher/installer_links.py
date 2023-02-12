@@ -1469,16 +1469,16 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             f'({x:08X}) - {crc_installer[x]}' for x in conv.srcCRCs
             if x in crc_installer)))
         log.setHeader('. ' + _('Options:'))
-        log(f"  *  {_('Skip Voices')}   = {bool(conv.skipVoices)}")
+        log(f"  *  {_('Skip Voices')} = {bool(conv.skipVoices)}")
         log(f"  *  {_('Solid Archive')} = {bool(conv.isSolid)}")
         if conv.isSolid:
             if conv.blockSize:
                 log(f"    *  {_('Solid Block Size')} = {conv.blockSize:d}")
             else:
                 log(f"    *  {_('Solid Block Size')} = 7z default")
-        log(f"  *  {_('Has Comments')}  = {bool(conv.comments)}")
+        log(f"  *  {_('Has Comments')} = {bool(conv.comments)}")
         log(f"  *  {_('Has Extra Directories')} = {bool(conv.hasExtraData)}")
-        log(f"  *  {_('Has Esps Unselected')}   = {bool(conv.espmNots)}")
+        log(f"  *  {_('Has Plugins Unselected')} = {bool(conv.espmNots)}")
         log(f"  *  {_('Has Packages Selected')} = {bool(conv.subActives)}")
         log.setHeader('. ' + _('Contains: %u file(s)') % len(
             conv.bcf_missing_files))
