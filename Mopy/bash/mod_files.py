@@ -146,8 +146,9 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
-        self.tes4 = bush.game.plugin_header_class(RecHeader(arg2=ZERO_FID,
-                _entering_context=True))
+        self.tes4 = bush.game.plugin_header_class(RecHeader(
+            bush.game.Esp.plugin_header_sig, arg2=ZERO_FID,
+            _entering_context=True))
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = _TopGroupDict(self) #--Top groups.

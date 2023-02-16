@@ -274,7 +274,11 @@ def find_first_difference(lo_a, acti_a, lo_b, acti_b):
     if low_diff != (None, None):
         low_acti = min(lindex_a[low_diff[0]], lindex_b[low_diff[1]])
     elif len(acti_a) != len(acti_b):
-        low_acti = min(len(acti_a), len(acti_b))
+        # This points into the actives list, need to convert to LO index
+        if len(acti_a) < len(acti_b):
+            low_acti = lindex_a[acti_a[-1]]
+        else:
+            low_acti = lindex_b[acti_b[-1]]
     else: low_acti = None
     # Finally, we need to deal with cases where one of the two is None and
     # return the smaller result

@@ -25,7 +25,7 @@ import re
 import string
 from collections import OrderedDict
 
-from .. import balt, bass, bolt, bosh, load_order
+from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import Link, Resources
 from ..bolt import FName, GPath
 from ..bosh import empty_path, mods_metadata, omods
@@ -414,6 +414,9 @@ class PluginChecker(WindowFrame):
                          u'clipboard.'))
         _f(_UPDATE,       False, _(u'Update'),
            setting_tip=_(u'Regenerate the report from scratch.'))
+        # If we can't load plugins, don't even show the option
+        if not bush.game.Esp.canBash:
+            self._controls[_LOAD_PLUGINS].visible = False
         #--Events
         self.on_activate.subscribe(self.on_activation)
         VLayout(border=4, spacing=4, item_expand=True, items=[

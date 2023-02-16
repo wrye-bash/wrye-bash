@@ -1190,6 +1190,7 @@ class ModList(_ModsUIList):
                              else toActivate)
             self._toggle_active_state(*toggle_target)
         if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N'):
+            if not bush.game.Esp.canBash: return # We can't write plugins
             if wrapped_evt.is_shift_down:
                 # Ctrl+Shift+N - Create a new Bashed Patch
                 self.new_bashed_patch()

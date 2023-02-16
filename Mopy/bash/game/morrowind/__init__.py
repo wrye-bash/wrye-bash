@@ -55,6 +55,8 @@ class MorrowindGameInfo(PatchGame):
     using_txt_file = False
     plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
 
+    allTags = set() # no BP functionality yet
+
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'

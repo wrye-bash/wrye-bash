@@ -116,6 +116,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               showVersion=True, scan_plugins=True):
     """Checks currently loaded mods for certain errors / warnings.
     mc_parent should be the instance of PluginChecker, to scan."""
+    if not bush.game.Esp.canBash:
+        # If we can't load plugins, then trying to do so will obviously fail
+        scan_plugins = False
     # Setup some commonly used collections of plugin info
     full_acti = load_order.cached_active_tuple()
     full_lo = load_order.cached_lo_tuple()
@@ -702,7 +705,8 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     temp_log = log.out.getvalue()
     if not temp_log:
         log.setHeader(u'=== ' + _(u'No Problems Found'))
-        if not scan_plugins:
+        # Don't annoy the user with this message if we can't load plugins
+        if not scan_plugins and bush.game.Esp.canBash:
             log(_(u'Wrye Bash did not find any problems with your installed '
                   u'plugins without loading them. Turning on loading of '
                   u'plugins may find more problems.'))
