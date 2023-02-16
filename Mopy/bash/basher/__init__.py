@@ -304,9 +304,17 @@ class _ModsUIList(balt.UIList):
             items.sort(key=lambda a: not self.data_store[a].in_master_block())
 
     def _activeModsFirst(self, items):
-        if self.selectedFirst: items.sort(key=lambda x: x not in
-            bosh.modInfos.imported | bosh.modInfos.merged | set(
-                load_order.cached_active_tuple()))
+        if self.selectedFirst:
+            set_active = set(load_order.cached_active_tuple())
+            set_merged = set(bosh.modInfos.merged)
+            set_imported = set(bosh.modInfos.imported)
+            def _sel_sort_key(x):
+                # First active, then merged, then imported, then inactive
+                if x in set_active: return 0
+                elif x in set_merged: return 1
+                elif x in set_imported: return 2
+                else: return 3
+            items.sort(key=_sel_sort_key)
 
     @property
     def masters_first_required(self):
@@ -336,9 +344,17 @@ class MasterList(_ModsUIList):
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            items.sort(key=lambda x: self.data_store[x].curr_name not in set(
-                load_order.cached_active_tuple()) | bosh.modInfos.imported
-                                           | bosh.modInfos.merged)
+            set_active = set(load_order.cached_active_tuple())
+            set_merged = set(bosh.modInfos.merged)
+            set_imported = set(bosh.modInfos.imported)
+            def _sel_sort_key(x):
+                # First active, then merged, then imported, then inactive
+                x_curr_name = self.data_store[x].curr_name
+                if x_curr_name in set_active: return 0
+                elif x_curr_name in set_merged: return 1
+                elif x_curr_name in set_imported: return 2
+                else: return 3
+            items.sort(key=_sel_sort_key)
     _extra_sortings = [_ModsUIList._sort_masters_first, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels

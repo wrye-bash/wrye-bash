@@ -34,7 +34,7 @@ from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down
 from ..parsers import CsvParser
 
-__all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_SelectedFirst',
+__all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
            'Mods_OblivionEsmMenu', 'Mods_CreateBlankBashedPatch',
            u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
            u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
@@ -228,8 +228,8 @@ class Mods_ActivePlugins(MenuLink):
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_MastersFirst(CheckLink, EnabledLink):
     """Sort masters to the top."""
-    _help = _('Sort masters by type. Always on if current sort is Load Order.')
     _text = _('Masters First')
+    _help = _('Sort masters by type. Always on if current sort is Load Order.')
 
     def _enable(self): return not self.window.masters_first_required
     def _check(self): return self.window.masters_first
@@ -238,10 +238,11 @@ class Mods_MastersFirst(CheckLink, EnabledLink):
         self.window.masters_first = not self.window.masters_first
         self.window.SortItems()
 
-class Mods_SelectedFirst(CheckLink):
+class Mods_ActiveFirst(CheckLink):
     """Sort loaded mods to the top."""
-    _text = _('Loaded')
-    _help = _('Sort active, merged and imported plugins to the top.')
+    _text = _('Active First')
+    _help = _('Sort active plugins to the top, followed by merged plugins, '
+              'imported plugins and inactive plugins.')
 
     def _check(self): return self.window.selectedFirst
 

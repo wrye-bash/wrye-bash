@@ -29,16 +29,17 @@ from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
     UIList_OpenItems
 from ..gui import copy_text_to_clipboard
 
-__all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
+__all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
            'INI_Apply', 'INI_CreateNew', 'INI_ListErrors', 'INI_Open']
 
-class INI_SortValid(BoolLink):
+class INI_ValidTweaksFirst(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    _text, _bl_key, _help = _(u'Valid Tweaks First'), u'bash.ini.sortValid', \
-                            _(u'Valid tweak files will be shown first.')
+    _text = _('Valid Tweaks First')
+    _bl_key = 'bash.ini.sortValid'
+    _help = _('Valid tweak files will be shown first.')
 
     def Execute(self):
-        super(INI_SortValid, self).Execute()
+        super().Execute()
         self.window.SortItems()
 
 #------------------------------------------------------------------------------
