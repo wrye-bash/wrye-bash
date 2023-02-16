@@ -32,7 +32,7 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1
+    gen_color3, int_unpacker, null1, NONE_FID, gen_coed_key
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -56,12 +56,13 @@ class AMelItems(MelSequential):
     def __init__(self, *, with_coed=True, with_counter=True):
         items_elements = [MelStruct(b'CNTO', ['I', 'i'], (FID, 'item'),
             'count')]
-        items_sort_attrs = ('item', 'count')
+        base_attrs = ('item', 'count')
+        sort_kwargs = {'sort_by_attrs': base_attrs}
         if with_coed:
             items_elements.append(_MelCoed())
-            items_sort_attrs += ('item_condition', 'item_owner', 'item_global')
+            sort_kwargs = {'sort_special': gen_coed_key(base_attrs)}
         final_elements = [MelSorted(MelGroups('items', *items_elements),
-            sort_by_attrs=items_sort_attrs)]
+            **sort_kwargs)]
         if with_counter:
             final_elements.insert(0, MelCounter(
                 MelUInt32(b'COCT', 'item_count'), counts='items'))
@@ -74,12 +75,13 @@ class AMelLLItems(MelSequential):
     def __init__(self, lvl_element: MelBase, *, with_coed=True,
             with_counter=True):
         lvl_elements = [lvl_element]
-        lvl_sort_attrs = ('level', 'listId', 'count')
+        base_attrs = ('level', 'listId', 'count')
+        sort_kwargs = {'sort_by_attrs': base_attrs}
         if with_coed:
             lvl_elements.append(_MelCoed())
-            lvl_sort_attrs += ('item_condition', 'item_owner', 'item_global')
+            sort_kwargs = {'sort_special': gen_coed_key(base_attrs)}
         final_elements = [MelSorted(MelGroups('entries', *lvl_elements),
-            sort_by_attrs=lvl_sort_attrs)]
+            **sort_kwargs)]
         if with_counter:
             final_elements.insert(0, MelCounter(
                 MelUInt8(b'LLCT', 'entry_count'), counts='entries'))

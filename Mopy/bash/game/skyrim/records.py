@@ -758,6 +758,8 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
+        ##: This sort_by_attrs might need a sort_special to handle part_node
+        # being None, keep an eye out for TypeError tracebacks
         MelSorted(MelUnorderedGroups('body_part_list',
             MelLString(b'BPTN', 'part_name'),
             MelString(b'PNAM', 'pose_matching'),

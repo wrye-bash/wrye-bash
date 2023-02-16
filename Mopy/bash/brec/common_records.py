@@ -38,7 +38,7 @@ from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId, NotPlayableFlag
+from .utils_constants import FID, FormId, NotPlayableFlag, gen_coed_key
 from .. import bolt, exception
 from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
@@ -477,10 +477,16 @@ class AMreLeveledList(MelRecord):
                          u'to %u, you will have to fix this manually!' %
                          (otherMod, self, max_lvl_size, max_lvl_size))
             self.entries = self.entries[:max_lvl_size]
-        entry_copy_attrs_key = attrgetter(*self.__class__._entry_copy_attrs)
+        all_entry_attrs = self.__class__._entry_copy_attrs
+        coed_attrs = ('item_owner', 'item_global', 'item_condition')
+        if all(a in all_entry_attrs for a in coed_attrs):
+            entry_sort_key = gen_coed_key(tuple(a for a in all_entry_attrs
+                                                if a not in coed_attrs))
+        else:
+            entry_sort_key = attrgetter(*all_entry_attrs)
         if newItems:
             self.items |= newItems
-            self.entries.sort(key=entry_copy_attrs_key)
+            self.entries.sort(key=entry_sort_key)
         #--Is merged list different from other? (And thus written to patch.)
         if ((len(self.entries) != len(other.entries)) or
                 (self.flags != other.flags)):
@@ -494,9 +500,9 @@ class AMreLeveledList(MelRecord):
             else:
                 # Then, check the sort-attributes, same story
                 otherlist = other.entries
-                otherlist.sort(key=entry_copy_attrs_key)
+                otherlist.sort(key=entry_sort_key)
                 for selfEntry, otherEntry in zip(self.entries, otherlist):
-                    for attr in self.__class__._entry_copy_attrs:
+                    for attr in all_entry_attrs:
                         if getattr(selfEntry, attr) != getattr(
                                 otherEntry, attr):
                             break

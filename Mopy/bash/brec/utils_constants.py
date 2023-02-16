@@ -380,6 +380,16 @@ def perk_effect_key(e):
     else:
         return e.pe_rank, e.pe_priority, perk_effect_type, *extra_vals
 
+def gen_coed_key(base_attrs: tuple[str, ...]):
+    """COED is optional, so all of its attrs may be None. Account
+    for that to avoid TypeError when some entries have COED present
+    and some don't."""
+    base_attrgetter = attrgetter_cache[base_attrs]
+    def _ret_key(e):
+        return (*base_attrgetter(e), e.item_condition or 0.0,
+                e.item_owner or NONE_FID, e.item_global or NONE_FID)
+    return _ret_key
+
 # Constants -------------------------------------------------------------------
 
 # Null strings (for default empty byte arrays)
