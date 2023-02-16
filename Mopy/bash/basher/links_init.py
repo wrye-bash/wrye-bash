@@ -180,7 +180,7 @@ def InitMasterLinks():
     """Initialize master list menus."""
     #--MasterList: Column Links
     MasterList.column_links.append(SortByMenu(
-        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
+        sort_options=[Mods_MastersFirst(), Mods_SelectedFirst()]))
     MasterList.column_links.append(ColumnsMenu())
     MasterList.column_links.append(SeparatorLink())
     MasterList.column_links.append(Master_AllowEdit())
@@ -450,7 +450,7 @@ def InitModLinks():
     #--ModList: Column Links
     # Sorting and Columns
     ModList.column_links.append(SortByMenu(
-        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
+        sort_options=[Mods_MastersFirst(), Mods_SelectedFirst()]))
     ModList.column_links.append(ColumnsMenu())
     ModList.column_links.append(SeparatorLink())
     # Files Menu
@@ -669,7 +669,7 @@ def InitModLinks():
     # View Menu
     view_menu = ModList.global_links[_('View')]
     view_menu.append(SortByMenu(
-        sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
+        sort_options=[Mods_MastersFirst(), Mods_SelectedFirst()]))
     view_menu.append(ColumnsMenu())
     view_menu.append(SeparatorLink())
     view_menu.append(Mods_ListMods())

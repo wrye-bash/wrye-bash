@@ -34,7 +34,7 @@ from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down
 from ..parsers import CsvParser
 
-__all__ = [u'Mods_EsmsFirst', u'Mods_ActivePlugins', u'Mods_SelectedFirst',
+__all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_SelectedFirst',
            'Mods_OblivionEsmMenu', 'Mods_CreateBlankBashedPatch',
            u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
            u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
@@ -226,16 +226,16 @@ class Mods_ActivePlugins(MenuLink):
         return active_lists
 
 # "Sort by" submenu -----------------------------------------------------------
-class Mods_EsmsFirst(CheckLink, EnabledLink):
-    """Sort esms to the top."""
-    _help = _(u'Sort masters by type. Always on if current sort is Load Order.')
-    _text = _(u'Type')
+class Mods_MastersFirst(CheckLink, EnabledLink):
+    """Sort masters to the top."""
+    _help = _('Sort masters by type. Always on if current sort is Load Order.')
+    _text = _('Masters First')
 
-    def _enable(self): return not self.window.forceEsmFirst()
-    def _check(self): return self.window.esmsFirst
+    def _enable(self): return not self.window.masters_first_required
+    def _check(self): return self.window.masters_first
 
     def Execute(self):
-        self.window.esmsFirst = not self.window.esmsFirst
+        self.window.masters_first = not self.window.masters_first
         self.window.SortItems()
 
 class Mods_SelectedFirst(CheckLink):

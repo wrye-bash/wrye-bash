@@ -273,23 +273,31 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
+    _masters_first_cols = balt.UIList.nonReversibleCols
 
-    _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
-    def esmsFirst(self): return settings.get(self.keyPrefix + u'.esmsFirst',
-                            True) or self.sort_column in self._esmsFirstCols
-    @esmsFirst.setter
-    def esmsFirst(self, val): settings[self.keyPrefix + u'.esmsFirst'] = val
+    def masters_first(self):
+        """Whether or not masters should be sorted before non-masters for the
+        current sort column."""
+        return (settings.get(f'{self.keyPrefix}.esmsFirst', True) or
+                self.masters_first_required)
+
+    @masters_first.setter
+    def masters_first(self, val):
+        settings[f'{self.keyPrefix}.esmsFirst'] = val
 
     @property
     def selectedFirst(self):
-        return settings.get(self.keyPrefix + u'.selectedFirst', False)
+        return settings.get(f'{self.keyPrefix}.selectedFirst', False)
+
     @selectedFirst.setter
     def selectedFirst(self, val):
-        settings[self.keyPrefix + u'.selectedFirst'] = val
+        settings[f'{self.keyPrefix}.selectedFirst'] = val
 
-    def _sortEsmsFirst(self, items):
-        if self.esmsFirst:
+    def _sort_masters_first(self, items):
+        """Conditional sort, performs the actual 'masters-first' sorting if
+        needed."""
+        if self.masters_first:
             items.sort(key=lambda a: not self.data_store[a].in_master_block())
 
     def _activeModsFirst(self, items):
@@ -297,8 +305,11 @@ class _ModsUIList(balt.UIList):
             bosh.modInfos.imported | bosh.modInfos.merged | set(
                 load_order.cached_active_tuple()))
 
-    def forceEsmFirst(self):
-        return self.sort_column in _ModsUIList._esmsFirstCols
+    @property
+    def masters_first_required(self):
+        """Return True if sorting by master status is required for the current
+        sort column."""
+        return self.sort_column in self._masters_first_cols
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -325,7 +336,7 @@ class MasterList(_ModsUIList):
             items.sort(key=lambda x: self.data_store[x].curr_name not in set(
                 load_order.cached_active_tuple()) | bosh.modInfos.imported
                                            | bosh.modInfos.merged)
-    _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
+    _extra_sortings = [_ModsUIList._sort_masters_first, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels
     labels = {
@@ -344,11 +355,16 @@ class MasterList(_ModsUIList):
     _do_size_checks = False
 
     @property
-    def esmsFirst(self):
+    def masters_first(self):
         # Flip the default for masters, we want to show the order in the save
         # so as to not make renamed/disabled masters 'jump around'
-        return (settings.get(self.keyPrefix + u'.esmsFirst', False) or
-                self.sort_column in self._esmsFirstCols)
+        return (settings.get(f'{self.keyPrefix}.esmsFirst', False) or
+                self.masters_first_required)
+
+    # We have to override this, otherwise Mods_MastersFirst breaks
+    @masters_first.setter
+    def masters_first(self, val):
+        settings[f'{self.keyPrefix}.esmsFirst'] = val
 
     @property
     def cols(self):
@@ -920,7 +936,7 @@ class ModList(_ModsUIList):
         u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
         u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
     }
-    _extra_sortings = [_ModsUIList._sortEsmsFirst,
+    _extra_sortings = [_ModsUIList._sort_masters_first,
                        _ModsUIList._activeModsFirst]
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False

@@ -57,7 +57,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
     MelWeight, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
     PerkEpdfDecider, VWDFlag, gen_color, gen_color3, lens_distributor, \
-    perk_distributor, perk_effect_key
+    perk_distributor, perk_effect_key, AMreWrld
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -787,7 +787,8 @@ class MreCams(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreCell(AMreCell):
+class MreCell(AMreCell): ##: Implement once regular records are done
+    """Cell."""
     ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
                  b'PHZD', b'PMIS', b'REFR'}
     interior_temp_extra = [b'NAVM']
@@ -997,6 +998,15 @@ class MreDfob(MelRecord):
         MelEdid(),
         MelFid(b'DATA', 'default_object'),
     )
+
+#------------------------------------------------------------------------------
+class MreDial(MelRecord): ##: Implement once regular records are done
+    """Dialogue."""
+    rec_sig = b'DIAL'
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
 #------------------------------------------------------------------------------
 class MreDmgt(MelRecord):
@@ -2140,3 +2150,10 @@ class MrePerk(MelRecord):
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
     ).with_distributor(perk_distributor)
+
+#------------------------------------------------------------------------------
+class MreWrld(AMreWrld): ##: Implement once regular records are done
+    """Worldspace."""
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'NAVM']
+    wrld_children_extra = [b'CELL'] # CELL for the persistent block
