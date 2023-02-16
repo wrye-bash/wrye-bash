@@ -140,9 +140,10 @@ class Installers_Link(ItemLink):
                 self._showError(_('%(package_filename)s already '
                                   'exists.') % fmt_pf)
                 return
-            if not self._askYes(_('%(package_filename)s already exists. '
-                                  'Overwrite it?') % fmt_pf,
-                    title=self._dialog_title, default=False): return
+            msg = _('%(package_filename)s already exists. Overwrite it?'
+                    ) % fmt_pf
+            if not self._askYes(msg, self._dialog_title, default_is_yes=False):
+                return
         return archive_path
 
 #--Information about the various Tabs
@@ -1817,6 +1818,9 @@ class ModDetails(_ModsSavesDetails):
                            self.descriptionStr == modInfo.header.description):
             self.DoCancel()
 
+    __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
+        'Windows-1252. %(game_name)s may not be able to activate this '
+        'plugin because of this. Do you want to rename the plugin anyway?')
     @balt.conversation
     def DoSave(self):
         modInfo = self.modInfo
@@ -1849,17 +1853,12 @@ class ModDetails(_ModsSavesDetails):
         if changeName:
             oldName,newName = modInfo.fn_key, file_str
             #--Bad name?
-            if (bosh.modInfos.isBadFileName(str(newName)) and
-                not balt.askContinue(self, _(
-                    'File name %(bad_file_name)s cannot be encoded to '
-                    '%(needed_encoding)s. %(game_name)s may not be able to '
-                    'activate this plugin because of this. Do you want to '
-                    'rename the plugin anyway?') % {
-                    'bad_file_name': newName,
-                    'needed_encoding': 'Windows-1252',
-                    'game_name': bush.game.displayName},
-                    'bash.rename.isBadFileName.continue')):
-                return ##: cancels all other changes - move to validate_filename (without the balt part)
+            if bosh.modInfos.isBadFileName(str(newName)):
+                msg = self.__bad_name_msg % {'bad_file_name': newName,
+                    'game_name': bush.game.displayName}
+                if not balt.askContinue(self, msg,
+                                        'bash.rename.isBadFileName.continue'):
+                    return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName)
         #--Change hedr/masters?

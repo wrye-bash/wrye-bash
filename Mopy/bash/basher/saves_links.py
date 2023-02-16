@@ -708,7 +708,7 @@ class Save_RepairAbomb(OneItemLink):
                     ) % progress
         message += '\n\n' + _("Note: Abomb animation slowing won't occur "
                               "until progress is near 100%%.")
-        if self._askYes(message, _(u'Repair Abomb'), default=False):
+        if self._askYes(message, _('Repair Abomb'), default_is_yes=False):
             saveFile.setAbomb(newCounter)
             saveFile.safeSave()
             self._showOk(_(u'Abomb counter reset.'))

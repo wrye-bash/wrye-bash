@@ -94,7 +94,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         else:
             if not u'-ms=' in bass.inisettings[u'7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
-                                       % archive_path, default=False)
+                                       % archive_path, default_is_yes=False)
                 if isSolid:
                     blockSize = self._promptSolidBlockSize(title=self._text)
             else:
@@ -1175,7 +1175,7 @@ class InstallerArchive_Unpack(_ArchiveOnly):
                 if not project: return
             elif project in self.idata and not self._askYes( #only needed check
                     _(u'%s already exists. Overwrite it?') % project,
-                    default=False):
+                    default_is_yes=False):
                 continue
             # All check passed, we can unpack this
             to_unpack.append((installer, project))

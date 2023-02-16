@@ -35,16 +35,15 @@ import wx.adv
 from . import bass # for dirs - try to avoid
 from . import bolt
 from .bolt import FName, Path, deprint, readme_url
-from .env import BTN_CANCEL, BTN_NO, BTN_OK, BTN_YES, GOOD_EXITS, \
-    TASK_DIALOG_AVAILABLE, TaskDialog
+from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
-from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
-    CheckListBox, Color, DialogWindow, DirOpen, DocumentViewer, EventResult, \
-    FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
-    HLayout, HorizontalLine, ImageWrapper, Label, LayoutOptions, ListBox, \
-    OkButton, PanelWin, Stretch, TextArea, UIListCtrl, VLayout, WindowFrame, \
-    WrappingLabel, bell, copy_files_to_clipboard, scaled, DeletionDialog, \
-    web_viewer_available, AutoSize, get_shift_down
+from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
+    Color, DialogWindow, DirOpen, DocumentViewer, EventResult, FileOpen, \
+    FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, HLayout, \
+    ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
+    TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
+    copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
+    AutoSize, get_shift_down, AskDialogue, ContinueDialog
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -137,8 +136,7 @@ class ColorChecks(ImageList):
                 shortKey = f'{status}.{state}'
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
-                image = images[image_key] = ImageWrapper(img,
-                    iconSize=16)
+                image = images[image_key] = ImageWrapper(img, iconSize=16)
                 self.images.append((shortKey, image))
 
     def Get(self,status,on):
@@ -252,69 +250,26 @@ def staticBitmap(parent, bitmap=None):
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-def askContinue(parent, message, continueKey, title=_(u'Warning'),
-        show_cancel=True):
-    """Show a modal continue query if value of continueKey is false. Return
-    True to continue.
-    Also provides checkbox "Don't show this in future." to set continueKey
-    to true. continueKey must end in '.continue' - should be enforced
-    """
+def askContinue(parent, message, continueKey=None, title=_('Warning'),
+                show_cancel=True):
+    """Show a modal continue query if continueKey is provided and the value of
+    the corresponding setting is False. Return True to continue.
+    Also provides checkbox "Don't show this in the future." to set continueKey
+    to True. continueKey must end in '.continue' - should be enforced. If
+    continueKey is None however, it provides a "Don't show this for the rest of
+    operation." checkbox instead."""
     #--ContinueKey set?
-    if _settings.get(continueKey): return True
+    if continueKey and _settings.get(continueKey):
+        return True
     #--Generate/show dialog
-    checkBoxTxt = _(u"Don't show this in the future.")
-    result, check = _ContinueDialog.display_dialog(parent, title=title,
-        message=message, checkBoxTxt=checkBoxTxt, show_cancel=show_cancel)
-    if result and check: # Don't store setting if user canceled
+    checkBoxTxt = _("Don't show this in the future.") if continueKey else _(
+        "Don't show this for the rest of operation.")
+    result, check = ContinueDialog.display_dialog(parent, message, title,
+        checkBoxTxt, show_cancel=show_cancel, sizes_dict=sizes)
+    if continueKey and result and check: # Don't store setting if user canceled
         _settings[continueKey] = 1
-    return result
-
-def askContinueShortTerm(parent, message, title=_(u'Warning')):
-    """Shows a modal continue query  Returns True to continue.
-    Also provides checkbox "Don't show this for rest of operation."."""
-    #--Generate/show dialog
-    checkBoxTxt = _(u"Don't show this for the rest of operation.")
-    result, check = _ContinueDialog.display_dialog(parent, title=title,
-        message=message, checkBoxTxt=checkBoxTxt)
-    return (result + bool(check)) if result else False # 2: checked 1: OK
-
-class _ContinueDialog(DialogWindow):
-    _def_size = _min_size = (360, 150)
-
-    def __init__(self, parent, message, title, checkBoxTxt, show_cancel):
-        super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
-        self.gCheckBox = CheckBox(self, checkBoxTxt)
-        #--Layout
-        bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
-        if show_cancel:
-            bottom_items.append(CancelButton(self))
-        VLayout(border=6, spacing=6, item_expand=True, items=[
-            (HLayout(spacing=6, items=[
-                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
-                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
-             LayoutOptions(weight=1)),
-            Stretch(),
-            HorizontalLine(self),
-            HLayout(spacing=4, item_expand=True, items=bottom_items),
-        ]).apply_to(self)
-
-    def show_modal(self):
-        #--Get continue key setting and return
-        result = super().show_modal()
-        check = self.gCheckBox.is_checked
-        return result, check
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        #--Get continue key setting and return
-        if canVista:
-            parent, *args = args
-            if not kwargs.pop('show_cancel', False):
-                kwargs['buttons'] = ((BTN_OK, 'ok'),)
-            result, check = vistaDialog(cls._resolve(parent), *args, **kwargs)
-        else:
-            return super().display_dialog(*args, **kwargs)
-        return result, check
+    return result if continueKey else ( # 2: checked 1: OK
+        (result + bool(check)) if result else False)
 
 #------------------------------------------------------------------------------
 def askText(parent, message, title=u'', default=u'', strip=True):
@@ -335,107 +290,41 @@ def askNumber(parent, message, prompt='', title='', initial_num=0, min_num=0,
         return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
-canVista = TASK_DIALOG_AVAILABLE
-
-def vistaDialog(parent, message, title, checkBoxTxt=None,
-                buttons=None, icon=u'warning', commandLinks=True, footer=u'',
-                expander=[], heading=u''):
-    """Always guard with canVista == True"""
-    buttons = buttons if buttons is not None else (
-        (BTN_OK, u'ok'), (BTN_CANCEL, u'cancel'))
-    heading = heading if heading is not None else title
-    title = title if title is not None else u'Wrye Bash'
-    dialog = TaskDialog(title, heading, message,
-                        buttons=[x[1] for x in buttons], main_icon=icon,
-                        parenthwnd=parent.GetHandle() if parent else None,
-                        footer=footer)
-    if expander:
-        dialog.set_expander(expander,False,not footer)
-    if checkBoxTxt:
-        if isinstance(checkBoxTxt, bytes):
-            raise RuntimeError(u'Do not pass bytes to vistaDialog!')
-        elif isinstance(checkBoxTxt, str):
-            dialog.set_check_box(checkBoxTxt,False)
-        else:
-            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
-    button, radio, checkbox = dialog.show(commandLinks)
-    for id_, title in buttons:
-        if title.startswith(u'+'): title = title[1:]
-        if title == button:
-            if checkBoxTxt:
-                return id_ in GOOD_EXITS, checkbox
-            else:
-                return id_ in GOOD_EXITS, None
-    return False, checkbox
-
-def askStyled(parent, message, title, style, do_center=False):
-    """Shows a modal MessageDialog.
-    Use ErrorMessage, WarningMessage or InfoMessage."""
-    parent = _AComponent._resolve(parent)
-    if do_center: style |= wx.CENTER
-    if canVista:
-        vista_btn = []
-        icon = None
-        if style & wx.YES_NO:
-            yes = u'yes'
-            no = u'no'
-            if style & wx.YES_DEFAULT:
-                yes = u'Yes'
-            elif style & wx.NO_DEFAULT:
-                no = u'No'
-            vista_btn.append((BTN_YES, yes))
-            vista_btn.append((BTN_NO, no))
-        if style & wx.OK:
-            vista_btn.append((BTN_OK, u'ok'))
-        if style & wx.CANCEL:
-            vista_btn.append((BTN_CANCEL, u'cancel'))
-        if style & wx.ICON_INFORMATION:
-            icon = 'information'
-        if style & wx.ICON_WARNING:
-            icon = 'warning'
-        if style & wx.ICON_ERROR:
-            icon = 'error'
-        result, _check = vistaDialog(parent, message=message, title=title,
-                                     icon=icon, buttons=vista_btn)
-    else:
-        dialog = wx.MessageDialog(parent,message,title,style) # TODO de-wx!
-        result = dialog.ShowModal() in (wx.ID_OK, wx.ID_YES)
-        dialog.Destroy()
-    return result
-
-def askOk(parent, message, title=u''):
+def askOk(parent, message, title=''):
     """Shows a modal error message."""
-    return askStyled(parent, message, title, wx.OK | wx.CANCEL)
+    return AskDialogue.display_dialog(parent, message, title)
 
-def askYes(parent, message, title=u'', default=True, questionIcon=False):
+def askYes(parent, message, title='', *, default_is_yes=True,
+           question_icon=False, vista_buttons=None, expander=None):
     """Shows a modal warning or question message."""
-    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_WARNING
-    style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
-    return askStyled(parent, message, title, style)
+    return AskDialogue.display_dialog(parent, message, title, yes_no=True,
+        default_is_yes=default_is_yes, question_icon=question_icon,
+        vista_buttons=vista_buttons, expander=expander)
 
-def askWarning(parent, message, title=_(u'Warning')):
+def askWarning(parent, message, title=_('Warning')):
     """Shows a modal warning message."""
-    return askStyled(parent, message, title,
-                     wx.OK | wx.CANCEL | wx.ICON_WARNING)
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
 
-def showOk(parent, message, title=u''):
+def showOk(parent, message, title=''):
     """Shows a modal error message."""
     if isinstance(title, Path): title = title.s
-    return askStyled(parent, message, title, wx.OK)
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True)
 
-def showError(parent, message, title=_(u'Error')):
+def showError(parent, message, title=_('Error')):
     """Shows a modal error message."""
     if isinstance(title, Path): title = title.s
-    return askStyled(parent, message, title, wx.OK | wx.ICON_ERROR)
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+                                      error_ico=True)
 
-def showWarning(parent, message, title=_(u'Warning'), do_center=False):
+def showWarning(parent, message, title=_('Warning'), do_center=False):
     """Shows a modal warning message."""
-    return askStyled(parent, message, title, wx.OK | wx.ICON_WARNING,
-                     do_center=do_center)
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True,
+                                      no_cancel=True, do_center=do_center)
 
-def showInfo(parent, message, title=_(u'Information')):
+def showInfo(parent, message, title=_('Information')):
     """Shows a modal information message."""
-    return askStyled(parent, message, title, wx.OK | wx.ICON_INFORMATION)
+    return AskDialogue.display_dialog(parent, message, title, info_ico=True,
+                                      no_cancel=True)
 
 #------------------------------------------------------------------------------
 class _Log(object):
@@ -1804,10 +1693,11 @@ class Link(object):
     def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
         return showWarning(self.window, message, title=title)
 
-    def _askYes(self, message, title=u'', default=True, questionIcon=False):
+    def _askYes(self, message, title='', default_is_yes=True,
+                questionIcon=False):
         if not title: title = self._text
-        return askYes(self.window, message, title=title, default=default,
-                      questionIcon=questionIcon)
+        return askYes(self.window, message, title=title,
+            default_is_yes=default_is_yes, question_icon=questionIcon)
 
     def _askContinue(self, message, continueKey, title=_('Warning'),
             show_cancel=True):
@@ -1815,7 +1705,7 @@ class Link(object):
             show_cancel=show_cancel)
 
     def _askContinueShortTerm(self, message, title=_(u'Warning')):
-        return askContinueShortTerm(self.window, message, title=title)
+        return askContinue(self.window, message, continueKey=None, title=title)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -2405,21 +2295,23 @@ class ListBoxes(DialogWindow):
                 checkList.lb_is_checked_at_index(i)]
 
 # Some UAC stuff --------------------------------------------------------------
-def ask_uac_restart(message, title, mopy):
-    if not canVista:
-        return askYes(None, message + u'\n\n' + _(
-            u'Start Wrye Bash with Administrator Privileges?'), title)
-    admin = _(u'Run with Administrator Privileges')
-    readme = readme_url(mopy) + u'#trouble-permissions'
-    return vistaDialog(None, message=message,
-        buttons=[(BTN_YES, u'+' + admin), (BTN_NO, _(u'Run normally'))],
-        title=title, expander=[_(u'How to avoid this message in the future'),
-            _(u'Less information'),
-            _(u'Use one of the following command line switches:') +
-            u'\n\n' + _(u'--no-uac: always run normally') +
-            u'\n' + _(u'--uac: always run with Admin Privileges') +
-            u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
-                u'for more information.') % {u'readmePath': readme}])[0]
+def ask_uac_restart(message, mopy):
+    if not TASK_DIALOG_AVAILABLE:
+        message += '\n\n' + _('Start Wrye Bash with Administrator Privileges?')
+        btns = ex = None
+    else:
+        admin = _('Run with Administrator Privileges')
+        readme = readme_url(mopy) + '#trouble-permissions'
+        btns = [(BTN_YES, f'+{admin}'), (BTN_NO, _('Run normally'))]
+        switches = [_('Use one of the following command line switches:'), '',
+                    _('--no-uac: always run normally'),
+                    _('--uac: always run with Admin Privileges'), '',
+                    _('See the <A href="%(readmePath)s">readme</A> '
+                      'for more information.') % {'readmePath': readme}]
+        ex = [_('How to avoid this message in the future'),
+              _('Less information'), '\n'.join(switches)]
+    return askYes(None, message, _('UAC Protection'), vista_buttons=btns,
+                  expander=ex)
 
 class INIListCtrl(wx.ListCtrl):
 

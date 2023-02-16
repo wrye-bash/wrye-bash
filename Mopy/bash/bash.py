@@ -470,19 +470,17 @@ def _main(opts, wx_locale, wxver):
     bash_app.locale = wx_locale
     if env.is_uac():
         uacRestart = opts.uac
-        if not opts.noUac and not opts.uac:
+        if not opts.noUac and not uacRestart:
             # Show a prompt asking if we should restart in Admin Mode
             message = _(
-                u'Wrye Bash needs Administrator Privileges to make changes '
-                u'to the %(gameName)s directory.  If you do not start Wrye '
-                u'Bash with elevated privileges, you will be prompted at '
-                u'each operation that requires elevated privileges.') % {
-                          u'gameName': bush_game.displayName}
-            uacRestart = balt.ask_uac_restart(message,
-                                              title=_(u'UAC Protection'),
-                                              mopy=bass.dirs[u'mopy'])
-            if uacRestart: bass.update_sys_argv([u'--uac'])
+                'Wrye Bash needs Administrator Privileges to make changes to '
+                'the %(gameName)s directory.  If you do not start Wrye Bash '
+                'with elevated privileges, you will be prompted at each '
+                'operation that requires elevated privileges.') % {
+                    'gameName': bush_game.displayName}
+            uacRestart = balt.ask_uac_restart(message, mopy=bass.dirs['mopy'])
         if uacRestart:
+            bass.update_sys_argv(['--uac'])
             bass.is_restarting = True
             return
     # Backup the Bash settings - we need settings being initialized to get
@@ -510,13 +508,13 @@ def _main(opts, wx_locale, wxver):
                 with gui.BusyCursor():
                     backup.backup_settings(balt)
             except exception.StateError:
-                if balt.askYes(frame, u'\n'.join([
-                    _(u'There was an error while trying to backup the '
-                      u'Bash settings!'),
-                    _(u'If you continue, your current settings may be '
-                        u'overwritten.'),
-                    _(u'Do you want to quit Wrye Bash now?')]),
-                                 title=_(u'Unable to create backup!')):
+                msg = [_('There was an error while trying to backup the Bash '
+                         'settings!'),
+                       _('If you continue, your current settings may be '
+                         'overwritten.'),
+                       _('Do you want to quit Wrye Bash now?')]
+                if balt.askYes(frame, u'\n'.join(msg),
+                               title=_('Unable to create backup!')):
                     return  # Quit
     frame = bapp.Init() # Link.Frame is set here !
     frame.ensureDisplayed()

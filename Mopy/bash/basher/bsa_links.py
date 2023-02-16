@@ -63,7 +63,7 @@ class BSA_ExtractToProject(ItemLink):
                 return
             if proj_path.is_dir():
                 question = _(u'%s already exists. Overwrite it?') % project
-                if not self._askYes(question, default=False):
+                if not self._askYes(question, default_is_yes=False):
                     return
                 # Clear existing project, user wanted to overwrite it
                 proj_path.rmtree(safety=u'Installers')
