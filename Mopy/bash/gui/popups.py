@@ -32,8 +32,8 @@ from typing import Any
 import wx as _wx
 
 from .base_components import Color, _AComponent
-from .buttons import Button, CancelButton, DeselectAllButton, ImageButton, \
-    OkButton, PureImageButton, SelectAllButton
+from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
+    PureImageButton, SelectAllButton
 from .checkables import CheckBox
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout
@@ -409,7 +409,7 @@ class DateAndTimeDialog(DialogWindow):
         return result, manual_datetime
 
 # Misc ------------------------------------------------------------------------
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class MLEList:
     """Represents a single list shown in a multi-list editor."""
     # The title of the list. Shown above the description and items.
@@ -431,7 +431,8 @@ class AMultiListEditor(DialogWindow):
 
     def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
             check_uncheck_bitmaps, sizes_dict, icon_bundle, start_checked=True,
-            ok_label=_('OK'), cancel_label=_('Cancel')):
+            ok_label: str | None = _('OK'),
+            cancel_label: str | None = _('Cancel')):
         """Initializes a new AMultiListEditor.
 
         :param data_desc: A description that will be shown at the top of the
@@ -442,12 +443,15 @@ class AMultiListEditor(DialogWindow):
             check/uncheck buttons. Order is checked, unchecked.
         :param start_checked: Optional. If True, start with all items checked.
             If False, start with all items unchecked. True by default.
-        :param ok_label: Optional. The label to show on the OK button. 'OK' by
-            default.
+        :param ok_label: Optional. The label to show on the OK button. If set
+            to None, hides the button. 'OK' by default.
         :param cancel_label: Optional. The label to show on the Cancel button.
-            'Cancel' by default."""
+            If set to None, hides the button. 'Cancel' by default."""
         super().__init__(parent, sizes_dict=sizes_dict,
             icon_bundle=icon_bundle)
+        if ok_label is cancel_label is None:
+            raise SyntaxError('You may not set both ok_label and cancel_label '
+                              'to None')
         # Stores the state of the edited data in each list
         self._wip_list_data = [{i: True for i in m.mlel_items}
                                for m in list_data]
@@ -502,8 +506,10 @@ class AMultiListEditor(DialogWindow):
             *clb_items,
             HLayout(spacing=4, item_expand=True, items=[
                 Stretch(),
-                OkButton(self, ok_label),
-                CancelButton(self, cancel_label),
+                # Hide these buttons if their labels are set to None
+                OkButton(self, ok_label) if ok_label is not None else None,
+                (CancelButton(self, cancel_label)
+                 if cancel_label is not None else None),
             ]),
         ]).apply_to(self)
         for wl in all_wrapping_labels:

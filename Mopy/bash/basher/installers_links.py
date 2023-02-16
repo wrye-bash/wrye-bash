@@ -93,7 +93,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         with load_order.Unlock():
             mods_changed = bosh.modInfos.refresh()
         inis_changed = bosh.iniInfos.refresh()
-        ui_refresh = (bool(mods_changed), bool(inis_changed))
+        ui_refresh = [bool(mods_changed), bool(inis_changed)]
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -106,59 +106,26 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         touchedFiles = {file_ for file_ in sameFiles if
                         data_sizeCrcDate[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
-
-        if not newFiles and not changedFiles and not touchedFiles:
+        if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
                            'folder.') % {'data_folder': bush.game.mods_dir},
-                         title=_('External Installation'))
+                title=_('Monitor External Installation - No Changes'))
             return
-        newFiles = sorted(newFiles) # sorts case insensitive as those are CIStr
-        changedFiles = sorted(changedFiles)
-        touchedFiles = sorted(touchedFiles)
         # Show results, select which files to include
-        checklists = []
-        newFilesKey = _('New Files: %(file_cnt)d') % {
-            'file_cnt': len(newFiles)}
-        changedFilesKey = _('Changed Files: %(file_cnt)d') % {
-            'file_cnt': len(changedFiles)}
-        touchedFilesKey = _('Touched Files: %(file_cnt)d') % {
-            'file_cnt': len(touchedFiles)}
-        delFilesKey = _('Deleted Files')
-        if newFiles:
-            group = [newFilesKey, _('These files are newly added to the '
-                                    '%(data_folder)s folder.') % {
-                'data_folder': bush.game.mods_dir}]
-            group.extend(newFiles)
-            checklists.append(group)
-        if changedFiles:
-            group = [changedFilesKey, _(u'These files were modified.'), ]
-            group.extend(changedFiles)
-            checklists.append(group)
-        if touchedFiles:
-            group = [touchedFilesKey, _(
-                u'These files were not changed, but had their modification '
-                u'time altered.  Most likely, these files are included in '
-                u'the external installation, but were the same version as '
-                u'already existed.'), ]
-            group.extend(touchedFiles)
-            checklists.append(group)
-        if delFiles:
-            group = [delFilesKey, _(
-                u'These files were deleted.  BAIN does not have the '
-                u'capability to remove files when installing.'), ]
-            group.extend(sorted(delFiles))
-        lists = ListBoxes.display_dialog(self.window, self._dialog_title,
-            _('The following changes were detected in the %(data_folder)s '
-              'folder.') % {'data_folder': bush.game.mods_dir},
-            checklists, bOk=_('Create Project'), get_checked=[(
-                newFilesKey, newFiles), (changedFilesKey, changedFiles),
-                (touchedFilesKey, touchedFiles)])
-        include = set(chain(*lists))
-        if not include: return
+        dialog_result = MonitorExternalInstallationEditor.display_dialog(
+            self.window, new_files=sorted(newFiles),
+            changed_files=sorted(changedFiles),
+            touched_files=sorted(touchedFiles),
+            deleted_files=sorted(delFiles))
+        ed_ok, ed_new, ed_changed, ed_touched, ed_del = dialog_result
+        # Ignore ed_del, we can't do anything about deleted files
+        include = set(chain(ed_new, ed_changed, ed_touched))
+        if not ed_ok or not include:
+            return # Aborted by user or nothing left to package, cancel
         # Create Project
-        projectName = self._askFilename(_(u'Project Name'), u'', ##: some default here?
-            inst_type=bosh.InstallerProject,
-            check_exists=False) # we will use unique name
+        projectName = self._askFilename(_('Project Name'),
+            _('External Installation'), inst_type=bosh.InstallerProject,
+            check_exists=False) # we will use unique_name
         if not projectName:
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
@@ -276,13 +243,12 @@ class Installers_CleanData(Installers_Link):
     @balt.conversation
     def Execute(self):
         if not self._askYes(self._full_msg): return
-        mdir = bush.game.mods_dir
-        mdir_fmt = {'data_folder': mdir}
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
         all_unknown_files = sorted(self.idata.get_clean_data_dir_list())
         if not all_unknown_files:
             self._showOk(_('There are no untracked files in the '
                            '%(data_folder)s folder.') % mdir_fmt,
-                title=_('%(data_folder)s Folder is Clean') % mdir_fmt)
+                title=_('Clean Data - %(data_folder)s is Clean') % mdir_fmt)
             return
         ed_ok, ed_unknown = CleanDataEditor.display_dialog(self.window,
             unknown_files=all_unknown_files)
