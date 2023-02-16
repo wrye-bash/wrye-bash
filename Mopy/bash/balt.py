@@ -44,8 +44,8 @@ from .gui import RIGHT, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     FileOpen, FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, \
     HLayout, HorizontalLine, ImageWrapper, Label, LayoutOptions, ListBox, \
     OkButton, PanelWin, Stretch, TextArea, UIListCtrl, VLayout, WindowFrame, \
-    WrappingTextMixin, bell, copy_files_to_clipboard, scaled, \
-    web_viewer_available, AutoSize
+    WrappingLabel, bell, copy_files_to_clipboard, scaled, DeletionDialog, \
+    web_viewer_available, AutoSize, get_shift_down
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -913,8 +913,6 @@ class UIList(PanelWin):
     global_links = None
     #--gList image collection
     _icons = ColorChecks()
-    _shellUI = False # only True in Screens/INIList/Installers
-    _recycle = True # False on tabs that recycle makes no sense (People)
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -1630,32 +1628,26 @@ class UIList(PanelWin):
         items = items if items is not None else self.GetSelected()
         # We need a copy of the original items for the error below
         orig_items = items
-        recycle = (self.__class__._recycle and
-        # menu items fire 'CommandEvent' - I need a workaround to detect Shift
-            (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
+        if wrapped_evt is None: # Called from menu item
+            recycle = not get_shift_down()
+        else:
+            recycle = not wrapped_evt.is_shift_down
         items = list(self.data_store.filter_essential(items))
         if not items and orig_items:
             # Only undeletable items selected, inform the user
             showError(self, _('The selected items cannot be deleted.'))
             return
-        if not self.__class__._shellUI:
-            items, = self._promptDelete(items, dialogTitle, order, recycle)
-        if not items: return
+        if order: items.sort()
+        # Let the user adjust deleted items and recycling state via GUI
+        dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
+            title=dialogTitle, items_to_delete=items, default_recycle=recycle,
+            sizes_dict=sizes, icon_bundle=Resources.bashBlue,
+            trash_icon=images['trash_can.32'].get_bitmap())
+        if not dd_ok or not dd_items: return
         try:
-            self.data_store.delete(items, confirm=self.__class__._shellUI,
-                recycle=recycle)
+            self.data_store.delete(dd_items, recycle=dd_recycle)
         except (AccessDeniedError, CancelError, SkipError): pass
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
-
-    def _promptDelete(self, items, dialogTitle, order, recycle):
-        if not items: return items,
-        message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
-        if order: items.sort()
-        message.extend(items)
-        msg = _(u'Delete these items to the recycling bin ?') if recycle else \
-            _(u'Delete these items?  This operation cannot be undone.')
-        return ListBoxes.display_dialog(self, dialogTitle, msg, [message],
-                                        get_checked=[(message[0], items)])
 
     def open_data_store(self):
         try:
@@ -2344,10 +2336,8 @@ class TreeCtrl(_AComponent):
 
     def OnMotion(self, event): return
 
-class ListBoxes(WrappingTextMixin, DialogWindow):
+class ListBoxes(DialogWindow):
     """A window with 1 or more lists."""
-    _wrapping_offset = 64
-
     def __init__(self, parent, title, message, lists, liststyle=u'check',
                  style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
         """lists is in this format:
@@ -2358,16 +2348,15 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        super(ListBoxes, self).__init__(message, parent, title=title,
-                                        icon_bundle=Resources.bashBlue,
-                                        sizes_dict=sizes, style=style)
+        super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
+            sizes_dict=sizes, style=style)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
         # TODO(inf) de-wx!
         minWidth = int(self._native_widget.ToDIP(
             self._native_widget.GetTextExtent(title)).width * 1.2 + 64)
-        self._panel_text.wrap(minWidth) # otherwise expands to max width
+        self._panel_text = WrappingLabel(self, message)
         layout = VLayout(border=5, spacing=5, items=[self._panel_text])
         self._ctrls = {}
         # Size ourselves slightly larger than the wrapped text, otherwise some

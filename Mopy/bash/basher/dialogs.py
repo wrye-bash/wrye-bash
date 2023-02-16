@@ -22,14 +22,15 @@
 # =============================================================================
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import ImageWrapper, colors
-from ..bolt import FName, text_wrap, top_level_dirs
+from ..bolt import CIstr, FName, text_wrap, top_level_dirs
 from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
-    TextAlignment, TextField, VBoxedLayout, VLayout, bell
+    TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
+    MLEList
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -482,3 +483,119 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.deprefix'] = pfx_remove
         cmt_skip = self._skip_comments.is_checked
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
+
+#------------------------------------------------------------------------------
+class _ABainMLE(AMultiListEditor):
+    """Base class for BAIN-related multi-list editors. Passes some required
+    parameters that depend on balt automatically and automatically converts
+    back to CIstrs."""
+    def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
+            **kwargs):
+        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
+            'square_check.16', 'square_empty.16'))
+        super().__init__(parent, data_desc=data_desc, list_data=list_data,
+            check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue, **kwargs)
+
+    def show_modal(self):
+        # Add the CIstrs we removed in __init__ back in
+        result = super().show_modal()
+        final_lists = [list(map(CIstr, l)) for l in result[1:]]
+        return result[0], *final_lists
+
+class SyncFromDataEditor(_ABainMLE):
+    """Template for a multi-list editor for Sync From Data."""
+    title = _('Sync From Data - Preview')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, pkg_missing: list[CIstr],
+            pkg_mismatched: list[CIstr], pkg_name: str):
+        # Note the map(str) usages to get rid of CIstr for gui/wx, which we
+        # later have to recreate in show_modal
+        del_data = MLEList(
+            mlel_title=_('Files To Delete (%(missing_count)d):') % {
+                'missing_count': len(pkg_missing)},
+            mlel_desc=_('Uncheck files to keep them in the package.'),
+            mlel_items=list(map(str, pkg_missing)))
+        upd_data = MLEList(
+            mlel_title=_('Files To Update (%(mismatched_count)d):') % {
+                'mismatched_count': len(pkg_mismatched)},
+            mlel_desc=_('Uncheck files to keep them unchanged in the '
+                        'package.'),
+            mlel_items=list(map(str, pkg_mismatched)))
+        sync_desc = _('Update %(target_package)s according to '
+                      '%(data_folder)s directory?') % {
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+        sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
+        super().__init__(parent, data_desc=sync_desc,
+            list_data=[del_data, upd_data], ok_label=_('Update'))
+
+#------------------------------------------------------------------------------
+class CleanDataEditor(_ABainMLE):
+    """Template for a multi-list editor for Clean Data."""
+    title = _('Clean Data - Preview')
+    _def_size = (450, 500)
+
+    def __init__(self, parent, *, unknown_files: list[CIstr]):
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        to_move_data = MLEList(
+            mlel_title=_('Files To Move (%(to_move_count)d):') % {
+                'to_move_count': len(unknown_files)},
+            mlel_desc=_('Uncheck any files you want to keep in the '
+                        '%(data_folder)s folder.') % mdir_fmt,
+            mlel_items=list(map(str, unknown_files)))
+        super().__init__(parent, list_data=[to_move_data],
+            data_desc=_('Move the following files out of the %(data_folder)s '
+                        'folder?') % mdir_fmt, ok_label=_('Move'))
+
+#------------------------------------------------------------------------------
+class MonitorExternalInstallationEditor(_ABainMLE):
+    """Template for a multi-list editor for Monitor External Installation."""
+    title = _('Monitor External Installation - Result')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, new_files: list[CIstr],
+            changed_files: list[CIstr], touched_files: list[CIstr],
+            deleted_files: list[CIstr]):
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        newf_data = MLEList(
+            mlel_title=_('New Files %(new_file_cnt)d:') % {
+                'new_file_cnt': len(new_files)},
+            mlel_desc=_('These files are newly added to the %(data_folder)s '
+                        'folder. Uncheck any that you want to '
+                        'skip.') % mdir_fmt,
+            mlel_items=list(map(str, new_files)))
+        changedf_data = MLEList(
+            mlel_title=_('Changed Files %(chg_file_cnt)d:') % {
+                'chg_file_cnt': len(changed_files)},
+            mlel_desc=_('These files were modified. Uncheck any that you want '
+                        'to skip.'),
+            mlel_items=list(map(str, changed_files)))
+        touchedf_data = MLEList(
+            mlel_title=_('Touched Files %(tch_file_cnt)d:') % {
+                'tch_file_cnt': len(touched_files)},
+            mlel_desc=_('These files were not changed, but had their '
+                        'modification time altered. These files were most '
+                        'likely included in the external installation, but '
+                        'were identical to the ones that already existed in '
+                        'the %(data_folder)s folder.') % mdir_fmt,
+            mlel_items=list(map(str, touched_files)))
+        deletedf_data = MLEList(
+            mlel_title=_('Deleted Files %(del_file_cnt)d:') % {
+                'del_file_cnt': len(deleted_files)},
+            mlel_desc=_("These files were deleted. BAIN does not have the "
+                        "capability to remove files when installing, so these "
+                        "deletions cannot be packaged into a BAIN project. "
+                        "You may want to use 'Sync From Data...' to remove "
+                        "them from their origin packages."),
+            mlel_items=list(map(str, deleted_files)))
+        mei_desc = _('The following changes were detected in the '
+                     '%(data_folder)s folder. Do you want to create a project '
+                     'from them?') % mdir_fmt
+        # Only show an OK button if we only have deleted files
+        any_non_deleted = bool(new_files or changed_files or touched_files)
+        ok_btn_label = _('Create Project') if any_non_deleted else _('OK')
+        cancel_btn_label = _('Cancel') if any_non_deleted else None
+        super().__init__(parent, data_desc=mei_desc,
+            list_data=[newf_data, changedf_data, touchedf_data, deletedf_data],
+            ok_label=ok_btn_label, cancel_label=cancel_btn_label)

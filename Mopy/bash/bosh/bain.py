@@ -1872,11 +1872,9 @@ class InstallersData(DataStore):
             else: toDelete.append(self.store_dir.join(item))
         return toDelete, markers
 
-    def _delete_operation(self, paths, markers, *, confirm=False,
-            recycle=True):
+    def _delete_operation(self, paths, markers, *, recycle=True):
         for m in markers: del self[m]
-        super()._delete_operation(paths, markers, confirm=confirm,
-            recycle=recycle)
+        super()._delete_operation(paths, markers, recycle=recycle)
 
     def delete_refresh(self, deleted, markers, check_existence):
         if any(isinstance(p, FName) for p in deleted): # UIList.hide path

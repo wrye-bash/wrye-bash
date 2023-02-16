@@ -27,14 +27,18 @@ from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
 
+from enum import Enum
+
 import wx as _wx
 import wx.adv as _adv
+from wx.lib.stattext import GenStaticText as _GenStaticTextWx
+from wx.lib.wordwrap import wordwrap as _wordwrap_wx
 
 from .base_components import _AComponent, scaled
 from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
-class TextAlignment(object): # PY3: enum
+class TextAlignment(Enum):
     LEFT = 0
     RIGHT = 1
     CENTER = 2
@@ -104,7 +108,7 @@ class _ATextInput(_AComponent):
             self._on_size_changed.subscribe(self._on_size_change)
             self.on_text_changed.subscribe(self._update_tooltip)
 
-    def _update_tooltip(self, new_text): # type: (str) -> None
+    def _update_tooltip(self, new_text: str):
         """Internal callback that shows or hides the tooltip depending on the
         length of the currently entered text and the size of this text input.
 
@@ -120,14 +124,14 @@ class _ATextInput(_AComponent):
         self._update_tooltip(self._native_widget.GetValue())
 
     @property
-    def editable(self): # type: () -> bool
+    def editable(self) -> bool:
         """Returns True if this text input can be edited by the user.
 
         :return: True if this text input is editable."""
         return self._native_widget.IsEditable()
 
     @editable.setter
-    def editable(self, is_editable): # type: (bool) -> None
+    def editable(self, is_editable: bool):
         """Enables or disables user input to this text input based on the
         specified parameter.
 
@@ -135,21 +139,21 @@ class _ATextInput(_AComponent):
         self._native_widget.SetEditable(is_editable)
 
     @property
-    def text_content(self): # type: () -> str
+    def text_content(self) -> str:
         """Returns the text that is currently inside this text input.
 
         :return: The entered text."""
         return self._native_widget.GetValue()
 
     @text_content.setter
-    def text_content(self, new_text): # type: (str) -> None
+    def text_content(self, new_text: str):
         """Changes the text inside this text input to the specified string.
 
         :param new_text: What to change this text input's text to."""
         self._native_widget.SetValue(new_text)
 
     @property
-    def modified(self): # type: () -> bool
+    def modified(self) -> bool:
         """Returns True if the user has modified the text inside this text
         input.
 
@@ -157,7 +161,7 @@ class _ATextInput(_AComponent):
         return self._native_widget.IsModified()
 
     @modified.setter
-    def modified(self, is_modified):
+    def modified(self, is_modified: bool):
         """Changes whether or not this text input is modified based on the
         specified parameter.
 
@@ -166,6 +170,7 @@ class _ATextInput(_AComponent):
         self._native_widget.SetModified(is_modified)
 
     def select_all_text(self):
+        """Selects all text currently present in this component."""
         self._native_widget.SelectAll()
 
 class TextArea(_ATextInput):
@@ -235,14 +240,14 @@ class SearchBar(TextField):
 class _ALabel(_AComponent):
     """Abstract base class for labels."""
     @property
-    def label_text(self): # type: () -> str
+    def label_text(self) -> str:
         """Returns the text of this label as a string.
 
         :return: The text of this label."""
         return self._native_widget.GetLabel()
 
     @label_text.setter
-    def label_text(self, new_text): # type: (str) -> None
+    def label_text(self, new_text: str):
         """Changes the text of this label to the specified string.
 
         :param new_text: The new text to use."""
@@ -253,7 +258,6 @@ class _ALabel(_AComponent):
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
-    # _native_widget: type: _wx.StaticText
     _native_widget: _wx.StaticText
 
     def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
@@ -265,13 +269,99 @@ class Label(_ALabel):
         super(Label, self).__init__(parent, label=init_text,
                                     style=_ta_to_wx[alignment])
 
-    def wrap(self, max_length): # type: (int) -> None
+    def wrap(self, max_length: int):
         """Wraps this label's text so that each line is at most max_length
         pixels long.
 
         :param max_length: The maximum number of device-independent pixels
             (DIP) a line may be long."""
         self._native_widget.Wrap(scaled(max_length))
+
+# All code starting from the 'BEGIN WXPYTHON-LICENSED PART' comment and until
+# the 'END WXPYTHON-LICENSED PART' comment is based on wx.lib.agw.infobar.AutoWrapStaticText
+# https://github.com/wxWidgets/Phoenix/blob/a3b6cfec77fcdcada6b7cb04b9e8f617525d763c/wx/lib/agw/infobar.py
+# by Andrea Gavana.
+# Modified to refactor and fit WB's code style, get rid of the background color
+# change and work around a weird bug.
+# BEGIN WXPYTHON-LICENSED PART ================================================
+class _WrappingStaticTextWx(_GenStaticTextWx):
+    """A StaticText alternative that automatically word-wraps when the parent
+    window is resized."""
+    def __init__(self, parent, label, style):
+        # Set this first - DoGetBestSize needs it and gets called by parent's
+        # __init__
+        self._orig_label = label
+        super().__init__(parent, label=label,
+            style=_wx.ST_NO_AUTORESIZE | style)
+        self.Bind(_wx.EVT_SIZE, self.OnSize)
+
+    def OnSize(self, event):
+        self.Wrap(event.GetSize().width)
+        event.Skip()
+
+    def Wrap(self, new_width):
+        if new_width < 0:
+            return
+        self.Freeze()
+        dc = _wx.ClientDC(self)
+        dc.SetFont(self.GetFont())
+        self.SetLabel(_wordwrap_wx(self._orig_label, new_width, dc), wrapped=True)
+        self.Thaw()
+
+    def SetLabel(self, label, wrapped=False):
+        # wrapped is only True if called from Wrap() since it doesn't exist in
+        # the parent method's signature
+        if not wrapped:
+            self._orig_label = label
+        super().SetLabel(label)
+
+    def DoGetBestSize(self):
+        wst_font = self.GetFont()
+        if not wst_font:
+            wst_font = _wx.SystemSettings.GetFont(_wx.SYS_DEFAULT_GUI_FONT)
+        dc = _wx.ClientDC(self)
+        dc.SetFont(wst_font)
+        wst_label = self.GetLabel()
+        # Workaround for a really weird bug where we sometimes get a label
+        # that's got a \n before every single word character (e.g.
+        # '\nf\no\no \nb\na\nr')
+        if wst_label.startswith('\n'):
+            wst_label = ''.join(wst_label.split('\n'))
+        # Draw the label's text in memory (i.e. not on a real window) and keep
+        # track of how much we drew
+        longest_line_width = total_drawn_height = 0
+        for label_line in wst_label.split('\n'):
+            if label_line == '':
+                w, h = dc.GetTextExtent('W') # Empty lines have height too
+            else:
+                w, h = dc.GetTextExtent(label_line)
+            total_drawn_height += h
+            longest_line_width = max(longest_line_width, w)
+        wst_best = _wx.Size(longest_line_width, total_drawn_height)
+        self.CacheBestSize(wst_best)
+        return wst_best
+# END WXPYTHON-LICENSED PART ==================================================
+
+class WrappingLabel(Label):
+    """Similar to Label, but automatically word-wraps when the parent window is
+    resized. After creating and using it in a layout, call auto_wrap if your
+    label's parents/sizers have proper sizes. If they don't, you will have to
+    pass in the right initial sizes manually (see settings_dialog.py for an
+    example)."""
+    _native_widget: _WrappingStaticTextWx
+
+    @_ALabel.label_text.setter
+    def label_text(self, new_text: str):
+        # Override to word-wrap when changing text programmatically as well.
+        # Note: you *do* still have to call update_layout after doing this!
+        if self.label_text != new_text:
+            self._native_widget.SetLabel(new_text)
+            self.wrap(self.component_size[0])
+
+    def auto_wrap(self):
+        """Automatically wrap this label to fit in the client size it was
+        given."""
+        self.wrap(self._native_widget.GetClientSize().width)
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a

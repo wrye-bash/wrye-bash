@@ -79,6 +79,21 @@ class Button(_AComponent):
         self.on_clicked = self._evt_handler(_wx.EVT_BUTTON)
         self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
 
+    @property
+    def button_label(self) -> str:
+        """Returns the label on this button as a string.
+
+        :return: The label on this button."""
+        return self._unescape(self._native_widget.GetLabel())
+
+    @button_label.setter
+    def button_label(self, new_btn_label):
+        """Changes the label on this button to the specified string.
+
+        :param new_btn_label: The new label to use."""
+        if self.button_label != new_btn_label:
+            self._native_widget.SetLabel(new_btn_label)
+
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the
     dialog or shows that the user consented to something. Note that if you use
@@ -183,16 +198,13 @@ class ImageButton(Button):
     """A button that display an image alongside its label.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, image_id=None, **kwargs):
+    def __init__(self, parent, wx_bitmap=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.
 
-        :param image_id: The internal id for the image shown on this button."""
+        :param wx_bitmap: The bitmap shown on this button."""
         super(ImageButton, self).__init__(parent, **kwargs)
-        if isinstance(image_id, str):
-            self.image = bass.wx_bitmap[image_id]
-        elif isinstance(image_id, _wx.Bitmap):
-            self.image = image_id
+        self.image = wx_bitmap
 
     @property
     def image(self): # type: () -> _wx.Bitmap
@@ -217,15 +229,16 @@ class PureImageButton(ImageButton):
     See Button for documentation on button events.
 
     See also ClickableImage."""
-    def __init__(self, parent, image_id, btn_tooltip=None):
+    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param image_id: The image id to be shown on this button.
+        :param wx_bitmap: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
-                            button."""
-        super().__init__(parent, image_id, btn_tooltip=btn_tooltip,
+            button. Required for accessibility purposes - without it users
+            would have to guess based on the image."""
+        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
             exact_fit=True)
 
 class ClickableImage(ImageButton):
@@ -234,13 +247,14 @@ class ClickableImage(ImageButton):
     See Button for documentation on button events.
 
     See also PureImageButton."""
-    def __init__(self, parent, image_id, btn_tooltip=None):
+    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param image_id: The image id to be shown on this button.
+        :param wx_bitmap: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
-                            button."""
-        super().__init__(parent, image_id, btn_tooltip=btn_tooltip,
+            button. Required for accessibility purposes - without it users
+            would have to guess based on the image."""
+        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
             exact_fit=True, no_border=True)

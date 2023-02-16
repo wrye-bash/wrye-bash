@@ -614,7 +614,6 @@ class INIList(balt.UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _shellUI = True
     _sort_keys = {
         u'File'     : None,
         u'Installer': lambda self, a: self.data_store[a].get_table_prop(
@@ -1753,7 +1752,8 @@ class ModDetails(_ModsSavesDetails):
         """Internal callback that handles showing the date and time dialog and
         processing its result."""
         user_ok, user_datetime = DateAndTimeDialog.display_dialog(
-            self, warning_color=balt.colors['default.warn'])
+            self, warning_color=balt.colors['default.warn'],
+            icon_bundle=balt.Resources.bashBlue)
         if user_ok:
             self._apply_modified_timestamp(user_datetime.strftime('%c'))
 
@@ -2551,7 +2551,6 @@ class InstallersList(balt.UIList):
     global_links = defaultdict(lambda: Links()) # Global menu
     _icons = InstallerColorChecks()
     _sunkenBorder = False
-    _shellUI = True
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
     _sort_keys = {
@@ -2564,7 +2563,7 @@ class InstallersList(balt.UIList):
     #--Special sorters
     def _sortStructure(self, items):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda self, x: self.data_store[x].type)
+            items.sort(key=lambda x: self.data_store[x].type)
     def _sortActive(self, items):
         if settings[u'bash.installers.sortActive']:
             items.sort(key=lambda x: not self.data_store[x].is_active)
@@ -2764,7 +2763,7 @@ class InstallersList(balt.UIList):
             else: msg = _('You have dragged some converters into Wrye Bash.')
             msg += '\n' + _('What would you like to do with them?')
             action, remember = CopyOrMovePopup.display_dialog(self, msg,
-                sizes_dict=balt.sizes)
+                sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
             if action and remember:
                 settings[u'bash.installers.onDropFiles.action'] = action
         return action
@@ -3515,7 +3514,6 @@ class ScreensList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
-    _shellUI = True
     _editLabels = _copy_paths = True
 
     _sort_keys = {u'File'    : None,
@@ -4641,6 +4639,11 @@ def InitImages():
     images['doc_browser.16'] = _svg('book.svg', 16, invertible=True)
     images['doc_browser.24'] = _svg('book.svg', 24, invertible=True)
     images['doc_browser.32'] = _svg('book.svg', 32, invertible=True)
+    # Check/Uncheck All buttons
+    images['square_empty.16'] = _svg('square_empty.svg', 16, invertible=True)
+    images['square_check.16'] = _svg('square_checked.svg', 16, invertible=True)
+    # Deletion dialog button
+    images['trash_can.32'] = _svg('trash_can.svg', 32, invertible=True)
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

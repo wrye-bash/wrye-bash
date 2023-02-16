@@ -3,41 +3,31 @@ All files listed below have been modified to optimize the SVGs.
 
 ## Font Awesome
 
-- `back.svg` is from https://fontawesome.com/icons/arrow-left?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `forward.svg` is from https://fontawesome.com/icons/arrow-right?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `calendar.svg` is from https://fontawesome.com/icons/calendar-days?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `checkmark.svg` is from https://fontawesome.com/icons/check?style=solid&s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `error_cross.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `gear.svg` is from https://fontawesome.com/icons/gear?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `help.svg` is from https://fontawesome.com/icons/circle-question?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `minus.svg` is from https://fontawesome.com/icons/minus?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `plus.svg` is from https://fontawesome.com/icons/plus?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `quit.svg` is from https://fontawesome.com/icons/circle-xmark?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
+- `back.svg` is from https://fontawesome.com/icons/arrow-left?s=solid&f=classic.
+- `forward.svg` is from https://fontawesome.com/icons/arrow-right?s=solid&f=classic.
+- `calendar.svg` is from https://fontawesome.com/icons/calendar-days?s=solid&f=classic.
+- `checkmark.svg` is from https://fontawesome.com/icons/check?style=solid&s=solid&f=classic.
+- `square_checked.svg` is from https://fontawesome.com/icons/square-check?s=regular&f=classic.
+- `square_empty.svg` is from https://fontawesome.com/icons/square?s=regular&f=classic.
+- `error_cross.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic.
+- `gear.svg` is from https://fontawesome.com/icons/gear?s=solid&f=classic.
+- `help.svg` is from https://fontawesome.com/icons/circle-question?s=solid&f=classic.
+- `minus.svg` is from https://fontawesome.com/icons/minus?s=solid&f=classic.
+- `plus.svg` is from https://fontawesome.com/icons/plus?s=solid&f=classic.
+- `quit.svg` is from https://fontawesome.com/icons/circle-xmark?s=solid&f=classic.
   It has been recolored orange.
-- `red_x.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `red_x.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic.
   It has been recolored red and scaled up.
-- `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
-- `tools/steam.svg` is from https://fontawesome.com/icons/steam?s=&f=brands,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
+- `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic.
+- `trash_can.svg` is from https://fontawesome.com/icons/trash-can?s=solid&f=classic.
+- `tools/steam.svg` is from https://fontawesome.com/icons/steam?s=&f=brands.
   A gradient matching Steam's logo colors has been added to it.
-- `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic,
-  licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free.
+- `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic.
   It has been recolored with a yellow gradient and the center has been filled black.
 
 All the files listed above have also been edited via Inkscape to add padding to make them square.
 This is necessary so that wxPython/nanosvg rasterizes them correctly at higher resolutions.
+They are all licensed under the CC-BY 4.0 license: https://fontawesome.com/license/free
 
 ## SVG Repo
 

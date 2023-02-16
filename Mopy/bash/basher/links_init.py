@@ -197,8 +197,8 @@ def InitInstallerLinks():
     #--Column links
     # Sorting and Columns
     InstallersList.column_links.append(SortByMenu(
-        sort_options=[Installers_SortActive(), # Installers_SortStructure(),
-                      Installers_SortProjects()]))
+        sort_options=[Installers_InstalledFirst(), Installers_SimpleFirst(),
+                      Installers_ProjectsFirst()]))
     InstallersList.column_links.append(ColumnsMenu())
     InstallersList.column_links.append(SeparatorLink())
     # Files Menu
@@ -364,8 +364,8 @@ def InitInstallerLinks():
     # View Menu
     view_menu = InstallersList.global_links[_('View')]
     view_menu.append(SortByMenu(
-        sort_options=[Installers_SortActive(), # Installers_SortStructure(),
-                      Installers_SortProjects()]))
+        sort_options=[Installers_InstalledFirst(), Installers_SimpleFirst(),
+                      Installers_ProjectsFirst()]))
     view_menu.append(ColumnsMenu())
     view_menu.append(SeparatorLink())
     view_menu.append(Installers_ListPackages())
