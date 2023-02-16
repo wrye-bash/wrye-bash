@@ -194,9 +194,6 @@ class ModFile(object):
                             self.tops[top_grup_sig] = new_top
                         else:
                             # Duplicate top-level group and we can merge
-                            deprint(f'{self.fileInfo}: Duplicate top-level '
-                                    f'{sig_to_str(top_grup_sig)} group, '
-                                    f'merging')
                             self.tops[top_grup_sig].merge_records(new_top,
                                 None, set(), False)
                     else:
