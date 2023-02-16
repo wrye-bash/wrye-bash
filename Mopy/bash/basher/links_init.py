@@ -521,7 +521,6 @@ def InitModLinks():
         file_menu.links.append(File_Snapshot())
         file_menu.links.append(File_RevertToSnapshot())
         ModList.context_links.append(file_menu)
-    #--------------------------------------------
     ModList.context_links.append(SeparatorLink())
     ModList.context_links.append(Mod_Move())
     ModList.context_links.append(Mod_ShowReadme())
@@ -541,7 +540,6 @@ def InitModLinks():
         if bush.game.Esp.canBash:
             info_menu.links.append(Mod_Details())
         ModList.context_links.append(info_menu)
-    #--------------------------------------------
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_MarkMergeable())
@@ -737,38 +735,42 @@ def InitSaveLinks():
         copyMenu = MenuLink(_('Copy to..'))
         copyMenu.links.append(Save_Move(True))
         SaveList.context_links.append(copyMenu)
-    #--------------------------------------------
     SaveList.context_links.append(SeparatorLink())
     SaveList.context_links.append(Save_ActivateMasters())
     SaveList.context_links.append(Save_ReorderMasters())
     SaveList.context_links.append(File_ListMasters())
     SaveList.context_links.append(Save_DiffMasters())
-    if bush.game.Ess.canEditMore:
-        SaveList.context_links.append(Save_Stats())
-    SaveList.context_links.append(Save_StatObse())
-    SaveList.context_links.append(Save_StatPluggy())
-    if bush.game.Ess.canEditMore:
-        #--------------------------------------------
-        SaveList.context_links.append(SeparatorLink())
-        SaveList.context_links.append(Save_EditPCSpells())
-        SaveList.context_links.append(Save_RenamePlayer())
-        SaveList.context_links.append(Save_EditCreatedEnchantmentCosts())
-        SaveList.context_links.append(Save_ImportFace())
-        SaveList.context_links.append(Save_EditCreated(b'ENCH'))
-        SaveList.context_links.append(Save_EditCreated(b'ALCH'))
-        SaveList.context_links.append(Save_EditCreated(b'SPEL'))
-        SaveList.context_links.append(Save_ReweighPotions())
-        SaveList.context_links.append(Save_UpdateNPCLevels())
-    #--------------------------------------------
     SaveList.context_links.append(SeparatorLink())
     SaveList.context_links.append(Save_ExportScreenshot())
     SaveList.context_links.append(Save_Renumber())
-    #--------------------------------------------
-    if bush.game.Ess.canEditMore:
+    if True: #--Info
+        info_menu = MenuLink(_('Info..'))
+        if bush.game.Ess.canEditMore:
+            info_menu.links.append(Save_Stats())
+        info_menu.links.append(Save_StatObse())
+        info_menu.links.append(Save_StatPluggy())
+        SaveList.context_links.append(info_menu)
+    if bush.game.Ess.canEditMore: #--Edit & Repair
+        edit_menu = MenuLink(_('Edit..'))
+        edit_menu.links.append(Save_EditCreated(b'ALCH'))
+        edit_menu.links.append(Save_ReweighPotions())
+        edit_menu.links.append(SeparatorLink())
+        edit_menu.links.append(Save_EditCreated(b'ENCH'))
+        edit_menu.links.append(Save_EditCreatedEnchantmentCosts())
+        edit_menu.links.append(SeparatorLink())
+        edit_menu.links.append(Save_EditCreated(b'SPEL'))
+        edit_menu.links.append(Save_EditPCSpells())
+        edit_menu.links.append(SeparatorLink())
+        edit_menu.links.append(Save_RenamePlayer())
+        edit_menu.links.append(Save_ImportFace())
+        edit_menu.links.append(Save_UpdateNPCLevels())
+        repair_menu = MenuLink(_('Repair..'))
+        repair_menu.links.append(Save_Unbloat())
+        repair_menu.links.append(Save_RepairAbomb())
+        repair_menu.links.append(Save_RepairHair())
         SaveList.context_links.append(SeparatorLink())
-        SaveList.context_links.append(Save_Unbloat())
-        SaveList.context_links.append(Save_RepairAbomb())
-        SaveList.context_links.append(Save_RepairHair())
+        SaveList.context_links.append(edit_menu)
+        SaveList.context_links.append(repair_menu)
     # SaveList: Global Links
     # File Menu
     file_menu = SaveList.global_links[_('File')]
