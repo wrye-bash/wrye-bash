@@ -2563,7 +2563,7 @@ class InstallersList(balt.UIList):
     #--Special sorters
     def _sortStructure(self, items):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda self, x: self.data_store[x].type)
+            items.sort(key=lambda x: self.data_store[x].type)
     def _sortActive(self, items):
         if settings[u'bash.installers.sortActive']:
             items.sort(key=lambda x: not self.data_store[x].is_active)

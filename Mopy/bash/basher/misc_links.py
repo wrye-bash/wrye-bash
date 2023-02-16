@@ -323,7 +323,7 @@ class _SortBy(RadioLink):
 
 class SortByMenu(ChoiceMenuLink):
     """Link-based interface to decide what to sort the list by."""
-    _text = _('Sort by..')
+    _text = _('Sort By..')
     choiceLinkType = _SortBy
 
     def __init__(self, sort_options=None):
