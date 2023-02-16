@@ -26,7 +26,7 @@ points to the InstallersList singleton."""
 from itertools import chain
 
 from . import Installers_Link
-from .dialogs import CreateNewProject
+from .dialogs import CreateNewProject, CleanDataEditor
 from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     ListBoxes, SeparatorLink
@@ -276,32 +276,23 @@ class Installers_CleanData(Installers_Link):
     @balt.conversation
     def Execute(self):
         if not self._askYes(self._full_msg): return
-        ui_refresh = [False, False]
         mdir = bush.game.mods_dir
         mdir_fmt = {'data_folder': mdir}
+        all_unknown_files = sorted(self.idata.get_clean_data_dir_list())
+        if not all_unknown_files:
+            self._showOk(_('There are no untracked files in the '
+                           '%(data_folder)s folder.') % mdir_fmt,
+                title=_('%(data_folder)s Folder is Clean') % mdir_fmt)
+            return
+        ed_ok, ed_unknown = CleanDataEditor.display_dialog(self.window,
+            unknown_files=all_unknown_files)
+        if not ed_ok or not ed_unknown:
+            return # Aborted by user or nothing left to clean, cancel
+        ui_refresh = [False, False]
         try:
-            all_unknown_files = self.idata.get_clean_data_dir_list()
-            if not all_unknown_files:
-                self._showOk(_('There are no untracked files in the '
-                               '%(data_folder)s folder.') % mdir_fmt,
-                    title=_('%(data_folder)s Folder is Clean') % mdir_fmt)
-                return
-            message = ['', # adding a tool tip
-                       _('Uncheck files to keep them in the %(data_folder)s '
-                         'folder.') % mdir_fmt]
-            all_unknown_files.sort()
-            message.extend(all_unknown_files)
-            selected_unknown_files, = ListBoxes.display_dialog(self.window,
-                _('Move files out of the %(data_folder)s folder.') % mdir_fmt,
-                _('Uncheck any files you want to keep in the %(data_folder)s '
-                  'folder.') % mdir_fmt, [message],
-                get_checked=[(message[0], all_unknown_files)])
-            if selected_unknown_files:
-                with balt.Progress(_('Cleaning %(data_folder)s '
-                                     'contents...') % mdir_fmt,
-                        f'\n{" " * 65}'):
-                    self.idata.clean_data_dir(selected_unknown_files,
-                                              ui_refresh)
+            with balt.Progress(_('Cleaning %(data_folder)s '
+                                 'contents...') % mdir_fmt, f'\n{" " * 65}'):
+                self.idata.clean_data_dir(ed_unknown, ui_refresh)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 

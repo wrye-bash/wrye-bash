@@ -422,14 +422,16 @@ class MLEList:
     mlel_items: list[str]
 
 class AMultiListEditor(DialogWindow):
-    """Base class for a multi-list editor. You have to subclass this and pass
-    in appropriate arguments (see __init__ below). That way we also get a
-    unique __class__.__name__ for the settings key."""
+    """Base class for a multi-list editor. Useful if you want to show a user
+    one or more lists, where they may check or uncheck items in those lists.
+    You have to subclass this and pass in appropriate arguments (see __init__
+    below). That way we also get a unique __class__.__name__ for the settings
+    key."""
     _min_size = (300, 400)
 
-    def __init__(self, parent, *, data_desc: str,
-            list_data: list[MLEList], check_uncheck_bitmaps, sizes_dict,
-            icon_bundle):
+    def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
+            check_uncheck_bitmaps, sizes_dict, icon_bundle, start_checked=True,
+            ok_label=_('OK'), cancel_label=_('Cancel')):
         """Initializes a new AMultiListEditor.
 
         :param data_desc: A description that will be shown at the top of the
@@ -437,7 +439,13 @@ class AMultiListEditor(DialogWindow):
         :param list_data: A list specifying the lists that can be edited via
             this dialog. See MLEList for more information.
         :param check_uncheck_bitmaps: A tuple of _wx.Bitmaps for the
-            check/uncheck buttons. Order is checked, unchecked."""
+            check/uncheck buttons. Order is checked, unchecked.
+        :param start_checked: Optional. If True, start with all items checked.
+            If False, start with all items unchecked. True by default.
+        :param ok_label: Optional. The label to show on the OK button. 'OK' by
+            default.
+        :param cancel_label: Optional. The label to show on the Cancel button.
+            'Cancel' by default."""
         super().__init__(parent, sizes_dict=sizes_dict,
             icon_bundle=icon_bundle)
         # Stores the state of the edited data in each list
@@ -455,8 +463,7 @@ class AMultiListEditor(DialogWindow):
                 self._editor_clbs.append(None)
                 continue
             mle_clb = CheckListBox(self, choices=mle_list.mlel_items)
-            # Start out with everything checked - could make a param if needed
-            mle_clb.set_all_checkmarks(checked=True)
+            mle_clb.set_all_checkmarks(checked=start_checked)
             mle_clb.on_box_checked.subscribe(partial(
                 self._handle_box_checked, i))
             self._editor_clbs.append(mle_clb)
@@ -495,8 +502,8 @@ class AMultiListEditor(DialogWindow):
             *clb_items,
             HLayout(spacing=4, item_expand=True, items=[
                 Stretch(),
-                OkButton(self, _('Commit')),
-                CancelButton(self)
+                OkButton(self, ok_label),
+                CancelButton(self, cancel_label),
             ]),
         ]).apply_to(self)
         for wl in all_wrapping_labels:
@@ -541,6 +548,6 @@ class AMultiListEditor(DialogWindow):
         result = super().show_modal()
         # Compile only the checked items into the resulting lists
         final_lists = [
-            [mle_item for mle_item, mle_item_checked in mle_list_data.items()
-             if mle_item_checked] for mle_list_data in self._wip_list_data]
+            [mli for mli, mli_checked in mle_list_data.items() if mli_checked]
+            for mle_list_data in self._wip_list_data]
         return result, *final_lists

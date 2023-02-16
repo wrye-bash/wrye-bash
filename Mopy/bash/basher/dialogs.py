@@ -485,7 +485,25 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
 
 #------------------------------------------------------------------------------
-class SyncFromDataEditor(AMultiListEditor):
+class _ABainMLE(AMultiListEditor):
+    """Base class for BAIN-related multi-list editors. Passes some required
+    parameters that depend on balt automatically and automatically converts
+    back to CIstrs."""
+    def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
+            **kwargs):
+        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
+            'square_check.16', 'square_empty.16'))
+        super().__init__(parent, data_desc=data_desc, list_data=list_data,
+            check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue, **kwargs)
+
+    def show_modal(self):
+        # Add the CIstrs we removed in __init__ back in
+        result = super().show_modal()
+        final_lists = [list(map(bolt.CIstr, l)) for l in result[1:]]
+        return result[0], *final_lists
+
+class SyncFromDataEditor(_ABainMLE):
     """Template for a multi-list editor for Sync From Data."""
     title = _('Sync From Data - Preview')
     _def_size = (450, 600)
@@ -509,14 +527,23 @@ class SyncFromDataEditor(AMultiListEditor):
                       '%(data_folder)s directory?') % {
             'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
-        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
-            'square_check.16', 'square_empty.16'))
-        super().__init__(parent, list_data=[del_data, upd_data],
-            data_desc=sync_desc, check_uncheck_bitmaps=cu_bitmaps,
-            sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
+        super().__init__(parent, data_desc=sync_desc,
+            list_data=[del_data, upd_data], ok_label=_('Sync'))
 
-    def show_modal(self):
-        # Add the CIstrs we removed in __init__ back in
-        result = super().show_modal()
-        final_lists = [list(map(bolt.CIstr, l)) for l in result[1:]]
-        return result[0], *final_lists
+#------------------------------------------------------------------------------
+class CleanDataEditor(_ABainMLE):
+    """Template for a multi-list editor for Clean Data."""
+    title = _('Clean Data - Preview')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, unknown_files):
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        to_move_data = MLEList(
+            mlel_title=_('Files to move (%(to_move_count)d):') % {
+                'to_move_count': len(unknown_files)},
+            mlel_desc=_('Uncheck any files you want to keep in the '
+                        '%(data_folder)s folder.') % mdir_fmt,
+            mlel_items=list(map(str, unknown_files)))
+        super().__init__(parent, list_data=[to_move_data],
+            data_desc=_('Move the following files out of the %(data_folder)s '
+                       'folder?') % mdir_fmt, ok_label=_('Clean'))
