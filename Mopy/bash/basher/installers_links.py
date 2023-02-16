@@ -42,12 +42,12 @@ __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            'Installers_CleanData', 'Installers_AvoidOnStart',
            u'Installers_Enabled', u'Installers_AutoAnneal',
            u'Installers_AutoWizard', u'Installers_AutoRefreshProjects',
-           u'Installers_AutoRefreshBethsoft',
+           'Installers_SkipVanillaContent',
            u'Installers_ApplyEmbeddedBCFs', u'Installers_BsaRedirection',
            u'Installers_RemoveEmptyDirs',
-           u'Installers_ConflictsReportShowsInactive',
-           u'Installers_ConflictsReportShowsLower',
-           u'Installers_ConflictsReportShowBSAConflicts',
+           u'Installers_ShowInactiveConflicts',
+           u'Installers_ShowLowerConflicts',
+           u'Installers_ShowActiveBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
            u'Installers_GlobalRedirects', u'Installers_FullRefresh',
            'Installers_IgnoreFomod', 'Installers_ValidateFomod',
@@ -448,16 +448,18 @@ class Installers_ApplyEmbeddedBCFs(ItemLink):
         self.window.SelectItemsNoCallback(destinations + converted)
 
 #------------------------------------------------------------------------------
-class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
-    """Toggle refreshVanilla setting and update."""
-    _text = _(u'Skip Bethsoft Content')
+class Installers_SkipVanillaContent(BoolLink, Installers_Link):
+    """Change whether or not to install vanilla content."""
+    _text = _('Skip Vanilla Content')
     _bl_key = u'bash.installers.autoRefreshBethsoft'
-    _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
+    _help = _('If checked, do not overwrite plugins and BSAs that came with '
+              'the original, unmodified game.')
     opposite = True
-    _message = _('Enable installation of Bethsoft content?') + '\n\n' + _(
-        "It is recommended to keep backups of any affected files. Unmodified "
-        "copies can be reacquired via Steam's 'Verify integrity of game "
-        "files' command.") + '\n\n' + _('Are you sure you want to continue?')
+    _message = (_('Enable installation of vanilla content?') + '\n\n' +
+                _("It is recommended to keep backups of any affected files. "
+                  "Unmodified copies can be reacquired via Steam's 'Verify "
+                  "integrity of game files' command.") + '\n\n' +
+                _('Are you sure you want to continue?'))
 
     @balt.conversation
     def Execute(self):
@@ -530,7 +532,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
         bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
 
 #------------------------------------------------------------------------------
-class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
+class Installers_ShowInactiveConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
     _text = _(u'Show Inactive Conflicts')
     _help = _(u'In the conflicts tab also display conflicts with inactive '
@@ -538,7 +540,7 @@ class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     _bl_key = u'bash.installers.conflictsReport.showInactive'
 
 #------------------------------------------------------------------------------
-class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
+class Installers_ShowLowerConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
     _text = _(u'Show Lower Conflicts')
     _help = _(u'In the conflicts tab also display conflicts with lower order '
@@ -546,7 +548,7 @@ class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     _bl_key = u'bash.installers.conflictsReport.showLower'
 
 #------------------------------------------------------------------------------
-class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
+class Installers_ShowActiveBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
     _text = _(u'Show Active BSA Conflicts')
     _help = _(u'In the conflicts tab also display same-name resources inside '
