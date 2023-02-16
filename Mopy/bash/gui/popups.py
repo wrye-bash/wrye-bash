@@ -32,8 +32,8 @@ from typing import Any
 import wx as _wx
 
 from .base_components import Color, _AComponent
-from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
-    PureImageButton, SelectAllButton
+from .buttons import Button, CancelButton, DeselectAllButton, ImageButton, \
+    OkButton, PureImageButton, SelectAllButton
 from .checkables import CheckBox
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout
@@ -253,7 +253,7 @@ class DeletionDialog(DialogWindow):
 
     def __init__(self, parent, *, title: str,
             items_to_delete: list[str], default_recycle: bool,
-            sizes_dict, icon_bundle):
+            sizes_dict, icon_bundle, trash_icon):
         """Initializes a new DeletionDialog.
 
         :param items_to_delete: A list of strings representing the items that
@@ -262,38 +262,59 @@ class DeletionDialog(DialogWindow):
             checked by default or not."""
         super().__init__(parent, sizes_dict=sizes_dict, title=title,
             icon_bundle=icon_bundle)
+        ##: yuck, decouple!
+        from ..balt import staticBitmap
         self._deletable_items = CheckListBox(self, choices=items_to_delete)
         self._deletable_items.set_all_checkmarks(checked=True)
         self._recycle_checkbox = CheckBox(self, _('Recycle'),
             checked=default_recycle, chkbx_tooltip=_(
                 'Whether to move deleted items to the recycling bin or '
                 'permanently delete them.'))
-        self._recycle_checkbox.on_checked.subscribe(self._set_question_msg)
-        self._question_label = WrappingLabel(self, self._get_question_msg(),
-            wrap_initially=True)
+        self._recycle_checkbox.on_checked.subscribe(self._on_recycle_checked)
+        self._question_label = WrappingLabel(self, self._get_question_msg())
+        uncheck_label = WrappingLabel(self, _('Uncheck items to skip deleting '
+                                              'them if desired.'))
+        self._delete_button = OkButton(self, self._get_button_text())
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._question_label,
-            HorizontalLine(self),
-            Label(self, _('Uncheck items to skip deleting them if desired.')),
+            HLayout(spacing=4, item_expand=True, items=[
+                staticBitmap(self, trash_icon),
+                (VLayout(spacing=4, item_expand=True, items=[
+                    self._question_label,
+                    HorizontalLine(self),
+                    uncheck_label,
+                ]), LayoutOptions(weight=1)),
+            ]),
             (self._deletable_items, LayoutOptions(weight=1)),
             HLayout(item_expand=True, items=[
                 self._recycle_checkbox,
                 Stretch(),
-                OkButton(self),
+                self._delete_button,
                 CancelButton(self),
             ]),
         ]).apply_to(self)
+        # Wrap our WrappingLabels afterwards and update the layout to match
+        uncheck_label.auto_wrap()
+        self._question_label.auto_wrap()
+        self.update_layout()
 
     def _get_question_msg(self):
+        """Helper method to get the right question message to show at the top
+        of the dialog."""
         return (_('Delete these items to the recycling bin?')
                 if self._recycle_checkbox.is_checked else
                 _('Permanently delete these items? This operation cannot be '
                   'undone!'))
 
-    def _set_question_msg(self, _checked):
-        """Internal callback for changing the question message whenever the
+    def _get_button_text(self):
+        """Helper method to get the right text to show on the OK button."""
+        return (_('Delete') if self._recycle_checkbox.is_checked else
+                _('Delete Permanently'))
+
+    def _on_recycle_checked(self, _checked):
+        """Internal callback for updating the dialog contents whenever the
         recycling checkbox is changed."""
         self._question_label.label_text = self._get_question_msg()
+        self._delete_button.button_label = self._get_button_text()
         self.update_layout()
 
     def show_modal(self) -> tuple[bool, tuple[str, ...], bool]:
@@ -424,6 +445,7 @@ class AMultiListEditor(DialogWindow):
                                for m in list_data]
         self._editor_clbs = []
         clb_items = []
+        all_wrapping_labels = []
         for i, mle_list in enumerate(list_data):
             # Skip showing any list editors for lists without items. However,
             # we do still want to return them in show_modal for ease of use
@@ -438,8 +460,12 @@ class AMultiListEditor(DialogWindow):
             mle_clb.on_box_checked.subscribe(partial(
                 self._handle_box_checked, i))
             self._editor_clbs.append(mle_clb)
-            clb_items.append(WrappingLabel(self, mle_list.mlel_title)),
-            clb_items.append(WrappingLabel(self, mle_list.mlel_desc)),
+            title_label = WrappingLabel(self, mle_list.mlel_title)
+            clb_items.append(title_label)
+            all_wrapping_labels.append(title_label)
+            desc_label = WrappingLabel(self, mle_list.mlel_desc)
+            clb_items.append(desc_label)
+            all_wrapping_labels.append(desc_label)
             # Put the check/uncheck buttons right before the search bar
             search_layout = HLayout(item_expand=True, spacing=4)
             check_all_btn = PureImageButton(self, check_uncheck_bitmaps[0],
@@ -461,8 +487,10 @@ class AMultiListEditor(DialogWindow):
             # And last goes the CheckListBox, which should tkae up all
             # remaining vertical space
             clb_items.append((mle_clb, LayoutOptions(weight=1)))
+        data_desc_label = WrappingLabel(self, data_desc)
+        all_wrapping_labels.append(data_desc_label)
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            WrappingLabel(self, data_desc),
+            data_desc_label,
             HorizontalLine(self),
             *clb_items,
             HLayout(spacing=4, item_expand=True, items=[
@@ -471,6 +499,9 @@ class AMultiListEditor(DialogWindow):
                 CancelButton(self)
             ]),
         ]).apply_to(self)
+        for wl in all_wrapping_labels:
+            wl.auto_wrap()
+        self.update_layout()
 
     def _handle_box_checked(self, list_data_index: int, box_index: int):
         """Internal callback, called whenever a checkbox is checked or

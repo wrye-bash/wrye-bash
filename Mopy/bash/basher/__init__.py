@@ -4642,6 +4642,8 @@ def InitImages():
     # Check/Uncheck All buttons
     images['square_empty.16'] = _svg('square_empty.svg', 16, invertible=True)
     images['square_check.16'] = _svg('square_checked.svg', 16, invertible=True)
+    # Deletion dialog button
+    images['trash_can.32'] = _svg('trash_can.svg', 32, invertible=True)
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

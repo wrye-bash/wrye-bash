@@ -344,22 +344,11 @@ class _WrappingStaticTextWx(_GenStaticTextWx):
 
 class WrappingLabel(Label):
     """Similar to Label, but automatically word-wraps when the parent window is
-    resized."""
+    resized. After creating and using it in a layout, call auto_wrap if your
+    label's parents/sizers have proper sizes. If they don't, you will have to
+    pass in the right initial sizes manually (see settings_dialog.py for an
+    example)."""
     _native_widget: _WrappingStaticTextWx
-
-    def __init__(self, parent, init_text, alignment=TextAlignment.LEFT, *,
-            wrap_initially=False):
-        """Extends Label.__init__, see there for docs on first three
-        parameters.
-
-        :param wrap_initially: If True, wrap this label immediately using the
-            parent's width. This is only useful if the parent has a usable
-            width, which some components don't (e.g. PanelWin does not)."""
-        super().__init__(parent, init_text, alignment=alignment)
-        # Wrap to parent's size if we have some initial text passed in and
-        # weren't asked not to
-        if init_text and wrap_initially:
-            self.wrap(parent.component_size[0])
 
     @_ALabel.label_text.setter
     def label_text(self, new_text: str):
@@ -368,6 +357,11 @@ class WrappingLabel(Label):
         if self.label_text != new_text:
             self._native_widget.SetLabel(new_text)
             self.wrap(self.component_size[0])
+
+    def auto_wrap(self):
+        """Automatically wrap this label to fit in the client size it was
+        given."""
+        self.wrap(self._native_widget.GetClientSize().width)
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a

@@ -137,6 +137,14 @@ class _AComponent:
         return EventHandler(self._native_widget, evt, arg_proc)
 
     @staticmethod
+    def _escape(s): # FIXME(inf) remove once && fixup is merged
+        return s.replace('&', '&&')
+
+    @staticmethod
+    def _unescape(s): # FIXME(inf) remove once && fixup is merged
+        return s.replace('&&', '&')
+
+    @staticmethod
     def _resolve(obj):
         """Resolves the specified object down to a wx object. If obj is a wx
         object already, then this just returns it. If obj is a component,

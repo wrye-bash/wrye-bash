@@ -1641,7 +1641,8 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=sizes, icon_bundle=Resources.bashBlue)
+            sizes_dict=sizes, icon_bundle=Resources.bashBlue,
+            trash_icon=images['trash_can.32'].get_bitmap())
         if not dd_ok or not dd_items: return
         try:
             self.data_store.delete(dd_items, recycle=dd_recycle)

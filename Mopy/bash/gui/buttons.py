@@ -79,6 +79,21 @@ class Button(_AComponent):
         self.on_clicked = self._evt_handler(_wx.EVT_BUTTON)
         self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
 
+    @property
+    def button_label(self) -> str:
+        """Returns the label on this button as a string.
+
+        :return: The label on this button."""
+        return self._unescape(self._native_widget.GetLabel())
+
+    @button_label.setter
+    def button_label(self, new_btn_label):
+        """Changes the label on this button to the specified string.
+
+        :param new_btn_label: The new label to use."""
+        if self.button_label != new_btn_label:
+            self._native_widget.SetLabel(new_btn_label)
+
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the
     dialog or shows that the user consented to something. Note that if you use

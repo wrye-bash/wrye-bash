@@ -19,6 +19,7 @@ All files listed below have been modified to optimize the SVGs.
 - `red_x.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic.
   It has been recolored red and scaled up.
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic.
+- `trash_can.svg` is from https://fontawesome.com/icons/trash-can?s=solid&f=classic.
 - `tools/steam.svg` is from https://fontawesome.com/icons/steam?s=&f=brands.
   A gradient matching Steam's logo colors has been added to it.
 - `warning.svg` is from https://fontawesome.com/icons/triangle-exclamation?s=solid&f=classic.

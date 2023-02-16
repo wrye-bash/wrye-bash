@@ -197,7 +197,7 @@ class ATreeMixin(_AComponent):
     def wrap_page_description(self, parent_width: int):
         """Wraps the description of this page to the parent's width (in
         DIP)."""
-        self._page_desc_label.wrap(parent_width)
+        #self._page_desc_label.wrap(parent_width)
 
 class TreePanel(_APageComponent):
     """A panel with a tree of options where each leaf corresponds to a
