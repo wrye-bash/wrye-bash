@@ -181,7 +181,7 @@ settingDefaults = { # keep current naming format till refactored
     'bash.backupPath': None,
     'bash.frameMax': False, # True if maximized
     'bash.page': 1,
-    'bash.show_global_menu': True,
+    'bash.global_menu': 0,
     'bash.pluginEncoding': 'cp1252',    # Western European
     'bash.show_internal_keys': False,
     'bash.restore_scroll_positions': True,
@@ -256,9 +256,9 @@ settingDefaults = { # keep current naming format till refactored
     'bash.mods.ratings': ['+', '1', '2', '3', '4', '5', '=', '~'],
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {
-        'Mod Status': _('Mod Status'),
+        'Mod Status': _('Plugin Status'),
         'Author': _('Author'),
-        'Cell': _('Cell'),
+        'Cell': _('Location'),
         'CRC': _('CRC'),
         'Current Index': _('Current Index'),
         'Current Order': _('Current LO'),
@@ -266,7 +266,7 @@ settingDefaults = { # keep current naming format till refactored
         'Files': _('Files'),
         'Group': _('Group'),
         'Indices': _('Index'),
-        'Installer': _('Installer'),
+        'Installer': _('Source'),
         'Load Order': _('Load Order'),
         'Modified': _('Modified'),
         'Num': _('MI'),

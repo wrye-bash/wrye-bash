@@ -191,7 +191,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
 #------------------------------------------------------------------------------
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
-    _text = _(u'Order By Name')
+    _text = _('Order by Name')
     _help = _(u'Reorder the selected plugins to be in alphabetical order. '
               u'Only works if the selected plugins may be reordered.')
 
@@ -226,7 +226,7 @@ class Mod_OrderByName(EnabledLink):
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
     """Moves selected mod(s) to a different LO position."""
-    _text = _('Move to...')
+    _text = _('Move To...')
     _help = _('Move the selected plugin(s) to a position of your choice. '
               'Only works if the selected plugin(s) may be reordered.')
 
@@ -1359,7 +1359,7 @@ class _CopyToLink(EnabledLink):
 
 class Mod_CopyToMenu(MenuLink):
     """Makes copies of the selected plugin(s) with changed extension."""
-    _text = _('Copy to..')
+    _text = _('Copy To..')
 
     def __init__(self):
         super(Mod_CopyToMenu, self).__init__()
@@ -1429,7 +1429,8 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
-    _add_flag = _remove_flag = u''
+    _add_flag: str
+    _remove_flag: str
 
     @property
     def _already_flagged(self): raise NotImplementedError
@@ -1532,7 +1533,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
               {u'ck_name': bush.game.Ck.long_name})
-    _add_flag = _(u'Add ESM Flag To Masters')
+    _add_flag = _('Add ESM Flag to Masters')
     _remove_flag = _(u'Remove ESM Flag From Masters')
 
     @property
@@ -1813,7 +1814,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
             'This command will export the level info for NPCs whose level is '
             'offset with respect to the PC.  The exported file can be edited '
             'with most spreadsheet programs and then reimported.') + u'\n\n' +
-                   _(u'See the Bash help file for more info.'))
+                   _('See the Wrye Bash readme for more info.'))
         if not self._askContinue(message, u'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
         super(Mod_ActorLevels_Export, self).Execute()
@@ -1827,7 +1828,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     _help = _(u'Import NPC level info from text file to mod')
     continueInfo = _(
         u'This command will import NPC level info from a previously exported '
-        u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
+        u'file.') + u'\n\n' + _('See the Wrye Bash readme for more info.')
     continueKey = u'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
     _parser_class = ActorLevels
@@ -1854,7 +1855,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     continueInfo = _(
         u'This command will import faction relation info from a previously '
         u'exported file.') + u'\n\n' + _(
-        u'See the Bash help file for more info.')
+        'See the Wrye Bash readme for more info.')
     continueKey = u'bash.factionRelations.import.continue'
     noChange = _(u'No relevant faction relations to import.')
     _parser_class = FactionRelations
@@ -1880,7 +1881,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
     _help = _(u'Import factions from text file to mod')
     continueInfo = _(
         u'This command will import faction ranks from a previously exported '
-        u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
+        u'file.') + u'\n\n' + _('See the Wrye Bash readme for more info.')
     continueKey = u'bash.factionRanks.import.continue'
     noChange = _(u'No relevant faction ranks to import.')
     _parser_class = ActorFactions
@@ -2145,25 +2146,25 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
-    askTitle = _(u'Export eids to:')
+    askTitle = _('Export Editor IDs to:')
     csvFile = u'_Eids.csv'
-    progressTitle = _(u'Export Editor Ids')
-    _text = _(u'Editor Ids...')
-    _help = _(u'Export faction editor ids from mod to text file')
+    progressTitle = _('Export Editor IDs')
+    _text = _('Editor IDs...')
+    _help = _(u'Export faction editor IDs from plugin to text file.')
 
     def _parser(self):
         return EditorIds()
 
 class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file."""
-    askTitle = _(u'Import eids from:')
+    askTitle = _('Import Editor IDs from:')
     csvFile = u'_Eids.csv'
-    continueInfo = _(u'Import editor ids from a text file. This will replace '
-                     u'existing ids and is not reversible!')
+    continueInfo = _('Import editor IDs from a text file. This will replace '
+                     'existing IDs and is not reversible!')
     continueKey = u'bash.editorIds.import.continue'
-    progressTitle = _(u'Import Editor Ids')
-    _text = _(u'Editor Ids...')
-    _help = _(u'Import faction editor ids from text file')
+    progressTitle = _(u'Import Editor IDs')
+    _text = _('Editor IDs...')
+    _help = _('Import faction editor IDs from text file.')
 
     def _parser(self, questionableEidsSet=None, badEidsList=None):
         return EditorIds(questionableEidsSet=questionableEidsSet,

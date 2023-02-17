@@ -601,8 +601,12 @@ class MasterList(_ModsUIList):
         self.detailsPanel.SetEdited() # inform the details panel
 
     #--Column Menu
-    def DoColumnMenu(self, evt_col):
-        if self.fileInfo: super(MasterList, self).DoColumnMenu(evt_col)
+    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
+        if self.fileInfo:
+            # Since there is no global menu for master lists, bypass the global
+            # menu setting (otherwise the user would never be able to access
+            # these links)
+            super().DoColumnMenu(evt_col, bypass_gm_setting=True)
         return EventResult.FINISH
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -750,8 +754,8 @@ class INIList(balt.UIList):
         else:
             tweak_clicked = self._getItemClicked(lb_dex_and_flags)
             if wrapped_evt.is_alt_down and tweak_clicked:
-                # Alt+Left click - jump to installer
-                if self.jump_to_installer(tweak_clicked):
+                # Alt+Left click - jump to source
+                if self.jump_to_source(tweak_clicked):
                     return EventResult.FINISH
 
     def OnDClick(self, lb_dex_and_flags):
@@ -1232,8 +1236,8 @@ class ModList(_ModsUIList):
         else:
             mod_clicked = self._getItemClicked(lb_dex_and_flags)
             if wrapped_evt.is_alt_down and mod_clicked:
-                # Alt+Left click - jump to installer
-                if self.jump_to_installer(mod_clicked):
+                # Alt+Left click - jump to source
+                if self.jump_to_source(mod_clicked):
                     return EventResult.FINISH
             # Pass Event onward to _handle_select
 
@@ -1641,7 +1645,7 @@ class ModDetails(_ModsSavesDetails):
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
             balt.images['minus.16'].get_bitmap(),
-            btn_tooltip=_('Remove the selected tag(s) from this plugin.'))
+            btn_tooltip=_('Remove the selected tags from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
@@ -3990,7 +3994,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 class BashStatusBar(DnDStatusBar):
     #--Class Data
     obseButton = None
-    laaButton = None
 
     def UpdateIconSizes(self, skip_refresh=False):
         self.buttons = {} # populated with SBLinks whose gButtons is not None
@@ -4480,7 +4483,8 @@ class BashFrame(WindowFrame):
         # wxPython) do not generate open/close events for that style of
         # menubar, which means we can't implement our JIT global menu - it will
         # simply display empty global menus that do nothing when clicked.
-        show_gm = bass.settings[u'bash.show_global_menu'] and os_name == u'nt'
+        # bash.global_menu == 2 -> Column Menu Only
+        show_gm = bass.settings['bash.global_menu'] != 2 and os_name == 'nt'
         self._native_widget.SetMenuBar(self.global_menu._native_widget
                                        if show_gm else None)
 
@@ -4643,10 +4647,9 @@ def InitImages():
             invertible_svg=invertible)
     # PNGs --------------------------------------------------------------------
     # Checkboxes
-    images[u'checkbox.red.x'] = _png(u'checkbox_red_x.png')
-    images[u'checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
-    images[u'checkbox.red.x.24'] = _png(u'checkbox_red_x_24.png')
-    images[u'checkbox.red.x.32'] = _png(u'checkbox_red_x_32.png')
+    images['checkbox.red.on.16'] = _png('checkbox_red_on.png')
+    images['checkbox.red.on.24'] = _png('checkbox_red_on_24.png')
+    images['checkbox.red.on.32'] = _png('checkbox_red_on_32.png')
     images[u'checkbox.red.off.16'] = _png(u'checkbox_red_off.png')
     images[u'checkbox.red.off.24'] = _png(u'checkbox_red_off_24.png')
     images[u'checkbox.red.off.32'] = _png(u'checkbox_red_off_32.png')

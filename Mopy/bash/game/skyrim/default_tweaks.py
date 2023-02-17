@@ -51,12 +51,12 @@ default_tweaks = {
     'Debug Log, Enabled [Skyrim].ini': {
         'Papyrus': {'bEnableLogging': '1', 'bLoadDebugInformation': '1',
                     'bEnableTrace': '1'}},
-    'Dialogue Camera, ~Default [Skyrim].ini': {
+    'Dialog Camera, ~Default [Skyrim].ini': {
         'Controls': {'fDialogueSoftStopAngle1P': '20.0',
                      'fDialogueHardStopAngle1P': '45.0',
                      'fDialogueSoftStopAngle3P': '25.0',
                      'fDialogueHardStopAngle3P': '55.0'}},
-    'Dialogue Camera, Free [Skyrim].ini': {
+    'Dialog Camera, Free [Skyrim].ini': {
         'Controls': {'fDialogueSoftStopAngle1P': '180.0',
                      'fDialogueHardStopAngle1P': '180.0',
                      'fDialogueSoftStopAngle3P': '180.0',

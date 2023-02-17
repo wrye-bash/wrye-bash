@@ -58,8 +58,8 @@ except ImportError:
             'version')
 
 # API
-libloot_version = '0.18.x' # The libloot version with which this implementation
-                           # is compatible
+metadata_version = '0.18' # The LOOT metadata version with which this
+                          # implementation is compatible
 
 class LOOTParser(object):
     """The main frontend for interacting with LOOT's masterlists. Provides
@@ -94,8 +94,8 @@ class LOOTParser(object):
         self._refresh_tags_cache(_force=True)
         # Old api
         self._tagCache: dict[FName, _RTags] = {}
-        deprint(f'Initialized loot_parser, compatible with libloot '
-                f'v{libloot_version}')
+        deprint(f'Initialized loot_parser, compatible with LOOT metadata '
+                f'v{metadata_version}')
 
     def _refresh_tags_cache(self, _force=False):
         try:

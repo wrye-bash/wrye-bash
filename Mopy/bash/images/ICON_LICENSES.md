@@ -1,14 +1,28 @@
 Some of the icons packaged with Wrye Bash are released / used under other licenses.
 All files listed below have been modified to optimize the SVGs.
 
+## Flags
+- `flags/brazil.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Brazil.svg.
+  Governo do Brasil, Public domain, via Wikimedia Common.
+- `flags/china.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_the_People%27s_Republic_of_China.svg
+  by SKopp, Denelson83, Zscout370, -xfi- and Shizhao, Public domain, via Wikimedia Commons
+- `flags/germany.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Germany.svg
+  by SKopp, Madden, and other users, Public domain, via Wikimedia Commons.
+- `flags/italy.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Italy.svg.
+  Public domain, via Wikimedia Commons.
+- `flags/japan.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Japan.svg.
+  Public domain, via Wikimedia Commons.
+- `flags/russia.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Russia.svg
+  by Zscout370, Public domain, via Wikimedia Commons.
+
 ## Font Awesome
 
 - `back.svg` is from https://fontawesome.com/icons/arrow-left?s=solid&f=classic.
 - `forward.svg` is from https://fontawesome.com/icons/arrow-right?s=solid&f=classic.
 - `calendar.svg` is from https://fontawesome.com/icons/calendar-days?s=solid&f=classic.
 - `checkmark.svg` is from https://fontawesome.com/icons/check?style=solid&s=solid&f=classic.
-- `square_checked.svg` is from https://fontawesome.com/icons/square-check?s=regular&f=classic.
-- `square_empty.svg` is from https://fontawesome.com/icons/square?s=regular&f=classic.
+- `external_link.svg` is from https://fontawesome.com/icons/arrow-up-right-from-square?s=solid&f=classic.
+  It has been recolored blue.
 - `error_cross.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic.
 - `gear.svg` is from https://fontawesome.com/icons/gear?s=solid&f=classic.
 - `help.svg` is from https://fontawesome.com/icons/circle-question?s=solid&f=classic.
@@ -19,6 +33,8 @@ All files listed below have been modified to optimize the SVGs.
 - `red_x.svg` is from https://fontawesome.com/icons/times?style=solid&s=solid&f=classic.
   It has been recolored red and scaled up.
 - `reload.svg` is from https://fontawesome.com/icons/rotate-right?s=solid&f=classic.
+- `square_checked.svg` is from https://fontawesome.com/icons/square-check?s=regular&f=classic.
+- `square_empty.svg` is from https://fontawesome.com/icons/square?s=regular&f=classic.
 - `trash_can.svg` is from https://fontawesome.com/icons/trash-can?s=solid&f=classic.
 - `tools/steam.svg` is from https://fontawesome.com/icons/steam?s=&f=brands.
   A gradient matching Steam's logo colors has been added to it.

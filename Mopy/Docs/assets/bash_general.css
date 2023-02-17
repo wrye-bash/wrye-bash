@@ -43,15 +43,9 @@ img.monkeygod {
 * Extracted inlines from General Readme are listed below
 ********************/
 
-/* Figure Captions */
+/* Figure Captions - always image size + 15px */
 .bain-overview-figcap, .ini-overview-figcap, .mods-overview-figcap {
   padding-top: 41.6875rem;		/* 635px */
-}
-.patch-overview-figcap {
-  padding-top: 42.3125rem;		/* 613px */
-}
-.launchers-figcap {
-  padding-top: 2.5rem;				/* 80px */
 }
 
 /* Consistency Formatting */

@@ -179,7 +179,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
-    _text = _(u'Change to...')
+    _text = _('Change To...')
     _help = _(u'Rename or replace the selected master through a file dialog.')
 
     @balt.conversation

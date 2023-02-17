@@ -275,16 +275,6 @@ class GameInfo(object):
         # Tooltip for mouse over the URL
         url_tip = u''
 
-    class Laa(object):
-        """Information about the LAA (Large Address Aware) launcher for this
-        game."""
-        # Display name of the launcher
-        laa_name = u''
-        # Executable to run
-        exe = u'*DNE*'
-        # Whether the launcher will automatically launch the SE
-        launchesSE = False
-
     class Ini(object):
         """Information about this game's INI handling."""
         # True means new lines are allowed to be added via INI tweaks

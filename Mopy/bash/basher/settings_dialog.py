@@ -473,11 +473,11 @@ class LanguagePage(_AScrollablePage):
         u'zh_CN': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'zh_TW': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de_DE': _(u'German') + u' (Deutsch)',
-        u'pt_PT': _(u'Portuguese') + u' (português)',
+        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
         u'it_IT': _(u'Italian') + u' (italiano)',
         u'ja_JP': _(u'Japanese') + u' (日本語)',
         u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
-        u'en_US': _(u'English') + u' (English)',
+        u'en_US': _('American English') + ' (American English)',
     })
     _localized_to_internal = _LangDict(
         {v: k for k, v in _internal_to_localized.items()})
@@ -865,9 +865,9 @@ class BackupsPage(_AFixedPage):
             btn_tooltip=_(u"Backup all of Wrye Bash's settings/data to an "
                           u'archive file.'))
         new_backup_btn.on_clicked.subscribe(self._new_backup)
-        add_backup_btn = Button(self, _('Set Backups Directory...'),
+        set_backups_dir_btn = Button(self, _('Set Backups Directory...'),
             btn_tooltip=_('Select the directory containing your backups.'))
-        add_backup_btn.on_clicked.subscribe(self._set_backup_dir)
+        set_backups_dir_btn.on_clicked.subscribe(self._set_backup_dir)
         self.restore_backup_btn = Button(self, _(u'Restore...'),
             btn_tooltip=_(u"Restore all of Wrye Bash's settings/data from the "
                           u'selected backup.'))
@@ -887,7 +887,7 @@ class BackupsPage(_AFixedPage):
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
                 VLayout(item_expand=True, spacing=4, items=[save_settings_btn,
-                    new_backup_btn, add_backup_btn, HorizontalLine(self),
+                    new_backup_btn, set_backups_dir_btn, HorizontalLine(self),
                     self.restore_backup_btn, self.rename_backup_btn,
                     self.delete_backup_btn,
                 ]),
@@ -1130,7 +1130,6 @@ class ConfirmationsPage(_AFixedPage):
     # The Import links are highly formulaic, so we just generate these here
     for k, v in {_(u'Editor IDs'):   u'editorIds',
                  _(u'Ingredients'):  u'Ingredient',
-                 _(u'Map Markers'):  u'MapMarkers',
                  _(u'Names'):        u'fullNames',
                  _(u'NPC Levels'):   u'actorLevels',
                  _(u'Prices'):       u'prices',
@@ -1273,7 +1272,13 @@ class GeneralPage(_AScrollablePage):
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.items()}
-    _setting_ids = {'global_menu_on', 'res_scroll_on', 'managed_game',
+    _global_menu_options = {
+        _('Both'): 0,
+        _('Global Menu Only'): 1,
+        _('Column Menu Only'): 2,
+    }
+    _gm_reverse = {v: k for k, v in _global_menu_options.items()}
+    _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
                     'plugin_encoding', 'update_check_enabled',
                     'update_check_cooldown', 'uac_restart'}
 
@@ -1319,14 +1324,15 @@ class GeneralPage(_AScrollablePage):
         check_now_btn.enabled = can_check_updates
         ##: Replace with a dropdown that lets you disable the global menu, the
         # column menus, or neither
-        self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
-            chkbx_tooltip=_(u'If checked, a global menu will be shown above '
-                            u'the tabs. If disabled, its options will still '
-                            u'be accessible by right-clicking the columns.'),
-            checked=bass.settings[u'bash.show_global_menu'])
-        self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        self._global_menu_dropdown = DropDown(self,
+            value=self._gm_reverse[bass.settings['bash.global_menu']],
+            choices=sorted(self._global_menu_options),
+            dd_tooltip=_('Choose whether only the global menu, only the '
+                         'column header menus, or both should be enabled.'))
+        self._global_menu_dropdown.on_combo_select.subscribe(
+            self._on_global_menu)
         # Hide the option on Linux - see refresh_global_menu_visibility
-        self._global_menu_checkbox.visible = os_name == u'nt'
+        self._global_menu_dropdown.visible = os_name == 'nt'
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
@@ -1363,7 +1369,11 @@ class GeneralPage(_AScrollablePage):
                 check_now_btn,
             ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
-                self._global_menu_checkbox, self._restore_scroll_checkbox,
+                HLayout(spacing=6, items=[
+                    Label(self, _('Global or Column Menu:')),
+                    self._global_menu_dropdown,
+                ]),
+                self._restore_scroll_checkbox,
                 self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
@@ -1372,19 +1382,20 @@ class GeneralPage(_AScrollablePage):
     def _current_encoding(self):
         return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
 
-    def _on_global_menu(self, checked):
-        self._mark_setting_changed(u'global_menu_on',
-            checked != bass.settings[u'bash.show_global_menu'])
+    def _on_global_menu(self, menu_label: str):
+        new_gm_state = self._global_menu_options[menu_label]
+        self._mark_setting_changed('global_menu_state',
+            new_gm_state != bass.settings['bash.global_menu'])
 
-    def _on_res_scroll(self, checked):
+    def _on_res_scroll(self, checked: bool):
         self._mark_setting_changed('res_scroll_on',
             checked != bass.settings['bash.restore_scroll_positions'])
 
-    def _on_managed_game(self, new_game):
+    def _on_managed_game(self, new_game: str):
         self._mark_setting_changed(u'managed_game',
             new_game != bush.game.displayName)
 
-    def _on_plugin_enc(self, new_enc):
+    def _on_plugin_enc(self, new_enc: str):
         self._mark_setting_changed(u'plugin_encoding',
             new_enc != self._current_encoding)
 
@@ -1409,7 +1420,7 @@ class GeneralPage(_AScrollablePage):
                 'version %(wb_version)s.') % {'wb_version': bass.AppVersion}
             showInfo(self, msg, title=_('No Newer Version Available'))
 
-    def _on_uac_restart(self, checked):
+    def _on_uac_restart(self, checked: bool):
         self._mark_setting_changed(u'uac_restart', checked)
 
     def on_apply(self):
@@ -1443,9 +1454,10 @@ class GeneralPage(_AScrollablePage):
             new_cooldown = self._update_check_cooldown.spinner_value
             bass.settings['bash.update_check.cooldown'] = new_cooldown
         # Show Global Menu
-        if self._is_changed(u'global_menu_on'):
-            new_gm_on = self._global_menu_checkbox.is_checked
-            bass.settings[u'bash.show_global_menu'] = new_gm_on
+        if self._is_changed('global_menu_state'):
+            new_gm_state = self._global_menu_options[
+                self._global_menu_dropdown.get_value()]
+            bass.settings['bash.global_menu'] = new_gm_state
             Link.Frame.refresh_global_menu_visibility()
         # Restore Scroll Positions on Start
         if self._is_changed(u'res_scroll_on'):

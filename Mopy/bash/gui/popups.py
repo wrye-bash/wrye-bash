@@ -593,7 +593,7 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
                 return id_ in GOOD_EXITS, None
     return False, checkbox
 
-class AskDialogue(DialogWindow):
+class AskDialog(DialogWindow):
     """If in doubt ask the user. If no_cancel is True just display an error/
     warning/info dialog."""
     _native_widget: _wx.MessageDialog
@@ -742,32 +742,32 @@ def askNumber(parent, message, prompt='', title='', *, initial_num=0,
 def askYes(parent, message, title='', *, default_is_yes=True,
            question_icon=False, vista_buttons=None, expander=None):
     """Shows a modal warning or question message."""
-    return AskDialogue.display_dialog(parent, message, title, yes_no=True,
+    return AskDialog.display_dialog(parent, message, title, yes_no=True,
         default_is_yes=default_is_yes, question_icon=question_icon,
         vista_buttons=vista_buttons, expander=expander)
 
 def askWarning(parent, message, title=_('Warning')):
     """Shows a modal warning message."""
-    return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
+    return AskDialog.display_dialog(parent, message, title, warn_ico=True)
 
 def showOk(parent, message, title=''):
     """Shows a modal confirmation message."""
     if isinstance(title, Path): title = title.s
-    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+    return AskDialog.display_dialog(parent, message, title, no_cancel=True,
                                       info_ico=True)
 
 def showError(parent, message, title=_('Error')):
     """Shows a modal error message."""
     if isinstance(title, Path): title = title.s
-    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+    return AskDialog.display_dialog(parent, message, title, no_cancel=True,
                                       error_ico=True)
 
 def showWarning(parent, message, title=_('Warning'), do_center=False):
     """Shows a modal warning message."""
-    return AskDialogue.display_dialog(parent, message, title, warn_ico=True,
+    return AskDialog.display_dialog(parent, message, title, warn_ico=True,
                                       no_cancel=True, do_center=do_center)
 
 def showInfo(parent, message, title=_('Information')):
     """Shows a modal information message."""
-    return AskDialogue.display_dialog(parent, message, title, info_ico=True,
+    return AskDialog.display_dialog(parent, message, title, info_ico=True,
                                       no_cancel=True)

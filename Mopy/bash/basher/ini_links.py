@@ -45,7 +45,7 @@ class INI_ValidTweaksFirst(BoolLink):
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
-    _text = _(u'Allow Tweaks with New Settings')
+    _text = _('Allow Tweaks With New Settings')
     _bl_key = u'bash.ini.allowNewLines'
     _help = _(u'Tweak files adding new sections/settings are considered valid')
 
@@ -116,18 +116,20 @@ class INI_Apply(EnabledLink):
 class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
-    _text = _(u'Create Tweak with current settings...')
+    _text = _('Create Tweak With Current Settings...')
 
     @property
     def link_help(self):
-        if not len(self.selected) == 1:
-            return _(u'Please choose one Ini Tweak')
-        return _(u"Creates a new tweak based on '%(tweak)s' but with "
-                 u"values from '%(ini)s'.") % {u'tweak': (self.selected[0]),
-                   u'ini': self.window.current_ini_name}
+        if len(self.selected) != 1:
+            return _('Please choose one INI Tweak')
+        return _("Create a new tweak based on '%(target_tweak)s' but with "
+                 "values from '%(target_ini)s'.") % {
+            'target_tweak': (self.selected[0]),
+            'target_ini': self.window.current_ini_name,
+        }
 
-    def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              self._selected_info.tweak_status() >= 0
+    def _enable(self):
+        return super()._enable() and self._selected_info.tweak_status() >= 0
 
     @balt.conversation
     def Execute(self):
@@ -135,9 +137,9 @@ class INI_CreateNew(OneItemLink):
         ini_info, ini_key = self._selected_info, self._selected_item
         fileName = ini_info.unique_key(ini_key.fn_body, add_copy=True)
         tweak_path = self._askSave(
-            title=_(u'Copy Tweak with current settings...'),
+            title=self._text,
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
-            wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
+            wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini")
         fn_tweak, msg = ini_info.validate_filename_str(tweak_path.stail)
         if msg is None:
             self._showError(fn_tweak) # it's an error message in this case

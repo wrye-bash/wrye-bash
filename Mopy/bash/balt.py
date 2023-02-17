@@ -983,11 +983,17 @@ class UIList(PanelWin):
         self.__gList.set_focus()
 
     #--Column Menu
-    def DoColumnMenu(self, evt_col):
-        """Show column menu."""
+    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
+        """Show column menu.
+
+        :param evt_col: The index of the column that the user clicked on.
+        :param bypass_gm_setting: If set to True, ignore the bash.global_menu
+            setting when determining whether to show a column menu or not."""
         # See DoItemMenu below
         if self.column_links and not self.__gList.ec_rename_prompt_opened():
-            self.column_links.popup_menu(self, evt_col)
+            # bash.global_menu == 1 -> Global Menu Only
+            if bypass_gm_setting or _settings['bash.global_menu'] != 1:
+                self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
     #--Item Menu
@@ -1477,24 +1483,24 @@ class UIList(PanelWin):
             defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
 
-    def jump_to_installer(self, uil_item: FName) -> bool:
+    def jump_to_source(self, uil_item: FName) -> bool:
         """Jumps to the installer associated with the specified UIList item."""
-        fn_inst = self.get_installer(uil_item)
-        if fn_inst is None:
+        fn_package = self.get_source(uil_item)
+        if fn_package is None:
             return False
-        Link.Frame.notebook.SelectPage('Installers', fn_inst)
+        Link.Frame.notebook.SelectPage('Installers', fn_package)
         return True
 
-    def get_installer(self, uil_item: FName) -> FName | None:
-        """Returns the installer associated with the specified UIList item, or
-        None if the Installers tab is not enabled, or if the Installers tab is
-        enabled but not constructed (i.e. hidden), or if the item does not have
-        an associated installer."""
+    def get_source(self, uil_item: FName) -> FName | None:
+        """Returns the package associated with the specified UIList item, or
+        None if the Installers tab is not enabled or the Installers tab is
+        enabled but not constructed (i.e. hidden) or the item does not have an
+        associated package."""
         if (not Link.Frame.iPanel or
-                not bass.settings['bash.installers.enabled']):
+                not _settings['bash.installers.enabled']):
             return None # Installers disabled or not initialized
-        inst_column = self.data_store.table.getColumn('installer')
-        return FName(inst_column.get(uil_item))
+        pkg_column = self.data_store.table.getColumn('installer')
+        return FName(pkg_column.get(uil_item))
 
     # Global Menu -------------------------------------------------------------
     def populate_category(self, cat_label, target_category):

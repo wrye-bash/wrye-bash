@@ -1597,9 +1597,9 @@ class GmstTweak_Visuals_SecundaSpeed(_AGmstCCUnitsTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_AI_BumpReactionDelay(_AGmstCCTweak):
     tweak_name = _(u'AI: Bump Reaction Delay')
-    tweak_tip = _(u'Changes how long it takes until NPCs (particularly '
-                  u'followers) that have commented on you bumping into them '
-                  u'repeat that dialogue. Infinite effectively disables it.')
+    tweak_tip = _('Changes how long it takes until NPCs (particularly '
+                  'followers) that have commented on you bumping into them '
+                  'repeat that dialog. Infinite effectively disables it.')
     tweak_key = (u'fBumpReactionSmallDelayTime',)
     tweak_choices = [(_(u'Infinite'), 99999.0),
                      (_(u'10x Longer'),  10.0),

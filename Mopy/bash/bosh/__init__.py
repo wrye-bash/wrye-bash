@@ -34,6 +34,7 @@ import sys
 from collections import OrderedDict
 from collections.abc import Iterable
 from functools import wraps
+from itertools import chain
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
@@ -706,7 +707,7 @@ class ModInfo(FileInfo):
         if load_order.cached_is_active(fnkey): return _(u'Active')
         elif fnkey in modInfos.merged: return _(u'Merged')
         elif fnkey in modInfos.imported: return _(u'Imported')
-        else: return _(u'Non-Active')
+        else: return _('Inactive')
 
     def hasTimeConflict(self):
         """True if there is another mod with the same mtime."""
@@ -3507,6 +3508,8 @@ def initTooldirs():
     #   First to default path
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
+    def multi_path(*paths):
+        return list(chain.from_iterable(pathlist(*p) for p in paths))
     tooldirs = bass.tooldirs = bolt.LowerDict() ##: Yak! needed for case insensitive keys
     def _get_boss_loot(registry_key, game_folder, exe_name):
         """Helper for determing correct BOSS/LOOT path."""
@@ -3545,7 +3548,9 @@ def initTooldirs():
     tooldirs[u'GmaxPath'] = GPath(u'C:\\GMAX').join(u'gmax.exe')
     tooldirs[u'MaxPath'] = pathlist(u'Autodesk',u'3ds Max 2010',u'3dsmax.exe')
     tooldirs[u'MayaPath'] = undefinedPath
-    tooldirs[u'PhotoshopPath'] = pathlist(u'Adobe',u'Adobe Photoshop CS3',u'Photoshop.exe')
+    tooldirs['PhotoshopPath'] = multi_path( ##: CC path
+        ['Adobe', 'Adobe Photoshop CS6 (64 Bit)', 'Photoshop.exe'],
+        ['Adobe', 'Adobe Photoshop CS3', 'Photoshop.exe'])
     tooldirs[u'GIMP'] = pathlist(u'GIMP-2.0',u'bin',u'gimp-2.6.exe')
     tooldirs[u'ISOBL'] = dirs[u'app'].join(u'ISOBL.exe')
     tooldirs[u'ISRMG'] = dirs[u'app'].join(u'Insanitys ReadMe Generator.exe')
@@ -3587,7 +3592,8 @@ def initTooldirs():
     tooldirs[u'WinMerge'] = pathlist(u'WinMerge',u'WinMergeU.exe')
     tooldirs[u'FreeMind'] = pathlist(u'FreeMind',u'Freemind.exe')
     tooldirs[u'MediaMonkey'] = pathlist(u'MediaMonkey',u'MediaMonkey.exe')
-    tooldirs[u'Inkscape'] = pathlist(u'Inkscape',u'inkscape.exe')
+    tooldirs['Inkscape'] = multi_path(['Inkscape', 'bin', 'inkscape.exe'],
+                                      ['Inkscape', 'inkscape.exe']) # older ver
     tooldirs[u'FileZilla'] = pathlist(u'FileZilla FTP Client',u'filezilla.exe')
     tooldirs[u'RADVideo'] = pathlist(u'RADVideo',u'radvideo.exe')
     tooldirs[u'EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')

@@ -58,7 +58,7 @@ class Stretch(object):
 
 class LayoutOptions(object):
     """Container for all layouts' options. Note that some options may only
-    work with certain kinds of layouts (eg. col_span and row_span).
+    work with certain kinds of layouts (e.g. col_span and row_span).
 
     border (int)
         The width (in pixels) of the empty space around an item.

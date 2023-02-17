@@ -43,5 +43,3 @@ class WindowsStoreMixin:
         pass
     class Sd(GameInfo.Sd):
         pass
-    class Laa(GameInfo.Laa):
-        pass

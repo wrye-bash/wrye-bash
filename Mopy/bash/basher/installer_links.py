@@ -746,7 +746,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
-    _text = _('Move to...')
+    _text = _('Move To...')
     _help = _('Move the selected installer(s) to a position of your choice.')
 
     @balt.conversation
@@ -1214,7 +1214,7 @@ class InstallerProject_OmodConfig(_SingleProject):
 #------------------------------------------------------------------------------
 class Installer_SyncFromData(_SingleInstallable):
     """Synchronize an archive or project with files from the Data directory."""
-    _text = _('Sync from Data...')
+    _text = _('Sync From Data...')
     _help = _(u'Synchronize an installer with files from the %s '
               u'directory.') % bush.game.mods_dir
 
@@ -1326,7 +1326,7 @@ class _InstallerConverter_Link(_ArchiveOnly):
         return False
 
 class InstallerConverter_Apply(_InstallerConverter_Link):
-    """Apply a Bain Conversion File."""
+    """Apply a BAIN Conversion File."""
     _dialog_title = _(u'Apply BCF...')
 
     def __init__(self,converter,selected):

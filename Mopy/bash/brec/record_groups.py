@@ -823,8 +823,8 @@ class MobDials(TopComplexGrup):
     def getSize(self):
         """Patch _mob_objects (INFO) headers are created with 0 stamp - I
         repeated here what the old code did, but we should check."""
-        for dialogue in self.id_records.values():
-            dialogue.set_stamp(self._grup_head.stamp)
+        for dialog in self.id_records.values():
+            dialog.set_stamp(self._grup_head.stamp)
         return super().getSize()
 
 #------------------------------------------------------------------------------

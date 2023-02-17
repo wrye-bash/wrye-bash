@@ -451,7 +451,7 @@ class PageVersions(PageInstaller):
                                      u'requirements are not met for using '
                                      u'this installer.'))
         text_warning.wrap(parent.get_page_size()[0] - 20)
-        self.checkOk = CheckBox(self, _(u'Install anyway.'))
+        self.checkOk = CheckBox(self, _('Install anyway'))
         self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
@@ -608,7 +608,7 @@ class WryeParser(ScriptParser.Parser):
                 outLine = u'<span class="code-n" style="display: inline;">%s</span>\n' % outLine
             else:
                 if br:
-                    outLine = u'<span class="code-n">%s</span><br />\n' % outLine
+                    outLine = u'<span class="code-n">%s</span><br>\n' % outLine
                 else:
                     outLine = u'<span class="code-n">%s</span>' % outLine
             outLines.append(outLine)

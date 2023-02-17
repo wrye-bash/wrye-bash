@@ -628,7 +628,7 @@ class ActorLevels(_HandleAliases):
 
 #------------------------------------------------------------------------------
 class EditorIds(_HandleAliases):
-    """Editor ids for records, with functions for importing/exporting
+    """Editor IDs for records, with functions for importing/exporting
     from/to mod/text file: id_stored_data[top_grup_sig][longid] = eid"""
     _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'))
     _key2_getter = itemgetter(1, 2)

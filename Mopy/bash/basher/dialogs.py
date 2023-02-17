@@ -297,6 +297,12 @@ class CreateNewPlugin(DialogWindow):
         self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
         self._plugin_name = TextField(self, _(u'New Plugin'),
             alignment=TextAlignment.RIGHT)
+        # Start with the plugin field focused (so that a simple Enter press
+        # will complete the process immediately) and all text selected (so that
+        # the user can immediately start typing the plugin name they actually
+        # want)
+        self._plugin_name.set_focus()
+        self._plugin_name.select_all_text()
         self._esm_flag = CheckBox(self, _(u'ESM Flag'),
             chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
                             u'a master, i.e. have the ESM flag.'))

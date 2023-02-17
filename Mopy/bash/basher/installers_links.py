@@ -147,7 +147,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
 
 #------------------------------------------------------------------------------
 class Installers_ListPackages(Installers_Link):
-    """Copies list of Bain files to clipboard."""
+    """Copies list of packages to clipboard."""
     _text = _(u'List Packages...')
     _help = _(u'Displays a list of all packages.  Also copies that list to '
         u'the clipboard.  Useful for posting your package order on forums.')

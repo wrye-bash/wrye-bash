@@ -73,28 +73,26 @@ def InitStatusBar():
         )
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
-    all_links = [obseButton]
-    BashStatusBar.laaButton = laaButton = LAA_Button(uid=u'LAA')
-    all_links.append(laaButton)
-    all_links.append(AutoQuit_Button(uid=u'AutoQuit'))
-    all_links.append( # Game
+    all_links = [
+        obseButton,
+        AutoQuit_Button(uid='AutoQuit'),
         Game_Button(
             bass.dirs['app'].join(bush.game.launch_exe),
             bass.dirs['app'].join(bush.game.version_detect_file),
             _png_list(f'games/{bush.game.game_icon}'),
             ' '.join((_('Launch'), bush.game.displayName)),
-            ' '.join((_('Launch'), bush.game.displayName, '%(app_version)s'))))
-    all_links.append( #TESCS/CreationKit
-        TESCS_Button(
+            ' '.join((_('Launch'), bush.game.displayName, '%(app_version)s'))),
+        TESCS_Button( # Construction Set / Creation Kit
             bass.dirs['app'].join(bush.game.Ck.exe),
             _png_list(f'tools/{bush.game.Ck.image_name}'),
             ' '.join((_('Launch'), bush.game.Ck.long_name)),
             ' '.join((_('Launch'), bush.game.Ck.long_name, '%(app_version)s')),
-            bush.game.Ck.se_args))
-    all_links.append( #OBMM
-        app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),
+            bush.game.Ck.se_args),
+        # OBMM
+        app_button_factory(bass.dirs['app'].join('OblivionModManager.exe'),
                            _png_list('tools/obmm%s.png'), _('Launch OBMM'),
-                           uid=u'OBMM'))
+                           uid='OBMM'),
+    ]
     # Just an _App_Button whose path is in bass.tooldirs
     Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
                                                       *args[1:])
@@ -287,6 +285,7 @@ def InitInstallerLinks():
         installMenu.links.append(Installer_Install())
         installMenu.links.append(Installer_Install('MISSING'))
         installMenu.links.append(Installer_Install('LAST'))
+        installMenu.links.append(SeparatorLink())
         if True: #--FOMOD Installer
             fomod_menu = MenuLink(_('FOMOD Installer..'))
             fomod_menu.links.append(Installer_RunFomod())
@@ -437,7 +436,7 @@ def InitINILinks():
     INIList.context_links.append(INI_CreateNew())
     INIList.context_links.append(INI_ListErrors())
     INIList.context_links.append(SeparatorLink())
-    INIList.context_links.append(File_JumpToInstaller())
+    INIList.context_links.append(File_JumpToSource())
     # INIList: Global Links
     # File Menu
     file_menu = INIList.global_links[_('File')]
@@ -481,6 +480,8 @@ def InitModLinks():
         lo_menu.links.append(Mods_LOUndo())
         lo_menu.links.append(Mods_LORedo())
         lo_menu.links.append(SeparatorLink())
+        lo_menu.links.append(Mods_LockActivePlugins())
+        lo_menu.links.append(SeparatorLink())
         lo_menu.links.append(Mods_OpenLOFileMenu())
         ModList.column_links.append(lo_menu)
         ModList.column_links.append(SeparatorLink())
@@ -490,8 +491,7 @@ def InitModLinks():
         plugins_menu = MenuLink(_('Plugins..'))
         if bush.game.has_esl:
             plugins_menu.links.append(Mods_AutoESLFlagBP())
-        plugins_menu.links.append(Mods_LockActivePlugins())
-        plugins_menu.links.append(SeparatorLink())
+            plugins_menu.links.append(SeparatorLink())
         plugins_menu.links.append(Mods_ScanDirty())
         plugins_menu.links.append(Mods_IgnoreDirtyVanillaFiles())
         plugins_menu.links.append(SeparatorLink())
@@ -534,7 +534,7 @@ def InitModLinks():
     ModList.context_links.append(SeparatorLink())
     ModList.context_links.append(Mod_Move())
     ModList.context_links.append(Mod_ShowReadme())
-    ModList.context_links.append(File_JumpToInstaller())
+    ModList.context_links.append(File_JumpToSource())
     if True: #--Info
         info_menu = MenuLink(_('Info..'))
         if bush.game.allTags:
@@ -736,13 +736,13 @@ def InitSaveLinks():
         file_menu.links.append(File_Backup())
         file_menu.links.append(File_RevertToBackup())
         SaveList.context_links.append(file_menu)
-    if True: #--Move to Profile
-        moveMenu = MenuLink(_('Move to..'))
+    if True: #--Move To
+        moveMenu = MenuLink(_('Move To..'))
         moveMenu.links.append(Save_Move())
         SaveList.context_links.append(moveMenu)
-    if True: #--Copy to Profile
-        copyMenu = MenuLink(_('Copy to..'))
-        copyMenu.links.append(Save_Move(True))
+    if True: #--Copy To
+        copyMenu = MenuLink(_('Copy To..'))
+        copyMenu.links.append(Save_Move(copyMode=True))
         SaveList.context_links.append(copyMenu)
     SaveList.context_links.append(SeparatorLink())
     SaveList.context_links.append(Save_ActivateMasters())

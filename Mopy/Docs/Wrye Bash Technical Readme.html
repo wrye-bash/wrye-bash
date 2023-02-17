@@ -54,7 +54,7 @@
                 <li class="list"><a href="#wizards">BAIN Wizards</a>
                     <ol class="items">
                         <li><a href="#wizards-overview">Overview</a></li>
-                        <li><a href="#wizards-dialog">Dialogues</a></li>
+                        <li><a href="#wizards-dialog">Dialogs</a></li>
                         <li><a href="#wizards-language">Language Structure</a></li>
                         <li><a href="#wizards-functions">Functions</a></li>
                         <li><a href="#wizards-deprecated-functions">Deprecated Functions</a></li>
@@ -71,6 +71,11 @@
                     <ol class="items">
                         <li><a href="#trusted-binaries-statements">Statements</a></li>
                         <li><a href="#trusted-binaries-structure">Structure</a></li>
+                    </ol>
+                </li>
+                <li class="list"><a href="#csv-formats">CSV Formats</a>
+                    <ol class="items">
+                        <li><a href="#csv-formats-package-order">Package Order</a></li>
                     </ol>
                 </li>
             </ol>
@@ -92,38 +97,44 @@
 
 <h2 id="wizards">BAIN Wizards</h2>
 <h3 id="wizards-overview">Overview</h3>
-<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and plugins will be selected, and any INI tweaks that will be applied.</p>
+<p>BAIN Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and plugins will be selected, and any INI tweaks that will be applied.</p>
 <p>Those using Notepad++ to write their install scripts may want to use Utumno's <a href="https://www.nexusmods.com/oblivion/mods/32654">BAIN wizard Script Highlighter for Notepad plus plus</a> as it features code folding and syntax highlighting to make spotting mistakes easier.
 <p>There is a similar <a href="https://www.nexusmods.com/oblivion/mods/34240">BAIN Wizard Syntax for EmEditor</a> syntax highlighter for EmEditor created by broken85.
 
-<h3 id="wizards-dialog">Dialogues</h3>
-    <p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.</p>
+<h3 id="wizards-dialog">Dialogs</h3>
+    <p>You may use a number of different dialogs in a wizard. The available dialogs are described in this section.</p>
     <ul>
         <li>
             <p><dfn>SelectOne</dfn> - This dialog displays a list of options, but only one can be selected. It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either double click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.</p>
-            <img alt="SelectOne Dialog" src="../bash/images/readme/selectone.png"/>
+            <img src="../bash/images/readme/wizard-selectone.png"
+                 alt="Dialog from Farmhouse Chimneys, showing three mutually exclusive options for chimney meshes. The third one is selected.">
         </li>
         <li>
             <p><dfn>SelectMany</dfn> - This dialog displays a list of options, and any combination can be selected (including none at all). It will be shown when a <a href="#wizardsSelectMany">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.</p>
-            <img alt="SelectMany Dialog" src="../bash/images/readme/selectmany.png"/>
+            <img src="../bash/images/readme/wizard-selectmany.png"
+                 alt="Dialog from DynDOLOD's wizard, showing a list of six options. The first five are checked, the last is unchecked.">
         </li>
         <li>
             <p><dfn>Cancel</dfn> - This dialog will be shown if the wizard cancels execution for some reason, activated by the <a href="#wizardsCancel">Cancel</a> keyword. If a reason is given, it will be displayed.</p>
-            <img alt="Cancel Dialog" src="../bash/images/readme/cancel.png"/>
+            <img src="../bash/images/readme/wizard-cancel.png"
+                 alt="Dialog showing that the wizard has been canceled and giving an author-provided reason ('Realistic Water Two is not installed! RWT - Improved Water requries RWT to function.').">
         </li>
         <li>
             <p><dfn>Error</dfn> - This dialog will be shown if the wizard encounters an error in the wizard file. The wizard will then quit.</p>
-            <img alt="Error Dialog" src="../bash/images/readme/error.png"/>
+            <img src="../bash/images/readme/wizard-error.png"
+                 alt="Dialog showing that the wizard has been terminated due to a scripting error (arguments were given to an 'Else' keyword).">
         </li>
         <li>
             <p><dfn>Finish</dfn> - This dialog will be shown at the end of the wizard, to show you which sub-packages and plugins will be selected.
                 It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.
                 It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.</p>
-            <img alt="Finish Dialog" src="../bash/images/readme/finish.png"/>
+            <img src="../bash/images/readme/wizard-finish.png"
+                 alt="Dialog showing the result of running a wizard for a made-up mod supposedly improving Realistic Water Two's water textures. A '00 Core' sub-package is selected, an 'RWT - Improved Water.esp' plugin is selected, an INI tweak with some LOD settings has been created and and a note is shown informing the user that the INI settings are only a suggestion and may be ignored.">
         </li>
         <li>
             <p><dfn>Version Warning</dfn> - This dialog is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements. These can be specified via the <a href="#wizardsRequireVersions">RequireVersions</a> keyword.</p>
-            <img alt="Version Warning Dialog" src="../bash/images/readme/versions.png"/>
+            <img src="../bash/images/readme/wizard-versions.png"
+                 alt="Dialog showing that the wizard has been aborted because its SKSE version requirement has not been met (wanted is 0.2.2.4, but installed is only 0.2.2.3).">
         </li>
     </ul>
 
@@ -133,18 +144,18 @@
 <p>Variable names may contain any alphanumeric characters (a-z, A-Z, 0-9) and underscores (_), but cannot start with a number. You cannot declare a variable with the same name as a keyword, function or constant. Variables can be assigned values using an assignment operator, and can hold the following data types:
 <ul>
     <li>Integers: whole numbers that can be either positive, negative or zero. You can perform mathematical operations on integers using the mathematical operators.
-    <li>Decimals: real numbers that contain a decimal point, eg. <code>0.123</code>, <code>-3.5</code>, <code>7.0</code>. You can perform mathematical operations on decimals using the mathematical operators.
-    <li>Strings: any string of characters, eg. <code>"Hello"</code>, <code>'World!'</code>. As in the examples, strings must be enclosed within double or single quotes. Special characters may be included in strings by using an escape sequence. Strings can be added and multiplied using the addition and multiplication operators. One string may be checked for within another using the in operator.
+    <li>Decimals: real numbers that contain a decimal point, e.g. <code>0.123</code>, <code>-3.5</code>, <code>7.0</code>. You can perform mathematical operations on decimals using the mathematical operators.
+    <li>Strings: any string of characters, e.g. <code>"Hello"</code>, <code>'World!'</code>. As in the examples, strings must be enclosed within double or single quotes. Special characters may be included in strings by using an escape sequence. Strings can be added and multiplied using the addition and multiplication operators. One string may be checked for within another using the in operator.
 </ul>
 <p>Constants are variables that are pre-defined by BAIN and cannot have their values changed. You cannot create new constants.
 <p>Comments are extra text ignored by the Wizard engine, to explain what the Wizard code does to other readers. Comments begin with a semicolon <code>;</code> and last until the end of the line.
-<p>Expressions are evaluated using the standard order of operations, eg. <code>3 + 6 * 2</code> will evaluate to <code>15</code>.
+<p>Expressions are evaluated using the standard order of operations, e.g. <code>3 + 6 * 2</code> will evaluate to <code>15</code>.
 <h4>Common Mistakes</h4>
 <ul>
     <li>Incorrect case. For example, make sure you're using <code>SelectSubPackage</code> and not <code>SeleCtsUbpacKage</code>.
     <li>Mismatched quotes. Make sure that if you start a string with a double quote, you end it with a double quote, and similarly strings that start with a single quote should end with a single quote.
     <li>Missing or extra backslashes at the end of a line. This causes an error or not all options to display.
-    <li>Extra spaces or tabs at the end of a line can cause issues with options showing up, eg. <code class="box">"","",""\                  </code>
+    <li>Extra spaces or tabs at the end of a line can cause issues with options showing up, e.g. <code class="box">"","",""\                  </code>
     <li>Referencing images that don't exist. Make sure any images you try to display in the Wizard actually exist.
 </ul>
 
@@ -153,7 +164,7 @@
 <p><dfn id="wizardsCompareGameVersion">CompareGameVersion</dfn> - Used to test the installed version of the game Wrye Bash is running for against the version you specify.
 <code class="box">CompareGameVersion(version_string)</code>
 <ul>
-    <li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"1.2.0.416"</code>.
+    <li><var>version_string</var> - A string formatted to hold a file version number, e.g. <code>"1.2.0.416"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -164,7 +175,7 @@
 <p><dfn id="wizardsCompareSEVersion">CompareSEVersion</dfn> - Used to test the installed version of the Script Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareSEVersion(version_string)</code>
 <ul>
-    <li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+    <li><var>version_string</var> - A string formatted to hold a file version number, e.g. <code>"0.0.20.1"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -175,7 +186,7 @@
 <p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareGEVersion(version_string)</code>
 <ul>
-    <li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"3.0.1"</code>.
+    <li><var>version_string</var> - A string formatted to hold a file version number, e.g. <code>"3.0.1"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -186,7 +197,7 @@
 <p><dfn>CompareWBVersion</dfn> - Used to test the installed version of Wrye Bash against the one you specify.
 <code class="box">CompareWBVersion(version_string)</code>
 <ul>
-    <li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"307"</code>.
+    <li><var>version_string</var> - A string formatted to hold a file version number, e.g. <code>"307"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -236,10 +247,10 @@
 <p class="indent">Return values:</p>
 <ul class="indent">
     <li><code>-1</code> - The plugin does not exist.</li>
-    <li><code>0</code> - The plugin is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img alt="Inactive" src="../bash/images/checkbox_green_off.png"/>.</li>
-    <li><code>1</code> - The plugin is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Imported" src="../bash/images/checkbox_green_imp.png"/>.</li>
-    <li><code>2</code> - The plugin is active. Its checkbox in Wrye Bash's Mods tab is <img alt="Active" src="../bash/images/checkbox_green_on.png"/>.</li>
-    <li><code>3</code> - The plugin is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Merged" src="../bash/images/checkbox_green_inc.png"/>.</li>
+    <li><code>0</code> - The plugin is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img alt="an unchecked checkbox" src="../bash/images/checkbox_green_off.png">.</li>
+    <li><code>1</code> - The plugin is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="a checkbox with a dot" src="../bash/images/checkbox_green_imp.png">.</li>
+    <li><code>2</code> - The plugin is active. Its checkbox in Wrye Bash's Mods tab is <img alt="a checked checkbox" src="../bash/images/checkbox_green_on.png">.</li>
+    <li><code>3</code> - The plugin is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="a checkbox with a plus" src="../bash/images/checkbox_green_inc.png">.</li>
 </ul>
 <p><dfn id="wizardsDisableINILine">DisableINILine</dfn> - Tells Wrye Bash to create an ini tweak file that disables the specified setting by commenting it out. Otherwise, behaves identically to <a href="#wizardsEditINI">EditINI</a>.</p>
 <code class="box">DisableINILine(file_name, section, setting)</code>
@@ -260,7 +271,7 @@
 <p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is useful for creating dynamically generated menus.
 <code class="box">Exec(lines)</code>
 <ul>
-    <li><var>lines</var> - A string containing lines to execute, separated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
+    <li><var>lines</var> - A string containing lines to execute, separated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. E.g. <code>\'</code> should be written <code>\\\'</code>.
 </ul>
 <p><dfn id="wizardsEndExec">EndExec</dfn> - Internal function used to mark the end of the lines executed by an <a href="wizardsExec">Exec</a> statement. Attempting to explicitly call it will result in an error.</p>
 <code class="box">EndExec(line_count)</code>
@@ -773,7 +784,7 @@ startswith(myStr, "foo")</code>
 
 <h3 id="wizards-examples">Examples</h3>
 <h4>Wizards In The Wild</h4>
-<p>The following mods have Wizard scripts that may be useful references: <a href="https://www.nexusmods.com/oblivion/mods/19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="https://www.nexusmods.com/oblivion/mods/31062">Bain Conversion Files</a>,  <a href="https://www.nexusmods.com/oblivion/mods/16513">Bananasplit Better Cities</a>,  <a href="https://www.nexusmods.com/oblivion/mods/36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="https://www.nexusmods.com/oblivion/mods/35856">Metallicow Cursor Mod</a>,  <a href="https://www.nexusmods.com/oblivion/mods/19370">Unique Landscapes Compilation</a>,  <a href="https://www.nexusmods.com/oblivion/mods/18305">Weather - All Natural</a>.
+<p>The following mods have Wizard scripts that may be useful references: <a href="https://www.nexusmods.com/oblivion/mods/19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="https://www.nexusmods.com/oblivion/mods/31062">BAIN Conversion Files</a>,  <a href="https://www.nexusmods.com/oblivion/mods/16513">Bananasplit Better Cities</a>,  <a href="https://www.nexusmods.com/oblivion/mods/36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="https://www.nexusmods.com/oblivion/mods/35856">Metallicow Cursor Mod</a>,  <a href="https://www.nexusmods.com/oblivion/mods/19370">Unique Landscapes Compilation</a>,  <a href="https://www.nexusmods.com/oblivion/mods/18305">Weather - All Natural</a>.
 <h4>Create A Package Overview</h4>
 <p>Every Wizard should have a short overview for the user to read before proceeding with the actual installation questions. Notice how in the example below there are no <code>Case</code> statements used and the default character <code>|</code> is before the <code>Start Here_Readme</code>.
 <code class="box">SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
@@ -1190,6 +1201,96 @@ None</code>
         </ul>
     </li>
 </ul>
+
+<h2 id="csv-formats">CSV Formats</h2>
+<p>This section covers CSV-based formats used by Wrye Bash. See
+    <a href="https://en.wikipedia.org/wiki/Comma-separated_values">Wikipedia's article on CSV files</a>
+    for an introduction to the format. All CSV files used by Wrye Bash must be
+    encoded in UTF-8. They currently require a UTF-8 BOM, but this is for
+    historical reasons and the BOMs will become optional in a future
+    release.</p>
+<p>All CSV files used by Wrye Bash use commas to separate values and double
+    quotes to quote values. Usually all values are quoted, but CSV files
+    created by older Wrye Bash versions may not have quotes around some values,
+    so be prepared to handle those.</p>
+<p>The names of the CSV columns are usually unimportant and may be localized.
+    Only the context in which the CSV file is used and its contents determine
+    the semantic meaning.</p>
+<p>These properties define a <dfn>WBCSV</dfn> file, which is the term that
+    will be used for the rest of this section.</p>
+
+<h3 id="csv-formats-package-order">Package Order</h3>
+<p>This format is used by
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-export-order">Export Order...</a>
+    and <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-import-order">Import Order...</a>
+    to export and import BAIN package order.</p>
+<p>The format is a WBCSV file, with two columns. Each row specifies a single
+    entry in the package order. The order of the rows specifies the order of
+    the packages. Missing packages will be skipped when importing.</p>
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">Package Order Format</th>
+        </tr>
+        <tr>
+            <th>Column Name</th>
+            <th>Meaning</th>
+            <th>Example Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Package</td>
+            <td>The name of the package.</td>
+            <td>Alternate Start - Live Another Life 4.1.7.7z</td>
+        </tr>
+        <tr>
+            <td>Installed? (Y/N)</td>
+            <td><code>Y</code> if the package was installed, <code>N</code> if
+                it wasn't.</td>
+            <td>Y</td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Example File</h4>
+
+<pre><code class="box">"Package","Installed? (Y/N)"
+"==Basics==","N"
+"Vanilla Script Sources.zip","Y"
+"SKSE Scripts 2.2.3.7z","Y"
+"Address Libary - All in one (Anniversary Edition)-32444-8-1664465359.zip","Y"
+"==Essentials==","N"
+"Alternate Start - Live Another Life 4.1.7.7z","Y"
+"Unofficial Skyrim Creation Club Content Patch-18975-7-2-1666561973.zip","Y"
+"Unofficial Skyrim Special Edition Patch-266-4-2-8-1663527575.7z","Y"
+"==SKSE Fixes & Plugins==","N"
+"ConsoleUtilSSE-24858-1-4-0-1665802090.zip","Y"
+"MfgFix-11669-1-6-1-1664520342.7z","Y"
+"SSE Display Tweaks-34705-0-5-12-1664893623.zip","Y"
+"SSEDT - Personal Config.7z","Y"
+"SSE Engine Fixes for 1.6.629 and newer-17230-6-1-1-1664974106.7z","Y"
+"Simple Item Spawner-64653-1-50-1653532324.zip","Y"
+"==Body==","N"
+"XP32 Maximum Skeleton Special Extended-1988-4-81-1660739371.7z","Y"
+"==Characters==","N"
+"Expressive Facial Animation - Female Edition-19181-1-7-1575746557.7z","Y"
+"Expressive Facial Animation - Male Edition-19532-1-21-1575813430.7z","Y"
+"RaceMenu Anniversary Edition v0-4-19-14-19080-0-4-19-14-1667000011.7z","Y"
+"==Combat==","N"
+"Armor Rating Rescaled Remake-35296-1-0-2-1663883868.zip","Y"
+"==Crafting==","N"
+"Ars Metallica 2.0.6.7z","Y"
+"==Interface==","N"
+"Immersive HUD - iHUD-12440-0-2b.7z","Y"
+"SkyHUD v090B v4-463-0-90B.zip","Y"
+"Better MessageBox Controls v1_2-1428-1-2.zip","Y"
+"Dialogue Interface ReShaped-46546-1-03-1616150370.zip","Y"
+"More Informative Console 1.1.0 AE (1.6.640 plus )-19250-1-1-0-1664127904.zip","Y"
+"==Tools==","N"
+"FNIS Behavior SE 7_6 XXL-3038-7-6-1582110624.7z","Y"
+"My SkyHUD Preset.7z","Y"
+"==Last==","N"</code></pre>
 
 <!-- Scrolling content end -->
 </div>

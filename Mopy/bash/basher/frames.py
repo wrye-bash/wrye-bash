@@ -39,7 +39,7 @@ from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
     _frame_settings_key = u'bash.modDocs'
-    _def_size = (300, 400)
+    _def_size = (900, 500)
 
     def __init__(self):
         # Data

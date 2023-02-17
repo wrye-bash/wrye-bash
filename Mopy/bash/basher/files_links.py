@@ -23,13 +23,13 @@
 import re
 
 from .. import balt, bass, bolt, bosh, exception
-from ..balt import AppendableLink, ChoiceLink, ItemLink, OneItemLink
+from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
            u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
-           'File_ListMasters', 'File_Redate', 'File_JumpToInstaller']
+           'File_ListMasters', 'File_Redate', 'File_JumpToSource']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -272,13 +272,13 @@ class File_Backup(ItemLink):
 class _RevertBackup(OneItemLink):
 
     def __init__(self, first=False):
-        super(_RevertBackup, self).__init__()
+        super().__init__()
         self._text = _(u'Revert to First Backup...') if first else _(
             u'Revert to Backup...')
         self.first = first
 
     def _initData(self, window, selection):
-        super(_RevertBackup, self)._initData(window, selection)
+        super()._initData(window, selection)
         self.backup_path = self._selected_info.backup_dir.join(
             self._selected_item) + (u'f' if self.first else u'')
         self._help = _(u'Revert %(file)s to its first backup') if self.first \
@@ -286,8 +286,7 @@ class _RevertBackup(OneItemLink):
         self._help %= {'file': self._selected_item}
 
     def _enable(self):
-        return super(_RevertBackup,
-                     self)._enable() and self.backup_path.exists()
+        return super()._enable() and self.backup_path.exists()
 
     @balt.conversation
     def Execute(self):
@@ -322,9 +321,10 @@ class _RevertBackup(OneItemLink):
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
 
-class File_RevertToBackup(ChoiceLink):
+class File_RevertToBackup(MultiLink):
     """Revert to last or first backup."""
-    extraItems = [_RevertBackup(), _RevertBackup(first=True)]
+    def _links(self):
+        return [_RevertBackup(), _RevertBackup(first=True)]
 
 #------------------------------------------------------------------------------
 class File_Redate(ItemLink):
@@ -357,13 +357,13 @@ class File_Redate(ItemLink):
         self.window.data_store.refresh(refresh_infos=False)
 
 #------------------------------------------------------------------------------
-class File_JumpToInstaller(AppendableLink, OneItemLink):
-    """Go to the installers tab and highlight the mods installer"""
-    _text = _('Jump to Installer')
+class File_JumpToSource(AppendableLink, OneItemLink):
+    """Go to the Installers tab and highlight the file's installing package."""
+    _text = _('Jump to Source')
 
     @property
     def link_help(self):
-        return _('Jump to the installer associated with %(filename)s. You '
+        return _('Jump to the package associated with %(filename)s. You '
                  'can Alt-Click on the file to the same effect.') % {
             'filename': self._selected_item}
 
@@ -373,7 +373,7 @@ class File_JumpToInstaller(AppendableLink, OneItemLink):
 
     def _enable(self):
         return (super()._enable() and
-                self.window.get_installer(self._selected_item) is not None)
+                self.window.get_source(self._selected_item) is not None)
 
     def Execute(self):
-        self.window.jump_to_installer(self._selected_item)
+        self.window.jump_to_source(self._selected_item)

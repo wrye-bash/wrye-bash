@@ -587,7 +587,7 @@ class Save_EditPCSpells(OneItemLink):
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedEnchantmentCosts(OneItemLink):
-    """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
+    """Dialog and Menu for setting number of uses for Cast When Used Enchantments."""
     _text = _(u'Set Number of Uses for Weapon Enchantments...')
     _help = _(u'Set number of uses for Cast When Used Enchantments')
 

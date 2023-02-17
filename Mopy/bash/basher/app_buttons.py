@@ -34,7 +34,7 @@ from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     showError
 
-__all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
+__all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
            'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
            'App_Restart', 'app_button_factory']
@@ -451,7 +451,7 @@ class _AApp_LOManager(_ExeButton):
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text = _('Launch using GUI')
+    _text = _('Launch Using GUI')
     _bl_key = 'BOSS.UseGUI'
     _help = _("If enabled, Bash will run BOSS's GUI.")
 
@@ -515,10 +515,7 @@ class Game_Button(_ExeButton):
 
     @property
     def sb_button_tip(self):
-        tip_ = self._tip + u' ' + self.version if self.version else self._tip
-        if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.Laa.laa_name
-        return tip_
+        return f'{self._tip} {self.version}' if self.version else self._tip
 
     @property
     def obseTip(self):
@@ -526,9 +523,6 @@ class Game_Button(_ExeButton):
         tip_ = self._obseTip % {'app_version': self.version}
         # + OBSE
         tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
-        # + LAA
-        if BashStatusBar.laaButton.button_state:
-            tip_ += f' + {bush.game.Laa.laa_name}'
         return tip_
 
     def _app_button_execute(self):
@@ -540,12 +534,8 @@ class Game_Button(_ExeButton):
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
             exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
-            exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
             exe_path = self.exePath # Default to the regular launcher
-            if BashStatusBar.laaButton.button_state:
-                # Should use the LAA Launcher if it's present
-                exe_path = (exe_laa if exe_laa.is_file() else exe_path)
-            elif BashStatusBar.obseButton.button_state:
+            if BashStatusBar.obseButton.button_state:
                 # OBSE refuses to start when its EXE is launched on a Steam
                 # installation
                 if (bush.game.fsName != u'Oblivion'
@@ -670,17 +660,14 @@ class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
     _state_key = u'bash.obse.on'
     _state_img_key = u'checkbox.green.%s.%s'
+
     @property
     def _present(self):
         return (bool(bush.game.Se.se_abbrev)
                 and bass.dirs[u'app'].join(bush.game.Se.exe).exists())
 
     def SetState(self,state=None):
-        super(Obse_Button, self).SetState(state)
-        if bush.game.Laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
-            # 4GB Launcher automatically launches the SE, so turning of the SE
-            # required turning off the 4GB Launcher as well
-            BashStatusBar.laaButton.SetState(state)
+        super().SetState(state)
         self.UpdateToolTips()
         return state
 
@@ -697,29 +684,6 @@ class Obse_Button(_StatefulButton):
         for button in _App_Button.obseButtons:
             button.gButton.tooltip = getattr(button, tipAttr, u'')
 
-class LAA_Button(_StatefulButton):
-    """4GB Launcher on/off state button."""
-    _state_key = u'bash.laa.on'
-    _state_img_key = u'checkbox.blue.%s.%s'
-    @property
-    def _present(self):
-        return bass.dirs[u'app'].join(bush.game.Laa.exe).exists()
-
-    def SetState(self,state=None):
-        super(LAA_Button, self).SetState(state)
-        if bush.game.Laa.launchesSE and BashStatusBar.obseButton.gButton is not None:
-            if state:
-                # If the 4gb launcher launches the SE, enable the SE when enabling this
-                BashStatusBar.obseButton.SetState(state)
-            else:
-                # We need the obse button to update the tooltips anyway
-                BashStatusBar.obseButton.UpdateToolTips()
-        return state
-
-    @property
-    def sb_button_tip(self): return bush.game.Laa.laa_name + (
-        _(u' Disabled'), _(u' Enabled'))[self.button_state]
-
 #------------------------------------------------------------------------------
 class AutoQuit_Button(_StatefulButton):
     """Button toggling application closure when launching Oblivion."""
@@ -728,17 +692,13 @@ class AutoQuit_Button(_StatefulButton):
     _default_state = False
 
     @property
-    def imageKey(self): return self._state_img_key % (
-        [u'off', u'x'][self.button_state], u'%d')
-
-    @property
     def sb_button_tip(self): return (_(u'Auto-Quit Disabled'), _(u'Auto-Quit Enabled'))[
         self.button_state]
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
     """Show help browser."""
-    imageKey, _tip = u'help.%s', _(u'Help File')
+    imageKey, _tip = 'help.%s', _('Help')
 
     def Execute(self):
         webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))

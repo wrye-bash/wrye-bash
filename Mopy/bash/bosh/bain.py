@@ -1141,7 +1141,7 @@ class Installer(ListInfo):
             self.tempList.remove()
 
     def _do_sync_data(self, proj_dir, delta_files: set[CIstr], progress):
-        """Performs a Sync from Data on the specified project directory with
+        """Performs a Sync From Data on the specified project directory with
         the specified missing or mismatched files."""
         data_dir_join = bass.dirs[u'mods'].join
         norm_ghost_get = Installer.getGhosted().get
@@ -2040,7 +2040,7 @@ class InstallersData(DataStore):
                           x.is_archive and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
-            destArchives = [FName(f'[Auto applied BCF] {x}') for x
+            destArchives = [FName(f'[Auto-applied BCF] {x}') for x
                             in installers]
         progress.setFull(len(installers))
         pending = []
@@ -3087,7 +3087,7 @@ class InstallersData(DataStore):
         """Returns package list as text."""
         #--Setup
         log = bolt.LogFile(io.StringIO())
-        log.setHeader(_(u'Bain Packages:'))
+        log.setHeader(_('BAIN Packages:'))
         #--List
         log(u'[spoiler]\n', False)
         for inst in self.sorted_values():
