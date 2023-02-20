@@ -771,7 +771,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 while new is None: # keep going until user entered valid float
                     new = balt.askText(self.gConfigPanel, msg,
                         title=tweak.tweak_name + _(u' - Custom Tweak Value'),
-                        default=str(tweak.choiceValues[index][i]))
+                        default_txt=str(tweak.choiceValues[index][i]))
                     if new is None: #user hit cancel
                         return
                     try:
@@ -799,7 +799,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 new = balt.askText(
                     self.gConfigPanel, msg,
                     title=tweak.tweak_name + _(u' - Custom Tweak Text'),
-                    default=tweak.choiceValues[index][i], strip=False) ##: strip ?
+                    default_txt=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
                 values.append(new)

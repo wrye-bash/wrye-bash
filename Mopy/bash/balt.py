@@ -43,7 +43,7 @@ from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
     ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
     TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
-    AutoSize, get_shift_down, AskDialogue, ContinueDialog
+    AutoSize, get_shift_down, AskDialogue, ContinueDialog, TextEntry, NumEntry
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -272,22 +272,17 @@ def askContinue(parent, message, continueKey=None, title=_('Warning'),
         (result + bool(check)) if result else False)
 
 #------------------------------------------------------------------------------
-def askText(parent, message, title=u'', default=u'', strip=True):
-    """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.TextEntryDialog(_AComponent._resolve(parent), message, title,
-                            default) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        txt = dialog.GetValue()
-        return txt.strip() if strip else txt
+def askText(parent, message, title='', default_txt='', *, strip=True):
+    """Show a text entry dialog and returns result or None if canceled."""
+    return TextEntry.display_dialog(parent, message, title, default_txt,
+                                    strip=strip)
 
 #------------------------------------------------------------------------------
-def askNumber(parent, message, prompt='', title='', initial_num=0, min_num=0,
-        max_num=10000):
-    """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.NumberEntryDialog(_AComponent._resolve(parent), message, prompt,
-                              title, initial_num, min_num, max_num) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        return dialog.GetValue()
+def askNumber(parent, message, prompt='', title='', *, initial_num=0,
+              min_num=0, max_num=10000):
+    """Show a number entry dialog and returns result or None if canceled."""
+    return NumEntry.display_dialog(parent, message, prompt, title, initial_num,
+                                   min_num, max_num)
 
 # Message Dialogs -------------------------------------------------------------
 def askOk(parent, message, title=''):
@@ -1690,7 +1685,7 @@ class Link(object):
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
     ##: avoid respecifying default params
-    def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
+    def _showWarning(self, message, title=_('Warning')):
         return showWarning(self.window, message, title=title)
 
     def _askYes(self, message, title='', default_is_yes=True,
@@ -1704,7 +1699,7 @@ class Link(object):
         return askContinue(self.window, message, continueKey, title=title,
             show_cancel=show_cancel)
 
-    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+    def _askContinueShortTerm(self, message, title=_('Warning')):
         return askContinue(self.window, message, continueKey=None, title=title)
 
     def _showOk(self, message, title=u''):
@@ -1716,7 +1711,7 @@ class Link(object):
 
     def _askText(self, message, title=u'', default=u'', strip=True):
         if not title: title = self._text
-        return askText(self.window, message, title=title, default=default,
+        return askText(self.window, message, title=title, default_txt=default,
                        strip=strip)
 
     def _showError(self, message, title=_(u'Error')):
@@ -1740,8 +1735,8 @@ class Link(object):
 
     def _askNumber(self, message, prompt='', title='', initial_num=0,
             min_num=0, max_num=10000):
-        return askNumber(self.window, message, prompt, title, initial_num,
-            min_num, max_num)
+        return askNumber(self.window, message, prompt, title,
+            initial_num=initial_num, min_num=min_num, max_num=max_num)
 
     # De-wx'd File/dir dialogs
     def _askOpen(self, title='', defaultDir='', defaultFile='', wildcard=''):

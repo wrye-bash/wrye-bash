@@ -935,9 +935,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # We need active mods
         if not load_order.cached_active_tuple():
             self._showWarning(
-                _(u'That which does not exist cannot be patched.') + u'\n' +
-                _(u'Load some mods and try again.'),
-                _(u'Existential Error'))
+                _('That which does not exist cannot be patched.') + '\n' +
+                _('Load some mods and try again.'), _('Existential Error'))
             return False
         # Read the config
         bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
@@ -1248,8 +1247,8 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if fileInfo.match_oblivion_re():
-                self._showWarning(_(u'Skipping %s') % fileInfo,
-                                  _(u'Remove World Orphans'))
+                self._showWarning(_('Skipping %s') % fileInfo,
+                                  _('Remove World Orphans'))
                 continue
             #--Export
             with balt.Progress(_(u'Remove World Orphans')) as progress:
@@ -1377,8 +1376,8 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
         with BusyCursor():
             for fileInfo in self.iselected_infos():
                 if fileInfo.match_oblivion_re():
-                    self._showWarning(_(u'Skipping %s') % fileInfo,
-                                      _(u'Decompile All'))
+                    self._showWarning(_('Skipping %s') % fileInfo,
+                                      _('Decompile All'))
                     continue
                 modFile = self._load_mod(fileInfo)
                 badGenericLore = False

@@ -197,7 +197,7 @@ class _ASettingsPage(ATreeMixin):
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
         new_fstr = balt.askText(self, msg, title=msg_title,
-                                 default=chosen_file)
+                                default_txt=chosen_file)
         if not new_fstr or new_fstr == chosen_file:
             return False # user canceled or entered identical name
         new_fpath = parent_dir.join(new_fstr)

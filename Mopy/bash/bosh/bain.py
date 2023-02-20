@@ -2096,7 +2096,7 @@ class InstallersData(DataStore):
         except StateError as e:
             deprint(msg, traceback=True)
             if show_warning:
-                show_warning(msg + f'\n\n{e.message}')
+                show_warning(f'{msg}\n\n{e.message}')
             raise # UI expects that
 
     def scan_installers_dir(self, folders, files, fullRefresh=False, *,

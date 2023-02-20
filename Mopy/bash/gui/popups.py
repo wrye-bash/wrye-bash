@@ -696,3 +696,33 @@ class ContinueDialog(DialogWindow):
         else:
             return super().display_dialog(*args, **kwargs)
         return result, check
+
+class _EntryDialog(DialogWindow):
+    """Ask the user for a string or a number."""
+    _native_widget: _wx.TextEntryDialog # default to text
+
+    def __init__(self, *args, **kwargs):
+        super(_TopLevelWin, self).__init__(*args, **kwargs)
+
+    def show_modal(self) -> str | float | None:
+        if self._native_widget.ShowModal() != _wx.ID_OK:
+            return None
+        return self._native_widget.GetValue()
+
+class TextEntry(_EntryDialog):
+
+    def __init__(self, parent, message, title, default_entry, *, strip=True):
+        super().__init__(parent, message, title, default_entry)
+        self._strip = strip
+
+    def show_modal(self):
+        txt: str = super().show_modal()
+        return txt.strip() if txt and self._strip else txt
+
+class NumEntry(_EntryDialog):
+    _native_widget: _wx.NumberEntryDialog
+
+    def __init__(self, parent, message, prompt='', title='', initial_num=0,
+                 min_num=0, max_num=10000):
+        super().__init__(parent, message, prompt, title, initial_num, min_num,
+                         max_num)
