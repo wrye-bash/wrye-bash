@@ -356,13 +356,13 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         b'KEYM': ('sound_pickup', 'sound_drop', 'sound_random_looping'),
         b'MISC': ('sound_pickup', 'sound_drop', 'sound_random_looping'),
         b'STAT': ('sound_random_looping',),
-        b'WEAP': ('sound_pickup', 'sound_drop', 'sound',
+        b'WEAP': ('sound_pickup', 'sound_drop', 'sound_gun_shoot_3d',
                   'sound_gun_shoot_dist', 'soundGunShot2D',
                   'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
                   'soundBlock', 'idleSound', 'equipSound', 'unequipSound',
-                  'soundMod1Shoot3Ds', 'soundMod1Shoot2D'),
+                  'sound_mod1_shoot_3d', 'sound_mod1_shoot_dist',
+                  'sound_mod1_shoot_2d'),
     }
-    sounds_fid_attrs[b'WEAP'] = ()
 
     #--------------------------------------------------------------------------
     # Import Graphics

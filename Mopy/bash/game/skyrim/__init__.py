@@ -754,7 +754,28 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = {
+    sounds_attrs = {
+        b'EXPL': ('expl_sound_level',),
+        b'IPCT': ('ipct_sound_level',),
+        ##: 'sounds' needs to be filtered
+        b'MGEF': ('casting_sound_level', 'sounds'),
+        b'PROJ': ('soundLevel',),
+        b'SNCT': ('staticVolumeMultiplier',),
+        # sound_files does not need to loop here
+        b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
+                  'pct_frequency_shift', 'pct_frequency_variance',
+                  'descriptor_priority', 'db_variance', 'staticAtten'),
+        b'SOPM': ('reverbSendpct', 'outputType', 'ch0_l', 'ch0_r', 'ch0_c',
+                  'ch0_lFE', 'ch0_rL', 'ch0_rR', 'ch0_bL', 'ch0_bR', 'ch1_l',
+                  'ch1_r', 'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL',
+                  'ch1_bR', 'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL',
+                  'ch2_rR', 'ch2_bL', 'ch2_bR', 'minDistance', 'maxDistance',
+                  'curve1', 'curve2', 'curve3', 'curve4', 'curve5'),
+        b'WEAP': ('detectionSoundLevel',),
+        # Has FormIDs, but will be filtered in AMreWthr.keep_fids
+        b'WTHR': ('sounds',),
+    }
+    sounds_fid_attrs = {
         b'ACTI': ('sound', 'sound_activation'),
         b'ADDN': ('sound',),
         b'ALCH': ('sound_pickup', 'sound_drop', 'sound_consume'),
@@ -767,42 +788,27 @@ class SkyrimGameInfo(PatchGame):
         b'CONT': ('sound', 'sound_close'),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'EFSH': ('sound_ambient',),
-        b'EXPL': ('expl_sound_level', 'expl_sound1', 'expl_sound2'),
+        b'EXPL': ('expl_sound1', 'expl_sound2'),
         b'FLOR': ('sound',),
         b'HAZD': ('hazd_sound',),
         b'INGR': ('sound_pickup', 'sound_drop'),
-        b'IPCT': ('ipct_sound_level', 'sound', 'ipct_sound2'),
+        b'IPCT': ('sound', 'ipct_sound2'),
         b'KEYM': ('sound_pickup', 'sound_drop'),
         b'LIGH': ('sound',),
-        #Needs to loop over all the sounds
-        b'MGEF': ('sounds', 'casting_sound_level'),
-        # b'REGN': ('entries',),
         b'MISC': ('sound_pickup', 'sound_drop'),
         b'MSTT': ('sound',),
-        b'PROJ': ('sound', 'sound_countdown', 'sound_disable', 'soundLevel'),
+        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
         b'SCRL': ('sound_pickup', 'sound_drop'),
         b'SLGM': ('sound_pickup', 'sound_drop'),
-        b'SNCT': ('parent', 'staticVolumeMultiplier'),
-        # Sounds does not need to loop here
-        b'SNDR': ('descriptor_category', 'output_model', 'sound_files',
-                  'looping_type', 'rumble_send_value', 'pct_frequency_shift',
-                  'pct_frequency_variance', 'descriptor_priority',
-                  'db_variance', 'staticAtten'),
-        b'SOPM': ('reverbSendpct', 'outputType', 'ch0_l', 'ch0_r', 'ch0_c',
-                  'ch0_lFE', 'ch0_rL', 'ch0_rR', 'ch0_bL', 'ch0_bR', 'ch1_l',
-                  'ch1_r', 'ch1_c', 'ch1_lFE', 'ch1_rL', 'ch1_rR', 'ch1_bL',
-                  'ch1_bR', 'ch2_l', 'ch2_r', 'ch2_c', 'ch2_lFE', 'ch2_rL',
-                  'ch2_rR', 'ch2_bL', 'ch2_bR', 'minDistance', 'maxDistance',
-                  'curve1', 'curve2', 'curve3', 'curve4', 'curve5'),
+        b'SNCT': ('parent',),
+        b'SNDR': ('descriptor_category', 'output_model'),
         b'SOUN': ('soundDescriptor',),
         b'TACT': ('sound',),
         b'TREE': ('sound',),
         b'WATR': ('sound',),
         b'WEAP': ('sound_pickup', 'sound_drop', 'sound', 'attackSound2D',
                   'attackLoopSound', 'attackFailSound', 'idleSound',
-                  'equipSound', 'unequipSound', 'detectionSoundLevel'),
-        #Needs to loop over all the sounds
-        b'WTHR': ('sounds',),
+                  'equipSound', 'unequipSound'),
     }
 
     #--------------------------------------------------------------------------

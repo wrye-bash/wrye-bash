@@ -30,12 +30,12 @@ class ImportWeaponModificationsPatcher(APreserver):
     _config_key = u'WeaponModsPatcher'
     patcher_order = 27 ##: This seems unneeded + no reason given
     rec_attrs = {b'WEAP': (
-        u'modelWithMods', u'firstPersonModelWithMods', u'weaponMods',
-        u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',
-        u'effectMod2', u'effectMod3', u'valueAMod1', u'valueAMod2',
-        u'valueAMod3', u'valueBMod1', u'valueBMod2', u'valueBMod3',
-        u'reloadAnimationMod', u'vats_mod_required',
-        u'dnamFlags2.scopeFromMod')}
+        'modelWithMods', 'firstPersonModelWithMods', 'weaponMods',
+        'effectMod1', 'effectMod2', 'effectMod3', 'valueAMod1', 'valueAMod2',
+        'valueAMod3', 'valueBMod1', 'valueBMod2', 'valueBMod3',
+        'reloadAnimationMod', 'vats_mod_required', 'dnamFlags2.scopeFromMod')}
+    _fid_rec_attrs = {b'WEAP': ('sound_mod1_shoot_3d', 'sound_mod1_shoot_dist',
+                                'sound_mod1_shoot_2d')}
 
     @classmethod
     def gui_cls_vars(cls):

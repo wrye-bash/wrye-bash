@@ -3159,8 +3159,13 @@ class MreWeap(MelRecord):
             MelFid(b'WMI2', 'mod2'),
             MelFid(b'WMI3', 'mod3'),
         )),
-        MelSound(),
-        fnv_only(MelFid(b'SNAM', 'sound_gun_shoot_dist')),
+        if_fnv(
+            fo3_version=MelSound(),
+            fnv_version=MelSequential(
+                MelFid(b'SNAM', 'sound_gun_shoot_3d'),
+                MelFid(b'SNAM', 'sound_gun_shoot_dist'),
+            ),
+        ),
         MelFid(b'XNAM','soundGunShot2D'),
         MelFid(b'NAM7','soundGunShot3DLooping'),
         MelFid(b'TNAM','soundMeleeSwingGunNoAmmo'),
@@ -3168,8 +3173,9 @@ class MreWeap(MelRecord):
         MelFid(b'UNAM','idleSound',),
         MelFid(b'NAM9','equipSound',),
         MelFid(b'NAM8','unequipSound',),
-        fnv_only(MelFids('soundMod1Shoot3Ds', MelFid(b'WMS1'))),
-        fnv_only(MelFid(b'WMS2', 'soundMod1Shoot2D')),
+        fnv_only(MelFid(b'WMS1', 'sound_mod1_shoot_3d')),
+        fnv_only(MelFid(b'WMS1', 'sound_mod1_shoot_dist')),
+        fnv_only(MelFid(b'WMS2', 'sound_mod1_shoot_2d')),
         MelStruct(b'DATA', [u'2I', u'f', u'H', u'B'],'value','health','weight','damage','clipsize'),
         if_fnv(
             fo3_version=MelTruncatedStruct(
@@ -3208,14 +3214,15 @@ class MreWeap(MelRecord):
             is_optional=True)),
         MelBase(b'VNAM','soundLevel'),
     ).with_distributor(fnv_only({
-        b'SNAM': ('sound', {
-            b'SNAM': 'sound_gun_shoot_dist',
-        }),
+        b'SNAM': [
+            (b'SNAM', 'sound_gun_shoot_3d'),
+            (b'SNAM', 'sound_gun_shoot_dist'),
+        ],
+        b'WMS1': [
+            (b'WMS1', 'sound_mod1_shoot_3d'),
+            (b'WMS1', 'sound_mod1_shoot_dist'),
+        ],
     }))
-
-    def keep_fids(self, keep_plugins):
-        if _is_fnv:
-            self.sounds = [s for s in self.sounds if s.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld):
