@@ -1153,6 +1153,85 @@ class MelMdob(MelFid):
         super().__init__(b'MDOB', 'menu_display_object')
 
 #------------------------------------------------------------------------------
+class MelMesgButtons(MelGroups):
+    """Implements the MESG subrecord ITXT and its conditions."""
+    def __init__(self, conditions_element: MelBase):
+        super().__init__('menu_buttons',
+            MelLString(b'ITXT', 'button_text'),
+            conditions_element,
+        )
+
+#------------------------------------------------------------------------------
+class MelMesgSharedFo3(MelSequential):
+    """Implements the MESG subrecords DNAM and TNAM."""
+    class _MesgFlags(Flags):
+        message_box: bool
+        auto_display: bool # called 'Delay Initial Display' in FO4
+
+    def __init__(self, *, prefix_elements: tuple[MelBase, ...] = ()):
+        super().__init__(
+            *prefix_elements,
+            MelUInt32Flags(b'DNAM', 'mesg_flags', self._MesgFlags),
+            MelUInt32(b'TNAM', 'display_time'),
+        )
+
+class MelMesgShared(MelMesgSharedFo3):
+    """Implements the MESG subrecords INAM, QNAM, DNAM and TNAM."""
+    def __init__(self):
+        super().__init__(prefix_elements=(
+            MelFid(b'INAM', 'unused_icon'), # leftover
+            MelFid(b'QNAM', 'owner_quest'),
+        ))
+
+#------------------------------------------------------------------------------
+class MelMgefData(MelPartialCounter):
+    """Handles some common code for the MGEF subrecord DATA (Data)."""
+    def __init__(self, struct_element: MelStruct):
+        super().__init__(struct_element,
+            counters={'counter_effect_count': 'counter_effects'})
+
+#------------------------------------------------------------------------------
+class MelMgefDnam(MelLString):
+    """Handles the MGEF subrecord DNAM (Magic Item Description)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'magic_item_description')
+
+#------------------------------------------------------------------------------
+class _AMelMgefEsce(MelSorted):
+    """Base class for the MGEF subrecord ESCE (Counter Effects)."""
+    def __init__(self, *, array_type: type[MelArray | MelGroups],
+            esce_element: MelBase, esce_attr: str):
+        super().__init__(array_type('counter_effects',
+            esce_element,
+        ), sort_by_attrs=esce_attr)
+
+class MelMgefEsceTes4(_AMelMgefEsce):
+    """Handles the Oblivion version of ESCE, which stores FourCCs."""
+    def __init__(self):
+        super().__init__(
+            array_type=MelArray,
+            esce_element=MelStruct(b'ESCE', ['4s'], 'counter_effect_code'),
+            esce_attr='counter_effect_code',
+        )
+
+class MelMgefEsce(_AMelMgefEsce):
+    """Handles the post-Oblivion version of ESCE, which stores FormIDs."""
+    def __init__(self):
+        super().__init__(
+            array_type=MelGroups,
+            esce_element=MelFid(b'ESCE', 'counter_effect_fid'),
+            esce_attr='counter_effect_fid',
+        )
+
+#------------------------------------------------------------------------------
+class MelMgefSounds(MelArray):
+    """Handles the MGEF subrecord SNDD (Sounds)."""
+    def __init__(self):
+        super().__init__('mgef_sounds',
+            MelStruct(b'SNDD', ['2I'], 'ms_sound_type', (FID, 'ms_sound')),
+        )
+
+#------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
     _fid_element = MelFid(null1) # dummy MelFid instance to use its loader

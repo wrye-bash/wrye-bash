@@ -64,7 +64,9 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
     PerkEpdfDecider, VWDFlag, gen_ambient_lighting, gen_color, gen_color3, \
-    null3, null4, perk_distributor, perk_effect_key, MelLinkColors
+    null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
+    MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1931,48 +1933,18 @@ class MreMesg(MelRecord):
     """Message."""
     rec_sig = b'MESG'
 
-    class MesgTypeFlags(Flags):
-        messageBox: bool
-        autoDisplay: bool
-
     melSet = MelSet(
         MelEdid(),
         MelDescription(),
         MelFull(),
-        MelFid(b'INAM','iconUnused'), # leftover
-        MelFid(b'QNAM','materialParent'),
-        MelUInt32Flags(b'DNAM', u'flags', MesgTypeFlags),
-        MelUInt32(b'TNAM', 'displayTime'),
-        MelGroups('menu_buttons',
-            MelLString(b'ITXT', 'button_text'),
-            MelConditionList(),
-        ),
+        MelMesgShared(),
+        MelMesgButtons(MelConditionList()),
     )
 
 #------------------------------------------------------------------------------
-class MreMgef(AMreWithKeywords):
+class MreMgef(AMreMgefTes5, AMreWithKeywords):
     """Magic Effect."""
     rec_sig = b'MGEF'
-
-    class MgefGeneralFlags(Flags):
-        hostile: bool = flag(0)
-        recover: bool = flag(1)
-        detrimental: bool = flag(2)
-        snaptoNavmesh: bool = flag(3)
-        noHitEvent: bool = flag(4)
-        dispellwithKeywords: bool = flag(8)
-        noDuration: bool = flag(9)
-        noMagnitude: bool = flag(10)
-        noArea: bool = flag(11)
-        fXPersist: bool = flag(12)
-        goryVisuals: bool = flag(14)
-        hideinUI: bool = flag(15)
-        noRecast: bool = flag(17)
-        powerAffectsMagnitude: bool = flag(21)
-        powerAffectsDuration: bool = flag(22)
-        painless: bool = flag(26)
-        noHitEffect: bool = flag(27)
-        noDeathDispel: bool = flag(28)
 
     melSet = MelSet(
         MelEdid(),
@@ -1980,10 +1952,10 @@ class MreMgef(AMreWithKeywords):
         MelFull(),
         MelMdob(),
         MelKeywords(),
-        MelPartialCounter(MelStruct(b'DATA',
+        MelMgefData(MelStruct(b'DATA',
             ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '4I', '4f', 'I', 'i',
              '4I', 'i', '3I', 'f', 'I', 'f', '7I', '2f'],
-            (MgefGeneralFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            (MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'magic_skill', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'taper_weight', (FID, 'hit_shader'),
             (FID, 'enchant_shader'), 'minimum_skill_level', 'spellmaking_area',
@@ -1997,15 +1969,10 @@ class MreMgef(AMreWithKeywords):
             (FID, 'enchant_visuals'), (FID, 'equip_ability'),
             (FID, 'effect_imad'), (FID, 'perk_to_apply'),
             'casting_sound_level', 'script_effect_ai_score',
-            'script_effect_ai_delay_time'),
-            counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelGroups(u'counter_effects',
-            MelFid(b'ESCE', u'counter_effect_code'),
-        ), sort_by_attrs='counter_effect_code'),
-        MelArray(u'sounds',
-            MelStruct(b'SNDD', [u'2I'], u'soundType', (FID, u'sound')),
-        ),
-        MelLString(b'DNAM', u'magic_item_description'),
+            'script_effect_ai_delay_time')),
+        MelMgefEsce(),
+        MelMgefSounds(),
+        MelMgefDnam(),
         MelConditionList(),
     )
 

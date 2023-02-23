@@ -57,7 +57,9 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
     MelWeight, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
     PerkEpdfDecider, VWDFlag, gen_color, gen_color3, lens_distributor, \
-    perk_distributor, perk_effect_key, AMreWrld
+    perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
+    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2083,6 +2085,58 @@ class MreMatt(MelRecord):
         # Ignore texture hashes - they're only an optimization, plenty of
         # records in Skyrim.esm are missing them
         MelNull(b'MODT'),
+    )
+
+#------------------------------------------------------------------------------
+class MreMesg(MelRecord):
+    """Message."""
+    rec_sig = b'MESG'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelDescription(),
+        MelFull(),
+        MelMesgShared(),
+        MelString(b'SNAM', 'message_swf'),
+        MelLString(b'NNAM', 'short_title'),
+        MelMesgButtons(MelConditionList()),
+    )
+
+#------------------------------------------------------------------------------
+class MreMgef(AMreMgefTes5):
+    """Magic Effect."""
+    rec_sig = b'MGEF'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelFull(),
+        MelMdob(),
+        MelKeywords(),
+        # Names match Skyrim because MGEF access is all over the codebase
+        MelMgefData(MelStruct(b'DATA',
+            ['I', 'f', 'I', '4s', 'I', 'H', '2s', 'I', 'f', '4I', '4f', '10I',
+             'f', 'I', 'f', '7I', '2f'],
+            (MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            'unused_magic_skill', (FID, 'resist_value'),
+            'counter_effect_count', 'unused1', (FID, 'light'), 'taper_weight',
+            (FID, 'hit_shader'), (FID, 'enchant_shader'),
+            'minimum_skill_level', 'spellmaking_area',
+            'spellmaking_casting_time', 'taper_curve', 'taper_duration',
+            'second_av_weight', 'effect_archetype', (FID, 'actorValue'),
+            (FID, 'projectile'), (FID, 'explosion'), 'casting_type',
+            'delivery', (FID, 'second_av'), (FID, 'casting_art'),
+            (FID, 'hit_effect_art'), (FID, 'effect_impact_data'),
+            'skill_usage_multiplier', (FID, 'dual_casting_art'),
+            'dual_casting_scale', (FID, 'enchant_art'), (FID, 'hit_visuals'),
+            (FID, 'enchant_visuals'), (FID, 'equip_ability'),
+            (FID, 'effect_imad'), (FID, 'perk_to_apply'),
+            'casting_sound_level', 'script_effect_ai_score',
+            'script_effect_ai_delay_time')),
+        MelMgefEsce(),
+        MelMgefSounds(),
+        MelMgefDnam(),
+        MelConditionList(),
     )
 
 #------------------------------------------------------------------------------

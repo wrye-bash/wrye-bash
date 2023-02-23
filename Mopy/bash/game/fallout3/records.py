@@ -55,7 +55,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, NavMeshFlags, PartialLoadDecider, PerkEpdfDecider, SizeDecider, \
     SpellFlags, VWDFlag, gen_color, gen_color3, null2, perk_distributor, \
-    perk_effect_key, MelLinkColors
+    perk_effect_key, MelLinkColors, MelMesgButtons, MelMesgSharedFo3, \
+    MelMgefData, MelMgefEsce
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == 'FalloutNV'
@@ -1674,31 +1675,23 @@ class MreMesg(MelRecord):
     """Message."""
     rec_sig = b'MESG'
 
-    class MesgTypeFlags(Flags):
-        messageBox: bool
-        autoDisplay: bool
-
     melSet = MelSet(
         MelEdid(),
         MelDescription(),
         MelFull(),
-        MelFid(b'INAM','icon'),
-        MelBase(b'NAM0', 'unused_0'),
-        MelBase(b'NAM1', 'unused_1'),
-        MelBase(b'NAM2', 'unused_2'),
-        MelBase(b'NAM3', 'unused_3'),
-        MelBase(b'NAM4', 'unused_4'),
-        MelBase(b'NAM5', 'unused_5'),
-        MelBase(b'NAM6', 'unused_6'),
-        MelBase(b'NAM7', 'unused_7'),
-        MelBase(b'NAM8', 'unused_8'),
-        MelBase(b'NAM9', 'unused_9'),
-        MelUInt32Flags(b'DNAM', u'flags', MesgTypeFlags),
-        MelUInt32(b'TNAM', 'displayTime'),
-        MelGroups('menu_buttons',
-            MelString(b'ITXT', 'button_text'),
-            MelConditionsFo3(),
-        ),
+        MelFid(b'INAM', 'message_icon'),
+        MelBase(b'NAM0', 'unused0'),
+        MelBase(b'NAM1', 'unused1'),
+        MelBase(b'NAM2', 'unused2'),
+        MelBase(b'NAM3', 'unused3'),
+        MelBase(b'NAM4', 'unused4'),
+        MelBase(b'NAM5', 'unused5'),
+        MelBase(b'NAM6', 'unused6'),
+        MelBase(b'NAM7', 'unused7'),
+        MelBase(b'NAM8', 'unused8'),
+        MelBase(b'NAM9', 'unused9'),
+        MelMesgSharedFo3(),
+        MelMesgButtons(MelConditionsFo3()),
     )
 
 #------------------------------------------------------------------------------
@@ -1707,29 +1700,10 @@ class MreMgef(MelRecord):
     rec_sig = b'MGEF'
 
     class _flags(Flags):
-        hostile: bool = flag(0)
-        recover: bool = flag(1)
-        detrimental: bool = flag(2)
-        magnitude: bool = flag(3)
-        self: bool = flag(4)
-        touch: bool = flag(5)
-        target: bool = flag(6)
-        noDuration: bool = flag(7)
-        noMagnitude: bool = flag(8)
-        noArea: bool = flag(9)
-        fxPersist: bool = flag(10)
-        spellmaking: bool = flag(11)
-        enchanting: bool = flag(12)
-        noIngredient: bool = flag(13)
-        useWeapon: bool = flag(16)
-        useArmor: bool = flag(17)
-        useCreature: bool = flag(18)
-        useSkill: bool = flag(19)
-        useAttr: bool = flag(20)
-        useAV: bool = flag(24)
-        sprayType: bool = flag(25)
-        boltType: bool = flag(26)
-        noHitEffect: bool = flag(27)
+        gory_visuals: bool = flag(12)
+        display_name_only: bool = flag(13)
+        radio_broadcast: bool = flag(15)
+        painless: bool = flag(24)
 
     melSet = MelSet(
         MelEdid(),
@@ -1737,19 +1711,15 @@ class MreMgef(MelRecord):
         MelDescription(),
         MelIcon(),
         MelModel(),
-        MelPartialCounter(MelStruct(b'DATA',
-            ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '6I', '2f',
-             'I', 'i'], (_flags, 'flags'), 'base_cost',
-            (FID, 'associated_item'), 'school', 'resist_value',
-            'counter_effect_count', 'unused1', (FID, 'light'),
+        MelMgefData(MelStruct(b'DATA',
+            ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '6I', '2f', 'I', 'i'],
+            (_flags, 'flags'), 'base_cost', (FID, 'associated_item'), 'school',
+            'resist_value', 'counter_effect_count', 'unused1', (FID, 'light'),
             'projectileSpeed', (FID, 'effectShader'), (FID, 'enchantEffect'),
             (FID, 'castingSound'), (FID, 'boltSound'), (FID, 'hitSound'),
             (FID, 'areaSound'), 'cef_enchantment', 'cef_barter',
-            'effect_archetype', 'actorValue'),
-            counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelGroups(u'counter_effects',
-            MelFid(b'ESCE', u'counter_effect_code'),
-        ), sort_by_attrs='counter_effect_code'),
+            'effect_archetype', 'actorValue')),
+        MelMgefEsce(),
     )
 
 #------------------------------------------------------------------------------

@@ -522,6 +522,14 @@ class AMreLeveledList(MelRecord):
         self.setChanged(self.mergeOverLast)
 
 #------------------------------------------------------------------------------
+class AMreMgefTes5(MelRecord):
+    """Base class for MGEF records since Skyrim."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.mgef_sounds = [s for s in self.mgef_sounds
+                            if s.ms_sound.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
 class AMreRace(MelRecord):
     """Base class for RACE records."""
     def keep_fids(self, keep_plugins):

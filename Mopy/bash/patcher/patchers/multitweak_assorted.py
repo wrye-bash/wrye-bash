@@ -511,7 +511,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     def tweak_record(self, record):
         for mgef_attr, mgef_val in self._silent_attrs.items():
             setattr(record, mgef_attr, mgef_val)
-        record.flags.noHitEffect = True
+        record.flags.no_hit_effect = True
 
     def tweak_log(self, log, count):
         # count would be pointless, always one record

@@ -38,7 +38,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
-    MelObme, MelOwnership, MelPartialCounter, MelRace, \
+    MelObme, MelOwnership, MelMgefEsceTes4, MelMgefData, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
     MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
     MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
@@ -47,7 +47,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4
+    SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4, \
+    AMgefFlagsTes4
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1383,30 +1384,15 @@ class MreMgef(MelRecord):
         ov_param_flag_d: bool = flag(20)
         ov_hidden: bool = flag(30)
 
-    class _MgefFlags(Flags):
-        hostile: bool = flag(0)
-        recover: bool = flag(1)
-        detrimental: bool = flag(2)
-        magnitude: bool = flag(3)
-        self: bool = flag(4)
-        touch: bool = flag(5)
-        target: bool = flag(6)
-        noDuration: bool = flag(7)
-        noMagnitude: bool = flag(8)
-        noArea: bool = flag(9)
-        fxPersist: bool = flag(10)
+    class _MgefFlags(AMgefFlagsTes4):
+        magnitude_pct: bool = flag(3)
         spellmaking: bool = flag(11)
         enchanting: bool = flag(12)
-        noIngredient: bool = flag(13)
-        useWeapon: bool = flag(16)
-        useArmor: bool = flag(17)
-        useCreature: bool = flag(18)
-        useSkill: bool = flag(19)
-        useAttr: bool = flag(20)
-        useAV: bool = flag(24)
-        sprayType: bool = flag(25)
-        boltType: bool = flag(26)
-        noHitEffect: bool = flag(27)
+        no_ingredient: bool = flag(13)
+        use_weapon: bool = flag(16)
+        use_armor: bool = flag(17)
+        use_creature: bool = flag(18)
+        use_actor_value: bool = flag(24)
 
     _magic_effects = { # effect_sig -> (school, name, value)
         b'ABAT': [5, _('Absorb Attribute'), 0.95],
@@ -1645,18 +1631,15 @@ class MreMgef(MelRecord):
         MelDescription(),
         MelIcon(),
         MelModel(),
-        MelPartialCounter(MelTruncatedStruct(b'DATA',
+        MelMgefData(MelTruncatedStruct(b'DATA',
             ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I', '2f'],
             (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'school', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'projectileSpeed', (FID, 'effectShader'),
             (FID, 'enchantEffect'), (FID, 'castingSound'), (FID, 'boltSound'),
             (FID, 'hitSound'), (FID, 'areaSound'), 'cef_enchantment',
-            'cef_barter', old_versions={'IfIiiH2sIfI'}),
-            counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelArray('counter_effects',
-            MelStruct(b'ESCE', ['4s'], 'counter_effect_code'),
-        ), sort_by_attrs='counter_effect_code'),
+            'cef_barter', old_versions={'IfIiiH2sIfI'})),
+        MelMgefEsceTes4(),
     )
 
 #------------------------------------------------------------------------------
@@ -1667,14 +1650,14 @@ class MreMisc(_ObIcon):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         @property
-        def use_actor_value(self) -> bool:
+        def misc_actor_value(self) -> bool:
             """The ActorValue flag is encoded in bits 6-7.  It might
             actually be treated as an int with different meanings for values
-            0, 1, 2, 3, but current code requires both bits set. """
+            0, 1, 2, 3, but current code requires both bits set."""
             return (self._field & 0b01100000) == 0b01100000
 
-        @use_actor_value.setter
-        def use_actor_value(self, new_av: bool) -> None:
+        @misc_actor_value.setter
+        def misc_actor_value(self, new_av: bool) -> None:
             new_bits = 0b01100000 if new_av else 0
             self._field = (self._field & ~0b01100000) | new_bits
 
@@ -1687,7 +1670,7 @@ class MreMisc(_ObIcon):
         MelUnion({
             False: MelValueWeight(),
             True: MelStruct(b'DATA', ['2I'], (FID, 'value'), 'weight'),
-        }, decider=FlagDecider('flags1', ['use_actor_value'])),
+        }, decider=FlagDecider('flags1', ['misc_actor_value'])),
     )
 
 #------------------------------------------------------------------------------
