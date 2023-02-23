@@ -38,7 +38,7 @@ from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId, NotPlayableFlag, gen_coed_key
+from .utils_constants import FID, FormId, gen_coed_key
 from .. import bolt, exception
 from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
@@ -671,8 +671,8 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass # not_playable exists since FO3
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2) # since FO3
 
     class _eyes_flags(Flags):
         playable: bool

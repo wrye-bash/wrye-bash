@@ -55,8 +55,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
-    MelWeight, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
-    PerkEpdfDecider, VWDFlag, gen_color, gen_color3, lens_distributor, \
+    MelWeight, PartialLoadDecider, \
+    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
     MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam
@@ -302,6 +302,7 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
 
     class HeaderFlags(AMreHeader.HeaderFlags):
+        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 
@@ -343,20 +344,25 @@ class MreActi(AMreWithKeywords):
     """Activator."""
     rec_sig = b'ACTI'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         never_fades: bool = flag(2)
         non_occluder: bool = flag(4)
+        heading_marker: bool = flag(7)
         must_update_anims: bool = flag(8)
         hidden_from_local_map: bool = flag(9)
-        headtracking_marker: bool = flag(10)
-        use_as_platform: bool = flag(11)
+        headtrack_marker: bool = flag(10)
+        used_as_platform: bool = flag(11)
         pack_in_use_only: bool = flag(13)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         dangerous: bool = flag(17)
         ignore_object_interaction: bool = flag(20)
         is_marker: bool = flag(23)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         child_can_use: bool = flag(29)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -429,6 +435,9 @@ class MreAlch(AMreWithKeywords):
     """Ingestible."""
     rec_sig = b'ALCH'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        medicine: bool = flag(29)
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -469,8 +478,8 @@ class MreAmmo(AMreWithKeywords):
     """Ammunition."""
     rec_sig = b'AMMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _ammo_flags(Flags):
         notNormalWeapon: bool
@@ -527,7 +536,7 @@ class MreArma(MelRecord):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         no_underarmor_scaling: bool = flag(6)
-        hires_first_person_only: bool = flag(30)
+        hi_res_1st_person_only: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -549,7 +558,8 @@ class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
         shield: bool = flag(6)
 
     melSet = MelSet(
@@ -799,15 +809,15 @@ class MreCell(AMreCell): ##: Implement once regular records are done
     interior_temp_extra = [b'NAVM']
 
     class HeaderFlags(AMreCell.HeaderFlags):
-        no_pre_vis: bool = flag(7)
+        no_previs: bool = flag(7)
 
 #------------------------------------------------------------------------------
 class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -822,6 +832,9 @@ class MreClas(MelRecord):
 class MreClfm(MelRecord):
     """Color."""
     rec_sig = b'CLFM'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _clfm_flags(Flags):
         playable: bool
@@ -899,9 +912,13 @@ class MreCont(AMreWithItems, AMreWithKeywords):
     """Container."""
     rec_sig = b'CONT'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, AMreWithItems.HeaderFlags):
-        random_animation_start: bool = flag(16)
+    class HeaderFlags(AMreWithItems.HeaderFlags):
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -1047,9 +1064,10 @@ class MreDoor(AMreWithKeywords):
     """Door."""
     rec_sig = b'DOOR'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         non_occluder: bool = flag(4)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
 
     melSet = MelSet(
@@ -1390,10 +1408,11 @@ class MreFurn(AMreWithItems, AMreWithKeywords):
     """Furniture."""
     rec_sig = b'FURN'
 
-    class HeaderFlags(VWDFlag, AMreWithItems.HeaderFlags):
+    class HeaderFlags(AMreWithItems.HeaderFlags):
         has_container: bool = flag(2)
         is_perch: bool = flag(7)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
         power_armor: bool = flag(25)
         must_exit_to_talk: bool = flag(28)
@@ -1518,8 +1537,8 @@ class MreHdpt(MelRecord):
     """Head Part."""
     rec_sig = b'HDPT'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -1770,7 +1789,7 @@ class MreKeym(AMreWithKeywords):
     rec_sig = b'KEYM'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        auto_calc_value: bool = flag(11)
+        calc_value_from_components: bool = flag(11)
         pack_in_use_only: bool = flag(13)
 
     melSet = MelSet(
@@ -1810,6 +1829,9 @@ class MreKywd(MelRecord):
     """Keyword."""
     rec_sig = b'KYWD'
     _has_duplicate_attrs = True # NNAM is an older version of FULL
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        restricted: bool = flag(15)
 
     melSet = MelSet(
         MelEdid(),
@@ -1859,6 +1881,7 @@ class MreLctn(AMreWithKeywords):
     class HeaderFlags(MelRecord.HeaderFlags):
         # mouthful - better name?
         interior_cells_use_ref_for_world_map_player_location: bool = flag(11)
+        partial_form: bool = flag(14)
 
     melSet = MelSet(
         MelLctnShared(),
@@ -1913,7 +1936,7 @@ class MreLigh(AMreWithKeywords):
     rec_sig = b'LIGH'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        random_animation_start: bool = flag(16)
+        random_anim_start: bool = flag(16)
         obstacle: bool = flag(25)
         portal_strict: bool = flag(28)
 
@@ -2144,8 +2167,8 @@ class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _script_flags(Flags):
         run_immediately: bool

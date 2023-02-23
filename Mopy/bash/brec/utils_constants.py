@@ -325,36 +325,6 @@ class AutoFixedString(FixedString):
     _str_encoding = None
 
 # Common flags ----------------------------------------------------------------
-##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
-# sense because it also marks all 32 of its possible flags as known
-class BipedFlags(Flags):
-    """Base Biped flags element. Includes logic for checking if armor/clothing
-    can be marked as playable. Should be subclassed to add the appropriate
-    flags and, if needed, the non-playable flags."""
-    _not_playable_flags: set[str] = set()
-
-    @property
-    def any_body_flag_set(self) -> bool:
-        check_flags = set(type(self)._names) - type(self)._not_playable_flags
-        return any(getattr(self, flg_name) for flg_name in check_flags)
-
-class NavMeshFlags:
-    """Mixin to add the NavMesh related flags to a HeaderFlags class."""
-    # These show up in FO3+
-    navmesh_filter: bool = flag(26)
-    navmesh_bounding_box: bool = flag(27)
-    navmesh_ground: bool = flag(30)
-
-class NotPlayableFlag:
-    """Mixin to add the not_playable flag to a HeaderFlags class."""
-    not_playable: bool = flag(2)
-
-class VWDFlag:
-    """Mixin to add the Visible When Distant (has_distant_lod) flag to a
-    HeaderFlags class."""
-    has_distant_lod: bool = flag(15)    # aka Visible when distant
-
-# MGEF flags ------------------------------------------------------------------
 class AMgefFlags(Flags):
     """Base class for MGEF data flags shared by all games."""
     hostile: bool = flag(0)
@@ -404,6 +374,19 @@ class MgefFlags(AMgefFlags):
     power_affects_duration: bool = flag(22)
     painless: bool = flag(26)
     no_death_dispel: bool = flag(28)
+
+##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
+# sense because it also marks all 32 of its possible flags as known
+class BipedFlags(Flags):
+    """Base Biped flags element. Includes logic for checking if armor/clothing
+    can be marked as playable. Should be subclassed to add the appropriate
+    flags and, if needed, the non-playable flags."""
+    _not_playable_flags: set[str] = set()
+
+    @property
+    def any_body_flag_set(self) -> bool:
+        check_flags = set(type(self)._names) - type(self)._not_playable_flags
+        return any(getattr(self, flg_name) for flg_name in check_flags)
 
 # Sort Keys -------------------------------------------------------------------
 fid_key = attrgetter_cache[u'fid']

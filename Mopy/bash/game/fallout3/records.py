@@ -53,8 +53,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
-    MelXlod, NavMeshFlags, PartialLoadDecider, PerkEpdfDecider, SizeDecider, \
-    SpellFlags, VWDFlag, gen_color, gen_color3, null2, perk_distributor, \
+    MelXlod, PartialLoadDecider, PerkEpdfDecider, SizeDecider, \
+    SpellFlags, gen_color, gen_color3, null2, perk_distributor, \
     perk_effect_key, MelLinkColors, MelMesgButtons, MelMesgSharedFo3, \
     MelMgefData, MelMgefEsce
 from ...exception import ModSizeError
@@ -427,18 +427,21 @@ class MreActi(MelRecord):
     """Activator."""
     rec_sig = b'ACTI'
 
-    class HeaderFlags(NavMeshFlags, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         has_tree_lod: bool = flag(6)
         must_update_anims: bool = flag(8)           # FNV only?
         # NOTE: xEdit FO3 source has "On Local Map", but *hidden* is consistent
         # with all other games with this flag.
         hidden_from_local_map: bool = flag(9)
-        random_animation_start: bool = flag(16)
+        random_anim_start: bool = flag(16)
         dangerous: bool = flag(17)
         ignore_object_interaction: bool = flag(20)  # FNV only?
         is_marker: bool = flag(23)                  # FNV only?
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         child_can_use: bool = flag(29)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -2508,18 +2511,24 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, MelRecord.HeaderFlags):
-        hidden_from_local_map: bool = flag(6)   # DOOR
-        inaccessible: bool = flag(8)            # DOOR
-        doesnt_light_water: bool = flag(8)      # LIGH
-        casts_shadows: bool = flag(9)           # LIGH
-        motion_blur: bool = flag(9)             # MSTT?
+    class HeaderFlags(MelRecord.HeaderFlags):
+        hidden_from_local_map: bool = flag(6)    # DOOR
+        inaccessible: bool = flag(8)             # DOOR
+        doesnt_light_water: bool = flag(8)       # LIGH
+        casts_shadows: bool = flag(9)            # LIGH
+        motion_blur: bool = flag(9)              # MSTT?
         persistent: bool = flag(10)
-        full_lod: bool = flag(16)               # non-LIGH?
-        never_fades: bool = flag(16)            # LIGH
-        doesnt_light_landscape: bool = flag(17) # LIGH
+        has_distant_lod: bool = flag(15)
+        full_lod: bool = flag(16)                # non-LIGH?
+        never_fades: bool = flag(16)             # LIGH
+        doesnt_light_landscape: bool = flag(17)  # LIGH
         no_ai_acquire: bool = flag(25)
-        reflected_by_auto_water: bool = flag(28)# LIGH
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        reflected_by_auto_water: bool = flag(28) # LIGH
+        ##: Track down which record types have navmesh_ground and which have
+        # no_respawn
+        navmesh_ground: bool = flag(30)
         no_respawn: bool = flag(30)
         multi_bound: bool = flag(31)
 
@@ -2825,10 +2834,11 @@ class MreStat(MelRecord):
     """Static."""
     rec_sig = b'STAT'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         has_tree_lod: bool = flag(6)
         addon_lod_object: bool = flag(7)    # FNV only?
         # cannot_save: 14 - runtime only
+        has_distant_lod: bool = flag(15)
         # 17: use_hd_lod_texture
         #     Not in xEdit source, but in old WB comments (not specified which
         #     game).  In Sky it's STAT:use_hd_lod_texture
