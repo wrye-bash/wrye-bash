@@ -1276,6 +1276,19 @@ class MelMODS(MelBase):
             if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
+class MelMovtName(MelString):
+    """Handles the MOVT subrecord MNAM (Name)."""
+    def __init__(self):
+        super().__init__(b'MNAM', 'movt_name'),
+
+#------------------------------------------------------------------------------
+class MelMovtThresholds(MelStruct):
+    """Handles the MOVT subrecord INAM (Anim Change Thresholds)."""
+    def __init__(self):
+        super().__init__(b'INAM', ['3f'], 'threshold_directional',
+            'threshold_movement_speed', 'threshold_rotation_speed')
+
+#------------------------------------------------------------------------------
 class MelNextPerk(MelFid):
     """Handles the PERK subrecord NNAM (Next Perk)."""
     def __init__(self):

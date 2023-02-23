@@ -30,6 +30,7 @@ __author__ = 'Infernio'
 
 import copy
 from itertools import chain
+from typing import Any, Callable
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct
@@ -651,23 +652,33 @@ class FlagDecider(ACommonDecider):
                    for flag_name in self._required_flags)
 
 class FormVersionDecider(ACommonDecider):
-    """Decider that checks if the record's form version against a target form
-    version."""
-    def __init__(self, comp_op, target_form_ver: int):
-        """Creates a new SinceFormVersionDecider with the specified target form
-        version.
+    """Decider that checks a record's form version."""
+    def __init__(self, fv_callable: Callable[[int], Any]):
+        """Creates a new FormVersionDecider with the specified callable.
 
-        :param comp_op: A callable that takes two integers. The first will be
-            the record's form version and the second will be target_form_ver.
-            The return value of this callable will be what's returned by the
-            decider. operator.ge is an example of a valid callable here.
-        :param target_form_ver: The form version in which the change was
-            introduced."""
-        self._comp_op = comp_op
-        self._target_form_ver = target_form_ver
+        :param fv_callable: A callable taking an int, which will be the
+            record's form version. The return value of this callable will be
+            returned by the decider."""
+        self._fv_callable = fv_callable
 
     def _decide_common(self, record):
-        return self._comp_op(record.header.form_version, self._target_form_ver)
+        return self._fv_callable(record.header.form_version)
+
+class SinceFormVersionDecider(FormVersionDecider):
+    """Decider that compares the record's form version against a target form
+    version."""
+    def __init__(self, comp_op: Callable[[int, int], Any],
+            target_form_ver: int):
+        """Creates a new SinceFormVersionDecider with the specified parameters.
+
+        :param comp_op: A callable that takes two integers, which will be the
+            record's form version and target_form_ver. The return value of this
+            callable will be returned by the decider.
+        :param target_form_ver: The form version in which the change was
+            introduced."""
+        def _callable(rec_form_ver: int):
+            return comp_op(rec_form_ver, target_form_ver)
+        super().__init__(_callable)
 
 class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the

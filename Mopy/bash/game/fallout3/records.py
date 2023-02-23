@@ -1758,13 +1758,19 @@ class MreMstt(MelRecord):
     """Moveable Static."""
     rec_sig = b'MSTT'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        on_local_map: bool = flag(9)
+        quest_item: bool = flag(10)
+        random_anim_start: bool = flag(16)
+        obstacle: bool = flag(25)
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelBase(b'DATA','data_p'),
+        MelUInt8(b'DATA', 'unknown_data'),
         MelSound(),
     )
 

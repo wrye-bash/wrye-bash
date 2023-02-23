@@ -55,11 +55,11 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
-    MelWeight, PartialLoadDecider, \
+    MelWeight, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
     PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
     MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
-    MelMgefSounds, AMreMgefTes5, MelMgefDnam
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -284,6 +284,57 @@ class MelSoundCrafting(MelFid):
     """Handles the common CUSD (Sound - Crafting) subrecord."""
     def __init__(self):
         super().__init__(b'CUSD', 'sound_crafting')
+
+#------------------------------------------------------------------------------
+class MelSped(MelUnion):
+    """Handles the common SPED (Movement Data) subrecord."""
+    def __init__(self):
+        super().__init__({
+            0: MelStruct(b'SPED', ['10f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run'),
+            1: MelStruct(b'SPED', ['11f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run', 'unknown1'),
+            2: MelStruct(b'SPED', ['17f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run', 'roll_walk', 'roll_run', 'yaw_walk',
+                'yaw_run', 'unknown1', 'unknown2', 'unknown3'),
+            3: MelStruct(b'SPED', ['28f'], 'speed_left_stand',
+                'speed_left_walk', 'speed_left_run', 'speed_left_sprint',
+                'speed_right_stand', 'speed_right_walk', 'speed_right_run',
+                'speed_right_sprint', 'speed_forward_stand',
+                'speed_forward_walk', 'speed_forward_run',
+                'speed_forward_sprint', 'speed_back_stand',
+                'speed_back_walk', 'speed_back_run', 'speed_back_sprint',
+                'pitch_stand', 'pitch_walk', 'pitch_run', 'pitch_sprint',
+                'roll_stand', 'roll_walk', 'roll_run', 'roll_sprint',
+                'yaw_stand', 'yaw_walk', 'yaw_run', 'yaw_sprint'),
+        }, decider=FormVersionDecider(self._decide_record_level))
+
+    @staticmethod
+    def _decide_record_level(rec_form_ver: int):
+        """Places the record into one of four categories based on its form
+        version v: 0 iff 0 <= v < 28, 1 iff 28 <= v < 60, 2 iff 60 <= v < 104
+        and 3 iff 104 <= v."""
+        if rec_form_ver < 28: return 0
+        elif rec_form_ver < 60: return 1
+        elif rec_form_ver < 104: return 2
+        else: return 3
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.header.form_version < 60:
+            # Before form version 60, pitch/roll/yaw used two shared floats
+            pry_walk = record.pitch_walk
+            pry_run = record.pitch_run
+            record.roll_walk = pry_walk
+            record.roll_run = pry_run
+            record.yaw_walk = pry_walk
+            record.yaw_run = pry_run
 
 #------------------------------------------------------------------------------
 class MelVmad(AMelVmad):
@@ -1043,7 +1094,7 @@ class MreDmgt(MelRecord):
                     (FID, 'dt_spell')),
             ),
             False: MelSimpleArray('damage_types', MelUInt32(b'DNAM')),
-        }, decider=FormVersionDecider(operator.ge, 78)),
+        }, decider=SinceFormVersionDecider(operator.ge, 78)),
     )
 
 #------------------------------------------------------------------------------
@@ -1214,7 +1265,7 @@ class MreEfsh(MelRecord):
                 'psa_loop_start_variation', 'psa_frame_count',
                 'psa_frame_count_variation', (_efsh_flags, 'efsh_flags'),
                 'fill_texture_scale_u', 'fill_texture_scale_v', 'unused9'),
-        }, decider=FormVersionDecider(operator.ge, 106)),
+        }, decider=SinceFormVersionDecider(operator.ge, 106)),
         MelModel(),
     )
 
@@ -2160,6 +2211,81 @@ class MreMgef(AMreMgefTes5):
         MelMgefSounds(),
         MelMgefDnam(),
         MelConditionList(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMisc(MelRecord):
+    """Misc. Item."""
+    rec_sig = b'MISC'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        calc_from_components: bool = flag(11)
+        pack_in_use_only: bool = flag(13)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelFid(b'FIMD', 'featured_item_message'),
+        MelValueWeight(),
+        MelArray('misc_components',
+            MelStruct(b'CVPA', ['2I'], (FID, 'component_fid'),
+                'component_count'),
+        ),
+        MelSimpleArray('component_display_indices', MelUInt8(b'CDIX')),
+    )
+
+#------------------------------------------------------------------------------
+class MreMovt(MelRecord):
+    """Movement Type."""
+    rec_sig = b'MOVT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelMovtName(),
+        MelSped(),
+        MelMovtThresholds(), # unused, leftover
+        MelFloat(b'JNAM', 'float_height'),
+        MelFloat(b'LNAM', 'flight_angle_gain'),
+    )
+
+#------------------------------------------------------------------------------
+class MreMstt(MelRecord):
+    """Moveable Static."""
+    rec_sig = b'MSTT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        must_update_anims: bool = flag(8)
+        hidden_from_local_map: bool = flag(9)
+        used_as_platform: bool = flag(11)
+        pack_in_use_only: bool = flag(13)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
+        has_currents: bool = flag(19)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelProperties(),
+        MelUInt8(b'DATA', 'on_local_map'), # really a bool
+        MelSound(),
     )
 
 #------------------------------------------------------------------------------

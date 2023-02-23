@@ -62,7 +62,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
     MelUInt32, MelUInt32Flags, MelUnion, MelUnloadEvent, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
-    MelXlod, PartialLoadDecider, \
+    MelXlod, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
     PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, \
     null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
     MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
@@ -2015,13 +2015,13 @@ class MreMovt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString(b'MNAM','mnam_n'),
-        MelTruncatedStruct(b'SPED', [u'11f'], 'leftWalk', 'leftRun', 'rightWalk',
-                           'rightRun', 'forwardWalk', 'forwardRun', 'backWalk',
-                           'backRun', 'rotateInPlaceWalk', 'rotateInPlaceRun',
-                           'rotateWhileMovingRun', old_versions={'10f'}),
-        MelStruct(b'INAM', ['3f'], 'directional', 'movementSpeed',
-                  'rotationSpeed'),
+        MelMovtName(),
+        MelTruncatedStruct(b'SPED', ['11f'], 'speed_left_walk',
+            'speed_left_run', 'speed_right_walk', 'speed_right_run',
+            'speed_forward_walk', 'speed_forward_run', 'speed_back_walk',
+            'speed_back_run', 'rotate_in_place_walk', 'rotate_in_place_run',
+            'rotate_while_moving_run', old_versions={'10f'}),
+        MelMovtThresholds(),
     )
 
 #------------------------------------------------------------------------------
@@ -2040,17 +2040,13 @@ class MreMstt(MelRecord):
         navmesh_bounding_box: bool = flag(27)
         navmesh_ground: bool = flag(30)
 
-    class MsttTypeFlags(Flags):
-        onLocalMap: bool
-        unknown2: bool
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelUInt8Flags(b'DATA', u'flags', MsttTypeFlags),
+        MelUInt8(b'DATA', 'on_local_map'), # really a bool
         MelSound(),
     )
 
