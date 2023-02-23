@@ -161,6 +161,20 @@ class AMreFlst(MelRecord):
         self.setChanged()
 
 #------------------------------------------------------------------------------
+class AMreGlob(MelRecord):
+    """Base class for globals."""
+    rec_sig = b'GLOB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFixedString(b'FNAM', 'global_format', 1),
+        # Rather stupidly all values, despite their designation (short, long,
+        # float, bool (FO4)), are stored as floats - which means that very
+        # large integers lose precision
+        MelFloat(b'FLTV', 'global_value'),
+    )
+
+#------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
@@ -707,23 +721,6 @@ class MreFsts(MelRecord):
         MelStruct(b'XCNT', ['5I'], 'count_walking', 'count_running',
             'count_sprinting', 'count_sneaking', 'count_swimming'),
         MelSimpleArray('footstep_sets', MelFid(b'DATA')),
-    )
-
-#------------------------------------------------------------------------------
-class MreGlob(MelRecord):
-    """Global."""
-    rec_sig = b'GLOB'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        constant: bool = flag(6)    # since FO3? definitely FO4
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFixedString(b'FNAM', 'global_format', 1),
-        # Rather stupidly all values, despite their designation (short, long,
-        # float, bool (FO4)), are stored as floats - which means that very
-        # large integers lose precision
-        MelFloat(b'FLTV', 'global_value'),
     )
 
 #------------------------------------------------------------------------------

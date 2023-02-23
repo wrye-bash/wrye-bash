@@ -47,7 +47,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, MelLscrRotation, \
     MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
-    MelObjectTemplate, MelPartialCounter, MelPerkData, \
+    MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, \
@@ -1543,6 +1543,12 @@ class MreGdry(MelRecord):
             'air_color_scale', 'back_color_scale', 'forward_color_scale',
             'back_phase', *gen_color3('air_color'), 'forward_phase'),
     )
+
+#------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
+    class HeaderFlags(AMreGlob.HeaderFlags):
+        constant: bool = flag(6)
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):

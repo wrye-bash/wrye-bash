@@ -53,7 +53,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelMatoPropertyData, MelMattShared, MelMdob, MelMODS, MelNextPerk, \
     MelNodeIndex, MelNull, MelOwnership, MelPartialCounter, \
     MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, \
-    MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, \
+    MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, AMreGlob, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
     MelSimpleArray, MelSInt8, MelSInt16, MelSInt32, MelSkipInterior, \
@@ -1482,6 +1482,12 @@ class MreGras(MelRecord):
         MelModel(),
         MelGrasData(),
     )
+
+#------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
+    class HeaderFlags(AMreGlob.HeaderFlags):
+        constant: bool = flag(6)
 
 #------------------------------------------------------------------------------
 class MreHazd(MelRecord):

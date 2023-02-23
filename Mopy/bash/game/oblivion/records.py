@@ -31,7 +31,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     AttrValDecider, BipedFlags, FlagDecider, MelActionFlags, MelActorSounds, \
     MelAnimations, MelArray, MelBase, MelBaseR, MelBodyParts, MelBookText, \
     MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, MelCombatStyle, \
-    MelConditionsTes4, MelContData, MelDeathItem, MelDescription, \
+    MelConditionsTes4, MelContData, MelDeathItem, MelDescription, AMreGlob, \
     MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
     MelFids, MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, \
@@ -1147,6 +1147,10 @@ class MreGras(MelRecord):
         MelModel(),
         MelGrasData(),
     )
+
+#------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
 
 #------------------------------------------------------------------------------
 class MreHair(MelRecord):
