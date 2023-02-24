@@ -43,7 +43,8 @@ from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
     ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
     TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
-    AutoSize, get_shift_down, AskDialogue, ContinueDialog, TextEntry, NumEntry
+    AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
+    askWarning, showOk, showError, showWarning, showInfo
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -249,56 +250,6 @@ def askContinue(parent, message, continueKey=None, title=_('Warning'),
         _settings[continueKey] = 1
     return result if continueKey else ( # 2: checked 1: OK
         (result + bool(check)) if result else False)
-
-#------------------------------------------------------------------------------
-def askText(parent, message, title='', default_txt='', *, strip=True):
-    """Show a text entry dialog and returns result or None if canceled."""
-    return TextEntry.display_dialog(parent, message, title, default_txt,
-                                    strip=strip)
-
-#------------------------------------------------------------------------------
-def askNumber(parent, message, prompt='', title='', *, initial_num=0,
-              min_num=0, max_num=10000):
-    """Show a number entry dialog and returns result or None if canceled."""
-    return NumEntry.display_dialog(parent, message, prompt, title, initial_num,
-                                   min_num, max_num)
-
-# Message Dialogs -------------------------------------------------------------
-def askOk(parent, message, title=''):
-    """Shows a modal confirmation message."""
-    return AskDialogue.display_dialog(parent, message, title)
-
-def askYes(parent, message, title='', *, default_is_yes=True,
-           question_icon=False, vista_buttons=None, expander=None):
-    """Shows a modal warning or question message."""
-    return AskDialogue.display_dialog(parent, message, title, yes_no=True,
-        default_is_yes=default_is_yes, question_icon=question_icon,
-        vista_buttons=vista_buttons, expander=expander)
-
-def askWarning(parent, message, title=_('Warning')):
-    """Shows a modal warning message."""
-    return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
-
-def showOk(parent, message, title=''):
-    """Shows a modal confirmation message."""
-    if isinstance(title, Path): title = title.s
-    return AskDialogue.display_dialog(parent, message, title, no_cancel=True)
-
-def showError(parent, message, title=_('Error')):
-    """Shows a modal error message."""
-    if isinstance(title, Path): title = title.s
-    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
-                                      error_ico=True)
-
-def showWarning(parent, message, title=_('Warning'), do_center=False):
-    """Shows a modal warning message."""
-    return AskDialogue.display_dialog(parent, message, title, warn_ico=True,
-                                      no_cancel=True, do_center=do_center)
-
-def showInfo(parent, message, title=_('Information')):
-    """Shows a modal information message."""
-    return AskDialogue.display_dialog(parent, message, title, info_ico=True,
-                                      no_cancel=True)
 
 #------------------------------------------------------------------------------
 class _Log(object):
@@ -526,7 +477,7 @@ class ListEditor(DialogWindow):
         if not newName or newName == curName:
             return
         elif newName in self._list_items:
-            showError(self,_(u'Name must be unique.'))
+            showError(self, _('Name must be unique.'))
         elif self._listEditorData.rename(curName,newName):
             self._list_items[itemDex] = newName
             self.listBox.lb_set_label_at_index(itemDex, newName)

@@ -31,7 +31,7 @@ from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
 from ..bolt import FName, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
-    get_shift_down
+    get_shift_down, showError
 from ..parsers import CsvParser
 
 __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
@@ -62,8 +62,8 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
         """Renames oldName to newName."""
         #--Right length?
         if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         #--Rename
         self.loadListDict[newName] = self.loadListDict[oldName]

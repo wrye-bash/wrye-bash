@@ -31,7 +31,8 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
 from ..env import get_game_version_fallback, getJava
-from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
+from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
+    showError
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
@@ -177,30 +178,24 @@ class _App_Button(StatusBar_Button):
                 self.gButton.tooltip = self.obseTip
         return self.gButton
 
-    def ShowError(self,error):
-        balt.showError(Link.Frame,
-            (f'{error}\n\n' +
-             _('Used Path: %(launched_exe_path)s') % {
-                 'launched_exe_path': self.exePath} + '\n' +
-             _('Used Arguments: %(launched_exe_args)s') % {
-                 'launched_exe_args': self.exeArgs}),
-            title=_("Could Not Launch '%(launched_exe_name)s'") % {
+    def ShowError(self, error=None, *, msg=None):
+        if error is not None:
+            msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
+                'launched_exe_path': self.exePath} + '\n' + _(
+                'Used Arguments: %(launched_exe_args)s') % {
+                       'launched_exe_args': self.exeArgs})
+        showError(Link.Frame, msg,
+                  title=_("Could Not Launch '%(launched_exe_name)s'") % {
                 'launched_exe_name': self.exePath.stail})
 
     def _showUnicodeError(self):
-        balt.showError(Link.Frame, _('Execution failed because one or more of '
-                                     'the command line arguments failed to '
-                                     'encode.'),
-            title=_("Could Not Launch '%(launched_exe_name)s'") % {
-                'launched_exe_name': self.exePath.stail})
+        self.ShowError(msg=_('Execution failed because one or more of the '
+                             'command line arguments failed to encode.'))
 
     def Execute(self):
         if not self.IsPresent():
-            balt.showError(Link.Frame,
-                _('Application missing: %(launched_exe_path)s') % {
-                    'launched_exe_path': self.exePath},
-                title=_("Could Not Launch '%(launched_exe_name)s'") % {
-                    'launched_exe_name': self.exePath.stail})
+            msg = _('Application missing: %(launched_exe_path)s')
+            self.ShowError(msg=msg % {'launched_exe_path': self.exePath})
             return
         self._app_button_execute()
 

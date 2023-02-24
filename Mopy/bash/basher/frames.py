@@ -34,7 +34,7 @@ from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
     SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
     VerticalLine, VLayout, WindowFrame, bell, copy_text_to_clipboard, \
-    web_viewer_available
+    web_viewer_available, showWarning
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -171,8 +171,8 @@ class DocBrowser(WindowFrame):
         if not doc_path:
             return bell()
         if not doc_path.is_file():
-            balt.showWarning(self, _('The assigned document is not '
-                                     'present:') + f'\n  {doc_path}')
+            showWarning(self, _('The assigned document is not present:') +
+                        f'\n  {doc_path}')
         else:
             doc_path.start()
 

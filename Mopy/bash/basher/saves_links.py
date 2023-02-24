@@ -37,7 +37,8 @@ from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
-from ..gui import BusyCursor, FileSave, ImageWrapper
+from ..gui import BusyCursor, FileSave, ImageWrapper, askText, showError, \
+    askYes, showOk
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
@@ -89,7 +90,7 @@ class Saves_ProfilesData(balt.ListEditorData):
 
     def add(self):
         """Adds a new profile."""
-        newName = balt.askText(self.parent, _(u'Enter profile name:'))
+        newName = askText(self.parent, _('Enter profile name:'))
         if not self._validate_prof_name(newName): return
         self.baseSaves.join(newName).makedirs()
         newSaves = _win_join(newName)
@@ -115,24 +116,22 @@ class Saves_ProfilesData(balt.ListEditorData):
         if not newName: return False
         lowerNames = {save_dir.lower() for save_dir in self.getItemList()}
         if newName.lower() in lowerNames:
-            balt.showError(self.parent, _('Name must be unique.'))
+            showError(self.parent, _('Name must be unique.'))
             return False
         if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                           _('Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         try:
             newName.encode('cp1252')
         except UnicodeEncodeError:
-            balt.showError(self.parent,
-                _('Name must be encodable in Windows Codepage 1252 (Western '
-                  'European), due to limitations of %(gameIni)s.') % {
-                               'gameIni': bush.game.Ini.dropdown_inis[0]})
+            showError(self.parent, _('Name must be encodable in Windows '
+                'Codepage 1252 (Western European), due to limitations of '
+                '%(gameIni)s.') % {'gameIni': bush.game.Ini.dropdown_inis[0]})
             return False
         if inv := Path.has_invalid_chars(newName):
-            balt.showError(self.parent,
-                           _('Name must not contain invalid chars for a '
-                             'windows path like %(inv)s') % {'inv': inv})
+            showError(self.parent, _('Name must not contain invalid chars for '
+                'a windows path like %(inv)s') % {'inv': inv})
             return False
         return True
 
@@ -141,15 +140,16 @@ class Saves_ProfilesData(balt.ListEditorData):
         profileSaves = _win_join(profile)
         #--Can't remove active or Default directory.
         if bosh.saveInfos.localSave == profileSaves:
-            balt.showError(self.parent,_(u'Active profile cannot be removed.'))
+            showError(self.parent, _('Active profile cannot be removed.'))
             return False
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
         files = [save_file for save_file in profileDir.ilist() if
                  bosh.SaveInfos.rightFileType(save_file)]
         if files:
-            message = _(u'Delete profile %s and the %d save files it contains?') % (profile,len(files))
-            if not balt.askYes(self.parent,message,_(u'Delete Profile')):
+            message = _('Delete profile %s and the %d save files it '
+                        'contains?') % (profile, len(files))
+            if not askYes(self.parent, message, _('Delete Profile')):
                 return False
         #--Remove directory
         if GPath(bush.game.my_games_name).join(u'Saves').s not in profileDir.s:
@@ -473,10 +473,10 @@ class Save_EditCreatedData(balt.ListEditorData):
         if len(newName) == 0:
             return False
         elif len(newName) > 128:
-            balt.showError(self.parent,_(u'Name is too long.'))
+            showError(self.parent, _('Name is too long.'))
             return False
         elif newName in self.name_nameRecords:
-            balt.showError(self.parent,_(u'Name is already used.'))
+            showError(self.parent, _('Name is already used.'))
             return False
         #--Rename
         self.name_nameRecords[newName] = self.name_nameRecords.pop(oldName)
@@ -486,7 +486,7 @@ class Save_EditCreatedData(balt.ListEditorData):
     def save(self):
         """Handles save button."""
         if not self._changed:
-            balt.showOk(self.parent,_(u'No changes made.'))
+            showOk(self.parent, _('No changes made.'))
         else:
             self._changed = False #--Allows graceful effort if close fails.
             count = 0
@@ -499,8 +499,8 @@ class Save_EditCreatedData(balt.ListEditorData):
                         record.getSize()
                     count += 1
             self.saveFile.safeSave()
-            balt.showOk(self.parent, _(u'Names modified: %d.') % count,
-                        self.saveFile.fileInfo.fn_key)
+            showOk(self.parent, _('Names modified: %d.') % count,
+                   self.saveFile.fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
 class Save_EditCreated(OneItemLink):

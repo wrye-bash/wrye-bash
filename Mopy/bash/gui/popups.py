@@ -43,7 +43,7 @@ from .text_components import Label, SearchBar, TextAlignment, TextField, \
     WrappingLabel
 from .top_level_windows import DialogWindow, _TopLevelWin
 ##: Remove GPath, it's for file dialogs
-from ..bolt import GPath, dict_sort
+from ..bolt import GPath, dict_sort, Path
 from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
     GOOD_EXITS, BTN_YES, BTN_NO
 from ..exception import ArgumentError
@@ -726,3 +726,48 @@ class NumEntry(_EntryDialog):
                  min_num=0, max_num=10000):
         super().__init__(parent, message, prompt, title, initial_num, min_num,
                          max_num)
+
+def askText(parent, message, title='', default_txt='', *, strip=True):
+    """Show a text entry dialog and returns result or None if canceled."""
+    return TextEntry.display_dialog(parent, message, title, default_txt,
+                                    strip=strip)
+
+def askNumber(parent, message, prompt='', title='', *, initial_num=0,
+              min_num=0, max_num=10000):
+    """Show a number entry dialog and returns result or None if canceled."""
+    return NumEntry.display_dialog(parent, message, prompt, title, initial_num,
+                                   min_num, max_num)
+
+# Message Dialogs -------------------------------------------------------------
+def askYes(parent, message, title='', *, default_is_yes=True,
+           question_icon=False, vista_buttons=None, expander=None):
+    """Shows a modal warning or question message."""
+    return AskDialogue.display_dialog(parent, message, title, yes_no=True,
+        default_is_yes=default_is_yes, question_icon=question_icon,
+        vista_buttons=vista_buttons, expander=expander)
+
+def askWarning(parent, message, title=_('Warning')):
+    """Shows a modal warning message."""
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
+
+def showOk(parent, message, title=''):
+    """Shows a modal confirmation message."""
+    if isinstance(title, Path): title = title.s
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+                                      info_ico=True)
+
+def showError(parent, message, title=_('Error')):
+    """Shows a modal error message."""
+    if isinstance(title, Path): title = title.s
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+                                      error_ico=True)
+
+def showWarning(parent, message, title=_('Warning'), do_center=False):
+    """Shows a modal warning message."""
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True,
+                                      no_cancel=True, do_center=do_center)
+
+def showInfo(parent, message, title=_('Information')):
+    """Shows a modal information message."""
+    return AskDialogue.display_dialog(parent, message, title, info_ico=True,
+                                      no_cancel=True)

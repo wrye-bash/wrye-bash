@@ -32,7 +32,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
     TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
-    MLEList, DocumentViewer, RadioButton
+    MLEList, DocumentViewer, RadioButton, showOk, showError
 from ..update_checker import LatestVersion
 
 class ImportFaceDialog(DialogWindow):
@@ -124,7 +124,7 @@ class ImportFaceDialog(DialogWindow):
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
                                         pc_flags)
-        balt.showOk(self, _(u'Face imported.'), self.fileInfo.fn_key)
+        showOk(self, _('Face imported.'), self.fileInfo.fn_key)
         self.accept_modal()
 
 #------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ class CreateNewProject(DialogWindow):
         # Destination project directory in installers dir
         projectDir = bass.dirs[u'installers'].join(projectName)
         if projectDir.exists():
-            balt.showError(self, _(
+            showError(self, _(
                 u'There is already a project with that name!') + u'\n' + _(
                 u'Pick a different name for the project and try again.'))
             return
@@ -425,7 +425,7 @@ class CreateNewPlugin(DialogWindow):
         pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
         newName, root = ModInfo.validate_filename_str(pl_name)
         if root is None:
-            balt.showError(self, newName)
+            showError(self, newName)
             self._plugin_name.set_focus()
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open

@@ -27,13 +27,14 @@ from collections import defaultdict
 from itertools import chain
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
-from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from .. import bass, bolt, bosh, bush, load_order
 from ..balt import CheckLink, Links, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
-    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout
+    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout, \
+    askText, showError, askNumber
 from ..patcher import patches_set
 from ..patcher.base import APatcher, MultiTweakItem
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
@@ -769,9 +770,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     'Note: A floating point number is expected here.'))
                 msg = f'{msg}{key_display}'
                 while new is None: # keep going until user entered valid float
-                    new = balt.askText(self.gConfigPanel, msg,
-                        title=tweak.tweak_name + _(u' - Custom Tweak Value'),
-                        default_txt=str(tweak.choiceValues[index][i]))
+                    new = askText(self.gConfigPanel, msg,
+                           title=tweak.tweak_name + _(' - Custom Tweak Value'),
+                           default_txt=str(tweak.choiceValues[index][i]))
                     if new is None: #user hit cancel
                         return
                     try:
@@ -781,14 +782,13 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     except ValueError:
                         ermsg = _("'%s' is not a valid floating point number."
                                   ) % new
-                        balt.showError(self.gConfigPanel, ermsg,
-                                       title=tweak.tweak_name + _(u' - Error'))
+                        showError(self.gConfigPanel, ermsg,
+                                  title=tweak.tweak_name + _(' - Error'))
                         new = None # invalid float, try again
             elif isinstance(v, int):
                 msg = _('Enter the desired custom tweak value.') + key_display
-                new = balt.askNumber(
-                    self.gConfigPanel, msg, prompt=_('Value'),
-                    title=tweak.tweak_name + _(u' - Custom Tweak Value'),
+                new = askNumber(self.gConfigPanel, msg, prompt=_('Value'),
+                    title=tweak.tweak_name + _(' - Custom Tweak Value'),
                     initial_num=tweak.choiceValues[index][i], min_num=-10000,
                     max_num=10000)
                 if new is None: #user hit cancel
@@ -796,9 +796,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 values.append(new)
             elif isinstance(v, str):
                 msg = _(u'Enter the desired custom tweak text.') + key_display
-                new = balt.askText(
-                    self.gConfigPanel, msg,
-                    title=tweak.tweak_name + _(u' - Custom Tweak Text'),
+                new = askText(self.gConfigPanel, msg,
+                    title=tweak.tweak_name + _(' - Custom Tweak Text'),
                     default_txt=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
@@ -816,10 +815,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.TweakOnListCheck() # fired so this line is needed (?)
         else:
             # The tweak doesn't like the values the user chose, let them know
-            error_header = tweak.validation_error_header(values)
-            balt.showError(self.gConfigPanel,
-                           error_header + '\n\n' + validation_error,
-                           title=_('%s - Error') % tweak.tweak_name)
+            error_header = tweak.validation_error_header(values) + '\n\n'
+            showError(self.gConfigPanel, error_header + validation_error,
+                      title=_('%s - Error') % tweak.tweak_name)
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all

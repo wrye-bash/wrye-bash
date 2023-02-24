@@ -81,9 +81,9 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         msg = _('Wrye Bash will monitor your data folder for changes when '
                 'installing a mod via an external application or manual '
                 'install.  This will require two refreshes of the '
-                '%(data_folder)s folder and may take some time.') % {
+                '%(data_folder)s folder and may take some time. Continue?') % {
             'data_folder': bush.game.mods_dir}
-        if not balt.askOk(self.window, msg, _('External Installation')):
+        if not self._askYes(msg, _('External Installation')):
             return
         # Refresh Data
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)

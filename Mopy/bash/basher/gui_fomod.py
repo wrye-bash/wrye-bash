@@ -33,7 +33,7 @@ from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
     PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
     TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
-    copy_text_to_clipboard
+    copy_text_to_clipboard, showWarning
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -180,8 +180,8 @@ class InstallerFomod(WizardDialog):
             fm_warning = _('This installer cannot start due to the following '
                            'unmet conditions:') + '\n' + '\n'.join(
                 f' - {l}' for l in str(e).splitlines())
-            balt.showWarning(self, fm_warning,
-                             title=_(u'Cannot Run Installer'), do_center=True)
+            showWarning(self, fm_warning, title=_('Cannot Run Installer'),
+                        do_center=True)
             self._cancel_wizard()
         else:
             self._run_wizard()
@@ -391,14 +391,13 @@ class PageSelect(PageInstaller):
         # Adjust the warning based on whether the problem is due to this option
         # or another one in the same group
         if block_option.option_type is OptionType.NOT_USABLE:
-            balt.showWarning(self, _(u'This option cannot be enabled.'))
+            showWarning(self, _('This option cannot be enabled.'))
         elif isinstance(block_checkable, CheckBox):
-            balt.showWarning(self, _(u'This option is required and cannot be '
-                                     u'disabled.'))
+            showWarning(self,
+                        _('This option is required and cannot be disabled.'))
         else: # RadioButton
-            balt.showWarning(self, _(u'One of the options in this group is '
-                                     u'required and cannot be unselected by '
-                                     u'choosing a different option.'))
+            showWarning(self, _('One of the options in this group is required '
+                'and cannot be unselected by choosing a different option.'))
 
     def _handle_context_menu(self, checkable):
         """Shows the right click menu with mass (de)select options."""
@@ -435,7 +434,7 @@ class PageSelect(PageInstaller):
     def show_fomod_error(self, fm_error):
         fm_error += u'\n' + _(u'Please ensure the FOMOD files are correct and '
                               u'contact the Wrye Bash Dev Team.')
-        balt.showWarning(self, fm_error, do_center=True)
+        showWarning(self, fm_error, do_center=True)
 
     def on_next(self):
         sel_options = []

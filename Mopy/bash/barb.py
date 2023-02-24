@@ -132,7 +132,7 @@ class BackupSettings(object):
         if previous_bash_version == 0 or AppVersion == previous_bash_version:
             return False
         # return True if not same app version and user opts to backup settings
-        return balt_.askYes(balt_.Link.Frame, u'\n'.join([
+        return balt_.askYes(balt_.Link.Frame, '\n'.join([
             _('A different version of Wrye Bash was previously installed.'),
             _('Previous Version: %(prev_bash_ver)s') % {
                 'prev_bash_ver': previous_bash_version},

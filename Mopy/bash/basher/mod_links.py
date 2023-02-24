@@ -41,7 +41,8 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
-from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard
+from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard, askText, \
+    showError
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
@@ -301,14 +302,14 @@ class _Mod_LabelsData(balt.ListEditorData):
     def add(self):
         """Adds a new group."""
         #--Name Dialog
-        newName = balt.askText(self.parent, self.addPrompt)
+        newName = askText(self.parent, self.addPrompt)
         if newName is None: return
         if newName in self.mod_labels:
-            balt.showError(self.parent,_(u'Name must be unique.'))
+            showError(self.parent, _('Name must be unique.'))
             return False
         elif len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         self.mod_labels.append(newName)
         self.mod_labels.sort()
@@ -321,8 +322,8 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Renames oldName to newName."""
         #--Right length?
         if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         #--Rename
         self.mod_labels.remove(oldName)

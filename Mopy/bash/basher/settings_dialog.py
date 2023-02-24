@@ -30,7 +30,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import Link, Resources, colors, showOk
+from ..balt import Link, Resources, colors
 from ..bolt import deprint, dict_sort, os_name, readme_url
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -38,7 +38,8 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     HLayout, HorizontalLine, Label, LayoutOptions, ListBox, OkButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
-    VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner
+    VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
+    showOk, askYes, askText, showError, askWarning, showInfo
 from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
 
@@ -126,13 +127,11 @@ class SettingsDialog(DialogWindow):
             leaf_page.on_apply()
         if self._requesting_restart:
             # A restart has been requested, ask the user whether to do it now
-            if balt.askYes(self,
-                    _(u'The following settings require Wrye Bash to be '
-                      u'restarted before they take effect:')
-                    + u'\n\n' + u'\n'.join(
-                        u' - %s' % r for r in sorted(self._requesting_restart))
-                    + u'\n\n' + _(u'Do you want to restart now?'),
-                    title=_(u'Restart Wrye Bash')):
+            m = [_('The following settings require Wrye Bash to be restarted '
+                   'before they take effect:'), '\n'.join(f' - {r}' for r in
+                        sorted(self._requesting_restart)),
+                 _('Do you want to restart now?')]
+            if askYes(self, '\n\n'.join(m), title=_('Restart Wrye Bash')):
                 Link.Frame.Restart(*self._restart_params)
             else:
                 # User denied the restart, don't bother them again
@@ -196,16 +195,15 @@ class _ASettingsPage(ATreeMixin):
         self._mark_changed(self, False)
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
-        new_fstr = balt.askText(self, msg, title=msg_title,
-                                default_txt=chosen_file)
+        new_fstr = askText(self, msg, title=msg_title, default_txt=chosen_file)
         if not new_fstr or new_fstr == chosen_file:
             return False # user canceled or entered identical name
         new_fpath = parent_dir.join(new_fstr)
         old_fpath = parent_dir.join(chosen_file)
         if new_fpath.is_file():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                u'exists. Do you want to replace the file?') % new_fstr,
-                title=_(u'Name Conflict')):
+            fstr = _('The chosen filename (%s) already exists. Do you want '
+                     'to replace the file?') % new_fstr
+            if not askYes(self, fstr, title=_('Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
             env.shellMove({old_fpath: new_fpath}, parent=self)
@@ -359,7 +357,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     out.write(f'{col_key}: {color.to_rgb_tuple()}\n')
         except Exception as e:
             msg = _('An error occurred writing to %s:') % outPath.stail
-            balt.showError(self, msg + f'\n\n{e}')
+            showError(self, msg + f'\n\n{e}')
 
     def OnImport(self):
         inDir = bass.dirs[u'patches']
@@ -398,7 +396,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                         self.changes[color_key] = color
         except Exception as e:
             msg = _('An error occurred reading from %s:') % inPath.stail
-            balt.showError(self, msg + f'\n\n{e}')
+            showError(self, msg + f'\n\n{e}')
         self.UpdateUIButtons()
 
     def OnComboBox(self):
@@ -575,8 +573,8 @@ class LanguagePage(_AScrollablePage):
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
             outFile = dump_translator(outPath, bass.active_locale)
-        balt.showOk(self, _(u'Translation keys written to %s') % outFile,
-                     _(u'Dump Localization: %s') % outPath.stail)
+        showOk(self, _('Translation keys written to %s') % outFile,
+               _('Dump Localization: %s') % outPath.stail)
         # Make the new localization show up in the list
         self._populate_l10n_list()
         # wx unselects here, so disable the context buttons
@@ -587,14 +585,14 @@ class LanguagePage(_AScrollablePage):
         chosen_editor = bass.settings[u'bash.l10n.editor.path']
         # First, verify that the chosen editor is valid
         if not chosen_editor:
-            balt.showError(self, _(u'No localization editor has been chosen. '
-                                   u"Please click on 'Configure Editor' to "
-                                   u'set one up.'), title=_(u'Invalid Editor'))
+            msg = _("No localization editor has been chosen. Please click "
+                    "on 'Configure Editor' to set one up.")
+            showError(self, msg, title=_('Invalid Editor'))
             return
         elif not os.path.isfile(chosen_editor):
-            balt.showError(self, _(u'The chosen editor (%s) does not exist or '
-                                   u'is not a file.') % chosen_editor,
-                title=_(u'Invalid Editor'))
+            msg = _('The chosen editor (%(chosen_editor)s) does not exist or '
+                    'is not a file.') % {'chosen_editor': chosen_editor}
+            showError(self, msg, title=_('Invalid Editor'))
             return
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
@@ -979,9 +977,9 @@ class BackupsPage(_AFixedPage):
     @balt.conversation
     def _restore_backup(self):
         """Restores the currently selected backup."""
-        if not balt.askYes(self, u'\n\n'.join([
-            _(u"Are you sure you want to restore your Bash settings from "
-              u"'%s'?") % self._chosen_backup,
+        if not askYes(self, '\n\n'.join([
+            _("Are you sure you want to restore your Bash settings from '%s'?"
+              ) % self._chosen_backup,
             _(u'This will force a restart of Wrye Bash once your settings are '
               u'restored.')]), _(u'Restore Bash Settings?')):
             return
@@ -997,17 +995,17 @@ class BackupsPage(_AFixedPage):
             error_msg, error_title = restore_.incompatible_backup_error(
                 bush.game.bak_game_name)
             if error_msg:
-                balt.showError(self, error_msg, error_title)
+                showError(self, error_msg, error_title)
                 return
             error_msg, error_title = restore_.incompatible_backup_warn()
-            if error_msg and not balt.askWarning(self, error_msg, error_title):
+            if error_msg and not askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            balt.showInfo(self, u'\n'.join([
-                _(u'Your Bash settings have been successfully extracted.'),
-                _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
-                  u'settings can take effect, Wrye Bash must restart.'), _(
-                u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
+            m = [_('Your Bash settings have been successfully extracted.'), _(
+                'Backup Path: ') + settings_file.s, '', _('Before the '
+                'settings can take effect, Wrye Bash must restart.'),
+                _('Click OK to restart now.')]
+            showInfo(self, '\n'.join(m), _('Bash Settings Extracted'))
             try: # we currently disallow backup and restore on the same boot
                 bass.sys_argv.remove(u'--backup')
             except ValueError:
@@ -1194,10 +1192,10 @@ class ConfirmationsPage(_AFixedPage):
             self._mark_setting_changed(u'internal_keys',
                 ik_checked != bass.settings[u'bash.show_internal_keys'])
         # Make sure we don't throw away changes the user made
-        if self._is_changed(u'confirmed_prompts') and not balt.askYes(self,
-                _(u'Activating this setting will discard all changes you have '
-                  u'made below. Are you sure you want to proceed?'),
-                title=_(u'Warning: Unapplied Changes')):
+        msg = _('Activating this setting will discard all changes you have '
+                'made below. Are you sure you want to proceed?')
+        if self._is_changed('confirmed_prompts') and not askYes(
+                self, msg, title=_('Warning: Unapplied Changes')):
             # User chose to cancel, reset the checkbox for visual consistency
             self._show_keys_checkbox.is_checked = not checked
             mark_internal_keys(not checked)
@@ -1407,10 +1405,9 @@ class GeneralPage(_AScrollablePage):
         if newer_version:
             UpdateNotification.display_dialog(self, newer_version)
         else:
-            balt.showInfo(self,
-                _('You are already using the newest version of Wrye Bash, '
-                  'version %(wb_version)s.') % {'wb_version': bass.AppVersion},
-                title=_('No Newer Version Available'))
+            msg = _('You are already using the newest version of Wrye Bash, '
+                'version %(wb_version)s.') % {'wb_version': bass.AppVersion}
+            showInfo(self, msg, title=_('No Newer Version Available'))
 
     def _on_uac_restart(self, checked):
         self._mark_setting_changed(u'uac_restart', checked)
@@ -1542,7 +1539,7 @@ class TrustedBinariesPage(_AFixedPage):
         if not textPath: return
         msg = _('Merge permissions from file with current dll permissions?')
         msg += '\n' + _("('No' Replaces current permissions instead.)")
-        replace = not balt.askYes(Link.Frame, msg, _('Merge permissions?'))
+        replace = not askYes(Link.Frame, msg, _('Merge permissions?'))
         def parse_path(s):
             """s was generated by a repr - so get rid of the u-prefix if it's
             there, drop the quotes and deal with path separators."""
@@ -1604,15 +1601,15 @@ class TrustedBinariesPage(_AFixedPage):
                 self._binaries_list.left_items = sorted(Dlls[u'goodDlls'])
                 self._binaries_list.right_items = sorted(Dlls[u'badDlls'])
         except UnicodeError:
-            balt.showError(self,
-                _(u'Wrye Bash could not load %s, because it is not saved in '
-                  u'UTF-8 format.  Please resave it in UTF-8 format and try '
-                  u'again.') % textPath)
+            msg = _('Wrye Bash could not load %s, because it is not saved in '
+                    'UTF-8 format.  Please resave it in UTF-8 format and try '
+                    'again.') % textPath
+            showError(self, msg)
         except SyntaxError:
             deprint(f'Error reading {textPath}', traceback=True)
-            balt.showError(self,
-                _(u'Wrye Bash could not load %s, because there was an error '
-                  u'in the format of the file.') % textPath)
+            msg = _('Wrye Bash could not load %s, because there was an error '
+                    'in the format of the file.') % textPath
+            showError(self, msg)
         finally:
             self._check_changed()
 

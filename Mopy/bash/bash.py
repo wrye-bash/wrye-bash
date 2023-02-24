@@ -184,9 +184,9 @@ def assure_single_instance(instance):
     :type instance: wx.SingleInstanceChecker"""
     if instance.IsAnotherRunning():
         bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
-        from . import balt
-        balt.showOk(None, _(u'Only one instance of Wrye Bash can run.'),
-                    title=u'Wrye Bash')
+        from . import gui
+        gui.showOk(None, _('Only one instance of Wrye Bash can run.'),
+                   title='Wrye Bash')
         sys.exit(1)
 
 def exit_cleanup():
@@ -513,8 +513,8 @@ def _main(opts, wx_locale, wxver):
                        _('If you continue, your current settings may be '
                          'overwritten.'),
                        _('Do you want to quit Wrye Bash now?')]
-                if balt.askYes(frame, u'\n'.join(msg),
-                               title=_('Unable to create backup!')):
+                if gui.askYes(frame, '\n'.join(msg),
+                              title=_('Unable to create backup!')):
                     return  # Quit
     frame = bapp.Init() # Link.Frame is set here !
     frame.ensureDisplayed()
@@ -803,8 +803,8 @@ def _rightWxVersion(wxver):
     """Shows a warning if the wrong wxPython version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
     if not wxver.startswith('4.2'):
-        from . import balt
-        return balt.askYes(None, _(
+        from . import gui
+        return gui.askYes(None, _(
             'Warning: you appear to be using a non-supported version of '
             'wxPython (%(curr_wx_ver)s). This will cause problems! It is '
             'highly recommended you use a %(supported_wx_series)s version. Do '
@@ -818,8 +818,8 @@ def _rightPythonVersion():
     called after _import_wx, setup_locale and balt is imported."""
     sysVersion = sys.version_info[:3]
     if sysVersion < (3, 11) or sysVersion >= (4,):
-        from . import balt
-        balt.showError(None, _(
+        from . import gui
+        gui.showError(None, _(
             "Only Python %(min_py_ver)s and newer is supported "
             "(%(curr_py_ver)s detected). If you know what you're doing, "
             "install the Python version of Wrye Bash and edit this warning "

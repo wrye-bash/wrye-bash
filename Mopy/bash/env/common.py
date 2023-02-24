@@ -232,13 +232,12 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
         elif from_path.is_file():
             # Copying a file: check for collisions if the user wants prompts
             if ask_confirm:
-                from .. import balt
+                from ..gui import askYes ##: YAK!
                 if to_path.is_file():
                     msg = _('Overwrite %(destination)s with %(source)s?') % {
                         'destination': os.fspath(to_path),
-                        'source': os.fspath(from_path)
-                    }
-                    if not balt.askYes(parent, msg, _('Overwrite file?')):
+                        'source': os.fspath(from_path)}
+                    if not askYes(parent, msg, _('Overwrite file?')):
                         continue
             # Perform the copy/move
             if move:
@@ -298,14 +297,13 @@ def file_operation(operation: str | FileOperationType,
         # silent: no real effect (no progress dialog in the implementation)
         source_paths = [GPath(abspath(x)) for x in sources_dests]
         if ask_confirm:
-             # TODO(ut): local import, env should be above balt...
-            from .. import balt
+            # TODO(ut): local import, env should be above balt...
+            from ..gui import askYes  ##: YAK!
             message = _('Are you sure you want to permanently delete '
                         'these %(item_cnt)d items?') % {
                 'item_cnt': len(source_paths)}
             message += u'\n\n' + u'\n'.join([f' * {x}' for x in source_paths])
-            if not balt.askYes(parent, message,
-                    _('Delete Multiple Items')):
+            if not askYes(parent, message, _('Delete Multiple Items')):
                 return {}
         # Do deletion
         for to_delete in source_paths:
