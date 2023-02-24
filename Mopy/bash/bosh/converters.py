@@ -66,9 +66,9 @@ class ConvertersData(DataDict):
         convs = set(self.bcfCRC_converter.values())
         refs = set(chain(*self.srcCRC_converters.values()))
         if not ((has_scr := convs & refs) == convs):
-            bolt.deprint(f'converters with no source: {len(convs - has_scr)}')
+            bolt.deprint(f'BCFs with no source: {len(convs - has_scr)}')
         if references_miss := refs - convs:
-            bolt.deprint(f'missing converters for {len(references_miss)}')
+            bolt.deprint(f'missing BCFs for {len(references_miss)}')
             self.__prune_srcCRC(lambda c: c not in convs)
         #Partly reconstruct bcfPath_sizeCrcDate to avoid a full refresh on boot
         self.bcfPath_sizeCrcDate = {co.fullPath: (None, c, None) for c, co in

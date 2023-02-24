@@ -88,12 +88,12 @@ from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
-_env_path = os.environ[u'PATH']
-if sys.prefix not in set(_env_path.split(u';')):
-    os.environ[u'PATH'] = _env_path + u';' + sys.prefix
+_env_path = os.environ['PATH']
+if sys.prefix not in _env_path.split(';'):
+    os.environ['PATH'] = f'{_env_path};{sys.prefix}'
 
 # Settings --------------------------------------------------------------------
-settings = None # type: bolt.Settings | None
+settings: bolt.Settings | None = None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

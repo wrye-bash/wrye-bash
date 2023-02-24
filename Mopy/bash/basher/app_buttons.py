@@ -63,8 +63,8 @@ class StatusBar_Button(ItemLink):
     def sb_button_tip(self): return self._tip
 
     def __init__(self, uid=None, canHide=True, button_tip=u''):
-        """ui: Unique identifier, used for saving the order of status bar icons
-               and whether they are hidden/shown.
+        """uid: Unique identifier, used for saving the order of status bar
+                icons and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
         super(StatusBar_Button, self).__init__()
         self.mainMenu = Links()
@@ -141,7 +141,7 @@ class _App_Button(StatusBar_Button):
     def sb_button_tip(self):
         if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
-            return self._tip + u' ' + self.version
+            return f'{self._tip} {self.version}'
 
     @property
     def obseTip(self):

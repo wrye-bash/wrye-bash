@@ -573,6 +573,11 @@ class Mod_Groups(_Mod_Labels):
                                 _(u'Reset Groups')): return
         self.listEditor.SetItemsTo(list(settingDefaults[u'bash.mods.groups']))
 
+    def SetItemsTo(self, items):
+        if self._listEditorData.setTo(items):
+            self._list_items = self._listEditorData.getItemList()
+            self.listBox.lb_set_items(self._list_items)
+
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
     """Add mod rating links."""

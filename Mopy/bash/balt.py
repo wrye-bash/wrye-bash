@@ -58,16 +58,16 @@ class Resources(object):
 
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
-    red_bundle = ImageBundle()
-    red_bundle.Add(bass.dirs['images'].join('bash_icons_red.ico'))
-    Resources.bashRed = red_bundle.GetIconBundle()
-    blue_bundle = ImageBundle()
-    blue_bundle.Add(bass.dirs['images'].join('bash_icons_blue.ico'))
-    Resources.bashBlue = blue_bundle.GetIconBundle()
+    def _get_bundle(img_path):
+        bundle = wx.IconBundle()
+        bundle.AddIcon(bass.dirs['images'].join(img_path).s,
+                       ImageWrapper.img_types['.ico'])
+        return bundle
+    Resources.bashRed = _get_bundle('bash_icons_red.ico')
+    Resources.bashBlue = _get_bundle('bash_icons_blue.ico')
 
 # Settings --------------------------------------------------------------------
-__unset = bolt.Settings(dictFile=None) # type information
-_settings = __unset # must be bound to bosh.settings - smelly, see #174
+_settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
@@ -75,26 +75,6 @@ colors: dict[str, Color] = {}
 
 # Images ----------------------------------------------------------------------
 images = {} #--Singleton for collection of images.
-
-#------------------------------------------------------------------------------
-class ImageBundle(object):
-    """Wrapper for bundle of images.
-
-    Allows image bundle to be specified before wx.App is initialized.""" # TODO: unneeded?
-    def __init__(self):
-        self._image_paths = []
-        self.iconBundle = None
-
-    def Add(self, img_path):
-        self._image_paths.append(img_path)
-
-    def GetIconBundle(self):
-        if not self.iconBundle:
-            self.iconBundle = wx.IconBundle()
-            for img_path in self._image_paths:
-                self.iconBundle.AddIcon(
-                    img_path.s, ImageWrapper.img_types[img_path.cext])
-        return self.iconBundle
 
 #------------------------------------------------------------------------------
 class ImageList(object):
@@ -111,10 +91,9 @@ class ImageList(object):
 
     def GetImageList(self):
         if not self.imageList:
-            indices = self.indices
-            imageList = self.imageList = wx.ImageList(self.width,self.height)
-            for key,image in self.images:
-                indices[key] = imageList.Add(image.get_bitmap())
+            imageList = self.imageList = wx.ImageList(self.width, self.height)
+            self.indices = {k: imageList.Add(im.get_bitmap()) for k, im in
+                            self.images}
         return self.imageList
 
     def get_icon(self, key): return self.images[self[key]][1].GetIcon() # YAK !
@@ -286,7 +265,7 @@ def askNumber(parent, message, prompt='', title='', *, initial_num=0,
 
 # Message Dialogs -------------------------------------------------------------
 def askOk(parent, message, title=''):
-    """Shows a modal error message."""
+    """Shows a modal confirmation message."""
     return AskDialogue.display_dialog(parent, message, title)
 
 def askYes(parent, message, title='', *, default_is_yes=True,
@@ -301,7 +280,7 @@ def askWarning(parent, message, title=_('Warning')):
     return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
 
 def showOk(parent, message, title=''):
-    """Shows a modal error message."""
+    """Shows a modal confirmation message."""
     if isinstance(title, Path): title = title.s
     return AskDialogue.display_dialog(parent, message, title, no_cancel=True)
 
@@ -327,8 +306,8 @@ class _Log(object):
     def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
         self.asDialog = asDialog
         #--Sizing
-        key__pos_ = self._settings_key + u'.pos'
-        key__size_ = self._settings_key + u'.size'
+        key__pos_ = f'{self._settings_key}.pos'
+        key__size_ = f'{self._settings_key}.size'
         if isinstance(title, Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
@@ -390,7 +369,7 @@ class WryeLog(_Log):
             logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
             bolt.convert_wtext_to_html(logPath, logText, css_dir)
-        super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
+        super().__init__(parent, title, asDialog, log_icons)
         #--Text
         self._html_ctrl = DocumentViewer(self.window, get_dv_bitmaps())
         self._html_ctrl.try_load_html(file_path=logPath)
@@ -459,7 +438,6 @@ class ListEditorData(object):
     #--Save/Cancel
     def save(self):
         """Handles save button."""
-        pass
 
 #------------------------------------------------------------------------------
 class ListEditor(DialogWindow):
@@ -476,7 +454,7 @@ class ListEditor(DialogWindow):
         :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
-        self._listEditorData = lid_data # type: ListEditorData
+        self._listEditorData: ListEditorData = lid_data
         self._list_items = lid_data.getItemList()
         #--GUI
         self._size_key = self._listEditorData.__class__.__name__
@@ -486,7 +464,7 @@ class ListEditor(DialogWindow):
                                onSelect=self.OnSelect)
         self.listBox.set_min_size(125, 150)
         #--Infobox
-        self.gInfoBox = None # type: TextArea
+        self.gInfoBox: TextArea | None = None
         if lid_data.showInfo:
             editable = not self._listEditorData.infoReadOnly
             self.gInfoBox = TextArea(self, editable=editable)
@@ -510,15 +488,15 @@ class ListEditor(DialogWindow):
                 return new_button
             new_buttons = [_btn(defLabel, func) for def_flag, defLabel, func
                            in buttonSet if def_flag]
-            buttons = VLayout(spacing=4, items=new_buttons)
+            le_buttons = VLayout(spacing=4, items=new_buttons)
         else:
-            buttons = None
+            le_buttons = None
         #--Layout
         layout = VLayout(border=4, spacing=4, items=[
             (HLayout(spacing=4, item_expand=True, items=[
                 (self.listBox, LayoutOptions(weight=1)),
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
-                buttons
+                le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
         #--Done
         if self._size_key in sizes:
@@ -535,11 +513,6 @@ class ListEditor(DialogWindow):
             self._list_items = self._listEditorData.getItemList()
             index = self._list_items.index(newItem)
             self.listBox.lb_insert(newItem, index)
-
-    def SetItemsTo(self, items):
-        if self._listEditorData.setTo(items):
-            self._list_items = self._listEditorData.getItemList()
-            self.listBox.lb_set_items(self._list_items)
 
     def DoRename(self):
         """Renames selected item."""
@@ -1464,7 +1437,7 @@ class UIList(PanelWin):
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
-    def dndAllow(self, event): # Disallow drag an drop by default
+    def dndAllow(self, event): # Disallow drag and drop by default
         if event: event.Veto()
         return False
 
@@ -2403,7 +2376,7 @@ class DnDStatusBar(wx.StatusBar):
 
     def OnDragEndForced(self, event):
         if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
-            # The even for clicking the button sends a force capture loss
+            # The event for clicking the button sends a force capture loss
             # message.  Ignore lost capture messages if we're the active
             # window.  If we're not, that means something else forced the
             # loss of mouse capture.

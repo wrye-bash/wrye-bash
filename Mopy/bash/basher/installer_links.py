@@ -46,7 +46,8 @@ from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
-from ..bosh import InstallerArchive, InstallerConverter, InstallerProject
+from ..bosh import InstallerArchive, InstallerConverter, InstallerProject, \
+    converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 
@@ -1412,29 +1413,31 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             defaultDir=self.idata.store_dir, wildcard=readTypes)
         if not destArchive: return
         #--Error Checking
-        BCFArchive = destArchive = FName(destArchive.stail)
+        bcf_fname = destArchive = FName(destArchive.stail)
         if not destArchive or destArchive.fn_ext not in archives.readExts:
-            self._showWarning(_(u'%s is not a valid archive name.') % destArchive)
+            self._showWarning(_('%(arcname)s is not a valid archive name.') % {
+                'arcname': destArchive})
             return
         if destArchive not in self.idata:
-            self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive)
+            self._showWarning(_('%(arcname)s must be in the Bash Installers '
+                                'directory.') % {'arcname': destArchive})
             return
-        if BCFArchive.fn_body[-4:].lower() != u'-bcf':
-            BCFArchive = FName(BCFArchive.fn_body + u'-BCF' + archives.defaultExt)
+        if bcf_fname.fn_body[-4:].lower() != '-bcf':
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
         #--List source archives and target archive
-        message = _(u'Convert:')
-        message += u'\n* ' + u'\n* '.join(sorted(
-            f'({v.crc:08X}) - {k}' for k, v in self.iselected_pairs()))
-        message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive) + u'\n'
+        msg = _('Convert:') + '\n* '
+        msg += '\n* '.join(sorted(f'({v.crc:08X}) - {k}' for k, v in
+                                  self.iselected_pairs())) + '\n\n' + _('To:')
+        msg += f'\n* ({self.idata[destArchive].crc:08X}) - {destArchive}\n'
         #--Confirm operation
-        BCFArchive = self._askFilename(message, BCFArchive,
-                                       base_dir=bass.dirs[u'converters'],
-                                       allowed_exts={archives.defaultExt})
-        if not BCFArchive: return
+        bcf_fname = self._askFilename(msg, bcf_fname,
+                                      base_dir=converters.converters_dir,
+                                      allowed_exts={archives.defaultExt})
+        if not bcf_fname: return
         #--Error checking
-        if BCFArchive.fn_body[-4:].lower() != u'-bcf':
-            BCFArchive = FName(BCFArchive.fn_body + u'-BCF' + archives.defaultExt)
-        if (conv_path := bass.dirs[u'converters'].join(BCFArchive)).exists(): ##: use converter_dir!!
+        if bcf_fname.fn_body[-4:].lower() != '-bcf':
+            bcf_fname = FName(f'{bcf_fname.fn_body}-BCF{archives.defaultExt}')
+        if (conv_path := converters.converters_dir.join(bcf_fname)).exists():
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
             self.idata.converters_data.removeConverter(conv_path)
@@ -1443,10 +1446,10 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self._dialog_title, default_size=destInstaller.blockSize or 0)
-        with balt.Progress(_('Creating %s...') % BCFArchive) as progress:
+        with balt.Progress(_('Creating %s...') % bcf_fname) as progress:
             #--Create the converter
             conv = InstallerConverter.from_scratch(self.selected, self.idata,
-                destArchive, BCFArchive, blockSize, progress)
+                destArchive, bcf_fname, blockSize, progress)
             #--Add the converter to Bash
             self.idata.converters_data.addConverter(conv)
         #--Refresh UI
@@ -1455,26 +1458,26 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         #--Generate log
         log = LogFile(io.StringIO())
         log.setHeader(f'== {_("Overview")}\n')
-##            log('{{CSS:wtxt_sand_small.css}}')
-        log(f". {_('Name')}: {BCFArchive}")
-        log(f". {_('Size')}: {round_size(conv.fullPath.psize)}")
-        log(f". {_('Remapped: %u file(s)') % len(conv.convertedFiles)}")
+        # log('{{CSS:wtxt_sand_small.css}}')
+        log(f'. {_("Name")}: {bcf_fname}')
+        log(f'. {_("Size")}: {round_size(conv.fullPath.psize)}')
+        log(f'. {_("Remapped: %u file(s)") % len(conv.convertedFiles)}')
         log.setHeader('. ' + _('Requires: %u file(s)') % len(conv.srcCRCs))
         log('  * ' + '\n  * '.join(sorted(
             f'({x:08X}) - {crc_installer[x]}' for x in conv.srcCRCs
             if x in crc_installer)))
         log.setHeader('. ' + _('Options:'))
-        log(f"  *  {_('Skip Voices')} = {bool(conv.skipVoices)}")
-        log(f"  *  {_('Solid Archive')} = {bool(conv.isSolid)}")
+        log(f'  *  {_("Skip Voices")} = {bool(conv.skipVoices)}')
+        log(f'  *  {_("Solid Archive")} = {bool(conv.isSolid)}')
         if conv.isSolid:
             if conv.blockSize:
-                log(f"    *  {_('Solid Block Size')} = {conv.blockSize:d}")
+                log(f'    *  {_("Solid Block Size")} = {conv.blockSize:d}')
             else:
-                log(f"    *  {_('Solid Block Size')} = 7z default")
-        log(f"  *  {_('Has Comments')} = {bool(conv.comments)}")
-        log(f"  *  {_('Has Extra Directories')} = {bool(conv.hasExtraData)}")
-        log(f"  *  {_('Has Plugins Unselected')} = {bool(conv.espmNots)}")
-        log(f"  *  {_('Has Packages Selected')} = {bool(conv.subActives)}")
+                log(f'    *  {_("Solid Block Size")} = 7z default')
+        log(f'  *  {_("Has Comments")} = {bool(conv.comments)}')
+        log(f'  *  {_("Has Extra Directories")} = {bool(conv.hasExtraData)}')
+        log(f'  *  {_("Has Plugins Unselected")} = {bool(conv.espmNots)}')
+        log(f'  *  {_("Has Packages Selected")} = {bool(conv.subActives)}')
         log.setHeader('. ' + _('Contains: %u file(s)') % len(
             conv.bcf_missing_files))
         log('  * ' + '\n  * '.join(sorted(map(str, conv.bcf_missing_files))))
@@ -1504,12 +1507,11 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
             #--Test every converter for every selected archive
-            converters = {*chain( # converters referencing selected installers
+            bcfs = {*chain( # converters referencing selected installers
                 *(inst_crc_converters[inst_crc] for inst_crc in selectedCRCs))}
             # Only add a link to the converter if all of its required archives
             # are selected
-            linkSet = {conv for conv in converters if
-                       conv.srcCRCs <= selectedCRCs}
+            linkSet = {conv for conv in bcfs if conv.srcCRCs <= selectedCRCs}
         #--If the archive is a single archive with an embedded BCF, add that
         if len(selected) == 1 and self._first_selected().hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())

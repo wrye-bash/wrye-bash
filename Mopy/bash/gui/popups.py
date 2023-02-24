@@ -572,7 +572,7 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
     parent_handle = (_AComponent._resolve(parent).GetHandle()
                      if parent else None)
     dialog = TaskDialog(title, heading, message,
-                        buttons=[x[1] for x in vista_buttons], main_icon=icon,
+                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon,
                         parenthwnd=parent_handle, footer=footer)
     if expander:
         dialog.set_expander(expander, False, not footer)
