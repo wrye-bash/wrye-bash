@@ -57,7 +57,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial, reduce
-from itertools import chain
+from itertools import chain, count
 
 import wx
 
@@ -4010,7 +4010,7 @@ class BashStatusBar(DnDStatusBar):
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
                 deprint(f'Failed to load button {uid!r}', traceback=True)
         # Add any new buttons
-        for link in BashStatusBar.buttons:
+        for link in BashStatusBar.all_sb_links:
             # Already tested?
             uid = link.uid
             if uid in order: continue
@@ -4048,15 +4048,9 @@ class BashStatusBar(DnDStatusBar):
         else:
             # Specified, but now factor in hidden buttons, etc
             self._addButton(link)
-            button = self.buttons.pop()
-            thisIndex, insertBefore = order.index(link.uid), 0
-            for i in range(len(self.buttons)):
-                otherlink = self.GetLink(index=i)
-                indexOther = order.index(otherlink.uid)
-                if indexOther > thisIndex:
-                    insertBefore = i
-                    break
-            self.buttons.insert(insertBefore,button)
+            uid_order = dict(zip(order, count()))
+            self.buttons.sort(
+                key=lambda b: uid_order[self.GetLink(button=b).uid])
         if not skip_refresh:
             self.refresh_status_bar()
 
@@ -4064,13 +4058,14 @@ class BashStatusBar(DnDStatusBar):
         """Get the Link object with a specific uid,
            or that made a specific button."""
         if uid is not None:
-            for link in BashStatusBar.buttons:
+            for link in BashStatusBar.all_sb_links:
                 if link.uid == uid:
                     return link
         elif index is not None:
             button = self.buttons[index]
+        # if we got the button above we need to find the link it belongs to
         if button is not None:
-            for link in BashStatusBar.buttons:
+            for link in BashStatusBar.all_sb_links:
                 if link.gButton is button:
                     return link
         return None

@@ -167,8 +167,8 @@ class _ASettingsPage(ATreeMixin):
         """Checks if the setting with the specified ID has been changed. See
         _mark_setting_changed below."""
         if setting_id not in self._setting_ids:
-            raise SyntaxError(u'Setting ID (%s) missing from _setting_ids for '
-                              u"page '%r'" % (setting_id, self))
+            raise SyntaxError(f"Setting ID ({setting_id}) missing from "
+                              f"_setting_ids for page '{self!r}'")
         return self._setting_states[setting_id]
 
     def _mark_setting_changed(self, setting_id, is_changed):
@@ -783,7 +783,7 @@ class StatusBarPage(_AScrollablePage):
         # Show App Version
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
-            for button in BashStatusBar.buttons:
+            for button in BashStatusBar.all_sb_links:
                 button.set_sb_button_tooltip()
             if BashStatusBar.obseButton.button_state:
                 BashStatusBar.obseButton.UpdateToolTips()
@@ -830,7 +830,7 @@ class StatusBarPage(_AScrollablePage):
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
         visible = []
-        for link in BashStatusBar.buttons:
+        for link in BashStatusBar.all_sb_links:
             if not link.IsPresent() or not link.canHide: continue
             button = link.gButton
             # Get a title for the hidden button

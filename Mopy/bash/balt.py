@@ -2266,7 +2266,7 @@ class INIListCtrl(wx.ListCtrl):
 # It's currently full of _native_widget hacks to keep it functional, this one
 # is the next big step
 class DnDStatusBar(wx.StatusBar):
-    buttons = Links()
+    all_sb_links = [] # all possible status bar links - visible or not
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
@@ -2300,23 +2300,22 @@ class DnDStatusBar(wx.StatusBar):
                 gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
-        id_ = mouseEvent.GetId()
+        native_button = mouseEvent.EventObject
         for i, button in enumerate(self.buttons):
-            if button.wx_id_() == id_:
+            if button._native_widget == native_button:
                 x = mouseEvent.GetPosition()[0]
                 # position is 0 at the beginning of the button's _icon_
                 # negative beyond that (on the left) and positive after
                 if x < -4:
-                    return max(i - 1, 0)
+                    return max(i - 1, 0), button
                 elif x > self.iconsSize - 4:
-                    return min(i + 1, len(self.buttons) - 1)
-                return i
-        return wx.NOT_FOUND
+                    return min(i + 1, len(self.buttons) - 1), button
+                return i, button
+        return wx.NOT_FOUND, None
 
     def OnDragStart(self, event):
-        self.dragging = self._getButtonIndex(event)
+        self.dragging, button = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
-            button = self.buttons[self.dragging]
             if not button._native_widget.HasCapture():
                 self.dragStart = event.GetPosition()[0]
                 button._native_widget.CaptureMouse()
@@ -2358,10 +2357,9 @@ class DnDStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            over = self._getButtonIndex(event)
+            over, button = self._getButtonIndex(event)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
-                button = self.buttons[self.dragging]
                 # update settings
                 uid = self.GetLink(button=button).uid
                 overUid = self.GetLink(index=over).uid
