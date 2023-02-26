@@ -73,8 +73,7 @@ def InitStatusBar():
         )
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
-    all_links = BashStatusBar.all_sb_links
-    all_links.append(obseButton)
+    all_links = [obseButton]
     BashStatusBar.laaButton = laaButton = LAA_Button(uid=u'LAA')
     all_links.append(laaButton)
     all_links.append(AutoQuit_Button(uid=u'AutoQuit'))
@@ -174,6 +173,7 @@ def InitStatusBar():
     all_links.append(App_Help(uid='Help', canHide=False))
     if bass.inisettings['ShowDevTools']:
         all_links.append(App_Restart(uid='Restart'))
+    BashStatusBar.all_sb_links = {li.uid: li for li in all_links}
 
 #------------------------------------------------------------------------------
 def InitMasterLinks():

@@ -81,7 +81,7 @@ class StatusBar_Button(ItemLink):
         existent buttons."""
         return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
+    def SetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
         btn_image = image or balt.images[self.imageKey % bass.settings[
             u'bash.statusbar.iconSize']].get_bitmap()
@@ -91,7 +91,6 @@ class StatusBar_Button(ItemLink):
                                       btn_tooltip=self.sb_button_tip)
         self.gButton.on_clicked.subscribe(self.Execute)
         self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
-        return self.gButton
 
     def DoPopupMenu(self):
         if self.canHide:
@@ -166,17 +165,16 @@ class _App_Button(StatusBar_Button):
         return self.exePath not in bosh.undefinedPaths and \
                self.exePath.exists()
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self.IsPresent(): return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self.IsPresent(): return
         iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2, duh
-        super(_App_Button, self).GetBitmapButton(
-            window, self.images[idex].get_bitmap(), onRClick)
+        super().SetBitmapButton(window, self.images[idex].get_bitmap(),
+                                onRClick)
         if self.obseTip is not None:
             _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
                 self.gButton.tooltip = self.obseTip
-        return self.gButton
 
     def ShowError(self, error=None, *, msg=None):
         if error is not None:
@@ -656,11 +654,10 @@ class _StatefulButton(StatusBar_Button):
     @property
     def _present(self): return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self._present: return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self._present: return
         self.SetState()
-        return super(_StatefulButton, self).GetBitmapButton(window, image,
-                                                            onRClick)
+        super().SetBitmapButton(window, image, onRClick)
 
     def IsPresent(self):
         return self._present
@@ -762,9 +759,8 @@ class App_Settings(StatusBar_Button):
     """Show settings dialog."""
     imageKey, _tip = 'settings_button.%s', _('Settings')
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        return super(App_Settings, self).GetBitmapButton(
-            window, image, lambda: self.Execute())
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        super().SetBitmapButton(window, image, lambda: self.Execute())
 
     def Execute(self):
         SettingsDialog.display_dialog()

@@ -783,7 +783,7 @@ class StatusBarPage(_AScrollablePage):
         # Show App Version
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
-            for button in BashStatusBar.all_sb_links:
+            for button in BashStatusBar.all_sb_links.values():
                 button.set_sb_button_tooltip()
             if BashStatusBar.obseButton.button_state:
                 BashStatusBar.obseButton.UpdateToolTips()
@@ -830,7 +830,7 @@ class StatusBarPage(_AScrollablePage):
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
         visible = []
-        for link in BashStatusBar.all_sb_links:
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             if not link.IsPresent() or not link.canHide: continue
             button = link.gButton
             # Get a title for the hidden button
@@ -844,8 +844,8 @@ class StatusBarPage(_AScrollablePage):
                 tip_ = getattr(link, u'sb_button_tip', None) # YAK YAK YAK
             if tip_ is None:
                 # No good, use its uid as a last resort
-                tip_ = link.uid
-            target_link_list = hidden if link.uid in hide else visible
+                tip_ = link_uid
+            target_link_list = hidden if link_uid in hide else visible
             target_link_list.append(tip_)
             self._tip_to_links[tip_] = link
         self._icon_lists.left_items = visible

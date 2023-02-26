@@ -57,7 +57,7 @@ import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
 from functools import partial, reduce
-from itertools import chain, count
+from itertools import chain
 
 import wx
 
@@ -3990,12 +3990,12 @@ class BashStatusBar(DnDStatusBar):
     laaButton = None
 
     def UpdateIconSizes(self, skip_refresh=False):
-        self.buttons = [] # will be populated with _displayed_ gButtons - g ?
+        self.buttons = {} # populated with SBLinks whose gButtons is not None
         order = settings[u'bash.statusbar.order']
         hide = settings[u'bash.statusbar.hide']
-        # Add buttons in order that is saved - on first run order = [] !
+        # Add buttons in order that is saved - on first Bash run order = [] !
         for uid in order[:]:
-            link = self.GetLink(uid=uid)
+            link = BashStatusBar.all_sb_links.get(uid)
             # Doesn't exist?
             if link is None:
                 order.remove(uid)
@@ -4010,65 +4010,43 @@ class BashStatusBar(DnDStatusBar):
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
                 deprint(f'Failed to load button {uid!r}', traceback=True)
         # Add any new buttons
-        for link in BashStatusBar.all_sb_links:
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             # Already tested?
-            uid = link.uid
-            if uid in order: continue
+            if link_uid in order: continue
             # Remove any hide settings, if they exist
-            if uid in hide:
-                hide.discard(uid)
-            order.append(uid)
+            if link_uid in hide:
+                hide.discard(link_uid)
+            order.append(link_uid)
             try:
                 self._addButton(link)
             except AttributeError:
-                deprint(f'Failed to load button {uid!r}', traceback=True)
+                deprint(f'Failed to load button {link_uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 
     def HideButton(self, button, skip_refresh=False):
-        if button in self.buttons:
-            # Find the BashStatusBar_Button instance that made it
-            link = self.GetLink(button=button)
-            if link:
+        for link_uid, link in self.buttons.items():
+            if link.gButton is button:
                 button.visible = False
-                self.buttons.remove(button)
-                settings[u'bash.statusbar.hide'].add(link.uid)
+                del self.buttons[link_uid]
+                settings['bash.statusbar.hide'].add(link_uid)
                 if not skip_refresh:
                     self.refresh_status_bar()
+                return
 
     def UnhideButton(self, link, skip_refresh=False):
         uid = link.uid
         settings[u'bash.statusbar.hide'].discard(uid)
         # Find the position to insert it at
         order = settings[u'bash.statusbar.order']
+        self._addButton(link)
         if uid not in order:
             # Not specified, put it at the end
             order.append(uid)
-            self._addButton(link)
         else:
-            # Specified, but now factor in hidden buttons, etc
-            self._addButton(link)
-            uid_order = dict(zip(order, count()))
-            self.buttons.sort(
-                key=lambda b: uid_order[self.GetLink(button=b).uid])
+            self._sort_buttons(order)
         if not skip_refresh:
             self.refresh_status_bar()
-
-    def GetLink(self,uid=None,index=None,button=None):
-        """Get the Link object with a specific uid,
-           or that made a specific button."""
-        if uid is not None:
-            for link in BashStatusBar.all_sb_links:
-                if link.uid == uid:
-                    return link
-        elif index is not None:
-            button = self.buttons[index]
-        # if we got the button above we need to find the link it belongs to
-        if button is not None:
-            for link in BashStatusBar.all_sb_links:
-                if link.gButton is button:
-                    return link
-        return None
 
     def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is
