@@ -20,15 +20,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES IV: Oblivion."""
 from os.path import join as _j
 
-from .. import WS_COMMON_FILES, GameInfo
+from .. import GOG_COMMON_FILES, WS_COMMON_FILES, GameInfo
+from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class OblivionGameInfo(PatchGame):
+    """GameInfo override for TES IV: Oblivion."""
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
@@ -40,10 +41,11 @@ class OblivionGameInfo(PatchGame):
     my_games_name = u'Oblivion'
     appdata_name = u'Oblivion'
     launch_exe = u'Oblivion.exe'
-    # Set to this because that file does not exist in Nehrim, whereas
-    # OblivionLauncher.exe and Oblivion.exe do
-    game_detect_includes = {_j('Data', 'Oblivion.esm')}
-    game_detect_excludes = WS_COMMON_FILES
+    game_detect_includes = {'OblivionLauncher.exe'}
+    # NehrimLauncher.exe is here to make sure we don't ever detect Nehrim as
+    # Oblivion
+    game_detect_excludes = (GOG_COMMON_FILES | WS_COMMON_FILES |
+                            {'NehrimLauncher.exe'})
     version_detect_file = u'Oblivion.exe'
     master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
@@ -54,9 +56,6 @@ class OblivionGameInfo(PatchGame):
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'
-
-    patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
-    patchTip = u'http://www.elderscrolls.com/'
 
     using_txt_file = False
     has_standalone_pluggy = True
@@ -1206,6 +1205,12 @@ class OblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
+class GOGOblivionGameInfo(GOGMixin, OblivionGameInfo):
+    """GameInfo override for the GOG version of Oblivion."""
+    displayName = 'Oblivion (GOG)'
+    check_legacy_paths = False
+    registry_keys = [(r'GOG.com\Games\1458058109', 'path')]
+
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""
     displayName = 'Oblivion (WS)'
@@ -1222,4 +1227,5 @@ class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
                             'Oblivion GOTY Italian',
                             'Oblivion GOTY Spanish']
 
-GAME_TYPE = {g.displayName: g for g in (OblivionGameInfo, WSOblivionGameInfo)}
+GAME_TYPE = {g.displayName: g for g in
+             (OblivionGameInfo, GOGOblivionGameInfo, WSOblivionGameInfo)}

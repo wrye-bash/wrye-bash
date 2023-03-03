@@ -20,8 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for Fallout 3."""
-
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
@@ -30,6 +28,7 @@ from ..windows_store_game import WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 class Fallout3GameInfo(PatchGame):
+    """GameInfo override for Fallout 3."""
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
@@ -1240,4 +1239,4 @@ class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
         ws_language_dirs = FO3_LANG_DIRS
 
 GAME_TYPE = {g.displayName: g for g in
-             (Fallout3GameInfo, WSFallout3GameInfo, EGSFallout3GameInfo)}
+             (Fallout3GameInfo, EGSFallout3GameInfo, WSFallout3GameInfo)}

@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES III: Morrowind."""
 import struct as _struct
 
 from .. import WS_COMMON_FILES, GameInfo
@@ -29,6 +28,7 @@ from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class MorrowindGameInfo(PatchGame):
+    """GameInfo override for TES III: Morrowind."""
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'

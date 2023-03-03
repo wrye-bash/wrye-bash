@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES V: Skyrim Special Edition."""
 import importlib
 
 from .. import GOG_COMMON_FILES, WS_COMMON_FILES
@@ -30,6 +29,7 @@ from ..windows_store_game import WindowsStoreMixin
 from ...bolt import classproperty
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
+    """GameInfo override for TES V: Skyrim Special Edition."""
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
     game_icon = u'skyrimse_%u.png'
@@ -309,17 +309,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # package name is skyrim here
         super()._import_records(package_name, plugin_form_vers)
 
-class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
-    """GameInfo override for the Windows Store version of Skyrim SE."""
-    displayName = 'Skyrim Special Edition (WS)'
-    my_games_name = 'Skyrim Special Edition MS'
-    appdata_name = 'Skyrim Special Edition MS'
-
-    class Ws(SkyrimSEGameInfo.Ws):
-        legacy_publisher_name = 'Bethesda'
-        win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
-
 class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
+    """GameInfo override for the Epic Games Store version of Skyrim SE."""
     displayName = 'Skyrim Special Edition (EGS)'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
@@ -337,12 +328,23 @@ class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
                          'ac82db5035584c7f8a2c548d98c86b2c'] # SE
 
 class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
+    """GameInfo override for the GOG version of Skyrim SE."""
     displayName = 'Skyrim Special Edition (GOG)'
     my_games_name = 'Skyrim Special Edition GOG'
     appdata_name = 'Skyrim Special Edition GOG'
     registry_keys = [(r'GOG.com\Games\1711230643', 'path'),
                      (r'GOG.com\Games\1162721350', 'path')]
 
+class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
+    """GameInfo override for the Windows Store version of Skyrim SE."""
+    displayName = 'Skyrim Special Edition (WS)'
+    my_games_name = 'Skyrim Special Edition MS'
+    appdata_name = 'Skyrim Special Edition MS'
+
+    class Ws(SkyrimSEGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
+
 GAME_TYPE = {g.displayName: g for g in (
-    SkyrimSEGameInfo, WSSkyrimSEGameInfo, GOGSkyrimSEGameInfo,
-    EGSSkyrimSEGameInfo)}
+    SkyrimSEGameInfo, EGSSkyrimSEGameInfo, GOGSkyrimSEGameInfo,
+    WSSkyrimSEGameInfo)}

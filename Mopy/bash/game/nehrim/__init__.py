@@ -20,17 +20,20 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES IV: Oblivion."""
+from .. import GOG_COMMON_FILES
+from ..gog_game import GOGMixin
 from ..oblivion import OblivionGameInfo
-from ... import bolt
+from ...bolt import DefaultFNDict, FName
 
 class NehrimGameInfo(OblivionGameInfo):
+    """GameInfo override for Nehrim: At Fate's Edge."""
     displayName = u'Nehrim'
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = {'NehrimLauncher.exe'}
-    master_file = bolt.FName(u'Nehrim.esm')
+    game_detect_excludes = GOG_COMMON_FILES
+    master_file = FName('Nehrim.esm')
     loot_dir = u'Nehrim'
     loot_game_name = 'Nehrim'
     boss_game_name = u'Nehrim'
@@ -40,7 +43,7 @@ class NehrimGameInfo(OblivionGameInfo):
     check_legacy_paths = False
 
     class Bsa(OblivionGameInfo.Bsa):
-        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+        redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'N - Textures1.bsa': 1104530400, # '2005-01-01'
             u'N - Textures2.bsa': 1104616800, # '2005-01-02'
             u'L - Voices.bsa': 1104703200,    # '2005-01-03'
@@ -127,4 +130,9 @@ class NehrimGameInfo(OblivionGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-GAME_TYPE = NehrimGameInfo
+class GOGNehrimGameInfo(GOGMixin, NehrimGameInfo):
+    """GameInfo override for the GOG version of Nehrim."""
+    displayName = 'Nehrim (GOG)'
+    registry_keys = [(r'GOG.com\Games\1497007810', 'path')]
+
+GAME_TYPE = {g.displayName: g for g in (NehrimGameInfo, GOGNehrimGameInfo)}

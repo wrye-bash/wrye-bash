@@ -20,15 +20,14 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module defines static data for use by bush, when Enderal SE is set as
-the active game."""
-
+from ..gog_game import GOGMixin
 from ..enderal import EnderalGameInfo
 from ..skyrimse import SkyrimSEGameInfo
 
 # We want the final chain of attribute lookups to be Enderal SE -> Enderal LE
 # -> Skyrim SE -> Skyrim LE -> Defaults, i.e. the narrower overrides first
 class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
+    """GameInfo override for Enderal Special Edition."""
     displayName = u'Enderal Special Edition'
     fsName = u'Enderal Special Edition'
     game_icon = u'enderalse_%u.png'
@@ -48,14 +47,14 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
 
-    class Ini(EnderalGameInfo.Ini):
+    class Ini(EnderalGameInfo.Ini, SkyrimSEGameInfo.Ini):
         save_prefix = u'..\\Enderal Special Edition\\Saves'
 
-    class Xe(EnderalGameInfo.Xe):
+    class Xe(EnderalGameInfo.Xe, SkyrimSEGameInfo.Xe):
         full_name = u'EnderalSEEdit'
         xe_key_prefix = u'enderalSEView'
 
-    class Bain(EnderalGameInfo.Bain):
+    class Bain(EnderalGameInfo.Bain, SkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'enderalseedit backups', u'enderalseedit cache'}
 
     bethDataFiles = {
@@ -95,11 +94,23 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
         'update.esm',
     }
 
-    names_tweaks = SkyrimSEGameInfo.names_tweaks  | {
-        'NamesTweak_RenamePennies'} - {'NamesTweak_RenameGold'}
+    names_tweaks = (SkyrimSEGameInfo.names_tweaks |
+                    {'NamesTweak_RenamePennies'} -
+                    {'NamesTweak_RenameGold'})
 
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-GAME_TYPE = EnderalSEGameInfo
+class GOGEnderalSEGameInfo(GOGMixin, EnderalSEGameInfo):
+    """GameInfo override for the GOG version of Enderal Special Edition."""
+    displayName = 'Enderal Special Edition (GOG)'
+    my_games_name = 'Enderal Special Edition GOG'
+    appdata_name = 'Enderal Special Edition GOG'
+    registry_keys = [(r'GOG.com\Games\1708684988', 'path')]
+
+    class Ini(EnderalSEGameInfo.Ini):
+        save_prefix = '..\\Enderal Special Edition GOG\\Saves'
+
+GAME_TYPE = {g.displayName: g for g in
+             (EnderalSEGameInfo, GOGEnderalSEGameInfo)}

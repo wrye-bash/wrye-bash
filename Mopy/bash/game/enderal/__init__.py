@@ -20,12 +20,10 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module defines static data for use by bush, when Enderal is set as the
-active game."""
-
 from ..skyrim import SkyrimGameInfo
 
 class EnderalGameInfo(SkyrimGameInfo):
+    """GameInfo override for Enderal."""
     displayName = u'Enderal'
     fsName = u'Enderal'
     game_icon = u'enderal_%u.png'

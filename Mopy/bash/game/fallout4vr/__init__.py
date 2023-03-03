@@ -20,13 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for Fallout 4 VR. Inherits from Fallout 4 and tweaks where
-necessary."""
-
 from ..fallout4 import Fallout4GameInfo
 from ... import bolt
 
 class Fallout4VRGameInfo(Fallout4GameInfo):
+    """GameInfo override for Fallout 4 VR."""
     displayName = u'Fallout 4 VR'
     fsName = u'Fallout4VR'
     game_icon = u'fallout4vr_%u.png'

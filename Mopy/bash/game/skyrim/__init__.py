@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES V: Skyrim."""
 import re
 from os.path import join as _j
 
@@ -28,6 +27,7 @@ from ..patch_game import GameInfo, PatchGame
 from ... import bolt
 
 class SkyrimGameInfo(PatchGame):
+    """GameInfo override for TES V: Skyrim."""
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'

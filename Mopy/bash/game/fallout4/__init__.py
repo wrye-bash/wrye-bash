@@ -20,8 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for Fallout 4."""
-
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
@@ -30,6 +28,7 @@ from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class Fallout4GameInfo(PatchGame):
+    """GameInfo override for Fallout 4."""
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'

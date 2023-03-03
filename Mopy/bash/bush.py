@@ -27,9 +27,9 @@ Bash to use, so must be imported and run high up in the booting sequence.
 """
 from __future__ import annotations
 
-import collections
 import pkgutil
 import textwrap
+from collections import defaultdict
 from configparser import ConfigParser
 
 from . import game as game_init
@@ -116,11 +116,22 @@ def _supportedGames(skip_ws_games=False):
             if egs_paths:
                 _egs_games[gt_display_name] = egs_paths
         del module
-    # Dump out info about all games that we *could* launch, but wrap it
+    # Dump out info about all games that we *could* launch, but deduplicate for
+    # games with versions from multiple store fronts
+    ##: This is pretty hacky - these should be 'variants' instead (see also the
+    # hack in settings_dialog)
     msg = ['The following games are supported by this version of Wrye Bash:']
-    all_supported_games = ', '.join(sorted(_allGames))
-    msg.extend(f'  {wrapped_line}' for wrapped_line in
-               textwrap.wrap(all_supported_games))
+    deduped_games = defaultdict(set)
+    for g in _allGames:
+        g_split = g.split('(')
+        base_game_name = g_split[0].strip()
+        if len(g_split) > 1:
+            deduped_games[base_game_name].add(g_split[1][:-1])
+        else:
+            deduped_games[base_game_name].add('Steam')
+    for base_game_name, game_variants in deduped_games.items():
+        fmt_game_variants = ', '.join(sorted(game_variants))
+        msg.append(f'  - {base_game_name} ({fmt_game_variants})')
     # Dump out info about all games that we *actually* found
     msg.append('Wrye Bash looked for installations of supported games in the '
                'following places:')
@@ -200,7 +211,7 @@ def _detectGames(cli_path: str = '', bash_ini_: ConfigParser | None = None
     if not _allGames: # if allGames is empty something goes badly wrong
         raise BoltError(_(u'No game support modules found in Mopy/bash/game.'))
     # check in order of precedence the -o argument, the ini and our parent dir
-    installPaths = collections.OrderedDict() #key->(path, found msg, error msg)
+    installPaths = {} # key -> (path, found msg, error msg)
     #--First: path specified via the -o command line argument
     if cli_path != u'':
         test_path = GPath(cli_path)

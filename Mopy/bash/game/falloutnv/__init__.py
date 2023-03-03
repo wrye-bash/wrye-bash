@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for Fallout NV."""
 from copy import deepcopy
 from os.path import join as _j
 
@@ -30,6 +29,7 @@ from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
 
 class FalloutNVGameInfo(Fallout3GameInfo):
+    """GameInfo override for Fallout New Vegas."""
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
@@ -491,7 +491,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         super()._import_records(__name__)
 
 class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
-    """GameInfo override for the Windows Store version of Fallout NV."""
+    """GameInfo override for the Windows Store version of Fallout New Vegas."""
     displayName = 'Fallout New Vegas (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.

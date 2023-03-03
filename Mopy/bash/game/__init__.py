@@ -123,10 +123,6 @@ class GameInfo(object):
                      # settings.dat
 
     # Additional game info - override as needed -------------------------------
-    # URL to download patches for the main game.
-    patchURL = u''
-    # Tooltip to display over the URL when displayed
-    patchTip = u'Update via Steam'
     # plugin extensions
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Load order info
@@ -582,7 +578,7 @@ class GameInfo(object):
 
 # Constants -------------------------------------------------------------------
 # Files shared by versions of games that are published on GOG
-GOG_COMMON_FILES = {'Galaxy64.dll'}
+GOG_COMMON_FILES = {'gog.ico'}
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
 

@@ -423,13 +423,7 @@ class PageVersions(PageInstaller):
         versions_layout.append_row([None, Label(self, _(u'Need')),
                                     Label(self, _(u'Have'))])
         # Game
-        if bush.game.patchURL != u'':
-            linkGame = HyperlinkLabel(self, bush.game.displayName,
-                                      bush.game.patchURL,
-                                      always_unvisited=True)
-        else:
-            linkGame = Label(self, bush.game.displayName)
-        linkGame.tooltip = bush.game.patchTip
+        linkGame = Label(self, bush.game.displayName)
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
                                     staticBitmap(self, bmps[bGameOk])])
