@@ -1668,6 +1668,9 @@ class ModDetails(_ModsSavesDetails):
             ]),
             (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
+        # If the game has no tags, then there is no point in enabling the Bash
+        # Tags field
+        self._bottom_low_panel.enabled = bool(bush.game.allTags)
 
     def _get_sub_splitter(self):
         return Splitter(self.right, min_pane_size=128)

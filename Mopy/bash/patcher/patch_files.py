@@ -39,7 +39,7 @@ class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
 
     def set_mergeable_mods(self, mergeMods):
-        """Set `mergeSet` attribute to the srcs of MergePatchesPatcher."""
+        """Set 'mergeSet' attribute to the srcs of MergePatchesPatcher."""
         self.mergeSet = set(mergeMods)
         self.merged_or_loaded = {*self.mergeSet, *self.load_dict}
         self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
@@ -190,7 +190,8 @@ class PatchFile(ModFile):
         self.bp_mergeable = set() # plugins we can show as sources for the merge patcher
         # inactive plugins with missing masters - that may be ok
         self.inactive_mm = defaultdict(list)
-        # inactive plugins with inactive masters - not ok but not for merged
+        # inactive plugins with inactive masters (unless the inactive masters
+        # are mergeable!) - not ok but not for merged
         self.inactive_inm = defaultdict(list)
         previousMods = set()
         # GUI - fatal errors
@@ -201,6 +202,7 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
+        mi_mergeable = pfile_minfos.mergeable
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = modInfo.getBashTags()
@@ -211,7 +213,7 @@ class PatchFile(ModFile):
                         self.active_mm[modName].append(master)
                     elif master not in all_plugins_set: ##: test against modInfos?
                         self.inactive_mm[modName].append(master)
-                    else:
+                    elif master not in mi_mergeable:
                         self.inactive_inm[modName].append(master)
                 elif master not in previousMods:
                     if is_loaded: self.delinquent[modName].append(master)
@@ -230,8 +232,9 @@ class PatchFile(ModFile):
                     # is filtered tagged, we will filter some masters and
                     # then recheck in merge_record - drop from inactive_mm
                     del self.inactive_mm[modName]
-            if modName in pfile_minfos.mergeable and \
-                modName not in self.inactive_inm and 'NoMerge' not in bashTags:
+            if (modName in mi_mergeable and
+                    modName not in self.inactive_inm and
+                    'NoMerge' not in bashTags):
                 self.bp_mergeable.add(modName)
 
     def getKeeper(self):

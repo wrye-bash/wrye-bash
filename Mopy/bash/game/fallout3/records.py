@@ -55,7 +55,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, NavMeshFlags, PartialLoadDecider, PerkEpdfDecider, SizeDecider, \
     SpellFlags, VWDFlag, gen_color, gen_color3, null2, perk_distributor, \
-    perk_effect_key
+    perk_effect_key, MelLinkColors
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == 'FalloutNV'
@@ -373,9 +373,7 @@ class MreAchr(MelRecord):
         MelFloat(b'XHLP', 'health'),
         MelLinkedDecals(),
         MelFid(b'XLKR', u'linkedReference'),
-        MelStruct(b'XCLP', ['8B'], 'linkStartColorRed', 'linkStartColorGreen',
-                  'linkStartColorBlue', 'linkColorUnused1', 'linkEndColorRed',
-                  'linkEndColorGreen', 'linkEndColorBlue', 'linkColorUnused2'),
+        MelLinkColors(),
         MelActivateParents(),
         fnv_only(MelActivationPrompt()),
         MelEnableParent(),
@@ -412,9 +410,7 @@ class MreAcre(MelRecord):
         MelFloat(b'XHLP', 'health'),
         MelLinkedDecals(),
         MelFid(b'XLKR', u'linkedReference'),
-        MelStruct(b'XCLP', ['8B'], 'linkStartColorRed', 'linkStartColorGreen',
-                  'linkStartColorBlue', 'linkColorUnused1', 'linkEndColorRed',
-                  'linkEndColorGreen', 'linkEndColorBlue', 'linkColorUnused2'),
+        MelLinkColors(),
         MelActivateParents(),
         fnv_only(MelActivationPrompt()),
         MelEnableParent(),
@@ -2225,9 +2221,7 @@ class MrePgre(MelRecord):
         MelReflectedRefractedBy(),
         MelLinkedDecals(),
         MelFid(b'XLKR','linkedReference'),
-        MelStruct(b'XCLP', ['8B'], 'linkStartColorRed', 'linkStartColorGreen',
-                  'linkStartColorBlue', 'linkColorUnused1', 'linkEndColorRed',
-                  'linkEndColorGreen', 'linkEndColorBlue', 'linkColorUnused2'),
+        MelLinkColors(),
         MelActivateParents(),
         fnv_only(MelActivationPrompt()),
         MelEnableParent(),
@@ -2263,9 +2257,7 @@ class MrePmis(MelRecord):
         MelReflectedRefractedBy(),
         MelLinkedDecals(),
         MelFid(b'XLKR','linkedReference'),
-        MelStruct(b'XCLP', ['8B'], 'linkStartColorRed', 'linkStartColorGreen',
-                  'linkStartColorBlue', 'linkColorUnused1', 'linkEndColorRed',
-                  'linkEndColorGreen', 'linkEndColorBlue', 'linkColorUnused2'),
+        MelLinkColors(),
         MelActivateParents(),
         fnv_only(MelActivationPrompt()),
         MelEnableParent(),
@@ -2633,9 +2625,7 @@ class MreRefr(MelRecord):
         MelSorted(MelFids('litWaters', MelFid(b'XLTW'))),
         MelLinkedDecals(),
         MelFid(b'XLKR','linkedReference'),
-        MelStruct(b'XCLP', ['8B'], 'linkStartColorRed', 'linkStartColorGreen',
-                  'linkStartColorBlue', 'linkColorUnused1', 'linkEndColorRed',
-                  'linkEndColorGreen', 'linkEndColorBlue', 'linkColorUnused2'),
+        MelLinkColors(),
         MelActivateParents(),
         fnv_only(MelActivationPrompt()),
         MelEnableParent(),

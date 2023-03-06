@@ -695,8 +695,8 @@ class Mod_CreateLOOTReport(_NotObLink):
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
-    _text = _(u'Copy Mod Info...')
-    _help = _(u'Copies the basic info about selected mod(s)')
+    _text = _('Copy Plugin Info...')
+    _help = _('Copy some basic information about the selected plugins.')
 
     def Execute(self):
         info_txt = []
@@ -724,7 +724,7 @@ class Mod_CopyModInfo(ItemLink):
             info_txt = f'[spoiler]\n{info_txt}\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
-        self._showLog(info_txt, title=_(u'Mod Info Report'), fixedFont=False)
+        self._showLog(info_txt, title=_('Plugin Info Report'), fixedFont=False)
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""

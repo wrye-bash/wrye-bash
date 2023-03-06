@@ -62,7 +62,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
     PerkEpdfDecider, VWDFlag, gen_ambient_lighting, gen_color, gen_color3, \
-    null3, null4, perk_distributor, perk_effect_key
+    null3, null4, perk_distributor, perk_effect_key, MelLinkColors
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -445,8 +445,7 @@ class MreAchr(MelRecord):
         MelFloat(b'XHLP', u'ref_health'),
         MelLinkedReferences(),
         MelActivateParents(),
-        MelStruct(b'XCLP', ['3B', 's', '3B', 's'], *gen_color('start_color'),
-            *gen_color('end_color')),
+        MelLinkColors(),
         MelFid(b'XLCN', u'persistent_location'),
         MelFid(b'XLRL', u'location_reference'),
         MelBase(b'XIS2', u'ignored_by_sandbox_2'),

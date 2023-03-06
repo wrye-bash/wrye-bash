@@ -1013,6 +1013,13 @@ class MelLighLensFlare(MelFid):
         super().__init__(b'LNAM', 'light_lens_flare')
 
 #------------------------------------------------------------------------------
+class MelLinkColors(MelStruct):
+    """Handles the common XCLP (Link Colors) subrecord."""
+    def __init__(self):
+        super().__init__(b'XCLP', ['3B', 's', '3B', 's'],
+            *gen_color('start_color'), *gen_color('end_color'))
+
+#------------------------------------------------------------------------------
 class MelLLChanceNone(MelUInt8):
     """Handles the leveled list subrecord LVLD (Chance None)."""
     _cn_sig = b'LVLD'

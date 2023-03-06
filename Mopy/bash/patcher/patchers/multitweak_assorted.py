@@ -399,6 +399,7 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
 class _AStaffTweak(MultiTweakItem):
     """Base class for tweaks that target staves."""
     tweak_read_classes = b'WEAP',
+    tweak_log_msg = _('Staves Changed: %(total_changed)d')
 
     def wants_record(self, record):
         staff_attr, staff_val = bush.game.staff_condition
@@ -465,7 +466,7 @@ class AssortedTweak_AttackSpeedStavesMinimum(_AStaffTweak, _AASTweakMin):
     tweak_tip = _('Ensures every staff has at least the chosen attack speed.')
     tweak_key = 'attack_speed_staves_min'
     tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
-    tweak_log_msg = _('Staves Changed: %(total_changed)d')
+    default_choice = '1.0'
     _log_attack_speed_value = _('Staff attack speed set to minimum of '
                                 '%(attack_speed_value)f.')
 
@@ -481,7 +482,7 @@ class AssortedTweak_AttackSpeedStavesMaximum(_AStaffTweak, _AASTweakMax):
     tweak_tip = _('Ensures every staff has at most the chosen attack speed.')
     tweak_key = 'attack_speed_staves_max'
     tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
-    tweak_log_msg = _('Staves Changed: %(total_changed)d')
+    default_choice = '1.0'
     _log_attack_speed_value = _('Staff attack speed set to maximum of '
                                 '%(attack_speed_value)f.')
 

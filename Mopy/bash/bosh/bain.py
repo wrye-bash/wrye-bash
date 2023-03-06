@@ -1313,7 +1313,7 @@ class InstallerMarker(Installer):
         return '==' + base_name.strip('=') + cnt_str + '=='
 
     def unique_key(self, new_root, ext=u'', add_copy=False):
-        new_name = new_root + (_(' Copy') if add_copy else '')
+        new_name = new_root + (f" {_('Copy')}" if add_copy else '')
         if u'%s' % new_name == u'%s' % self.fn_key: # allow change of case
             return None
         return self.unique_name(new_name)

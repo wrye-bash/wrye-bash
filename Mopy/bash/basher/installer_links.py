@@ -1171,8 +1171,10 @@ class InstallerArchive_Unpack(_ArchiveOnly):
         for iname, installer in self.idata.sorted_pairs(self.selected):
             project = iname.fn_body
             if len(self.selected) == 1:
-                project = self._askFilename(_('Unpack %s to Project:') % iname,
-                    project, inst_type=bosh.InstallerProject, no_file=True)
+                project = self._askFilename(_('Unpack %(target_archive)s to '
+                                              'Project:') % {
+                    'target_archive': iname}, project,
+                    inst_type=bosh.InstallerProject, no_file=True)
                 if not project: return
             elif project in self.idata and not self._askYes( #only needed check
                     _(u'%s already exists. Overwrite it?') % project,
@@ -1446,7 +1448,8 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self._dialog_title, default_size=destInstaller.blockSize or 0)
-        with balt.Progress(_('Creating %s...') % bcf_fname) as progress:
+        with balt.Progress(_('Creating %(bcf_name)s...') % {
+            'bcf_name': bcf_fname}) as progress:
             #--Create the converter
             conv = InstallerConverter.from_scratch(self.selected, self.idata,
                 destArchive, bcf_fname, blockSize, progress)
