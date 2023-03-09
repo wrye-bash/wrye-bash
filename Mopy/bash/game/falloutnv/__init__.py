@@ -22,6 +22,7 @@
 # =============================================================================
 """GameInfo override for Fallout NV."""
 from copy import deepcopy
+from os.path import join as _j
 
 from .. import WS_COMMON_FILES
 from ..fallout3 import Fallout3GameInfo
@@ -79,6 +80,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
 
     class Bain(Fallout3GameInfo.Bain):
         data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
+        no_skip_dirs = Fallout3GameInfo.Bain.no_skip_dirs | {
+            # 3P: JIP LN's Script Runner
+            _j('nvse', 'plugins', 'scripts'): {'.txt'},
+        }
         skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):

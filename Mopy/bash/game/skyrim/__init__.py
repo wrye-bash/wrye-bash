@@ -119,6 +119,7 @@ class SkyrimGameInfo(PatchGame):
             'calientetools', # 3P: BodySlide
             'dialogueviews',
             'dyndolod', # 3P: DynDOLOD
+            'flm', # 3P: FormList Manipulator
             'grass',
             'interface',
             'lodsettings',
@@ -130,6 +131,7 @@ class SkyrimGameInfo(PatchGame):
             'osa', # 3P: OSA Animation Framework
             'platform', # 3P: Skyrim Platform
             'scripts',
+            'seasons', # 3P: Seasons of Skyrim SKSE
             'seq',
             'shadersfx',
             'skse', # 3P: SKSE
@@ -173,6 +175,13 @@ class SkyrimGameInfo(PatchGame):
             # <SKSE plugin name>_preload.txt
             re.compile(bolt.os_sep_re.join([
                 'skse', 'plugins', r'.+_preload\.txt'])),
+            # 3P: Dynamic Animation Replacer - meshes\actors\<Project folder>\
+            # animations\DynamicAnimationReplacer\_CustomConditions\<Priority>\
+            # _conditions.txt
+            re.compile(bolt.os_sep_re.join([
+                'meshes', 'actors', '.+', 'animations',
+                'dynamicanimationreplacer', '_customconditions', r'-?\d+',
+                r'_conditions\.txt'])),
         )
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 

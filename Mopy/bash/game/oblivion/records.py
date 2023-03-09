@@ -1880,7 +1880,7 @@ class MreQust(_ObIcon):
     })
 
     def can_set_icon(self):
-        return not self.stages
+        return self.stages and super().can_set_icon()
 
 #------------------------------------------------------------------------------
 class MreRace(AMreRace):
