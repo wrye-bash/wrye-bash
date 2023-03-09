@@ -54,6 +54,7 @@ from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError
+from ..gui import askYes ##: YAK!
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -1682,7 +1683,7 @@ class FileInfos(TableFileInfos):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile, AINIInfo):
-    _valid_exts_re = r'(\.(?:' + u'|'.join(
+    _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
 
     def _reset_cache(self, stat_tuple, load_cache):
@@ -3062,7 +3063,7 @@ class ModInfos(FileInfos):
         msg += _('Please close the other program that is accessing %(new)s.')
         msg += '\n\n' + _('Try again?')
         msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
-        return balt.askYes(self, msg, _('File in use'))
+        return askYes(self, msg, _('File in use'))
 
     def setOblivionVersion(self, newVersion):
         """Swaps Oblivion.esm to specified version."""
@@ -3695,8 +3696,8 @@ def initBosh(bashIni, game_ini_path):
     initOptions(bashIni)
     Installer.init_bain_dirs()
 
-def initSettings(readOnly=False, _dat=u'BashSettings.dat',
-                 _bak=u'BashSettings.dat.bak'):
+def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',
+                 _bak='BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
     def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
@@ -3726,7 +3727,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
             "second to last time that you used Wrye Bash)?") % {
             'settings_err': repr(err),
             'settings_file_name': 'BashSettings.dat'}
-        usebck = balt.askYes(None, msg, _(u'Settings Load Error'))
+        usebck = ask_yes(None, msg, _('Settings Load Error'))
         if usebck:
             try:
                 bass.settings = _loadBakOrEmpty()
@@ -3738,7 +3739,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                     "the corrupted settings and load Wrye Bash without your "
                     "saved settings (choosing 'No' will cause Wrye Bash to "
                     "exit)?") % {'settings_err': repr(err)}
-                delete = balt.askYes(None, msg, _('Settings Load Error'))
+                delete = ask_yes(None, msg, _('Settings Load Error'))
                 if delete:
                     bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:
@@ -3748,7 +3749,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                 "Do you want to delete the corrupted settings and load Wrye "
                 "Bash without your saved settings (choosing 'No' will cause "
                 "Wrye Bash to exit)?")
-            delete = balt.askYes(None, msg, _('Settings Load Error'))
+            delete = ask_yes(None, msg, _('Settings Load Error'))
             if delete: # Ignore bak but don't delete, overwrite on exit instead
                 bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else:

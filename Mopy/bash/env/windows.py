@@ -1255,7 +1255,7 @@ class TaskDialog(object):
     stock_button_ids = {u'ok': 1, u'cancel': 2, u'retry': 4, u'yes': 6,
                         u'no': 7, u'close': 8}
 
-    def __init__(self, title, heading, content, buttons=(), main_icon=None,
+    def __init__(self, title, heading, content, tsk_buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
         """Initialize the dialog."""
         self.__events = {_CREATED:[],
@@ -1282,8 +1282,8 @@ class TaskDialog(object):
         self._main_icon = self.stock_icons[
             main_icon] if self._main_is_stock else main_icon
         # buttons
-        buttons = list(buttons)
-        self.set_buttons(buttons)
+        tsk_buttons = list(tsk_buttons)
+        self.set_buttons(tsk_buttons)
         # parent handle
         self._parent = parenthwnd
 
@@ -1325,7 +1325,7 @@ class TaskDialog(object):
         if self.__handle is not None:
             self.__update_element_text(_FOOTER, footer)
 
-    def set_buttons(self, buttons, convert_stock_buttons=True):
+    def set_buttons(self, tsk_buttons, convert_stock_buttons=True):
         """
 
            Set the buttons on the dialog using the list of strings in *buttons*
@@ -1334,18 +1334,18 @@ class TaskDialog(object):
            See the official documentation.
 
         """
-        self._buttons = buttons
+        self._buttons = tsk_buttons
         self._conv_stock = convert_stock_buttons
         return self
 
-    def set_radio_buttons(self, buttons, default=0):
+    def set_radio_buttons(self, radio_buttons, default=0):
         """
 
            Add radio buttons to the dialog using the list of strings in
            *buttons*.
 
         """
-        self._radio_buttons = buttons
+        self._radio_buttons = radio_buttons
         self._default_radio = default
         return self
 

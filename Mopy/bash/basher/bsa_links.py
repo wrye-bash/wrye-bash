@@ -47,7 +47,7 @@ class BSA_ExtractToProject(ItemLink):
             if not result: return
             # Error checking
             if (result := FName(result)).fn_ext in archives.readExts:
-                self._showWarning(_(u'%s is not a valid project name.') %
+                self._showWarning(_('%s is not a valid project name.') %
                                   result)
                 return
             to_unpack = [(result, selected_bsas[0])]
@@ -59,11 +59,11 @@ class BSA_ExtractToProject(ItemLink):
         for project, _bsa_inf in to_unpack:
             proj_path = bass.dirs[u'installers'].join(project)
             if proj_path.is_file():
-                self._showWarning(_(u'%s is a file.') % project)
+                self._showWarning(_('%s is a file.') % project)
                 return
             if proj_path.is_dir():
-                question = _(u'%s already exists. Overwrite it?') % project
-                if not self._askYes(question, default=False):
+                question = _('%s already exists. Overwrite it?') % project
+                if not self._askYes(question, default_is_yes=False):
                     return
                 # Clear existing project, user wanted to overwrite it
                 proj_path.rmtree(safety=u'Installers')

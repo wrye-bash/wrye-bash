@@ -137,9 +137,7 @@ class _RecordsGrup(_AMobBase):
             src_rec.keep_fids(active_mods_earlier_than_patch)
         masterset = MasterSet()
         src_rec.updateMasters(masterset.add)
-        if not active_mods_earlier_than_patch.issuperset(masterset):
-            return True
-        return False
+        return not active_mods_earlier_than_patch.issuperset(masterset)
 
     def __bool__(self):
         return any(self.iter_records(skip_flagged=False))
@@ -930,8 +928,8 @@ class CellChildren(_Nested, _ChildrenGrup):
         for sig in self._extra_records:
             if rec := self._stray_recs[sig]:
                 s.append(f'{sig_to_str(sig)}: {rec!r}')
-        for gt in self._mob_objects.values():
-            if gt: s.append(f'{gt!r}')
+        for mob in self._mob_objects.values():
+            if mob: s.append(f'{mob!r}')
         children = ', '.join(s) if s else 'No children'
         return f'<{self}: {self._accepted_sigs}: {children}'
 

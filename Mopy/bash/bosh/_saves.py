@@ -139,8 +139,8 @@ class SreNPC(object):
         #--Factions
         if self.factions is not None:
             pack_short(out, len(self.factions))
-            for faction in self.factions:
-                _pack(u'=Ib', *faction)
+            for fa in self.factions:
+                _pack(u'=Ib', *fa)
         #--Spells
         if self.spells is not None:
             num = len(self.spells)
@@ -186,8 +186,8 @@ class SreNPC(object):
             buff.append(f'{self.acbs}')
         if self.factions is not None:
             buff.append('Factions:')
-            for faction in self.factions:
-                buff.append(f'  {fids[faction[0]]:8X} {faction[1]:2X}')
+            for fa in self.factions:
+                buff.append(f'  {fids[fa[0]]:8X} {fa[1]:2X}')
         if self.spells is not None:
             buff.append('Spells:')
             for spell in self.spells:

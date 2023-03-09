@@ -36,14 +36,17 @@ from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
     PureImageButton, SelectAllButton
 from .checkables import CheckBox
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
-    VLayout
+    VLayout, TOP
 from .misc_components import DatePicker, HorizontalLine, TimePicker
 from .multi_choices import CheckListBox
 from .text_components import Label, SearchBar, TextAlignment, TextField, \
     WrappingLabel
-from .top_level_windows import DialogWindow
+from .top_level_windows import DialogWindow, _TopLevelWin
 ##: Remove GPath, it's for file dialogs
-from ..bolt import GPath, dict_sort
+from ..bolt import GPath, dict_sort, Path
+from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
+    GOOD_EXITS, BTN_YES, BTN_NO
+from ..exception import ArgumentError
 
 class CopyOrMovePopup(DialogWindow):
     """A popup that allows the user to choose between moving or copying a file
@@ -556,3 +559,215 @@ class AMultiListEditor(DialogWindow):
             [mli for mli, mli_checked in mle_list_data.items() if mli_checked]
             for mle_list_data in self._wip_list_data]
         return result, *final_lists
+
+# Message Dialogs -------------------------------------------------------------
+def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
+                  icon='warning', commandLinks=True, footer='', expander=None,
+                  heading=''):
+    """Always guard with TASK_DIALOG_AVAILABLE == True."""
+    vista_buttons = ((BTN_OK, 'ok'), (BTN_CANCEL, 'cancel')) \
+        if vista_buttons is None else vista_buttons
+    heading = heading if heading is not None else title
+    title = title if title is not None else 'Wrye Bash'
+    parent_handle = (_AComponent._resolve(parent).GetHandle()
+                     if parent else None)
+    dialog = TaskDialog(title, heading, message,
+                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon,
+                        parenthwnd=parent_handle, footer=footer)
+    if expander:
+        dialog.set_expander(expander, False, not footer)
+    if checkBoxTxt:
+        if isinstance(checkBoxTxt, bytes):
+            raise RuntimeError('Do not pass bytes to _vista_dialog!')
+        elif isinstance(checkBoxTxt, str):
+            dialog.set_check_box(checkBoxTxt,False)
+        else:
+            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
+    button, radio, checkbox = dialog.show(commandLinks)
+    for id_, title in vista_buttons:
+        if title.startswith('+'): title = title[1:] # used in ask_uac_restart
+        if title == button:
+            if checkBoxTxt:
+                return id_ in GOOD_EXITS, checkbox
+            else:
+                return id_ in GOOD_EXITS, None
+    return False, checkbox
+
+class AskDialogue(DialogWindow):
+    """If in doubt ask the user. If no_cancel is True just display an error/
+    warning/info dialog."""
+    _native_widget: _wx.MessageDialog
+
+    def __init__(self, parent,  message, title, style=0):
+        # bypass the machinery of DialogWindow (size and position restoring
+        # and saving) and _TopLevelWin (similar stuff - condense somehow?)
+        super(_TopLevelWin, self).__init__(parent, message, title, style=style)
+        self.title = title
+
+    @classmethod
+    def display_dialog(cls, *args, do_center=False, no_cancel=False,
+                       warn_ico=False, error_ico=False, info_ico=False,
+                       yes_no=False, default_is_yes=True, question_icon=False,
+                       vista_buttons=None, expander=None, **kwargs):
+        if sum([warn_ico, error_ico, info_ico, yes_no]) > 1:
+            raise ArgumentError(f'At most one of {warn_ico=}, {error_ico=}, '
+                                f'{info_ico=}, {yes_no=} can be True')
+        if yes_no:
+            style = _wx.YES_NO | (
+                _wx.ICON_QUESTION if question_icon else _wx.ICON_WARNING) | (
+                        _wx.YES_DEFAULT if default_is_yes else _wx.NO_DEFAULT)
+        else:
+            style = _wx.OK | (0 if no_cancel else _wx.CANCEL)
+            style |= (warn_ico and _wx.ICON_WARNING) | (error_ico and
+                _wx.ICON_ERROR) | (info_ico and _wx.ICON_INFORMATION)
+        if do_center:
+            style |= _wx.CENTER
+        if TASK_DIALOG_AVAILABLE:
+            if vista_buttons is None:
+                vista_buttons = []
+                if yes_no:
+                    yes = 'yes'
+                    no = 'no'
+                    if style & _wx.YES_DEFAULT:
+                        yes = 'Yes'
+                    elif style & _wx.NO_DEFAULT:
+                        no = 'No'
+                    vista_buttons.append((BTN_YES, yes))
+                    vista_buttons.append((BTN_NO, no))
+                if style & _wx.OK:
+                    vista_buttons.append((BTN_OK, 'ok'))
+                if style & _wx.CANCEL:
+                    vista_buttons.append((BTN_CANCEL, 'cancel'))
+            icon = None
+            if info_ico:
+                icon = 'information'
+            if error_ico:
+                icon = 'error'
+            if warn_ico or not icon: # default to warning icon
+                icon = 'warning'
+            parent, message, title = args
+            result, _check = _vista_dialog(parent, message, title, icon=icon,
+                vista_buttons=vista_buttons, expander=expander)
+        else:
+            kwargs['style'] = style
+            return super().display_dialog(*args, **kwargs)
+        return result
+
+class ContinueDialog(DialogWindow):
+    """Dialog having a checkbox that gives the user the option to not show
+    it again."""
+    _def_size = _min_size = (360, 150)
+
+    def __init__(self, parent, message, title, checkBoxTxt,
+                 show_cancel, *, sizes_dict=None):
+        super().__init__(parent, title, sizes_dict=sizes_dict)
+        self.gCheckBox = CheckBox(self, checkBoxTxt)
+        #--Layout
+        bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
+        if show_cancel:
+            bottom_items.append(CancelButton(self))
+        ##: yuck, decouple!
+        from ..balt import staticBitmap
+        VLayout(border=6, spacing=6, item_expand=True, items=[
+            (HLayout(spacing=6, items=[
+                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
+                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
+             LayoutOptions(weight=1)),
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(spacing=4, item_expand=True, items=bottom_items),
+        ]).apply_to(self)
+
+    def show_modal(self):
+        #--Get continue key setting and return
+        result = super().show_modal()
+        check = self.gCheckBox.is_checked
+        return result, check
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        #--Get continue key setting and return
+        if TASK_DIALOG_AVAILABLE:
+            parent, *args = args
+            if not kwargs.pop('show_cancel', False):
+                kwargs['vista_buttons'] = ((BTN_OK, 'ok'),)
+            kwargs.pop('sizes_dict', None) # can't ever be resized AFAIK
+            result, check = _vista_dialog(cls._resolve(parent), *args, **kwargs)
+        else:
+            return super().display_dialog(*args, **kwargs)
+        return result, check
+
+class _EntryDialog(DialogWindow):
+    """Ask the user for a string or a number."""
+    _native_widget: _wx.TextEntryDialog # default to text
+
+    def __init__(self, *args, **kwargs):
+        super(_TopLevelWin, self).__init__(*args, **kwargs)
+
+    def show_modal(self) -> str | float | None:
+        if self._native_widget.ShowModal() != _wx.ID_OK:
+            return None
+        return self._native_widget.GetValue()
+
+class TextEntry(_EntryDialog):
+
+    def __init__(self, parent, message, title, default_entry, *, strip=True):
+        super().__init__(parent, message, title, default_entry)
+        self._strip = strip
+
+    def show_modal(self):
+        txt: str = super().show_modal()
+        return txt.strip() if txt and self._strip else txt
+
+class NumEntry(_EntryDialog):
+    _native_widget: _wx.NumberEntryDialog
+
+    def __init__(self, parent, message, prompt='', title='', initial_num=0,
+                 min_num=0, max_num=10000):
+        super().__init__(parent, message, prompt, title, initial_num, min_num,
+                         max_num)
+
+def askText(parent, message, title='', default_txt='', *, strip=True):
+    """Show a text entry dialog and returns result or None if canceled."""
+    return TextEntry.display_dialog(parent, message, title, default_txt,
+                                    strip=strip)
+
+def askNumber(parent, message, prompt='', title='', *, initial_num=0,
+              min_num=0, max_num=10000):
+    """Show a number entry dialog and returns result or None if canceled."""
+    return NumEntry.display_dialog(parent, message, prompt, title, initial_num,
+                                   min_num, max_num)
+
+# Message Dialogs -------------------------------------------------------------
+def askYes(parent, message, title='', *, default_is_yes=True,
+           question_icon=False, vista_buttons=None, expander=None):
+    """Shows a modal warning or question message."""
+    return AskDialogue.display_dialog(parent, message, title, yes_no=True,
+        default_is_yes=default_is_yes, question_icon=question_icon,
+        vista_buttons=vista_buttons, expander=expander)
+
+def askWarning(parent, message, title=_('Warning')):
+    """Shows a modal warning message."""
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True)
+
+def showOk(parent, message, title=''):
+    """Shows a modal confirmation message."""
+    if isinstance(title, Path): title = title.s
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+                                      info_ico=True)
+
+def showError(parent, message, title=_('Error')):
+    """Shows a modal error message."""
+    if isinstance(title, Path): title = title.s
+    return AskDialogue.display_dialog(parent, message, title, no_cancel=True,
+                                      error_ico=True)
+
+def showWarning(parent, message, title=_('Warning'), do_center=False):
+    """Shows a modal warning message."""
+    return AskDialogue.display_dialog(parent, message, title, warn_ico=True,
+                                      no_cancel=True, do_center=do_center)
+
+def showInfo(parent, message, title=_('Information')):
+    """Shows a modal information message."""
+    return AskDialogue.display_dialog(parent, message, title, info_ico=True,
+                                      no_cancel=True)

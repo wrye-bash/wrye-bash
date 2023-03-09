@@ -31,7 +31,8 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
 from ..env import get_game_version_fallback, getJava
-from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
+from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
+    showError
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
@@ -63,8 +64,8 @@ class StatusBar_Button(ItemLink):
     def sb_button_tip(self): return self._tip
 
     def __init__(self, uid=None, canHide=True, button_tip=u''):
-        """ui: Unique identifier, used for saving the order of status bar icons
-               and whether they are hidden/shown.
+        """uid: Unique identifier, used for saving the order of status bar
+                icons and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
         super(StatusBar_Button, self).__init__()
         self.mainMenu = Links()
@@ -80,7 +81,7 @@ class StatusBar_Button(ItemLink):
         existent buttons."""
         return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
+    def SetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
         btn_image = image or balt.images[self.imageKey % bass.settings[
             u'bash.statusbar.iconSize']].get_bitmap()
@@ -90,7 +91,6 @@ class StatusBar_Button(ItemLink):
                                       btn_tooltip=self.sb_button_tip)
         self.gButton.on_clicked.subscribe(self.Execute)
         self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
-        return self.gButton
 
     def DoPopupMenu(self):
         if self.canHide:
@@ -141,7 +141,7 @@ class _App_Button(StatusBar_Button):
     def sb_button_tip(self):
         if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
-            return self._tip + u' ' + self.version
+            return f'{self._tip} {self.version}'
 
     @property
     def obseTip(self):
@@ -165,42 +165,35 @@ class _App_Button(StatusBar_Button):
         return self.exePath not in bosh.undefinedPaths and \
                self.exePath.exists()
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self.IsPresent(): return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self.IsPresent(): return
         iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2, duh
-        super(_App_Button, self).GetBitmapButton(
-            window, self.images[idex].get_bitmap(), onRClick)
+        super().SetBitmapButton(window, self.images[idex].get_bitmap(),
+                                onRClick)
         if self.obseTip is not None:
             _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
                 self.gButton.tooltip = self.obseTip
-        return self.gButton
 
-    def ShowError(self,error):
-        balt.showError(Link.Frame,
-            (f'{error}\n\n' +
-             _('Used Path: %(launched_exe_path)s') % {
-                 'launched_exe_path': self.exePath} + '\n' +
-             _('Used Arguments: %(launched_exe_args)s') % {
-                 'launched_exe_args': self.exeArgs}),
-            title=_("Could Not Launch '%(launched_exe_name)s'") % {
+    def ShowError(self, error=None, *, msg=None):
+        if error is not None:
+            msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
+                'launched_exe_path': self.exePath} + '\n' + _(
+                'Used Arguments: %(launched_exe_args)s') % {
+                       'launched_exe_args': self.exeArgs})
+        showError(Link.Frame, msg,
+                  title=_("Could Not Launch '%(launched_exe_name)s'") % {
                 'launched_exe_name': self.exePath.stail})
 
     def _showUnicodeError(self):
-        balt.showError(Link.Frame, _('Execution failed because one or more of '
-                                     'the command line arguments failed to '
-                                     'encode.'),
-            title=_("Could Not Launch '%(launched_exe_name)s'") % {
-                'launched_exe_name': self.exePath.stail})
+        self.ShowError(msg=_('Execution failed because one or more of the '
+                             'command line arguments failed to encode.'))
 
     def Execute(self):
         if not self.IsPresent():
-            balt.showError(Link.Frame,
-                _('Application missing: %(launched_exe_path)s') % {
-                    'launched_exe_path': self.exePath},
-                title=_("Could Not Launch '%(launched_exe_name)s'") % {
-                    'launched_exe_name': self.exePath.stail})
+            msg = _('Application missing: %(launched_exe_path)s')
+            self.ShowError(msg=msg % {'launched_exe_path': self.exePath})
             return
         self._app_button_execute()
 
@@ -661,11 +654,10 @@ class _StatefulButton(StatusBar_Button):
     @property
     def _present(self): return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self._present: return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self._present: return
         self.SetState()
-        return super(_StatefulButton, self).GetBitmapButton(window, image,
-                                                            onRClick)
+        super().SetBitmapButton(window, image, onRClick)
 
     def IsPresent(self):
         return self._present
@@ -767,9 +759,8 @@ class App_Settings(StatusBar_Button):
     """Show settings dialog."""
     imageKey, _tip = 'settings_button.%s', _('Settings')
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        return super(App_Settings, self).GetBitmapButton(
-            window, image, lambda: self.Execute())
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        super().SetBitmapButton(window, image, lambda: self.Execute())
 
     def Execute(self):
         SettingsDialog.display_dialog()

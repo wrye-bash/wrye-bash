@@ -142,6 +142,6 @@ class INI_CreateNew(OneItemLink):
         if msg is None:
             self._showError(fn_tweak) # it's an error message in this case
             return
-        if bosh.iniInfos.copy_tweak_from_target(self._selected_item, fn_tweak):
+        if bosh.iniInfos.copy_tweak_from_target(ini_key, fn_tweak):
             ##: we need a 'to_add' param in RefreshUI
             self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)

@@ -83,17 +83,18 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     LayoutOptions, ListBox, MultiChoicePopup, PanelWin, Picture, \
     PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
     TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
-    get_shift_down, read_files_from_clipboard_cb
+    get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
+    showWarning, askWarning, showOk
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
-_env_path = os.environ[u'PATH']
-if sys.prefix not in set(_env_path.split(u';')):
-    os.environ[u'PATH'] = _env_path + u';' + sys.prefix
+_env_path = os.environ['PATH']
+if sys.prefix not in _env_path.split(';'):
+    os.environ['PATH'] = f'{_env_path};{sys.prefix}'
 
 # Settings --------------------------------------------------------------------
-settings = None # type: bolt.Settings | None
+settings: bolt.Settings | None = None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -140,9 +141,10 @@ class Installers_Link(ItemLink):
                 self._showError(_('%(package_filename)s already '
                                   'exists.') % fmt_pf)
                 return
-            if not self._askYes(_('%(package_filename)s already exists. '
-                                  'Overwrite it?') % fmt_pf,
-                    title=self._dialog_title, default=False): return
+            msg = _('%(package_filename)s already exists. Overwrite it?'
+                    ) % fmt_pf
+            if not self._askYes(msg, self._dialog_title, default_is_yes=False):
+                return
         return archive_path
 
 #--Information about the various Tabs
@@ -635,8 +637,8 @@ class MasterList(_ModsUIList):
         elif evt_label == u'':
             return EventResult.CANCEL
         else:
-            balt.showError(self, _('File %(selected_file)s does not '
-                                   'exist.') % {'selected_file': evt_label})
+            showError(self, _('File %(selected_file)s does not exist.') % {
+                'selected_file': evt_label})
             return EventResult.CANCEL
 
     #--GetMasters
@@ -808,11 +810,11 @@ class INIList(balt.UIList):
         if default_ini.exists():
             msg += _(u'Do you want Bash to create it by copying '
                      u'%(default_ini)s ?') % {u'default_ini': default_ini}
-            if not balt.askYes(None, msg, _(u'Missing game Ini')):
+            if not askYes(None, msg, _('Missing game Ini')):
                 return False
         else:
             msg += _(u'Please create it manually to continue.')
-            balt.showError(None, msg, _(u'Missing game Ini'))
+            showError(None, msg, _('Missing game Ini'))
             return False
         try:
             default_ini.copyTo(target_ini_file.abs_path)
@@ -825,11 +827,10 @@ class INIList(balt.UIList):
             target_ini_pth = target_ini_file.abs_path
             deprint(f'Failed to copy {default_ini} to {target_ini_pth}',
                 traceback=True)
-            balt.showError(None,
-                _('Failed to copy %(def_ini_path)s to %(target_ini_pth)s.') % {
-                    'def_ini_path': default_ini,
-                    'target_ini_pth': target_ini_pth},
-                title=_('Missing Game INI'))
+            msg = _('Failed to copy %(def_ini_path)s to %(target_ini_pth)s.'
+                    ) % {'def_ini_path': default_ini,
+                         'target_ini_pth': target_ini_pth}
+            showError(None, msg, title=_('Missing Game INI'))
         return False
 
     @staticmethod
@@ -1021,7 +1022,7 @@ class ModList(_ModsUIList):
         try:
             bosh.modInfos.cached_lo_save_all()
         except (BoltError, NotImplementedError) as e:
-            balt.showError(self, f'{e}')
+            showError(self, f'{e}')
         first_impacted = load_order.cached_lo_tuple()[first_index]
         self.RefreshUI(redraw=self._lo_redraw_targets({first_impacted}),
                        refreshSaves=True)
@@ -1155,7 +1156,7 @@ class ModList(_ModsUIList):
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
-            chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
+            chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
             for dex in indexes:
                 if previous != -1 and previous + 1 != dex:
@@ -1299,7 +1300,7 @@ class ModList(_ModsUIList):
                     changes[self.__deactivated_key][act] = \
                         load_order.get_ordered(deactivated)
             except (BoltError, NotImplementedError) as e:
-                balt.showError(self, f'{e}')
+                showError(self, f'{e}')
         # Activate ?
         # Track illegal activations for the return value
         illegal_activations = []
@@ -1320,7 +1321,7 @@ class ModList(_ModsUIList):
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
             except (BoltError, NotImplementedError) as e:
-                balt.showError(self, f'{e}')
+                showError(self, f'{e}')
                 break
         # Show warnings to the user if they attempted to deactivate mods that
         # can't be deactivated (e.g. vanilla masters on newer games) and/or
@@ -1403,8 +1404,8 @@ class ModList(_ModsUIList):
             self.ClearSelected(clear_details=True)
             self.RefreshUI(redraw=[new_patch_name], refreshSaves=False)
         else:
-            balt.showWarning(self, _('Unable to create new Bashed Patch: 10 '
-                                     'Bashed Patches already exist!'))
+            showWarning(self, _('Unable to create new Bashed Patch: 10 Bashed '
+                                'Patches already exist!'))
 
 #------------------------------------------------------------------------------
 class _DetailsMixin(object):
@@ -1501,7 +1502,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         #--Validate the filename
         name_path, root = self.file_info.validate_name(fileStr)
         if root is None:
-            balt.showError(self, name_path) # it's an error message in this case
+            showError(self, name_path) # it's an error message in this case
             self._fname_ctrl.text_content = self.fileStr
         #--Okay?
         else:
@@ -1525,8 +1526,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         except FileError as e:
             deprint(f'Failed to edit details for {self.displayed_item}',
                     traceback=True)
-            balt.showError(self, _('File corrupted on save!') +
-                                 f'\n{e.message}')
+            showError(self, _('File corrupted on save!') + f'\n{e.message}')
             return None
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
@@ -1769,9 +1769,9 @@ class ModDetails(_ModsSavesDetails):
             newTimeTup = time.strptime(modifiedStr)
             time.mktime(newTimeTup)
         except ValueError:
-            balt.showError(self,
-                _('Invalid date "%(unrecognized_date)s", formatting is likely '
-                  'incorrect.') % {'unrecognized_date': modifiedStr})
+            showError(self, _(
+                'Invalid date "%(unrecognized_date)s", formatting is likely '
+                'incorrect.') % {'unrecognized_date': modifiedStr})
             self.modified_txt.text_content = self.modifiedStr
             return
         self._apply_modified_timestamp(time.strftime('%c', newTimeTup))
@@ -1817,6 +1817,9 @@ class ModDetails(_ModsSavesDetails):
                            self.descriptionStr == modInfo.header.description):
             self.DoCancel()
 
+    __bad_name_msg = _('File name %(bad_file_name)s cannot be encoded to '
+        'Windows-1252. %(game_name)s may not be able to activate this '
+        'plugin because of this. Do you want to rename the plugin anyway?')
     @balt.conversation
     def DoSave(self):
         modInfo = self.modInfo
@@ -1832,7 +1835,7 @@ class ModDetails(_ModsSavesDetails):
             msg = modInfo.ask_resources_ok(
                 bsa_and_blocking_msg=self._bsa_and_blocking_msg,
                 bsa_msg=self._bsa_msg, blocking_msg=self._blocking_msg)
-            if msg and not balt.askWarning(
+            if msg and not askWarning(
                     self, msg, title=_('Rename %(target_file_name)s') % {
                         'target_file_name': modInfo}): return
         #--Only change date?
@@ -1849,17 +1852,12 @@ class ModDetails(_ModsSavesDetails):
         if changeName:
             oldName,newName = modInfo.fn_key, file_str
             #--Bad name?
-            if (bosh.modInfos.isBadFileName(str(newName)) and
-                not balt.askContinue(self, _(
-                    'File name %(bad_file_name)s cannot be encoded to '
-                    '%(needed_encoding)s. %(game_name)s may not be able to '
-                    'activate this plugin because of this. Do you want to '
-                    'rename the plugin anyway?') % {
-                    'bad_file_name': newName,
-                    'needed_encoding': 'Windows-1252',
-                    'game_name': bush.game.displayName},
-                    'bash.rename.isBadFileName.continue')):
-                return ##: cancels all other changes - move to validate_filename (without the balt part)
+            if bosh.modInfos.isBadFileName(str(newName)):
+                msg = self.__bad_name_msg % {'bad_file_name': newName,
+                    'game_name': bush.game.displayName}
+                if not balt.askContinue(self, msg,
+                                        'bash.rename.isBadFileName.continue'):
+                    return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName)
         #--Change hedr/masters?
@@ -2007,11 +2005,10 @@ class ModDetails(_ModsSavesDetails):
                 if mod_info.setBashTagsDesc(mod_tags):
                     _refresh_only_details()
                 else:
-                    balt.showError(
-                        Link.Frame, _(u'Description field including the Bash '
-                                      u'Tags must be at most 511 characters. '
-                                      u'Edit the description to leave enough '
-                                      u'room.'))
+                    showError(Link.Frame, _(
+                        'Description field including the Bash Tags must be at '
+                        'most 511 characters. Edit the description to leave '
+                        'enough room.'))
         class Tags_SelectAll(ItemLink):
             _text = _(u'Select All')
             _help = _(u'Selects all currently applied tags.')
@@ -2298,7 +2295,7 @@ class SaveList(balt.UIList):
         newName, root = \
             self.panel.detailsPanel.file_info.validate_filename_str(evt_label)
         if not root:
-            balt.showError(self, newName)
+            showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = [self.panel.detailsPanel.displayed_item]
         to_select = set()
@@ -2348,7 +2345,7 @@ class SaveList(balt.UIList):
         if not sinf: return
         # Don't allow enabling backups, the game won't read them either way
         if (fn_item := sinf.fn_key).fn_ext == u'.bak':
-            balt.showError(self, _(u'You cannot enable save backups.'))
+            showError(self, _('You cannot enable save backups.'))
             return
         enabled_ext = bush.game.Ess.ext
         disabled_ext = enabled_ext[:-1] + u'r'
@@ -2674,7 +2671,7 @@ class InstallersList(balt.UIList):
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
         if root is None:
-            balt.showError(self, newName)
+            showError(self, newName)
             return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         if isinstance(root, tuple):
@@ -2747,12 +2744,10 @@ class InstallersList(balt.UIList):
                 progress(i, om_name)
                 outDir = bass.dirs[u'installers'].join(omod.body)
                 if outDir.exists():
-                    if balt.askYes(progress.dialog,
-                            _("The project '%(omod_project)s' already exists. "
-                              "Do you want to overwrite it with "
-                              "'%(omod_name)s'?") % {
-                                'omod_project': omod.sbody,
-                                'omod_name': om_name}):
+                    if askYes(progress.dialog, _(
+                        "The project '%(omod_project)s' already exists. Do "
+                        "you want to overwrite it with '%(omod_name)s'?") % {
+                            'omod_project': omod.sbody, 'omod_name': om_name}):
                         env.shellDelete([outDir], parent=self,
                                         recycle=True)  # recycle
                     else: continue
@@ -2780,12 +2775,12 @@ class InstallersList(balt.UIList):
             if failed:
                 msg += _(u'The following OMODs failed to extract:') + \
                        u'\n%s' % u'\n'.join(failed)
-            balt.showOk(self, msg, _(u'OMOD Extraction Canceled'))
+            showOk(self, msg, _('OMOD Extraction Canceled'))
         else:
-            if failed: balt.showWarning(self, _(
-                u'The following OMODs failed to extract.  This could be '
-                u'a file IO error, or an unsupported OMOD format:') + u'\n\n'
-                + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
+            if failed: showWarning(self, _(
+                'The following OMODs failed to extract.  This could be '
+                'a file IO error, or an unsupported OMOD format:') + '\n\n'
+                    + '\n'.join(failed), _('OMOD Extraction Complete'))
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
 
@@ -2892,7 +2887,7 @@ class InstallersList(balt.UIList):
             moveMod = 1 if kcode in balt.wxArrowDown else -1 # move down or up
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
-            visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
+            visibleIndex = self._get_uil_index(sorted_[0]) + moveMod * 2
             maxPos = max(x.order for x in self.data_store.values())
             for thisFile in sorted_:
                 newPos = self.data_store[thisFile].order + moveMod
@@ -2954,13 +2949,13 @@ class InstallersList(balt.UIList):
             max_order = sorted_inst[-1].order + 1 #place it after last selected
         else:
             max_order = None
-        new_marker = FName(u'====')
+        new_marker = FName('====')
         try:
-            index = self.GetIndex(new_marker)
+            index = self._get_uil_index(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
             self.data_store.add_marker(new_marker, max_order)
             self.RefreshUI() # need to redraw all items cause order changed
-            index = self.GetIndex(new_marker)
+            index = self._get_uil_index(new_marker)
         if index != -1:
             self.SelectAndShowItem(new_marker, deselectOthers=True,
                                    focus=True)
@@ -3425,8 +3420,8 @@ class InstallersPanel(BashTab):
                 u'many mods installed.') + u'\n\n\t' + _(
                 u'If not, you can enable it at any time by right-clicking '
                 u"the column header menu and selecting 'Enabled'.")
-            settings[u'bash.installers.enabled'] = balt.askYes(self, message,
-                                                              _(u'Installers'))
+            settings['bash.installers.enabled'] = askYes(self, message,
+                                                         _('Installers'))
 
     @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
@@ -3524,10 +3519,10 @@ class InstallersPanel(BashTab):
             try:
                 _del(omodRemoves)
             except (CancelError, SkipError):
-                while balt.askYes(self, _(
-                        u'Bash needs Administrator Privileges to delete '
-                        u'OMODs that have already been extracted.') +
-                        u'\n\n' + _(u'Try again?'), dialog_title):
+                while askYes(self, _(
+                        'Bash needs Administrator Privileges to delete '
+                        'OMODs that have already been extracted.') +
+                        '\n\n' + _('Try again?'), dialog_title):
                     try:
                         omodRemoves = [x for x in omodRemoves if x.exists()]
                         _del(omodRemoves)
@@ -3550,10 +3545,10 @@ class InstallersPanel(BashTab):
                 env.shellMakeDirs([dirInstallersJoin('Bash', 'Failed OMODs')])
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
-                while balt.askYes(self, _(
-                        u'Bash needs Administrator Privileges to move failed '
-                        u'OMODs out of the Bash Installers directory.') +
-                        u'\n\n' + _(u'Try again?'), dialog_title):
+                while askYes(self, _(
+                        'Bash needs Administrator Privileges to move failed '
+                        'OMODs out of the Bash Installers directory.') +
+                        '\n\n' + _('Try again?'), dialog_title):
                     try:
                         omodMoves = [x for x in omodMoves if x.exists()]
                         _move_omods(omodMoves)
@@ -3613,7 +3608,7 @@ class ScreensList(balt.UIList):
         root, numStr = self.panel.detailsPanel.file_info.validate_filename_str(
             evt_label)
         if numStr is None: # allow for number only names
-            balt.showError(self, root)
+            showError(self, root)
             return EventResult.CANCEL
         selected = self.get_selected_infos_filtered()
         #--Rename each screenshot, keeping the old extension
@@ -3995,12 +3990,12 @@ class BashStatusBar(DnDStatusBar):
     laaButton = None
 
     def UpdateIconSizes(self, skip_refresh=False):
-        self.buttons = [] # will be populated with _displayed_ gButtons - g ?
+        self.buttons = {} # populated with SBLinks whose gButtons is not None
         order = settings[u'bash.statusbar.order']
         hide = settings[u'bash.statusbar.hide']
-        # Add buttons in order that is saved - on first run order = [] !
+        # Add buttons in order that is saved - on first Bash run order = [] !
         for uid in order[:]:
-            link = self.GetLink(uid=uid)
+            link = BashStatusBar.all_sb_links.get(uid)
             # Doesn't exist?
             if link is None:
                 order.remove(uid)
@@ -4015,70 +4010,43 @@ class BashStatusBar(DnDStatusBar):
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
                 deprint(f'Failed to load button {uid!r}', traceback=True)
         # Add any new buttons
-        for link in BashStatusBar.buttons:
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             # Already tested?
-            uid = link.uid
-            if uid in order: continue
+            if link_uid in order: continue
             # Remove any hide settings, if they exist
-            if uid in hide:
-                hide.discard(uid)
-            order.append(uid)
+            if link_uid in hide:
+                hide.discard(link_uid)
+            order.append(link_uid)
             try:
                 self._addButton(link)
             except AttributeError:
-                deprint(f'Failed to load button {uid!r}', traceback=True)
+                deprint(f'Failed to load button {link_uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 
     def HideButton(self, button, skip_refresh=False):
-        if button in self.buttons:
-            # Find the BashStatusBar_Button instance that made it
-            link = self.GetLink(button=button)
-            if link:
+        for link_uid, link in self.buttons.items():
+            if link.gButton is button:
                 button.visible = False
-                self.buttons.remove(button)
-                settings[u'bash.statusbar.hide'].add(link.uid)
+                del self.buttons[link_uid]
+                settings['bash.statusbar.hide'].add(link_uid)
                 if not skip_refresh:
                     self.refresh_status_bar()
+                return
 
     def UnhideButton(self, link, skip_refresh=False):
         uid = link.uid
         settings[u'bash.statusbar.hide'].discard(uid)
         # Find the position to insert it at
         order = settings[u'bash.statusbar.order']
+        self._addButton(link)
         if uid not in order:
             # Not specified, put it at the end
             order.append(uid)
-            self._addButton(link)
         else:
-            # Specified, but now factor in hidden buttons, etc
-            self._addButton(link)
-            button = self.buttons.pop()
-            thisIndex, insertBefore = order.index(link.uid), 0
-            for i in range(len(self.buttons)):
-                otherlink = self.GetLink(index=i)
-                indexOther = order.index(otherlink.uid)
-                if indexOther > thisIndex:
-                    insertBefore = i
-                    break
-            self.buttons.insert(insertBefore,button)
+            self._sort_buttons(order)
         if not skip_refresh:
             self.refresh_status_bar()
-
-    def GetLink(self,uid=None,index=None,button=None):
-        """Get the Link object with a specific uid,
-           or that made a specific button."""
-        if uid is not None:
-            for link in BashStatusBar.buttons:
-                if link.uid == uid:
-                    return link
-        elif index is not None:
-            button = self.buttons[index]
-        if button is not None:
-            for link in BashStatusBar.buttons:
-                if link.gButton is button:
-                    return link
-        return None
 
     def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is
@@ -4174,7 +4142,7 @@ class BashFrame(WindowFrame):
                     'the auto-ghost section of the readme for more '
                     'details.') % {'data_folder': bush.game.mods_dir,
                                    'game_name': bush.game.displayName}
-            balt.showWarning(self, message, title=_('Too Many Plugins.'))
+            showWarning(self, message, title=_('Too Many Plugins.'))
 
     def bind_refresh(self, bind=True):
         if self._native_widget:
@@ -4298,10 +4266,10 @@ class BashFrame(WindowFrame):
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
             u'SkipResetTimeNotifications']:
-            balt.showWarning(self, _(u'Load order has changed outside of Bash '
-                u'and has been reverted to the one saved in Bash. You can hit '
-                u'Ctrl + Z while the mods list has focus to undo this.'),
-                             _(u'Lock Load Order'))
+            showWarning(self, _('Load order has changed outside of Bash and '
+                'has been reverted to the one saved in Bash. You can hit '
+                'Ctrl + Z while the mods list has focus to undo this.'),
+                _('Lock Load Order'))
             load_order.warn_locked = False
 
     def warn_load_order(self):
@@ -4409,11 +4377,11 @@ class BashFrame(WindowFrame):
                 msg = '\n'.join([self.oblivionIniCorrupted, '', _(
                     'Please replace the INI with a default copy and restart '
                     'Wrye Bash.')])
-                balt.showWarning(self, msg, title=_('Corrupted Game INI'))
+                showWarning(self, msg, title=_('Corrupted Game INI'))
         elif self.oblivionIniMissing != self._oblivionIniMissing:
             self._oblivionIniMissing = self.oblivionIniMissing
             if self._oblivionIniMissing:
-                balt.showWarning(self, self._ini_missing % {
+                showWarning(self, self._ini_missing % {
                     'game_ini_file': bosh.oblivionIni.abs_path,
                     'game_name': bush.game.displayName},
                     title=_('Missing Game INI'))
@@ -4430,7 +4398,7 @@ class BashFrame(WindowFrame):
                  '%(data_docs_dir)s folders.') % {
                    'wb_folder': 'Mopy',
                    'data_docs_dir': os.path.join(bush.game.mods_dir, 'Docs')})
-        balt.showWarning(self, msg, title=_('Incomplete Installation'))
+        showWarning(self, msg, title=_('Incomplete Installation'))
 
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
@@ -4607,7 +4575,7 @@ class BashApp(object):
 # Initialization --------------------------------------------------------------
 def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
-    bosh.initSettings()
+    bosh.initSettings(askYes)
     global settings
     balt._settings = bass.settings
     balt.sizes = bass.settings.get(u'bash.window.sizes', {})

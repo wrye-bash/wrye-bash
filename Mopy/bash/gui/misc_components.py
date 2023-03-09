@@ -210,9 +210,9 @@ class Table(WithCharEvents):
                 parsed_clipboard = self._parse_clipboard_contents(
                     read_from_clipboard())
                 if not parsed_clipboard:
-                    from .. import balt # TODO(inf) de-wx! move this to gui
-                    balt.showWarning(self, _(u'Could not parse the pasted '
-                                             u'contents as a valid table.'))
+                    from .popups import showWarning ##: circular import
+                    showWarning(self, _('Could not parse the pasted contents '
+                                        'as a valid table.'))
                     return
                 self.edit_cells(parsed_clipboard)
                 self._native_widget.AutoSize()

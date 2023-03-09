@@ -338,3 +338,50 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     def lc_select_item_at_index(self, index: int, select=True,
                                 __select=_wx.LIST_STATE_SELECTED):
         self._native_widget.SetItemState(index, select * __select, __select)
+
+    # wrappers for UIList used methods ----------------------------------------
+    def get_selected_index(self, after=-1, *, __next_all=_wx.LIST_NEXT_ALL,
+                           __state_selected=_wx.LIST_STATE_SELECTED):
+        """Get selected indexes after the specified index - if not specified
+        get first selected index."""
+        return self._native_widget.GetNextItem(after, __next_all,
+                                               __state_selected)
+
+    def set_item_data(self, *args):
+        self._native_widget.SetItem(*args)
+
+    def get_item_data(self, dex):
+        return self._native_widget.GetItem(dex)
+
+    def get_text_color(self):
+        return self._native_widget.GetTextColour()
+
+    def resize_last_col(self):
+        self._native_widget.resizeLastColumn(0)
+
+    def focus_index(self, dex):
+        self._native_widget.Focus(dex)
+
+    def ensure_visible_index(self, dex):
+        self._native_widget.EnsureVisible(dex)
+
+    def edit_label(self, dex):
+        self._native_widget.EditLabel(dex)
+
+    # Images
+    def set_image_list(self, image_list, *, __which=_wx.IMAGE_LIST_SMALL):
+        self._native_widget.SetImageList(image_list, __which)
+
+    def clear_col_image(self, col_dex):
+        self._native_widget.ClearColumnImage(col_dex)
+
+    def set_col_image(self, col_dex, image):
+        self._native_widget.SetColumnImage(col_dex, image)
+
+    # Scroll
+    def get_scroll_pos(self, is_vertical):
+        return self._native_widget.GetScrollPos(
+            _wx.VERTICAL if is_vertical else _wx.HORIZONTAL)
+
+    def set_scroll_pos(self, pos):
+        return self._native_widget.ScrollLines(pos)

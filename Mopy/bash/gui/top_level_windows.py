@@ -49,7 +49,7 @@ class _TopLevelWin(_AComponent):
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
-        super(_TopLevelWin, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         self._set_pos_size(kwargs, sizes_dict)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
@@ -172,9 +172,8 @@ class DialogWindow(_TopLevelWin):
         if sizes_dict is not None: style |= _wx.RESIZE_BORDER
         else: sizes_dict = {}
         if caption: style |= _wx.CAPTION
-        super(DialogWindow, self).__init__(parent, sizes_dict, icon_bundle,
-                                           title=self.title, style=style,
-                                           **kwargs)
+        super().__init__(parent, sizes_dict, icon_bundle, title=self.title,
+                         style=style, **kwargs)
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
         self._on_size_changed.subscribe(self.save_size) # save dialog size
 

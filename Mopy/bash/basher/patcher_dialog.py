@@ -35,7 +35,8 @@ from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
-    SaveAsButton, SelectAllButton, Stretch, VLayout
+    SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
+    showWarning
 from ..patcher import exportConfig, list_patches_dir
 
 # Final lists of gui patcher classes instances, initialized in
@@ -170,7 +171,7 @@ class PatchDialog(DialogWindow):
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
             if patchFile.tes4.num_masters > bush.game.Esp.master_limit:
-                balt.showError(self, _(
+                showError(self, _(
                     'The resulting Bashed Patch contains too many masters '
                     '(%(curr_num_masters)d, limit is %(max_num_masters)d). '
                     'You can try to disable some patchers, create a second '
@@ -238,8 +239,8 @@ class PatchDialog(DialogWindow):
             message = _('Activate %(bp_name)s?') % {'bp_name': patch_name}
             count = 0
             if load_order.cached_is_active(patch_name) or (
-                        bass.inisettings[u'PromptActivateBashedPatch'] and
-                        balt.askYes(self.parent, message, patch_name)):
+                    bass.inisettings['PromptActivateBashedPatch'] and
+                    askYes(self.parent, message, patch_name)):
                 try:
                     count = len(bosh.modInfos.lo_activate(patch_name,
                         doSave=True))
@@ -248,9 +249,9 @@ class PatchDialog(DialogWindow):
                             _('Masters Activated: %(num_activated)d') % {
                                 'num_activated': count - 1})
                 except PluginsFullError:
-                    balt.showError(self,
-                        _('Unable to activate plugin %(bp_name)s because the '
-                          'load order is full.') % {'bp_name': patch_name})
+                    showError(self, _(
+                        'Unable to activate plugin %(bp_name)s because the '
+                        'load order is full.') % {'bp_name': patch_name})
             if info.fsize == patch_size:
                 # Needed if size remains the same - mtime is set in
                 # ModFile.safeSave which can't use setmtime(crc_changed), as no
@@ -276,7 +277,7 @@ class PatchDialog(DialogWindow):
     def _error(self, e_msg):
         balt.playSound(self.parent, bass.inisettings[u'SoundError'])
         bolt.deprint('Exception during Bashed Patch building:', traceback=True)
-        balt.showError(self, e_msg, _(u'Bashed Patch Error'))
+        showError(self, e_msg, _('Bashed Patch Error'))
 
     def _save_pbash(self, patchFile, patch_name):
         while True:
@@ -288,18 +289,16 @@ class PatchDialog(DialogWindow):
                 return
             except (CancelError, SkipError, PermissionError):
                 ##: Ugly warts below (see also FIXME above)
-                if balt.askYes(self,
-                    (_(u'Bash encountered an error when saving '
-                       u'%(patch_name)s.') + u'\n\n' + _(
-                        u'Either Bash needs Administrator Privileges to save '
-                        u'the file, or the file is in use by another process '
-                        u'such as %(xedit_name)s.') + u'\n' + _(
-                        u'Please close any program that is accessing '
-                        u'%(patch_name)s, and provide Administrator '
-                        u'Privileges if prompted to do so.') + u'\n\n' + _(
-                        u'Try again?')) % {u'patch_name': patch_name,
-                        u'xedit_name': bush.game.Xe.full_name},
-                        _(u'Bashed Patch - Save Error')):
+                m = _('Bash encountered an error when saving %(patch_name)s.')
+                m += '\n\n' + _('Either Bash needs Administrator Privileges '
+                    'to save the file, or the file is in use by another '
+                    'process such as %(xedit_name)s.')
+                m += '\n' + _('Please close any program that is accessing '
+                    '%(patch_name)s, and provide Administrator Privileges if '
+                    'prompted to do so.') + '\n\n' + _('Try again?')
+                m %= {'patch_name': patch_name,
+                      'xedit_name': bush.game.Xe.full_name}
+                if askYes(self, m, _('Bashed Patch - Save Error')):
                     continue
                 raise # will raise the SkipError which is correctly processed
 
@@ -336,19 +335,17 @@ class PatchDialog(DialogWindow):
             if not patchConfigs: # try the old format
                 patchConfigs = table_get(self.__old_key)
             if not patchConfigs:
-                balt.showWarning(self,
-                    _('No patch config data found in %(bp_config_path)s') % {
-                        'bp_config_path': textPath},
-                    title=_('Import Config'))
+                msg = _('No patch config data found in %(bp_config_path)s') % {
+                    'bp_config_path': textPath}
+                showWarning(self, msg, title=_('Import Config'))
                 return
-            balt.showError(self,
-                _('The patch config data in %(bp_config_path)s is too old for '
-                  'this version of Wrye Bash to handle or was created with '
-                  'CBash. Please use Wrye Bash 307 to import the config, then '
-                  'rebuild the patch using PBash to convert it and finally '
-                  'export the config again to get one that will work in this '
-                  'version.') % {'bp_config_path': textPath},
-                title=_('Config Too Old'))
+            msg = _('The patch config data in %(bp_config_path)s is too old '
+                'for this version of Wrye Bash to handle or was created with '
+                'CBash. Please use Wrye Bash 307 to import the config, then '
+                'rebuild the patch using PBash to convert it and finally '
+                'export the config again to get one that will work in this '
+                'version.') % {'bp_config_path': textPath}
+            showError(self, msg, title=_('Config Too Old'))
             return
         self._load_config(patchConfigs)
 

@@ -46,6 +46,7 @@ from ..bolt import AFile, CIstr, FName, GPath, ListInfo, Path, SubProgress, \
     forward_compat_path_to_fn_list, round_size, top_level_items
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
+from ..gui import askYes ##: YAK
 from ..ini_files import OBSEIniFile, supported_ini_exts
 
 os_sep = os.path.sep
@@ -635,7 +636,7 @@ class Installer(ListInfo):
                 dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
-            if not balt.askYes(balt.Link.Frame,message, dialogTitle):
+            if not askYes(balt.Link.Frame, message, dialogTitle):
                 badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
@@ -2096,7 +2097,7 @@ class InstallersData(DataStore):
         except StateError as e:
             deprint(msg, traceback=True)
             if show_warning:
-                show_warning(msg + f'\n\n{e.message}')
+                show_warning(f'{msg}\n\n{e.message}')
             raise # UI expects that
 
     def scan_installers_dir(self, folders, files, fullRefresh=False, *,

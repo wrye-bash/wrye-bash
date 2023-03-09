@@ -60,14 +60,12 @@ class Files_Unhide(ItemLink):
             # Validate that the file is valid and isn't already present
             if not self.window.data_store.rightFileType(srcFileName.s):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
-                                    'not valid.') % {
-                    'skipped_file': srcFileName})
+                    'not valid.') % {'skipped_file': srcFileName})
                 continue
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
-                                    'already present.') % {
-                    'skipped_file': srcFileName})
+                    'already present.') % {'skipped_file': srcFileName})
                 continue
             # File
             srcFiles.append(srcPath)

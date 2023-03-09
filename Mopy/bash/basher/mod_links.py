@@ -41,7 +41,8 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
-from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard
+from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard, askText, \
+    showError
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
@@ -301,14 +302,14 @@ class _Mod_LabelsData(balt.ListEditorData):
     def add(self):
         """Adds a new group."""
         #--Name Dialog
-        newName = balt.askText(self.parent, self.addPrompt)
+        newName = askText(self.parent, self.addPrompt)
         if newName is None: return
         if newName in self.mod_labels:
-            balt.showError(self.parent,_(u'Name must be unique.'))
+            showError(self.parent, _('Name must be unique.'))
             return False
         elif len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         self.mod_labels.append(newName)
         self.mod_labels.sort()
@@ -321,8 +322,8 @@ class _Mod_LabelsData(balt.ListEditorData):
         """Renames oldName to newName."""
         #--Right length?
         if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
+            showError(self.parent, _('Name must be between 1 and 64 '
+                                     'characters long.'))
             return False
         #--Rename
         self.mod_labels.remove(oldName)
@@ -572,6 +573,11 @@ class Mod_Groups(_Mod_Labels):
                                 u'bash.groups.reset.continue',
                                 _(u'Reset Groups')): return
         self.listEditor.SetItemsTo(list(settingDefaults[u'bash.mods.groups']))
+
+    def SetItemsTo(self, items):
+        if self._listEditorData.setTo(items):
+            self._list_items = self._listEditorData.getItemList()
+            self.listBox.lb_set_items(self._list_items)
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
@@ -935,9 +941,8 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         # We need active mods
         if not load_order.cached_active_tuple():
             self._showWarning(
-                _(u'That which does not exist cannot be patched.') + u'\n' +
-                _(u'Load some mods and try again.'),
-                _(u'Existential Error'))
+                _('That which does not exist cannot be patched.') + '\n' +
+                _('Load some mods and try again.'), _('Existential Error'))
             return False
         # Read the config
         bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
@@ -1248,8 +1253,8 @@ class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if fileInfo.match_oblivion_re():
-                self._showWarning(_(u'Skipping %s') % fileInfo,
-                                  _(u'Remove World Orphans'))
+                self._showWarning(_('Skipping %s') % fileInfo,
+                                  _('Remove World Orphans'))
                 continue
             #--Export
             with balt.Progress(_(u'Remove World Orphans')) as progress:
@@ -1377,8 +1382,8 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
         with BusyCursor():
             for fileInfo in self.iselected_infos():
                 if fileInfo.match_oblivion_re():
-                    self._showWarning(_(u'Skipping %s') % fileInfo,
-                                      _(u'Decompile All'))
+                    self._showWarning(_('Skipping %s') % fileInfo,
+                                      _('Decompile All'))
                     continue
                 modFile = self._load_mod(fileInfo)
                 badGenericLore = False
