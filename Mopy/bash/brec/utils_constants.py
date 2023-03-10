@@ -122,7 +122,8 @@ class FormId:
 
     def is_null(self):
         """Return True if we are a round 0."""
-        return self.short_fid == 0
+        # Use object_dex instead of short_fid here since 01000000 is also NULL
+        return self.object_dex == 0
 
     # Hash and comparisons
     def __hash__(self):

@@ -128,9 +128,6 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
-    # All log operations that put FormIDs into the log must do it relative to
-    # the entire load order and set this to True
-    fids_in_log = False
     log = bolt.LogFile(io.StringIO())
     # -------------------------------------------------------------------------
     # The header we'll be showing at the start of the log. Separate so that we
@@ -233,10 +230,13 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Scan plugins to collect data for more detailed analysis.
     scanning_canceled = False
+    all_unneeded_deletions = defaultdict(list) # fn_key -> list[(fid, sig)]
     all_deleted_refs = defaultdict(list) # fn_key -> list[fid]
     all_deleted_navms = defaultdict(list) # fn_key -> list[fid]
     all_deleted_others = defaultdict(list) # fn_key -> list[fid]
     old_weapon_records = defaultdict(list) # fn_key -> list[fid]
+    null_formid_records = defaultdict(list) # fn_key -> list[(eid, sig)]
+    plgn_header_sig = bush.game.Esp.plugin_header_sig
     # fid -> (is_injected, orig_plugin, list[(eid, sig, plugin)])
     record_type_collisions = {}
     # fid -> (orig_plugin, list[(eid, sig, plugin)])
@@ -293,27 +293,34 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 # couldn't be fixed even if they did)
                 scan_old_weapons = (game_has_v44 and
                                     plugin_fn not in vanilla_masters)
+                add_unneeded_del = all_unneeded_deletions[plugin_fn].append
                 add_deleted_ref = all_deleted_refs[plugin_fn].append
                 add_deleted_navm = all_deleted_navms[plugin_fn].append
                 add_deleted_rec = all_deleted_others[plugin_fn].append
                 add_old_weapon = old_weapon_records[plugin_fn].append
                 add_hitme = all_hitmes[plugin_fn].append
+                add_null_fid = null_formid_records[plugin_fn].append
                 p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
                     for r_fid, (r_header, r_eid) in d.items():
                         w_rec_type = r_header.recType
+                        if (r_fid.object_dex == 0 and
+                                w_rec_type != plgn_header_sig):
+                            add_null_fid((w_rec_type, r_eid))
+                        r_mod_index = r_fid.mod_dex
                         if scan_deleted:
                             # Check the deleted flag - unpacking flags is too
                             # expensive
                             if r_header.flags1 & 0x00000020:
-                                if w_rec_type == b'NAVM':
+                                if r_mod_index == p_num_masters - 1:
+                                    add_unneeded_del((r_fid, w_rec_type))
+                                elif w_rec_type == b'NAVM':
                                     add_deleted_navm(r_fid)
                                 elif w_rec_type in all_ref_types:
                                     add_deleted_ref(r_fid)
                                 else:
                                     add_deleted_rec(r_fid)
-                        r_mod_index = r_fid.mod_dex
                         # p_masters includes self, so >=
                         is_hitme = r_mod_index >= p_num_masters
                         if is_hitme:
@@ -388,6 +395,17 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             if progress:
                 progress.Destroy()
     # -------------------------------------------------------------------------
+    # Check for unnecessary deletions, i.e. new records that have the Deleted
+    # flag set and should probably just be removed entirely instead
+    unnecessary_dels = {}
+    if all_unneeded_deletions:
+        for plugin_fn, ud_data in all_unneeded_deletions.items():
+            # .esu files created by xEdit use deleted records on purpose to
+            # mark records that exist in one plugin but not in the other
+            plugin_is_esu = plugin_fn.fn_ext == '.esu'
+            if ud_data and not plugin_is_esu:
+                unnecessary_dels[plugin_fn] = ud_data
+    # -------------------------------------------------------------------------
     # Check for deleted references
     if all_deleted_refs:
         for plugin_fn, deleted_refrs in all_deleted_refs.items():
@@ -453,6 +471,14 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                     weap_msg = _(u'%d old weapon records') % num_weaps
                 old_weaps[plugin_fn] = weap_msg
     # -------------------------------------------------------------------------
+    # Check for NULL FormIDs, i.e. records beside the main file header that
+    # have a FormID of 0x00000000
+    null_fids = {}
+    if null_formid_records:
+        for plugin_fn, null_data in null_formid_records.items():
+            if null_data:
+                null_fids[plugin_fn] = null_data
+    # -------------------------------------------------------------------------
     # Check for HITMEs, i.e. records with a mod index that is > the number of
     # masters that the containing plugin has
     hitmes = {}
@@ -471,6 +497,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 hitmes[plugin_fn] = hitme_msg
     # -------------------------------------------------------------------------
     # Some helpers for building the log
+    p_header_str = sig_to_str(plgn_header_sig)
     def log_plugins(plugin_list_):
         """Logs a simple list of plugins."""
         for p in sorted(plugin_list_):
@@ -479,11 +506,42 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
         """Logs a list of plugins with a message after each plugin."""
         for p, p_msg in dict_sort(plugin_dict):
             log(f'* __{p}:__  {p_msg}')
+    def log_whole_lo_fid_note():
+        """Log a note telling users that FormIDs in this section are relative
+        to the whole LO, not individual plugins."""
+        first_msg = _(
+            'Note: the FormIDs in this section are relative to the whole load '
+            'order, not any individual plugin.')
+        second_msg = _(
+            "To view the records with these FormIDs in %(xedit_name)s, make "
+            "sure to load your entire load order (simply accept the 'Module "
+            "Selection' prompt in %(xedit_name)s with OK).") % {
+            'xedit_name': bush.game.Xe.full_name,
+        }
+        log(f'~~{first_msg}~~ {second_msg}')
+    def log_rel_fid_note():
+        """Log a note telling users that FormIDs in this section are relative
+        to individual plugins, not the whole LO."""
+        first_msg = _(
+            'Note: the FormIDs in this section are relative to each '
+            'individual listed plugin, not the whole load order.')
+        second_msg = _(
+            "To view the records with these FormIDs in %(xedit_name)s, "
+            "double-click the plugin in the 'Module Selection' prompt in "
+            "%(xedit_name)s.") % {'xedit_name': bush.game.Xe.full_name}
+        log(f'~~{first_msg}~~ {second_msg}')
+    def format_record(raw_sig: bytes, fmt_fid: str, raw_eid=''):
+        """Format a record identifier, with a given signature, formatted FormID
+        and (optionally) Editor ID."""
+        ret_fmt = f'[{sig_to_str(raw_sig)}:{fmt_fid}]'
+        if raw_eid:
+            ret_fmt = f'{raw_eid} {ret_fmt}'
+        return ret_fmt
     if bush.game.has_esl:
         # Need to undo the offset we applied to sort ESLs after regulars
         sort_offset = load_order.max_espms() - 1
         def format_fid(whole_lo_fid, fid_orig_plugin):
-            """Formats a whole-LO FormID, which can exceed normal FormID limits
+            """Format a whole-LO FormID, which can exceed normal FormID limits
             (e.g. 211000800 is perfectly fine in a load order with ESLs), so
             that xEdit (and the game) can understand it."""
             orig_minf = modInfos[fid_orig_plugin]
@@ -509,9 +567,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             log(u'* ' + _(u'%s from %s, colliding versions:')
                 % (proper_fid, coll_plugin))
         for ver_eid, ver_sig, ver_orig_plugin in coll_versions:
-            fmt_record = f'[{sig_to_str(ver_sig)}:{proper_fid}]'
-            if ver_eid:
-                fmt_record = f'{ver_eid} {fmt_record}'
+            fmt_record = format_record(ver_sig, proper_fid, ver_eid)
             # Mark the base record if the record wasn't injected
             if not coll_inj and ver_orig_plugin == coll_plugin:
                 log(u'  * ' + _(u'%s from %s (base record)') % (
@@ -574,8 +630,6 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'must be corrected.'))
         log_plugins(p_delinquent_masters)
     if invalid_tes4_versions:
-        # Always an ASCII byte string, so this is fine
-        p_header_str = sig_to_str(bush.game.Esp.plugin_header_sig)
         ver_list = u', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
         log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_str)
@@ -612,34 +666,70 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 'num_ignored_vanilla': num_dirty_vanilla})
     if deleted_navmeshes:
         log.setHeader(u'=== ' + _(u'Deleted Navmeshes'))
-        log(_(u'The following plugins have deleted navmeshes. They will cause '
-              u'a CTD if another plugin references the deleted navmesh or a '
-              u'nearby navmesh. They can only be fixed manually, which should '
-              u'usually be done by the mod author. Failing that, the safest '
-              u'course of action is to uninstall the plugin.'))
+        log(_('The following plugins have deleted navmeshes. They will cause '
+              'a CTD if another plugin references the deleted navmesh or a '
+              'nearby navmesh. They can only be fixed manually, which should '
+              'usually be done by the mod author. Failing that, the safest '
+              'course of action is to uninstall the plugins.'))
         log_plugin_messages(deleted_navmeshes)
     if deleted_base_recs:
         log.setHeader(u'=== ' + _(u'Deleted Base Records'))
-        log(_(u'The following plugins have deleted base records. If another '
-              u'plugin references the deleted record, the resulting behavior '
-              u'is undefined. It may CTD, fail to delete the record or do any '
-              u'number of other things. They can only be fixed manually, '
-              u'which should usually be done by the mod author. Failing that, '
-              u'the safest course of action is to uninstall the plugin.'))
+        log(_('The following plugins have deleted base records. If another '
+              'plugin references the deleted record, the resulting behavior '
+              'is undefined. It may CTD, fail to delete the record or do any '
+              'number of other things. They can only be fixed manually, '
+              'which should usually be done by the mod author. Failing that, '
+              'the safest course of action is to uninstall the plugins.'))
         log_plugin_messages(deleted_base_recs)
+    if unnecessary_dels:
+        log.setHeader('=== ' + _('Unnecessary Deleted Records'))
+        log(_('The following plugins have unnecessary deleted records. These '
+              'are new records introduced by the plugin that also have the '
+              'Deleted flag set. This is most likely a mistake by the mod '
+              'author. If the record was not intended to be used (e.g. if it '
+              'is a leftover from an abandoned idea), this can be corrected '
+              'by simply removing the entire record in %(xedit_name)s. In any '
+              'case, the mod author should be notified so they can figure out '
+              'what they meant to do here and correct it properly.') % {
+            'xedit_name': bush.game.Xe.full_name,
+        })
+        log_rel_fid_note()
+        for p, ud_data in dict_sort(unnecessary_dels):
+            log(f'* __{p}__')
+            for ud_fid, ud_sig in ud_data:
+                log(f'  * {format_record(ud_sig, str(ud_fid))}')
     if old_weaps:
         log.setHeader(u'=== ' + _(u'Old Weapon Records'))
-        log(_(u'The following plugins have old weapon (WEAP) records. These '
-              u'cannot be loaded by %(game_name)s and the %(ck_name)s cannot '
-              u'automatically fix them by resaving. They have to be manually '
-              u'fixed in the %(ck_name)s by changing the critical data (CRDT) '
-              u'subrecord to restore the correct data, which should usally be '
-              u'done by the mod author. Failing that, the safest course of '
-              u'action is to uninstall the plugin.') % {
+        log(_('The following plugins have old weapon (WEAP) records. These '
+              'cannot be loaded by %(game_name)s and the %(ck_name)s cannot '
+              'automatically fix them by resaving. They have to be manually '
+              'fixed in the %(ck_name)s by changing the critical data (CRDT) '
+              'subrecord to restore the correct data, which should usally be '
+              'done by the mod author. Failing that, the safest course of '
+              'action is to uninstall the plugins.') % {
             u'game_name': bush.game.displayName,
             u'ck_name': bush.game.Ck.long_name,
         })
         log_plugin_messages(old_weaps)
+    if null_fids:
+        log.setHeader('=== ' + _('NULL FormIDs'))
+        log(_('The following plugins have records with NULL (00000000) '
+              'FormIDs besides the main file header (%(main_file_sig)s). This '
+              'is undefined behavior, as the NULL FormID is a special '
+              'reserved value, and may result in the records not working '
+              'correctly or causing CTDs. This is most likely a sign that the '
+              'mod author broke something via scripted edits. They can only '
+              'be fixed manually, by assigning them a new FormID (or removing '
+              'them if the records are unnecessary), which should usually be '
+              'done by the mod author. Failing that, the safest course of '
+              'action is to uninstall the plugins.') % {
+            'main_file_sig': p_header_str,
+        })
+        log_rel_fid_note()
+        for p, null_data in dict_sort(null_fids):
+            log(f'* __{p}__')
+            for nd_sig, nd_eid in null_data:
+                log(f'  * {format_record(nd_sig, "00000000", nd_eid)}')
     if hitmes:
         log.setHeader('=== ' + 'HITMEs')
         log(_('The following plugins have HITMEs (%(hitme_acronym)s), which '
@@ -663,8 +753,8 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               'unpredictable issues at runtime. Such problems can only be '
               'fixed manually, which should usually be done by the mod '
               'author. Failing that, the safest course of action is to '
-              'uninstall the plugin.'))
-        fids_in_log = True
+              'uninstall the plugins.'))
+        log_whole_lo_fid_note()
         for orig_fid, duplicates_counter in duplicate_formids.items():
             for orig_plugin, dupe_count in duplicates_counter.items():
                 log('* ' + _('%(full_fid)s in %(orig_plugin)s: '
@@ -675,28 +765,28 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 })
     if record_type_collisions:
         log.setHeader(u'=== ' + _(u'Record Type Collisions'))
-        log(_(u'The following records override each other, but have different '
-              u'record types. This is undefined behavior, but will almost '
-              u'certainly lead to CTDs. Such conflicts can only be fixed '
-              u'manually, which should usually be done by the mod author. '
-              u'Failing that, the safest course of action is to uninstall the '
-              u'plugin.'))
-        fids_in_log = True
+        log(_('The following records override each other, but have different '
+              'record types. This is undefined behavior, but will almost '
+              'certainly lead to CTDs. Such conflicts can only be fixed '
+              'manually, which should usually be done by the mod author. '
+              'Failing that, the safest course of action is to uninstall the '
+              'plugins.'))
+        log_whole_lo_fid_note()
         for orig_fid, (is_inj, orig_plugin, coll_info) in dict_sort(
                 record_type_collisions):
             log_collision(orig_fid, is_inj, orig_plugin, coll_info)
     if probable_injected_collisions:
         log.setHeader(u'=== ' + _(u'Probable Injected Collisions'))
-        log(_(u'The following injected records override each other, but have '
-              u'different Editor IDs (EDIDs). This probably means that two '
-              u'different injected records have collided, but have the same '
-              u'record signature. The resulting behavior depends on what the '
-              u'injecting plugins are trying to do with the record, but they '
-              u'will most likely not work as intended. Such conflicts can '
-              u'only be fixed manually, which should usually be done by the '
-              u'mod author. Failing that, the safest course of action is to '
-              u'uninstall the plugin '))
-        fids_in_log = True
+        log(_('The following injected records override each other, but have '
+              'different Editor IDs (EDIDs). This probably means that two '
+              'different injected records have collided, but have the same '
+              'record signature. The resulting behavior depends on what the '
+              'injecting plugins are trying to do with the record, but they '
+              'will most likely not work as intended. Such conflicts can '
+              'only be fixed manually, which should usually be done by the '
+              'mod author. Failing that, the safest course of action is to '
+              'uninstall the plugins.'))
+        log_whole_lo_fid_note()
         for orig_fid, (orig_plugin, coll_info) in dict_sort(
                 probable_injected_collisions):
             log_collision(orig_fid, True, orig_plugin, coll_info)
@@ -718,15 +808,6 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     if showModList:
         log(u'\n' + modInfos.getModList(showCRC, showVersion, wtxt=True,
                                         log_problems=False).strip())
-    # If the log includes any FormIDs, include a help note in the header
-    if fids_in_log:
-        log_header += u'\n\n~~%s~~ %s' % (
-            _(u'Note that all FormIDs in the report are relative to the '
-              u'entire load order.'),
-            _(u'If you want to view these FormIDs in %(xedit_name)s, make '
-              u'sure to load your entire load order (simply accept the '
-              u"'Module Selection' prompt in %(xedit_name)s with OK).") % {
-                u'xedit_name': bush.game.Xe.full_name})
     return log_header + u'\n\n' + log.out.getvalue()
 
 #------------------------------------------------------------------------------
