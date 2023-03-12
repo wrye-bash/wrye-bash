@@ -33,7 +33,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
     patcher_desc = _(u"Import roads from source mods.")
-    autoKey = {u'Roads'}
+    patcher_tags = {'Roads'}
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
@@ -91,11 +91,6 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
-    @classmethod
-    def gui_cls_vars(cls):
-        cls_vars = super(ImportRoadsPatcher, cls).gui_cls_vars()
-        return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars
-
 #------------------------------------------------------------------------------
 class _ExSpecialList(CsvListPatcher, ExSpecial):
     _csv_key = u'OVERRIDE'
@@ -111,8 +106,7 @@ class _ExSpecialList(CsvListPatcher, ExSpecial):
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
-        more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
-        return cls_vars.update(more) or cls_vars
+        return cls_vars.update({'canAutoItemCheck': False}) or cls_vars
 
 class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater powers to work with Cobl's power exhaustion

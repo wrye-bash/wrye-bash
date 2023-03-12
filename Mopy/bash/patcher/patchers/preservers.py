@@ -26,6 +26,7 @@ absorb all of them under the _APreserver base class."""
 from __future__ import annotations
 
 import operator
+import re
 from collections import Counter, defaultdict
 from itertools import chain
 
@@ -163,7 +164,7 @@ class APreserver(ImportPatcher):
             mod_id_data = {}
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             mod_sigs = set()
-            mod_tags = srcFile.fileInfo.getBashTags()
+            mod_tags = self.patchFile.all_tags[srcMod]
             # don't use _read_sigs here as srcs_sigs might be updated in
             # _parse_csv_sources
             for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
@@ -245,6 +246,8 @@ class ImportActorsPatcher(APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _fid_rec_attrs = bush.game.actor_importer_fid_attrs
     _multi_tag = True
+    patcher_tags = set(chain(chain.from_iterable(rec_attrs.values()),
+                             chain.from_iterable(_fid_rec_attrs.values())))
 
 #------------------------------------------------------------------------------
 class ImportActorsFacesPatcher(APreserver):
@@ -263,6 +266,15 @@ class ImportActorsFacesPatcher(APreserver):
     }}
     _multi_tag = True
     _force_full_import_tag = 'NpcFacesForceFullImport'
+    patcher_tags = {'NPC.Eyes', 'NPC.FaceGen', 'NPC.Hair',
+                    'NpcFacesForceFullImport'}
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error, *,
+                      __auto_re=re.compile('^TNR .*.esp$', re.I)):
+        if __auto_re.match(src_fn) and src_fn in p_file.all_plugins:
+            return True
+        return super()._validate_mod(p_file, src_fn, raise_on_error)
 
 #------------------------------------------------------------------------------
 class ImportActorsFactionsPatcher(APreserver):
@@ -271,6 +283,8 @@ class ImportActorsFactionsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
+    patcher_tags = {'Actors.Factions'}
+    _csv_key = 'Factions'
 
     def _filter_csv_fids(self, parser_instance, loaded_csvs):
         """Transform the parser structure to the one used by the patcher."""
@@ -298,28 +312,33 @@ class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
     ##: Has FormIDs, filter these in keep_fids?
     rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
+    patcher_tags = {'Destructible'}
 
 #------------------------------------------------------------------------------
 class ImportEffectsStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
     _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}
+    patcher_tags = {'EffectStats'}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentsPatcher(APreserver):
     """Preserves changes to EITM (enchantment/object effect) subrecords."""
     _fid_rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
+    patcher_tags = {'Enchantments'}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
     _fid_rec_attrs = {b'ENCH': bush.game.ench_stats_fid_attrs}
+    patcher_tags = {'EnchantmentStats'}
 
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
     rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+    patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
@@ -328,20 +347,25 @@ class ImportNamesPatcher(APreserver):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
     _csv_parser = parsers.FullNames
+    patcher_tags = {'Names'}
+    _csv_key = 'Names'
 
 #------------------------------------------------------------------------------
 class ImportObjectBoundsPatcher(APreserver):
     rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
+    patcher_tags = {'ObjectBounds'}
 
 #------------------------------------------------------------------------------
 class ImportScriptsPatcher(APreserver):
     _fid_rec_attrs = {x: ('script_fid',) for x in bush.game.scripts_types}
+    patcher_tags = {'Scripts'}
 
 #------------------------------------------------------------------------------
 class ImportSoundsPatcher(APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.sounds_attrs
     _fid_rec_attrs = bush.game.sounds_fid_attrs
+    patcher_tags = {'Sound'}
 
 #------------------------------------------------------------------------------
 class ImportSpellStatsPatcher(APreserver):
@@ -353,6 +377,8 @@ class ImportSpellStatsPatcher(APreserver):
                       for x in bush.game.spell_stats_types}
     _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
         else None
+    patcher_tags = {'SpellStats'}
+    _csv_key = 'Spells'
 
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):
@@ -363,10 +389,13 @@ class ImportStatsPatcher(APreserver):
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
     _csv_parser = parsers.ItemStats
+    patcher_tags = {'Stats'}
+    _csv_key = 'Stats'
 
 #------------------------------------------------------------------------------
 class ImportTextPatcher(APreserver):
     rec_attrs = bush.game.text_types
+    patcher_tags = {'Text'}
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
@@ -375,6 +404,7 @@ class ImportTextPatcher(APreserver):
 class ImportCellsPatcher(ImportPatcher):
     logMsg = '\n=== ' + _('Cells/Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD')
+    patcher_tags = set(bush.game.cellRecAttrs)
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -393,7 +423,7 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = self.patchFile.all_plugins[srcMod]
-            bashTags = srcInfo.getBashTags()
+            bashTags = self.patchFile.all_tags[srcMod]
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
             srcFile = self.patchFile.get_loaded_mod(srcMod)
@@ -492,6 +522,7 @@ class ImportCellsPatcher(ImportPatcher):
 class ImportGraphicsPatcher(APreserver):
     rec_attrs = bush.game.graphicsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
+    patcher_tags = {'Graphics'}
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
@@ -527,6 +558,8 @@ class ImportRacesPatcher(APreserver):
     rec_attrs = bush.game.import_races_attrs
     _fid_rec_attrs = bush.game.import_races_fid_attrs
     _multi_tag = True
+    patcher_tags = set(chain(chain.from_iterable(rec_attrs.values()),
+                             chain.from_iterable(_fid_rec_attrs.values())))
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):

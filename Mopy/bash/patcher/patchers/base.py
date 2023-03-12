@@ -170,17 +170,26 @@ class MergePatchesPatcher(ListPatcher):
         'but some of its masters %(inactive_master)s are inactive.'),
         _('Please activate the inactive master(s) to fix this.')])
 
+    @classmethod
+    def _validate_mod(cls, p_file, merge_src, raise_on_error):
+        if merge_src not in p_file.bp_mergeable:
+            err = err = f'{cls.__name__}: {merge_src} is not mergeable'
+        # Then, perform an error check for missing/inactive masters
+        elif ((mm := p_file.active_mm.get(merge_src)) # should not happen
+                or (mm := p_file.inactive_mm.get(merge_src))):
+            err = cls._missing_master_error % {'merged_plugin': merge_src,
+                                               'missing_master': mm}
+        elif mm := p_file.inactive_inm.get(merge_src):
+            # It's present but inactive - that won't work for merging
+            err = cls._inactive_master_error % {'merged_plugin': merge_src,
+                                                'inactive_master': mm}
+        else:
+            return True
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
     def _process_sources(self, p_sources, p_file):
-        # First, perform an error check for missing/inactive masters
-        for merge_src in p_sources:
-            if ((mm := p_file.active_mm.get(merge_src)) or  # should not happen
-                    (mm := p_file.inactive_mm.get(merge_src))):
-                raise BPConfigError(self._missing_master_error % {
-                    'merged_plugin': merge_src, 'missing_master': mm})
-            elif mm := p_file.inactive_inm.get(merge_src):
-                # It's present but inactive - that won't work for merging
-                raise BPConfigError(self._inactive_master_error % {
-                    'merged_plugin': merge_src, 'inactive_master': mm})
         sup = super()._process_sources(p_sources, p_file)
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
@@ -212,6 +221,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
     patcher_order = 15
     _read_sigs = _PatchFidReplacer._read_sigs
     _csv_parser = _PatchFidReplacer
+    _csv_key = 'Formids'
 
     def _filter_csv_fids(self, parser_instance, loaded_csvs):
         earlier_loading = self.patchFile.all_plugins

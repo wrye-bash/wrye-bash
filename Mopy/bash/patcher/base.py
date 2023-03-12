@@ -36,6 +36,7 @@ from itertools import chain
 
 from .. import load_order, bass
 from ..bolt import deprint, dict_sort, sig_to_str
+from ..exception import BPConfigError
 from ..parsers import _HandleAliases
 
 #------------------------------------------------------------------------------
@@ -98,6 +99,9 @@ class ListPatcher(APatcher):
     srcsHeader = '=== ' + _('Source Mods')
     # a CsvParser type to parse the csv sources of this patcher
     _csv_parser = None
+    patcher_tags = set()
+    # CSV files for this patcher have to end with _{this value}.csv
+    _csv_key = None ##: todo this belongs to the parsers would deduplicate mod_links wildcards also
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
@@ -105,11 +109,60 @@ class ListPatcher(APatcher):
         super(ListPatcher, self).__init__(p_name, p_file)
         self.isActive = self._process_sources(p_sources, p_file)
 
+    @classmethod
+    def get_sources(cls, p_file, p_sources=None, raise_on_error=False):
+        """Get a list of plugin/csv sources for this patcher. If p_sources are
+        passed in filter/validate them."""
+        if p_sources is None: # getting the sources
+            p_sources = [*p_file.all_plugins]
+            if cls._csv_key:
+                p_sources.extend(sorted(p_file.patches_set))
+        return [src_fn for src_fn in p_sources if
+                cls._validate_src(p_file, src_fn, raise_on_error)]
+
+    @classmethod
+    def _validate_src(cls, p_file, src_fn, raise_on_error):
+        try:
+            return cls._validate_mod(p_file, src_fn, raise_on_error)
+        except KeyError:
+            if src_fn[-4:] == '.csv':
+                if cls._csv_key:
+                    if src_fn not in p_file.patches_set:
+                        err = f'{cls.__name__}: {src_fn} is not present'
+                    elif src_fn.endswith(f'_{cls._csv_key}.csv'):
+                        return True
+                    else:
+                        err = f'{cls.__name__}: invalid csv type {src_fn}'
+                else:
+                    err = f'{cls.__name__}: csv src passed in: {src_fn}'
+            else:
+                err = f'{cls.__name__}: {src_fn} is not loading before the ' \
+                      f'BP or is not a mod'
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+        """Return True if the src_fn plugin should be part of the sources
+        for this patcher."""
+        # Must have an appropriate tag and no missing masters or a Filter tag
+        if src_fn in p_file.inactive_mm: ##fixme or active_mm
+            err = f'{cls.__name__}: {src_fn} is inactive'
+        elif not (cls.patcher_tags & p_file.all_tags[src_fn]):
+            err = f'{cls.__name__}: {src_fn} is not tagged with supported ' \
+                  f'tags {cls.patcher_tags}'
+        else:
+            return True
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
     def _process_sources(self, p_sources, p_file):
-        """Filter srcs and update p_file read factories."""
+        """Validate srcs and update p_file read factories."""
+        self.get_sources(p_file, p_sources, raise_on_error=True)
         self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
-        self.srcs = [s for s in p_sources if s.fn_ext != '.csv' and s in
-                     p_file.all_plugins]
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
         self._update_patcher_factories(p_file)
         self._parse_csv_sources()
         return bool(self.srcs or self.csv_srcs)
@@ -180,10 +233,6 @@ class ListPatcher(APatcher):
 class CsvListPatcher(_HandleAliases, ListPatcher):
     """List patcher that is-a CsvParser - we could change this to has-a,
     would retire this class."""
-
-    def _update_patcher_factories(self, p_file):
-        ##: actually the override is not needed if sources are never plugins
-        """No plugin src files."""
 
     @property
     def _parser_instance(self):

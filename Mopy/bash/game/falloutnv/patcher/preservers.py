@@ -26,7 +26,7 @@ class ImportWeaponModificationsPatcher(APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
     patcher_name = _(u'Import Weapon Modifications')
     patcher_desc = _(u'Merges changes to weapon modifications.')
-    autoKey = {u'WeaponMods'}
+    patcher_tags = {'WeaponMods'}
     _config_key = u'WeaponModsPatcher'
     patcher_order = 27 ##: This seems unneeded + no reason given
     rec_attrs = {b'WEAP': (
@@ -41,5 +41,4 @@ class ImportWeaponModificationsPatcher(APreserver):
     def gui_cls_vars(cls):
         """Class variables for gui patcher classes created dynamically."""
         return {u'patcher_type': cls, u'patcher_desc': cls.patcher_desc,
-                u'patcher_name': cls.patcher_name,
-                u'_config_key': cls._config_key, u'autoKey': cls.autoKey}
+            'patcher_name': cls.patcher_name, '_config_key': cls._config_key}

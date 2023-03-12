@@ -44,8 +44,7 @@ class PatchFile(ModFile):
         self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
         self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
                                      load_order.get_ordered(merged_active)}
-        self.ii_mode = {m for m in merge_set if
-                        'IIM' in self.p_file_minfos[m].getBashTags()}
+        self.ii_mode = {m for m in merge_set if 'IIM' in self.all_tags[m]}
 
     def _log_header(self, log, patch_name):
         log.setHeader(f'= {patch_name} {"=" * 30}#', True)
@@ -168,6 +167,14 @@ class PatchFile(ModFile):
         # exclude modding esms (those tend to be huge)
         self.all_plugins = {k: pfile_minfos[k] for k in self.all_plugins if
                             k not in bush.game.modding_esm_size}
+        # cache the tags
+        self.all_tags = {k: v.getBashTags() for k, v in
+                         self.all_plugins.items()}
+        # list the patchers folders to get potential Bash Patches csv
+        # sources and cache the result for this patch  execution session
+        self.patches_set = set(bass.dirs['patches'].ilist())
+        if bass.dirs['defaultPatches']:
+            self.patches_set.update(bass.dirs['defaultPatches'].ilist())
         self.p_file_minfos = pfile_minfos
         self.set_active_arrays(pfile_minfos)
         # cache of mods loaded - eventually share between initData/scanModFile
@@ -179,21 +186,20 @@ class PatchFile(ModFile):
         """Populate PatchFile data structures with info on active mods - must
         be rerun when active plugins change"""
         c = count()
-        loaded_mods = {m: next(c) for m in self.all_plugins if
+        active_mods = {m: next(c) for m in self.all_plugins if
                        load_order.cached_is_active(m)}
         # TODO: display those
         loaded_modding_esms = [m for m in load_order.cached_active_tuple() if
                                m in bush.game.modding_esm_size]
-        if not loaded_mods:
+        if not active_mods:
             raise BoltError('No active plugins loading before the Bashed '
                             'Patch')
-        self.load_dict = loaded_mods # used in printing BP masters' indexes
+        self.load_dict = active_mods # used in printing BP masters' indexes
         self.set_mergeable_mods([]) # reset - depends on load_dict
         # Populate mod arrays for the rest of the patch stages ----------------
-        all_plugins_set = set(self.all_plugins)
         self.needs_filter_mods = {}
         self.bp_mergeable = set() # plugins we can show as sources for the merge patcher
-        # inactive plugins with missing masters - that may be ok
+        # inactive plugins with missing or delinquent masters - that may be ok
         self.inactive_mm = defaultdict(list)
         # inactive plugins with inactive masters (unless the inactive masters
         # are mergeable!) - not ok but not for merged
@@ -210,13 +216,13 @@ class PatchFile(ModFile):
         mi_mergeable = pfile_minfos.mergeable
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
-            bashTags = modInfo.getBashTags()
-            is_loaded = modName in loaded_mods
+            bashTags = self.all_tags[modName]
+            is_loaded = modName in active_mods
             for master in modInfo.masterNames:
-                if master not in loaded_mods:
+                if master not in active_mods:
                     if is_loaded:
                         self.active_mm[modName].append(master)
-                    elif master not in all_plugins_set: ##: test against modInfos?
+                    elif master not in self.all_plugins: # might be delinquent
                         self.inactive_mm[modName].append(master)
                     elif master not in mi_mergeable:
                         self.inactive_inm[modName].append(master)
@@ -237,9 +243,8 @@ class PatchFile(ModFile):
                     # is filtered tagged, we will filter some masters and
                     # then recheck in merge_record - drop from inactive_mm
                     del self.inactive_mm[modName]
-            if (modName in mi_mergeable and
-                    modName not in self.inactive_inm and
-                    'NoMerge' not in bashTags):
+            if (modName in mi_mergeable and modName not in
+                    self.inactive_inm and 'NoMerge' not in bashTags):
                 self.bp_mergeable.add(modName)
 
     def getKeeper(self):
@@ -303,8 +308,8 @@ class PatchFile(ModFile):
         mod_file.load_plugin()
         # don't waste time for active Filter plugins, since we already ensure
         # those don't have missing masters before we even begin building the BP
-        if mod_name not in self.load_dict and 'Filter' in \
-                mod_info.getBashTags():
+        if mod_name not in self.load_dict and 'Filter' in self.all_tags[
+                mod_name]:
             load_set = set(self.load_dict)
             # pass lf in - in initData self.readFactory is not initialized yet
             self.filter_plugin(mod_file, load_set, lf=lf)
@@ -323,7 +328,7 @@ class PatchFile(ModFile):
                 continue
             # Check some commonly needed properties of the current plugin
             is_merged = modName in self.mergeSet
-            is_filter = 'Filter' in modInfo.getBashTags()
+            is_filter = 'Filter' in self.all_tags[modName]
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = modName in self.ii_mode

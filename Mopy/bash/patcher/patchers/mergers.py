@@ -32,7 +32,7 @@ from itertools import chain
 from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName
-from ...exception import BoltError, ModSigMismatchError
+from ...exception import ModSigMismatchError, BPConfigError
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
@@ -124,7 +124,7 @@ class _AMerger(ImportPatcher):
         #--Source mod?
         if modName in self.srcs:
             # The applied tags limit what data we're going to collect
-            applied_tags = modFile.fileInfo.getBashTags()
+            applied_tags = self.patchFile.all_tags[modName]
             can_add = self._add_tag in applied_tags
             can_change = self._change_tag in applied_tags
             can_remove = self._remove_tag in applied_tags
@@ -233,6 +233,8 @@ class ImportActorsPerksPatcher(_AMerger):
     _change_tag = u'Actors.Perks.Change'
     _remove_tag = u'Actors.Perks.Remove'
     _wanted_subrecord = {x: u'perks' for x in bush.game.actor_types}
+    patcher_tags = {'Actors.Perks.Add', 'Actors.Perks.Change',
+                    'Actors.Perks.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.perk
@@ -245,6 +247,7 @@ class ImportInventoryPatcher(_AMerger):
     _remove_tag = u'Invent.Remove'
     _wanted_subrecord = {x: u'items' for x in bush.game.inventoryTypes}
     iiMode = True
+    patcher_tags = {'Invent.Add', 'Invent.Change', 'Invent.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.item
@@ -255,6 +258,7 @@ class ImportOutfitsPatcher(_AMerger):
     _add_tag = u'Outfits.Add'
     _remove_tag = u'Outfits.Remove'
     _wanted_subrecord = {b'OTFT': u'items'}
+    patcher_tags = {'Outfits.Add', 'Outfits.Remove'}
 
 #------------------------------------------------------------------------------
 class ImportRacesRelationsPatcher(_AMerger):
@@ -263,6 +267,8 @@ class ImportRacesRelationsPatcher(_AMerger):
     _change_tag = u'R.Relations.Change'
     _remove_tag = u'R.Relations.Remove'
     _wanted_subrecord = {b'RACE': u'relations'}
+    patcher_tags = {'R.Relations.Add', 'R.Relations.Change',
+                    'R.Relations.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
@@ -274,6 +280,8 @@ class ImportRelationsPatcher(_AMerger):
     _change_tag = u'Relations.Change'
     _remove_tag = u'Relations.Remove'
     _wanted_subrecord = {b'FACT': u'relations'}
+    patcher_tags = {'Relations.Add', 'Relations.Change', 'Relations.Remove'}
+    # _csv_key = 'Relations' # TODO restore csv support
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
@@ -284,6 +292,7 @@ class ImportRelationsPatcher(_AMerger):
 class ImportActorsAIPackagesPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'AI Package Lists Changed') + u': %d'
     _read_sigs = bush.game.actor_types
+    patcher_tags = {'Actors.AIPackages', 'Actors.AIPackagesForceAdd'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
@@ -324,7 +333,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             tempData = {}
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             force_add = 'Actors.AIPackagesForceAdd' in \
-                        srcFile.fileInfo.getBashTags()
+                        self.patchFile.all_tags[srcMod]
             mod_tops = set()
             for rsig, block in srcFile.iter_tops(self._read_sigs):
                 mod_tops.add(rsig)
@@ -417,6 +426,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         _read_sigs = _actor_sigs + _spel_sigs
     else:
         _read_sigs = _actor_sigs
+    patcher_tags = {'Actors.Spells', 'Actors.SpellsForceAdd'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
@@ -449,7 +459,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             self._index_spells(srcFile)
             force_add = 'Actors.SpellsForceAdd' in \
-                        srcFile.fileInfo.getBashTags()
+                        self.patchFile.all_tags[srcMod]
             mod_tops = set()
             for rsig, block in srcFile.iter_tops(self._actor_sigs):
                 mod_tops.add(rsig)
@@ -816,6 +826,7 @@ class LeveledListsPatcher(_AListsMerger):
         b'LVSP': _(u'Spell'),
     }
     _de_re_header = _(u'Delevelers/Relevelers')
+    patcher_tags = {_de_tag, _re_tag}
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
         super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
@@ -843,6 +854,7 @@ class FormIDListsPatcher(_AListsMerger):
     _de_tag = u'Deflst'
     _sig_to_label = {b'FLST': _(u'FormID')}
     _de_re_header = _(u'Deflsters')
+    patcher_tags = {_de_tag}
 
     def _get_entries(self, target_list):
         return target_list.formIDInList
@@ -851,10 +863,23 @@ class FormIDListsPatcher(_AListsMerger):
 class ImportRacesSpellsPatcher(ImportPatcher):
     _read_sigs = (b'RACE',)
     _filter_in_patch = True
+    patcher_tags = {'R.AddSpells', 'R.ChangeSpells'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+        if sup := super()._validate_mod(p_file, src_fn, raise_on_error):
+            if 'R.ChangeSpells' in (bashTags := p_file.all_tags[src_fn]) and \
+                    'R.AddSpells' in bashTags:
+                if raise_on_error:
+                    raise BPConfigError(f'WARNING mod {src_fn} has both '
+                        f'R.AddSpells and R.ChangeSpells tags - only one of '
+                        f'those tags should be on a mod at one time')
+                return False
+        return sup
 
     def initData(self, progress):
         if not self.isActive: return
@@ -862,16 +887,10 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         for srcMod in self.srcs:
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             if not (race_block := srcFile.tops.get(b'RACE')): continue
-            bashTags = srcFile.fileInfo.getBashTags()
+            bashTags = self.patchFile.all_tags[srcMod]
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             change_spells = 'R.ChangeSpells' in bashTags
             add_spells = 'R.AddSpells' in bashTags
-            ##: This should be detected earlier and raise a BPConfigError so
-            # we abort with a nice, visible error message
-            if change_spells and add_spells:
-                raise BoltError(f'WARNING mod {srcMod} has both R.AddSpells '
-                                f'and R.ChangeSpells tags - only one of '
-                                f'those tags should be on a mod at one time')
             for rid, race in race_block.iter_present_records():
                 if add_spells:
                     tmp_race_data[rid]['AddSpells'] = race.spells
