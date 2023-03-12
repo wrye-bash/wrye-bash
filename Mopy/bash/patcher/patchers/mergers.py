@@ -81,13 +81,12 @@ class _AMerger(ImportPatcher):
     def _process_sources(self, p_sources, p_file):
         """We need to scan the masters recursively - add to p_file read
         factories."""
-        self.srcs = [s for s in p_sources if s in p_file.all_plugins]
+        sup = super()._process_sources(p_sources, p_file)
         self._masters_and_srcs = {*chain.from_iterable( # merger_masters
             p_file.p_file_minfos.recurse_masters(srcMod) for srcMod in
             self.srcs), *self.srcs}
         # self._update_patcher_factories(p_file, self._masters_and_srcs)
-        p_file.update_read_factories(self._read_sigs, self.srcs)
-        return bool(self.srcs)
+        return sup
 
     def initData(self,progress):
         if not self.isActive: return
@@ -113,7 +112,7 @@ class _AMerger(ImportPatcher):
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
-            for curr_sig, block in modFile.iter_tops(self._present_sigs):
+            for curr_sig, block in modFile.iter_tops(self._read_sigs):
                 sr_attr = self._wanted_subrecord[curr_sig]
                 for rid, record in block.iter_present_records():
                     if rid in touched:
@@ -172,9 +171,9 @@ class _AMerger(ImportPatcher):
         id_deltas = self.id_deltas
         mod_count = Counter()
         en_key = self._entry_key
-        for curr_sig in self._present_sigs:
+        for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
-            for rid, record in self.patchFile.tops[curr_sig].id_records.items():
+            for rid, record in p_block.id_records.items():
                 deltas = id_deltas[rid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
@@ -719,8 +718,9 @@ class _AListsMerger(ListPatcher):
         for leveler in self.levelers:
             log(u'* ' + self.annotate_plugin(leveler))
         # Save to patch file
-        for list_type_sig, list_label in self._sig_to_label.items():
-            if list_type_sig not in self._read_sigs: continue
+        sig_label = {k: v for k, v in self._sig_to_label.items() if
+                     k in self._read_sigs}
+        for list_type_sig, list_label in sig_label.items():
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
@@ -737,9 +737,7 @@ class _AListsMerger(ListPatcher):
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
-        for list_type_sig, list_label in self._sig_to_label.items():
-            if list_type_sig not in self._read_sigs: continue
-            patch_block = self.patchFile.tops[list_type_sig]
+        for list_type_sig, patch_block in self.patchFile.iter_tops(sig_label):
             stored_lists = self.type_list[list_type_sig]
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
@@ -782,11 +780,11 @@ class _AListsMerger(ListPatcher):
                     if old_entries != stored_list.entries:
                         cleaned_lists.add(stored_list.eid)
                         keep(sub_super, stored_list)
-            log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
+            log.setHeader('=== ' + _('Empty %s Sublists') % (
+                list_label := sig_label[list_type_sig]))
             for list_eid in sorted(removed_empty_sublists, key=str.lower):
                 log(u'* ' + list_eid)
-            log.setHeader(u'=== ' + _(u'Empty %s Sublists Removed') %
-                          list_label)
+            log.setHeader('=== ' + _('Empty %s Sublists Removed') % list_label)
             for list_eid in sorted(cleaned_lists, key=str.lower):
                 log(u'* ' + list_eid)
 
@@ -915,7 +913,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                 keep(rfid, race)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
+        self._log_srcs(log)
         log(u'\n=== ' + _(u'Merged'))
         if not racesPatched:
             log(f'. ~~{_("None")}~~')

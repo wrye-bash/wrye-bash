@@ -43,9 +43,9 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
-    def _process_sources(self, p_sources, p_file):
-        """No csvs and we don't scan masters (?)"""
-        return super(ImportPatcher, self)._process_sources(p_sources, p_file)
+    def _update_patcher_factories(self, p_file):
+        """We don't scan masters (?)"""
+        return super(ImportPatcher, self)._update_patcher_factories(p_file)
 
     def initData(self,progress):
         """Get roads from source files."""
@@ -196,7 +196,7 @@ class MorphFactionsPatcher(_ExSpecialList):
 
     def _pLog(self, log, changes_dict):
         log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
+        self._log_srcs(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
         for mod in load_order.get_ordered(changes_dict):
             log(f'* {mod}: {changes_dict[mod]:d}')

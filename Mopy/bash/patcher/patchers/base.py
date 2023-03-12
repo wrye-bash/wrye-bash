@@ -54,9 +54,9 @@ class IndexingTweak(MultiTweakItem):
     def prepare_for_tweaking(self, patch_file):
         for fn_plugin, pl_info in patch_file.merged_or_loaded_ord.items(): ##: all_plugins?
             index_plugin = self._mod_file_read(pl_info)
-            for index_sig in self._index_sigs:
+            for index_sig, block in index_plugin.iter_tops(self._index_sigs):
                 self._indexed_records[index_sig].update(
-                    index_plugin.tops[index_sig].iter_present_records())
+                    block.iter_present_records())
         super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
@@ -182,12 +182,15 @@ class MergePatchesPatcher(ListPatcher):
                 # It's present but inactive - that won't work for merging
                 raise BPConfigError(self._inactive_master_error % {
                     'merged_plugin': merge_src, 'inactive_master': mm})
-        self.srcs = p_sources
+        sup = super()._process_sources(p_sources, p_file)
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
         # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(p_sources)
-        return bool(p_sources)
+        return sup
+
+    def _update_patcher_factories(self, p_file):
+        """No initData - don't add to patch factories."""
 
 class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -293,7 +296,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
             if keepWorld:
                 keep(worldId, worldBlock)
         log.setHeader(f'= {self._patcher_name}')
-        self._srcMods(log)
+        self._log_srcs(log)
         log('\n=== ' + _('Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(f'* {srcMod}: {count[srcMod]:d}')

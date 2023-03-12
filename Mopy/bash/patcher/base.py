@@ -34,8 +34,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from itertools import chain
 
-from . import getPatchesPath
-from .. import load_order
+from .. import load_order, bass
 from ..bolt import deprint, dict_sort, sig_to_str
 from ..parsers import _HandleAliases
 
@@ -74,8 +73,7 @@ class APatcher:
         return self.active_read_sigs
 
     def initData(self,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
+        """Compiles material, i.e. reads esp's, etc. as necessary."""
 
     def scan_mod_file(self, modFile, progress):
         """Scans specified mod file to extract info. May add record to patch
@@ -98,6 +96,8 @@ class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = '=== ' + _('Source Mods')
+    # a CsvParser type to parse the csv sources of this patcher
+    _csv_parser = None
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
@@ -107,34 +107,81 @@ class ListPatcher(APatcher):
 
     def _process_sources(self, p_sources, p_file):
         """Filter srcs and update p_file read factories."""
-        self.srcs = [s for s in p_sources if s in p_file.all_plugins]
-        p_file.update_read_factories(self._read_sigs, self.srcs)
-        return bool(self.srcs)
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv' and s in
+                     p_file.all_plugins]
+        self._update_patcher_factories(p_file)
+        self._parse_csv_sources()
+        return bool(self.srcs or self.csv_srcs)
 
-    def _srcMods(self,log):
-        """Logs the Source mods for this patcher."""
+    def _update_patcher_factories(self, p_file):
+        # run before _parse_csv_sources as the latter updates srcs_sigs for
+        # APreserver - we want _read_sigs to return rec_type_attrs here
+        p_file.update_read_factories(self._read_sigs, self.srcs)
+
+    def _log_srcs(self, log):
+        """Logs the Source mods/csvs for this patcher."""
         log(self.__class__.srcsHeader)
-        if not self.srcs:
+        all_srcs = [*self.srcs, *self.csv_srcs]
+        if not all_srcs:
             log(f'. ~~{_("None")}~~')
         else:
-            for srcFile in self.srcs:
+            for srcFile in all_srcs:
                 log(f'* {srcFile}')
 
-class CsvListPatcher(_HandleAliases, ListPatcher):
-    """List patcher with csv sources."""
-
-    def _process_sources(self, p_sources, p_file):
-        # progress.setFull(len(self.srcs)) ## todo re-add progress
-        filtered_sources = []
-        for srcFile in p_sources:
+    # CSV helpers
+    def _parse_csv_sources(self):
+        """Parses CSV files. Only called if _parser_instance returns a
+        parser."""
+        if not (parser_instance := self._parser_instance):
+            return {}
+        loaded_csvs = []
+        for src_path in self.csv_srcs:
             try:
-                self.read_csv(getPatchesPath(srcFile))
-                filtered_sources.append(srcFile)
-            except OSError: deprint(f'{srcFile} is no longer in patches set',
-                                    traceback=True)
-            # progress.plus()
-        self.srcs = filtered_sources
-        return bool(filtered_sources)
+                try: ##: the correct path must be passed from gui_patchers.py
+                    csv_path = bass.dirs['patches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                except OSError:
+                    csv_path = bass.dirs['defaultPatches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                loaded_csvs.append(src_path)
+            except OSError:
+                deprint(f'{src_path} is no longer in patches set',
+                        traceback=True)
+            except UnicodeError:
+                deprint(f'{src_path} is not saved in UTF-8 format',
+                        traceback=True)
+        self.csv_srcs = loaded_csvs
+        # Filter out any entries that don't actually have data or whose
+        # record signatures do not appear in _parser_sigs - these might not
+        # always be a subset of read_sigs for instance CoblExhaustionPatcher
+        # which reads b'FACT' but _read_sigs is b'SPEL'
+        rec_att = {*parser_instance._parser_sigs}
+        if s := set(parser_instance.id_stored_data) - rec_att:
+            deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
+                    f'{loaded_csvs}')
+        ##: make sure k is always bytes and drop encode below
+        filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
+                         k, v in parser_instance.id_stored_data.items() if
+                         v and k in rec_att}
+        return filtered_dict
+
+    @property
+    def _parser_instance(self):
+        return self._csv_parser and self._csv_parser(
+            self.patchFile.pfile_aliases, called_from_patcher=True)
+
+class CsvListPatcher(_HandleAliases, ListPatcher):
+    """List patcher that is-a CsvParser - we could change this to has-a,
+    would retire this class."""
+
+    def _update_patcher_factories(self, p_file):
+        ##: actually the override is not needed if sources are never plugins
+        """No plugin src files."""
+
+    @property
+    def _parser_instance(self):
+        return self
 
 #------------------------------------------------------------------------------
 # MultiTweakItem --------------------------------------------------------------
@@ -386,21 +433,15 @@ class ImportPatcher(ListPatcher, ScanPatcher):
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    def _process_sources(self, p_sources, p_file):
-        """Special processing for the ImportPatchers - csv and masters."""
-        # Split srcs based on CSV extension
-        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
-        self.srcs = [s for s in p_sources if s.fn_ext != '.csv' and s in
-                     p_file.all_plugins]
+    def _update_patcher_factories(self, p_file):
         # most of the import patchers scan their sources' masters
         mast = (p_file.all_plugins[s].masterNames for s in self.srcs)
         sources = set(chain(self.srcs, *mast))
         p_file.update_read_factories(self._read_sigs, sources)
-        return bool(self.srcs or self.csv_srcs) ##: move _parse_csv_sources here
 
     def _patchLog(self,log,type_count):
         log.setHeader(f'= {self._patcher_name}')
-        self._srcMods(log)
+        self._log_srcs(log)
         self._plog(log,type_count)
 
     ##: Unify these - decide which one looks best in the end and make all

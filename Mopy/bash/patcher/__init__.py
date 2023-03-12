@@ -36,13 +36,6 @@ def exportConfig(patch_name, config, win, outDir):
         pd.pickled_data[gkey] = {'bash.patch.configs': config}
         pd.save()
 
-def getPatchesPath(fileName):
-    """Choose the correct Bash Patches path for the file."""
-    if (patches_fpath := bass.dirs[u'patches'].join(fileName)).is_file():
-        return patches_fpath
-    else:
-        return bass.dirs[u'defaultPatches'].join(fileName)
-
 # this is set once and stays the same for the patch execution session
 _patches_set = None
 

@@ -29,7 +29,6 @@ import operator
 from collections import Counter, defaultdict
 from itertools import chain
 
-from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
@@ -59,7 +58,6 @@ class APreserver(ImportPatcher):
     # subrecords to import, instead of just mapping the record signatures
     # directly to the tuples
     _multi_tag = False
-    _csv_parser = None
     # A bash tag to force the import of all relevant data from a tagged mod,
     # without it being checked against the masters first. None means no such
     # tag exists for this patcher
@@ -67,7 +65,7 @@ class APreserver(ImportPatcher):
 
     def __init__(self, p_name, p_file, p_sources):
         #--(attribute-> value) dicts keyed by long fid.
-        self.id_data = defaultdict(dict)
+        self.id_data = {}
         self.srcs_sigs = set() #--Record signatures actually provided by src
         # mods/files.
         #--Type Fields
@@ -97,37 +95,8 @@ class APreserver(ImportPatcher):
         super().__init__(p_name, p_file, p_sources)
 
     # CSV helpers
-    def _parse_csv_sources(self, progress):
-        """Parses CSV files. Only called if _csv_parser is set."""
-        parser_instance = self._csv_parser(self.patchFile.pfile_aliases,
-                                           called_from_patcher=True)
-        loaded_csvs = []
-        for src_path in self.csv_srcs:
-            try:
-                csv_path = getPatchesPath(src_path)
-                parser_instance.read_csv(csv_path)
-                loaded_csvs.append(csv_path)
-            except OSError:
-                deprint(f'{src_path} is no longer in patches set',
-                        traceback=True)
-            except UnicodeError:
-                deprint(f'{src_path} is not saved in UTF-8 format',
-                        traceback=True)
-            progress.plus()
-        self.csv_srcs = loaded_csvs
-        # Filter out any entries that don't actually have data or whose
-        # record signatures do not appear in rec_type_attrs
-        # We need to use the parser attributes for example for the
-        # CoblExhaustionPatcher which reads b'FACT' but _read_sigs is b'SPEL'
-        # might be redundant to add self._read_sigs then
-        parser_sigs = {*self._read_sigs, *parser_instance._parser_sigs}
-        if s := set(parser_instance.id_stored_data) - set(parser_sigs):
-            deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
-                    f'{loaded_csvs}')
-        ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
-                         k, v in parser_instance.id_stored_data.items() if
-                         v and k in parser_sigs}
+    def _parse_csv_sources(self):
+        filtered_dict = super()._parse_csv_sources()
         self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.values():
             self.id_data.update(src_data)
@@ -184,17 +153,19 @@ class APreserver(ImportPatcher):
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
-        id_data = self.id_data
-        progress.setFull(len(self.srcs) + len(self.csv_srcs))
+        id_data = defaultdict(dict)
+        progress.setFull(len(self.srcs))
         loaded_mods = self.patchFile.load_dict
-        srcs_sigs = set()
+        srcssigs = set()
         for srcMod in self.srcs:
             mod_id_data = {}
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             mod_sigs = set()
             mod_tags = srcFile.fileInfo.getBashTags()
+            # don't use _read_sigs here as srcs_sigs might be updated in
+            # _parse_csv_sources
             for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
-                srcs_sigs.add(rsig)
+                srcssigs.add(rsig)
                 mod_sigs.add(rsig)
                 self._init_data_loop(rsig, block, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
@@ -219,9 +190,8 @@ class APreserver(ImportPatcher):
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
-        self.srcs_sigs = srcs_sigs
-        if self._csv_parser:
-            self._parse_csv_sources(progress)
+        self.id_data = {**id_data, **self.id_data} # csvs take precedence
+        self.srcs_sigs.update(srcssigs)
         self.isActive = bool(self.srcs_sigs)
 
     def _add_to_patch(self, rid, record, top_sig, *,
@@ -263,15 +233,6 @@ class APreserver(ImportPatcher):
         self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log, type_count)
-
-    def _srcMods(self,log):
-        log(self.__class__.srcsHeader)
-        all_srcs = [*self.srcs, *self.csv_srcs]
-        if not all_srcs:
-            log(f'. ~~{_("None")}~~')
-        else:
-            for srcFile in all_srcs:
-                log(f'* {srcFile}')
 
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------

@@ -449,6 +449,11 @@ class _AParser(_HandleAliases):
         """Returns a set of all record types that this parser requires."""
         return set(self._fp_types) | set(self._sp_types)
 
+    @property
+    def _parser_sigs(self):
+        """Returns a set of all record types that this parser requires."""
+        return set(self._fp_types) | set(self._sp_types)
+
 class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
     read and write both plugins and CSV, and uses a single pass if called from
