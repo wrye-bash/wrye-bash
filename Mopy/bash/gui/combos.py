@@ -280,6 +280,7 @@ class TreePanel(_APageComponent):
         parent_page, sub_page = page_path.split(u'/')
         ##: wx.TreeCtrl has the worst API ever, this desperately needs wrapping
         # and some rethinking (plus virtualizing etc.)
+        ##: We have tree_ctrl.Tree now, can we use that here somehow?
         tree_ctrl = self._native_widget.GetTreeCtrl()
         root_item = tree_ctrl.GetRootItem()
         # The root does not actually exist, so look at its first child. The

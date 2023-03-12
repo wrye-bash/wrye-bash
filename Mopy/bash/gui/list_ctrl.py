@@ -255,7 +255,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         gItem.SetData(i)
         ##: de-wx! This is a wx object escaping - should be internal-only,
         # need to absorb __setUI in gui and export a public API like
-        # _ListItemFormat for that
+        # ListItemFormat for that
         decorate_cb(gItem)
         # This commits the actual changed data in the ListCtrl
         self._native_widget.SetItem(gItem)

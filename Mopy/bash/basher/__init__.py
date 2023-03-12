@@ -550,7 +550,7 @@ class MasterList(_ModsUIList):
             mouseText += _('Stored size does not match the one on disk.') + ' '
         if self.allowEdit:
             if masterInfo.old_name in settings[u'bash.mods.renames']:
-                item_format.strong = True
+                item_format.bold = True
         #--Image
         status = self.GetMasterStatus(mi)
         oninc = load_order.cached_is_active(masters_name) or (

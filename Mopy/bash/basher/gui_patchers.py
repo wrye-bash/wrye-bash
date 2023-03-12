@@ -62,7 +62,7 @@ class _PatcherPanel(object):
         self.gConfigPanel = None
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
-        self._is_slanted = False
+        self._is_italicized = False
         # executing bashed patch file, use only for info on active mod arrays
         self._bp = None
 
@@ -77,11 +77,11 @@ class _PatcherPanel(object):
         self.isEnabled = self_enabled
         self.patch_dialog.check_patcher(self, self_enabled)
 
-    def _style_patcher_label(self, bold=False, slant=False):
+    def _style_patcher_label(self, bold=False, italics=False):
         self._is_bolded |= bold
-        self._is_slanted |= slant
+        self._is_italicized |= italics
         self.patch_dialog.style_patcher(self, bold=self._is_bolded,
-                                        slant=self._is_slanted)
+                                        italics=self._is_italicized)
 
     def _GetIsFirstLoad(self):
         return getattr(self, u'is_first_load', False)
@@ -410,9 +410,9 @@ class _ListPatcherPanel(_PatcherPanel):
                         item, effectiveDefaultItemCheck))
         if patcherOn:
             self._enable_self()
-        # Bold it if it has a new item, slant it if it has no items
-        patcher_slant = self.gList.lb_get_items_count() == 0
-        self._style_patcher_label(bold=patcher_bold, slant=patcher_slant)
+        # Bold it if it has a new item, italicize it if it has no items
+        patcher_italics = self.gList.lb_get_items_count() == 0
+        self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -661,9 +661,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 # patcher
                 self.gTweakList.lb_style_font_at_index(index, bold=True)
                 patcher_bold = True
-        # Bold it if it has a new item, slant it if it has no items
-        patcher_slant = self.gTweakList.lb_get_items_count() == 0
-        self._style_patcher_label(bold=patcher_bold, slant=patcher_slant)
+        # Bold it if it has a new item, italicize it if it has no items
+        patcher_italics = self.gTweakList.lb_get_items_count() == 0
+        self._style_patcher_label(bold=patcher_bold, italics=patcher_italics)
 
     def TweakOnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all check states."""
@@ -973,7 +973,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         if default:
             super(_ListsMergerPanel, self)._import_config(default)
 
-    def _style_patcher_label(self, bold=False, slant=False):
+    def _style_patcher_label(self, bold=False, italics=False):
         # Never italicize these since they will run even if there are no tagged
         # source plugins
         super(_ListsMergerPanel, self)._style_patcher_label(bold=bold)

@@ -27,6 +27,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import partial, wraps
 
 import wx
@@ -44,7 +45,7 @@ from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
     TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
-    askWarning, showOk, showError, showWarning, showInfo
+    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -709,6 +710,25 @@ def conversation(func):
                     Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class _ListItemFormat:
+    icon_key: str | None = None
+    back_key: str = 'default.bkgd'
+    text_key: str = 'default.text'
+    bold: bool = False
+    italics: bool = False
+    underline: bool = False
+
+    def to_tree_node_format(self):
+        """Convert this list item format to an equivalent tree node format."""
+        return TreeNodeFormat(
+            icon_bmp=(images[self.icon_key].get_bitmap()
+                      if self.icon_key else None),
+            back_color=colors[self.back_key],
+            text_color=colors[self.text_key],
+            bold=self.bold, italics=self.italics, underline=self.underline)
+
 class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
@@ -880,15 +900,6 @@ class UIList(PanelWin):
             self.__gList.set_item_data(itemDex, col_dex,
                                        self.labels[col](self, item))
 
-    class _ListItemFormat(object):
-        def __init__(self):
-            self.icon_key = None
-            self.back_key = u'default.bkgd'
-            self.text_key = u'default.text'
-            self.strong = False
-            self.italics = False
-            self.underline = False
-
     def set_item_format(self, item, item_format, target_ini_setts):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text. Responsible (applicable if the
@@ -898,7 +909,7 @@ class UIList(PanelWin):
 
     def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
-        df = self._ListItemFormat()
+        df = _ListItemFormat()
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
         if df.icon_key:
             if isinstance(df.icon_key, tuple):
@@ -912,7 +923,7 @@ class UIList(PanelWin):
         if df.back_key:
             gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
+        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
                                  slant=df.italics, underline=df.underline))
 
     def populate_items(self):
@@ -2118,12 +2129,13 @@ class _CheckList_SelectAll(ItemLink):
     def Execute(self):
         self.window.set_all_checkmarks(checked=self.select)
 
-# TODO(inf) Needs renaming, also need to make a virtual version eventually...
-class TreeCtrl(_AComponent):
+# XXX(inf) Obsolete, see trees.Tree and trees.VirtualTree. Will disappear along
+#   with ListBoxes at the end of this branch
+class _TreeCtrl(_AComponent):
     _native_widget: wx.TreeCtrl
 
     def __init__(self, parent, title, items_dict):
-        super(TreeCtrl, self).__init__(parent, size=(150, 200),
+        super().__init__(parent, size=(150, 200),
             style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
                   wx.TR_HIDE_ROOT)
         root = self._native_widget.AddRoot(title)
@@ -2186,7 +2198,7 @@ class ListBoxes(DialogWindow):
             elif liststyle == u'list':
                 checksCtrl = ListBox(self, choices=strs, isHScroll=True)
             else: # u'tree'
-                checksCtrl = TreeCtrl(self, title, item_group[2])
+                checksCtrl = _TreeCtrl(self, title, item_group[2])
             self._ctrls[title] = checksCtrl
             checksCtrl.tooltip = item_tip
             layout.add((HBoxedLayout(self, item_expand=True, title=title,

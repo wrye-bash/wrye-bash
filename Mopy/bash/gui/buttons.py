@@ -46,9 +46,8 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     _default_label = u''
 
-    def __init__(self, parent, btn_label: str = '', btn_tooltip: str = '',
-            default: bool = False, exact_fit: bool = False,
-            no_border: bool = False):
+    def __init__(self, parent, btn_label='', btn_tooltip='', default=False,
+            exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx

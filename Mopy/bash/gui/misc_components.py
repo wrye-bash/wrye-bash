@@ -43,8 +43,8 @@ from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
-    def Style(font_: _wx.Font, bold=False, slant=False, underline=False):
-        if bold: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
+    def Style(font_: _wx.Font, strong=False, slant=False, underline=False):
+        if strong: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
         else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
         if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
         else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
