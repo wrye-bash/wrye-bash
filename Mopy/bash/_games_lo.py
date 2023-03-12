@@ -581,7 +581,7 @@ class LoGame(object):
         if disable: # chop off extra
             cached_minfs.selectedExtra = fix_active.selectedExtra = [
                 x for x in acti_filtered if x in disable]
-        before_reorder = acti # with overflowed plugins removed
+        before_reorder = acti[:] # with overflowed plugins removed
         if self._order_fixed(acti):
             fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
@@ -606,14 +606,18 @@ class LoGame(object):
                      if x in self.mod_infos]
         return [self.master_path] + fixed_ord
 
-    def _order_fixed(self, lord):
-        fixed_order = self._fixed_order_plugins()
+    def _order_fixed(self, lord_or_acti):
+        # This may be acti, so don't force-activate fixed-order plugins
+        # (plugins with a missing LO when this is lord will already have had a
+        # load order set earlier in _fix_load_order)
+        la_set = set(lord_or_acti)
+        fixed_order = [p for p in self._fixed_order_plugins() if p in la_set]
         if not fixed_order: return False # nothing to do
         fixed_order_set = set(fixed_order)
-        filtered_lo = [x for x in lord if x not in fixed_order_set]
+        filtered_lo = [x for x in lord_or_acti if x not in fixed_order_set]
         lo_with_fixed = fixed_order + filtered_lo
-        if lord != lo_with_fixed:
-            lord[:] = lo_with_fixed
+        if lord_or_acti != lo_with_fixed:
+            lord_or_acti[:] = lo_with_fixed
             return True
         return False
 
