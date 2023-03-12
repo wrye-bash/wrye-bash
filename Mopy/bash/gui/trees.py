@@ -38,7 +38,10 @@ from .misc_components import Font
 @dataclass(slots=True, kw_only=True)
 class TreeNodeFormat:
     """Dataclass holding information on how to decorate a single TreeNode."""
-    icon_bmp: _wx.Bitmap | None
+    # The index into the parent Tree's image list. Must be None if the image
+    # list was not specified.
+    icon_idx: int | None
+    #
     back_color: Color
     text_color: Color
     bold: bool
@@ -61,6 +64,37 @@ class TreeNode:
         self._node_text = node_text
         self._child_nodes: list[Self] = []
 
+    # This Node ---------------------------------------------------------------
+    def decorate_node(self, tif: TreeNodeFormat):
+        """Decorate this tree node with the specified tree node format."""
+        if tif.icon_idx is not None:
+            self._native_parent.SetItemImage(self._native_node_id,
+                tif.icon_idx)
+        self._native_parent.SetItemBackgroundColour(self._native_node_id,
+            tif.back_color.to_rgba_tuple())
+        self._native_parent.SetItemTextColour(self._native_node_id,
+            tif.text_color.to_rgba_tuple())
+        self._native_parent.SetItemFont(self._native_node_id, Font.Style(
+            self._native_parent.GetItemFont(self._native_node_id),
+            strong=tif.bold, slant=tif.italics, underline=tif.underline))
+
+    def collapse_node(self, recursively=False):
+        """Programmatically collapse this node. If recursively is True,
+        collapse all its subnodes as well."""
+        if recursively:
+            self._native_parent.CollapseAllChildren(self._native_node_id)
+        else:
+            self._native_parent.Collapse(self._native_node_id)
+
+    def expand_node(self, recursively=False):
+        """Programmatically expand this node. If recursively is True, expand
+        all its subnodes as well."""
+        if recursively:
+            self._native_parent.ExpandAllChildren(self._native_node_id)
+        else:
+            self._native_parent.Expand(self._native_node_id)
+
+    # Children ----------------------------------------------------------------
     def _wrap_child(self, new_child_id: _wx.TreeItemId, child_text: str,
             child_node_type: type[TreeNode] | None = None):
         """Internal method holding shared code for append_child et al."""
@@ -131,21 +165,6 @@ class TreeNode:
         self._child_nodes.insert(0, wrapped_child)
         return wrapped_child
 
-    def decorate_node(self, tif: TreeNodeFormat):
-        """Decorate this tree node with the specified tree node format."""
-        self._native_parent.SetItemImage(self._native_node_id, tif.icon_bmp)
-        self._native_parent.SetItemBackgroundColour(self._native_node_id,
-            tif.back_color.to_rgba_tuple())
-        self._native_parent.SetItemTextColour(self._native_node_id,
-            tif.text_color.to_rgba_tuple())
-        self._native_parent.SetItemFont(self._native_node_id, Font.Style(
-            self._native_parent.GetItemFont(self._native_node_id),
-            strong=tif.bold, slant=tif.italics, underline=tif.underline))
-
-    def on_expanding(self):
-        """Called whenever this node is being expanded in a VirtualTree. Does
-        nothing by default."""
-
     def iter_child_nodes(self):
         """An iterator yielding the nodes that are direct children of this
         node."""
@@ -160,6 +179,16 @@ class TreeNode:
             yield subnode
             yield from subnode.iter_subnodes()
 
+    # Events ------------------------------------------------------------------
+    def on_activated(self):
+        """Called whenever this node was activated via double click or
+        keyboard. Does nothing by default. May return EventResults."""
+
+    def on_expanding(self):
+        """Called whenever this node is being expanded in a VirtualTree. Does
+        nothing by default. May return EventResults."""
+
+    # Other -------------------------------------------------------------------
     @property
     def node_text(self):
         """The text shown on this node."""
@@ -215,12 +244,15 @@ class Tree(_AComponent):
     VirtualTree as well."""
     _native_widget: _wx.TreeCtrl
 
-    def __init__(self, parent, *, root_text: str | None = None,
+    def __init__(self, parent, image_list = None, *,
+            root_text: str | None = None,
             root_node_type: type[TreeNode] = TreeNode):
         """Create a new Tree with the specified root text.
 
         :param parent: The object that this tree belongs to. May be a wx object
             or a component.
+        :param image_list: A balt.ImageList instance, or None if the tree items
+            do not have any images.
         :param root_text: The text to use for the root element. If set to None,
             the root element will be hidden. That is useful if you want to
             simulate having multiple roots.
@@ -230,12 +262,29 @@ class Tree(_AComponent):
         if root_text is None:
             style |= _wx.TR_HIDE_ROOT
         super().__init__(parent, style=style)
+        if image_list is not None:
+            self._native_widget.SetImageList(image_list.GetImageList())
         self._native_tree_id_to_child = {}
+        on_node_activated = self._evt_handler(_wx.EVT_TREE_ITEM_ACTIVATED,
+            self._evt_to_node_processor)
+        on_node_activated.subscribe(self._handle_node_activated)
         final_root_text = root_text or ''
         root_id = self._native_widget.AddRoot(final_root_text)
         self._root_node = root_node_type(self, self._native_widget, root_id,
             final_root_text)
         self._notify_child_added(self._root_node, root_id)
+
+    # Internal API ------------------------------------------------------------
+    def _evt_to_node_processor(self, tree_evt: _wx.TreeEvent):
+        """Internal event processor, converts a tree event into the affected
+        child node."""
+        return [self._native_tree_id_to_child[tree_evt.GetItem()]]
+
+    @staticmethod
+    def _handle_node_activated(affected_node: TreeNode):
+        """Internal callback, called when a node is activated. Simply delegates
+        to the node itself."""
+        return affected_node.on_activated()
 
     def _notify_child_added(self, new_child: TreeNode,
             native_child_id: _wx.TreeItemId):
@@ -247,6 +296,15 @@ class Tree(_AComponent):
         """Notify this tree of a child with the specified native ID having been
         deleted."""
         del self._native_tree_id_to_child[native_child_id]
+
+    # Public API --------------------------------------------------------------
+    def collapse_everything(self):
+        """Recursively collapse all nodes in this tree."""
+        self._native_widget.CollapseAll()
+
+    def expand_everything(self):
+        """Recursively expand all nodes in this tree."""
+        self._native_widget.ExpandAll()
 
     @property
     def root_node(self):
@@ -263,10 +321,11 @@ class VirtualTree(Tree):
         super().__init__(parent, root_text=root_text,
             root_node_type=root_node_type)
         on_node_expanding = self._evt_handler(_wx.EVT_TREE_ITEM_EXPANDING,
-            lambda e: [e])
+            self._evt_to_node_processor)
         on_node_expanding.subscribe(self._handle_node_expanding)
 
-    def _handle_node_expanding(self, tree_evt: _wx.TreeEvent):
+    @staticmethod
+    def _handle_node_expanding(affected_node: TreeNode):
         """Internal callback, called when a node is being expanded. Simply
         delegates to the node itself."""
-        self._native_tree_id_to_child[tree_evt.GetItem()].on_expanding()
+        return affected_node.on_expanding()

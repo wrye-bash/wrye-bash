@@ -63,7 +63,8 @@ import wx
 
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
-from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification
+from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
+    DependentsAffectedDialog, MastersAffectedDialog
 from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
@@ -1301,7 +1302,7 @@ class ModList(_ModsUIList):
                 if len(deactivated) > (act in deactivated):
                     # deactivated dependents
                     deactivated = [x for x in deactivated if x != act]
-                    changes[self.__deactivated_key][act] = \
+                    changes[self._deactivated_key][act] = \
                         load_order.get_ordered(deactivated)
             except (BoltError, NotImplementedError) as e:
                 showError(self, f'{e}')
@@ -1323,7 +1324,7 @@ class ModList(_ModsUIList):
                 touched |= set(activated)
                 if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
-                    changes[self.__activated_key][inact] = activated
+                    changes[self._activated_key][inact] = activated
             except (BoltError, NotImplementedError) as e:
                 showError(self, f'{e}')
                 break
@@ -1348,29 +1349,25 @@ class ModList(_ModsUIList):
             self.RefreshUI(redraw=self._lo_redraw_targets(touched),
                            refreshSaves=True)
 
-    __activated_key = _(u'Masters activated:')
-    __deactivated_key = _(u'Children deactivated:')
+    _activated_key = 0
+    _deactivated_key = 1
     def __toggle_active_msg(self, changes_dict):
-        masters_activated = changes_dict[self.__activated_key]
-        children_deactivated = changes_dict[self.__deactivated_key]
-        checklists = []
-        # It's one or the other !
+        masters_activated = self.decorate_tree_dict(
+            changes_dict[self._activated_key])
+        dependents_deactivated = self.decorate_tree_dict(
+            changes_dict[self._deactivated_key])
+        # If we have no changes, abort - if we do have changes, only one of
+        # these can be truthy at a time
+        if not masters_activated and not dependents_deactivated:
+            return
         if masters_activated:
-            checklists = [self.__activated_key, _(
-            u'Wrye Bash automatically activates the masters of activated '
-            u'plugins.'), masters_activated]
-            msg = _(u'Activating the following plugins caused their masters '
-                    u'to be activated')
-        elif children_deactivated:
-            checklists += [self.__deactivated_key, _(
-                u'Wrye Bash automatically deactivates the children of '
-                u'deactivated plugins.'), children_deactivated]
-            msg = _(u'Deactivating the following plugins caused their '
-                    u'children to be deactivated')
-        else: return
-        ListBoxes.display_dialog(self, _(u'Masters/Children affected'), msg,
-                                 [checklists], liststyle=u'tree',
-                                 canCancel=False)
+            target_dlg = MastersAffectedDialog
+            target_tree_dict = masters_activated
+        else:
+            target_dlg = DependentsAffectedDialog
+            target_tree_dict = dependents_deactivated
+        target_dlg(self, mods_list_images=self._icons,
+            decorated_plugins=target_tree_dict).show_modeless()
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):

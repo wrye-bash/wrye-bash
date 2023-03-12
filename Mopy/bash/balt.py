@@ -720,14 +720,17 @@ class _ListItemFormat:
     italics: bool = False
     underline: bool = False
 
-    def to_tree_node_format(self):
-        """Convert this list item format to an equivalent tree node format."""
+    def to_tree_node_format(self, parent_uil: UIList):
+        """Convert this list item format to an equivalent tree node format,
+        relative to the specified parent UIList."""
         return TreeNodeFormat(
-            icon_bmp=(images[self.icon_key].get_bitmap()
-                      if self.icon_key else None),
-            back_color=colors[self.back_key],
-            text_color=colors[self.text_key],
+            icon_idx=parent_uil.lookup_icon_index(self.icon_key),
+            back_color=parent_uil.lookup_back_key(self.back_key),
+            text_color=parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
+
+DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat,
+                                      list[tuple[FName, TreeNodeFormat]]]]
 
 class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
@@ -814,8 +817,8 @@ class UIList(PanelWin):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = wx.SystemSettings.GetColour(
-            wx.SYS_COLOUR_WINDOW)
+        self._defaultTextBackground = Color.from_wx(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     # Column properties
@@ -900,32 +903,6 @@ class UIList(PanelWin):
             self.__gList.set_item_data(itemDex, col_dex,
                                        self.labels[col](self, item))
 
-    def set_item_format(self, item, item_format, target_ini_setts):
-        """Populate item_format attributes for text and background colors
-        and set icon, font and mouse text. Responsible (applicable if the
-        data_store is a FileInfo subclass) for calling getStatus (or
-        tweak_status in Inis) to update respective info's status."""
-        pass # screens, bsas
-
-    def __setUI(self, fileName, target_ini_setts, gItem):
-        """Set font, status icon, background text etc."""
-        df = _ListItemFormat()
-        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        if df.icon_key:
-            if isinstance(df.icon_key, tuple):
-                img = self._icons.Get(*df.icon_key)
-            else: img = self._icons[df.icon_key]
-            gItem.SetImage(img)
-        if df.text_key:
-            gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
-        else:
-            gItem.SetTextColour(self.__gList.get_text_color())
-        if df.back_key:
-            gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
-        else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
-                                 slant=df.italics, underline=df.underline))
-
     def populate_items(self):
         """Sort items and populate entire list."""
         # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
@@ -991,7 +968,62 @@ class UIList(PanelWin):
     def Focus(self):
         self.__gList.set_focus()
 
-    #--Column Menu
+    #--Decorating -------------------------------------------------------------
+    def set_item_format(self, item, item_format, target_ini_setts):
+        """Populate item_format attributes for text and background colors
+        and set icon, font and mouse text. Responsible (applicable if the
+        data_store is a FileInfo subclass) for calling getStatus (or
+        tweak_status in Inis) to update respective info's status."""
+        pass # screens, bsas
+
+    def __setUI(self, fileName, target_ini_setts, gItem):
+        """Set font, status icon, background text etc."""
+        df = _ListItemFormat()
+        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
+        icon_index = self.lookup_icon_index(df.icon_key)
+        if icon_index is not None:
+            gItem.SetImage(icon_index)
+        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
+        gItem.SetBackgroundColour(
+            self.lookup_back_key(df.back_key).to_rgba_tuple())
+        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
+                                 slant=df.italics, underline=df.underline))
+
+    def lookup_icon_index(self, target_icon_key: str | tuple) -> int:
+        """Helper method to look up an icon from a list item format and return
+        it as an index into the image list."""
+        if isinstance(target_icon_key, tuple):
+            return self._icons.Get(*target_icon_key)
+        else:
+            return self._icons[target_icon_key]
+
+    def lookup_text_key(self, target_text_color: str):
+        """Helper method to look up a text color from a list item format."""
+        if target_text_color:
+            return colors[target_text_color]
+        else:
+            return self.__gList.get_text_color()
+
+    def lookup_back_key(self, target_back_color: str):
+        """Helper method to look up a background color from a list item
+        format."""
+        if target_back_color:
+            return colors[target_back_color]
+        else:
+            return self._defaultTextBackground
+
+    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
+            target_ini_setts=None) -> DecoratedTreeDict:
+        """Add appropriate TreeNodeFormat instances to the specified dict
+        mapping items in this UIList to lists of items in this UIList."""
+        def _decorate(i):
+            lif = _ListItemFormat()
+            self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+            return lif.to_tree_node_format(self)
+        return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
+                for i, i_children in tree_dict.items()}
+
+    #--Right Click Menus ------------------------------------------------------
     def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
         """Show column menu.
 
@@ -1005,7 +1037,6 @@ class UIList(PanelWin):
                 self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
-    #--Item Menu
     def DoItemMenu(self):
         """Show item menu."""
         # Don't allow this if we are in the process of renaming because

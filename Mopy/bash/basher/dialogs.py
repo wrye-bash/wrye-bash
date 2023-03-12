@@ -21,9 +21,10 @@
 #
 # =============================================================================
 import webbrowser
+from dataclasses import dataclass
 
 from .. import balt, bass, bolt, bosh, bush, env, load_order
-from ..balt import ImageWrapper, colors
+from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
 from ..bolt import CIstr, FName, text_wrap, top_level_dirs
 from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
@@ -32,7 +33,8 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
     TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
-    MLEList, DocumentViewer, RadioButton, showOk, showError
+    MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
+    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode
 from ..update_checker import LatestVersion
 
 class ImportFaceDialog(DialogWindow):
@@ -720,3 +722,107 @@ class UpdateNotification(DialogWindow):
         bass.rmTempDir()
         if self._do_quit:
             balt.Link.Frame.exit_wb()
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True, kw_only=True)
+class _ChangeData:
+    """Records a change to some items in a UIList."""
+    # An optional title for this change
+    change_title: str | None
+    # An optional description for this change
+    change_desc: str | None
+    # The ImageList used by the parent UIList that hosts the items that this
+    # change happened to
+    uil_image_list: ImageList
+    # A decorated tree dict storing the items that the change happened to
+    changed_items: DecoratedTreeDict
+    # The internal key for the parent tab in tabInfo. E.g. 'Mods'
+    parent_tab_key: str
+
+class _AChangeHighlightDialog(MaybeModalDialogWindow):
+    """Base class for dialogs that highlights certain changes having been
+    made to UIList items."""
+    _def_size = (350, 400)
+    _min_size = (250, 300)
+
+    def __init__(self, parent, *, highlight_changes: list[_ChangeData]):
+        super().__init__(parent, stay_over_parent=True, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue)
+        ch_layout = VLayout(border=4, spacing=6, item_expand=True)
+        labels_to_wrap = []
+        for change_data in highlight_changes:
+            # First add the title and description for the change
+            if change_data.change_title:
+                title_label = WrappingLabel(self, change_data.change_title)
+                ch_layout.add(title_label)
+                labels_to_wrap.append(title_label)
+            if change_data.change_desc:
+                desc_label = WrappingLabel(self, change_data.change_desc)
+                ch_layout.add(desc_label)
+                labels_to_wrap.append(desc_label)
+            class _TabTreeNode(TreeNode):
+                """A node depicting an item on a certain tab."""
+                def on_activated(self):
+                    balt.Link.Frame.notebook.SelectPage(
+                        change_data.parent_tab_key, self._node_text)
+                    return EventResult.FINISH # Don't collapse/expand nodes
+            # Then create the actual tree listing the changes, which will take
+            # up most of the space
+            new_tree = Tree(self, change_data.uil_image_list)
+            temp_root = new_tree.root_node
+            affected_items = change_data.changed_items
+            for hp, (hp_tf, hp_children) in affected_items.items():
+                hp_node = temp_root.append_child(hp,
+                    child_node_type=_TabTreeNode)
+                hp_node.decorate_node(hp_tf)
+                if hp_children:
+                    for hpc, hpc_tf in hp_children:
+                        hpc_node = hp_node.append_child(hpc,
+                            child_node_type=_TabTreeNode)
+                        hpc_node.decorate_node(hpc_tf)
+            new_tree.expand_everything()
+            ch_layout.add((new_tree, LayoutOptions(weight=1)))
+            # Separator between trees and also between the last tree and the OK
+            # button
+            ch_layout.add(HorizontalLine(self))
+        ch_layout.add((OkButton(self), LayoutOptions(
+            h_align=CENTER, expand=False)))
+        ch_layout.apply_to(self)
+        for wl in labels_to_wrap:
+            wl.auto_wrap()
+        self.update_layout()
+
+#------------------------------------------------------------------------------
+class _ALORippleHighlightDialog(_AChangeHighlightDialog):
+    """Base class for dialogs highlighting when a load order change had a
+    'ripple' effect, e.g. deactivating a certain master caused its dependents
+    to be deactivated too."""
+    _change_title: str
+    _change_desc: str
+
+    def __init__(self, parent, *, mods_list_images: ImageList,
+            decorated_plugins: DecoratedTreeDict):
+        # Only count the additional masters/dependents
+        total_affected = sum(len(v[1]) for v in decorated_plugins.values())
+        super().__init__(parent, highlight_changes=[_ChangeData(
+            change_title=None, uil_image_list=mods_list_images,
+            change_desc=self._change_desc % {'num_affected': total_affected},
+            changed_items=decorated_plugins, parent_tab_key='Mods')])
+
+class MastersAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was activated and thus its masters got
+    activated too."""
+    title = _('Masters Affected')
+    _change_desc = _('Wrye Bash automatically activates the masters of '
+                     'activated plugins. Activating the following plugins '
+                     'thus caused %(num_affected)d master(s) to be activated '
+                     'as well.')
+
+class DependentsAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was deactivated and thus its dependent
+    plugins got deactivated too."""
+    title = _('Dependents Affected')
+    _change_desc = _('Wrye Bash automatically deactivates the dependent '
+                     'plugins of deactivated plugins. Deactivating the '
+                     'following plugins thus caused %(num_affected)d '
+                     'dependent(s) to be deactivated as well.')
