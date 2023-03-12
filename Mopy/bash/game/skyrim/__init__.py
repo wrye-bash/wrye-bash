@@ -133,6 +133,7 @@ class SkyrimGameInfo(PatchGame):
             'scripts',
             'seasons', # 3P: Seasons of Skyrim SKSE
             'seq',
+            'shaders', # 3P: Community Shaders
             'shadersfx',
             'skse', # 3P: SKSE
             'skyproc patchers', # 3P: SkyProc
