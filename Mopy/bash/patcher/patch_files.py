@@ -401,7 +401,7 @@ class PatchFile(ModFile):
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
-        shared_rec_types = set(self.tops) & set(modFile.tops)
+        shared_rec_types = self.tops.keys() & modFile.tops
         # Keep and update all MGEFs no matter what
         if b'MGEF' in modFile.tops:
             shared_rec_types.discard(b'MGEF')

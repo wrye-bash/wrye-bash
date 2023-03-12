@@ -152,10 +152,10 @@ class CoblExhaustionPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
-            if record.obme_record_version is not None: continue
+            if record.obme_record_version is not None or record.spellType != 2:
+                continue
             #--Skip this one?
-            duration = id_info.get(rid, 0)
-            if not (duration and record.spellType == 2): continue
+            if not (duration := id_info.get(rid)): continue
             isExhausted = False ##: unused, was it supposed to be used?
             if any(ef.effect_sig == b'SEFF' and
                    ef.scriptEffect.script_fid == self._exhaust_fid

@@ -33,7 +33,6 @@ from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
-from ...brec import RecordType
 from ...exception import ModSigMismatchError
 
 #------------------------------------------------------------------------------
@@ -102,9 +101,12 @@ class APreserver(ImportPatcher):
         """Parses CSV files. Only called if _csv_parser is set."""
         parser_instance = self._csv_parser(self.patchFile.pfile_aliases,
                                            called_from_patcher=True)
+        loaded_csvs = []
         for src_path in self.csv_srcs:
             try:
-                parser_instance.read_csv(getPatchesPath(src_path))
+                csv_path = getPatchesPath(src_path)
+                parser_instance.read_csv(csv_path)
+                loaded_csvs.append(csv_path)
             except OSError:
                 deprint(f'{src_path} is no longer in patches set',
                         traceback=True)
@@ -112,13 +114,20 @@ class APreserver(ImportPatcher):
                 deprint(f'{src_path} is not saved in UTF-8 format',
                         traceback=True)
             progress.plus()
-        parsed_sources = parser_instance.id_stored_data
-        # Filter out any entries that don't actually have data or don't
-        # actually exist (for this game at least)
+        self.csv_srcs = loaded_csvs
+        # Filter out any entries that don't actually have data or whose
+        # record signatures do not appear in rec_type_attrs
+        # We need to use the parser attributes for example for the
+        # CoblExhaustionPatcher which reads b'FACT' but _read_sigs is b'SPEL'
+        # might be redundant to add self._read_sigs then
+        parser_sigs = {*self._read_sigs, *parser_instance._parser_sigs}
+        if s := set(parser_instance.id_stored_data) - set(parser_sigs):
+            deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
+                    f'{loaded_csvs}')
         ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode(u'ascii') if isinstance(k, str) else k: v
-                         for k, v in parsed_sources.items()
-                         if v and k in RecordType.sig_to_class}
+        filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
+                         k, v in parser_instance.id_stored_data.items() if
+                         v and k in parser_sigs}
         self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.values():
             self.id_data.update(src_data)
@@ -226,13 +235,13 @@ class APreserver(ImportPatcher):
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for attr, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for attr, val in id_data_dict[rfid].items():
                 if __attrgetters[attr](record) != val: break
             else: continue
-            for attr, val in id_data[rfid].items():
+            for attr, val in id_data_dict[rfid].items():
                 if isinstance(attr, tuple):
                     # This is a fused attribute, so unpack the attrs and assign
                     # each value to each matching attr
@@ -329,7 +338,7 @@ class ImportKeywordsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
-    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    logMsg =  '\n=== ' + _('Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
     _csv_parser = parsers.FullNames
@@ -500,10 +509,10 @@ class ImportGraphicsPatcher(APreserver):
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for attr, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for attr, val in id_data_dict[rfid].items():
                 rec_attr = __attrgetters[attr](record)
                 if isinstance(rec_attr, str) and isinstance(val, str):
                     if rec_attr.lower() != val.lower():
@@ -522,7 +531,7 @@ class ImportGraphicsPatcher(APreserver):
                         break
                 if rec_attr != val: break
             else: continue
-            for attr, val in id_data[rfid].items():
+            for attr, val in id_data_dict[rfid].items():
                 setattr(record, attr, val)
             keep(rfid, record)
             type_count[top_mod_rec] += 1
@@ -536,10 +545,10 @@ class ImportRacesPatcher(APreserver):
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for att, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for att, val in id_data_dict[rfid].items():
                 record_val = __attrgetters[att](record)
                 if att in ('eyes', 'hairs'):
                     if set(record_val) != set(val): break
@@ -549,7 +558,7 @@ class ImportRacesPatcher(APreserver):
                                 f'is None')
                     elif record_val != val: break
             else: continue
-            for att, val in id_data[rfid].items():
+            for att, val in id_data_dict[rfid].items():
                 loop_setattr(record, att, val)
             keep(rfid, record)
             type_count[top_mod_rec] += 1

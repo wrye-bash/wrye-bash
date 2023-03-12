@@ -113,11 +113,11 @@ def isPBashMergeable(modInfo, minfos, reasons):
     #--New record
     newblocks = []
     self_name = modInfo.fn_key
-    for top_type,block in modFile.tops.items():
+    for top_sig, block in modFile.tops.items():
         for candidate_rec in block.iter_records(): # skip deleted/ignored
             if candidate_rec.group_key().mod_fn == self_name:
                 if not verbose: return False
-                newblocks.append(top_type)
+                newblocks.append(top_sig)
                 break
     if newblocks: reasons.append(
         _(u'New record(s) in block(s): ') + f'{_join_sigs(newblocks)}.')

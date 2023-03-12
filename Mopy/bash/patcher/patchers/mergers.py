@@ -554,12 +554,11 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 # Second pass: sort LVSP after SPEL
                 spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
             return spells_ret
-        for top_grup_sig in self._actor_sigs:
-            for rid, record in self.patchFile.tops[top_grup_sig].id_records.items():
+        for top_grup_sig, block in self.patchFile.iter_tops(self._actor_sigs):
+            for rid, record in block.id_records.items():
                 if rid not in merged_deleted:
                     continue
-                merged_spells = sorted_spells(
-                    merged_deleted[rid]['merged'])
+                merged_spells = sorted_spells(merged_deleted[rid]['merged'])
                 if sorted_spells(record.spells) != merged_spells:
                     record.spells = merged_spells
                     mod_count[rid.mod_fn] += keep(rid, record)

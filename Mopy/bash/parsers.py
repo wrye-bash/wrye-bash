@@ -254,9 +254,7 @@ class _HandleAliases(CsvParser):
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(modInfo)
-        for top_grup_sig in self._parser_sigs:
-            typeBlock = modFile.tops.get(top_grup_sig)
-            if not typeBlock: continue
+        for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
             id_data = self.id_stored_data[top_grup_sig]
             for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
@@ -335,9 +333,7 @@ class _AParser(_HandleAliases):
         def _fp_loop(mod_to_read):
             """Central loop of _read_plugin_fp, factored out into a method so
             that it can easily be used twice."""
-            for block_type in self._fp_types:
-                rec_block = mod_to_read.tops.get(block_type, None)
-                if not rec_block: continue
+            for block_type, rec_block in mod_to_read.iter_tops(self._fp_types):
                 for rfid, record in rec_block.iter_present_records():
                     self.id_context[rfid] = self._read_record_fp(record)
             self._fp_mods.add(mod_to_read.fileInfo.fn_key)
@@ -371,9 +367,7 @@ class _AParser(_HandleAliases):
         its masters. Results are stored in id_stored_data.
 
         :param loaded_mod: The loaded mod to read from."""
-        for rec_type in self._sp_types:
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            if not rec_block: continue
+        for rec_type, rec_block in loaded_mod.iter_tops(self._sp_types):
             for rfid, record in rec_block.iter_present_records():
                 # Check if we even want this record first
                 if self._is_record_useful(record):
@@ -848,8 +842,8 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for top_grup_sig in self._parser_sigs:
-            for rfid, record in modFile.tops[top_grup_sig].iter_present_records():
+        for _sig, top_block in modFile.iter_tops(self._parser_sigs):
+            for rfid, record in top_block.iter_present_records():
                 if changeBase: record.fid = swapper(rfid)
                 record.mapFids(swapper, save_fids=True)
                 record.setChanged()

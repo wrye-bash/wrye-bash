@@ -1389,8 +1389,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 badGenericLore = False
                 removed = []
                 id_text = {}
-                scpt_grp = modFile.tops[b'SCPT']
-                if scpt_grp:
+                if scpt_grp := modFile.tops.get(b'SCPT'):
                     master_factory = self._load_fact(keepAll=False)
                     for master in modFile.tes4.masters:
                         masterFile = self._load_mod(bosh.modInfos[master],
