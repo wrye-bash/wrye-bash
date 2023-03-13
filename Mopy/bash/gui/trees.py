@@ -38,14 +38,18 @@ from .misc_components import Font
 @dataclass(slots=True, kw_only=True)
 class TreeNodeFormat:
     """Dataclass holding information on how to decorate a single TreeNode."""
-    # The index into the parent Tree's image list. Must be None if the image
-    # list was not specified.
+    # An index into the parent Tree's image list indicating the image to use
+    # for this node. Must be None if the image list was not specified.
     icon_idx: int | None
-    #
+    # The background color to use for this node.
     back_color: Color
+    # The foreground/text color to use for this node.
     text_color: Color
+    # If True, render this node's text in bold.
     bold: bool
+    # If True, render this node's text in italics.
     italics: bool
+    # If True, underline this node's text.
     underline: bool
 
 ##: There are probably more places where pause_drawing here should be added in

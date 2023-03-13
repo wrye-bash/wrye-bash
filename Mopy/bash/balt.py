@@ -989,13 +989,15 @@ class UIList(PanelWin):
         gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
                                  slant=df.italics, underline=df.underline))
 
-    def lookup_icon_index(self, target_icon_key: str | tuple) -> int:
+    def lookup_icon_index(self, target_icon_key: str | tuple) -> int | None:
         """Helper method to look up an icon from a list item format and return
         it as an index into the image list."""
         if isinstance(target_icon_key, tuple):
             return self._icons.Get(*target_icon_key)
-        else:
+        elif target_icon_key is not None:
             return self._icons[target_icon_key]
+        else:
+            return None # keep None as None
 
     def lookup_text_key(self, target_text_color: str):
         """Helper method to look up a text color from a list item format."""
@@ -1017,11 +1019,13 @@ class UIList(PanelWin):
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
-            if i not in self.data_store:
-                # Highlighted item not present in the UIList, probably corrupt
-                return None
             lif = _ListItemFormat()
-            self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+            # Only run set_item_format when the item is actually present,
+            # otherwise just use the default settings (we do still have to use
+            # those since the default text/background colors may have been
+            # changed from the OS default)
+            if i in self.data_store:
+                self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
             return lif.to_tree_node_format(self)
         return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
                 for i, i_children in tree_dict.items()}
