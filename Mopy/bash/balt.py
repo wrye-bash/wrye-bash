@@ -729,8 +729,8 @@ class _ListItemFormat:
             text_color=parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
 
-DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat,
-                                      list[tuple[FName, TreeNodeFormat]]]]
+DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
+    list[tuple[FName, TreeNodeFormat | None]]]]
 
 class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
@@ -1017,6 +1017,9 @@ class UIList(PanelWin):
         """Add appropriate TreeNodeFormat instances to the specified dict
         mapping items in this UIList to lists of items in this UIList."""
         def _decorate(i):
+            if i not in self.data_store:
+                # Highlighted item not present in the UIList, probably corrupt
+                return None
             lif = _ListItemFormat()
             self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
             return lif.to_tree_node_format(self)

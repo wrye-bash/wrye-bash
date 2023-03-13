@@ -65,8 +65,10 @@ class TreeNode:
         self._child_nodes: list[Self] = []
 
     # This Node ---------------------------------------------------------------
-    def decorate_node(self, tif: TreeNodeFormat):
+    def decorate_node(self, tif: TreeNodeFormat | None):
         """Decorate this tree node with the specified tree node format."""
+        if tif is None:
+            return # Simply skip decorating entirely
         if tif.icon_idx is not None:
             self._native_parent.SetItemImage(self._native_node_id,
                 tif.icon_idx)

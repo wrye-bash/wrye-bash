@@ -24,7 +24,7 @@ import webbrowser
 from dataclasses import dataclass
 
 from .. import balt, bass, bolt, bosh, bush, env, load_order
-from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
+from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, UIList, colors
 from ..bolt import CIstr, FName, text_wrap, top_level_dirs
 from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
@@ -763,8 +763,14 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
             class _TabTreeNode(TreeNode):
                 """A node depicting an item on a certain tab."""
                 def on_activated(self):
-                    balt.Link.Frame.notebook.SelectPage(
-                        change_data.parent_tab_key, self._node_text)
+                    try:
+                        balt.Link.Frame.notebook.SelectPage(
+                            change_data.parent_tab_key, self._node_text)
+                    except KeyError:
+                        balt.showError(self._parent_tree,
+                            _('%(target_item)s could not be found.') % {
+                                'target_item': self._node_text},
+                            title=_('Cannot Jump to Item'))
                     return EventResult.FINISH # Don't collapse/expand nodes
             # Then create the actual tree listing the changes, which will take
             # up most of the space
@@ -826,3 +832,17 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
                      'plugins of deactivated plugins. Deactivating the '
                      'following plugins thus caused %(num_affected)d '
                      'dependent(s) to be deactivated as well.')
+
+#------------------------------------------------------------------------------
+class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
+    """Dialog """
+    title = _('Warning: Load Order Sanitized')
+
+    @staticmethod
+    def make_change(*, mods_list_images: ImageList, lo_change_desc: str,
+            decorated_plugins: DecoratedTreeDict):
+        """Helper for creating a _ChangeData object for load order
+        sanitizations."""
+        return _ChangeData(change_title=None, uil_image_list=mods_list_images,
+            change_desc=lo_change_desc, changed_items=decorated_plugins,
+            parent_tab_key='Mods')

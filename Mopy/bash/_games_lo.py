@@ -487,7 +487,8 @@ class LoGame(object):
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as save load and active should be an atomic operation -
         leads to hacks (like the _selected parameter)."""
-        if fix_lo is None: fix_lo = FixInfo() # discard fix info
+        quiet = fix_lo is None
+        if quiet: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -512,6 +513,8 @@ class LoGame(object):
         loadorder_set = set(lord)
         mods_set = set(cached_minfs)
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
+        if fix_lo.lo_removed and not quiet:
+            cached_minfs.selectedBad |= fix_lo.lo_removed
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
         # Remove non existent plugins from load order
@@ -555,7 +558,7 @@ class LoGame(object):
         fix_active.act_removed = set(acti) - acti_filtered_set
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt
-            cached_minfs.selectedBad = fix_active.lo_removed
+            cached_minfs.selectedBad |= fix_active.act_removed
         if not self.allow_deactivate_master:
             if self.master_path not in acti_filtered_set:
                 acti_filtered.insert(0, self.master_path)

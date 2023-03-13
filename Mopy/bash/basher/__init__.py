@@ -64,7 +64,7 @@ import wx
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
 from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
-    DependentsAffectedDialog, MastersAffectedDialog
+    DependentsAffectedDialog, MastersAffectedDialog, LoadOrderSanitizedDialog
 from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
@@ -4282,29 +4282,50 @@ class BashFrame(WindowFrame):
 
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
-        def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
-            ListBoxes.display_dialog(self, title, message, [lists],
-                                     liststyle=u'list', canCancel=False)
+        def mk_warning(lo_warn_msg, warning_plugins: list[FName]):
+            warning_dec_plugins = self.modList.decorate_tree_dict(
+                {p: [] for p in warning_plugins})
+            return LoadOrderSanitizedDialog.make_change(
+                mods_list_images=self.modList._icons,
+                lo_change_desc=lo_warn_msg,
+                decorated_plugins=warning_dec_plugins)
+        lo_warnings = []
         if bosh.modInfos.selectedBad:
-           msg = [u'',_(u'Missing files have been removed from load list:')]
-           msg.extend(sorted(bosh.modInfos.selectedBad))
-           warn(_(u'Missing files have been removed from load list:'), msg)
-           bosh.modInfos.selectedBad = set()
-        #--Was load list too long? or bad filenames?
-        if bosh.modInfos.selectedExtra:## or bosh.modInfos.activeBad:
-           ## Disable this message for now, until we're done testing if
-           ## we can get the game to load these files
-           #if bosh.modInfos.activeBad:
-           #    msg = [u'Incompatible names:',
-           #           u'Incompatible file names deactivated:']
-           #    msg.extend(bosh.modInfos.bad_names)
-           #    bosh.modInfos.activeBad = set()
-           #    message.append(msg)
-           msg = [u'Too many files:', _(
-               u'Load list is overloaded.  Some files have been deactivated:')]
-           msg.extend(sorted(bosh.modInfos.selectedExtra))
-           warn(_(u'Files have been removed from load list:'), msg)
-           bosh.modInfos.selectedExtra = set()
+            lo_warnings.append(mk_warning(
+                _('The following plugins could not be found in the '
+                  '%(data_folder)s folder or are corrupt and have thus been '
+                  'removed from the load order.') % {
+                    'data_folder': bush.game.mods_dir,
+                }, sorted(bosh.modInfos.selectedBad)))
+            bosh.modInfos.selectedBad = set()
+        if bosh.modInfos.selectedExtra:
+            if bush.game.has_esl:
+                warn_msg = _('The following plugins have been deactivated '
+                             'because only %(max_regular_plugins)d regular '
+                             'plugins and %(max_esl_plugins)d ESL-flagged '
+                             'plugins may be active at the same time.')
+            else:
+                warn_msg = _('The following plugins have been deactivated '
+                             'because only %(max_regular_plugins)d plugins '
+                             'may be active at the same time.')
+            lo_warnings.append(mk_warning(warn_msg % {
+                'max_regular_plugins': load_order.max_espms(),
+                'max_esl_plugins': load_order.max_esls(),
+            }, sorted(bosh.modInfos.selectedExtra)))
+            bosh.modInfos.selectedExtra = set()
+        ##: Disable this message for now, until we're done testing if we can
+        # get the game to load these files
+        # if bosh.modInfos.activeBad:
+        #     lo_warnings.append(mk_warning(
+        #         _('The following plugins have been deactivated because they '
+        #           'have filenames that cannot be encoded in Windows-1252 and '
+        #           'thus cannot be loaded by %(game_name)s.') % {
+        #             'game_name': bush.game.displayName,
+        #         }, sorted(bosh.modInfos.activeBad)))
+        #     bosh.modInfos.activeBad = set()
+        if lo_warnings:
+            LoadOrderSanitizedDialog(self,
+                highlight_changes=lo_warnings).show_modeless()
 
     def warn_corrupted(self, warn_mods=False, warn_saves=False,
                        warn_strings=False, warn_bsas=False):
