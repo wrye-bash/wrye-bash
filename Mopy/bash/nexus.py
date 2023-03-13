@@ -102,6 +102,17 @@ class UpdatePeriod(Enum):
     ONE_WEEK = '1w'
     ONE_MONTH = '1m'
 
+class EndorsementStatus(Enum):
+    """The valid states that a user's endorsement of a mod can have."""
+    # The user has not yet chosen to endorse or abstain from endorsing the mod
+    UNDECIDED = 'Undecided'
+    # The user has endorsed the mod
+    ENDORSED = 'Endorsed'
+    # The user has abstained from endorsing the mod
+    ABSTAINED = 'Abstained'
+
+_str_to_es = {e.value: e for e in EndorsementStatus.__members__.values()}
+
 @dataclass(slots=True)
 class NxModUpdate(JsonParsable):
     """Represents a recent update to a mod."""
@@ -129,13 +140,14 @@ class NxUploadUser(JsonParsable):
 class NxModEndorsement(JsonParsable):
     """Represents a user's endorsement relative to a mod."""
     _parsers = {
+        'endorse_status': lambda d, a: _str_to_es[d[a]],
         'endorse_timestamp': json_remap('timestamp'),
         'endorse_version': json_remap('version'),
     }
-    # One of 'Undecided', 'Endorsed' or 'Abstained'
-    endorse_status: str
+    # The current endorsement status of this mod by the current user
+    endorse_status: EndorsementStatus
     # The timestamp at which the mod was endorsed. None if endorse_status is
-    # 'Undecided'
+    # UNDECIDED
     endorse_timestamp: int | None
     ##: Seems to always be None, Pickysaurus said it may be unused
     endorse_version: str | None

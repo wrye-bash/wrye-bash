@@ -81,10 +81,10 @@ class ARestHandler:
     # The base URL for the REST API you're using. Set in
     _base_url: str
 
-    def __init__(self, extra_headers: dict[str, str] = None):
+    def __init__(self, extra_headers: dict[str, str] | None = None):
         """Initializes a new ARestHandler instance.
 
-        :param extra_headers: A optional dict of extra HTTP headers to use for
+        :param extra_headers: An optional dict of extra HTTP headers to use for
             all requests in this session."""
         self._session = requests.Session()
         self._session.headers.update({

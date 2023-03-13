@@ -43,6 +43,7 @@ try:
 except ImportError as e:
     deprint(f'requests not installed, update checking functionality will not '
             f'be available (error: {e})')
+    ARestHandler = None
     can_check_updates = False
 
 # Constants -------------------------------------------------------------------
@@ -106,7 +107,7 @@ class _GitHub(ARestHandler):
     # Abstract API ------------------------------------------------------------
     def _handle_error_response(self, response):
         if (response.status_code == 403 and
-                response.headers['x-ratelimit-remaining'] == 0):
+                int(response.headers['x-ratelimit-remaining']) == 0):
             self._update_rate_limit_info(response.headers)
             raise LimitReachedError()
         raise RequestError(response.status_code, response.json()['message'])
@@ -184,6 +185,16 @@ class UpdateChecker:
             deprint('Failed to contact GitHub for update check')
             # Try again in 5 minutes, maybe it'll be fixed by then
             next_try = int(time.time()) + (5 * 60)
+            bass.settings['bash.update_check.last_checked'] = next_try
+            return None
+        # We currently only support base64 (and GitHub only returns base64)
+        if ver_file_data.ghf_encoding != 'base64':
+            deprint(f"Unknown file encoding '{ver_file_data.ghf_encoding}'")
+            # Try again in an hour, though this probably just means we have to
+            # add support for the new encoding (really, this should never
+            # happen since GitHub versions their API and this would be a
+            # breaking change)
+            next_try = int(time.time()) + (60 * 60)
             bass.settings['bash.update_check.last_checked'] = next_try
             return None
         lv_json_str = _decode_base64(ver_file_data.ghf_content)

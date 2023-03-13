@@ -676,6 +676,7 @@
         Delete "${Path}\Mopy\bash\images\errormarker*.png"
         Delete "${Path}\Mopy\bash\images\exclamation.png"
         Delete "${Path}\Mopy\bash\images\group_gear*.png"
+        Delete "${Path}\Mopy\bash\images\mcowavi32.png"
         Delete "${Path}\Mopy\bash\images\nexusmodmanager*.png"
         Delete "${Path}\Mopy\bash\images\page_find*.png"
         Delete "${Path}\Mopy\bash\images\pickle*.png"
