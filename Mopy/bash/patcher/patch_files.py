@@ -157,6 +157,7 @@ class PatchFile(ModFile):
         # Aliases from one mod name to another. Used by text file patchers.
         self.pfile_aliases = {}
         self.mergeIds = set()
+        # Information arrays
         self.loadErrorMods = []
         self.worldOrphanMods = []
         self.compiledAllMods = []
@@ -290,9 +291,9 @@ class PatchFile(ModFile):
             # IIM.
             iiMode = modName in self.ii_mode
             try:
-                loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
+                scan_factory = (self.readFactory, self.mergeFactory)[is_merged]
                 progress(index, f'{modName}\n' + _('Loading...'))
-                modFile = ModFile(modInfo, loadFactory)
+                modFile = ModFile(modInfo, scan_factory)
                 modFile.load_plugin(SubProgress(progress, index, index + 0.5))
             except ModError as e:
                 deprint('load error:', traceback=True)

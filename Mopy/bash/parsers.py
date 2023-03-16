@@ -460,9 +460,9 @@ class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
     read and write both plugins and CSV, and uses a single pass if called from
     a patcher, but two passes if called from a link."""
-    _csv_header = (_(u'Type'), _(u'Actor Eid'), _(u'Actor Mod'),
-                   _(u'Actor Object'), _(u'Faction Eid'), _(u'Faction Mod'),
-                   _(u'Faction Object'), _(u'Rank'))
+    _csv_header = (_('Type'), _('Actor Eid'), _('Actor Mod'),
+                   _('Actor Object'), _('Faction Eid'), _('Faction Mod'),
+                   _('Faction Object'), _('Rank'))
     _grup_index = 0
     _key2_getter = itemgetter(2, 3)
 
@@ -865,8 +865,8 @@ class FidReplacer(_HandleAliases):
 class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file: id_stored_data[top_grup_sig][longid] = (eid, name)"""
-    _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
-                   _(u'Editor Id'), _(u'Name'))
+    _csv_header = (_('Type'), _('Mod Name'), _('ObjectIndex'), _('Editor Id'),
+                   _('Name'))
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _row_sorter = partial(_key_sort, fid_eid=True)
@@ -910,11 +910,11 @@ class ItemStats(_HandleAliases):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
-        if self._called_from_patcher:
-            self.sig_stats_attrs = {r: tuple(x for x in a if x != 'eid') for
-                                    r, a in bush.game.stats_csv_attrs.items()}
-        else:
-            self.sig_stats_attrs = bush.game.stats_csv_attrs
+        self.sig_stats_attrs = bush.game.stats_csv_attrs
+        if self._called_from_patcher: # filter eid
+            self.sig_stats_attrs = {r: t for r, a in
+                                    self.sig_stats_attrs.items() if
+                                    (t := tuple(x for x in a if x != 'eid'))}
         self._parser_sigs = set(self.sig_stats_attrs)
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):

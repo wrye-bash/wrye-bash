@@ -44,8 +44,8 @@ from ..parsers import _HandleAliases
 #------------------------------------------------------------------------------
 class APatcher:
     """Abstract base class for patcher elements - must be the penultimate class
-     in MRO (method resolution order), just before object"""
-    patcher_group = u'UNDEFINED'
+    in MRO (method resolution order), just before object."""
+    patcher_group = 'UNDEFINED'
     patcher_order = 10
     iiMode = False
     _read_sigs: Iterable[bytes] = () #top group signatures this patcher patches
@@ -97,7 +97,7 @@ class APatcher:
 class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
-    srcsHeader = u'=== '+ _(u'Source Mods')
+    srcsHeader = '=== ' + _('Source Mods')
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
@@ -354,10 +354,14 @@ class ScanPatcher(APatcher):
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
-            patchBlock = self.patchFile.tops[top_sig]
+            patchBlock = None # do not create the patch block till needed
             for rid, rec in block.iter_present_records():
                 if self._add_to_patch(rid, rec, top_sig):
-                    patchBlock.setRecord(rec)
+                    try:
+                        patchBlock.setRecord(rec)
+                    except AttributeError:
+                        patchBlock = self.patchFile.tops[top_sig]
+                        patchBlock.setRecord(rec)
 
     def _add_to_patch(self, rid, record, top_sig):
         """Decide if this record should be added to the patch top_sig block.

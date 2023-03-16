@@ -110,11 +110,11 @@ class APreserver(ImportPatcher):
             try:
                 parser_instance.read_csv(getPatchesPath(src_path))
             except OSError:
-                deprint(u'%s is no longer in patches set' % src_path,
-                    traceback=True)
+                deprint(f'{src_path} is no longer in patches set',
+                        traceback=True)
             except UnicodeError:
-                deprint(u'%s is not saved in UTF-8 format' % src_path,
-                    traceback=True)
+                deprint(f'{src_path} is not saved in UTF-8 format',
+                        traceback=True)
             progress.plus()
         parsed_sources = parser_instance.id_stored_data
         # Filter out any entries that don't actually have data or don't
@@ -267,12 +267,12 @@ class APreserver(ImportPatcher):
 
     def _srcMods(self,log):
         log(self.__class__.srcsHeader)
-        all_srcs = self.srcs + self.csv_srcs
+        all_srcs = [*self.srcs, *self.csv_srcs]
         if not all_srcs:
-            log(u". ~~%s~~" % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for srcFile in all_srcs:
-                log(u"* %s" % srcFile)
+                log(f'* {srcFile}')
 
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
@@ -511,7 +511,7 @@ class ImportCellsPatcher(ImportPatcher):
     def _plog(self,log,count): # type 1 but for logMsg % sum(...)
         log(self.__class__.logMsg)
         for srcMod in load_order.get_ordered(count):
-            log(u'* %s: %d' % (srcMod,count[srcMod]))
+            log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------
 class ImportGraphicsPatcher(APreserver):

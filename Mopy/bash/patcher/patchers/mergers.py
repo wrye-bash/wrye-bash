@@ -277,8 +277,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     _read_sigs = bush.game.actor_types
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ImportActorsAIPackagesPatcher, self).__init__(p_name, p_file, p_sources)
-        # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
+        super().__init__(p_name, p_file, p_sources)
+        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
 
     def _insertPackage(self, id_merged_deleted, fi, index, pkg, recordData):
@@ -418,8 +418,8 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         _read_sigs = _actor_sigs
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
-        # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
+        super().__init__(p_name, p_file, p_sources)
+        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self._id_merged_deleted = {}
         # long_fid -> rec_sig
         self._spel_type = {}
