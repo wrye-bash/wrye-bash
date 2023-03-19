@@ -39,9 +39,7 @@ class _Checker(ScanPatcher):
     """Common checkers code."""
     patcher_group = 'Special'
     patcher_order = 40
-
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records
+    _filter_in_patch = True
 
 class ContentsCheckerPatcher(_Checker):
     """Checks contents of leveled lists, inventories and containers for
@@ -271,8 +269,7 @@ class TimescaleCheckerPatcher(_Checker):
         p_file.update_read_factories([b'GLOB'], p_file.merged_or_loaded_ord)
 
     def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records \
-            and record.wave_period != 0.0
+        return record.wave_period != 0.0
 
     def buildPatch(self, log, progress):
         if not self.isActive: return

@@ -104,6 +104,10 @@ class _ExSpecialList(CsvListPatcher, ExSpecial):
         super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
         ListPatcher.__init__(self, p_name, p_file, p_sources)
 
+    @property
+    def _keep_ids(self):
+        return self.id_stored_data[b'FACT']
+
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
@@ -142,7 +146,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         return int(csv_fields[3])
 
     def _add_to_patch(self, rid, record, top_sig):
-        return record.spellType == 2 and rid in self.id_stored_data[b'FACT']
+        return record.spellType == 2
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -224,9 +228,6 @@ class MorphFactionsPatcher(_ExSpecialList):
             if record:
                 self.patchFile.tops[b'FACT'].setRecord(record)
         super().scanModFile(modFile, progress, scan_sigs)
-
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""

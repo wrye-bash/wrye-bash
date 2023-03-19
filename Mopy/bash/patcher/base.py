@@ -405,18 +405,37 @@ class MultiTweakItem:
 
 class ScanPatcher(APatcher):
     """WIP class to encapsulate scanModFile common logic."""
+    # filter records that exist in corresponding patch block
+    _filter_in_patch = False
+
+    @property
+    def _keep_ids(self):
+        return None
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
-            patchBlock = None # do not create the patch block till needed
-            for rid, rec in block.iter_present_records():
-                if self._add_to_patch(rid, rec, top_sig):
-                    try:
-                        patchBlock.setRecord(rec)
-                    except AttributeError:
-                        patchBlock = self.patchFile.tops[top_sig]
-                        patchBlock.setRecord(rec)
+            # do not create the patch block till needed
+            patchBlock = self.patchFile.tops.get(top_sig)
+            rid_rec = block.iter_present_records()
+            if self._filter_in_patch and patchBlock:
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid not in patchBlock.id_records)
+            if self._keep_ids is not None:
+                if not self._keep_ids: return # won't add to patch
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid in self._keep_ids)
+            try:
+                rid_rec = [(rid, rec) for rid, rec in rid_rec if
+                           self._add_to_patch(rid, rec, top_sig)]
+            except NotImplementedError:
+                pass
+            for rid, rec in rid_rec:
+                try:
+                    patchBlock.setRecord(rec)
+                except AttributeError:
+                    patchBlock = self.patchFile.tops[top_sig]
+                    patchBlock.setRecord(rec)
 
     def _add_to_patch(self, rid, record, top_sig):
         """Decide if this record should be added to the patch top_sig block.

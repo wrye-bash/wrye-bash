@@ -54,6 +54,7 @@ class _AMerger(ImportPatcher):
     _wanted_subrecord = {}
     # We want inactives since we process our sources in scanModFiles
     _scan_inactive = True
+    _filter_in_patch = True
 
     def __init__(self, p_name, p_file, p_sources):
         # Set of record signatures that are actually provided by sources
@@ -159,11 +160,11 @@ class _AMerger(ImportPatcher):
         if modFile.fileInfo.fn_key not in self.inventOnlyMods:
             super().scanModFile(modFile, progress, scan_sigs)
 
-    def _add_to_patch(self, rid, record, top_sig):
+    @property
+    def _keep_ids(self):
         # Copy the defining version of each record into the BP - updating it is
         # handled by mergeModFile/update_patch_records_from_mod
-        return rid in self.touched and rid not in self.patchFile.tops[
-            top_sig].id_records
+        return self.touched
 
     def buildPatch(self,log,progress):
         if not self.isActive: return
@@ -381,9 +382,12 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                                     pkg, recordData)
             progress.plus()
 
+    @property
+    def _keep_ids(self):
+        return self.id_merged_deleted
+
     def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.id_merged_deleted and record.aiPackages != \
-            self.id_merged_deleted[rid]['merged']
+        return record.aiPackages != self.id_merged_deleted[rid]['merged']
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -534,9 +538,12 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         # we then need to sort, so we have to index them here
         self._index_spells(modFile)
 
+    @property
+    def _keep_ids(self):
+        return self._id_merged_deleted
+
     def _add_to_patch(self, rid, record, top_sig):
-        return rid in self._id_merged_deleted and record.spells != \
-            self._id_merged_deleted[rid]['merged']
+        return record.spells != self._id_merged_deleted[rid]['merged']
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -843,6 +850,7 @@ class FormIDListsPatcher(_AListsMerger):
 #------------------------------------------------------------------------------
 class ImportRacesSpellsPatcher(ImportPatcher):
     _read_sigs = (b'RACE',)
+    _filter_in_patch = True
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
@@ -888,9 +896,6 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                         if tempRaceData[race_key] != getattr(race, race_key):
                             raceData[race_key] = tempRaceData[race_key]
             progress.plus()
-
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records
 
     def buildPatch(self, log, progress):
         if not (race_block := self.patchFile.tops.get(b'RACE')): return

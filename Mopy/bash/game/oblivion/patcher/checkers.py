@@ -54,6 +54,7 @@ class CoblCatalogsPatcher(ExSpecial):
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
     _read_sigs = (b'BOOK', b'INGR')
+    _filter_in_patch = True
 
     @classmethod
     def gui_cls_vars(cls):
@@ -69,19 +70,21 @@ class CoblCatalogsPatcher(ExSpecial):
     def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
-    def _add_to_patch(self, rid, record, top_sig):
-        """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it."""
-        if top_sig == b'BOOK':
-            if rid in _book_fids and rid not in self.patchFile.tops[
-                b'BOOK'].id_records:
-                self.patchFile.tops[b'BOOK'].setRecord(record, do_copy=False) ##: todo do_copy.... else we would just return True
-        if top_sig == b'INGR': ##: Skips OBME records - rework to support them
-            #--Ingredient must have name!
-            if record.full and record.obme_record_version is None:
-                effects = record.getEffects()
-                if not (b'SEFF', 0) in effects:
-                    self.id_ingred[rid] = (record.eid, record.full, effects)
+    @property
+    def _keep_ids(self):
+        return _book_fids
+
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """Index INGR then add BOOK records to patch file."""
+        if ingr_block := modFile.tops.get(b'INGR'):
+            for rid, record in ingr_block.iter_present_records():
+                #--Ingredient must have name!
+                ##: Skips OBME records - rework to support them
+                if record.full and record.obme_record_version is None:
+                    effects = record.getEffects()
+                    if not (b'SEFF', 0) in effects:
+                        self.id_ingred[rid] = (record.eid, record.full, effects)
+        super().scanModFile(modFile, progress, [b'BOOK'])
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -186,9 +189,12 @@ class SEWorldTestsPatcher(ExSpecial):
         if modFile.fileInfo.fn_key == _ob_path: return
         super().scanModFile(modFile, progress, scan_sigs)
 
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.cyrodiilQuests and all(  #--365: playerInSeWorld
-            condition.ifunc != 365 for condition in record.conditions)
+    @property
+    def _keep_ids(self):
+        return self.cyrodiilQuests
+
+    def _add_to_patch(self, rid, record, top_sig):  #--365: playerInSeWorld
+        return all(condition.ifunc != 365 for condition in record.conditions)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""

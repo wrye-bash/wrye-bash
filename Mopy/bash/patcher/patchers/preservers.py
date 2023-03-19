@@ -62,6 +62,7 @@ class APreserver(ImportPatcher):
     # without it being checked against the masters first. None means no such
     # tag exists for this patcher
     _force_full_import_tag = None
+    _filter_in_patch = True
 
     def __init__(self, p_name, p_file, p_sources):
         #--(attribute-> value) dicts keyed by long fid.
@@ -194,10 +195,12 @@ class APreserver(ImportPatcher):
         self.srcs_sigs.update(srcssigs)
         self.isActive = bool(self.srcs_sigs)
 
+    @property
+    def _keep_ids(self):
+        return self.id_data
+
     def _add_to_patch(self, rid, record, top_sig, *,
                       __attrgetters=attrgetter_cache):
-        if rid not in self.id_data or rid in self.patchFile.tops[
-            top_sig].id_records: return False # see parent docs
         for att, val in self.id_data[rid].items():
             if __attrgetters[att](record) != val:
                 return True
