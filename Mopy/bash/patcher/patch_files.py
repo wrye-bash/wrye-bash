@@ -40,11 +40,11 @@ class PatchFile(ModFile):
 
     def set_mergeable_mods(self, mergeMods):
         """Set 'mergeSet' attribute to the srcs of MergePatchesPatcher."""
-        self.mergeSet = set(mergeMods)
-        self.merged_or_loaded = {*self.mergeSet, *self.load_dict}
+        self.mergeSet = merge_set = set(mergeMods)
+        self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
         self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
-            load_order.get_ordered(self.merged_or_loaded)}
-        self.ii_mode = {m for m in self.mergeSet if
+                                     load_order.get_ordered(merged_active)}
+        self.ii_mode = {m for m in merge_set if
                         'IIM' in self.p_file_minfos[m].getBashTags()}
 
     def _log_header(self, log, patch_name):
@@ -306,13 +306,8 @@ class PatchFile(ModFile):
         if mod_name not in self.load_dict and 'Filter' in \
                 mod_info.getBashTags():
             load_set = set(self.load_dict)
-            # PatchFile does not have its load factory set up yet so we'd get a
-            # MobBase instance from it, which obviously can't do filtering. So
-            # use a temporary LoadFactory as a workaround
-            for top_grup_sig, filter_block in mod_file.tops.items():
-                temp_block = lf.getTopClass(top_grup_sig).empty_mob(
-                    lf, top_grup_sig)
-                temp_block.merge_records(filter_block, load_set, set(), True)
+            # pass lf in - in initData self.readFactory is not initialized yet
+            self.filter_plugin(mod_file, load_set, lf=lf)
         self._loaded_mods[mod_name] = mod_file
         return mod_file
 
@@ -386,18 +381,18 @@ class PatchFile(ModFile):
             self.tops[top_grup_sig].merge_records(block, loaded_mods,
                                                   self.mergeIds, iiSkipMerge)
 
-    def filter_plugin(self, modFile, loaded_mods):
+    def filter_plugin(self, modFile, loaded_mods, lf=None):
         """Filters the specified plugin according to the specified loaded
         plugins. Does nothing else."""
-        read_fact = self.readFactory
-        for top_grup_sig, block in modFile.tops.items():
-            if top_grup_sig in read_fact.topTypes:
-                ##: Same ugly hack as in _filtered_mod_read, figure out a
-                # better way (can't just use self.tops since that uses
-                # loadFactory rather than readFactory)
-                temp_block = read_fact.getTopClass(top_grup_sig).empty_mob(
-                    read_fact, top_grup_sig)
-                temp_block.merge_records(block, loaded_mods, set(), True)
+        # PatchFile might not have its load factory set up yet so we'd get a
+        # MobBase instance from it, which obviously can't do filtering
+        read_fact = lf or self.readFactory
+        for top_grup_sig, block in modFile.iter_tops(read_fact.topTypes):
+            # get a temp TopGrup to call merge_records on which will do the
+            # filtering
+            temp_block = read_fact.getTopClass(top_grup_sig).empty_mob(
+                read_fact, top_grup_sig)
+            temp_block.merge_records(block, loaded_mods, set(), True)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""

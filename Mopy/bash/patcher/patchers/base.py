@@ -105,11 +105,15 @@ class MultiTweaker(ScanPatcher):
         """We need to iterate only through the master records for complex
         groups."""
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
-            patchBlock = self.patchFile.tops[top_sig]
+            patchBlock = self.patchFile.tops.get(top_sig)
             for rid, rec in block.iter_present_records(top_sig): # this
                 for p_tweak in self._tweak_dict[top_sig]:
                     if p_tweak.wants_record(rec):
-                        patchBlock.setRecord(rec)
+                        try:
+                            patchBlock.setRecord(rec)
+                        except AttributeError:
+                            patchBlock = self.patchFile.tops[top_sig]
+                            patchBlock.setRecord(rec)
                         break # Exit as soon as a tweak is interested
 
     def buildPatch(self,log,progress):
@@ -182,7 +186,8 @@ class MergePatchesPatcher(ListPatcher):
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
         # first - ensured through its group of 'General'
-        p_file.set_mergeable_mods(p_sources)
+        # use self.srcs below as p_sources may be filtered in principle
+        p_file.set_mergeable_mods(self.srcs)
         return sup
 
     def _update_patcher_factories(self, p_file):
@@ -210,14 +215,13 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
             attrgetter('temp_refs'), attrgetter('persistent_refs'))):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        patchCells = self.patchFile.tops[b'CELL']
-        patchWorlds = self.patchFile.tops[b'WRLD']
 ##        for top_grup_sig in MreRecord.simpleTypes:
 ##            for record in modFile.tops[top_grup_sig].iter_present_records():
 ##                record = record.getTypeCopy(mapper)
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
+            patchCells = self.patchFile.tops[b'CELL']
             for cfid, cblock in modFile.tops[b'CELL'].iter_present_records():
                 if patch_cell := cfid in patchCells.id_records:
                     patch_cell = patchCells.setRecord(cblock.master_record,
@@ -230,6 +234,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
                                     cblock.master_record)
                             get_refs(patch_cell).setRecord(rec, do_copy=False)
         if b'WRLD' in modFile.tops:
+            patchWorlds = self.patchFile.tops[b'WRLD']
             for wfid, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
                 if patch_wrld := (wfid in patchWorlds.id_records):
                     patch_wrld = patchWorlds.setRecord(

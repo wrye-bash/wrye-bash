@@ -281,8 +281,8 @@ class TimescaleCheckerPatcher(_Checker):
         # First, look in the BP to see if we have a record that overrides the
         # timescale
         def find_timescale(glob_file):
-            if b'GLOB' not in glob_file.tops: return None
-            glob_recs = glob_file.tops[b'GLOB'].iter_present_records()
+            if not (glob_block := glob_file.tops.get(b'GLOB')): return None
+            glob_recs = glob_block.iter_present_records()
             for glob_eid, glob_rec in ((r.eid, r) for _gkey, r in glob_recs):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value

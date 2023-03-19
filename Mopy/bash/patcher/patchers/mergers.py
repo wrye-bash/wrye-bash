@@ -722,15 +722,14 @@ class _AListsMerger(ListPatcher):
                      k in self._read_sigs}
         for list_type_sig, list_label in sig_label.items():
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
-            patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
             for stored_list in sorted(stored_lists.values(),
                                       key=lambda l: l.eid or ''):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 if keep(list_fid, stored_list):
-                    patch_block.setRecord(stored_lists[list_fid],
-                                          do_copy=False)
+                    self.patchFile.tops[list_type_sig].setRecord(
+                        stored_lists[list_fid], do_copy=False)
                     log(f'* {stored_list.eid}')
                     for merge_source in stored_list.mergeSources:
                         log(f'  * {self.annotate_plugin(merge_source)}')
@@ -854,7 +853,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         progress.setFull(len(self.srcs))
         for srcMod in self.srcs:
             srcFile = self.patchFile.get_loaded_mod(srcMod)
-            if b'RACE' not in srcFile.tops: continue
+            if not (race_block := srcFile.tops.get(b'RACE')): continue
             bashTags = srcFile.fileInfo.getBashTags()
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             change_spells = 'R.ChangeSpells' in bashTags
@@ -865,7 +864,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                 raise BoltError(f'WARNING mod {srcMod} has both R.AddSpells '
                                 f'and R.ChangeSpells tags - only one of '
                                 f'those tags should be on a mod at one time')
-            for rid, race in srcFile.tops[b'RACE'].iter_present_records():
+            for rid, race in race_block.iter_present_records():
                 if add_spells:
                     tmp_race_data[rid]['AddSpells'] = race.spells
                 if change_spells:
@@ -873,8 +872,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
             for master in srcFile.fileInfo.masterNames:
                 if not (masterFile := self.patchFile.get_loaded_mod(master)):
                     continue # or break filter mods
-                if b'RACE' not in masterFile.tops: continue
-                for rid, race in masterFile.tops[b'RACE'].iter_present_records():
+                if not (mast_race := masterFile.tops.get(b'RACE')): continue
+                for rid, race in mast_race.iter_present_records():
                     if rid not in tmp_race_data: continue
                     tempRaceData = tmp_race_data[rid]
                     raceData = self.raceData[rid]
@@ -894,11 +893,10 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         return rid not in self.patchFile.tops[top_sig].id_records
 
     def buildPatch(self, log, progress):
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        keep = patchFile.getKeeper()
+        if not (race_block := self.patchFile.tops.get(b'RACE')): return
+        keep = self.patchFile.getKeeper()
         racesPatched = []
-        for rfid, race in patchFile.tops[b'RACE'].id_records.items():
+        for rfid, race in race_block.id_records.items():
             raceData = self.raceData.get(rfid, None)
             if not raceData: continue
             orig_spells = race.spells[:]
