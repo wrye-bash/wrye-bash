@@ -31,7 +31,6 @@ from ... import load_order
 from ...bolt import deprint
 from ...brec import RecordType
 from ...exception import BPConfigError
-from ...mod_files import LoadFactory, ModFile
 from ...parsers import FidReplacer
 
 # Patchers 1 ------------------------------------------------------------------
@@ -41,19 +40,16 @@ from ...parsers import FidReplacer
 class IndexingTweak(MultiTweakItem):
     _index_sigs: list[bytes]
 
-    def __init__(self):
-        super(IndexingTweak, self).__init__()
-        self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+    def __init__(self, bashed_patch):
+        super().__init__(bashed_patch)
+        bashed_patch.update_read_factories(self._index_sigs,
+            bashed_patch.merged_or_loaded_ord) ##: all_plugins?
         self._indexed_records = defaultdict(dict)
-
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo, self.loadFactory)
-        modFile.load_plugin()
-        return modFile
+        self._tweak_bp = bashed_patch
 
     def prepare_for_tweaking(self, patch_file):
-        for fn_plugin, pl_info in patch_file.merged_or_loaded_ord.items(): ##: all_plugins?
-            index_plugin = self._mod_file_read(pl_info)
+        for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
+            index_plugin = self._tweak_bp.get_loaded_mod(fn_plugin)
             for index_sig, block in index_plugin.iter_tops(self._index_sigs):
                 self._indexed_records[index_sig].update(
                     block.iter_present_records())
@@ -94,12 +90,12 @@ class MultiTweaker(ScanPatcher):
         self._tweak_dict: dict[bytes, list[MultiTweakItem]] = dict(tweak_dict)
 
     @classmethod
-    def tweak_instances(cls):
+    def tweak_instances(cls, bashed_patch):
         # Sort alphabetically first for aesthetic reasons
         tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
         # After that, sort to make tweaks instantiate & run in the right order
         tweak_classes.sort(key=lambda c: c.tweak_order)
-        return [t() for t in tweak_classes]
+        return [t(bashed_patch) for t in tweak_classes]
 
     @property
     def _read_sigs(self):

@@ -248,7 +248,7 @@ class MultiTweakItem:
     # If True, tweak_key will be shown in the 'custom value' popup
     show_key_for_custom = False
 
-    def __init__(self):
+    def __init__(self, bashed_patch):
         # Don't check tweak_log_msg, settings tweaks don't use it
         for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
                            u'tweak_log_msg'):

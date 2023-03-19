@@ -830,7 +830,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        all_tweaks = self.patcher_type.tweak_instances()
+        all_tweaks = self.patcher_type.tweak_instances(self._bp)
         self._all_tweaks = self._curr_tweaks = all_tweaks
         for tweak in self._all_tweaks:
             tweak.init_tweak_config(config)
