@@ -5194,7 +5194,7 @@ C.Location, -C.LockList
         <tr>
             <td>Roads</td>
             <td>Modifies road records.</td>
-            <td>The (ROAD) Road subrecord of (WRLD) Worldspace records.</td>
+            <td>The (ROAD) Road child record of (WRLD) Worldspace records.</td>
         </tr>
         <tr>
             <td>R.Attributes-F</td>
@@ -12060,7 +12060,7 @@ iScreenShotIndex=0</code></td>
 
 <h3 id="tools-swapping">Oblivion.esm Swapping <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Oblivion.esm swapping is a feature that allows mod authors to switch between different versions of Oblivion.esm on the fly. This is useful as it allows mod authors to make plugins that are totally SI-independent (as the Shivering Isles patches Oblivion.esm instead of using a new plugin). It can also be used to avoid the need for a fully patched Oblivion to run a plugin, but this usage is <strong>not recommended</strong>. If you want a plugin to work on older versions of Oblivion, use the <a href="#modsVersion0.8">Version 0.8</a> command on it.
-<p>The main requirement for swapping to work is that you have the necessary copies of the different Oblivion.esm files. <strong>This is only possible if you copy and rename Oblivion.esm before installing Shivering Isles.</strong> There are three accepted versions of Oblivion.esm in addition to the latest SI one. These are determined by their file size:
+<p>The main requirement for swapping to work is that you have the necessary copies of the different Oblivion.esm files. <strong>This is only possible if you copy and rename Oblivion.esm before installing Shivering Isles.</strong> There are four accepted versions of Oblivion.esm in addition to the latest SI one. These are determined by their file size:
 <ul>
     <li>247388848 bytes: this is the 1.1 version. Rename it to <code>Oblivion_1.1.esm</code>.</li>
     <li>247388812 bytes: this is the GOTY version without SI. Rename it to <code>Oblivion_GOTY non-SI.esm</code>.</li>
@@ -12068,7 +12068,7 @@ iScreenShotIndex=0</code></td>
     <li>260961973 bytes: this is the <a href="https://www.nexusmods.com/oblivion/mods/49349">GBRPlus patched</a> version. Rename it to <code>Oblivion_GBR SI.esm</code>.</li>
 </ul>
     <p>You can then swap between the different versions of Oblivion.esm using the <a href="#modsOblivion.esm">Oblivion.esm</a> submenu in the Mods tab column header context menu. Your currently active version will be checked, select another to swap them. You can also perform the same swapping <a href="#saves-oblivion.esm">in the Saves tab column header context menu</a>, but in addition to the swapping this will also mark the selected version as the preferred version to use with the current <a href="#saves-profiles">Save Profile</a>. If you then switch to another save profile and back to this one, Oblivion.esm will be swapped automatically.
-<p>Wrye Bash displays the current version of Oblivion.esm in its version indicators. The main indicator is in the title bar of the main Wrye Bash window, but there are also indicators placed after Oblivion.esm in the Mods tab plugin list, and after Oblivion.esm in the Masters tab for plugins and savegames. The three possible indicators are:
+<p>Wrye Bash displays the current version of Oblivion.esm in its version indicators. The main indicator is in the title bar of the main Wrye Bash window, but there are also indicators placed after Oblivion.esm in the Mods tab plugin list, and after Oblivion.esm in the Masters tab for plugins and savegames. The four possible indicators are:
 <ul>
     <li>[1.1]: You are currently using the 1.1 or 1.1b version of Oblivion.esm.</li>
     <li>[GOTY non-SI]: You are currently using the GOTY without SI installed version of Oblivion.esm.</li>

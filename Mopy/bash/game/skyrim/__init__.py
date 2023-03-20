@@ -122,6 +122,7 @@ class SkyrimGameInfo(PatchGame):
             'flm', # 3P: FormList Manipulator
             'grass',
             'interface',
+            'kreate', # 3P: KreatE
             'lodsettings',
             'mapmarkers', # 3P: Common Marker Addon Project
             'mapweathers', # 3P: Unique Map Weather
