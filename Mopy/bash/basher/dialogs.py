@@ -655,9 +655,12 @@ class UpdateNotification(DialogWindow):
         self._dl_btn_to_url = {}
         self._url_buttons = []
         for i, download_info in enumerate(new_version.wb_downloads):
+            if not download_info.should_show_download():
+                # The download isn't compatible with this system, skip it
+                continue
             dl_name = download_info.download_name
             dl_url = download_info.download_url
-            if is_first := (i == 0):
+            if i == 0:
                 # The first one is the default
                 self._download_url = dl_url
                 rbtn = RadioButton(self, dl_name, is_group=True)
@@ -669,6 +672,12 @@ class UpdateNotification(DialogWindow):
             rbtn.on_checked.subscribe(self._on_download_opt_changed)
             self._url_buttons.append(rbtn)
             self._dl_btn_to_url[rbtn] = dl_url
+        # Ensure the downloads list is never empty, which would break the
+        # entire update notification popup
+        if not self._url_buttons:
+            raise RuntimeError('No download is available on this system. '
+                               'latest.json has been misconfigured, please '
+                               'report this to the Wrye Bash maintainers.')
         quit_btn = OkButton(self, _('Quit and Download'),
             btn_tooltip=_('Close Wrye Bash and open the selected download '
                           'option in your default web browser.'))

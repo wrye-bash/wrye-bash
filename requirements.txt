@@ -9,6 +9,8 @@ https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
 lxml==4.9.2
+# For parsing download conditions when checking for updates
+packaging==23.0
 # For PDF support in the doc browser
 PyMuPDF==1.21.1
 # For various Internet-based functionality

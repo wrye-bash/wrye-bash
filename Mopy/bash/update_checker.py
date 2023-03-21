@@ -46,6 +46,23 @@ except ImportError as e:
     ARestHandler = None
     can_check_updates = False
 
+# This won't work if packaging isn't installed - in that case, we simply have
+# to show all downloads for all operating systems
+try:
+    from packaging.markers import Marker, InvalidMarker, UndefinedComparison, \
+        UndefinedEnvironmentName
+    from packaging.version import InvalidVersion
+    parse_marker_errs = (InvalidMarker,)
+    eval_marker_errs = (UndefinedComparison, UndefinedEnvironmentName,
+                        InvalidVersion)
+except ImportError as e:
+    deprint(f'packaging not installed, download condition checking will not '
+            f'work (error: {e})')
+    parse_marker_errs = eval_marker_errs = ()
+    Marker = lambda s: None
+    InvalidMarker = UndefinedComparison = UndefinedEnvironmentName = None
+    InvalidVersion = None
+
 # Constants -------------------------------------------------------------------
 _GITHUB_API_URL = 'https://api.github.com/'
 # The GitHub API version to use - bump this every once in a while after
@@ -57,6 +74,23 @@ def _decode_base64(b64_html: str | bytes) -> str:
     """Helper for decoding base64-encoded text. Used e.g. for storing a copy of
     the changelog inside the latest.json file."""
     return base64.b64decode(b64_html).decode('utf-8')
+
+def _mk_marker(marker_str: str) -> Marker | None:
+    """Helper to parse a marker from a marker string."""
+    try:
+        return Marker(marker_str)
+    except parse_marker_errs:
+        deprint('Failed to parse marker', traceback=True)
+        return None
+
+def _parse_markers(marker_strs: list[str]) -> list[Marker]:
+    """Helper to parse only valid markers from a list of marker strings."""
+    ret_markers = []
+    for m in marker_strs:
+        marker_candidate = _mk_marker(m)
+        if marker_candidate is not None:
+            ret_markers.append(marker_candidate)
+    return ret_markers
 
 @dataclass(slots=True)
 class _GHFile(JsonParsable):
@@ -139,9 +173,26 @@ class DownloadInfo(JsonParsable):
     _parsers = {
         'download_name': json_remap('name'),
         'download_url': json_remap('url'),
+        'download_conditions': lambda d, a: _parse_markers(
+            d.get('conditions', [])),
     }
     download_name: str
     download_url: str
+    download_conditions: list[Marker | None]
+
+    def should_show_download(self):
+        """Return True if this download should be shown on the current system
+        based on the conditions associated with this download."""
+        for c in self.download_conditions:
+            try:
+                if not c.evaluate():
+                    return False
+            except eval_marker_errs:
+                deprint(f"Failed to evaluate marker {c}. latest.json has been "
+                        f"misconfigured, please report this to the Wrye Bash "
+                        f"maintainers")
+                continue
+        return True
 
 @dataclass(slots=True)
 class LatestVersion(JsonParsable):
@@ -170,8 +221,9 @@ class UpdateChecker:
     def _get_latest_version(self) -> LatestVersion | None:
         """Retrieves information about the latest release from GitHub."""
         try:
-            ver_file_data = self._gh_api.get_file_from_path(gh_owner='wrye-bash',
-                gh_repo='wb_status', gh_file_path='latest.json')
+            ver_file_data = self._gh_api.get_file_from_path(
+                gh_owner='wrye-bash', gh_repo='wb_status',
+                gh_file_path='latest.json')
         except LimitReachedError:
             deprint('Reached GitHub rate limit, setting next update check '
                     'post-rate-reset')
@@ -216,28 +268,27 @@ class UpdateChecker:
     def check_for_updates(self, force_check=False) -> LatestVersion | None:
         """Checks for updates if necessary. Returns a LatestVersion object
         representing a newer version than what the user has installed, or None
-        if update checking is disabled, we're on cooldown, a connection problem
-        occurred or no new version is available.
+        if update checking is disabled, we're on cooldown or a connection
+        problem occurred.
 
         :param force_check: If set to True, check for updates even if the user
             has disabled update checking or we're on cooldown. With this set,
-            the only way the method will return None is a connection problem or
-            no new version being available."""
+            the only way the method will return None is a connection
+            problem."""
         if not can_check_updates:
             return None # no requests, no update checking
         if force_check or self._should_check_for_updates():
             lv = self._get_latest_version()
             # lv is None if we ran into a GitHub error. In that case, the last
             # checked timestamp will have already been changed
-            if lv:
+            if lv is not None:
                 # We've done the check, remember the timestamp so we don't use
                 # up the user's entire GitHub API budget (unless they set the
                 # cooldown to 0 of course, in which case they *want* to use up
                 # their budget)
                 next_check = int(time.time())
                 bass.settings['bash.update_check.last_checked'] = next_check
-                if lv.wb_version > LooseVersion(bass.AppVersion):
-                    return lv
+                return lv
         return None
 
 class UCThread(Thread):

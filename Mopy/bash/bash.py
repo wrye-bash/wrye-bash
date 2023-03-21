@@ -249,6 +249,11 @@ def dump_environment(wxver=None):
     except ImportError:
         lxml_ver = 'not found (optional)'
     try:
+        import packaging
+        packaging_ver = packaging.__version__
+    except ImportError:
+        packaging_ver = 'not found (optional)'
+    try:
         import fitz
         pymupdf_ver = (f'{fitz.VersionBind}; bundled MuPDF version: '
                        f'{fitz.VersionFitz}')
@@ -292,9 +297,12 @@ def dump_environment(wxver=None):
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet_ver}',
-        (f' - ifileoperation: {ifileoperation_ver}'
-         if bolt.os_name == 'nt' else ''),
+    ]
+    if bolt.os_name == 'nt': # Hide on non-Windows platforms
+        msg.append(f' - ifileoperation: {ifileoperation_ver}')
+    msg.extend([
         f' - lxml: {lxml_ver}',
+        f' - packaging: {packaging_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
@@ -308,7 +316,7 @@ def dump_environment(wxver=None):
         f'Filesystem encoding: {fse}'
         f'{f" - using {bolt.Path.sys_fs_enc}" if not fse else ""}',
         f'Command line: {sys.argv}',
-    ]
+    ])
     bolt.deprint(msg := '\n\t'.join(msg))
     return msg
 

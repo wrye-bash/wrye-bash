@@ -73,7 +73,7 @@ from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
     NotebookPanel, Resources, SeparatorLink, colors, images
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
-    to_unix_newlines, to_win_newlines, top_level_items
+    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion
 from ..bosh import ModInfo, omods
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
@@ -4498,7 +4498,8 @@ class BashFrame(WindowFrame):
     def _on_update_check_done(self, *, newer_version: LatestVersion | None):
         """Internal callback, called from the update checking thread via custom
         event once it has completed its work."""
-        if newer_version:
+        if (newer_version is not None and
+                newer_version.wb_version > LooseVersion(bass.AppVersion)):
             UpdateNotification.display_dialog(self, newer_version)
 
 #------------------------------------------------------------------------------

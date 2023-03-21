@@ -31,7 +31,7 @@ from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url
+from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
     DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
@@ -1413,12 +1413,18 @@ class GeneralPage(_AScrollablePage):
     def _on_check_now(self):
         with BusyCursor():
             newer_version = UpdateChecker().check_for_updates(force_check=True)
-        if newer_version:
-            UpdateNotification.display_dialog(self, newer_version)
+        if newer_version is not None:
+            if newer_version.wb_version > LooseVersion(bass.AppVersion):
+                UpdateNotification.display_dialog(self, newer_version)
+            else:
+                showInfo(self, _('You are already using the newest version of '
+                                 'Wrye Bash, version %(wb_version)s.') % {
+                    'wb_version': bass.AppVersion},
+                    title=_('No Newer Version Available'))
         else:
-            msg = _('You are already using the newest version of Wrye Bash, '
-                'version %(wb_version)s.') % {'wb_version': bass.AppVersion}
-            showInfo(self, msg, title=_('No Newer Version Available'))
+            showError(self, _('Failed to contact GitHub for update checking. '
+                              'Check your Internet connection.'),
+                title=_('Failed To Check for Updates'))
 
     def _on_uac_restart(self, checked: bool):
         self._mark_setting_changed(u'uac_restart', checked)
