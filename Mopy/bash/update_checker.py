@@ -33,7 +33,7 @@ from threading import Thread
 
 from . import bass
 from .bolt import JsonParsable, LooseVersion, deprint, json_remap
-from .exception import LimitReachedError, RequestError
+from .exception import LimitReachedError, RequestError, UnknownWebError
 
 # This won't work if requests isn't installed - in that case, we simply can't
 # check for updates
@@ -233,7 +233,7 @@ class UpdateChecker:
             next_reset = self._gh_api.core_reset + 1
             bass.settings['bash.update_check.last_checked'] = next_reset
             return None
-        except RequestError:
+        except (RequestError, UnknownWebError):
             deprint('Failed to contact GitHub for update check')
             # Try again in 5 minutes, maybe it'll be fixed by then
             next_try = int(time.time()) + (5 * 60)

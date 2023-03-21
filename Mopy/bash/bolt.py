@@ -2817,11 +2817,11 @@ def readme_url(mopy, advanced=False, skip_local=False):
                    u'Wrye Bash General Readme.html')
     readme = mopy.join(u'Docs', readme_name)
     skip_local = skip_local and os_name == 'nt' # Windows-only bug
-    if skip_local and readme.is_file():
+    if not skip_local and readme.is_file():
         readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
         # Fallback to hosted version
-        readme = u'http://wrye-bash.github.io/docs/' + readme_name
+        readme = f'http://wrye-bash.github.io/docs/{readme_name}'
     return readme.replace(u' ', u'%20')
 
 # WryeText --------------------------------------------------------------------

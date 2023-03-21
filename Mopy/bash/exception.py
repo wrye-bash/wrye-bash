@@ -283,7 +283,7 @@ class ListenerBound(GuiError):
     """Trying to bind a listener that is already subscribed to this event
     handler."""
 
-# Nexus API errors ------------------------------------------------------------
+# Web API errors --------------------------------------------------------------
 class LimitReachedError(Exception):
     """Exception raised when the request rate limit has been reached."""
     def __init__(self):
@@ -297,6 +297,13 @@ class RequestError(Exception):
         self.orig_msg = msg
         super().__init__(f'Status Code {status_code} - {msg}')
 
+class UnknownWebError(Exception):
+    """Exception raised when some kind of error occurs in the underlying APIs
+    used to establish connections etc."""
+    def __init__(self):
+        super().__init__('Failed to send request')
+
+# Nexus API errrors -----------------------------------------------------------
 class EndorsementError(Exception):
     """Base class for endorsement/disendorsement errors."""
 

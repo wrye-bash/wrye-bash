@@ -52,7 +52,7 @@ import platform
 from enum import Enum
 
 from . import bass
-from .exception import RequestError
+from .exception import RequestError, UnknownWebError
 
 # First see if we even have the dependencies necessary to use the web APIs
 try:
@@ -109,9 +109,12 @@ class ARestHandler:
         if req_payload is None: req_payload = {}
         if req_data is None: req_data = {}
         if req_headers is None: req_headers = {}
-        response = self._session.request(req_op.value,
-            self._base_url + req_endpoint, params=req_payload, data=req_data,
-            headers=req_headers, timeout=10)
+        try:
+            response = self._session.request(req_op.value,
+                self._base_url + req_endpoint, params=req_payload,
+                data=req_data, headers=req_headers, timeout=10)
+        except requests.RequestException as e:
+            raise UnknownWebError() from e
         if response.status_code < 200 or response.status_code > 299:
             self._handle_error_response(response)
         self._update_rate_limit_info(response.headers)
