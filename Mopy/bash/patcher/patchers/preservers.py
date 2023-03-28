@@ -285,10 +285,9 @@ class ImportActorsFactionsPatcher(APreserver):
                 fact_obj = []
                 for fact_fid, rank in facts.items():
                     if fact_fid.mod_fn not in earlier_loading: continue
-                    ret_obj = rec_type.getDefault('factions')
-                    ret_obj.faction = fact_fid
+                    ret_obj = parser_instance.get_empty_object(rec_type,
+                                                               fact_fid)
                     ret_obj.rank = rank
-                    ret_obj.unused1 = b'ODB'
                     fact_obj.append(ret_obj)
                 if fact_obj: patcher_dict_sig[f] = {'factions': fact_obj}
             if patcher_dict_sig: patcher_dict[sig] = patcher_dict_sig
