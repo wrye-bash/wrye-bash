@@ -38,13 +38,6 @@ from ..bolt import dict_sort, structs_cache
 from ..exception import EnvError
 
 # API - Constants =============================================================
-try:
-    MAX_PATH_LEN = int(subprocess.check_output(
-        ['getconf', 'PATH_MAX', '/'])) # 1024 on mac!
-except (ValueError, subprocess.CalledProcessError, OSError):
-    _deprint('calling getconf failed - error:', traceback=True)
-    MAX_PATH_LEN = 4096
-
 FO_MOVE = 1
 FO_COPY = 2
 FO_DELETE = 3

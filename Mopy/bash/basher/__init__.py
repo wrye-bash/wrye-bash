@@ -4122,7 +4122,6 @@ class BashFrame(WindowFrame):
         self.known_older_form_versions = set()
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
-        self.incompleteInstallError = False
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -4269,7 +4268,6 @@ class BashFrame(WindowFrame):
         self.warn_corrupted(warn_mods=True, warn_saves=True, warn_strings=True,
                             warn_bsas=True)
         self.warn_game_ini()
-        self._missingDocsDir()
         #--Done (end recursion blocker)
         self.inRefreshData = False
         return EventResult.FINISH
@@ -4396,20 +4394,6 @@ class BashFrame(WindowFrame):
                     'game_ini_file': bosh.oblivionIni.abs_path,
                     'game_name': bush.game.displayName},
                     title=_('Missing Game INI'))
-
-    def _missingDocsDir(self):
-        #--Missing docs directory?
-        testFile = bass.dirs[u'mopy'].join(u'Docs', u'wtxt_teal.css')
-        if self.incompleteInstallError or testFile.exists(): return
-        self.incompleteInstallError = True
-        msg = (_('Installation appears incomplete. Please reinstall Wrye Bash '
-                 'to the game directory so that all files are '
-                 'installed.') + '\n\n' +
-               _('Correct installation will create %(wb_folder)s and '
-                 '%(data_docs_dir)s folders.') % {
-                   'wb_folder': 'Mopy',
-                   'data_docs_dir': os.path.join(bush.game.mods_dir, 'Docs')})
-        showWarning(self, msg, title=_('Incomplete Installation'))
 
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""

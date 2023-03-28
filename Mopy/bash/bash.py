@@ -172,6 +172,20 @@ def _import_deps():
         _show_boot_popup(_('The following dependencies could not be located '
                            'or failed to load:') + u'\n\n' + deps_msg)
 
+def _warn_missing_bash_dir():
+    """Check for some vital files that *must* be present (note that most dirs
+    don't have to be present in certain scenarios: bash/compiled/* is optional
+    on Linux, bash/taglists/* is completely optional and the Python files and
+    dirs are gone in standalone builds)."""
+    test_files = [bass.dirs['mopy'].join(*x) for x in (
+        ('bash', 'l10n', 'de_DE.po'), ('bash', 'images', 'bash.svg'))]
+    if any(not t.is_file() for t in test_files):
+        msg = (_('Installation appears incomplete. Please reinstall Wrye Bash '
+                 'so that all files are installed.') + '\n\n' +
+               _('Correct installation will create a filled %(wb_folder)s '
+                 'folder.') % {'wb_folder': os.path.join('Mopy', 'bash')})
+        raise RuntimeError(msg)
+
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
     """Ascertain that only one instance of Wrye Bash is running. Must only be
@@ -359,6 +373,8 @@ def main(opts):
         # come next
         from . import initialization
         initialization.init_dirs_mopy()
+        # Make sure we actually have a functional 'bash' folder to work with
+        _warn_missing_bash_dir()
         # Early setup is done, delegate to the main init method
         _main(opts, wx_locale, wxver)
     except Exception:

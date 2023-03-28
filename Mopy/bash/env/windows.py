@@ -148,8 +148,6 @@ def file_operation(operation: str | FileOperationType,
 # API - Constants =============================================================
 _isUAC = False
 
-MAX_PATH_LEN = _MAX_PATH
-
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
     _indirect.restype = c_void_p
