@@ -59,8 +59,10 @@ GOOD_EXITS = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 def _getShellPath(folderKey): ##: mkdirs
     home = os.path.expanduser(u'~')
-    return _GPath({u'Personal': home,
-                   u'Local AppData': home + u'/.local/share'}[folderKey])
+    return _GPath({
+        'Personal': f'{home}/Documents',
+        'Local AppData': f'{home}/.local/share',
+    }[folderKey])
 
 def _get_error_info():
     return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))

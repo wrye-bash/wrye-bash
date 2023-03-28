@@ -186,6 +186,10 @@ class ListBox(WithMouseEvents):
             return None
 
     def lb_get_vertical_scroll_pos(self) -> int:
+        if _wx.Platform == '__WXGTK__':
+            ##: Causes 'this window is not scrollable' assertion in wxGTK,
+            # see e.g. https://forums.wxwidgets.org/viewtopic.php?t=25153
+            return 0
         return self._native_widget.GetScrollPos(_wx.VERTICAL)
 
     def lb_get_items_count(self) -> int:

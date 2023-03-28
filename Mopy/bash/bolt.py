@@ -2810,13 +2810,17 @@ def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
 
 #------------------------------------------------------------------------------
 def readme_url(mopy, advanced=False, skip_local=False):
+    """Return the URL of the WB readme based on the specified Mopy folder. Note
+    that skip_local is ignored on non-Windows systems, as the bug it works
+    around only exists on Windows."""
     readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
                    u'Wrye Bash General Readme.html')
     readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.is_file():
+    skip_local = skip_local and os_name == 'nt' # Windows-only bug
+    if skip_local and readme.is_file():
         readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
-        # Fallback to Git repository
+        # Fallback to hosted version
         readme = u'http://wrye-bash.github.io/docs/' + readme_name
     return readme.replace(u' ', u'%20')
 

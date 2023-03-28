@@ -1024,6 +1024,7 @@ class UIList(PanelWin):
                     if item_txt != self.mouseTextPrev:
                         Link.Frame.set_status_info(item_txt)
                         self.mouseTextPrev = item_txt
+
     def _handle_mouse_leaving(self):
         if self.mouse_index is not None:
             self.mouse_index = None
@@ -1054,15 +1055,19 @@ class UIList(PanelWin):
         # Ctrl+Num + - auto-size columns to fit contents
         elif cmd_down and kcode == wx.WXK_NUMPAD_ADD:
             self.auto_col_widths = AutoSize.FIT_CONTENTS
-            ##: On Windows, this happens automatically (probably due to it
-            # being a native widget), check if this happens on other platforms
-            # too or if this check is necessary
+            # On Windows, this happens automatically (due to the native widget
+            # handling it), so all we have to do there is update our internal
+            # state to match. On all (?, only tested on wxGTK) other platforms
+            # we have to implement it ourselves
             if wx.Platform != '__WXMSW__':
                 self.autosizeColumns()
         # Ctrl+C - copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])
+        else:
+            return EventResult.CONTINUE
+        return EventResult.FINISH
 
     # Columns callbacks
     def _on_column_click(self, evt_col):
@@ -1424,6 +1429,10 @@ class UIList(PanelWin):
     def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
         items = items if items is not None else self.GetSelected()
+        if not items:
+            # Sometimes we get a double Del key event on GTK, but with no
+            # selection present for the second one - just skip that
+            return
         # We need a copy of the original items for the error below
         orig_items = items
         if wrapped_evt is None: # Called from menu item

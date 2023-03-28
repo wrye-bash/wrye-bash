@@ -332,7 +332,6 @@ class DeletionDialog(DialogWindow):
 class DateAndTimeDialog(DialogWindow):
     """Dialog for choosing a date and time."""
     title = _('Choose a date and time')
-    _def_size = (270, 360)
 
     def __init__(self, parent, *, warning_color: Color, icon_bundle):
         super().__init__(parent, icon_bundle=icon_bundle)
@@ -365,7 +364,7 @@ class DateAndTimeDialog(DialogWindow):
                 self._ok_button,
                 CancelButton(self),
             ]),
-        ]).apply_to(self)
+        ]).apply_to(self, fit=True)
 
     def _handle_picker(self):
         """Internal callback that updates the manual entry field whenever a

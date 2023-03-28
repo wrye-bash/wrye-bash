@@ -772,7 +772,7 @@ class INIList(balt.UIList):
             self.OpenSelected(
                 self.data_store.filter_essential(self.GetSelected()))
         else:
-            return EventResult.CONTINUE
+            return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random tweak that starts with the key code
         return EventResult.FINISH
 
@@ -1154,9 +1154,18 @@ class ModList(_ModsUIList):
         Link.Frame.docBrowser.raise_frame()
 
     def _handle_key_down(self, wrapped_evt):
-        """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         kcode = wrapped_evt.key_code
-        if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
+        if wrapped_evt.is_space:
+            selected = self.GetSelected()
+            toActivate = [item for item in selected if
+                          not load_order.cached_is_active(item)]
+            # If none are checked or all are checked, then toggle the selection
+            # Otherwise, check all that aren't
+            toggle_target = (selected if len(toActivate) == 0 or
+                                         len(toActivate) == len(selected)
+                             else toActivate)
+            self._toggle_active_state(*toggle_target)
+        elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
@@ -1194,24 +1203,13 @@ class ModList(_ModsUIList):
             # Ctrl+Y - redo last load order or active plugins change
             self.lo_redo()
         else:
-            # Correctly update the highlight around selected mod
-            return EventResult.CONTINUE
+            return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
 
     def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
         # Space - enable/disable selected plugins
-        if wrapped_evt.is_space:
-            selected = self.GetSelected()
-            toActivate = [item for item in selected if
-                          not load_order.cached_is_active(item)]
-            # If none are checked or all are checked, then toggle the selection
-            # Otherwise, check all that aren't
-            toggle_target = (selected if len(toActivate) == 0 or
-                                         len(toActivate) == len(selected)
-                             else toActivate)
-            self._toggle_active_state(*toggle_target)
         if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N'):
             if not bush.game.Esp.canBash: return # We can't write plugins
             if wrapped_evt.is_shift_down:
@@ -1220,7 +1218,9 @@ class ModList(_ModsUIList):
             else:
                 # Ctrl+N - Create a new plugin
                 CreateNewPlugin.display_dialog(self)
-        super(ModList, self)._handle_key_up(wrapped_evt)
+        else:
+            return super()._handle_key_up(wrapped_evt)
+        return EventResult.FINISH
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags,
@@ -2913,7 +2913,7 @@ class InstallersList(balt.UIList):
             # Enter - open selected installers
             self.OpenSelected()
         else:
-            return EventResult.CONTINUE
+            return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
 
@@ -2946,7 +2946,9 @@ class InstallersList(balt.UIList):
             else:
                 # Ctrl+N - Create a new project
                 CreateNewProject.display_dialog(self)
-        super(InstallersList, self)._handle_key_up(wrapped_evt)
+            return EventResult.FINISH
+        else:
+            super()._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -3653,8 +3655,11 @@ class ScreensList(balt.UIList):
 
     def _handle_key_up(self, wrapped_evt):
         # Enter: Open selected screens
-        if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
-        else: super(ScreensList, self)._handle_key_up(wrapped_evt)
+        if wrapped_evt.key_code in balt.wxReturn:
+            self.OpenSelected()
+        else:
+            return super()._handle_key_up(wrapped_evt)
+        return EventResult.FINISH
 
 #------------------------------------------------------------------------------
 class ScreensDetails(_DetailsMixin, NotebookPanel):
