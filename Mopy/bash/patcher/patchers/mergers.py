@@ -144,8 +144,8 @@ class _AMerger(ImportPatcher):
                     changed_entries = []
                 final_add_entries = addEntries if can_add else []
                 if remove_keys or final_add_entries or changed_entries:
-                    id_deltas[fid].append((remove_keys, final_add_entries,
-                                           changed_entries))
+                    id_deltas[fid].append(
+                        (remove_keys, final_add_entries, changed_entries))
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
         if modFile.fileInfo.fn_key not in self.inventOnlyMods:

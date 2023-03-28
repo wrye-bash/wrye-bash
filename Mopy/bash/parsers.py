@@ -27,12 +27,14 @@ They are also used by some patchers in order to not duplicate the work that
 has to be done when reading mods.
 However, not all parsers fit this pattern - some have to read mods twice,
 others barely even fit into the pattern at all (e.g. FidReplacer)."""
+from __future__ import annotations
 
 import csv
 import re
 from collections import Counter, defaultdict
 from functools import partial
 from operator import itemgetter
+from typing import get_type_hints
 
 from . import bush, load_order
 from .balt import Progress
@@ -121,11 +123,12 @@ class _TextParser(object):
         modFile = self._load_plugin(modInfo, keepAll=True,
                                     target_types=self.id_stored_data)
         changed_stats = self._changed_type()
+        # Check which record types makes any sense to patch
+        block_to_data = [(block, stored_info) for sig, stored_info in
+                         self.id_stored_data.items() if stored_info and (
+                             block := modFile.tops.get(sig))]
         # We know that the loaded mod only has the tops loaded that we need
-        for top_grup_sig, stored_rec_info in self.id_stored_data.items():
-            rec_block = modFile.tops.get(top_grup_sig, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
+        for rec_block, stored_rec_info in block_to_data:
             for rfid, record in rec_block.iter_present_records():
                 self._check_write_record(rfid, record, stored_rec_info,
                                          changed_stats)
@@ -211,7 +214,7 @@ class _HandleAliases(CsvParser):
     _grup_index = None
     # the type of the values of id_stored_data
     _nested_type = dict
-    _id_data_type = defaultdict
+    _id_data_type: defaultdict
 
     def __init__(self, aliases_, called_from_patcher=False):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
@@ -223,7 +226,7 @@ class _HandleAliases(CsvParser):
         # (Mostly) map record sigs to dicts that map long fids to stored info
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
-        self.id_stored_data = self.__class__._id_data_type(
+        self.id_stored_data = get_type_hints(self.__class__)['_id_data_type'](
             self.__class__._nested_type)
 
     def _coerce_fid(self, modname, hex_fid):
@@ -276,10 +279,10 @@ class _AParser(_HandleAliases):
        not offer fine-grained filtering of the read information. It is mapped
        by long FormID and stored in id_context. You will have to set
        _fp_types appropriately and override _read_record_fp to use this pass.
-     - The second pass filters by record type and long FormID, and can choose
-       whether or not it wants to store certain information. The result is
-       stored in id_stored_data. You will have to set _sp_types appropriately
-       and override _is_record_useful and _read_record_sp to use this pass.
+     - The second pass updates id_stored_data. You need to set _sp_types and
+       override _is_record_useful and _read_record_sp to use this pass.
+       `id_stored_data` indexes record information by record group and FormID -
+       this information being usually the values for certain record attributes.
      - If you want to skip either pass, just leave _fp_types / _sp_types
        empty."""
     _nested_type = lambda: defaultdict(dict)
@@ -425,28 +428,24 @@ class _AParser(_HandleAliases):
         self._current_mod = None
 
     # Writing to plugins
-    def _write_record_2(self, record, new_data, cur_info):
+    def _write_record_2(self, record, added_changed):
         """This is where your parser should perform the actual work of writing
         out the necessary changes to the record, using the given record
         information to determine what to change.
 
         :param record: The record to write to.
-        :param new_data: The new record info.
-        :param cur_info: The current record info."""
+        :param added_changed: The new record info."""
         raise NotImplementedError
 
     _changed_type = Counter
     def _write_record(self, record, new_data, changed_stats):
         """Asks this parser to write its stored information to the specified
-        ModInfo instance.
-
-        :param mod_info: The ModInfo instance to write to.
-        :return: A dict mapping record types to the number of changed records
-            in them."""
+        record."""
         cur_data = self._read_record_sp(record)
         if new_data != cur_data:
             # It's different, ask the parser to write it out
-            self._write_record_2(record, new_data, cur_data)
+            added_changed = set(new_data.items()) - set(cur_data.items())
+            self._write_record_2(record, added_changed)
             record.setChanged()
             changed_stats[record.rec_sig] += 1
 
@@ -485,10 +484,12 @@ class ActorFactions(_AParser):
         return bool(record.factions)
 
     def _read_record_sp(self, record):
-        return {f.faction: f.rank for f in record.factions}
+        if self._called_from_patcher: # only used as a csv reader in patcher
+            raise NotImplementedError
+        return {f.faction: f.rank for f in record.factions} # last mod wins
 
-    def _write_record_2(self, record, new_data, cur_info):
-        for fa, rank in set(new_data.items()) - set(cur_info.items()):
+    def _write_record_2(self, record, added_changed):
+        for fa, rank in added_changed:
             # Check if this an addition or a change
             for entry in record.factions:
                 if entry.faction == fa:
@@ -499,10 +500,10 @@ class ActorFactions(_AParser):
                 # This is an addition, we need to create a new faction instance
                 target_entry = record.getDefault('factions')
                 record.factions.append(target_entry)
+                target_entry.faction = fa
+                target_entry.unused1 = b'ODB'
             # Actually write out the attributes from new_info
-            target_entry.faction = fa
             target_entry.rank = rank
-            target_entry.unused1 = b'ODB'
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])
@@ -537,7 +538,7 @@ class ActorLevels(_HandleAliases):
     _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, fid_eid=True)
-    _id_data_type = DefaultFNDict
+    _id_data_type: DefaultFNDict
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ActorLevels, self).__init__(aliases_, called_from_patcher)
@@ -713,11 +714,11 @@ class EditorIds(_HandleAliases):
             self.old_new[csv_fields[4].lower()] = \
                 self.id_stored_data[top_grup_sig][longid]
 
-    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None,
-                 __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
-                __reGoodEid=re.compile(u'^[a-zA-Z]')):
-        eid = super(EditorIds, self)._update_from_csv(top_grup_sig,
-            csv_fields, index_dict)[u'eid']
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None, *,
+                         __reValidEid=re.compile('^[a-zA-Z0-9]+$'),
+                         __reGoodEid=re.compile('^[a-zA-Z]')):
+        eid = super()._update_from_csv(top_grup_sig, csv_fields, index_dict)[
+            'eid']
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
@@ -727,7 +728,7 @@ class EditorIds(_HandleAliases):
         return eid
 
     def _row_out(self, lfid, stored_data, top_grup):
-        return '"%s",%s,"%s"\n' % (top_grup, _fid_str(lfid), stored_data)
+        return f'"{top_grup}",{_fid_str(lfid)},"{stored_data}"\n'
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -753,7 +754,7 @@ class FactionRelations(_AParser):
         # may have still deleted original relations.
         return True
 
-    def _read_record_sp(self, record, __attrgetters=attrgetter_cache):
+    def _read_record_sp(self, record, *, __attrgetters=attrgetter_cache):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
         relations = self.id_stored_data[b'FACT'][record.fid]
@@ -765,8 +766,8 @@ class FactionRelations(_AParser):
             relations[other_fac] = rel_attrs[1:]
         return relations
 
-    def _write_record_2(self, record, new_data, cur_info):
-        for rel_fac, rel_attributes in set(new_data.items()) - set(cur_info.items()):
+    def _write_record_2(self, record, added_changed):
+        for rel_fac, rel_att_values in added_changed:
             # See if this is a new relation or a change to an existing one
             for entry in record.relations:
                 if rel_fac == entry.faction:
@@ -779,7 +780,7 @@ class FactionRelations(_AParser):
                 record.relations.append(target_entry)
             # Actually write out the attributes from new_info
             for rel_attr, rel_val in zip(self.cls_rel_attrs,
-                                         (rel_fac, *rel_attributes)):
+                                         (rel_fac, *rel_att_values)):
                 setattr(target_entry, rel_attr, rel_val)
 
     def _parse_line(self, csv_fields):

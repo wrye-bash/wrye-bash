@@ -1711,7 +1711,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
                         f' - {m}' for m in e_missing_masters])
                     self._showError(err_msg, title=_('Missing Masters'))
                     return
-                readProgress(index, _(u'Reading') + u' %s.' % fileName)
+                readProgress(index, _('Reading') + f' {fileName}.')
                 parser.readFromMod(fileInfo)
             progress(0.8, _(u'Exporting to') + f' {textPath.stail}.')
             parser.write_text_file(textPath)
