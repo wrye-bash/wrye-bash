@@ -31,7 +31,7 @@ from collections.abc import Iterable
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name
+from ..bolt import os_name, Path
 
 _TShellWindow = '_AComponent | _Window | None'
 
@@ -54,7 +54,13 @@ def _resolve(parent: _TShellWindow):
     except AttributeError:
         return parent   # type: ignore
 
-# Higher level APIs implemented by using the imported OS-specific ones above
+# Higher level APIs using imported OS-specific ones ---------------------------
+def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
+    """Convenience method for converting a path of unknown origin to a path
+    compatible with this OS/FS. See normalize_ci_path and convert_separators
+    for more information."""
+    return normalize_ci_path(convert_separators(os.fspath(questionable_path)))
+
 def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
                 ask_confirm=False, recycle=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation

@@ -25,8 +25,9 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bolt, bush, env
+from .. import balt, bass, bolt, bush
 from ..balt import EnabledLink, Links, colors
+from ..env import get_file_version, get_game_version_fallback, to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
@@ -116,11 +117,11 @@ class InstallerFomod(WizardDialog):
         # Get the game version, be careful about Windows Store games
         test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
         try:
-            gver = env.get_file_version(test_path.s)
+            gver = get_file_version(test_path.s)
             if gver == (0, 0, 0, 0) and bush.ws_info.installed:
-                gver = env.get_game_version_fallback(test_path, bush.ws_info)
+                gver = get_game_version_fallback(test_path, bush.ws_info)
         except OSError:
-            gver = env.get_game_version_fallback(test_path, bush.ws_info)
+            gver = get_game_version_fallback(test_path, bush.ws_info)
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
@@ -376,7 +377,8 @@ class PageSelect(PageInstaller):
         self.update_layout()
 
     def _open_image(self, _dclick_ignored=0):
-        if self._current_image: # sanity check
+        # May be None if we're on Linux and a path didn't end up existing
+        if self._current_image:
             self._current_image.start()
 
     def _handle_block_user(self, block_checkable):
@@ -407,13 +409,16 @@ class PageSelect(PageInstaller):
         """Sets the image and description on the right side based on the
         specified checkable."""
         option = self.checkable_to_option[checkable]
-        opt_img = self._page_parent.archive_path.join(
-            self._page_parent.installer_root, option.option_image)
-        self._current_image = opt_img # To allow opening it via double click
+        opt_img = option.option_image
+        # Note that these are almost always Windows paths, so we have to
+        # convert them if we're on Linux
+        opt_img_path = to_os_path(self._page_parent.archive_path.join(
+            self._page_parent.installer_root, opt_img))
+        self._current_image = opt_img_path # To allow opening via double click
         try:
             final_image = self._img_cache[opt_img]
         except KeyError:
-            final_image = opt_img
+            final_image = opt_img_path
         self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
         # Check if we need to display a special string above the description
         type_desc, type_warn = self._option_type_info[option.option_type]

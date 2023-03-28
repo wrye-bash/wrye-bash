@@ -26,10 +26,12 @@ import functools
 import os
 import subprocess
 import sys
+from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 
 from .common import _find_legendary_games, _LegacyWinAppInfo
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
+from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import dict_sort, structs_cache
@@ -236,6 +238,37 @@ def python_tools_dir():
 
 def convert_separators(p):
     return p.replace(u'\\', u'/')
+
+##: A more performant implementation would maybe cache folder contents or
+# something similar, as it stands this is not usable for fixing BAIN on Linux
+def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+    if os.path.exists(ci_path):
+        # Fast path, but GPath it as we haven't normpathed it yet
+        return _GPath(ci_path)
+    # The first part is root, which we can obviously skip (has no other case)
+    ci_parts = PPath(os.path.normpath(os.fspath(ci_path))).parts[1:]
+    constructed_path = '/'
+    for ci_part in ci_parts:
+        new_ci_path = os.path.join(constructed_path, ci_part)
+        if os.path.exists(new_ci_path):
+            # If this part exists with the correct case, keep going
+            constructed_path = new_ci_path
+        else:
+            # Otherwise we have to list the entire folder and
+            # case-insensitively look for a match
+            ci_part_lower = ci_part.lower()
+            for candidate_file in os.listdir(constructed_path):
+                if candidate_file.lower() == ci_part_lower:
+                    # We found a matching file, construct the new path with the
+                    # right case and resume the outer loop
+                    constructed_path = os.path.join(constructed_path,
+                        candidate_file)
+                    break
+            else:
+                # We can't find this part at all, so the whole path can't be
+                # found -> None
+                return None
+    return _GPath_no_norm(constructed_path)
 
 # API - Classes ===============================================================
 class TaskDialog(object):

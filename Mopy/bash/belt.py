@@ -30,7 +30,7 @@ from collections import OrderedDict, defaultdict
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .balt import ItemLink, Links, images, staticBitmap
 from .bolt import FName, FNDict, LooseVersion
-from .env import get_file_version, get_game_version_fallback
+from .env import get_file_version, get_game_version_fallback, to_os_path
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
     PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
@@ -214,9 +214,14 @@ class PageSelect(PageInstaller):
 
     def _click_on_image(self):
         img = self.images[self.index]
-        try: img.start()
-        except FileNotFoundError: pass
-        except OSError: bolt.deprint(f'Failed to open {img}.', traceback=True)
+        if not img:
+            return # None - no image path specified
+        try:
+            img.start()
+        except FileNotFoundError:
+            pass # Image path specified, but no image present at that path
+        except OSError:
+            bolt.deprint(f'Failed to open {img}.', traceback=True)
 
     def _on_right_click(self, lb_selection_dex):
         """Internal callback to show the context menu for appropriate pages."""
@@ -1360,13 +1365,17 @@ class WryeParser(ScriptParser.Parser):
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from
             # Mopy/bash/images/Wizard Images)
-            wiz_img_path = imageJoin(i)
-            if (i.lower().startswith('wizard images') and
-                    not wiz_img_path.is_file()):
-                std_img_path = bass.dirs['images'].join(i)
-                if std_img_path.is_file():
-                    wiz_img_path = std_img_path
-            image_paths.append(wiz_img_path)
+            # Note that these are almost always Windows paths, so we have to
+            # convert them if we're on Linux
+            wiz_img_path = to_os_path(imageJoin(i))
+            if wiz_img_path and wiz_img_path.is_file():
+                image_paths.append(wiz_img_path)
+            elif i.lower().startswith('wizard images'):
+                std_img_path = to_os_path(bass.dirs['images'].join(i).s)
+                if std_img_path and std_img_path.is_file():
+                    image_paths.append(std_img_path)
+            else:
+                image_paths.append(None)
         self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,
                                descs, image_paths)
 

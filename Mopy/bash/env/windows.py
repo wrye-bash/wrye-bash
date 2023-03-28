@@ -1236,6 +1236,15 @@ def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')
 
+def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+    """Alter the case of a case-insensitive path to match directories and files
+    actually present in the filesystem, if any. This is basically identical to
+    what Wine does when emulating case insensitivity. If this returns None, the
+    path does not exist. However, if this does not return None then there is no
+    guarantee that the path exists, so check using exists()/is_file()/etc."""
+    # Windows is case-insensitive, nothing to do here
+    return _Path(os.fspath(ci_path))
+
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section
 # below.
