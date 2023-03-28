@@ -25,8 +25,7 @@
 from collections import Counter, defaultdict
 from operator import attrgetter
 
-from ..base import APatcher, CsvListPatcher, ListPatcher, MultiTweakItem, \
-    ScanPatcher
+from ..base import APatcher, ListPatcher, MultiTweakItem, ScanPatcher
 from ... import load_order
 from ...bolt import deprint
 from ...brec import RecordType
@@ -193,23 +192,32 @@ class MergePatchesPatcher(ListPatcher):
     def _update_patcher_factories(self, p_file):
         """No initData - don't add to patch factories."""
 
-class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
-    """Imports Form Id replacers into the Bashed Patch."""
-    patcher_group = u'General'
-    patcher_order = 15
+class _PatchFidReplacer(FidReplacer):
     _read_sigs = RecordType.simpleTypes | { # this better be initialized
         b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
 
-    def __init__(self, p_name, p_file, p_sources):
-        super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+    def __init__(self, aliases_=None, called_from_patcher=False):
+        super().__init__(aliases_, called_from_patcher)
         # we need to override self._parser_sigs from FidReplacer.__init__
         self._parser_sigs = self._read_sigs
-        ListPatcher.__init__(self, p_name, p_file, p_sources)
 
     def _parse_line(self, csv_fields):
         oldId = self._coerce_fid(csv_fields[1], csv_fields[2]) # oldMod, oldObj
         newId = self._coerce_fid(csv_fields[5], csv_fields[6]) # newMod, newObj
         self.old_new[oldId] = newId
+
+class ReplaceFormIDsPatcher(ListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    patcher_group = 'General'
+    patcher_order = 15
+    _read_sigs = _PatchFidReplacer._read_sigs
+    _csv_parser = _PatchFidReplacer
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        earlier_loading = self.patchFile.all_plugins
+        self.old_new = {k: v for k, v in parser_instance.old_new.items() if
+            k.mod_fn in earlier_loading and v.mod_fn in earlier_loading}
+        self.isActive = bool(self.old_new)
 
     def scanModFile(self, modFile, progress, *, __get_refs=(
             attrgetter('temp_refs'), attrgetter('persistent_refs'))):

@@ -152,18 +152,24 @@ class ListPatcher(APatcher):
                 deprint(f'{src_path} is not saved in UTF-8 format',
                         traceback=True)
         self.csv_srcs = loaded_csvs
+        filtered_dict = self._filter_csv_fids(parser_instance, loaded_csvs)
+        return filtered_dict
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
         # Filter out any entries that don't actually have data or whose
         # record signatures do not appear in _parser_sigs - these might not
         # always be a subset of read_sigs for instance CoblExhaustionPatcher
         # which reads b'FACT' but _read_sigs is b'SPEL'
         rec_att = {*parser_instance._parser_sigs}
-        if s := set(parser_instance.id_stored_data) - rec_att:
+        sig_data = parser_instance.id_stored_data
+        if s := (sig_data.keys() - rec_att):
             deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
                     f'{loaded_csvs}')
         ##: make sure k is always bytes and drop encode below
+        earlier_loading = self.patchFile.all_plugins
         filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
-                         k, v in parser_instance.id_stored_data.items() if
-                         v and k in rec_att}
+            k, d in sig_data.items() if (k in rec_att) and (v := {f: j for
+                f, j in d.items() if f.mod_fn in earlier_loading})}
         return filtered_dict
 
     @property

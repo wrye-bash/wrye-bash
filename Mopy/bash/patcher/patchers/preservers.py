@@ -32,6 +32,7 @@ from itertools import chain
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
+from ...brec import RecordType
 from ...exception import ModSigMismatchError
 
 #------------------------------------------------------------------------------
@@ -270,6 +271,28 @@ class ImportActorsFactionsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        """Transform the parser structure to the one used by the patcher."""
+        filtered_dict = super()._filter_csv_fids(parser_instance, loaded_csvs)
+        # filter existing factions and convert to the patcher representation
+        earlier_loading = self.patchFile.all_plugins
+        patcher_dict = {}
+        for sig, d in filtered_dict.items():
+            rec_type = RecordType.sig_to_class[sig]
+            patcher_dict_sig = {}
+            for f, facts in d.items():
+                fact_obj = []
+                for fact_fid, rank in facts.items():
+                    if fact_fid.mod_fn not in earlier_loading: continue
+                    ret_obj = rec_type.getDefault('factions')
+                    ret_obj.faction = fact_fid
+                    ret_obj.rank = rank
+                    ret_obj.unused1 = b'ODB'
+                    fact_obj.append(ret_obj)
+                if fact_obj: patcher_dict_sig[f] = {'factions': fact_obj}
+            if patcher_dict_sig: patcher_dict[sig] = patcher_dict_sig
+        return patcher_dict
 
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):

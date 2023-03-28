@@ -465,12 +465,7 @@ class ActorFactions(_AParser):
     _key2_getter = itemgetter(2, 3)
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        super(ActorFactions, self).__init__(aliases_, called_from_patcher)
-        if called_from_patcher:
-            # Need to redefine this for the patcher since we don't want to
-            # reassign self.__class__._nested_type
-            self.id_stored_data = defaultdict(lambda: defaultdict(lambda: {
-                'factions': []}))
+        super().__init__(aliases_, called_from_patcher)
         a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
         self._fp_types = () if called_from_patcher else (*a_types, b'FACT')
@@ -508,12 +503,8 @@ class ActorFactions(_AParser):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])
         rank = int(csv_fields[7])
         if self._called_from_patcher:
-            ret_obj = RecordType.sig_to_class[top_grup_sig].getDefault(u'factions')
-            ret_obj.faction = lfid
-            ret_obj.rank = rank
-            ret_obj.unused1 = b'ODB'
             aid = self._key2(csv_fields) ##: pass key2 ?
-            self.id_stored_data[top_grup_sig][aid][u'factions'].append(ret_obj)
+            self.id_stored_data[top_grup_sig][aid][lfid] = rank
             return None # block updating id_stored_data in _parse_line
         else:
             return {lfid: rank}
