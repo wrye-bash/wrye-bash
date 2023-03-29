@@ -148,6 +148,10 @@ class _TextParser(object):
         if stored_data:
             self._write_record(record, stored_data, changed_stats)
 
+    def _write_record(self, record, stored_data, changed_stats):
+        """WIP - always guard with _check_write_records."""
+        raise NotImplementedError
+
 class CsvParser(_TextParser):
     _csv_header = ()
 
@@ -269,6 +273,7 @@ class _AParser(_HandleAliases):
     """Base class for parsers manipulating array record elements (factions and
     relations). Behaves like a merger when reading csvs, keeping all the csv
     entries (last item wins) and exporting to mods additions and changes.
+    When reading from mods behaves like a merger w
 
     Reading from mods:
      - This is the most complex part of this design - we offer up to two
@@ -285,6 +290,8 @@ class _AParser(_HandleAliases):
     _nested_type = lambda: defaultdict(dict)
     _target_array = None # target record array attribute
     array_item_attrs = None # the attributes this parser needs from array elements
+    # whether to override or merge when reading a record from multiple plugins
+    _is_merger = False
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         # The types of records to read from in the first pass. These should be
@@ -372,8 +379,11 @@ class _AParser(_HandleAliases):
             for rfid, record in rec_block.iter_present_records():
                 # Check if we even want this record first
                 if self._is_record_useful(record):
-                    self.id_stored_data[rec_type][rfid] = \
-                        self._read_record_sp(record)
+                    rec_data = self._read_record_sp(record)
+                    if self._is_merger:
+                        self.id_stored_data[rec_type][rfid].update(rec_data)
+                    else:
+                        self.id_stored_data[rec_type][rfid] = rec_data
                     # Check if we need to follow up on the first pass info
                     if self._context_needs_followup:
                         self.id_context[rfid] = self._read_record_fp(record)
@@ -435,7 +445,7 @@ class _AParser(_HandleAliases):
         """Asks this parser to write its stored information to the specified
         record."""
         cur_data = self._read_record_sp(record)
-        if new_data != cur_data:
+        if new_data != cur_data:##: fixme differentiate between _is_merger cases?
             # It's different, ask the parser to write it out
             added_changed = set(new_data.items()) - set(cur_data.items())
             for faction_fid, item_values in added_changed:
@@ -457,8 +467,9 @@ class _AParser(_HandleAliases):
                     for rel_attr, rel_val in zip(self.array_item_attrs,
                                                  item_values):
                         setattr(target_entry, rel_attr, rel_val)
-            record.setChanged()
-            changed_stats[record.rec_sig] += 1
+            if changed_stats is not None: # used in parser
+                record.setChanged()
+                changed_stats[record.rec_sig] += 1
 
     # Other API
     @property
@@ -730,9 +741,10 @@ class FactionRelations(_AParser):
     and CSV, and uses two passes to do so."""
     array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
     _target_array = 'relations'
+    _is_merger = True # the results of _read_record_sp will be merged
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        super(FactionRelations, self).__init__(aliases_, called_from_patcher)
+        super().__init__(aliases_, called_from_patcher)
         self._fp_types = () if self._called_from_patcher else (b'FACT',)
         self._sp_types = (b'FACT',)
         self._needs_fp_master_sort = True
@@ -751,9 +763,7 @@ class FactionRelations(_AParser):
 
     def _read_record_sp(self, record, *, __attrgetters=tuple(
             attrgetter_cache[a] for a in ('faction', *array_item_attrs))):
-        # Look if we already have relations and base ourselves on those,
-        # otherwise make a new list
-        relations = self.id_stored_data[b'FACT'][record.fid]
+        relations = {}
         # Merge added relations, preserve changed relations
         for relation in record.relations:
             other_fac, *rel_attrs = (a(relation) for a in __attrgetters)

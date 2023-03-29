@@ -33,14 +33,13 @@ from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName
 from ...exception import ModSigMismatchError, BPConfigError
+from ...parsers import FactionRelations
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
-##: a lot of code still shared with _APreserver - move to ImportPatcher
-##: add CSV support - we broke Import Relations when we made it an _AMerger -
-##: see gui_patchers.ImportRelations
+##: a lot of code still shared with APreserver - move to ImportPatcher
 # instance (the GUI will still list them too)
 class _AMerger(ImportPatcher):
     """Still very WIP base class for mergers."""
@@ -59,10 +58,11 @@ class _AMerger(ImportPatcher):
     def __init__(self, p_name, p_file, p_sources):
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
+        self.touched = set()
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self.id_deltas = defaultdict(list)
         self.mod_id_entries = {}
-        self.touched = set()
+        self._csv_ids = {}
         self.inventOnlyMods = {x for x in self.srcs if
                                x in p_file.ii_mode} if self.iiMode else set()
 
@@ -102,7 +102,7 @@ class _AMerger(ImportPatcher):
                         continue  # or break filter mods
                     self.touched.add(rid)
             progress.plus()
-        self._present_sigs = present_sigs
+        self._present_sigs.update(present_sigs)
         self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
@@ -114,7 +114,7 @@ class _AMerger(ImportPatcher):
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
             for curr_sig, block in modFile.iter_tops(self._read_sigs):
-                sr_attr = self._wanted_subrecord[curr_sig]
+                sr_attr = self._wanted_subrecord[curr_sig] # ex. 'relations'
                 for rid, record in block.iter_present_records():
                     if rid in touched:
                         try:
@@ -128,16 +128,16 @@ class _AMerger(ImportPatcher):
             can_add = self._add_tag in applied_tags
             can_change = self._change_tag in applied_tags
             can_remove = self._remove_tag in applied_tags
-            id_entries = {}
-            en_key = self._entry_key
+            master_id_entries = {}
+            en_key = self._entry_key # ex. attrgetter('faction')
             # Determine the effective master entries. First, find the winning
             # master entries (as determined by rule of one)
             for master in modFile.tes4.masters:
-                if master in mod_id_entries:
-                    id_entries.update(mod_id_entries[master])
+                if master in mod_id_entries: ##: we may have missing masters - due to 'Filter'?
+                    master_id_entries.update(mod_id_entries[master])
             # Then, apply all deltas that originate from masters of this source
             src_masters_set = set(modFile.tes4.masters)
-            for m_fid, curr_entries in list(id_entries.items()):
+            for m_fid, curr_entries in list(master_id_entries.items()):
                 # Check here since this is a defaultdict and we don't want to
                 # fill it with a ton of empty lists, that just wastes memory
                 if m_fid in id_deltas:
@@ -149,10 +149,10 @@ class _AMerger(ImportPatcher):
                             new_entries = self._merge_delta(
                                 delta, curr_entries)
                     if new_entries != curr_entries:
-                        id_entries[m_fid] = new_entries
-            for fid,entries in mod_id_entries[modName].items():
-                masterEntries = id_entries.get(fid)
-                if masterEntries is None: continue
+                        master_id_entries[m_fid] = new_entries
+            for rid, entries in mod_id_entries[modName].items():
+                if (masterEntries := master_id_entries.get(rid)) is None:
+                    continue # new record defined in modName - no deltas
                 master_keys = {en_key(x) for x in masterEntries}
                 modkeys = {en_key(x) for x in entries}
                 remove_keys = master_keys - modkeys if can_remove else set()
@@ -170,7 +170,7 @@ class _AMerger(ImportPatcher):
                     changed_entries = []
                 final_add_entries = addEntries if can_add else []
                 if remove_keys or final_add_entries or changed_entries:
-                    id_deltas[fid].append((modName, remove_keys,
+                    id_deltas[rid].append((modName, remove_keys,
                                            final_add_entries, changed_entries))
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
@@ -229,15 +229,18 @@ class _AMerger(ImportPatcher):
         en_key = self._entry_key
         for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
+            csv_ids = self._csv_ids.get(curr_sig) or {}
             for rid, record in p_block.id_records.items():
                 deltas = id_deltas[rid]
-                if not deltas: continue
+                if not deltas or rid not in csv_ids: continue
                 wip_entries = getattr(record, sr_attr)
                 # Use sorted to preserve duplicates, but ignore order. This is
                 # safe because order does not matter for items.
                 old_entries = sorted(wip_entries, key=en_key)
                 for delta in deltas:
                     wip_entries = self._merge_delta(delta, wip_entries)
+                if rid in csv_ids:
+                    self._csv_parser._write_record(record, csv_ids[rid], None)
                 if old_entries != sorted(wip_entries, key=en_key):
                     setattr(record, sr_attr, wip_entries)
                     keep(rid, record)
@@ -301,7 +304,14 @@ class ImportRelationsPatcher(_AMerger):
     _remove_tag = 'Relations.Remove'
     _wanted_subrecord = {b'FACT': 'relations'}
     patcher_tags = {'Relations.Add', 'Relations.Change', 'Relations.Remove'}
-    # _csv_key = 'Relations' # TODO restore csv support
+    _csv_key = 'Relations'
+    _csv_parser = FactionRelations
+
+    def _parse_csv_sources(self):
+        filtered_dict = super()._parse_csv_sources()
+        for src_data in filtered_dict.values():
+            self.touched.update(src_data)
+        self._csv_ids = filtered_dict
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
