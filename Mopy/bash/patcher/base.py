@@ -218,11 +218,12 @@ class ListPatcher(APatcher):
         if s := (sig_data.keys() - rec_att):
             deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
                     f'{loaded_csvs}')
+            sig_data = {k: v for k, v in sig_data.items() if k in rec_att}
         ##: make sure k is always bytes and drop encode below
         earlier_loading = self.patchFile.all_plugins
         filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
-            k, d in sig_data.items() if (k in rec_att) and (v := {f: j for
-                f, j in d.items() if f.mod_fn in earlier_loading})}
+            k, d in sig_data.items() if (v := {f: j for f, j in d.items() if
+                                               f.mod_fn in earlier_loading})}
         return filtered_dict
 
     @property
