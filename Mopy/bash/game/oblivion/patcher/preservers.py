@@ -97,7 +97,6 @@ class ImportRoadsPatcher(ImporterPatcherConfig):
 
 #------------------------------------------------------------------------------
 class _ExSpecialList(CsvListPatcher, ExSpecial):
-    _csv_key = u'OVERRIDE'
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_file.pfile_aliases)
