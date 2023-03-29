@@ -72,6 +72,7 @@ def _fid_str(fid_tuple):
 class _TextParser(object):
     """Basic read/write csv functionality - ScriptText handles script files
     not csvs though."""
+    csv_suffix: str = None  # suffix of the csv files this parser reads/writes
 
     def _coerce_fid(self, modname, hex_fid):
         """Create a long formid from a unicode modname and a unicode
@@ -418,7 +419,7 @@ class _AParser(_HandleAliases):
         :param mod_info: The ModInfo instance to read from."""
         self._current_mod = mod_info.fn_key
         # Check if we need to read at all
-        a_types = self.all_types
+        a_types = self._parser_sigs
         if not a_types:
             # We need to unset _current_mod since we're no longer loading a mod
             self._current_mod = None
@@ -473,14 +474,9 @@ class _AParser(_HandleAliases):
 
     # Other API
     @property
-    def all_types(self):
-        """Returns a set of all record types that this parser requires."""
-        return set(self._fp_types) | set(self._sp_types)
-
-    @property
     def _parser_sigs(self):
         """Returns a set of all record types that this parser requires."""
-        return set(self._fp_types) | set(self._sp_types)
+        return {*self._fp_types, *self._sp_types}
 
 class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
@@ -493,6 +489,7 @@ class ActorFactions(_AParser):
     _key2_getter = itemgetter(2, 3)
     _target_array = 'factions'
     array_item_attrs = 'rank'
+    csv_suffix = '_Factions.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super().__init__(aliases_, called_from_patcher)
@@ -540,6 +537,7 @@ class ActorLevels(_HandleAliases):
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, fid_eid=True)
     _id_data_type: DefaultFNDict
+    csv_suffix = '_NPC_Levels.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ActorLevels, self).__init__(aliases_, called_from_patcher)
@@ -641,6 +639,7 @@ class EditorIds(_HandleAliases):
     _grup_index = 0
     _attr_dex = {u'eid': 3}
     _row_sorter = partial(_key_sort, by_value=True)
+    csv_suffix = '_Eids.csv'
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
                  badEidsList=None, called_from_patcher=False):
@@ -742,6 +741,7 @@ class FactionRelations(_AParser):
     array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
     _target_array = 'relations'
     _is_merger = True # the results of _read_record_sp will be merged
+    csv_suffix = '_Relations.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super().__init__(aliases_, called_from_patcher)
@@ -858,6 +858,7 @@ class FullNames(_HandleAliases):
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _row_sorter = partial(_key_sort, fid_eid=True)
+    csv_suffix = '_Names.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
@@ -895,6 +896,7 @@ class ItemStats(_HandleAliases):
     importing/exporting from/to mod/text file."""
     _nested_type = lambda: defaultdict(dict)
     _row_sorter = partial(_key_sort, fid_eid=True)
+    csv_suffix = '_Stats.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
@@ -1113,6 +1115,7 @@ class ItemPrices(_HandleAliases):
     _grup_index = 5
     _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
     _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
+    csv_suffix = '_Prices.csv'
 
     def __init__(self, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
@@ -1192,6 +1195,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
     _parser_sigs = [b'SGST']
+    csv_suffix = '_SigilStones.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(SigilStoneDetails, self).__init__(aliases_,
@@ -1214,6 +1218,7 @@ class SpellRecords(_UsesEffectsMixin):
                   'spell_flags')
     _parser_sigs = [b'SPEL']
     _attr_dex = None
+    csv_suffix = '_Spells.csv'
 
     def __init__(self, aliases_=None, detailed=False,
                  called_from_patcher=False):
@@ -1253,6 +1258,7 @@ class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
     from/to mod/text file."""
     _parser_sigs = [b'INGR']
+    csv_suffix = '_Ingredients.csv'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         # same as SGST apart from 'uses'
