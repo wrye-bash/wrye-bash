@@ -867,10 +867,9 @@ class MreCell(AMreCell):
         ##: The other games skip this in interiors - why / why not here?
         MelStruct(b'XCLC', ['2i', 'I'], 'posX', 'posY',
                   (_cell_land_flags, 'cell_land_flags')),
-        MelTruncatedStruct(b'XCLL',
-            [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'3f', u'3B',
-             u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B',
-             u's', u'3B', u's', u'f', u'3B', u's', u'3f', u'I'],
+        MelTruncatedStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f',
+            '2i', '3f', '3B', 's', '3B', 's', '3B', 's', '3B', 's', '3B', 's',
+            '3B', 's', '3B', 's', 'f', '3B', 's', '3f', 'I'],
             'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
             'directionalRed', 'directionalGreen', 'directionalBlue',
             'unused2', 'fogRed', 'fogGreen', 'fogBlue',

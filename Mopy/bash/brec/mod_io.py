@@ -73,7 +73,7 @@ class RecHeader(RecordHeader):
     __slots__ = ('flags1', 'fid', 'flags2')
 
     def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0,
-                 _entering_context=False, *, ins=None):
+                 *, _entering_context=False, ins=None):
         """Fixed size structure defining next record.
 
         :param recType: signature of record -TES4, GMST, KYWD, etc
@@ -236,7 +236,7 @@ def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
             return ChildrenGrupHeader(grup_size, FID(grup_label), grup_type,
                                       *rest)
         if grup_type in __exterior: # exterior cell (sub)block
-            yx_coords = __unpacker(__packer(grup_label)) # type: (int, int)
+            yx_coords: (int, int) = __unpacker(__packer(grup_label))
             return ExteriorGrupHeader(grup_size, yx_coords, grup_type, *rest)
         return GrupHeader(*args)
     #--Record

@@ -155,15 +155,13 @@ class _HeadedGrup(_AMobBase):
 
     def __init__(self, grup_head_or_end, load_f, ins):
         if self._grup_header_type:
-            # we need to store the _end_pos for _WorldChildren
+            # we need to store the _end_pos for WorldChildren
             self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size())
             self._grup_head = grup_head_or_end
-            self.size = grup_head_or_end.size # includes RecordHeader.rec_header_size
         else: # _ExteriorCells
             # just a guess for _ExteriorCells, it's the WorldChildren _end_pos
             self._end_pos = grup_head_or_end
             self._grup_head = None
-            self.size = None # we might want to set this
         if ins: # self._load_f is not yet defined
             needs_load = self._accepted_sigs & load_f.all_sigs
             if not load_f.keepAll and not needs_load:
@@ -207,7 +205,7 @@ class MobBase(_HeadedGrup):
         """Returns size (including size of any group headers)."""
         if self.grup_blob is None:
             raise NotImplementedError(f'{self!r} was not loaded')
-        return self.size
+        return self._grup_head.size
 
     def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
@@ -516,9 +514,9 @@ def _process_rec(sig, after=True, target=None):
                 del old[self._top_type if sig is None else sig]
                 # we decorate the final method in the inheritance chain, and we
                 # want to call the immediate ancestor - get that
-                parent_function = [f for t in type(self).__mro__ if
-                                   (f := t.__dict__.get(meth.__name__))][1]
-                parent_function(self, *args, **kwargs)
+                parent_method = [m for t in type(self).__mro__ if
+                                 (m := t.__dict__.get(meth.__name__))][1]
+                parent_method(self, *args, **kwargs)
             finally:
                 setattr(target_, '_stray_recs', {**recs, **old})
             # Now execute the logic for the excluded record
@@ -990,7 +988,7 @@ class MobCells(TopComplexGrup):
         """Return the total size of the block, but also compute dictionaries
         containing the sizes of the individual blocks/subblocks and the cell
         ids every block contains."""
-        self.size = 0
+        cell_blocks_size = 0
         self._block_subblock_cells = defaultdict(lambda: defaultdict(list))
         hsize = RecordHeader.rec_header_size
         # Every subblock has one record header
@@ -1006,8 +1004,8 @@ class MobCells(TopComplexGrup):
         for block, subs_sizes in self._block_subblock_cells.items():
             bsize = sum(self._block_subblock_sizes[block].values())
             self._block_sizes[block] += bsize # includes the sizes of headers
-            self.size += self._block_sizes[block]
-        return self.size
+            cell_blocks_size += self._block_sizes[block]
+        return cell_blocks_size
 
     def _load_rec_group(self, ins, end_pos):
         """Loads data from input stream. Called by load()."""

@@ -31,8 +31,6 @@ from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 
-_wrld_types = frozenset((b'CELL', b'WRLD'))
-
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
     """Retrieves a tuple containing a set of added and a set of deleted
@@ -818,7 +816,7 @@ class NvidiaFogFixer(object):
         self.fixedCells = set()
 
     def fix_fog(self, progress, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
-                __wrld_types=_wrld_types,
+                __wrld_types=frozenset((b'CELL', b'WRLD')), # FIXME - skip WRLD top group also?
                 __packer=structs_cache[u'12s2f2l2f'].pack):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.fsize)
@@ -838,8 +836,8 @@ class NvidiaFogFixer(object):
                     _rsig = header.recType
                     out.write(header.pack_head())
                     if _rsig == b'GRUP':
-                        if header.groupType != 0: #--Ignore sub-groups
-                            pass
+                        if header.groupType != 0:
+                            pass # treat CELL/WRLD sub-groups record by record
                         elif header.label not in __wrld_types:
                             copy(header.blob_size())
                     #--Handle cells

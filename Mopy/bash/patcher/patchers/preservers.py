@@ -403,7 +403,7 @@ class ImportTextPatcher(APreserver):
 #------------------------------------------------------------------------------
 ##: absorbing this one will be hard - or not :P
 class ImportCellsPatcher(ImportPatcher):
-    logMsg = '\n=== ' + _('Cells/Worlds Patched')
+    logMsg = '\n=== ' + _('Cells Patched') + ': %d'
     _read_sigs = (b'CELL', b'WRLD')
     patcher_tags = set(bush.game.cellRecAttrs)
 
@@ -515,10 +515,7 @@ class ImportCellsPatcher(ImportPatcher):
         self.cellData.clear()
         self._patchLog(log, count)
 
-    def _plog(self,log,count): # type 1 but for logMsg % sum(...)
-        log(self.__class__.logMsg)
-        for srcMod in load_order.get_ordered(count):
-            log(f'* {srcMod}: {count[srcMod]:d}')
+    def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 #------------------------------------------------------------------------------
 class ImportGraphicsPatcher(APreserver):
