@@ -103,10 +103,10 @@ class ConvertersData(DataDict):
             present_bcfs = [*map(converters_dir.join, bcfs_list)]
             for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
                 # on first run it needs to repopulate the bcfPath_sizeCrcDate
-                size, crc, mod_time = self.bcfPath_sizeCrcDate.get(bcfPath, (
-                    None, None, None))
+                cached_size, crc, mod_time = self.bcfPath_sizeCrcDate.get(
+                    bcfPath, (None, None, None))
                 size_mtime = bcfPath.size_mtime()
-                if crc is None or (size, mod_time) != size_mtime:
+                if crc is None or (cached_size, mod_time) != size_mtime:
                     crc_changed = crc != (crc := bcfPath.crc)
                     self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
                                                          size_mtime[1])

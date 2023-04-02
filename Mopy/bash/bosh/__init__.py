@@ -2381,13 +2381,13 @@ class ModInfos(FileInfos):
         # first to account for mergeability of their masters
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
-            size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
+            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
             # if ESL bit was flipped size won't change, so check this first
             if modInfo.is_esl():
                 # Don't mark ESLs as ESL-capable (duh) - modInfo must have its
                 # header set
                 name_mergeInfo[fn_mod] = (modInfo.fsize, False)
-            elif size == modInfo.fsize:
+            elif cached_size == modInfo.fsize:
                 if canMerge: self.mergeable.add(fn_mod)
             else:
                 newMods.append(fn_mod)

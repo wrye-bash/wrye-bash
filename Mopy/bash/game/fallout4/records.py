@@ -1345,7 +1345,7 @@ class MreFlst(AMreFlst):
 #------------------------------------------------------------------------------
 ##: It should be possible to absorb this in MelArray, see MelWthrColorsFnv for
 # a plan of attack. But note that if we have form version info, we should be
-# able to pass that in too, since the other algorithm is ambigous once a
+# able to pass that in too, since the other algorithm is ambiguous once a
 # subrecord of size lcm(new, old) is reached - MelFVDArray (form version
 # dependent)?
 class MelFurnMarkerParams(MelArray):

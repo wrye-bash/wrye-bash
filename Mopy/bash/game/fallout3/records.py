@@ -1398,11 +1398,11 @@ class MreImgs(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            152: MelStruct(b'DNAM', _dnam_fmts + ['B', '3s'],
-                *(_dnam_common + ['unknown1', 'unused1', 'unused2', 'unused3',
-                                  (_dnam_flags, 'dnam_flags'), 'unused4'])),
-            148: MelStruct(b'DNAM', _dnam_fmts, *(_dnam_common + [
-                'unknown1', 'unused1', 'unused2', 'unused3'])),
+            152: MelStruct(b'DNAM', [*_dnam_fmts, 'B', '3s'], *_dnam_common,
+                           'unknown1', 'unused1', 'unused2', 'unused3',
+                           (_dnam_flags, 'dnam_flags'), 'unused4'),
+            148: MelStruct(b'DNAM', _dnam_fmts,  *_dnam_common,
+                'unknown1', 'unused1', 'unused2', 'unused3'),
             132: MelStruct(b'DNAM', ['33f'], *_dnam_common),
         }, decider=SizeDecider()),
     )

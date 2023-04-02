@@ -72,6 +72,11 @@ class _AMobBase:
 class _RecordsGrup(_AMobBase):
     """Record group unpacked into records."""
 
+    def _group_element(self, header, ins,
+                       end_pos) -> 'MreRecord | _ComplexRec | None':
+        rec_class = self._load_f.sig_to_type[header.recType]
+        return None if rec_class is None else rec_class(header, ins)
+
     def iter_records(self, *, skip_flagged=True):
         """Flattens the structure of this record block into a linear sequence
         of records. Works as an iterator for memory reasons.
@@ -144,7 +149,7 @@ class _RecordsGrup(_AMobBase):
 
 class _HeadedGrup(_AMobBase):
     """Grup headed by a header - header might be None in the case of
-    ExtCellChildren but the handling of this is done more economically here."""
+    _ExteriorCells but the handling of this is done more economically here."""
     _grup_header_type: type[GrupHeader] | None = None
     _accepted_sigs = {b'OVERRIDE'} # set in PatchGame._import_records
 
@@ -154,10 +159,11 @@ class _HeadedGrup(_AMobBase):
             self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size())
             self._grup_head = grup_head_or_end
             self.size = grup_head_or_end.size # includes RecordHeader.rec_header_size
-        else:
-            self._end_pos = grup_head_or_end # yep
+        else: # _ExteriorCells
+            # just a guess for _ExteriorCells, it's the WorldChildren _end_pos
+            self._end_pos = grup_head_or_end
             self._grup_head = None
-            self.size = ins and (self._end_pos - ins.tell())
+            self.size = None # we might want to set this
         if ins: # self._load_f is not yet defined
             needs_load = self._accepted_sigs & load_f.all_sigs
             if not load_f.keepAll and not needs_load:
@@ -263,10 +269,6 @@ class MobObjects(_RecordsGrup, _HeadedGrup):
                     not j.should_skip()) if skip_flagged else it
 
     # MobObjects API - makes no sense for (most) _Nested ----------------------
-    def _group_element(self, header, ins, end_pos) -> 'MreRecord':
-        rec_class = self._load_f.sig_to_type[header.recType]
-        return None if rec_class is None else rec_class(header, ins)
-
     def setRecord(self, record, do_copy=True, _loading=False):
         """Adds record to self.id_records."""
         el_key = record.group_key()
@@ -462,24 +464,33 @@ class _Nested(_RecordsGrup):
                 if (gt := header.groupType) in self._marker_groups:
                     ins.rewind() # either next Top Grup or a cell block header
                     break
-                if gt in subgroups_loaded:
+                ##: we might want to merge other subgroups - we need a more
+                # complex _load_mobs override
+                if gt in subgroups_loaded and gt not in \
+                        WorldChildren._mob_objects_type:
                     self._load_err(f'Duplicate subgroup type {gt} in {self}')
                 self._load_mobs(gt, header, ins, master_rec=master_rec)
                 subgroups_loaded.add(gt)
             else:
+                # sometimes the ROAD record is *after* _ExteriorCells
+                if isinstance(self, _ExtCell):
+                    if head_sig in WorldChildren._extra_records:
+                        ins.rewind()
+                        return
                 self._load_err(f'Unexpected {sig_to_str(head_sig)} record in '
                                f'{self} group.')
 
     def _load_mobs(self, gt, header, ins, **kwargs):
+        loaded_mobs = self._mob_objects.get(gt)
         try:
-            self._mob_objects[gt] = self._mob_objects_type[gt](header,
-                self._load_f, ins, **kwargs)
+            mob = self._mob_objects_type[gt](header, self._load_f, ins,
+                                             **kwargs)
+            if loaded_mobs is None:
+                self._mob_objects[gt] = mob
+            else:
+                loaded_mobs.id_records.update(mob.id_records)
         except KeyError:
             self._load_err(f'Sub {gt} in {self}')
-
-    def _group_element(self, header, ins, end_pos) -> 'MreRecord':
-        rec_class = self._load_f.sig_to_type[header.recType]
-        return None if rec_class is None else rec_class(header, ins)
 
     def dump(self, out): # No _sort_group
         for r in self._stray_recs.values():
@@ -957,9 +968,7 @@ class MobCells(TopComplexGrup):
     """A block containing cells. It's an anomalous MobObjects, as it may not
     have a header (exterior WRLD cells) - not always a TopComplexGrup either
     but most of the behavior (the non header dependent) is identical.
-
     Note that "blocks" here only roughly match the file block structure.
-
     "Bsb" is a tuple of the file (block,subblock) labels. For interior
     cells, bsbs are tuples of two numbers, while for exterior cells, bsb labels
     are tuples of grid tuples."""
@@ -1012,6 +1021,11 @@ class MobCells(TopComplexGrup):
                 cell_block = self._group_element(self._load_f, ins, end_pos)
                 if endBlockPos and ((pos := insTell()) > endBlockPos or
                                     pos > endSubblockPos):
+                    # sometimes the persistent cell is *after* _ExteriorCells
+                    if isinstance(self, _ExteriorCells):
+                        if cell_block.master_record.flags1.persistent:
+                            ins.seek(endBlockPos)
+                            return
                     self._load_err(f'{cell_block.master_record!r} outside of '
                                    f'block or subblock.')
                 self.setRecord(cell_block, _loading=True)
@@ -1025,6 +1039,11 @@ class MobCells(TopComplexGrup):
                     self._load_err(f'Unexpected subgroup {gt:d} in '
                                    f'{self} group.')
             else:
+                # sometimes the ROAD record is *after* _ExteriorCells
+                if isinstance(self, _ExteriorCells):
+                    if _rsig in WorldChildren._extra_records:
+                        ins.rewind()
+                        return
                 self._load_err(f'Unexpected {sig_to_str(_rsig)} record in '
                                f'{self} group.')
 
@@ -1116,7 +1135,7 @@ class WorldChildren(CellChildren):
 
     def _load_mobs(self, gt, header, ins, **kwargs):
         ins.rewind() # to reread (0, 0) block header - which we discard below
-        super()._load_mobs(gt, self._end_pos, ins, **kwargs)
+        super()._load_mobs(gt, self._end_pos, ins, **kwargs) # we pass _end_pos
 
     def _group_element(self, header, ins, end_pos) -> 'MreRecord':
         if header.recType == b'CELL': # loading the persistent Cell

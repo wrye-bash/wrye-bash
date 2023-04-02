@@ -872,16 +872,13 @@ class MelUnion(MelBase):
         # Ask each of our elements, and remember the ones where we'd have to
         # actually forward the mapFids call. We can't just blindly call
         # mapFids, since MelBase.mapFids is abstract.
-        for element in self.element_mapping.values():
+        elements = self.element_mapping.values()
+        if self.fallback: elements = self.fallback, *elements
+        for element in elements:
             temp_elements = set()
             element.hasFids(temp_elements)
             if temp_elements:
                 self.fid_elements.add(element)
-        if self.fallback:
-            temp_elements = set()
-            self.fallback.hasFids(temp_elements)
-            if temp_elements:
-                self.fid_elements.add(self.fallback)
         if self.fid_elements: formElements.add(self)
 
     def setDefault(self, record):

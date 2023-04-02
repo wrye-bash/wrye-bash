@@ -779,7 +779,7 @@ class Installer(ListInfo):
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
-        for full,size,crc in self.fileSizeCrcs:
+        for full, cached_size, crc in self.fileSizeCrcs:
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
             file_relative = full[rootIdex:]
@@ -871,8 +871,8 @@ class Installer(ListInfo):
                 continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
-                if Installer._executables_process[fileExt](
-                        checkOBSE, fileLower, full, archiveRoot, size, crc):
+                if Installer._executables_process[fileExt](checkOBSE,
+                        fileLower, full, archiveRoot, cached_size, crc):
                     continue
             #--Noisy skips
             if fileLower in bethFiles:
@@ -898,9 +898,9 @@ class Installer(ListInfo):
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.track(bass.dirs[u'mods'].join(dest))
             #--Save
-            data_sizeCrc[dest] = (size,crc)
+            data_sizeCrc[dest] = (cached_size, crc)
             dest_src[dest] = full
-            unSize += size
+            unSize += cached_size
         self.unSize = unSize
         (self.ci_dest_sizeCrc, old_sizeCrc) = (data_sizeCrc, self.ci_dest_sizeCrc)
         #--Update dirty?
@@ -922,7 +922,7 @@ class Installer(ListInfo):
         dataDirsPlus = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
-        for full, size, crc in self.fileSizeCrcs:
+        for full, _cached_size, crc in self.fileSizeCrcs:
             fileLower = full.lower()
             if fileLower.startswith(skips_start): continue
             frags = full.split(_os_sep)
@@ -1029,7 +1029,7 @@ class Installer(ListInfo):
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
         root_path = self.extras_dict.get(u'root_path', u'')
-        for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
+        for full, _cached_size, crc in self.fileSizeCrcs:#break if type=1 else churn on
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
                 full = full[self.fileRootIdex:]
@@ -1221,7 +1221,7 @@ class Installer(ListInfo):
         join_data_dir = bass.dirs[u'mods'].join
         bsa_ext = bush.game.Bsa.bsa_extension
         for dest, src in dest_src.items():
-            size,crc = data_sizeCrc[dest]
+            dest_size, crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
             if (dest_fname := FName('%s' % dest)) in installer_plugins:
@@ -1230,7 +1230,7 @@ class Installer(ListInfo):
                 inis.add(FName(ini_name))
             elif dest_fname.fn_ext == bsa_ext:
                 bsas.add(dest_fname)
-            data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
+            data_sizeCrcDate_update[dest] = (dest_size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
             sources_dests[srcDirJoin(src)] = join_data_dir(norm_ghostGet(dest, dest))
@@ -1635,14 +1635,14 @@ class InstallerProject(Installer):
                 rpFile = os.path.join(rsDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 lstat = os.lstat(asFile)
-                size, date = lstat.st_size, lstat.st_mtime
+                st_size, date = lstat.st_size, lstat.st_mtime
                 max_mtime = max_mtime if max_mtime >= date else date
                 oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
-                if size == oSize and date == oDate:
+                if st_size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 else:
-                    pending[rpFile] = (size, oCrc, date, asFile)
-                    pending_size += size
+                    pending[rpFile] = (st_size, oCrc, date, asFile)
+                    pending_size += st_size
         Installer.final_update(new_sizeCrcDate, self.src_sizeCrcDate, pending,
                                pending_size, progress, recalculate_all_crcs,
                                rootName)
@@ -1683,11 +1683,11 @@ class InstallerProject(Installer):
 ##        cumDate = 0
         cumSize = 0
         fileSizeCrcs = self.fileSizeCrcs = []
-        for path, (size, crc, date) in self.src_sizeCrcDate.items():
-            fileSizeCrcs.append((path, size, crc))
+        for path, (src_size, crc, date) in self.src_sizeCrcDate.items():
+            fileSizeCrcs.append((path, src_size, crc))
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
-            cumSize += size
+            cumSize += src_size
         self.fsize = cumSize
         self.crc = cumCRC & 0xFFFFFFFF
         self.project_refreshed = True
@@ -2352,8 +2352,8 @@ class InstallersData(DataStore):
         for d in deleted_or_pending: self.data_sizeCrcDate.pop(d, None)
         Installer.calc_crcs(pending, pending_size, bass.dirs[u'mods'].stail,
                             new_sizeCrcDate, progress)
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.items():
-            self.data_sizeCrcDate[rpFile] = (size, crc, date)
+        for rpFile, (src_size, crc, date, _asFile) in new_sizeCrcDate.items():
+            self.data_sizeCrcDate[rpFile] = (src_size, crc, date)
 
     def update_for_overridden_skips(self, dont_skip=None, progress=None):
         if dont_skip is not None:

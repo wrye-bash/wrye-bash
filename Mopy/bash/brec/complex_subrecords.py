@@ -303,7 +303,6 @@ class MelConditionsFo3(MelGroups):
         super().__init__('conditions', _MelCtdaFo3(suffix_fmt=['2I'],
             suffix_elements=['runOn', 'reference'], old_suffix_fmts={'I', ''}))
 
-
 # API - TES5 and onwards ------------------------------------------------------
 class MelConditionList(MelGroups):
     """A list of conditions without a counter. Applies to Skyrim and newer

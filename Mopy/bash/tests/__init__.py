@@ -32,9 +32,6 @@ import traceback
 
 import wx as _wx
 
-##: Is this bolt import needed for some reason or is it unused?
-from .. import bolt
-
 # set in _emulate_startup used in set_game - we need to init translations
 # before importing
 bush = None
