@@ -164,7 +164,7 @@ class _MelDistributor(MelNull):
 
     def getSlotsUsed(self):
         # _loader_state is the current state of our descent into the
-        # distributor config, this is a tuple of strings marking the
+        # distributor config, this is a list of strings marking the
         # subrecords we've visited.
         # _seq_index is only used when processing a sequential and marks
         # the index where we left off in the last load_mel

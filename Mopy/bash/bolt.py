@@ -724,17 +724,17 @@ class _AttrGettersCache(dict):
 attrgetter_cache = _AttrGettersCache()
 
 # noinspection PyDefaultArgument
-def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
+def setattr_deep(obj, attr, value, *, __attrgetters=attrgetter_cache,
         __split_cache={}):
     try:
         parent_attr, leaf_attr = __split_cache[attr]
     except KeyError:
-        dot_dex = attr.rfind(u'.')
+        dot_dex = attr.rfind('.')
         if dot_dex > 0:
             parent_attr = attr[:dot_dex]
             leaf_attr = attr[dot_dex + 1:]
         else:
-            parent_attr = u''
+            parent_attr = ''
             leaf_attr = attr
         __split_cache[attr] = parent_attr, leaf_attr
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
@@ -762,9 +762,7 @@ def GPath(str_or_uni: None) -> None: ...
 @overload
 def GPath(str_or_uni: str | os.PathLike[str]) -> Path: ...
 def GPath(str_or_uni: str | os.PathLike[str] | None) -> Path | None:
-    """Path factory and cache.
-
-    :rtype: Path"""
+    """Path factory and cache."""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
     if not str_or_uni: return Path('') # needed, os.path.normpath('') = '.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
@@ -2746,7 +2744,7 @@ class RecPath(object):
     complex (e.g. contains repeated or optional attributes). Does quite a bit
     of validation and preprocessing, making it much faster and safer than a
     'naive' solution. See the wiki page '[dev] Record Paths' for a full
-    overview of syntax and usage. Curent implementation supports paths to
+    overview of syntax and usage. Current implementation supports paths to
     record attributes of type str, using None to signal the absence of the
     attribute."""
     __slots__ = ('_root_subpath',)

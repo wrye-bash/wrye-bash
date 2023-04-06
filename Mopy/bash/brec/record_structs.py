@@ -182,13 +182,12 @@ class MelSet(object):
         all_slots = set()
         for element in self.elements:
             element_slots = set(element.getSlotsUsed())
-            duplicate_slots = sorted(all_slots & element_slots)
-            if duplicate_slots:
+            if duplicate_slots := (all_slots & element_slots):
                 raise SyntaxError(
-                    u'Duplicate element attributes in record type %s: %s. '
-                    u'This most likely points at an attribute collision, make '
-                    u'sure to choose unique attribute names!' % (
-                        curr_rec_sig, repr(duplicate_slots)))
+                    f'Duplicate element attributes in record type '
+                    f'{curr_rec_sig}: {sorted(duplicate_slots)}. This '
+                    f'most likely points at an attribute collision, '
+                    f'make sure to choose unique attribute names!')
             all_slots.update(element_slots)
 
     def getDefault(self,attr):

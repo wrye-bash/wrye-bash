@@ -367,19 +367,16 @@ class MelObme(MelStruct):
                  extra_contents=None, reserved_byte_count=28):
         """Initializes a MelObme instance. Supports customization for the
         variations that exist for effects subrecords and MGEF records."""
-        if extra_format is None:
-            extra_format = []
-        if extra_contents is None:
-            extra_contents = []
         # Always begins with record version and OBME version
         # obme_record_version is almost always 0 in plugins using OBME
         struct_contents = ['obme_record_version', 'obme_version_beta',
                            'obme_version_minor', 'obme_version_major']
         # Then comes any extra info placed in the middle
-        struct_contents += extra_contents
+        if extra_contents is not None:
+            struct_contents += extra_contents
         # Always ends with a statically sized reserved byte array
         struct_contents += ['obme_unused']
-        str_fmts = ['4B', *extra_format, f'{reserved_byte_count}s']
+        str_fmts = ['4B', *(extra_format or []), f'{reserved_byte_count}s']
         super().__init__(struct_sig, str_fmts, *struct_contents)
 
 #------------------------------------------------------------------------------
@@ -407,7 +404,7 @@ class _MelMgefCode(MelStruct):
         """"""
         super().__init__(mel_sig, struct_formats, *elements)
         self._mgef_code_attr = mgef_code_attr
-        self._mgef_int_attr = f'_{self._mgef_code_attr}_as_int'
+        self._mgef_int_attr = f'_{mgef_code_attr}_as_int'
         self._emulated_attr = emulated_attr
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -418,8 +415,9 @@ class _MelMgefCode(MelStruct):
             setattr(record, self._emulated_attr, bolt.decoder(mgef_code[:4],
                 encoding=bolt.pluginEncoding,
                 avoidEncodings=('utf8', 'utf-8')))
-        setattr(record, self._mgef_int_attr, int_unpacker(mgef_code)[0])
-        if getattr(record, self._mgef_int_attr) >= 0x80000000:
+        setattr(record, self._mgef_int_attr,
+                mgef_int := int_unpacker(mgef_code)[0])
+        if mgef_int >= 0x80000000:
             # This is actually an OBME FormID, not a normal MGEF code. Note
             # that OBME stores them as big endian for some godforsaken reason
             setattr(record, self._mgef_code_attr,

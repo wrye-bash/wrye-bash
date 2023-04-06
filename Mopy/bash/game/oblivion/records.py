@@ -411,9 +411,9 @@ class MreHasEffects(MelRecord):
             se.full = sename
             se.script_fid = _coerce_fid(semod, seobj)
             se.school = seschool
-            sevisuals = int_or_none(sevisual) #OBME not
-            # supported (support requires adding a mod/objectid format to
-            # the csv, this assumes visual MGEFCode is raw)
+            # OBME not supported (support requires adding a mod/objectid format
+            # to the csv, this assumes visual MGEFCode is raw)
+            sevisuals = int_or_none(sevisual)
             if sevisuals is None: # it was no int try to read unicode MGEF Code
                 sevisuals = str_or_none(sevisual)
                 sevisuals = str_to_sig(sevisuals) if sevisuals else null4
@@ -2285,9 +2285,8 @@ class MreTree(MelRecord):
         MelEdid(),
         MelModel(),
         MelIcon(),
-        MelSorted(MelArray('speedTree',
-            MelUInt32(b'SNAM', 'seed'),
-        ), sort_by_attrs='seed'),
+        MelSorted(MelArray('speedTree', MelUInt32(b'SNAM', 'seed')),
+                  sort_by_attrs='seed'),
         MelStruct(b'CNAM', ['5f', 'i', '2f'], 'curvature', 'minAngle',
                   'maxAngle', 'branchDim', 'leafDim', 'shadowRadius',
                   'rockSpeed', 'rustleSpeed'),

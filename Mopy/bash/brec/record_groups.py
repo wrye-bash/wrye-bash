@@ -553,7 +553,7 @@ class _ComplexRec(_Nested):
                     super(_ComplexRec, prev_wrld)._load_rec_group(
                         ins, end_pos, prev_wrld.master_record)
                     return
-                header.skip_blob()
+                header.skip_blob(ins)
                 global _orphans_skipped
                 _orphans_skipped += 1
                 return
@@ -1203,7 +1203,7 @@ class MobWorld(_ComplexRec):
                     super(MobWorld, wrld_block)._load_mobs(
                         gt, header, ins, master_rec=wrld_block.master_record)
                     return
-                header.skip_blob()
+                header.skip_blob(ins)
                 global _orphans_skipped
                 _orphans_skipped += 1
                 return
