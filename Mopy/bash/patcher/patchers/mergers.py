@@ -32,7 +32,7 @@ from itertools import chain
 from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
 from ...bolt import FName
-from ...exception import BoltError, ModSigMismatchError
+from ...exception import ModSigMismatchError, BPConfigError
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
@@ -54,16 +54,13 @@ class _AMerger(ImportPatcher):
     _wanted_subrecord = {}
     # We want inactives since we process our sources in scanModFiles
     _scan_inactive = True
+    _filter_in_patch = True
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_AMerger, self).__init__(p_name, p_file, p_sources)
-        self.id_deltas = defaultdict(list)
-        merger_masters = set(chain.from_iterable(
-            p_file.p_file_minfos.recurse_masters(srcMod)
-            for srcMod in self.srcs))
-        self._masters_and_srcs = merger_masters | set(self.srcs)
         # Set of record signatures that are actually provided by sources
         self._present_sigs = set()
+        super(_AMerger, self).__init__(p_name, p_file, p_sources)
+        self.id_deltas = defaultdict(list)
         self.mod_id_entries = {}
         self.touched = set()
         self.inventOnlyMods = {x for x in self.srcs if
@@ -78,22 +75,34 @@ class _AMerger(ImportPatcher):
 
     @property
     def _read_sigs(self):
-        return self._present_sigs
+        # isActive and no _present_sigs means we are in initData
+        return (self._present_sigs if self._present_sigs
+                else self._wanted_subrecord) if self.isActive else set()
+
+    def _process_sources(self, p_sources, p_file):
+        """We need to scan the masters recursively - add to p_file read
+        factories."""
+        sup = super()._process_sources(p_sources, p_file)
+        self._masters_and_srcs = {*chain.from_iterable( # merger_masters
+            p_file.p_file_minfos.recurse_masters(srcMod) for srcMod in
+            self.srcs), *self.srcs}
+        # self._update_patcher_factories(p_file, self._masters_and_srcs)
+        return sup
 
     def initData(self,progress):
-        if not self.isActive or not self.srcs: return
-        # set loadFactory attribute to be used by _mod_file_read
-        self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
+        if not self.isActive: return
         progress.setFull(len(self.srcs))
-        minfs = self.patchFile.all_plugins
-        for index,srcMod in enumerate(self.srcs):
-            srcFile = self._filtered_mod_read(minfs[srcMod], self.patchFile)
+        present_sigs = set()
+        for srcMod in self.srcs:
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             for s, block in srcFile.iter_tops(self._wanted_subrecord):
-                self._present_sigs.add(s)
+                present_sigs.add(s)
                 for rid, _record in block.iter_present_records():
-                    if rid.mod_fn not in minfs: continue # or break filter mods
+                    if rid.mod_fn not in self.patchFile.all_plugins:
+                        continue  # or break filter mods
                     self.touched.add(rid)
             progress.plus()
+        self._present_sigs = present_sigs
         self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
@@ -104,7 +113,7 @@ class _AMerger(ImportPatcher):
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
-            for curr_sig, block in modFile.iter_tops(self._present_sigs):
+            for curr_sig, block in modFile.iter_tops(self._read_sigs):
                 sr_attr = self._wanted_subrecord[curr_sig]
                 for rid, record in block.iter_present_records():
                     if rid in touched:
@@ -115,7 +124,7 @@ class _AMerger(ImportPatcher):
         #--Source mod?
         if modName in self.srcs:
             # The applied tags limit what data we're going to collect
-            applied_tags = modFile.fileInfo.getBashTags()
+            applied_tags = self.patchFile.all_tags[modName]
             can_add = self._add_tag in applied_tags
             can_change = self._change_tag in applied_tags
             can_remove = self._remove_tag in applied_tags
@@ -151,11 +160,11 @@ class _AMerger(ImportPatcher):
         if modFile.fileInfo.fn_key not in self.inventOnlyMods:
             super().scanModFile(modFile, progress, scan_sigs)
 
-    def _add_to_patch(self, rid, record, top_sig):
+    @property
+    def _keep_ids(self):
         # Copy the defining version of each record into the BP - updating it is
         # handled by mergeModFile/update_patch_records_from_mod
-        return rid in self.touched and rid not in self.patchFile.tops[
-            top_sig].id_records
+        return self.touched
 
     def buildPatch(self,log,progress):
         if not self.isActive: return
@@ -163,9 +172,9 @@ class _AMerger(ImportPatcher):
         id_deltas = self.id_deltas
         mod_count = Counter()
         en_key = self._entry_key
-        for curr_sig in self._present_sigs:
+        for curr_sig, p_block in self.patchFile.iter_tops(self._read_sigs):
             sr_attr = self._wanted_subrecord[curr_sig]
-            for rid, record in self.patchFile.tops[curr_sig].id_records.items():
+            for rid, record in p_block.id_records.items():
                 deltas = id_deltas[rid]
                 if not deltas: continue
                 # Use sorted to preserve duplicates, but ignore order. This is
@@ -224,6 +233,8 @@ class ImportActorsPerksPatcher(_AMerger):
     _change_tag = u'Actors.Perks.Change'
     _remove_tag = u'Actors.Perks.Remove'
     _wanted_subrecord = {x: u'perks' for x in bush.game.actor_types}
+    patcher_tags = {'Actors.Perks.Add', 'Actors.Perks.Change',
+                    'Actors.Perks.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.perk
@@ -236,6 +247,7 @@ class ImportInventoryPatcher(_AMerger):
     _remove_tag = u'Invent.Remove'
     _wanted_subrecord = {x: u'items' for x in bush.game.inventoryTypes}
     iiMode = True
+    patcher_tags = {'Invent.Add', 'Invent.Change', 'Invent.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.item
@@ -246,6 +258,7 @@ class ImportOutfitsPatcher(_AMerger):
     _add_tag = u'Outfits.Add'
     _remove_tag = u'Outfits.Remove'
     _wanted_subrecord = {b'OTFT': u'items'}
+    patcher_tags = {'Outfits.Add', 'Outfits.Remove'}
 
 #------------------------------------------------------------------------------
 class ImportRacesRelationsPatcher(_AMerger):
@@ -254,6 +267,8 @@ class ImportRacesRelationsPatcher(_AMerger):
     _change_tag = u'R.Relations.Change'
     _remove_tag = u'R.Relations.Remove'
     _wanted_subrecord = {b'RACE': u'relations'}
+    patcher_tags = {'R.Relations.Add', 'R.Relations.Change',
+                    'R.Relations.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
@@ -265,6 +280,8 @@ class ImportRelationsPatcher(_AMerger):
     _change_tag = u'Relations.Change'
     _remove_tag = u'Relations.Remove'
     _wanted_subrecord = {b'FACT': u'relations'}
+    patcher_tags = {'Relations.Add', 'Relations.Change', 'Relations.Remove'}
+    # _csv_key = 'Relations' # TODO restore csv support
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.faction
@@ -275,6 +292,7 @@ class ImportRelationsPatcher(_AMerger):
 class ImportActorsAIPackagesPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'AI Package Lists Changed') + u': %d'
     _read_sigs = bush.game.actor_types
+    patcher_tags = {'Actors.AIPackages', 'Actors.AIPackagesForceAdd'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
@@ -309,32 +327,21 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        read_sigs = self._read_sigs
-        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
         mer_del = self.id_merged_deleted
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
-            if not (srcInfo := minfs.get(srcMod)):
-                continue
             tempData = {}
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
-            force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
+            force_add = 'Actors.AIPackagesForceAdd' in \
+                        self.patchFile.all_tags[srcMod]
             mod_tops = set()
-            for rsig, block in srcFile.iter_tops(read_sigs):
+            for rsig, block in srcFile.iter_tops(self._read_sigs):
                 mod_tops.add(rsig)
                 for rid, record in block.iter_present_records():
                     tempData[rid] = record.aiPackages
-            for master in reversed(srcInfo.masterNames):
-                if master not in minfs: continue # or break filter mods
-                try:
-                    masterFile = cachedMasters[master]
-                except KeyError:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+            for master in reversed(srcFile.fileInfo.masterNames):
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
                         if rid not in tempData: continue
@@ -384,9 +391,12 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                                     pkg, recordData)
             progress.plus()
 
+    @property
+    def _keep_ids(self):
+        return self.id_merged_deleted
+
     def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.id_merged_deleted and record.aiPackages != \
-            self.id_merged_deleted[rid]['merged']
+        return record.aiPackages != self.id_merged_deleted[rid]['merged']
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -416,6 +426,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         _read_sigs = _actor_sigs + _spel_sigs
     else:
         _read_sigs = _actor_sigs
+    patcher_tags = {'Actors.Spells', 'Actors.SpellsForceAdd'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
@@ -423,10 +434,13 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         self._id_merged_deleted = {}
         # long_fid -> rec_sig
         self._spel_type = {}
+        self._indexed_mods = set()
 
     def _index_spells(self, modFile):
         """Helper method for indexing SPEL and LVSP types during initData."""
-        if bush.game.Esp.sort_lvsp_after_spel:
+        if bush.game.Esp.sort_lvsp_after_spel and \
+                modFile.fileInfo.fn_key not in self._indexed_mods:
+            self._indexed_mods.add(modFile.fileInfo.fn_key)
             spel_type = self._spel_type
             for spel_top_sig, block in modFile.iter_tops(self._spel_sigs):
                 for rid, record in block.iter_present_records():
@@ -438,34 +452,23 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        actor_sigs = self._actor_sigs
-        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
         mer_del = self._id_merged_deleted
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
             tempData = {}
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             self._index_spells(srcFile)
-            force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
+            force_add = 'Actors.SpellsForceAdd' in \
+                        self.patchFile.all_tags[srcMod]
             mod_tops = set()
-            for rsig, block in srcFile.iter_tops(actor_sigs):
+            for rsig, block in srcFile.iter_tops(self._actor_sigs):
                 mod_tops.add(rsig)
                 for rid, record in block.iter_present_records():
                     tempData[rid] = record.spells
-            for master in reversed(srcInfo.masterNames):
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    self._index_spells(masterFile)
-                    cachedMasters[master] = masterFile
+            for master in reversed(srcFile.fileInfo.masterNames):
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
+                self._index_spells(masterFile)
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
                         if rid not in tempData: continue
@@ -545,9 +548,12 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         # we then need to sort, so we have to index them here
         self._index_spells(modFile)
 
+    @property
+    def _keep_ids(self):
+        return self._id_merged_deleted
+
     def _add_to_patch(self, rid, record, top_sig):
-        return rid in self._id_merged_deleted and record.spells != \
-            self._id_merged_deleted[rid]['merged']
+        return record.spells != self._id_merged_deleted[rid]['merged']
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -564,12 +570,11 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 # Second pass: sort LVSP after SPEL
                 spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
             return spells_ret
-        for top_grup_sig in self._actor_sigs:
-            for rid, record in self.patchFile.tops[top_grup_sig].id_records.items():
+        for top_grup_sig, block in self.patchFile.iter_tops(self._actor_sigs):
+            for rid, record in block.id_records.items():
                 if rid not in merged_deleted:
                     continue
-                merged_spells = sorted_spells(
-                    merged_deleted[rid]['merged'])
+                merged_spells = sorted_spells(merged_deleted[rid]['merged'])
                 if sorted_spells(record.spells) != merged_spells:
                     record.spells = merged_spells
                     mod_count[rid.mod_fn] += keep(rid, record)
@@ -730,27 +735,25 @@ class _AListsMerger(ListPatcher):
         for leveler in self.levelers:
             log(u'* ' + self.annotate_plugin(leveler))
         # Save to patch file
-        for list_type_sig, list_label in self._sig_to_label.items():
-            if list_type_sig not in self._read_sigs: continue
+        sig_label = {k: v for k, v in self._sig_to_label.items() if
+                     k in self._read_sigs}
+        for list_type_sig, list_label in sig_label.items():
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
-            patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
             for stored_list in sorted(stored_lists.values(),
                                       key=lambda l: l.eid or ''):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 if keep(list_fid, stored_list):
-                    patch_block.setRecord(stored_lists[list_fid],
-                                          do_copy=False)
+                    self.patchFile.tops[list_type_sig].setRecord(
+                        stored_lists[list_fid], do_copy=False)
                     log(f'* {stored_list.eid}')
                     for merge_source in stored_list.mergeSources:
                         log(f'  * {self.annotate_plugin(merge_source)}')
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
-        for list_type_sig, list_label in self._sig_to_label.items():
-            if list_type_sig not in self._read_sigs: continue
-            patch_block = self.patchFile.tops[list_type_sig]
+        for list_type_sig, patch_block in self.patchFile.iter_tops(sig_label):
             stored_lists = self.type_list[list_type_sig]
             empty_lists = []
             # Build a dict mapping leveled lists to other leveled lists that
@@ -793,11 +796,11 @@ class _AListsMerger(ListPatcher):
                     if old_entries != stored_list.entries:
                         cleaned_lists.add(stored_list.eid)
                         keep(sub_super, stored_list)
-            log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
+            log.setHeader('=== ' + _('Empty %s Sublists') % (
+                list_label := sig_label[list_type_sig]))
             for list_eid in sorted(removed_empty_sublists, key=str.lower):
                 log(u'* ' + list_eid)
-            log.setHeader(u'=== ' + _(u'Empty %s Sublists Removed') %
-                          list_label)
+            log.setHeader('=== ' + _('Empty %s Sublists Removed') % list_label)
             for list_eid in sorted(cleaned_lists, key=str.lower):
                 log(u'* ' + list_eid)
 
@@ -823,6 +826,7 @@ class LeveledListsPatcher(_AListsMerger):
         b'LVSP': _(u'Spell'),
     }
     _de_re_header = _(u'Delevelers/Relevelers')
+    patcher_tags = {_de_tag, _re_tag}
 
     def __init__(self, p_name, p_file, p_sources, remove_empty, tag_choices):
         super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
@@ -850,6 +854,7 @@ class FormIDListsPatcher(_AListsMerger):
     _de_tag = u'Deflst'
     _sig_to_label = {b'FLST': _(u'FormID')}
     _de_re_header = _(u'Deflsters')
+    patcher_tags = {_de_tag}
 
     def _get_entries(self, target_list):
         return target_list.formIDInList
@@ -857,48 +862,45 @@ class FormIDListsPatcher(_AListsMerger):
 #------------------------------------------------------------------------------
 class ImportRacesSpellsPatcher(ImportPatcher):
     _read_sigs = (b'RACE',)
+    _filter_in_patch = True
+    patcher_tags = {'R.AddSpells', 'R.ChangeSpells'}
 
     def __init__(self, p_name, p_file, p_sources):
         super().__init__(p_name, p_file, p_sources)
         self.raceData = defaultdict(dict) #--Race eye meshes, hair, eyes
 
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+        if sup := super()._validate_mod(p_file, src_fn, raise_on_error):
+            if 'R.ChangeSpells' in (bashTags := p_file.all_tags[src_fn]) and \
+                    'R.AddSpells' in bashTags:
+                if raise_on_error:
+                    raise BPConfigError(f'WARNING mod {src_fn} has both '
+                        f'R.AddSpells and R.ChangeSpells tags - only one of '
+                        f'those tags should be on a mod at one time')
+                return False
+        return sup
+
     def initData(self, progress):
-        if not self.isActive or not self.srcs: return
-        self.loadFactory = self._patcher_read_fact()
+        if not self.isActive: return
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
-        for index, srcMod in enumerate(self.srcs):
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
-            if b'RACE' not in srcFile.tops: continue
-            bashTags = srcInfo.getBashTags()
+        for srcMod in self.srcs:
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
+            if not (race_block := srcFile.tops.get(b'RACE')): continue
+            bashTags = self.patchFile.all_tags[srcMod]
             tmp_race_data = defaultdict(dict) #so as not to carry anything over!
             change_spells = 'R.ChangeSpells' in bashTags
             add_spells = 'R.AddSpells' in bashTags
-            ##: This should be detected earlier and raise a BPConfigError so
-            # we abort with a nice, visible error message
-            if change_spells and add_spells:
-                raise BoltError(f'WARNING mod {srcMod} has both R.AddSpells '
-                                f'and R.ChangeSpells tags - only one of '
-                                f'those tags should be on a mod at one time')
-            for rid, race in srcFile.tops[b'RACE'].iter_present_records():
+            for rid, race in race_block.iter_present_records():
                 if add_spells:
                     tmp_race_data[rid]['AddSpells'] = race.spells
                 if change_spells:
                     self.raceData[rid]['spellsOverride'] = race.spells
-            for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = minfs[master]
-                    masterFile = self._filtered_mod_read(masterInfo,
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
-                    if b'RACE' not in masterFile.tops: continue
-                for rid, race in masterFile.tops[b'RACE'].iter_present_records():
+            for master in srcFile.fileInfo.masterNames:
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
+                if not (mast_race := masterFile.tops.get(b'RACE')): continue
+                for rid, race in mast_race.iter_present_records():
                     if rid not in tmp_race_data: continue
                     tempRaceData = tmp_race_data[rid]
                     raceData = self.raceData[rid]
@@ -914,15 +916,11 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                             raceData[race_key] = tempRaceData[race_key]
             progress.plus()
 
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records
-
     def buildPatch(self, log, progress):
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        keep = patchFile.getKeeper()
+        if not (race_block := self.patchFile.tops.get(b'RACE')): return
+        keep = self.patchFile.getKeeper()
         racesPatched = []
-        for rfid, race in patchFile.tops[b'RACE'].id_records.items():
+        for rfid, race in race_block.id_records.items():
             raceData = self.raceData.get(rfid, None)
             if not raceData: continue
             orig_spells = race.spells[:]
@@ -937,7 +935,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
                 keep(rfid, race)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
+        self._log_srcs(log)
         log(u'\n=== ' + _(u'Merged'))
         if not racesPatched:
             log(f'. ~~{_("None")}~~')

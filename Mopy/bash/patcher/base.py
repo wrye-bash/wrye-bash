@@ -32,11 +32,11 @@ from this module outside of the patcher package."""
 from __future__ import annotations
 
 from collections.abc import Iterable
+from itertools import chain
 
-from . import getPatchesPath
-from .. import load_order
+from .. import load_order, bass
 from ..bolt import deprint, dict_sort, sig_to_str
-from ..mod_files import LoadFactory, ModFile
+from ..exception import BPConfigError
 from ..parsers import _HandleAliases
 
 #------------------------------------------------------------------------------
@@ -74,8 +74,7 @@ class APatcher:
         return self.active_read_sigs
 
     def initData(self,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
+        """Compiles material, i.e. reads esp's, etc. as necessary."""
 
     def scan_mod_file(self, modFile, progress):
         """Scans specified mod file to extract info. May add record to patch
@@ -98,35 +97,146 @@ class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = '=== ' + _('Source Mods')
+    # a CsvParser type to parse the csv sources of this patcher
+    _csv_parser = None
+    patcher_tags = set()
+    # CSV files for this patcher have to end with _{this value}.csv
+    _csv_key = None ##: todo this belongs to the parsers would deduplicate mod_links wildcards also
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
         ListPatcher attribute."""
         super(ListPatcher, self).__init__(p_name, p_file)
-        self.srcs = p_sources
-        self.isActive = bool(self.srcs)
+        self.isActive = self._process_sources(p_sources, p_file)
 
-    def _srcMods(self,log):
-        """Logs the Source mods for this patcher."""
+    @classmethod
+    def get_sources(cls, p_file, p_sources=None, raise_on_error=False):
+        """Get a list of plugin/csv sources for this patcher. If p_sources are
+        passed in filter/validate them."""
+        if p_sources is None: # getting the sources
+            p_sources = [*p_file.all_plugins]
+            if cls._csv_key:
+                p_sources.extend(sorted(p_file.patches_set))
+        return [src_fn for src_fn in p_sources if
+                cls._validate_src(p_file, src_fn, raise_on_error)]
+
+    @classmethod
+    def _validate_src(cls, p_file, src_fn, raise_on_error):
+        try:
+            return cls._validate_mod(p_file, src_fn, raise_on_error)
+        except KeyError:
+            if src_fn[-4:] == '.csv':
+                if cls._csv_key:
+                    if src_fn not in p_file.patches_set:
+                        err = f'{cls.__name__}: {src_fn} is not present'
+                    elif src_fn.endswith(f'_{cls._csv_key}.csv'):
+                        return True
+                    else:
+                        err = f'{cls.__name__}: invalid csv type {src_fn}'
+                else:
+                    err = f'{cls.__name__}: csv src passed in: {src_fn}'
+            else:
+                err = f'{cls.__name__}: {src_fn} is not loading before the ' \
+                      f'BP or is not a mod'
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+        """Return True if the src_fn plugin should be part of the sources
+        for this patcher."""
+        # Must have an appropriate tag and no missing masters or a Filter tag
+        if src_fn in p_file.inactive_mm: ##fixme or active_mm
+            err = f'{cls.__name__}: {src_fn} is inactive'
+        elif not (cls.patcher_tags & p_file.all_tags[src_fn]):
+            err = f'{cls.__name__}: {src_fn} is not tagged with supported ' \
+                  f'tags {cls.patcher_tags}'
+        else:
+            return True
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    def _process_sources(self, p_sources, p_file):
+        """Validate srcs and update p_file read factories."""
+        self.get_sources(p_file, p_sources, raise_on_error=True)
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
+        self._update_patcher_factories(p_file)
+        self._parse_csv_sources()
+        return bool(self.srcs or self.csv_srcs)
+
+    def _update_patcher_factories(self, p_file):
+        # run before _parse_csv_sources as the latter updates srcs_sigs for
+        # APreserver - we want _read_sigs to return rec_type_attrs here
+        p_file.update_read_factories(self._read_sigs, self.srcs)
+
+    def _log_srcs(self, log):
+        """Logs the Source mods/csvs for this patcher."""
         log(self.__class__.srcsHeader)
-        if not self.srcs:
+        all_srcs = [*self.srcs, *self.csv_srcs]
+        if not all_srcs:
             log(f'. ~~{_("None")}~~')
         else:
-            for srcFile in self.srcs:
+            for srcFile in all_srcs:
                 log(f'* {srcFile}')
 
-class CsvListPatcher(_HandleAliases, ListPatcher):
-    """List patcher with csv sources."""
+    # CSV helpers
+    def _parse_csv_sources(self):
+        """Parses CSV files. Only called if _parser_instance returns a
+        parser."""
+        if not (parser_instance := self._parser_instance):
+            return {}
+        loaded_csvs = []
+        for src_path in self.csv_srcs:
+            try:
+                try: ##: the correct path must be passed from gui_patchers.py
+                    csv_path = bass.dirs['patches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                except OSError:
+                    csv_path = bass.dirs['defaultPatches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                loaded_csvs.append(src_path)
+            except OSError:
+                deprint(f'{src_path} is no longer in patches set',
+                        traceback=True)
+            except UnicodeError:
+                deprint(f'{src_path} is not saved in UTF-8 format',
+                        traceback=True)
+        self.csv_srcs = loaded_csvs
+        filtered_dict = self._filter_csv_fids(parser_instance, loaded_csvs)
+        return filtered_dict
 
-    def initData(self,progress):
-        """Get names from source files."""
-        if not self.isActive: return
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(f'{srcFile} is no longer in patches set',
-                                    traceback=True)
-            progress.plus()
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        # Filter out any entries that don't actually have data or whose
+        # record signatures do not appear in _parser_sigs - these might not
+        # always be a subset of read_sigs for instance CoblExhaustionPatcher
+        # which reads b'FACT' but _read_sigs is b'SPEL'
+        rec_att = {*parser_instance._parser_sigs}
+        sig_data = parser_instance.id_stored_data
+        if s := (sig_data.keys() - rec_att):
+            deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
+                    f'{loaded_csvs}')
+        ##: make sure k is always bytes and drop encode below
+        earlier_loading = self.patchFile.all_plugins
+        filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
+            k, d in sig_data.items() if (k in rec_att) and (v := {f: j for
+                f, j in d.items() if f.mod_fn in earlier_loading})}
+        return filtered_dict
+
+    @property
+    def _parser_instance(self):
+        return self._csv_parser and self._csv_parser(
+            self.patchFile.pfile_aliases, called_from_patcher=True)
+
+class CsvListPatcher(_HandleAliases, ListPatcher):
+    """List patcher that is-a CsvParser - we could change this to has-a,
+    would retire this class."""
+
+    @property
+    def _parser_instance(self):
+        return self
 
 #------------------------------------------------------------------------------
 # MultiTweakItem --------------------------------------------------------------
@@ -193,7 +303,7 @@ class MultiTweakItem:
     # If True, tweak_key will be shown in the 'custom value' popup
     show_key_for_custom = False
 
-    def __init__(self):
+    def __init__(self, bashed_patch):
         # Don't check tweak_log_msg, settings tweaks don't use it
         for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
                            u'tweak_log_msg'):
@@ -350,18 +460,37 @@ class MultiTweakItem:
 
 class ScanPatcher(APatcher):
     """WIP class to encapsulate scanModFile common logic."""
+    # filter records that exist in corresponding patch block
+    _filter_in_patch = False
+
+    @property
+    def _keep_ids(self):
+        return None
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
-            patchBlock = None # do not create the patch block till needed
-            for rid, rec in block.iter_present_records():
-                if self._add_to_patch(rid, rec, top_sig):
-                    try:
-                        patchBlock.setRecord(rec)
-                    except AttributeError:
-                        patchBlock = self.patchFile.tops[top_sig]
-                        patchBlock.setRecord(rec)
+            # do not create the patch block till needed
+            patchBlock = self.patchFile.tops.get(top_sig)
+            rid_rec = block.iter_present_records()
+            if self._filter_in_patch and patchBlock:
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid not in patchBlock.id_records)
+            if self._keep_ids is not None:
+                if not self._keep_ids: return # won't add to patch
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid in self._keep_ids)
+            try:
+                rid_rec = [(rid, rec) for rid, rec in rid_rec if
+                           self._add_to_patch(rid, rec, top_sig)]
+            except NotImplementedError:
+                pass
+            for rid, rec in rid_rec:
+                try:
+                    patchBlock.setRecord(rec)
+                except AttributeError:
+                    patchBlock = self.patchFile.tops[top_sig]
+                    patchBlock.setRecord(rec)
 
     def _add_to_patch(self, rid, record, top_sig):
         """Decide if this record should be added to the patch top_sig block.
@@ -370,50 +499,23 @@ class ScanPatcher(APatcher):
         we've already copied this record or if we're not interested in it."""
         raise NotImplementedError
 
-class ModLoader(ScanPatcher): ##: this must go - WIP!
-    """Mixin for patchers loading mods"""
-    loadFactory = None
-
-    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
-        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
-
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo,
-                          self.loadFactory or self._patcher_read_fact())
-        modFile.load_plugin()
-        return modFile
-
-    # FIXME(inf) HACK until we've refactored initData to the point where we
-    #  can properly filter Filter-tagged plugins in one central place
-    def _filtered_mod_read(self, modInfo, patchFile):
-        modFile = self._mod_file_read(modInfo)
-        # The final refactored version should also check if it's inactive so we
-        # don't waste time doing nothing for active Filter plugins (since we
-        # already ensure those don't have missing masters before we even begin
-        # building the BP)
-        if 'Filter' in modInfo.getBashTags():
-            load_set = set(patchFile.load_dict)
-            # PatchFile does not have its load factory set up yet so we'd get a
-            # MobBase instance from it, which obviously can't do filtering. So
-            # use a temporary LoadFactory as a workaround
-            temp_factory = self.loadFactory or self._patcher_read_fact()
-            for top_grup_sig, filter_block in modFile.tops.items():
-                temp_block = temp_factory.getTopClass(top_grup_sig).empty_mob(
-                    temp_factory, top_grup_sig)
-                temp_block.merge_records(filter_block, load_set, set(), True)
-        return modFile
-
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(ListPatcher, ModLoader):
+class ImportPatcher(ListPatcher, ScanPatcher):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
     patcher_order = 20
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
+    def _update_patcher_factories(self, p_file):
+        # most of the import patchers scan their sources' masters
+        mast = (p_file.all_plugins[s].masterNames for s in self.srcs)
+        sources = set(chain(self.srcs, *mast))
+        p_file.update_read_factories(self._read_sigs, sources)
+
     def _patchLog(self,log,type_count):
         log.setHeader(f'= {self._patcher_name}')
-        self._srcMods(log)
+        self._log_srcs(log)
         self._plog(log,type_count)
 
     ##: Unify these - decide which one looks best in the end and make all

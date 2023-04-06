@@ -40,12 +40,11 @@ class PatchFile(ModFile):
 
     def set_mergeable_mods(self, mergeMods):
         """Set 'mergeSet' attribute to the srcs of MergePatchesPatcher."""
-        self.mergeSet = set(mergeMods)
-        self.merged_or_loaded = {*self.mergeSet, *self.load_dict}
+        self.mergeSet = merge_set = set(mergeMods)
+        self.merged_or_loaded = merged_active = {*merge_set, *self.load_dict}
         self.merged_or_loaded_ord = {m: self.p_file_minfos[m] for m in
-            load_order.get_ordered(self.merged_or_loaded)}
-        self.ii_mode = {m for m in self.mergeSet if
-                        'IIM' in self.p_file_minfos[m].getBashTags()}
+                                     load_order.get_ordered(merged_active)}
+        self.ii_mode = {m for m in merge_set if 'IIM' in self.all_tags[m]}
 
     def _log_header(self, log, patch_name):
         log.setHeader(f'= {patch_name} {"=" * 30}#', True)
@@ -168,28 +167,39 @@ class PatchFile(ModFile):
         # exclude modding esms (those tend to be huge)
         self.all_plugins = {k: pfile_minfos[k] for k in self.all_plugins if
                             k not in bush.game.modding_esm_size}
+        # cache the tags
+        self.all_tags = {k: v.getBashTags() for k, v in
+                         self.all_plugins.items()}
+        # list the patchers folders to get potential Bash Patches csv
+        # sources and cache the result for this patch  execution session
+        self.patches_set = set(bass.dirs['patches'].ilist())
+        if bass.dirs['defaultPatches']:
+            self.patches_set.update(bass.dirs['defaultPatches'].ilist())
         self.p_file_minfos = pfile_minfos
         self.set_active_arrays(pfile_minfos)
+        # cache of mods loaded - eventually share between initData/scanModFile
+        self._loaded_mods = {}
+        # read signatures we need to load per plugin - updated by the patchers
+        self._read_signatures = defaultdict(set)
 
     def set_active_arrays(self, pfile_minfos):
         """Populate PatchFile data structures with info on active mods - must
         be rerun when active plugins change"""
         c = count()
-        loaded_mods = {m: next(c) for m in self.all_plugins if
+        active_mods = {m: next(c) for m in self.all_plugins if
                        load_order.cached_is_active(m)}
         # TODO: display those
         loaded_modding_esms = [m for m in load_order.cached_active_tuple() if
                                m in bush.game.modding_esm_size]
-        if not loaded_mods:
+        if not active_mods:
             raise BoltError('No active plugins loading before the Bashed '
                             'Patch')
-        self.load_dict = loaded_mods # used in printing BP masters' indexes
+        self.load_dict = active_mods # used in printing BP masters' indexes
         self.set_mergeable_mods([]) # reset - depends on load_dict
         # Populate mod arrays for the rest of the patch stages ----------------
-        all_plugins_set = set(self.all_plugins)
         self.needs_filter_mods = {}
         self.bp_mergeable = set() # plugins we can show as sources for the merge patcher
-        # inactive plugins with missing masters - that may be ok
+        # inactive plugins with missing or delinquent masters - that may be ok
         self.inactive_mm = defaultdict(list)
         # inactive plugins with inactive masters (unless the inactive masters
         # are mergeable!) - not ok but not for merged
@@ -206,13 +216,13 @@ class PatchFile(ModFile):
         mi_mergeable = pfile_minfos.mergeable
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
-            bashTags = modInfo.getBashTags()
-            is_loaded = modName in loaded_mods
+            bashTags = self.all_tags[modName]
+            is_loaded = modName in active_mods
             for master in modInfo.masterNames:
-                if master not in loaded_mods:
+                if master not in active_mods:
                     if is_loaded:
                         self.active_mm[modName].append(master)
-                    elif master not in all_plugins_set: ##: test against modInfos?
+                    elif master not in self.all_plugins: # might be delinquent
                         self.inactive_mm[modName].append(master)
                     elif master not in mi_mergeable:
                         self.inactive_inm[modName].append(master)
@@ -233,9 +243,8 @@ class PatchFile(ModFile):
                     # is filtered tagged, we will filter some masters and
                     # then recheck in merge_record - drop from inactive_mm
                     del self.inactive_mm[modName]
-            if (modName in mi_mergeable and
-                    modName not in self.inactive_inm and
-                    'NoMerge' not in bashTags):
+            if (modName in mi_mergeable and modName not in
+                    self.inactive_inm and 'NoMerge' not in bashTags):
                 self.bp_mergeable.add(modName)
 
     def getKeeper(self):
@@ -276,17 +285,50 @@ class PatchFile(ModFile):
         #--Merge Factory
         self.mergeFactory = LoadFactory(False, by_sig=bush.game.mergeable_sigs)
 
+    def update_read_factories(self, sigs, mods):
+        """Let the patchers request loading the specified `sigs` for the
+        specified `mods` to use in its initData (eventually scanModFile)."""
+        for m in mods: self._read_signatures[m].update(sigs)
+
+    def get_loaded_mod(self, mod_name):
+        # get which signatures the patchers need to load for this mod
+        load_sigs = self._read_signatures.get(mod_name) or set()
+        if mod_name in self._loaded_mods:
+            loaded_mod: ModFile = self._loaded_mods[mod_name]
+            if loaded_mod.topsSkipped & load_sigs: # we need to reload
+                # never happens for initData but see mergeModFile
+                del self._loaded_mods[mod_name]
+            else:
+                return loaded_mod
+        elif mod_name not in self.all_plugins:
+            return None # (Filter tagged) mods with missing masters
+        lf = LoadFactory(False, by_sig=load_sigs)
+        mod_info = self.all_plugins[mod_name]
+        mod_file = ModFile(mod_info, lf)
+        mod_file.load_plugin()
+        # don't waste time for active Filter plugins, since we already ensure
+        # those don't have missing masters before we even begin building the BP
+        if mod_name not in self.load_dict and 'Filter' in self.all_tags[
+                mod_name]:
+            load_set = set(self.load_dict)
+            # pass lf in - in initData self.readFactory is not initialized yet
+            self.filter_plugin(mod_file, load_set, lf=lf)
+        self._loaded_mods[mod_name] = mod_file
+        return mod_file
+
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""
         nullProgress = Progress()
         progress = progress.setFull(len(self.all_plugins))
         load_set = set(self.load_dict)
+        patchers_ord = sorted(self._patcher_instances,
+                              key=attrgetter('patcher_order'))
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             if modName in self.needs_filter_mods:
                 continue
             # Check some commonly needed properties of the current plugin
             is_merged = modName in self.mergeSet
-            is_filter = 'Filter' in modInfo.getBashTags()
+            is_filter = 'Filter' in self.all_tags[modName]
             # iiMode is a hack to support Item Interchange. Actual key used is
             # IIM.
             iiMode = modName in self.ii_mode
@@ -319,8 +361,7 @@ class PatchFile(ModFile):
                     # we might still want to import filtered data, e.g. actor
                     # factions)
                     self.filter_plugin(modFile, load_set)
-                for patcher in sorted(self._patcher_instances,
-                        key=attrgetter('patcher_order')):
+                for patcher in patchers_ord:
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate, f'{modName}\n{patcher.getName()}')
                     patcher.scan_mod_file(modFile,nullProgress)
@@ -345,22 +386,22 @@ class PatchFile(ModFile):
             self.tops[top_grup_sig].merge_records(block, loaded_mods,
                                                   self.mergeIds, iiSkipMerge)
 
-    def filter_plugin(self, modFile, loaded_mods):
+    def filter_plugin(self, modFile, loaded_mods, lf=None):
         """Filters the specified plugin according to the specified loaded
         plugins. Does nothing else."""
-        read_fact = self.readFactory
-        for top_grup_sig, block in modFile.tops.items():
-            if top_grup_sig in read_fact.topTypes:
-                ##: Same ugly hack as in _filtered_mod_read, figure out a
-                # better way (can't just use self.tops since that uses
-                # loadFactory rather than readFactory)
-                temp_block = read_fact.getTopClass(top_grup_sig).empty_mob(
-                    read_fact, top_grup_sig)
-                temp_block.merge_records(block, loaded_mods, set(), True)
+        # PatchFile might not have its load factory set up yet so we'd get a
+        # MobBase instance from it, which obviously can't do filtering
+        read_fact = lf or self.readFactory
+        for top_grup_sig, block in modFile.iter_tops(read_fact.topTypes):
+            # get a temp TopGrup to call merge_records on which will do the
+            # filtering
+            temp_block = read_fact.getTopClass(top_grup_sig).empty_mob(
+                read_fact, top_grup_sig)
+            temp_block.merge_records(block, loaded_mods, set(), True)
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
-        shared_rec_types = set(self.tops) & set(modFile.tops)
+        shared_rec_types = self.tops.keys() & modFile.tops
         # Keep and update all MGEFs no matter what
         if b'MGEF' in modFile.tops:
             shared_rec_types.discard(b'MGEF')

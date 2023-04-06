@@ -30,19 +30,16 @@ from collections import Counter, defaultdict
 from itertools import chain
 
 from .base import is_templated
-from ..base import ModLoader, ScanPatcher
+from ..base import ScanPatcher
 from ... import bush
 from ...bolt import FName, dict_sort, sig_to_str
 from ...brec import FormId
-from ...mod_files import LoadFactory
 
 class _Checker(ScanPatcher):
     """Common checkers code."""
     patcher_group = 'Special'
     patcher_order = 40
-
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records
+    _filter_in_patch = True
 
 class ContentsCheckerPatcher(_Checker):
     """Checks contents of leveled lists, inventories and containers for
@@ -262,19 +259,17 @@ class NpcCheckerPatcher(_Checker):
                 log(f'* {src_mod}: {num_fixed:d}')
 
 #------------------------------------------------------------------------------
-class TimescaleCheckerPatcher(ModLoader):
-    patcher_group = 'Special'
-    patcher_order = 40
+class TimescaleCheckerPatcher(_Checker):
     _read_sigs = (b'GRAS',)
 
     def __init__(self, p_name, p_file):
-        super(TimescaleCheckerPatcher, self).__init__(p_name, p_file)
-        # We want to use _mod_file_read for GLOB records, not GRAS records
-        self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
+        super().__init__(p_name, p_file)
+        # needed for build patch - few mods actually have GLOB so doesn't harm
+        # but reloading the main master just for GLOB sucks
+        p_file.update_read_factories([b'GLOB'], p_file.merged_or_loaded_ord)
 
     def _add_to_patch(self, rid, record, top_sig):
-        return rid not in self.patchFile.tops[top_sig].id_records \
-            and record.wave_period != 0.0
+        return record.wave_period != 0.0
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
@@ -283,8 +278,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # First, look in the BP to see if we have a record that overrides the
         # timescale
         def find_timescale(glob_file):
-            if b'GLOB' not in glob_file.tops: return None
-            glob_recs = glob_file.tops[b'GLOB'].iter_present_records()
+            if not (glob_block := glob_file.tops.get(b'GLOB')): return None
+            glob_recs = glob_block.iter_present_records()
             for glob_eid, glob_rec in ((r.eid, r) for _gkey, r in glob_recs):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value
@@ -294,10 +289,9 @@ class TimescaleCheckerPatcher(ModLoader):
         # override the timescale and look for the last override (hence the
         # reversed order)
         if final_timescale is None:
-            relevant_plugins = [v for v in
-                                self.patchFile.merged_or_loaded_ord.values()]
-            for r_plugin in reversed(relevant_plugins):
-                final_timescale = find_timescale(self._mod_file_read(r_plugin))
+            for r_plugin in reversed(self.patchFile.merged_or_loaded_ord):
+                final_timescale = find_timescale(
+                    self.patchFile.get_loaded_mod(r_plugin))
                 if final_timescale is not None:
                     break
         # If none of the plugins had it (this should be impossible), assume the

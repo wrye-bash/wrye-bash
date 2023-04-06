@@ -33,7 +33,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
     patcher_desc = _(u"Import roads from source mods.")
-    autoKey = {u'Roads'}
+    patcher_tags = {'Roads'}
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
@@ -43,16 +43,17 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
+    def _update_patcher_factories(self, p_file):
+        """We don't scan masters (?)"""
+        return super(ImportPatcher, self)._update_patcher_factories(p_file)
+
     def initData(self,progress):
-        """Get cells from source files."""
+        """Get roads from source files."""
         if not self.isActive: return
-        self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
-            if srcMod not in self.patchFile.all_plugins: continue
-            srcInfo = self.patchFile.all_plugins[srcMod]
-            src_wrld_block = self._filtered_mod_read(
-                srcInfo, self.patchFile).tops[b'WRLD']
-            for worldId, worldBlock in src_wrld_block.iter_present_records():
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
+            for worldId, worldBlock in srcFile.tops[
+                    b'WRLD'].iter_present_records():
                 if worldBlock.road:
                     self.world_road[worldId] = worldBlock.road.getTypeCopy()
         self.isActive = bool(self.world_road)
@@ -90,11 +91,6 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
-    @classmethod
-    def gui_cls_vars(cls):
-        cls_vars = super(ImportRoadsPatcher, cls).gui_cls_vars()
-        return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars
-
 #------------------------------------------------------------------------------
 class _ExSpecialList(CsvListPatcher, ExSpecial):
     _csv_key = u'OVERRIDE'
@@ -103,11 +99,14 @@ class _ExSpecialList(CsvListPatcher, ExSpecial):
         super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
         ListPatcher.__init__(self, p_name, p_file, p_sources)
 
+    @property
+    def _keep_ids(self):
+        return self.id_stored_data[b'FACT']
+
     @classmethod
     def gui_cls_vars(cls):
         cls_vars = super(_ExSpecialList, cls).gui_cls_vars()
-        more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
-        return cls_vars.update(more) or cls_vars
+        return cls_vars.update({'canAutoItemCheck': False}) or cls_vars
 
 class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater powers to work with Cobl's power exhaustion
@@ -123,16 +122,13 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _parser_sigs = [b'FACT']
     _exhaust_fid = FormId.from_tuple((cobl_main, 0x05139B))
 
-    def __init__(self, p_name, p_file, p_sources):
-        super().__init__(p_name, p_file, p_sources)
-        if self.isActive:
-            if cobl_main in p_file.load_dict:
-                vers = self.patchFile.all_plugins[cobl_main].get_version()
-                maVersion = re.search(r'(\d+\.?\d*)', vers)
-                if maVersion:
-                    self.isActive = float(maVersion.group(1)) > 1.65
-                    return
-            self.isActive = False # COBL not loaded or its version is < 1.65
+    def _process_sources(self, p_sources, p_file):
+        if cobl_main in p_file.load_dict:
+            vers = self.patchFile.all_plugins[cobl_main].get_version()
+            maVersion = re.search(r'(\d+\.?\d*)', vers)
+            if maVersion and float(maVersion.group(1)) > 1.65:
+                return super()._process_sources(p_sources, p_file)
+        return False # COBL not loaded or its version is < 1.65
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -144,7 +140,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         return int(csv_fields[3])
 
     def _add_to_patch(self, rid, record, top_sig):
-        return record.spellType == 2 and rid in self.id_stored_data[b'FACT']
+        return record.spellType == 2
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -154,10 +150,10 @@ class CoblExhaustionPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
-            if record.obme_record_version is not None: continue
+            if record.obme_record_version is not None or record.spellType != 2:
+                continue
             #--Skip this one?
-            duration = id_info.get(rid, 0)
-            if not (duration and record.spellType == 2): continue
+            if not (duration := id_info.get(rid)): continue
             isExhausted = False ##: unused, was it supposed to be used?
             if any(ef.effect_sig == b'SEFF' and
                    ef.scriptEffect.script_fid == self._exhaust_fid
@@ -198,7 +194,7 @@ class MorphFactionsPatcher(_ExSpecialList):
 
     def _pLog(self, log, changes_dict):
         log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
+        self._log_srcs(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
         for mod in load_order.get_ordered(changes_dict):
             log(f'* {mod}: {changes_dict[mod]:d}')
@@ -213,8 +209,11 @@ class MorphFactionsPatcher(_ExSpecialList):
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
         # self.id_info #--Morphable factions keyed by fid
-        self.isActive &= cobl_main in p_file.load_dict
         self.mFactLong = FormId.from_tuple((cobl_main, 0x33FB))
+
+    def _process_sources(self, p_sources, p_file):
+        return cobl_main in p_file.load_dict and super()._process_sources(
+            p_sources, p_file)
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
@@ -223,9 +222,6 @@ class MorphFactionsPatcher(_ExSpecialList):
             if record:
                 self.patchFile.tops[b'FACT'].setRecord(record)
         super().scanModFile(modFile, progress, scan_sigs)
-
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.id_stored_data[b'FACT']
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""

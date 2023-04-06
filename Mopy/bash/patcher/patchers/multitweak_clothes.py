@@ -41,8 +41,8 @@ class _AClothesTweak(MultiTweakItem):
         u'rings':    0x000000C0, # (1<<6) | (1<<7),
     }
 
-    def __init__(self):
-        super(_AClothesTweak, self).__init__()
+    def __init__(self, bashed_patch):
+        super(_AClothesTweak, self).__init__(bashed_patch)
         type_key = self.tweak_key[:self.tweak_key.find(u'.')]
         self.or_type_flags = type_key == u'rings'
         self.type_flags = self.clothes_flags[type_key]

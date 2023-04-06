@@ -26,10 +26,10 @@ absorb all of them under the _APreserver base class."""
 from __future__ import annotations
 
 import operator
+import re
 from collections import Counter, defaultdict
 from itertools import chain
 
-from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
@@ -60,16 +60,15 @@ class APreserver(ImportPatcher):
     # subrecords to import, instead of just mapping the record signatures
     # directly to the tuples
     _multi_tag = False
-    _csv_parser = None
     # A bash tag to force the import of all relevant data from a tagged mod,
     # without it being checked against the masters first. None means no such
     # tag exists for this patcher
     _force_full_import_tag = None
+    _filter_in_patch = True
 
     def __init__(self, p_name, p_file, p_sources):
-        super(APreserver, self).__init__(p_name, p_file, p_sources)
         #--(attribute-> value) dicts keyed by long fid.
-        self.id_data = defaultdict(dict)
+        self.id_data = {}
         self.srcs_sigs = set() #--Record signatures actually provided by src
         # mods/files.
         #--Type Fields
@@ -96,40 +95,19 @@ class APreserver(ImportPatcher):
         else:
             all_attrs = chain.from_iterable(self.rec_type_attrs.values())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
-        # Split srcs based on CSV extension ##: move somewhere else?
-        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
-        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
-        self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
+        super().__init__(p_name, p_file, p_sources)
 
     # CSV helpers
-    def _parse_csv_sources(self, progress):
-        """Parses CSV files. Only called if _csv_parser is set."""
-        parser_instance = self._csv_parser(self.patchFile.pfile_aliases,
-                                           called_from_patcher=True)
-        for src_path in self.csv_srcs:
-            try:
-                parser_instance.read_csv(getPatchesPath(src_path))
-            except OSError:
-                deprint(f'{src_path} is no longer in patches set',
-                        traceback=True)
-            except UnicodeError:
-                deprint(f'{src_path} is not saved in UTF-8 format',
-                        traceback=True)
-            progress.plus()
-        parsed_sources = parser_instance.id_stored_data
-        # Filter out any entries that don't actually have data or don't
-        # actually exist (for this game at least)
-        ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode(u'ascii') if isinstance(k, str) else k: v
-                         for k, v in parsed_sources.items()
-                         if v and k in RecordType.sig_to_class}
+    def _parse_csv_sources(self):
+        filtered_dict = super()._parse_csv_sources()
         self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.values():
             self.id_data.update(src_data)
 
     @property
     def _read_sigs(self):
-        return self.srcs_sigs
+        return (self.srcs_sigs if self.srcs_sigs else self.rec_type_attrs) if \
+            self.isActive else ()
 
     def _init_data_loop(self, top_grup_sig, src_top, srcMod, mod_id_data,
                         mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
@@ -178,20 +156,19 @@ class APreserver(ImportPatcher):
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
-        id_data = self.id_data
-        progress.setFull(len(self.srcs) + len(self.csv_srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
+        id_data = defaultdict(dict)
+        progress.setFull(len(self.srcs))
         loaded_mods = self.patchFile.load_dict
+        srcssigs = set()
         for srcMod in self.srcs:
             mod_id_data = {}
-            if srcMod not in minfs: continue
-            srcInfo = minfs[srcMod]
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             mod_sigs = set()
-            mod_tags = srcInfo.getBashTags()
+            mod_tags = self.patchFile.all_tags[srcMod]
+            # don't use _read_sigs here as srcs_sigs might be updated in
+            # _parse_csv_sources
             for rsig, block in srcFile.iter_tops(self.rec_type_attrs):
-                self.srcs_sigs.add(rsig)
+                srcssigs.add(rsig)
                 mod_sigs.add(rsig)
                 self._init_data_loop(rsig, block, srcMod, mod_id_data,
                                      mod_tags, loaded_mods, __attrgetters)
@@ -201,14 +178,9 @@ class APreserver(ImportPatcher):
                 # filtering by masters, then move on to the next mod
                 id_data.update(mod_id_data)
                 continue
-            for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterFile = self._filtered_mod_read(minfs[master],
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+            for master in srcFile.fileInfo.masterNames:
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for rsig, block in masterFile.iter_tops(mod_sigs):
                     for rfid, record in block.iter_present_records():
                         if rfid not in mod_id_data: continue
@@ -221,14 +193,16 @@ class APreserver(ImportPatcher):
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
-        if self._csv_parser:
-            self._parse_csv_sources(progress)
+        self.id_data = {**id_data, **self.id_data} # csvs take precedence
+        self.srcs_sigs.update(srcssigs)
         self.isActive = bool(self.srcs_sigs)
+
+    @property
+    def _keep_ids(self):
+        return self.id_data
 
     def _add_to_patch(self, rid, record, top_sig, *,
                       __attrgetters=attrgetter_cache):
-        if rid not in self.id_data or rid in self.patchFile.tops[
-            top_sig].id_records: return False # see parent docs
         for att, val in self.id_data[rid].items():
             if __attrgetters[att](record) != val:
                 return True
@@ -236,13 +210,13 @@ class APreserver(ImportPatcher):
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for attr, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for attr, val in id_data_dict[rfid].items():
                 if __attrgetters[attr](record) != val: break
             else: continue
-            for attr, val in id_data[rfid].items():
+            for attr, val in id_data_dict[rfid].items():
                 if isinstance(attr, tuple):
                     # This is a fused attribute, so unpack the attrs and assign
                     # each value to each matching attr
@@ -265,15 +239,6 @@ class APreserver(ImportPatcher):
         # Log
         self._patchLog(log, type_count)
 
-    def _srcMods(self,log):
-        log(self.__class__.srcsHeader)
-        all_srcs = [*self.srcs, *self.csv_srcs]
-        if not all_srcs:
-            log(f'. ~~{_("None")}~~')
-        else:
-            for srcFile in all_srcs:
-                log(f'* {srcFile}')
-
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -281,6 +246,8 @@ class ImportActorsPatcher(APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _fid_rec_attrs = bush.game.actor_importer_fid_attrs
     _multi_tag = True
+    patcher_tags = set(chain(chain.from_iterable(rec_attrs.values()),
+                             chain.from_iterable(_fid_rec_attrs.values())))
 
 #------------------------------------------------------------------------------
 class ImportActorsFacesPatcher(APreserver):
@@ -299,6 +266,15 @@ class ImportActorsFacesPatcher(APreserver):
     }}
     _multi_tag = True
     _force_full_import_tag = 'NpcFacesForceFullImport'
+    patcher_tags = {'NPC.Eyes', 'NPC.FaceGen', 'NPC.Hair',
+                    'NpcFacesForceFullImport'}
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error, *,
+                      __auto_re=re.compile('^TNR .*.esp$', re.I)):
+        if __auto_re.match(src_fn) and src_fn in p_file.all_plugins:
+            return True
+        return super()._validate_mod(p_file, src_fn, raise_on_error)
 
 #------------------------------------------------------------------------------
 class ImportActorsFactionsPatcher(APreserver):
@@ -307,56 +283,89 @@ class ImportActorsFactionsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
+    patcher_tags = {'Actors.Factions'}
+    _csv_key = 'Factions'
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        """Transform the parser structure to the one used by the patcher."""
+        filtered_dict = super()._filter_csv_fids(parser_instance, loaded_csvs)
+        # filter existing factions and convert to the patcher representation
+        earlier_loading = self.patchFile.all_plugins
+        patcher_dict = {}
+        for sig, d in filtered_dict.items():
+            rec_type = RecordType.sig_to_class[sig]
+            patcher_dict_sig = {}
+            for f, facts in d.items():
+                fact_obj = []
+                for fact_fid, rank in facts.items():
+                    if fact_fid.mod_fn not in earlier_loading: continue
+                    ret_obj = parser_instance.get_empty_object(rec_type,
+                                                               fact_fid)
+                    ret_obj.rank = rank
+                    fact_obj.append(ret_obj)
+                if fact_obj: patcher_dict_sig[f] = {'factions': fact_obj}
+            if patcher_dict_sig: patcher_dict[sig] = patcher_dict_sig
+        return patcher_dict
 
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
     ##: Has FormIDs, filter these in keep_fids?
     rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
+    patcher_tags = {'Destructible'}
 
 #------------------------------------------------------------------------------
 class ImportEffectsStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
     _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}
+    patcher_tags = {'EffectStats'}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentsPatcher(APreserver):
     """Preserves changes to EITM (enchantment/object effect) subrecords."""
     _fid_rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
+    patcher_tags = {'Enchantments'}
 
 #------------------------------------------------------------------------------
 class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
     _fid_rec_attrs = {b'ENCH': bush.game.ench_stats_fid_attrs}
+    patcher_tags = {'EnchantmentStats'}
 
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
     rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+    patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
-    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    logMsg =  '\n=== ' + _('Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
     _csv_parser = parsers.FullNames
+    patcher_tags = {'Names'}
+    _csv_key = 'Names'
 
 #------------------------------------------------------------------------------
 class ImportObjectBoundsPatcher(APreserver):
     rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
+    patcher_tags = {'ObjectBounds'}
 
 #------------------------------------------------------------------------------
 class ImportScriptsPatcher(APreserver):
     _fid_rec_attrs = {x: ('script_fid',) for x in bush.game.scripts_types}
+    patcher_tags = {'Scripts'}
 
 #------------------------------------------------------------------------------
 class ImportSoundsPatcher(APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.sounds_attrs
     _fid_rec_attrs = bush.game.sounds_fid_attrs
+    patcher_tags = {'Sound'}
 
 #------------------------------------------------------------------------------
 class ImportSpellStatsPatcher(APreserver):
@@ -368,6 +377,8 @@ class ImportSpellStatsPatcher(APreserver):
                       for x in bush.game.spell_stats_types}
     _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
         else None
+    patcher_tags = {'SpellStats'}
+    _csv_key = 'Spells'
 
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):
@@ -378,10 +389,13 @@ class ImportStatsPatcher(APreserver):
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
     _csv_parser = parsers.ItemStats
+    patcher_tags = {'Stats'}
+    _csv_key = 'Stats'
 
 #------------------------------------------------------------------------------
 class ImportTextPatcher(APreserver):
     rec_attrs = bush.game.text_types
+    patcher_tags = {'Text'}
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
@@ -390,33 +404,29 @@ class ImportTextPatcher(APreserver):
 class ImportCellsPatcher(ImportPatcher):
     logMsg = '\n=== ' + _('Cells/Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD')
+    patcher_tags = set(bush.game.cellRecAttrs)
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
         self.recAttrs = bush.game.cellRecAttrs # dict[str, tuple[str]]
-        self.loadFactory = self._patcher_read_fact()
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
         progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        minfs = self.patchFile.all_plugins
         for srcMod in self.srcs:
-            if srcMod not in minfs: continue
             # tempCellData maps long fids for cells in srcMod to dicts of
             # (attributes (among attrs) -> their values for this mod). It is
             # used to update cellData with cells that change those attributes'
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
-            srcInfo = minfs[srcMod]
-            bashTags = srcInfo.getBashTags()
+            srcInfo = self.patchFile.all_plugins[srcMod]
+            bashTags = self.patchFile.all_tags[srcMod]
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
-            srcFile = self._filtered_mod_read(srcInfo, self.patchFile)
-            cachedMasters[srcMod] = srcFile
+            srcFile = self.patchFile.get_loaded_mod(srcMod)
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
             interior_attrs = attrs - bush.game.cell_skip_interior_attrs
@@ -440,13 +450,8 @@ class ImportCellsPatcher(ImportPatcher):
             # attribute values in temp cell data are then used to update these
             # records where the value is different.
             for master in srcInfo.masterNames:
-                if master not in minfs: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterFile = self._filtered_mod_read(minfs[master],
-                        self.patchFile)
-                    cachedMasters[master] = masterFile
+                if not (masterFile := self.patchFile.get_loaded_mod(master)):
+                    continue # or break filter mods
                 for _sig, block in masterFile.iter_tops(self._read_sigs):
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
                         if cfid not in tempCellData: continue
@@ -517,13 +522,14 @@ class ImportCellsPatcher(ImportPatcher):
 class ImportGraphicsPatcher(APreserver):
     rec_attrs = bush.game.graphicsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
+    patcher_tags = {'Graphics'}
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for attr, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for attr, val in id_data_dict[rfid].items():
                 rec_attr = __attrgetters[attr](record)
                 if isinstance(rec_attr, str) and isinstance(val, str):
                     if rec_attr.lower() != val.lower():
@@ -542,7 +548,7 @@ class ImportGraphicsPatcher(APreserver):
                         break
                 if rec_attr != val: break
             else: continue
-            for attr, val in id_data[rfid].items():
+            for attr, val in id_data_dict[rfid].items():
                 setattr(record, attr, val)
             keep(rfid, record)
             type_count[top_mod_rec] += 1
@@ -552,14 +558,16 @@ class ImportRacesPatcher(APreserver):
     rec_attrs = bush.game.import_races_attrs
     _fid_rec_attrs = bush.game.import_races_fid_attrs
     _multi_tag = True
+    patcher_tags = set(chain(chain.from_iterable(rec_attrs.values()),
+                             chain.from_iterable(_fid_rec_attrs.values())))
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
-        id_data = self.id_data
+        id_data_dict = self.id_data
         for rfid, record in records:
-            if rfid not in id_data: continue
-            for att, val in id_data[rfid].items():
+            if rfid not in id_data_dict: continue
+            for att, val in id_data_dict[rfid].items():
                 record_val = __attrgetters[att](record)
                 if att in ('eyes', 'hairs'):
                     if set(record_val) != set(val): break
@@ -569,7 +577,7 @@ class ImportRacesPatcher(APreserver):
                                 f'is None')
                     elif record_val != val: break
             else: continue
-            for att, val in id_data[rfid].items():
+            for att, val in id_data_dict[rfid].items():
                 loop_setattr(record, att, val)
             keep(rfid, record)
             type_count[top_mod_rec] += 1

@@ -37,7 +37,7 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning
-from ..patcher import exportConfig, list_patches_dir
+from ..patcher import exportConfig
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
@@ -60,7 +60,6 @@ class PatchDialog(DialogWindow):
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
             size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
-        list_patches_dir() # refresh cached dir
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
         for g in self._gui_patchers: g._bp = bashed_patch
         self.currentPatcher = None

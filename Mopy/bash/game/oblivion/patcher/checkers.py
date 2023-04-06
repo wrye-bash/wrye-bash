@@ -29,7 +29,6 @@ from itertools import chain
 from ._shared import ExSpecial, cobl_main
 from .... import bush
 from ....brec import FormId, RecordType, null4, null3, null2
-from ....patcher.base import ModLoader
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
@@ -55,6 +54,7 @@ class CoblCatalogsPatcher(ExSpecial):
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
     _read_sigs = (b'BOOK', b'INGR')
+    _filter_in_patch = True
 
     @classmethod
     def gui_cls_vars(cls):
@@ -70,19 +70,21 @@ class CoblCatalogsPatcher(ExSpecial):
     def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
-    def _add_to_patch(self, rid, record, top_sig):
-        """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it."""
-        if top_sig == b'BOOK':
-            if rid in _book_fids and rid not in self.patchFile.tops[
-                b'BOOK'].id_records:
-                self.patchFile.tops[b'BOOK'].setRecord(record, do_copy=False) ##: todo do_copy.... else we would just return True
-        if top_sig == b'INGR': ##: Skips OBME records - rework to support them
-            #--Ingredient must have name!
-            if record.full and record.obme_record_version is None:
-                effects = record.getEffects()
-                if not (b'SEFF', 0) in effects:
-                    self.id_ingred[rid] = (record.eid, record.full, effects)
+    @property
+    def _keep_ids(self):
+        return _book_fids
+
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """Index INGR then add BOOK records to patch file."""
+        if ingr_block := modFile.tops.get(b'INGR'):
+            for rid, record in ingr_block.iter_present_records():
+                #--Ingredient must have name!
+                ##: Skips OBME records - rework to support them
+                if record.full and record.obme_record_version is None:
+                    effects = record.getEffects()
+                    if not (b'SEFF', 0) in effects:
+                        self.id_ingred[rid] = (record.eid, record.full, effects)
+        super().scanModFile(modFile, progress, [b'BOOK'])
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -155,7 +157,7 @@ class CoblCatalogsPatcher(ExSpecial):
 
 #------------------------------------------------------------------------------
 _ob_path = bush.game.master_file
-class SEWorldTestsPatcher(ExSpecial, ModLoader):
+class SEWorldTestsPatcher(ExSpecial):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _('SEWorld Tests')
     patcher_desc = _("Suspends Cyrodiil quests while in Shivering Isles. "
@@ -171,9 +173,11 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
     def __init__(self, p_name, p_file):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
-        if _ob_path in p_file.load_dict:
-            modInfo = self.patchFile.all_plugins[_ob_path]
-            modFile = self._mod_file_read(modInfo) # read Oblivion quests
+        p_file.update_read_factories(self._read_sigs, [_ob_path])
+
+    def initData(self,progress):
+        if _ob_path in self.patchFile.load_dict: # read Oblivion quests
+            modFile = self.patchFile.get_loaded_mod(_ob_path)
             for rid, record in modFile.tops[b'QUST'].iter_present_records():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:
@@ -185,9 +189,12 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         if modFile.fileInfo.fn_key == _ob_path: return
         super().scanModFile(modFile, progress, scan_sigs)
 
-    def _add_to_patch(self, rid, record, top_sig):
-        return rid in self.cyrodiilQuests and all(  #--365: playerInSeWorld
-            condition.ifunc != 365 for condition in record.conditions)
+    @property
+    def _keep_ids(self):
+        return self.cyrodiilQuests
+
+    def _add_to_patch(self, rid, record, top_sig):  #--365: playerInSeWorld
+        return all(condition.ifunc != 365 for condition in record.conditions)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""

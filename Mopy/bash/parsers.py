@@ -222,7 +222,7 @@ class _HandleAliases(CsvParser):
         self.aliases = aliases_ or {} # type: dict
         # Set to True when called by a patcher - can be used to alter stored
         # data format when reading from a csv - could be in a subclass
-        self._called_from_patcher = called_from_patcher
+        self._called_from_patcher = called_from_patcher # avoid using this!
         # (Mostly) map record sigs to dicts that map long fids to stored info
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
@@ -254,9 +254,7 @@ class _HandleAliases(CsvParser):
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(modInfo)
-        for top_grup_sig in self._parser_sigs:
-            typeBlock = modFile.tops.get(top_grup_sig)
-            if not typeBlock: continue
+        for top_grup_sig, typeBlock in modFile.iter_tops(self._parser_sigs):
             id_data = self.id_stored_data[top_grup_sig]
             for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
@@ -268,10 +266,9 @@ class _HandleAliases(CsvParser):
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
 class _AParser(_HandleAliases):
-    """The base class from which all parsers inherit, implements reading and
-    writing mods using PBash calls. You will of course still have to
-    implement _read_record_fp et al., depending on the passes and behavior
-    you want.
+    """Base class for parsers manipulating array record elements (factions and
+    relations). Behaves like a merger when reading csvs, keeping all the csv
+    entries (last item wins) and exporting to mods additions and changes.
 
     Reading from mods:
      - This is the most complex part of this design - we offer up to two
@@ -286,6 +283,8 @@ class _AParser(_HandleAliases):
      - If you want to skip either pass, just leave _fp_types / _sp_types
        empty."""
     _nested_type = lambda: defaultdict(dict)
+    _target_array = None # target record array attribute
+    array_item_attrs = None # the attributes this parser needs from array elements
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         # The types of records to read from in the first pass. These should be
@@ -335,9 +334,7 @@ class _AParser(_HandleAliases):
         def _fp_loop(mod_to_read):
             """Central loop of _read_plugin_fp, factored out into a method so
             that it can easily be used twice."""
-            for block_type in self._fp_types:
-                rec_block = mod_to_read.tops.get(block_type, None)
-                if not rec_block: continue
+            for block_type, rec_block in mod_to_read.iter_tops(self._fp_types):
                 for rfid, record in rec_block.iter_present_records():
                     self.id_context[rfid] = self._read_record_fp(record)
             self._fp_mods.add(mod_to_read.fileInfo.fn_key)
@@ -371,9 +368,7 @@ class _AParser(_HandleAliases):
         its masters. Results are stored in id_stored_data.
 
         :param loaded_mod: The loaded mod to read from."""
-        for rec_type in self._sp_types:
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            if not rec_block: continue
+        for rec_type, rec_block in loaded_mod.iter_tops(self._sp_types):
             for rfid, record in rec_block.iter_present_records():
                 # Check if we even want this record first
                 if self._is_record_useful(record):
@@ -428,14 +423,12 @@ class _AParser(_HandleAliases):
         self._current_mod = None
 
     # Writing to plugins
-    def _write_record_2(self, record, added_changed):
-        """This is where your parser should perform the actual work of writing
-        out the necessary changes to the record, using the given record
-        information to determine what to change.
-
-        :param record: The record to write to.
-        :param added_changed: The new record info."""
-        raise NotImplementedError
+    @classmethod
+    def get_empty_object(cls, record, faction_fid):
+        """Get an empty MelObject to add to the record array."""
+        target_entry = record.getDefault(cls._target_array)
+        target_entry.faction = faction_fid
+        return target_entry
 
     _changed_type = Counter
     def _write_record(self, record, new_data, changed_stats):
@@ -445,13 +438,36 @@ class _AParser(_HandleAliases):
         if new_data != cur_data:
             # It's different, ask the parser to write it out
             added_changed = set(new_data.items()) - set(cur_data.items())
-            self._write_record_2(record, added_changed)
+            for faction_fid, item_values in added_changed:
+                # See if this is a new item or a change to an existing one
+                array = attrgetter_cache[self._target_array](record)
+                for entry in array:
+                    if faction_fid == entry.faction:
+                        # Just a change, change the attributes
+                        target_entry = entry
+                        break
+                else:
+                    # It's an addition, we need to make a new object
+                    target_entry = self.get_empty_object(record, faction_fid)
+                    array.append(target_entry)
+                # Actually write out the attributes from new_data
+                if isinstance(self.array_item_attrs, str):
+                    setattr(target_entry, self.array_item_attrs, item_values)
+                else:
+                    for rel_attr, rel_val in zip(self.array_item_attrs,
+                                                 item_values):
+                        setattr(target_entry, rel_attr, rel_val)
             record.setChanged()
             changed_stats[record.rec_sig] += 1
 
     # Other API
     @property
     def all_types(self):
+        """Returns a set of all record types that this parser requires."""
+        return set(self._fp_types) | set(self._sp_types)
+
+    @property
+    def _parser_sigs(self):
         """Returns a set of all record types that this parser requires."""
         return set(self._fp_types) | set(self._sp_types)
 
@@ -464,14 +480,11 @@ class ActorFactions(_AParser):
                    _('Faction Object'), _('Rank'))
     _grup_index = 0
     _key2_getter = itemgetter(2, 3)
+    _target_array = 'factions'
+    array_item_attrs = 'rank'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        super(ActorFactions, self).__init__(aliases_, called_from_patcher)
-        if called_from_patcher:
-            # Need to redefine this for the patcher since we don't want to
-            # reassign self.__class__._nested_type
-            self.id_stored_data = defaultdict(lambda: defaultdict(lambda: {
-                'factions': []}))
+        super().__init__(aliases_, called_from_patcher)
         a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
         self._fp_types = () if called_from_patcher else (*a_types, b'FACT')
@@ -488,36 +501,20 @@ class ActorFactions(_AParser):
             raise NotImplementedError
         return {f.faction: f.rank for f in record.factions} # last mod wins
 
-    def _write_record_2(self, record, added_changed):
-        for fa, rank in added_changed:
-            # Check if this an addition or a change
-            for entry in record.factions:
-                if entry.faction == fa:
-                    # Just a change, use the existing faction
-                    target_entry = entry
-                    break
-            else:
-                # This is an addition, we need to create a new faction instance
-                target_entry = record.getDefault('factions')
-                record.factions.append(target_entry)
-                target_entry.faction = fa
-                target_entry.unused1 = b'ODB'
-            # Actually write out the attributes from new_info
-            target_entry.rank = rank
+    @classmethod
+    def get_empty_object(cls, record, faction_fid):
+        """We also need to set the (by default None) unused1 MelStruct
+        element."""
+        target_entry = super().get_empty_object(record, faction_fid)
+        target_entry.unused1 = b'ODB' ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
+        return target_entry
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         lfid = self._coerce_fid(csv_fields[5], csv_fields[6])
         rank = int(csv_fields[7])
-        if self._called_from_patcher:
-            ret_obj = RecordType.sig_to_class[top_grup_sig].getDefault(u'factions')
-            ret_obj.faction = lfid
-            ret_obj.rank = rank
-            ret_obj.unused1 = b'ODB'
-            aid = self._key2(csv_fields) ##: pass key2 ?
-            self.id_stored_data[top_grup_sig][aid][u'factions'].append(ret_obj)
-            return None # block updating id_stored_data in _parse_line
-        else:
-            return {lfid: rank}
+        aid = self._key2(csv_fields) ##: pass key2 ?
+        self.id_stored_data[top_grup_sig][aid][lfid] = rank
+        return None  # block updating id_stored_data in _parse_line
 
     def _row_out(self, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
@@ -734,7 +731,8 @@ class EditorIds(_HandleAliases):
 class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
-    cls_rel_attrs = bush.game.relations_attrs
+    array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
+    _target_array = 'relations'
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FactionRelations, self).__init__(aliases_, called_from_patcher)
@@ -742,8 +740,8 @@ class FactionRelations(_AParser):
         self._sp_types = (b'FACT',)
         self._needs_fp_master_sort = True
         self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
-            _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple( # first attr is faction
-            attr_csv_struct[a][1] for a in self.__class__.cls_rel_attrs[1:])
+            _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
+            attr_csv_struct[a][1] for a in self.__class__.array_item_attrs)
 
     def _read_record_fp(self, record):
         # Gather the latest value for the EID matching the FID
@@ -754,34 +752,16 @@ class FactionRelations(_AParser):
         # may have still deleted original relations.
         return True
 
-    def _read_record_sp(self, record, *, __attrgetters=attrgetter_cache):
+    def _read_record_sp(self, record, *, __attrgetters=tuple(
+            attrgetter_cache[a] for a in ('faction', *array_item_attrs))):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
         relations = self.id_stored_data[b'FACT'][record.fid]
         # Merge added relations, preserve changed relations
         for relation in record.relations:
-            rel_attrs = tuple(__attrgetters[a](relation) for a
-                              in self.cls_rel_attrs)
-            other_fac = rel_attrs[0]
-            relations[other_fac] = rel_attrs[1:]
+            other_fac, *rel_attrs = (a(relation) for a in __attrgetters)
+            relations[other_fac] = rel_attrs
         return relations
-
-    def _write_record_2(self, record, added_changed):
-        for rel_fac, rel_att_values in added_changed:
-            # See if this is a new relation or a change to an existing one
-            for entry in record.relations:
-                if rel_fac == entry.faction:
-                    # Just a change, change the attributes
-                    target_entry = entry
-                    break
-            else:
-                # It's an addition, we need to make a new relation object
-                target_entry = record.getDefault('relations')
-                record.relations.append(target_entry)
-            # Actually write out the attributes from new_info
-            for rel_attr, rel_val in zip(self.cls_rel_attrs,
-                                         (rel_fac, *rel_att_values)):
-                setattr(target_entry, rel_attr, rel_val)
 
     def _parse_line(self, csv_fields):
         _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
@@ -795,7 +775,7 @@ class FactionRelations(_AParser):
         return '\n'.join(['"%s",%s,"%s",%s,%s' % (
             main_eid, _fid_str(lfid), oth_eid, _fid_str(oth_fid), ','.join(
                 attr_csv_struct[a][2](x) for a, x in
-                zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
+                zip(self.__class__.array_item_attrs, relation_obj)))
         for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel)]) + '\n'
 
 #------------------------------------------------------------------------------
@@ -848,8 +828,8 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for top_grup_sig in self._parser_sigs:
-            for rfid, record in modFile.tops[top_grup_sig].iter_present_records():
+        for _sig, top_block in modFile.iter_tops(self._parser_sigs):
+            for rfid, record in top_block.iter_present_records():
                 if changeBase: record.fid = swapper(rfid)
                 record.mapFids(swapper, save_fids=True)
                 record.setChanged()

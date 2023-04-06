@@ -39,7 +39,7 @@ class PatchGame(GameInfo):
     def check_loaded_mod(cls, patch_file, modFile):
         """Perform some game specific validation on a loaded modFile and update
         PatchFile instance variables."""
-        if b'WRLD' in modFile.tops and modFile.tops[b'WRLD'].orphansSkipped:
+        if (wrld_block := modFile.tops.get(b'WRLD')) and wrld_block.orphansSkipped:
             patch_file.worldOrphanMods.append(modFile.fileInfo.fn_key)
 
     # Bash Tags supported by this game. List only tags that aren't used by

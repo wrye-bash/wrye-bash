@@ -25,14 +25,11 @@
 from collections import Counter, defaultdict
 from operator import attrgetter
 
-from ..base import APatcher, CsvListPatcher, ListPatcher, MultiTweakItem, \
-    ScanPatcher
-from ..patch_files import PatchFile
+from ..base import APatcher, ListPatcher, MultiTweakItem, ScanPatcher
 from ... import load_order
 from ...bolt import deprint
 from ...brec import RecordType
 from ...exception import BPConfigError
-from ...mod_files import LoadFactory, ModFile
 from ...parsers import FidReplacer
 
 # Patchers 1 ------------------------------------------------------------------
@@ -42,22 +39,19 @@ from ...parsers import FidReplacer
 class IndexingTweak(MultiTweakItem):
     _index_sigs: list[bytes]
 
-    def __init__(self):
-        super(IndexingTweak, self).__init__()
-        self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+    def __init__(self, bashed_patch):
+        super().__init__(bashed_patch)
+        bashed_patch.update_read_factories(self._index_sigs,
+            bashed_patch.merged_or_loaded_ord) ##: all_plugins?
         self._indexed_records = defaultdict(dict)
-
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo, self.loadFactory)
-        modFile.load_plugin()
-        return modFile
+        self._tweak_bp = bashed_patch
 
     def prepare_for_tweaking(self, patch_file):
-        for fn_plugin, pl_info in patch_file.merged_or_loaded_ord.items(): ##: all_plugins?
-            index_plugin = self._mod_file_read(pl_info)
-            for index_sig in self._index_sigs:
+        for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
+            index_plugin = self._tweak_bp.get_loaded_mod(fn_plugin)
+            for index_sig, block in index_plugin.iter_tops(self._index_sigs):
                 self._indexed_records[index_sig].update(
-                    index_plugin.tops[index_sig].iter_present_records())
+                    block.iter_present_records())
         super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
@@ -95,12 +89,12 @@ class MultiTweaker(ScanPatcher):
         self._tweak_dict: dict[bytes, list[MultiTweakItem]] = dict(tweak_dict)
 
     @classmethod
-    def tweak_instances(cls):
+    def tweak_instances(cls, bashed_patch):
         # Sort alphabetically first for aesthetic reasons
         tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
         # After that, sort to make tweaks instantiate & run in the right order
         tweak_classes.sort(key=lambda c: c.tweak_order)
-        return [t() for t in tweak_classes]
+        return [t(bashed_patch) for t in tweak_classes]
 
     @property
     def _read_sigs(self):
@@ -110,11 +104,15 @@ class MultiTweaker(ScanPatcher):
         """We need to iterate only through the master records for complex
         groups."""
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
-            patchBlock = self.patchFile.tops[top_sig]
+            patchBlock = self.patchFile.tops.get(top_sig)
             for rid, rec in block.iter_present_records(top_sig): # this
                 for p_tweak in self._tweak_dict[top_sig]:
                     if p_tweak.wants_record(rec):
-                        patchBlock.setRecord(rec)
+                        try:
+                            patchBlock.setRecord(rec)
+                        except AttributeError:
+                            patchBlock = self.patchFile.tops[top_sig]
+                            patchBlock.setRecord(rec)
                         break # Exit as soon as a tweak is interested
 
     def buildPatch(self,log,progress):
@@ -172,54 +170,76 @@ class MergePatchesPatcher(ListPatcher):
         'but some of its masters %(inactive_master)s are inactive.'),
         _('Please activate the inactive master(s) to fix this.')])
 
-    def __init__(self, p_name, p_file: PatchFile, p_sources):
-        super().__init__(p_name, p_file, p_sources)
-        if not self.isActive: return
-        # First, perform an error check for missing/inactive masters
-        for merge_src in self.srcs:
-            if ((mm := p_file.active_mm.get(merge_src)) or  # should not happen
-                    (mm := p_file.inactive_mm.get(merge_src))):
-                raise BPConfigError(self._missing_master_error % {
-                    'merged_plugin': merge_src, 'missing_master': mm})
-            elif mm := p_file.inactive_inm.get(merge_src):
-                # It's present but inactive - that won't work for merging
-                raise BPConfigError(self._inactive_master_error % {
-                    'merged_plugin': merge_src, 'inactive_master': mm})
+    @classmethod
+    def _validate_mod(cls, p_file, merge_src, raise_on_error):
+        if merge_src not in p_file.bp_mergeable:
+            err = err = f'{cls.__name__}: {merge_src} is not mergeable'
+        # Then, perform an error check for missing/inactive masters
+        elif ((mm := p_file.active_mm.get(merge_src)) # should not happen
+                or (mm := p_file.inactive_mm.get(merge_src))):
+            err = cls._missing_master_error % {'merged_plugin': merge_src,
+                                               'missing_master': mm}
+        elif mm := p_file.inactive_inm.get(merge_src):
+            # It's present but inactive - that won't work for merging
+            err = cls._inactive_master_error % {'merged_plugin': merge_src,
+                                                'inactive_master': mm}
+        else:
+            return True
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    def _process_sources(self, p_sources, p_file):
+        sup = super()._process_sources(p_sources, p_file)
         #--WARNING: Since other patchers may rely on the following update
         # during their __init__, it's important that MergePatchesPatcher runs
         # first - ensured through its group of 'General'
+        # use self.srcs below as p_sources may be filtered in principle
         p_file.set_mergeable_mods(self.srcs)
+        return sup
 
-class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
-    """Imports Form Id replacers into the Bashed Patch."""
-    patcher_group = u'General'
-    patcher_order = 15
+    def _update_patcher_factories(self, p_file):
+        """No initData - don't add to patch factories."""
+
+class _PatchFidReplacer(FidReplacer):
     _read_sigs = RecordType.simpleTypes | { # this better be initialized
         b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}
 
-    def __init__(self, p_name, p_file, p_sources):
-        super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+    def __init__(self, aliases_=None, called_from_patcher=False):
+        super().__init__(aliases_, called_from_patcher)
         # we need to override self._parser_sigs from FidReplacer.__init__
         self._parser_sigs = self._read_sigs
-        ListPatcher.__init__(self, p_name, p_file, p_sources)
 
     def _parse_line(self, csv_fields):
         oldId = self._coerce_fid(csv_fields[1], csv_fields[2]) # oldMod, oldObj
         newId = self._coerce_fid(csv_fields[5], csv_fields[6]) # newMod, newObj
         self.old_new[oldId] = newId
 
+class ReplaceFormIDsPatcher(ListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    patcher_group = 'General'
+    patcher_order = 15
+    _read_sigs = _PatchFidReplacer._read_sigs
+    _csv_parser = _PatchFidReplacer
+    _csv_key = 'Formids'
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        earlier_loading = self.patchFile.all_plugins
+        self.old_new = {k: v for k, v in parser_instance.old_new.items() if
+            k.mod_fn in earlier_loading and v.mod_fn in earlier_loading}
+        self.isActive = bool(self.old_new)
+
     def scanModFile(self, modFile, progress, *, __get_refs=(
             attrgetter('temp_refs'), attrgetter('persistent_refs'))):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        patchCells = self.patchFile.tops[b'CELL']
-        patchWorlds = self.patchFile.tops[b'WRLD']
 ##        for top_grup_sig in MreRecord.simpleTypes:
 ##            for record in modFile.tops[top_grup_sig].iter_present_records():
 ##                record = record.getTypeCopy(mapper)
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
+            patchCells = self.patchFile.tops[b'CELL']
             for cfid, cblock in modFile.tops[b'CELL'].iter_present_records():
                 if patch_cell := cfid in patchCells.id_records:
                     patch_cell = patchCells.setRecord(cblock.master_record,
@@ -232,6 +252,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
                                     cblock.master_record)
                             get_refs(patch_cell).setRecord(rec, do_copy=False)
         if b'WRLD' in modFile.tops:
+            patchWorlds = self.patchFile.tops[b'WRLD']
             for wfid, worldBlock in modFile.tops[b'WRLD'].iter_present_records():
                 if patch_wrld := (wfid in patchWorlds.id_records):
                     patch_wrld = patchWorlds.setRecord(
@@ -294,7 +315,7 @@ class ReplaceFormIDsPatcher(FidReplacer, CsvListPatcher):
             if keepWorld:
                 keep(worldId, worldBlock)
         log.setHeader(f'= {self._patcher_name}')
-        self._srcMods(log)
+        self._log_srcs(log)
         log('\n=== ' + _('Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(f'* {srcMod}: {count[srcMod]:d}')

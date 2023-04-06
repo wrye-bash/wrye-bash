@@ -51,7 +51,7 @@ class _ANamesTweak(CustomChoiceTweak):
     _may_lack_specifiers = False # Whether formats without '%s' in them are OK
     _prepends_name = False # Whether the tweak prepends or appends the name
 
-    def __init__(self):
+    def __init__(self, bashed_patch):
         # Generate choices based on the example item, code and stat
         dynamic_choices = []
         for choice_fmt in self._choice_formats:
@@ -71,7 +71,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     formatted_label += self._example_item
             dynamic_choices.append((formatted_label, choice_fmt))
         self.tweak_choices = dynamic_choices
-        super(_ANamesTweak, self).__init__()
+        super(_ANamesTweak, self).__init__(bashed_patch)
 
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
@@ -281,8 +281,8 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
     tweak_choices = [(c, c) for c in bush.game.body_part_codes]
     tweak_order = 9 # Run before all other tweaks
 
-    def __init__(self):
-        super(NamesTweak_BodyPartCodes, self).__init__()
+    def __init__(self, bashed_patch):
+        super(NamesTweak_BodyPartCodes, self).__init__(bashed_patch)
         len_first = len(self.tweak_choices[0][0])
         # Verify that the body_part_codes constant is valid
         for tc in self.tweak_choices[1:]:
@@ -750,8 +750,8 @@ class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
                   u'end of the ammunition name.')
     _index_sigs = [b'FLST']
 
-    def __init__(self):
-        super(NamesTweak_AmmoWeight_Fo3, self).__init__()
+    def __init__(self, bashed_patch):
+        super(NamesTweak_AmmoWeight_Fo3, self).__init__(bashed_patch)
         self._look_up_weight = None
 
     def prepare_for_tweaking(self, patch_file):
@@ -848,8 +848,8 @@ class _ATextReplacer(MultiTweakItem):
     _tr_replacements = {}
     _tr_extra_gmsts = {} # override in implementations
 
-    def __init__(self):
-        super(_ATextReplacer, self).__init__()
+    def __init__(self, bashed_patch):
+        super(_ATextReplacer, self).__init__(bashed_patch)
         self._re_mapping = {re.compile(m): r for m, r
                             in self._tr_replacements.items()}
         # Convert the match/replace strings to record paths
