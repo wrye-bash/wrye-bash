@@ -552,8 +552,11 @@ class Installer(ListInfo):
                     self.skipDirFiles.add(full)
                     return None # we don't want to install those files
                 elif bass.settings['bash.installers.redirect_docs']:
-                    # Move top-level docs to the Docs folder
-                    dest = docs_ + dest
+                    if (fileLower not in bush.game.Bain.no_skip
+                            and not any(nsr.match(fileLower) for nsr in
+                                        bush.game.Bain.no_skip_regexes)):
+                        # Move top-level docs to the Docs folder
+                        dest = docs_ + dest
             return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs

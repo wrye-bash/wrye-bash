@@ -80,6 +80,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
 
     class Bain(Fallout3GameInfo.Bain):
         data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
+        no_skip = Fallout3GameInfo.Bain.no_skip | {
+            'aaid.txt', # 3P: Auto Activate Invisible Doors
+        }
         no_skip_dirs = Fallout3GameInfo.Bain.no_skip_dirs | {
             # 3P: JIP LN's Script Runner
             _j('nvse', 'plugins', 'scripts'): {'.txt'},
