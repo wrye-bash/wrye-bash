@@ -25,7 +25,7 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 
 from ...bolt import Flags, flag
-from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
+from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, MelPostMast, MelPostMastS, \
     FixedString, MelArray, MelBase, MelBookText, MelColor, MelColorO, \
     MelCounter, MelDescription, MelEffectsTes3, MelFixedString, MelFloat, \
     MelGroup, MelGroups, MelIcons, MelLists, MelLLChanceNoneTes3, \
@@ -222,7 +222,6 @@ class MelSpellsTes3(MelGroups):
 class MreTes3(AMreHeader):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
-    _post_masters_sigs = {b'GMDT', b'SCRD', b'SCRS'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', 'I', '32s', '256s', 'I'], ('version', 1.3),
@@ -231,14 +230,13 @@ class MreTes3(AMreHeader):
         AMreHeader.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
-            MelStruct(b'GMDT', [u'6f', u'64s', u'f', u'32s'], u'pc_curr_health',
-                u'pc_max_health', u'unknown1', u'unknown2', u'unknown3',
-                u'unknown4', (FixedString(64), u'curr_cell'),
-                u'unknown5', (AutoFixedString(32), u'pc_name')),
-            MelBase(b'SCRD', u'unknown_scrd'), # likely screenshot-related
-            MelArray(u'screenshot_data',
-                # Yes, the correct order is bgra
-                MelStruct(b'SCRS', [u'4B'], u'blue', u'green', u'red', u'alpha'),
+            MelPostMastS(b'GMDT', ['6f', '64s', 'f', '32s'], 'pc_curr_health',
+                'pc_max_health', 'unknown1', 'unknown2', 'unknown3',
+                'unknown4', (FixedString(64), 'curr_cell'),
+                'unknown5', (AutoFixedString(32), 'pc_name')),
+            MelPostMast(b'SCRD', 'unknown_scrd'), #likely screenshot-related
+            MelArray('screenshot_data', # Yes, the correct order is bgra
+                MelPostMastS(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
             ),
         ),
     )

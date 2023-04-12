@@ -24,7 +24,8 @@
 import operator
 
 from ...bolt import Flags, flag
-from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
+from ...brec import MelModelCompare, MelPostMastA, MelPostMast, MelPostMastI, \
+    FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreWithItems, \
     AMreWithKeywords, ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, \
     FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, MelExtra, \
@@ -425,7 +426,6 @@ class MelVmad(AMelVmad):
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
     next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
@@ -441,14 +441,14 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
         MelGroups('transient_types',
-            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
+            MelPostMastA('unknownTNAM', MelFid(b'TNAM'),
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
-        MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'interior_cell_count'),
+        MelPostMastI(b'INTV', 'unknownINTV'),
+        MelPostMastI(b'INCC', 'interior_cell_count'),
     )
 
 #------------------------------------------------------------------------------

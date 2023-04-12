@@ -204,7 +204,7 @@ class ExteriorGrupHeader(GrupHeader):
         return (f'<GRUP Header: {group_types[self.groupType]}, '
                 f'{tuple(reversed(self.label))}>')
 
-def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
+def unpack_header(ins, *, _entering_context=False, __rh=RecordHeader,
                   __children=frozenset({1, 6, 7, 8, 9, 10}),
                   __exterior=frozenset({4, 5})):
     """Header factory. For GRUP headers it will unpack the 'label' according

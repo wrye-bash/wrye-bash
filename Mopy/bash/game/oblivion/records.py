@@ -495,7 +495,6 @@ class MreHasEffects(MelRecord):
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = set()
     next_object_default = 0x800
 
     melSet = MelSet(

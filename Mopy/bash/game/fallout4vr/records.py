@@ -24,15 +24,14 @@
 FO4VR."""
 
 from ...bolt import flag
-from ...brec import AMreHeader, MelBase, MelFid, MelGroups, MelNull, MelSet, \
-    MelSimpleArray, MelStruct, MelUInt32
+from ...brec import AMreHeader, MelFid, MelGroups, MelNull, MelPostMast, \
+    MelPostMastA, MelPostMastI, MelSet, MelStruct, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
     next_object_default = 0x800
 
     class HeaderFlags(AMreHeader.HeaderFlags):
@@ -48,12 +47,12 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
         MelGroups('transient_types',
-            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
+            MelPostMastA('unknownTNAM', MelFid(b'TNAM'),
                 prelude=MelUInt32(b'TNAM', 'form_type')),
         ),
-        MelUInt32(b'INTV', 'unknownINTV'),
-        MelUInt32(b'INCC', 'interior_cell_count'),
+        MelPostMastI(b'INTV', 'unknownINTV'),
+        MelPostMastI(b'INCC', 'interior_cell_count'),
     )

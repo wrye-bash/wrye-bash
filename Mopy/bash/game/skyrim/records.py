@@ -26,7 +26,7 @@ from itertools import repeat
 
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, sig_to_str
-from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
+from ...brec import MelModelCompare, MelPostMastA, MelPostMast, FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     AMreActor, AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, \
     AMreRace, AMreWithItems, AMreWithKeywords, AMreWrld, AMreWthr, \
     ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, FlagDecider, \
@@ -299,7 +299,7 @@ class MreHasEffects(MelRecord):
         return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
-class MelInteriorCellCount(MelUInt32):
+class MelInteriorCellCount(MelPostMast, MelUInt32):
     """Handles the TES4 subrecord INCC, which is actually a uint32 but was
     marked as an unknown byte array in TES5Edit for a long time. Handle it by
     just skipping subrecords that can't be read as a uint32."""
@@ -407,7 +407,6 @@ class MelWaterCurrents(MelSequential):
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         localized: bool = flag(7)
@@ -423,9 +422,9 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
-        MelBase(b'INTV', 'unknownINTV'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
+        MelPostMast(b'INTV', 'unknownINTV'),
         MelInteriorCellCount(),
     )
 

@@ -185,8 +185,6 @@ class AMreGlob(MelRecord):
 #------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
-    # Subrecords that can appear after the masters block - must be set per game
-    _post_masters_sigs: set[bytes]
     # Set per game, the value that nextObject defaults to
     next_object_default: int
 
@@ -269,43 +267,13 @@ class AMreHeader(MelRecord):
         self.author_pstr = remove_newlines(new_author)
 
     def loadData(self, ins, endPos, *, file_offset=0):
-        """Loads data from input stream - copy pasted from parent cause we need
-        to grab the masters as soon as possible due to ONAM needing FID
-        wrapping."""
-        loaders = self.__class__.melSet.loaders
-        # Load each subrecord
-        ins_at_end = ins.atEnd
-        masters_loaded = False
-        in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
-        while not ins_at_end(endPos, self._rec_sig):
-            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
-                                                 file_offset=file_offset)
-            if not masters_loaded and sub_type in self._post_masters_sigs:
-                masters_loaded = True
-                utils_constants.FORM_ID = FormId.from_masters(
-                    (*self.masters, ins.inName), in_overlay_plugin)
-            try:
-                loader = loaders[sub_type]
-                try:
-                    loader.load_mel(self, ins, sub_type, sub_size,
-                                    self._rec_sig, sub_type) # *debug_strs
-                    continue
-                except Exception as er:
-                    error = er
-            except KeyError: # loaders[sub_type]
-                # Wrap this error to make it more understandable
-                error = f'Unexpected subrecord: {self.rec_str}.' \
-                        f'{sig_to_str(sub_type)}'
-            file_offset += ins.tell()
-            bolt.deprint(self.error_string('loading', file_offset, sub_size,
-                                           sub_type))
-            if isinstance(error, str):
-                raise exception.ModError(ins.inName, error)
-            raise exception.ModError(ins.inName, f'{error!r}') from error
-        if not masters_loaded:
-            augmented_masters = (*self.masters, ins.inName)
+        """Loads data from input stream - we need to grab the masters as
+        soon as possible due to ONAM needing FID wrapping."""
+        super().loadData(ins, endPos, file_offset=file_offset)
+        if utils_constants.FORM_ID is None:
+            in_overlay_plugin = getattr(self.flags1, 'overlay_flag', False)
             utils_constants.FORM_ID = FormId.from_masters(
-                augmented_masters, in_overlay_plugin)
+                (*self.masters, ins.inName), in_overlay_plugin)
         self._truncate_master_sizes()
 
     def _truncate_master_sizes(self):

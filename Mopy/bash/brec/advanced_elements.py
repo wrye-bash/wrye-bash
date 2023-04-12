@@ -34,7 +34,7 @@ from itertools import chain
 from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
-    MelSequential, MelStruct, MelGroups
+    MelSequential, MelStruct, MelGroups, MelPostMast
 from .. import bush
 from ..bolt import attrgetter_cache, deprint, structs_cache, \
     flatten_multikey_dict
@@ -450,6 +450,8 @@ class MelSimpleArray(MelArray):
 
     def _pack_array_data(self, array_val):
         return b''.join(map(self._element.packer, array_val))
+
+class MelPostMastA(MelPostMast, MelSimpleArray): pass
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):
