@@ -25,10 +25,10 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 from ...bolt import Flags, flag
 from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
-    FixedString, MelArray, MelBase, MelBookText, MelColorO, \
-    MelCounter, MelDescription, MelEffectsTes3, MelFixedString, MelFloat, \
-    MelGroup, MelGroups, MelIcons, AMelLists, MelLLChanceNoneTes3, \
-    MelLLFlagsTes3, MelNull, MelRecord, MelRef3D, MelRefScale, MelSequential, \
+    FixedString, MelArray, MelBase, MelBookText, MelColorO, MelCounter, \
+    MelDescription, MelEffectsTes3, MelFixedString, MelFloat, MelGroup, \
+    MelGroups, MelIcons, AMelLists, MelLLChanceNoneTes3, MelLLFlagsTes3, \
+    MelNull, MelPostMast, MelPostMastS, MelRecord, MelRef3D, MelRefScale, MelSequential, \
     MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
     MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
     SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs, \
@@ -235,7 +235,6 @@ class MelSpellsTes3(MelGroups):
 class MreTes3(AMreHeader):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
-    _post_masters_sigs = {b'GMDT', b'SCRD', b'SCRS'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', 'I', '32s', '256s', 'I'], ('version', 1.3),
@@ -244,14 +243,13 @@ class MreTes3(AMreHeader):
         AMreHeader.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
-            MelStruct(b'GMDT', ['6f', '64s', 'f', '32s'], 'pc_curr_health',
+            MelPostMastS(b'GMDT', ['6f', '64s', 'f', '32s'], 'pc_curr_health',
                 'pc_max_health', 'unknown1', 'unknown2', 'unknown3',
                 'unknown4', (FixedString(64), 'curr_cell'),
                 'unknown5', (AutoFixedString(32), 'pc_name')),
-            MelBase(b'SCRD', 'unknown_scrd'), # likely screenshot-related
-            MelArray('screenshot_data',
-                # Yes, the correct order is bgra
-                MelStruct(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
+            MelPostMast(b'SCRD', 'unknown_scrd'), # likely screenshot-related
+            MelArray('screenshot_data', # Yes, the correct order is bgra
+                MelPostMastS(b'SCRS', ['4B'], 'blue', 'green', 'red', 'alpha'),
             ),
         ),
     )

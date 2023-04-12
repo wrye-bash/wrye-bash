@@ -43,7 +43,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, MelNoteType, \
     MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
     MelNull, MelObject, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
-    MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, MelRaceParts, \
+    MelPerkData, MelPerkParamsGroups, MelPostMastA, MelPostMast, MelRace, MelRaceData, MelRaceParts, \
     MelRaceVoices, MelReadOnly, MelRef3D, MelReferences, MelMgefEsce, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
     MelRelations, MelScript, MelScriptVars, MelSequential, MelSet, MelVoice, \
@@ -372,7 +372,6 @@ class MelSoundRandomLooping(MelFid):
 class MreTes4(MelRecord, AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN'}
     next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags, AMreHeader.HeaderFlags):
@@ -386,8 +385,8 @@ class MreTes4(MelRecord, AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
     )
 
 #------------------------------------------------------------------------------
