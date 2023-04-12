@@ -27,8 +27,8 @@ from ..fallout3.records import MelDestructible, MelModel, MelRecord
 from ...bolt import Flags, flag
 from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
     MelDescription, MelEdid, MelFid, MelFloat, MelFull, MelGroups, \
-    MelIco2, MelIcon, MelIcons, MelNull, MelScript, MelSet, \
-    MelSimpleArray, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
+    MelIco2, MelIcon, MelIcons, MelNull, MelPostMast, MelPostMastA, \
+    MelScript, MelSet, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
     MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
     MelValueWeight, MelSimpleGroups
 
@@ -38,7 +38,6 @@ from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
 class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN'}
     next_object_default = 0x800
 
     melSet = MelSet(
@@ -49,8 +48,8 @@ class MreTes4(AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
     )
 
 #------------------------------------------------------------------------------

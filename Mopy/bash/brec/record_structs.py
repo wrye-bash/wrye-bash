@@ -542,10 +542,10 @@ class MelRecord(MreRecord, GetAttrer):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
             try:
-                loader = loaders[sub_type]
+                mel_loader = loaders[sub_type]
                 try:
-                    loader.load_mel(self, ins, sub_type, sub_size,
-                                    self._rec_sig, sub_type) # *debug_strs
+                    mel_loader.load_mel(self, ins, sub_type, sub_size,
+                                        self._rec_sig, sub_type) # *debug_strs
                     continue
                 except Exception as er:
                     error = er

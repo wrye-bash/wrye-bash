@@ -29,8 +29,8 @@ from typing import BinaryIO
 
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
-    int_unpacker, null1, GetAttrer, SlottedType
-from .. import bolt, exception
+    int_unpacker, null1, GetAttrer, SlottedType, FormId
+from .. import bolt, exception, bush
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
 
@@ -946,3 +946,19 @@ class MelFid(MelUInt32):
     def mapFids(self, record, function, save_fids=False):
         result = function(getattr(record, self.attr, None))
         if save_fids: setattr(record, self.attr, result)
+
+#------------------------------------------------------------------------------
+class MelPostMast(MelBase):
+    """Elements that come after the masters in MreTes4/3 and are responsible
+    for setting FORM_ID."""
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        if utils_constants.FORM_ID is None:
+            in_overlay_plugin = bush.game.has_overlay_plugins and \
+                                record.flags1.overlay_flag
+            utils_constants.FORM_ID = FormId.from_masters(
+                (*record.masters, ins.inName), in_overlay_plugin)
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+
+class MelPostMastS(MelPostMast, MelStruct): pass
+class MelPostMastI(MelPostMast, MelUInt32): pass

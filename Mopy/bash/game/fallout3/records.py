@@ -26,7 +26,7 @@ file must be imported till then."""
 
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, struct_calcsize, structs_cache
-from ...brec import MelModelCompare, FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
+from ...brec import MelModelCompare, MelPostMastA, MelPostMast, FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreRace, AMreWithItems, \
     AMreWrld, AMreWthr, AttrValDecider, BipedFlags, MelActionFlags, \
     MelActivateParents, MelActorSounds, MelAddnDnam, MelAnimations, MelArray, \
@@ -372,7 +372,6 @@ class MelSoundRandomLooping(MelFid):
 class MreTes4(MelRecord, AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN'}
     next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags, AMreHeader.HeaderFlags):
@@ -386,8 +385,8 @@ class MreTes4(MelRecord, AMreHeader):
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
         AMreHeader.MelMasterNames(),
-        MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', 'screenshot'),
+        MelPostMastA('overrides', MelFid(b'ONAM')),
+        MelPostMast(b'SCRN', 'screenshot'),
     )
 
 #------------------------------------------------------------------------------
