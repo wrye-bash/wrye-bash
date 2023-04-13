@@ -855,25 +855,29 @@ class MelUnion(MelBase):
             return self._get_element(
                 getattr(record, self.decider_result_attr))
 
+    def _mel_parts(self, with_decider=True):
+        """The Mels that will assign attributes to the record/MelObject."""
+        mel_parts = self.element_mapping.values()
+        if self.fallback: mel_parts = *mel_parts, self.fallback
+        if with_decider and isinstance(self.decider, PartialLoadDecider):
+            # yep this one too will be assigned to slotted MelObject
+            mel_parts = *mel_parts, self.decider._loader
+        return mel_parts
+
     def getSlotsUsed(self):
         # We need to reserve every possible slot, since we can't know what
         # we'll resolve to yet. Use a set to avoid duplicates.
         slots_ret = {self.decider_result_attr}
-        for element in self.element_mapping.values():
+        for element in self._mel_parts():
             slots_ret.update(element.getSlotsUsed())
-        if self.fallback: slots_ret.update(self.fallback.getSlotsUsed())
-        if isinstance(self.decider, PartialLoadDecider):
-            # yep this one too will be assigned to slotted MelObject
-            slots_ret.update(self.decider._loader.getSlotsUsed())
         return tuple(slots_ret)
 
     def getLoaders(self, loaders):
         # We need to collect all signatures and assign ourselves for them all
         # to handle unions with different signatures
         temp_loaders = {}
-        for element in self.element_mapping.values():
+        for element in self._mel_parts(with_decider=False):
             element.getLoaders(temp_loaders)
-        if self.fallback: self.fallback.getLoaders(temp_loaders)
         for signature in temp_loaders:
             loaders[signature] = self
 
@@ -881,9 +885,7 @@ class MelUnion(MelBase):
         # Ask each of our elements, and remember the ones where we'd have to
         # actually forward the mapFids call. We can't just blindly call
         # mapFids, since MelBase.mapFids is abstract.
-        elements = self.element_mapping.values()
-        if self.fallback: elements = self.fallback, *elements
-        for element in elements:
+        for element in self._mel_parts(with_decider=False):
             temp_elements = set()
             element.hasFids(temp_elements)
             if temp_elements:
@@ -900,13 +902,8 @@ class MelUnion(MelBase):
         if (dra := self.decider_result_attr) in defaultrs: # and defaultrs[self.decider_result_attr] is not None:
             raise SyntaxError(f'{self} duplicate attr {dra}')
         defaultrs[dra] = None
-        if isinstance(self.decider, PartialLoadDecider):
-            # yep this one too will be assigned to slotted MelObject
-            self.decider._loader.getDefaulters(mel_set_instance)
-        for element in self.element_mapping.values():
+        for element in self._mel_parts():
             element.getDefaulters(mel_set_instance)
-        if self.fallback:
-            self.fallback.getDefaulters(mel_set_instance)
 
     def mapFids(self, record, function, save_fids=False):
         element = self._get_element_from_record(record)

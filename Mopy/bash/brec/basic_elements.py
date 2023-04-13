@@ -30,7 +30,7 @@ from typing import BinaryIO
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
     int_unpacker, null1, GetAttrer, SlottedType
-from .. import bolt, bush, exception
+from .. import bolt, exception
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
 
@@ -88,18 +88,8 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
-        cond_val_data = bush.game.condition_function_data
-        to_show = []
-        for obj_attr in self.__slots__:
-            if getattr(self, obj_attr) is not None:
-                obj_val = getattr(self, obj_attr)
-                # Show the CK names for condition functions, their numeric
-                # representation is really hard to work with
-                if obj_attr == u'ifunc': ##: FIXME move this to conditions MelGroups
-                    to_show.append(f'{obj_attr}: {obj_val:d} '
-                        f'({cond_val_data.get(obj_val, ["Unknown"])[0]})')
-                else:
-                    to_show.append(f'{obj_attr}: {obj_val!r}')
+        to_show = [f'{obj_attr}: {obj_val!r}' for obj_attr in self.__slots__ if
+                   (obj_val := getattr(self, obj_attr)) is not None]
         return f'<{", ".join(to_show)}>'
 
 class AttrsCompare(MelObject):
