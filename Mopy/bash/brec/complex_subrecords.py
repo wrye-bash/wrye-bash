@@ -201,7 +201,7 @@ class _MelCtda(MelUnion):
         }, decider=PartialLoadDecider(
             # Skip everything up to the function index in one go, we'll be
             # discarding this once we rewind anyways.
-            loader=MelStruct(ctda_sub_sig, ['8s', 'H'], 'ctda_skip', 'ifunc'),
+            loader=MelStruct(ctda_sub_sig, ['8s', 'H'], '_ctda_skip', 'ifunc'),
             decider=AttrValDecider('ifunc'),
         ))
         self._ctda_mel: MelStruct = next(iter(self.element_mapping.values()))
@@ -291,23 +291,10 @@ class _MelCtda(MelUnion):
         self.fid_elements = list(self.element_mapping.values())
         formElements.add(self)
 
-    def getLoaders(self, loaders):
-        loaders[self._ctda_mel.mel_sig] = self
-
-    def getSlotsUsed(self):
-        return 'ctda_skip', self.decider_result_attr, \
-            *self._ctda_mel.getSlotsUsed()
-
-    def getDefaulters(self, mel_set_instance):
-        defaultrs = mel_set_instance.defaulters
-        if self.decider_result_attr in defaultrs: # and defaultrs[self.decider_result_attr] is not None:
-            raise SyntaxError(
-                f'{self} duplicate attr {self.decider_result_attr}')
-        defaultrs[self.decider_result_attr] = None
-        # yep this one too will be assigned to slotted MelObject
-        self.decider._loader.getDefaulters(mel_set_instance)
-        next(iter(self.element_mapping.values())).getDefaulters(mel_set_instance)
-        # no fallback
+    def _mel_parts(self, with_decider=True):
+        # all structs are equivalent with respect to getSlotsUsed/Defaulters
+        return self._ctda_mel, self.decider._loader if with_decider else \
+            self._ctda_mel, # no fallback
 
 class _MelCtdaFo3(_MelCtda):
     """Version of _MelCtda that handles the additional complexities that were
@@ -377,7 +364,27 @@ class _CtdaDecider(SignatureDecider):
     def decide_dump(self, record):
         return b'CTDA'
 
-class MelConditionsTes4(MelGroups):
+class _MelCtdaGroups(MelGroups):
+    """Special __repr__ for CDTA's."""
+
+    class _CdtaObj(MelObject):
+        def __repr__(self):
+            cond_val_data = bush.game.condition_function_data
+            to_show = []
+            for obj_attr in self.__slots__:
+                if (obj_val := getattr(self, obj_attr)) is not None:
+                    # Show the CK names for condition functions, their numeric
+                    # representation is really hard to work with
+                    if obj_attr == 'ifunc':
+                        to_show.append(f'{obj_attr}: {obj_val:d} '
+                            f'({cond_val_data.get(obj_val, ["Unknown"])[0]})')
+                    else:
+                        to_show.append(f'{obj_attr}: {obj_val!r}')
+            return f'<{", ".join(to_show)}>'
+
+    _mel_object_base_type = _CdtaObj
+
+class MelConditionsTes4(_MelCtdaGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
     def __init__(self):
@@ -391,7 +398,7 @@ class MelConditionsTes4(MelGroups):
         )
 
 # API - FO3 and FNV -----------------------------------------------------------
-class MelConditionsFo3(MelGroups):
+class MelConditionsFo3(_MelCtdaGroups):
     """A list of conditions."""
     def __init__(self):
         # Note that reference can be a fid - handled in _MelCtdaFo3.mapFids
@@ -404,7 +411,7 @@ class MelConditionList(MelGroups):
     games. See also MelConditions, which includes a counter for this class."""
     def __init__(self, conditions_attr='conditions'):
         super().__init__(conditions_attr,
-            MelGroups('condition_list',
+            _MelCtdaGroups('condition_list',
                 _MelCtdaFo3(suffix_fmt=['2I', 'i'],
                     suffix_elements=['runOn', 'reference', 'param3'],
                     old_suffix_fmts={'2I', 'I', ''}),
