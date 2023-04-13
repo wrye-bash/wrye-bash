@@ -37,11 +37,15 @@ from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
 #------------------------------------------------------------------------------
 class _MelObjectType(SlottedType):
     """Metaclass responsible for adding comparison attributes to its
-    instances."""
+    instances. It will filter out attributes whose names start by '_',
+    'unknown' or 'unused'."""
 
-    def __new__(cls, name, bases, classdict):
+    def __new__(cls, name, bases, classdict, *,
+                __ignored=('_', 'unknown', 'unused')):
         new = super(_MelObjectType, cls).__new__(cls, name, bases, classdict)
         comp_attrs = classdict.get('compare_attrs') or new.__slots__
+        # ignore unknown/unused attributes in MelObject comparisons
+        comp_attrs = (c for c in comp_attrs if not c.startswith(__ignored))
         if acts := classdict.get('compare_actions'): # iterated separately
             comp_attrs = (c for c in comp_attrs if c not in acts)
         new.compare_attrs = frozenset(comp_attrs)
