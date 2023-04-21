@@ -25,6 +25,7 @@ from __future__ import annotations
 import collections
 import copy
 import datetime
+import html
 import io
 import os
 import pickle
@@ -3026,7 +3027,7 @@ class WryeText:
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = to_unix_newlines(line)
+            line = html.escape(to_unix_newlines(line))
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
