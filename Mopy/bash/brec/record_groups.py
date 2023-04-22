@@ -156,7 +156,7 @@ class _HeadedGrup(_AMobBase):
     def __init__(self, grup_head_or_end, load_f, ins):
         if self._grup_header_type:
             # we need to store the _end_pos for WorldChildren
-            self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size())
+            self._end_pos = ins and (ins.tell() + grup_head_or_end.blob_size)
             self._grup_head = grup_head_or_end
         else: # _ExteriorCells
             # just a guess for _ExteriorCells, it's the WorldChildren _end_pos
@@ -177,8 +177,8 @@ class _HeadedGrup(_AMobBase):
         # block data structures - see _ExteriorCells
         group_size = self.getSize()
         if self._grup_header_type:
-            if self._grup_head:
-                self._grup_head.size = group_size # keep the rest of the header
+            if self._grup_head: # only update size, keep the rest of the header
+                self._grup_head.group_size = group_size
                 out.write(self._grup_head.pack_head())
             else: raise self._load_err(f'Missing header in {self!r}')
 
@@ -205,7 +205,7 @@ class MobBase(_HeadedGrup):
         """Returns size (including size of any group headers)."""
         if self.grup_blob is None:
             raise NotImplementedError(f'{self!r} was not loaded')
-        return self._grup_head.size
+        return self._grup_head.group_size
 
     def get_num_headers(self):
         """Returns number of records, including self (if plusSelf), unless
@@ -226,7 +226,7 @@ class MobBase(_HeadedGrup):
                     header = unpack_header(ins)
                     if header.recType != b'GRUP':
                         # FMR.seek doesn't have *debug_str arg so use blob_size
-                        ins.seek(header.blob_size(), 1) # instead of skip_blob
+                        ins.seek(header.blob_size, 1) # instead of skip_blob
                     num_headers += 1
             self._num_headers = num_headers
             return self._num_headers
@@ -1030,9 +1030,9 @@ class MobCells(TopComplexGrup):
             elif _rsig == b'GRUP':
                 gt = header.groupType
                 if gt == self._block_type: # Block number
-                    endBlockPos = insTell() + header.blob_size()
+                    endBlockPos = insTell() + header.blob_size
                 elif gt == self._subblock_type: # Sub-block number
-                    endSubblockPos = insTell() + header.blob_size()
+                    endSubblockPos = insTell() + header.blob_size
                 else:
                     self._load_err(f'Unexpected subgroup {gt:d} in '
                                    f'{self} group.')

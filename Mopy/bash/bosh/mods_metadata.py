@@ -816,7 +816,6 @@ class NvidiaFogFixer(object):
         self.fixedCells = set()
 
     def fix_fog(self, progress, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
-                __wrld_types=frozenset((b'CELL', b'WRLD')), # FIXME - skip WRLD top group also?
                 __packer=structs_cache[u'12s2f2l2f'].pack):
         """Duplicates file, then walks through and edits file as necessary."""
         progress.setFull(self.modInfo.fsize)
@@ -827,23 +826,22 @@ class NvidiaFogFixer(object):
         #--Scan/Edit
         with ModReader.from_info(self.modInfo) as ins:
             with ShortFidWriteContext(minfo_path.temp) as out:
-                def copy(bsize):
-                    buff = ins.read(bsize)
-                    out.write(buff)
                 while not ins.atEnd():
                     progress(ins.tell())
                     header = unpack_header(ins)
                     _rsig = header.recType
-                    out.write(header.pack_head())
-                    if _rsig == b'GRUP':
-                        if header.groupType != 0:
-                            pass # treat CELL/WRLD sub-groups record by record
-                        elif header.label not in __wrld_types:
-                            copy(header.blob_size())
+                    out.write(header.pack_head()) # copy the GRUP/record header
+                    if (header.is_top_group_header and header.label != b'CELL'
+                        # treat CELL block subgroups record by record - analyze
+                        # CELLs but just copy cell-children records over. If
+                        # _rsig == GRUP no need to do anything (copied above)
+                            ) or (_rsig != b'GRUP' and _rsig != b'CELL'):
+                        buff = ins.read(header.blob_size)
+                        out.write(buff)
                     #--Handle cells
                     elif _rsig == b'CELL':
-                        nextRecord = ins.tell() + header.blob_size()
-                        while ins.tell() < nextRecord:
+                        next_header = ins.tell() + header.blob_size
+                        while ins.tell() < next_header:
                             subrec = SubrecordBlob(ins, _rsig)
                             if subrec.mel_sig == b'XCLL':
                                 color, near, far, rotXY, rotZ, fade, clip = \
@@ -854,9 +852,6 @@ class NvidiaFogFixer(object):
                                         far, rotXY, rotZ, fade, clip)
                                     fixedCells.add(header.fid)
                             subrec.packSub(out, subrec.mel_data)
-                    #--Non-Cells
-                    else:
-                        copy(header.blob_size())
         #--Done
         if fixedCells:
             self.modInfo.makeBackup()

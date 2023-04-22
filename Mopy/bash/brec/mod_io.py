@@ -60,7 +60,13 @@ class RecordHeader(object):
     # Version, usually because it's impossible
     skip_form_version_upgrade = set()
     is_top_group_header = False
-    __slots__ = (u'recType', u'size', u'extra')
+    __slots__ = ('recType', 'extra')
+
+    def skip_blob(self, ins, *debug_strs):
+        # type: (ModReader, str) -> None
+        """Skip the record/group data - ins must be positioned at the beginning
+        of the blob of data, ie call this immediately after unpacking self."""
+        ins.seek(self.blob_size, 1, self.recType, *debug_strs)
 
     ##: The way we represent form versions in memory needs rethinking
     @property
@@ -70,14 +76,14 @@ class RecordHeader(object):
 
 class RecHeader(RecordHeader):
     """Fixed size structure defining next record."""
-    __slots__ = ('flags1', 'fid', 'flags2')
+    __slots__ = ('blob_size', 'fid', 'flags1', 'flags2')
 
-    def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0,
-                 *, _entering_context=False, ins=None):
+    def __init__(self, recType=b'TES4', blob_size=0, arg1=0, arg2=0, arg3=0,
+                 arg4=0, *, _entering_context=False, ins=None):
         """Fixed size structure defining next record.
 
         :param recType: signature of record -TES4, GMST, KYWD, etc
-        :param size: size of current record, not entire file
+        :param blob_size: size of current record, *without* this header's size
         :param arg1: the record flags
         :param arg2: Record FormID, TES4 records have FormID of 0
         :param arg3: Record possible version control in CK
@@ -86,7 +92,7 @@ class RecHeader(RecordHeader):
             raise ModError(ins and ins.inName,
                            f'Bad header signature: {sig_to_str(recType)}')
         self.recType = recType
-        self.size = size
+        self.blob_size = blob_size
         self.flags1 = arg1
         # FID call will blow as no FORM_ID global is defined when
         # _entering_context - setting FORM_ID to FormId would be more implicit
@@ -97,7 +103,7 @@ class RecHeader(RecordHeader):
     def pack_head(self, __rh=RecordHeader):
         """Return the record header packed into a bitstream to be written to
         file."""
-        pack_args = [__rh.rec_pack_format_str, self.recType, self.size,
+        pack_args = [__rh.rec_pack_format_str, self.recType, self.blob_size,
                      self.flags1, self.fid.dump(), self.flags2]
         if __rh.plugin_form_version:
             # Upgrade to latest form version unless we were told to skip that
@@ -110,16 +116,6 @@ class RecHeader(RecordHeader):
             pack_args.append(self.extra)
         return struct_pack(*pack_args)
 
-    def skip_blob(self, ins):
-        # type: (ModReader) -> None
-        """Skip the record - ins must be positioned at the beginning of the
-        record data, ie call this immediately after unpacking self."""
-        ins.seek(self.size, 1, self.recType) # aka self.blob_size()
-
-    def blob_size(self):
-        """The size of the blob this header is heading"""
-        return self.size
-
     def __repr__(self):
         return f'<Record Header: [{sig_to_str(self.recType)}:' \
                f'{self.fid}] v{self.form_version:d}>'
@@ -127,7 +123,7 @@ class RecHeader(RecordHeader):
 class GrupHeader(RecordHeader):
     """Fixed size structure serving as a fencepost in the plugin file,
     signaling a block of same type records ahead."""
-    __slots__ = (u'label', u'groupType', u'stamp')
+    __slots__ = ('group_size', 'groupType', 'label', 'stamp')
 
     def __init__(self, grup_size=0, grup_label=b'', arg2=0, arg3=0, arg4=0):
         """Fixed size structure serving as a fencepost in the plugin file,
@@ -141,7 +137,7 @@ class GrupHeader(RecordHeader):
         :param arg3: 2h, possible time stamp, unknown
         :param arg4: 0 for known mods (2h, form_version, unknown ?)"""
         self.recType = b'GRUP'
-        self.size = grup_size
+        self.group_size = grup_size
         self.label = grup_label
         self.groupType = arg2
         self.stamp = arg3
@@ -155,20 +151,17 @@ class GrupHeader(RecordHeader):
         return struct_pack(*pack_args)
 
     def _pack_args(self, __rh):
-        return [__rh.pack_formats[1], b'GRUP', self.size, self.label,
+        return [__rh.pack_formats[1], b'GRUP', self.group_size, self.label,
                 self.groupType, self.stamp]
 
-    def skip_blob(self, ins): # won't be called often, no need for inlines
-        # type: (ModReader) -> None
-        """Skip the group - ins must be positioned at the beginning of the
-        block of group records, ie call this immediately after unpacking self.
-        """
+    def skip_blob(self, ins, *ar): # won't be called often, no need for inlines
         # label is an int for MobDials groupType == 7
-        ins.seek(self.blob_size(), 1, 'GRUP', str(self.label))
+        super().skip_blob(ins, str(self.label))
 
+    @property
     def blob_size(self):
         """The size of the grup blob this header is heading."""
-        return self.size - self.__class__.rec_header_size
+        return self.group_size - self.__class__.rec_header_size
 
     def __repr__(self):
         return f'<GRUP Header: {group_types[self.groupType]}, ' \
@@ -189,7 +182,7 @@ class TopGrupHeader(GrupHeader):
                            f'Bad Top GRUP type: {sig_to_str(grup_label)}')
 
     def _pack_args(self, __rh):
-        return [__rh.pack_formats[0], b'GRUP', self.size, self.label,
+        return [__rh.pack_formats[0], b'GRUP', self.group_size, self.label,
                 self.groupType, self.stamp]
 
 class ChildrenGrupHeader(GrupHeader):
@@ -198,8 +191,8 @@ class ChildrenGrupHeader(GrupHeader):
     __slots__ = ()
 
     def _pack_args(self, __rh):
-        return [__rh.pack_formats[1], b'GRUP', self.size, self.label.dump(),
-                self.groupType, self.stamp]
+        return [__rh.pack_formats[1], b'GRUP', self.group_size,
+                self.label.dump(), self.groupType, self.stamp]
 
 class ExteriorGrupHeader(GrupHeader):
     """Exterior Cell Sub/Block - label is Grid Y, X (Note the reverse order)"""
@@ -207,7 +200,7 @@ class ExteriorGrupHeader(GrupHeader):
     __slots__ = ()
 
     def _pack_args(self, __rh):
-        return [__rh.pack_formats[4], b'GRUP', self.size, *self.label,
+        return [__rh.pack_formats[4], b'GRUP', self.group_size, *self.label,
                 self.groupType, self.stamp]
 
     def __repr__(self):

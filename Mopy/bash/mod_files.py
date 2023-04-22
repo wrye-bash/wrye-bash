@@ -146,9 +146,9 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
-        self.tes4 = bush.game.plugin_header_class(RecHeader(
-            bush.game.Esp.plugin_header_sig, arg2=ZERO_FID,
-            _entering_context=True))
+        self.tes4 = bush.game.plugin_header_class(
+            RecHeader(bush.game.Esp.plugin_header_sig, arg2=ZERO_FID,
+                      _entering_context=True))
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = _TopGroupDict(self) #--Top groups.
@@ -377,8 +377,7 @@ class ModHeaderReader(object):
                 while not ins_at_end():
                     next_header = unpack_header(ins)
                     # Skip GRUPs themselves, only process their records
-                    header_rec_sig = next_header.recType
-                    if header_rec_sig != b'GRUP':
+                    if next_header.recType != b'GRUP':
                         header_fid = next_header.fid
                         if (header_fid.mod_dex >= num_masters and
                                 header_fid.object_dex > 0xFFF):
@@ -451,11 +450,11 @@ class ModHeaderReader(object):
                 #     # record (can't use skip_blob because that passes
                 #     # debug_strs to seek()...)
                 #     records[next_header.fid] = (next_header, '')
-                #     ins_seek(ins_tell() + next_header.blob_size())
+                #     ins_seek(ins_tell() + next_header.blob_size)
                 else:
                     # This is a regular record, look for the EDID subrecord
                     eid = u''
-                    blob_siz = next_header.blob_size()
+                    blob_siz = next_header.blob_size
                     next_record = ins_tell() + blob_siz
                     if next_header.flags1 & 0x00040000: # 'compressed' flag
                         size_check = __unpacker(ins_read(4))[0]

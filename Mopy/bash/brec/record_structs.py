@@ -317,7 +317,7 @@ class MreRecord(metaclass=RecordType):
         if ins: # Load data from ins stream
             file_offset = ins.tell()
             ##: Couldn't we toss this data if we unpacked it? (memory!)
-            self.data = ins.read(header.size, self._rec_sig,
+            self.data = ins.read(header.blob_size, self._rec_sig,
                                  file_offset=file_offset)
             if not do_unpack: return  #--Read, but don't analyze.
             if self.__class__ is MreRecord: return  # nothing to be done
@@ -424,7 +424,7 @@ class MreRecord(metaclass=RecordType):
         """Return size of self.data, (after, if necessary, packing it) PLUS the
         size of the record header."""
         if not self.changed:
-            return self.header.size + RecordHeader.rec_header_size
+            return self.header.blob_size + RecordHeader.rec_header_size
         #--Pack data and return size.
         out = io.BytesIO()
         self._sort_subrecords()
@@ -434,9 +434,9 @@ class MreRecord(metaclass=RecordType):
             dataLen = len(self.data)
             comp = zlib.compress(self.data,6)
             self.data = struct_pack('=I', dataLen) + comp
-        self.header.size = len(self.data)
+        self.header.blob_size = len(self.data)
         self.setChanged(False)
-        return self.header.size + RecordHeader.rec_header_size
+        return self.header.blob_size + RecordHeader.rec_header_size
 
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version
@@ -460,14 +460,15 @@ class MreRecord(metaclass=RecordType):
         """Dumps all data to output stream."""
         if self.changed:
             raise exception.StateError(f'Data changed: {self.rec_str}')
-        if not self.data and not self.flags1.deleted and self.header.size > 0:
+        if not self.data and not self.flags1.deleted and \
+                self.header.blob_size > 0:
             raise exception.StateError(
                 f'Data undefined: {self.rec_str} {self.fid}')
         #--Update the header so it 'packs' correctly
         self.header.flags1 = self.flags1
         self.header.fid = self.fid
         out.write(self.header.pack_head())
-        if self.header.size > 0: out.write(self.data)
+        if self.header.blob_size > 0: out.write(self.data)
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self, mel_sig_):

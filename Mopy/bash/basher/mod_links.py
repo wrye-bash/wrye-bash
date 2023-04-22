@@ -1196,9 +1196,8 @@ class Mod_ScanDirty(ItemLink):
                     add_deleted_rec = all_deleted_others[plugin_fn].append
                     for r, d in ext_data.items():
                         for r_fid, (r_header, r_eid) in d.items():
-                            w_rec_type = r_header.recType
                             if r_header.flags1 & 0x00000020:
-                                if w_rec_type == b'NAVM':
+                                if (w_rec_type := r_header.recType) == b'NAVM':
                                     add_deleted_navm(r_fid)
                                 elif w_rec_type in all_ref_types:
                                     add_deleted_ref(r_fid)
