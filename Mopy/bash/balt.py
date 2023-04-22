@@ -860,8 +860,7 @@ class UIList(PanelWin):
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        ##: HACK or workaround for installer labels giving back Paths
-        str_label = f'{self.labels[allow_cols[0]](self, item)}'
+        str_label = self.labels[allow_cols[0]](self, item)
         if insert:
             # We're inserting a new item, so we need special handling for the
             # first SetItem call - see InsertListCtrlItem
@@ -877,10 +876,9 @@ class UIList(PanelWin):
             # the first column's text
             gItem.SetText(str_label)
             self.__gList.set_item_data(gItem)
-        for col_index, col in enumerate(allow_cols[1:], start=1):
-            ##: HACK, same as above
-            self.__gList.set_item_data(itemDex, col_index,
-                                       f'{self.labels[col](self, item)}')
+        for col_dex, col in enumerate(allow_cols[1:], start=1):
+            self.__gList.set_item_data(itemDex, col_dex,
+                                       self.labels[col](self, item))
 
     class _ListItemFormat(object):
         def __init__(self):

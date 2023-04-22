@@ -1727,7 +1727,7 @@ class ListInfo:
             num_str = ma_groups[1] if cls._has_digits else None
             if not (root or num_str):
                 pass # will return the error message at the end
-            elif cls._has_digits: return FName(root + ma_groups[2]), num_str
+            elif cls._has_digits: return FName(root), num_str
             else: return FName(name_str), root
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None

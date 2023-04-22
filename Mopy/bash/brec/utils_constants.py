@@ -278,8 +278,8 @@ NONE_FID = _NoneFid()
 # plugin
 FORM_ID: type[FormId] | None = None
 
-# Global short mapper function. It must be set by the mod output context
-# manager for mapping the fids based on the masters of the currently dumped plugin
+# Global short mapper function. Set by the plugin output context manager.
+# Maps the fids based on the masters of the currently dumped plugin
 short_mapper: Callable | None = None
 short_mapper_no_engine: Callable | None = None
 

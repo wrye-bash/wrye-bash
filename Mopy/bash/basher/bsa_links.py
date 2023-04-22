@@ -81,10 +81,9 @@ class BSA_ExtractToProject(ItemLink):
                     progress=SubProgress(prog, prog_curr, prog_next))
                 prog_curr += step_size
                 prog_next += step_size
-        self._showOk(_(u'Successfully extracted all selected BSAs. Open the '
-                       u'Installers tab to view and manage the created '
-                       u'project(s).'),
-                     _(u'Extraction Completed'))
+        msg = _('Successfully extracted all selected BSAs. Open the '
+                'Installers tab to view and manage the created project(s).')
+        self._showOk(msg, _('Extraction Completed'))
 
 class BSA_ListContents(ItemLink):
     """Lists the contents of one or more BSAs."""

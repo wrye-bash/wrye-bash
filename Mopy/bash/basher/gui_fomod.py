@@ -285,11 +285,11 @@ class PageSelect(PageInstaller):
                 if gtype in (GroupType.SELECT_EXACTLY_ONE,
                              GroupType.SELECT_AT_MOST_ONE):
                     checkable = RadioButton(panel_groups,
-                                            label=option.option_name,
+                                            rb_label=option.option_name,
                                             is_group=option is grp[0])
                 else:
                     checkable = CheckBox(panel_groups,
-                                         label=option.option_name)
+                                         cb_label=option.option_name)
                     # Mass selection makes no sense on radio buttons
                     checkable.on_context.subscribe(self._handle_context_menu)
                     if gtype is GroupType.SELECT_ALL:
@@ -336,7 +336,7 @@ class PageSelect(PageInstaller):
             initial_state = {c: c.is_checked for c in
                              self.group_option_map[grp]}
             if gtype is GroupType.SELECT_AT_MOST_ONE:
-                none_button = RadioButton(panel_groups, label=_(u'None'))
+                none_button = RadioButton(panel_groups, rb_label=_('None'))
                 if not any_selected:
                     none_button.is_checked = True
                 elif block_all_in_group:

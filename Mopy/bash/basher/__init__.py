@@ -3621,7 +3621,7 @@ class ScreensList(balt.UIList):
             return EventResult.CANCEL
         selected = self.get_selected_infos_filtered()
         #--Rename each screenshot, keeping the old extension
-        num = int(numStr or  0)
+        num = int(numStr or 0)
         digits = len(f'{(num + len(selected) - 1)}')
         numStr = numStr.zfill(digits) if numStr else ''
         with BusyCursor():

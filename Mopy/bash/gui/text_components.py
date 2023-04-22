@@ -287,12 +287,13 @@ class Label(_ALabel):
 class _WrappingStaticTextWx(_GenStaticTextWx):
     """A StaticText alternative that automatically word-wraps when the parent
     window is resized."""
+    # Param names must match the native StaticText ones
     def __init__(self, parent, label, style):
         # Set this first - DoGetBestSize needs it and gets called by parent's
         # __init__
         self._orig_label = label
         super().__init__(parent, label=label,
-            style=_wx.ST_NO_AUTORESIZE | style)
+                         style=_wx.ST_NO_AUTORESIZE | style)
         self.Bind(_wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, event):
