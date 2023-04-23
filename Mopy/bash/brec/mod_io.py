@@ -113,7 +113,7 @@ class RecHeader(RecordHeader):
                 extra1 = __rh.plugin_form_version
                 self.extra = struct_unpack('=I', struct_pack(
                     '=2h', extra1, extra2))[0]
-            pack_args.append(self.extra)
+            return struct_pack(*pack_args, self.extra)
         return struct_pack(*pack_args)
 
     def __repr__(self):
@@ -145,14 +145,14 @@ class GrupHeader(RecordHeader):
 
     def pack_head(self, __rh=RecordHeader):
         """Pack the record header to bytes to write to a file."""
-        pack_args = self._pack_args(__rh)
+        pack_args = __rh.pack_formats[self.groupType], b'GRUP', \
+            self.group_size, *self._pack_lab(), self.groupType, self.stamp
         if __rh.plugin_form_version:
-            pack_args.append(self.extra)
+            return struct_pack(*pack_args, self.extra)
         return struct_pack(*pack_args)
 
-    def _pack_args(self, __rh):
-        return [__rh.pack_formats[1], b'GRUP', self.group_size, self.label,
-                self.groupType, self.stamp]
+    def _pack_lab(self):
+        return self.label,
 
     def skip_blob(self, ins, *ar): # won't be called often, no need for inlines
         # label is an int for MobDials groupType == 7
@@ -181,27 +181,21 @@ class TopGrupHeader(GrupHeader):
             raise ModError(ins and ins.inName,
                            f'Bad Top GRUP type: {sig_to_str(grup_label)}')
 
-    def _pack_args(self, __rh):
-        return [__rh.pack_formats[0], b'GRUP', self.group_size, self.label,
-                self.groupType, self.stamp]
-
 class ChildrenGrupHeader(GrupHeader):
     """Children of a CELL/WRLD/DIAL top record - label is fid of parent."""
     label: utils_constants.FormId
     __slots__ = ()
 
-    def _pack_args(self, __rh):
-        return [__rh.pack_formats[1], b'GRUP', self.group_size,
-                self.label.dump(), self.groupType, self.stamp]
+    def _pack_lab(self):
+        return self.label.dump(),
 
 class ExteriorGrupHeader(GrupHeader):
     """Exterior Cell Sub/Block - label is Grid Y, X (Note the reverse order)"""
     label: (int, int)
     __slots__ = ()
 
-    def _pack_args(self, __rh):
-        return [__rh.pack_formats[4], b'GRUP', self.group_size, *self.label,
-                self.groupType, self.stamp]
+    def _pack_lab(self):
+        return self.label
 
     def __repr__(self):
         # Reverse the labels for repr display, makes it easier to compare them
