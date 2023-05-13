@@ -4290,7 +4290,7 @@ class BashFrame(WindowFrame):
                 {p: [] for p in sorted(warning_plugins)})
             return LoadOrderSanitizedDialog.make_change_entry(
                 mods_list_images=self.modList._icons,
-                lo_change_desc=lo_warn_msg,
+                mods_change_desc=lo_warn_msg,
                 decorated_plugins=warning_dec_plugins)
         lo_warnings = []
         if bosh.modInfos.selectedBad:

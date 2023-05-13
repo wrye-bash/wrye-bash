@@ -27,10 +27,11 @@ import copy
 import io
 import traceback
 from collections import defaultdict
+from collections.abc import Iterable
 from itertools import chain
 
 from .constants import settingDefaults
-from .dialogs import ExportScriptsDialog
+from .dialogs import ExportScriptsDialog, MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
@@ -969,12 +970,12 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
         if _configIsCBash(bp_config):
             if not self._askYes(
-                    _(u'This patch was built in CBash mode. This is no longer '
-                      u'supported. You can either use Wrye Bash 307 to '
-                      u'convert it to PBash format, or you can click "Yes" '
-                      u'below to make Wrye Bash reset the configuration to '
-                      u'default. If you click "No", the patch building will '
-                      u'abort now.'), title=_(u'Unsupported CBash Patch')):
+                    _('This patch was built in CBash mode. This is no longer '
+                      'supported. You can either use Wrye Bash 307 to '
+                      'convert it to PBash format, or you can click "Yes" '
+                      'below to make Wrye Bash reset the configuration to '
+                      'default. If you click "No", the patch building will '
+                      'abort now.'), title=_('Unsupported CBash Patch')):
                 return False
             bp_config = {}
         # Create the PatchFile instance
@@ -984,22 +985,25 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             # we might have de-activated plugins so recalculate active sets
             bashed_patch.set_active_arrays(bosh.modInfos)
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
-        if missing or delinquent:
-            error_msg = _(
-                'The following plugins have master file errors. You will '
-                'have to fix these problems before Bashed Patch building can '
-                'begin.')
-            missing_msg = _(
+        def mk_error(warn_msg: str, warning_items: Iterable[FName]):
+            return MasterErrorsDialog.make_change_entry(
+                mods_list_images=self.window._icons, mods_change_desc=warn_msg,
+                decorated_plugins=self.window.decorate_tree_dict(
+                    {i: [] for i in sorted(warning_items)}))
+        bp_master_errors = []
+        if missing:
+            bp_master_errors.append(mk_error(_(
                 'The following plugins have missing masters and are active. '
-                'This will cause the game to crash. Please disable them.')
-            delinquent_msg = _(
+                'This will cause the game to crash. Please disable them.'),
+                missing))
+        if delinquent:
+            bp_master_errors.append(mk_error(_(
                 'These mods have delinquent masters, which means they load '
-                'before their masters. This will cause unpredictable '
-                'behavior. Please adjust your load order to fix this.')
-            ListBoxes.display_dialog(Link.Frame, _('Master Errors'),
-                error_msg, [[_('Missing Master Errors'), missing_msg, missing],
-                [_('Delinquent Master Errors'), delinquent_msg, delinquent]],
-                liststyle='tree', canCancel=False)
+                'before their masters. This is undefined behavior. Please '
+                'adjust your load order to fix this.'), delinquent))
+        if bp_master_errors:
+            MasterErrorsDialog.display_dialog(self.window,
+                highlight_changes=bp_master_errors)
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,

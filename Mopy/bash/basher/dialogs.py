@@ -804,6 +804,19 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
             wl.auto_wrap()
         self.update_layout()
 
+class _AModsChangeHighlightDialog(_AChangeHighlightDialog):
+    """Version of _AChangeHighlightDialog for the Mods tab."""
+    @staticmethod
+    def make_change_entry(*, mods_list_images: ImageList,
+            mods_change_desc: str, decorated_plugins: DecoratedTreeDict):
+        """Helper for creating a _ChangeData object for load order
+        sanitizations."""
+        return _ChangeData(uil_image_list=mods_list_images,
+            change_desc=mods_change_desc, changed_items=decorated_plugins,
+            parent_tab_key='Mods')
+
+# Note: we sometimes use 'unnecessary' subclasses here for the separate
+# balt.sizes key provided by the unique class name
 #------------------------------------------------------------------------------
 class _ALORippleHighlightDialog(_AChangeHighlightDialog):
     """Base class for dialogs highlighting when a load order change had a
@@ -840,18 +853,9 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
                      'dependent(s) to be deactivated as well.')
 
 #------------------------------------------------------------------------------
-class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
+class LoadOrderSanitizedDialog(_AModsChangeHighlightDialog):
     """Dialog shown when certain load order problems have been fixed."""
     title = _('Warning: Load Order Sanitized')
-
-    @staticmethod
-    def make_change_entry(*, mods_list_images: ImageList, lo_change_desc: str,
-            decorated_plugins: DecoratedTreeDict):
-        """Helper for creating a _ChangeData object for load order
-        sanitizations."""
-        return _ChangeData(uil_image_list=mods_list_images,
-            change_desc=lo_change_desc, changed_items=decorated_plugins,
-            parent_tab_key='Mods')
 
 #------------------------------------------------------------------------------
 class MultiWarningDialog(_AChangeHighlightDialog):
@@ -867,3 +871,9 @@ class MultiWarningDialog(_AChangeHighlightDialog):
         return _ChangeData(uil_image_list=uil_images,
             change_desc=warn_change_desc, changed_items=decorated_items,
             parent_tab_key=origin_tab_key)
+
+#------------------------------------------------------------------------------
+class MasterErrorsDialog(_AModsChangeHighlightDialog):
+    """Dialog shown when Wrye Bash detected master errors before building a
+    BP."""
+    title = _('Master Errors')
