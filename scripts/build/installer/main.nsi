@@ -163,6 +163,12 @@ ManifestDPIAware true
     FunctionEnd
 
     Function .onInit
+        ${IfNot} ${AtLeastWin8}
+            MessageBox MB_OK|MB_ICONSTOP "Wrye Bash requires Windows 8 or later"
+            SetErrorLevel 1150 ; ERROR_OLD_WIN_VERSION
+            Quit
+        ${EndIf}
+
         StrCpy $Empty ""
         StrCpy $True "True"
 
