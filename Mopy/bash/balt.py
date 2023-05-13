@@ -38,11 +38,11 @@ from . import bolt
 from .bolt import FName, Path, deprint, readme_url
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
-from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
+from .gui import RIGHT, BusyCursor, Button, CheckListBox, \
     Color, DialogWindow, DirOpen, DocumentViewer, EventResult, FileOpen, \
-    FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, HLayout, \
+    FileOpenMultiple, FileSave, Font, GlobalMenu, HLayout, \
     ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
-    TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
+    TextArea, UIListCtrl, VLayout, WindowFrame, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
     askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
@@ -2155,126 +2155,6 @@ wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
 _wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
-
-# ListBoxes -------------------------------------------------------------------
-class _CheckList_SelectAll(ItemLink):
-    """Menu item used in ListBoxes."""
-    def __init__(self,select=True):
-        super(_CheckList_SelectAll, self).__init__()
-        self.select = select
-        self._text = _(u'Select All') if select else _(u'Select None')
-
-    def Execute(self):
-        self.window.set_all_checkmarks(checked=self.select)
-
-# XXX(inf) Obsolete, see trees.Tree and trees.VirtualTree. Will disappear along
-#   with ListBoxes at the end of this branch
-class _TreeCtrl(_AComponent):
-    _native_widget: wx.TreeCtrl
-
-    def __init__(self, parent, title, items_dict):
-        super().__init__(parent, size=(150, 200),
-            style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
-                  wx.TR_HIDE_ROOT)
-        root = self._native_widget.AddRoot(title)
-        self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
-        for item, subitems in items_dict.items():
-            if not isinstance(item, str):
-                deprint(f'Non-str {item!r} passed')
-                item = f'{item}'
-            child = self._native_widget.AppendItem(root, item)
-            for subitem in subitems:
-                if not isinstance(subitem, str):
-                    deprint(f'Non-str {subitem!r} passed')
-                    subitem = f'{subitem}'
-                self._native_widget.AppendItem(child, subitem)
-            self._native_widget.Expand(child)
-
-    def OnMotion(self, event): return
-
-class ListBoxes(DialogWindow):
-    """A window with 1 or more lists."""
-    def __init__(self, parent, title, message, lists, liststyle=u'check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
-        """lists is in this format:
-        if liststyle == u'check' or u'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == u'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
-            sizes_dict=sizes, style=style)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        # TODO(inf) de-wx!
-        minWidth = int(self._native_widget.ToDIP(
-            self._native_widget.GetTextExtent(title)).width * 1.2 + 64)
-        self._panel_text = WrappingLabel(self, message)
-        layout = VLayout(border=5, spacing=5, items=[self._panel_text])
-        self._ctrls = {}
-        # Size ourselves slightly larger than the wrapped text, otherwise some
-        # of it may be cut off and the buttons may become too small to read
-        # TODO(ut) we should set ourselves to min(minWidth, size(btns)) - how?
-        self.component_size = (minWidth + 64, -1)
-        min_height = 128 + 128 * len(lists) #arbitrary just fits well currently
-        if self.component_size[1] < min_height:
-            self.component_size = (minWidth + 64, min_height)
-        self.set_min_size(minWidth + 64, min_height)
-        for item_group in lists:
-            title = item_group[0] # also serves as key in self._ctrls dict
-            item_tip = item_group[1]
-            if not (strs := [f'{x}' for x in item_group[2:]]): # Path | str
-                continue
-            if liststyle == u'check':
-                checksCtrl = CheckListBox(self, choices=strs, isSingle=True,
-                                          isHScroll=True)
-                checksCtrl.on_context.subscribe(self._on_context)
-                checksCtrl.set_all_checkmarks(checked=True)
-            elif liststyle == u'list':
-                checksCtrl = ListBox(self, choices=strs, isHScroll=True)
-            else: # u'tree'
-                checksCtrl = _TreeCtrl(self, title, item_group[2])
-            self._ctrls[title] = checksCtrl
-            checksCtrl.tooltip = item_tip
-            layout.add((HBoxedLayout(self, item_expand=True, title=title,
-                                     item_weight=1, items=[checksCtrl]),
-                        LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk),
-                CancelButton(self, btn_label=bCancel) if canCancel else None]
-        layout.add((HLayout(spacing=5, items=btns),
-                    LayoutOptions(h_align=RIGHT)))
-        layout.apply_to(self)
-
-    def _on_context(self, lb_instance):
-        """Context Menu"""
-        self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Return a tuple of lists of checked items"""
-        get_checked = kwargs.pop('get_checked', ())
-        with cls(*args, **kwargs) as dialog:
-            res = dialog.show_modal()
-            if not res: return tuple(() for __ in range(len(get_checked)))
-            return tuple(dialog._get_checked(*args_tuple) for args_tuple in
-                         get_checked) or res # or for when get_checked is empty
-
-    def _get_checked(self, cntrl_key, items):
-        """Return a sublist of 'items' containing (un)checked items.
-
-        The control only displays the string names of items, that is why items
-        needs to be passed in. If items is empty it will return an empty list.
-        :param cntrl_key: a key for the private _ctrls dictionary
-        :param items: the items that correspond to the _ctrls[key] checksCtrl
-        :rtype : list
-        :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
-        """
-        if not items or not (checkList := self._ctrls[cntrl_key]): return []
-        return [mod for i, mod in enumerate(items) if
-                checkList.lb_is_checked_at_index(i)]
 
 # Some UAC stuff --------------------------------------------------------------
 def ask_uac_restart(message, mopy):
