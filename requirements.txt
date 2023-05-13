@@ -2,7 +2,7 @@
 chardet==5.1.0
 ifileoperation==1.2.3; sys_platform == 'win32'
 lz4==4.3.2
-pywin32==305; sys_platform == 'win32'
+pywin32==306; sys_platform == 'win32'
 PyYAML==6.0
 wxPython==4.2.0; sys_platform != 'win32'
 https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.1a1-cp311-cp311-win_amd64.whl; sys_platform == 'win32'
@@ -21,5 +21,5 @@ websocket-client==1.5.1
 isort==5.12.0
 pygit2==1.12.1
 pyfiglet==0.8.post1
-pyinstaller==5.10.1
+pyinstaller==5.11.0
 pytest==7.3.1
