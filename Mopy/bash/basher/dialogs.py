@@ -500,10 +500,9 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
 
 #------------------------------------------------------------------------------
-class _ABainMLE(AMultiListEditor):
-    """Base class for BAIN-related multi-list editors. Passes some required
-    parameters that depend on balt automatically and automatically converts
-    back to CIstrs."""
+class _AWBMLE(AMultiListEditor):
+    """Base class for multi-list editors, passing required parameters that
+    depend on balt automatically."""
     def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
             **kwargs):
         cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
@@ -512,12 +511,16 @@ class _ABainMLE(AMultiListEditor):
             check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
             icon_bundle=balt.Resources.bashBlue, **kwargs)
 
+class _ABainMLE(_AWBMLE):
+    """Base class for BAIN-related multi-list editors. Automatically converts
+    results back to CIstrs."""
     def show_modal(self):
-        # Add the CIstrs we removed in __init__ back in
+        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
         result = super().show_modal()
         final_lists = [list(map(CIstr, l)) for l in result[1:]]
         return result[0], *final_lists
 
+#------------------------------------------------------------------------------
 class SyncFromDataEditor(_ABainMLE):
     """Template for a multi-list editor for Sync From Data."""
     title = _('Sync From Data - Preview')
@@ -574,20 +577,20 @@ class MonitorExternalInstallationEditor(_ABainMLE):
             deleted_files: list[CIstr]):
         mdir_fmt = {'data_folder': bush.game.mods_dir}
         newf_data = MLEList(
-            mlel_title=_('New Files %(new_file_cnt)d:') % {
+            mlel_title=_('New Files (%(new_file_cnt)d):') % {
                 'new_file_cnt': len(new_files)},
             mlel_desc=_('These files are newly added to the %(data_folder)s '
                         'folder. Uncheck any that you want to '
                         'skip.') % mdir_fmt,
             mlel_items=list(map(str, new_files)))
         changedf_data = MLEList(
-            mlel_title=_('Changed Files %(chg_file_cnt)d:') % {
+            mlel_title=_('Changed Files (%(chg_file_cnt)d):') % {
                 'chg_file_cnt': len(changed_files)},
             mlel_desc=_('These files were modified. Uncheck any that you want '
                         'to skip.'),
             mlel_items=list(map(str, changed_files)))
         touchedf_data = MLEList(
-            mlel_title=_('Touched Files %(tch_file_cnt)d:') % {
+            mlel_title=_('Touched Files (%(tch_file_cnt)d):') % {
                 'tch_file_cnt': len(touched_files)},
             mlel_desc=_('These files were not changed, but had their '
                         'modification time altered. These files were most '
@@ -596,7 +599,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
                         'the %(data_folder)s folder.') % mdir_fmt,
             mlel_items=list(map(str, touched_files)))
         deletedf_data = MLEList(
-            mlel_title=_('Deleted Files %(del_file_cnt)d:') % {
+            mlel_title=_('Deleted Files (%(del_file_cnt)d):') % {
                 'del_file_cnt': len(deleted_files)},
             mlel_desc=_("These files were deleted. BAIN does not have the "
                         "capability to remove files when installing, so these "
@@ -614,6 +617,47 @@ class MonitorExternalInstallationEditor(_ABainMLE):
         super().__init__(parent, data_desc=mei_desc,
             list_data=[newf_data, changedf_data, touchedf_data, deletedf_data],
             ok_label=ok_btn_label, cancel_label=cancel_btn_label)
+
+#------------------------------------------------------------------------------
+class DeactivateBeforePatchEditor(_AWBMLE):
+    """Template for a multi-list editor for pre-BP deactivation of plugins."""
+    title = _('Deactivate Prior to Patching')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, plugins_mergeable: list[FName],
+            plugins_nomerge: list[FName], plugins_deactivate: list[FName]):
+        pm_data = MLEList(
+            mlel_title=_('Mergeable (%(plgn_cnt)d):') % {
+                'plgn_cnt': len(plugins_mergeable)},
+            mlel_desc=_('These plugins are mergeable. It is suggested that '
+                        'they be deactivated and merged into the patch. This '
+                        'helps avoid the maximum plugin limit.'),
+            mlel_items=list(map(str, plugins_mergeable)))
+        pn_data = MLEList(
+            mlel_title=_("Mergeable, but Tagged 'NoMerge' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_nomerge)},
+            mlel_desc=_("These plugins are mergeable, but have been tagged "
+                        "with 'NoMerge'. They should be deactivated before "
+                        "building the patch, imported into it and reactivated "
+                        "afterwards."),
+            mlel_items=list(map(str, plugins_nomerge)))
+        pd_data = MLEList(
+            mlel_title=_("Tagged 'Deactivate' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_deactivate)},
+            mlel_desc=_("These mods have been tagged with 'Deactivate'. They "
+                        "should be deactivated and merged or imported into "
+                        "the Bashed Patch."),
+            mlel_items=list(map(str, plugins_deactivate)))
+        dbp_desc = _('The following plugins should be deactivated prior to '
+                     'building the Bashed Patch.')
+        super().__init__(parent, data_desc=dbp_desc,
+            list_data=[pm_data, pn_data, pd_data], cancel_label=_('Skip'))
+
+    def show_modal(self):
+        # Add the FNames we removed in __init__ (see map(str)'s above) back in
+        result = super().show_modal()
+        final_lists = [list(map(FName, l)) for l in result[1:]]
+        return result[0], *final_lists
 
 #------------------------------------------------------------------------------
 _uc_css = """body {

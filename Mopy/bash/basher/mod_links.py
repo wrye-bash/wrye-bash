@@ -31,14 +31,14 @@ from collections.abc import Iterable
 from itertools import chain
 
 from .constants import settingDefaults
-from .dialogs import ExportScriptsDialog, MasterErrorsDialog
+from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
+    MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
-    ItemLink, Link, ListBoxes, MenuLink, OneItemLink, SeparatorLink, \
-    TransLink
+    ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
@@ -1015,49 +1015,27 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         for mod in bashed_patch.load_dict:
             tags = bosh.modInfos[mod].getBashTags()
             if not bush.game.check_esl and mod in bosh.modInfos.mergeable:
-                if u'MustBeActiveIfImported' in tags:
+                if 'MustBeActiveIfImported' in tags:
                     continue
-                if u'NoMerge' in tags: noMerge.append(mod)
-                else: merge.append(mod)
-            elif u'Deactivate' in tags: deactivate.append(mod)
-        checklists = []
-        mergeKey = _(u'Mergeable')
-        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
-        deactivateKey = _(u"Tagged 'Deactivate'")
-        if merge:
-            group = [mergeKey, _('These mods are mergeable.  '
-                'While it is not important to Wrye Bash functionality or '
-                'the end contents of the Bashed Patch, it is suggested that '
-                'they be deactivated and merged into the patch.  This helps '
-                'avoid the maximum plugin limit.'), ]
-            group.extend(merge)
-            checklists.append(group)
-        if noMerge:
-            group = [noMergeKey, _(u'These mods are mergeable, but tagged '
-                u"'NoMerge'.  They should be deactivated before building the "
-                u'patch and imported into the Bashed Patch.'), ]
-            group.extend(noMerge)
-            checklists.append(group)
-        if deactivate:
-            group = [deactivateKey, _(u"These mods are tagged 'Deactivate'.  "
-                u'They should be deactivated before building the patch, and '
-                u'merged or imported into the Bashed Patch.'), ]
-            group.extend(deactivate)
-            checklists.append(group)
-        if not checklists: return
-        getchecks = [(mergeKey, merge), (noMergeKey, noMerge),
-                     (deactivateKey, deactivate)]
-        deselect = set(chain(*ListBoxes.display_dialog(Link.Frame,
-            _('Deactivate these mods prior to patching'),
-            _('The following mods should be deactivated prior to building the '
-              'patch.'), checklists, bCancel=_('Skip'),
-            get_checked= getchecks)))
-        if not deselect:
-            return
-        self.mods_to_reselect = set(noMerge) & deselect
+                elif 'NoMerge' in tags:
+                    noMerge.append(mod)
+                else:
+                    merge.append(mod)
+            elif 'Deactivate' in tags:
+                deactivate.append(mod)
+        if not merge and not noMerge and not deactivate:
+            return False # Nothing to deselect
+        dbp_result = DeactivateBeforePatchEditor.display_dialog(self.window,
+            plugins_mergeable=merge, plugins_nomerge=noMerge,
+            plugins_deactivate=deactivate)
+        ed_ok, ed_mergeable, ed_nomerge, ed_deactivate = dbp_result
+        to_deselect = set(chain(ed_mergeable, ed_nomerge, ed_deactivate))
+        if not ed_ok or not to_deselect:
+            return False # Aborted by user or nothing left enabled
+        self.mods_to_reselect = ed_nomerge
         with BusyCursor():
-            bosh.modInfos.lo_deactivate(deselect, doSave=True)
-        self.window.RefreshUI(refreshSaves=True)
+            bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
+            self.window.RefreshUI(refreshSaves=True)
         return True
 
 #------------------------------------------------------------------------------
