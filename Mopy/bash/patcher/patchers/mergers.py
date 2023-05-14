@@ -130,9 +130,26 @@ class _AMerger(ImportPatcher):
             can_remove = self._remove_tag in applied_tags
             id_entries = {}
             en_key = self._entry_key
+            # Determine the effective master entries. First, find the winning
+            # master entries (as determined by rule of one)
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
                     id_entries.update(mod_id_entries[master])
+            # Then, apply all deltas that originate from masters of this source
+            src_masters_set = set(modFile.tes4.masters)
+            for m_fid, curr_entries in list(id_entries.items()):
+                # Check here since this is a defaultdict and we don't want to
+                # fill it with a ton of empty lists, that just wastes memory
+                if m_fid in id_deltas:
+                    new_entries = curr_entries
+                    for delta in id_deltas[m_fid]:
+                        # Only apply deltas that actually belong to masters of
+                        # this source
+                        if delta[0] in src_masters_set:
+                            new_entries = self._merge_delta(
+                                delta, curr_entries)
+                    if new_entries != curr_entries:
+                        id_entries[m_fid] = new_entries
             for fid,entries in mod_id_entries[modName].items():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
@@ -153,8 +170,8 @@ class _AMerger(ImportPatcher):
                     changed_entries = []
                 final_add_entries = addEntries if can_add else []
                 if remove_keys or final_add_entries or changed_entries:
-                    id_deltas[fid].append(
-                        (remove_keys, final_add_entries, changed_entries))
+                    id_deltas[fid].append((modName, remove_keys,
+                                           final_add_entries, changed_entries))
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
         if modFile.fileInfo.fn_key not in self.inventOnlyMods:
@@ -165,6 +182,44 @@ class _AMerger(ImportPatcher):
         # Copy the defining version of each record into the BP - updating it is
         # handled by mergeModFile/update_patch_records_from_mod
         return self.touched
+
+    def _merge_delta(self, delta, record_entries):
+        """Perform one set of removals, additions and changes on the specified
+        record's entries and return the new entries."""
+        en_key = self._entry_key
+        _modName, remove_keys, add_entries, change_entries = delta
+        # First execute removals, don't want to change something
+        # we're going to remove
+        if remove_keys:
+            record_entries = [x for x in record_entries if
+                              en_key(x) not in remove_keys]
+        # Then execute changes, don't want to modify our own
+        # additions
+        if change_entries:
+            # In order to not modify the list while iterating
+            final_remove = []
+            final_add = []
+            for change_entry in change_entries:
+                # Look for one with the same item - can't just use
+                # a dict or change the items directly because we
+                # have to respect duplicates
+                for curr_entry in record_entries:
+                    if en_key(change_entry) == en_key(curr_entry):
+                        # Remove the old entry, add the changed one
+                        final_remove.append(curr_entry)
+                        final_add.append(change_entry)
+                        break
+            # No need to check both, see add/append above
+            if final_remove:
+                record_entries = [x for x in record_entries if
+                                  x not in final_remove] + final_add
+        # Finally, execute additions - fairly straightforward
+        if add_entries:
+            current_keys = {en_key(x) for x in record_entries}
+            for entry in add_entries:
+                if en_key(entry) not in current_keys:
+                    record_entries.append(entry)
+        return record_entries
 
     def buildPatch(self,log,progress):
         if not self.isActive: return
@@ -177,46 +232,14 @@ class _AMerger(ImportPatcher):
             for rid, record in p_block.id_records.items():
                 deltas = id_deltas[rid]
                 if not deltas: continue
+                wip_entries = getattr(record, sr_attr)
                 # Use sorted to preserve duplicates, but ignore order. This is
                 # safe because order does not matter for items.
-                old_items = sorted(getattr(record, sr_attr), key=en_key)
-                for remove_keys, add_entries, change_entries in deltas:
-                    # First execute removals, don't want to change something
-                    # we're going to remove
-                    if remove_keys:
-                        setattr(record, sr_attr,
-                            [x for x in getattr(record, sr_attr)
-                             if en_key(x) not in remove_keys])
-                    # Then execute changes, don't want to modify our own
-                    # additions
-                    if change_entries:
-                        # In order to not modify the list while iterating
-                        final_remove = []
-                        final_add = []
-                        record_entries = getattr(record, sr_attr)
-                        for change_entry in change_entries:
-                            # Look for one with the same item - can't just use
-                            # a dict or change the items directly because we
-                            # have to respect duplicates
-                            for curr_entry in record_entries:
-                                if en_key(change_entry) == en_key(curr_entry):
-                                    # Remove the old entry, add the changed one
-                                    final_remove.append(curr_entry)
-                                    final_add.append(change_entry)
-                                    break
-                        # No need to check both, see add/append above
-                        if final_remove:
-                            setattr(record, sr_attr,
-                                [x for x in record_entries
-                                 if x not in final_remove] + final_add)
-                    # Finally, execute additions - fairly straightforward
-                    if add_entries:
-                        record_entries = getattr(record, sr_attr)
-                        current_entries = {en_key(x) for x in record_entries}
-                        for entry in add_entries:
-                            if en_key(entry) not in current_entries:
-                                record_entries.append(entry)
-                if old_items != sorted(getattr(record, sr_attr), key=en_key):
+                old_entries = sorted(wip_entries, key=en_key)
+                for delta in deltas:
+                    wip_entries = self._merge_delta(delta, wip_entries)
+                if old_entries != sorted(wip_entries, key=en_key):
+                    setattr(record, sr_attr, wip_entries)
                     keep(rid, record)
                     mod_count[rid.mod_fn] += 1
         self.id_deltas.clear()
