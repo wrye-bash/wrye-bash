@@ -3653,12 +3653,14 @@ class ScreensList(balt.UIList):
                 item_edited[0] = newName
             return oldName, newName # continue
 
-    def _handle_key_up(self, wrapped_evt):
+    def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens
         if wrapped_evt.key_code in balt.wxReturn:
             self.OpenSelected()
         else:
-            return super()._handle_key_up(wrapped_evt)
+            return super()._handle_key_down(wrapped_evt)
+        # Otherwise we'd jump to a random screenshot that starts with the key
+        # code
         return EventResult.FINISH
 
 #------------------------------------------------------------------------------

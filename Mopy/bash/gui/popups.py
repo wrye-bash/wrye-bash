@@ -672,7 +672,6 @@ class ContinueDialog(DialogWindow):
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
-            Stretch(),
             HorizontalLine(self),
             HLayout(spacing=4, item_expand=True, items=bottom_items),
         ]).apply_to(self)
