@@ -2976,8 +2976,9 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
         """Remove the specified mods from _lo_wip and _active_wip caches."""
-        # Use set to speed up lookups
-        to_remove = set(to_remove)
+        # Use set to speed up lookups and note that these are strings (at least
+        # when they come from delete_refresh, check others?)
+        to_remove = {FName(x) for x in to_remove}
         # Remove mods from cache
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]
