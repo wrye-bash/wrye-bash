@@ -32,11 +32,21 @@ import json
 import os
 import shutil
 import stat
+import subprocess
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, TypeVar
 
+from .. import bolt
 from ..bolt import GPath, Path, deprint
+
+try:
+    from send2trash import send2trash, TrashPermissionError
+except ImportError:
+    # Don't log on Windows, we use IFileOperation there
+    if bolt.os_name != 'nt':
+        deprint('send2trash missing, recycling will not be possible')
+    send2trash = TrashPermissionError = None
 
 # Internals ===================================================================
 @functools.cache
@@ -291,7 +301,8 @@ def file_operation(operation: str | FileOperationType,
         return {}
     abspath = os.path.abspath
     if operation is FileOperationType.DELETE:
-        # allow_undo: no effect, can't use the recylce bin with standard lib
+        # allow_undo: use send2trash if present, otherwise we can't do anything
+        #             about this with only stdlib
         # confirm: show custom prompts if True
         # rename_on_collision: NOT IMPLEMENTED
         # silent: no real effect (no progress dialog in the implementation)
@@ -305,9 +316,21 @@ def file_operation(operation: str | FileOperationType,
             message += u'\n\n' + u'\n'.join([f' * {x}' for x in source_paths])
             if not askYes(parent, message, _('Delete Multiple Items')):
                 return {}
-        # Do deletion
         for to_delete in source_paths:
             if not to_delete.exists(): continue
+            # Check if we can even do this (send2trash may not be installed)
+            if allow_undo and send2trash:
+                try:
+                    send2trash(to_delete.s)
+                    continue
+                except TrashPermissionError:
+                    # This happens if we have permission to delete the file,
+                    # but do not have permission to create a trash directory
+                    # for it on the device it's on - fall back to regular
+                    # deletion there
+                    deprint(f'Permission to delete trash directory denied, '
+                            f'permanently deleting the file ({to_delete}) '
+                            f'instead', traceback=True)
             if to_delete.is_dir():
                 to_delete.rmtree(to_delete.stail)
             else:

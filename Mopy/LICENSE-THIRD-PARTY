@@ -5,9 +5,12 @@ To easily navigate this document, search for the '::LICENSE::' markers placed at
 Note: Some of the icons in Mopy/bash/images are released under other licenses too - please see the
 'Mopy/bash/images/ICON_LICENSES.md' file for their licenses.
 
-======================
-Code From Dependencies
-======================
+See https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-LICENSE-THIRD-PARTY
+for more information on this file and its format.
+
+==================================
+::SECTION:: Code From Dependencies
+==================================
 
 The following third-party sources are required at runtime for Wrye Bash to function.
 
@@ -1121,12 +1124,13 @@ SOFTWARE.
    If you do not wish that, you must delete the exception notice from such
    code and/or adjust the licensing conditions notice accordingly. 
 
-=============
-Included Code
-=============
+=========================
+::SECTION:: Included Code
+=========================
 
-The following third-party sources have been merged into Wrye Bash's source code.
-As part of that process, modifications have been made to fit Wrye Bash's code style and/or to port the code to newer Python versions.
+The following third-party sources have been merged into Wrye Bash's source
+code. As part of that process, modifications have been made to fit Wrye Bash's
+code style and/or to port the code to newer Python versions.
 
 ==============================================
 ::LICENSE:: fomod-schema
@@ -1564,9 +1568,9 @@ apply, that proxy's public statement of acceptance of any version is
 permanent authorization for you to choose that version for the
 Library.
 
-===============================
-Code From Optional Dependencies
-===============================
+===========================================
+::SECTION:: Code From Optional Dependencies
+===========================================
 
 The following third-party sources are not required by Wrye Bash.
 If they are installed, additional functionality may become available.
@@ -2453,6 +2457,37 @@ For more information on this, and how to apply and follow the GNU AGPL, see
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 
+===============================================
+::LICENSE:: send2trash
+::URL:: https://github.com/arsenetar/send2trash
+===============================================
+
+Copyright (c) 2017, Virgil Dupras
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+    * Neither the name of Hardcoded Software Inc. nor the names of its
+      contributors may be used to endorse or promote products derived from this
+      software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ============================================================
 ::LICENSE:: websocket-client
 ::URL:: https://github.com/websocket-client/websocket-client
@@ -2660,9 +2695,9 @@ For more information on this, and how to apply and follow the GNU AGPL, see
    See the License for the specific language governing permissions and
    limitations under the License.
 
-=========================================
-Code From Compile/Build-Time Dependencies
-=========================================
+=====================================================
+::SECTION:: Code From Compile/Build-Time Dependencies
+=====================================================
 
 The following third-party sources are only needed for creating a binary release of Wrye Bash, running unit tests, etc.
 They are not, however, redistributed in the created release.
