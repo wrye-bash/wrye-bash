@@ -1171,7 +1171,7 @@ class WorldChildren(CellChildren):
     def keepRecords(self, p_keep_ids):
         if pcell := self._stray_recs[b'CELL']:
             pcell.keepRecords(p_keep_ids)
-            if pcell.master_record.fid not in p_keep_ids:
+            if pcell.master_record is None:
                 self._stray_recs[b'CELL'] = None
         return True # keepRecords for the rest of WRLD children
 
