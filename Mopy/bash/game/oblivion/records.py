@@ -510,8 +510,9 @@ class MreAcre(MelRecord):
         MelEdid(),
         MelFid(b'NAME', 'base'),
         MelOwnershipTes4(),
-        MelEnableParent(),
         MelBase(b'XRGD', 'xrgd_p'), # Ragdoll Data, bytearray
+        MelXlod(),
+        MelEnableParent(),
         MelRefScale(),
         MelRef3D(),
     )
