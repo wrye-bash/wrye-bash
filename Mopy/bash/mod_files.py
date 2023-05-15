@@ -35,7 +35,7 @@ from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
     RecordHeader, RecordType, Subrecord, TopGrup, int_unpacker, null1, \
-    unpack_header, FormId
+    unpack_header, FormId, SubrecordBlob
 from .exception import MasterMapError, ModError, ModReadError, StateError
 from .load_order import get_ordered
 
@@ -549,3 +549,26 @@ class ModHeaderReader(object):
                 msg = f'Error scanning {mod_info}, file read pos: {ins.tell()}'
                 raise ModError(ins.inName, msg) from e
         return ret_headers
+
+    @staticmethod
+    def read_all_subrecords(mod_info) -> \
+            dict[bytes, list[tuple[RecHeader, list[SubrecordBlob]]]]:
+        """Read the specified plugin, returning a dict mapping signatures to
+        tuples of record headers and the subrecords those headers contain."""
+        ret_records = defaultdict(list)
+        curr_sig = None
+        with FormIdReadContext.from_info(mod_info) as ins:
+            try:
+                while not ins.atEnd():
+                    next_header = unpack_header(ins)
+                    if next_header.recType == b'GRUP':
+                        if next_header.is_top_group_header:
+                            curr_sig = next_header.label
+                    else:
+                        subrecs = list(
+                            MreRecord(next_header, ins).iterate_subrecords())
+                        ret_records[curr_sig].append((next_header, subrecs))
+            except (OSError, struct_error) as e:
+                msg = f'Error scanning {mod_info}, file read pos: {ins.tell()}'
+                raise ModError(ins.inName, msg) from e
+        return ret_records

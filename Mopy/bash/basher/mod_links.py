@@ -68,7 +68,7 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
-           'Mod_RecalcRecordCounts', 'Mod_Duplicate']
+           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -132,6 +132,27 @@ class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
         for top_grup_sig, block in dict_sort(modFile.tops):
             bolt.deprint(f'{sig_to_str(top_grup_sig)} GRUP has '
                          f'{block.get_num_headers()} records and groups')
+
+class Mod_DumpSubrecords(_LoadLink):
+    """Useful for figuring out the *order* of subrecords inside certain
+    records, to make sure the order you're programming into WB matches the one
+    the CK actually puts out."""
+    _text = 'Dump Subrecords'
+    _help = ('Write information on the FourCC and order of all subrecords in '
+             'all records in the selected plugins to the BashBugDump.')
+
+    def Execute(self):
+        for ds_p in self.iselected_infos():
+            ds_data = ModHeaderReader.read_all_subrecords(ds_p)
+            bolt.deprint(f'=== Dumping records and subrecords for {ds_p} ===')
+            for ds_sig, ds_all_recs in ds_data.items():
+                bolt.deprint(f'- {sig_to_str(ds_sig)}:')
+                for ds_rec_head, ds_subrecs in ds_all_recs:
+                    bolt.deprint(f' - {ds_rec_head.fid.short_fid:08X}:')
+                    for ds_sub in ds_subrecs:
+                        bolt.deprint(f'  - {sig_to_str(ds_sub.mel_sig)}, '
+                                     f'{len(ds_sub.mel_data)} bytes')
+            bolt.deprint(f'=== Finished dump for {ds_p} ===')
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
