@@ -157,7 +157,8 @@ class APreserver(ImportPatcher):
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = defaultdict(dict)
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         loaded_mods = self.patchFile.load_dict
         srcssigs = set()
         for srcMod in self.srcs:
@@ -415,7 +416,8 @@ class ImportCellsPatcher(ImportPatcher):
         """Get cells from source files."""
         if not self.isActive: return
         cellData = self.cellData
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         for srcMod in self.srcs:
             # tempCellData maps long fids for cells in srcMod to dicts of
             # (attributes (among attrs) -> their values for this mod). It is

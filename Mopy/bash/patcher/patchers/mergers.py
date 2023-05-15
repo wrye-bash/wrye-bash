@@ -91,7 +91,8 @@ class _AMerger(ImportPatcher):
 
     def initData(self,progress):
         if not self.isActive: return
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         present_sigs = set()
         for srcMod in self.srcs:
             srcFile = self.patchFile.get_loaded_mod(srcMod)
@@ -350,7 +351,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         mer_del = self.id_merged_deleted
         for srcMod in self.srcs:
             tempData = {}
@@ -475,7 +477,8 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         mer_del = self._id_merged_deleted
         for srcMod in self.srcs:
             tempData = {}
@@ -906,7 +909,8 @@ class ImportRacesSpellsPatcher(ImportPatcher):
 
     def initData(self, progress):
         if not self.isActive: return
-        progress.setFull(len(self.srcs))
+        if self.srcs:
+            progress.setFull(len(self.srcs))
         for srcMod in self.srcs:
             srcFile = self.patchFile.get_loaded_mod(srcMod)
             if not (race_block := srcFile.tops.get(b'RACE')): continue
