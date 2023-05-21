@@ -123,8 +123,8 @@ excluded_binaries = {
     'vcruntime140_1.dll',
     'vcruntime140.dll',
 }
-a.binaries = TOC([x for x in a.binaries
-                  if os.path.basename(x[0]).lower() not in excluded_binaries])
+a.binaries = [x for x in a.binaries
+              if os.path.basename(x[0]).lower() not in excluded_binaries]
 
 pyz = PYZ(a.pure, a.zipped_data,
           cipher=block_cipher)
