@@ -401,12 +401,12 @@ null3 = null1 * 3
 null4 = null1 * 4
 
 # TES4 Group/Top Types
-group_types = {0: u'Top', 1: u'World Children', 2: u'Interior Cell Block',
-               3: u'Interior Cell Sub-Block', 4: u'Exterior Cell Block',
-               5: u'Exterior Cell Sub-Block', 6: u'Cell Children',
-               7: u'Topic Children', 8: u'Cell Persistent Children',
-               9: u'Cell Temporary Children',
-               10: u'Cell Visible Distant Children/Quest Children'}
+group_types = {0: 'Top', 1: 'World Children', 2: 'Interior Cell Block',
+               3: 'Interior Cell Sub-Block', 4: 'Exterior Cell Block',
+               5: 'Exterior Cell Sub-Block', 6: 'Cell Children',
+               7: 'Topic Children', 8: 'Cell Persistent Children',
+               9: 'Cell Temporary Children',
+               10: 'Cell Visible Distant Children/Quest Children'}
 
 # Helpers ---------------------------------------------------------------------
 def get_structs(struct_format):

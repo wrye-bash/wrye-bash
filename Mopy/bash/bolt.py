@@ -1407,7 +1407,7 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-_not_a_flag = object()  # sentinel for Flags typhints
+_not_a_flag = object()  # sentinel for Flags typehints
 
 def flag(index: int | None) -> bool:
     """Type erasing method for assigning Field index values."""
@@ -1423,7 +1423,7 @@ class Flags:
 
     To support Flags types whose fields are determined at runtime, you can
     specify `= flag(None)` to indicate that the index should be incremented,
-    but not name associated with that bit of the field. This is intended for
+    but no name associated with that bit of the field. This is intended for
     usage with static deciders like `fnv_only` and `sse_only`."""
     __slots__ = ('_field',)
     _names: ClassVar[dict[str, int]] = {}
@@ -1434,29 +1434,26 @@ class Flags:
         names_dict = {}
         current_index = 0
         hints = get_type_hints(cls)
-        for attr, hint in hints.items():
-            if hint is bool:
-                override = getattr(cls, attr, _not_a_flag)
-                if override is not _not_a_flag:
-                    if override is None:
-                        # None indicates just increment the index
-                        current_index += 1
-                        continue
-                    # Error checks
-                    if not isinstance(override, int):
-                        raise TypeError(
-                            f'{cls.__name__} flag field index must '
-                            f'be an integer or None, got {override!r}'
-                        )
-                    elif override < 0:
+        hints = ((att, hint) for att, hint in hints.items() if hint is bool)
+        for attr, hint in hints: # we're only considering the 'bool' hints
+            override = getattr(cls, attr, _not_a_flag)
+            if override is not _not_a_flag:
+                if override is None:
+                    # None indicates just increment the index
+                    current_index += 1
+                    continue
+                # Error checks
+                if isinstance(override, int):
+                    if override < 0:
                         raise ValueError(
                             f'{cls.__name__} flag field index must be a '
-                            f'positive integer None, got {override}'
-                        )
-                    else:
-                        current_index = override
-                names_dict[attr] = current_index
-                current_index += 1
+                            f'positive integer or None, got {override}')
+                    current_index = override
+                else:
+                    raise TypeError(f'{cls.__name__} flag field index must '
+                                    f'be an integer or None, got {override!r}')
+            names_dict[attr] = current_index
+            current_index += 1
         cls._names = names_dict
 
     #--Generation
