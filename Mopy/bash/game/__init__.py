@@ -79,7 +79,7 @@ class GameInfo(object):
     # both).
     game_detect_includes = set()
     # Path to one or more files to look for to see if this is *not* the right
-    # game when joined with the game's root path. Used to differentia between
+    # game when joined with the game's root path. Used to differentiate between
     # versions of the game distributed on different platforms (at the moment
     # these are GOG, Steam and Windows Store).
     game_detect_excludes = set()
@@ -567,8 +567,6 @@ class GameInfo(object):
                 for p in cls.game_detect_excludes))
 
 # Constants -------------------------------------------------------------------
-# Files shared by versions of games that are published on GOG
-GOG_COMMON_FILES = {'gog.ico'}
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
 

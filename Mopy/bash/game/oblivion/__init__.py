@@ -22,11 +22,16 @@
 # =============================================================================
 from os.path import join as _j
 
-from .. import GOG_COMMON_FILES, WS_COMMON_FILES, GameInfo
+from .. import WS_COMMON_FILES, GameInfo
 from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
+
+_GOG_IDS = [
+    1458058109, # Game
+    1242989820, # Package
+]
 
 class OblivionGameInfo(PatchGame):
     """GameInfo override for TES IV: Oblivion."""
@@ -44,8 +49,8 @@ class OblivionGameInfo(PatchGame):
     game_detect_includes = {'OblivionLauncher.exe'}
     # NehrimLauncher.exe is here to make sure we don't ever detect Nehrim as
     # Oblivion
-    game_detect_excludes = (GOG_COMMON_FILES | WS_COMMON_FILES |
-                            {'NehrimLauncher.exe'})
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES | {'NehrimLauncher.exe'})
     version_detect_file = u'Oblivion.exe'
     master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
@@ -1208,7 +1213,7 @@ class GOGOblivionGameInfo(GOGMixin, OblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
     displayName = 'Oblivion (GOG)'
     check_legacy_paths = False
-    registry_keys = [(r'GOG.com\Games\1458058109', 'path')]
+    _gog_game_ids = _GOG_IDS
 
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""

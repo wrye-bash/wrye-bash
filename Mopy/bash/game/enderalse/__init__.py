@@ -20,9 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ..gog_game import GOGMixin
 from ..enderal import EnderalGameInfo
+from ..gog_game import GOGMixin
 from ..skyrimse import SkyrimSEGameInfo
+
+_GOG_IDS = [1708684988]
 
 # We want the final chain of attribute lookups to be Enderal SE -> Enderal LE
 # -> Skyrim SE -> Skyrim LE -> Defaults, i.e. the narrower overrides first
@@ -38,6 +40,7 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     # Enderal LE also has an Enderal Launcher.exe, but no SkyrimSE.exe. Skyrim
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe
     game_detect_includes = {'Enderal Launcher.exe', 'SkyrimSE.exe'}
+    game_detect_excludes = set(GOGMixin.get_unique_filenames(_GOG_IDS))
     loot_dir = u'Enderal Special Edition'
     loot_game_name = 'Enderal Special Edition'
     # This is in HKCU. There's also one in HKLM that uses 'SureAI\Enderal SE'
@@ -107,7 +110,7 @@ class GOGEnderalSEGameInfo(GOGMixin, EnderalSEGameInfo):
     displayName = 'Enderal Special Edition (GOG)'
     my_games_name = 'Enderal Special Edition GOG'
     appdata_name = 'Enderal Special Edition GOG'
-    registry_keys = [(r'GOG.com\Games\1708684988', 'path')]
+    _gog_game_ids = _GOG_IDS
 
     class Ini(EnderalSEGameInfo.Ini):
         save_prefix = '..\\Enderal Special Edition GOG\\Saves'

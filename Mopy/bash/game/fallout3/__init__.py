@@ -23,9 +23,12 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
+from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
+
+_GOG_IDS = [1454315831]
 
 class Fallout3GameInfo(PatchGame):
     """GameInfo override for Fallout 3."""
@@ -40,7 +43,8 @@ class Fallout3GameInfo(PatchGame):
     appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
     game_detect_includes = {'Fallout3.exe'}
-    game_detect_excludes = WS_COMMON_FILES | {'FalloutLauncherEpic.exe'}
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES | {'FalloutLauncherEpic.exe'})
     version_detect_file = u'Fallout3.exe'
     master_file = FName('Fallout3.esm')
     taglist_dir = u'Fallout3'
@@ -1214,6 +1218,7 @@ FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',
 class EGSFallout3GameInfo(Fallout3GameInfo):
     """GameInfo override for the Epic Games Store version of Fallout 3."""
     displayName = 'Fallout 3 (EGS)'
+    # appdata_name and my_games_name use the original locations
 
     @classproperty
     def game_detect_includes(cls):
@@ -1227,11 +1232,16 @@ class EGSFallout3GameInfo(Fallout3GameInfo):
         egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
         egs_language_dirs = FO3_LANG_DIRS
 
+class GOGFallout3GameInfo(GOGMixin, Fallout3GameInfo):
+    """GameInfo override for the GOG version of Fallout 3."""
+    displayName = 'Fallout 3 (GOG)'
+    _gog_game_ids = _GOG_IDS
+    # appdata_name and my_games_name use the original locations
+
 class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
     """GameInfo override for the Windows Store version of Fallout 3."""
     displayName = 'Fallout 3 (WS)'
-    # `appdata_name` and `my_games_name` use the original locations, unlike
-    # newer Windows Store games.
+    # appdata_name and my_games_name use the original locations
 
     class Ws(Fallout3GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
@@ -1239,4 +1249,5 @@ class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
         ws_language_dirs = FO3_LANG_DIRS
 
 GAME_TYPE = {g.displayName: g for g in
-             (Fallout3GameInfo, EGSFallout3GameInfo, WSFallout3GameInfo)}
+             (Fallout3GameInfo, EGSFallout3GameInfo, GOGFallout3GameInfo,
+              WSFallout3GameInfo)}

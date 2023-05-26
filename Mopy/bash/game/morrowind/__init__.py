@@ -23,9 +23,16 @@
 import struct as _struct
 
 from .. import WS_COMMON_FILES, GameInfo
+from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
+
+_GOG_IDS = [
+    1435828767, # Game
+    1432185303, # GOG Amazon Prime game
+    1440163901, # Package
+]
 
 class MorrowindGameInfo(PatchGame):
     """GameInfo override for TES III: Morrowind."""
@@ -39,7 +46,8 @@ class MorrowindGameInfo(PatchGame):
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
     game_detect_includes = {'Morrowind.exe'}
-    game_detect_excludes = WS_COMMON_FILES
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES)
     version_detect_file = u'Morrowind.exe'
     master_file = bolt.FName(u'Morrowind.esm')
     mods_dir = u'Data Files'
@@ -146,6 +154,12 @@ class MorrowindGameInfo(PatchGame):
         sub.sub_header_size = 8
         cls._import_records(__name__)
 
+class GOGMorrowindGameInfo(GOGMixin, MorrowindGameInfo):
+    """GameInfo override for the GOG version of Morrowind."""
+    displayName = 'Morrowind (GOG)'
+    _gog_game_ids = _GOG_IDS
+    # Morrowind does not use the personal folders, so no my_games_name etc.
+
 class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
     """GameInfo override for the Windows Store version of Morrowind."""
     displayName = 'Morrowind (WS)'
@@ -159,4 +173,4 @@ class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
                             'Morrowind GOTY German']
 
 GAME_TYPE = {g.displayName: g for g in
-             (MorrowindGameInfo, WSMorrowindGameInfo)}
+             (MorrowindGameInfo, GOGMorrowindGameInfo, WSMorrowindGameInfo)}

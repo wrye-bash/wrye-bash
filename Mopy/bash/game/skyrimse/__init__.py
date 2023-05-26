@@ -22,11 +22,17 @@
 # =============================================================================
 import importlib
 
-from .. import GOG_COMMON_FILES, WS_COMMON_FILES
+from .. import WS_COMMON_FILES
 from ..gog_game import GOGMixin
 from ..skyrim import SkyrimGameInfo
 from ..windows_store_game import WindowsStoreMixin
 from ...bolt import classproperty
+
+_GOG_IDS = [
+    1801825368, # Game
+    1162721350, # Anniversary Upgrade DLC/patch
+    1711230643, # Package
+]
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     """GameInfo override for TES V: Skyrim Special Edition."""
@@ -45,7 +51,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     # recommend creating a copy of SkyrimVR.exe called SkyrimSE.exe to "trick"
     # WB into launching. That's from back when WB had no VR support, but those
     # guides haven't been updated since...
-    game_detect_excludes = (GOG_COMMON_FILES | WS_COMMON_FILES |
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES |
                             {'EOSSDK-Win64-Shipping.dll'} | # Epic Store
                             {'SkyrimVR.exe'})
     version_detect_file = u'SkyrimSE.exe'
@@ -332,8 +339,7 @@ class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
     displayName = 'Skyrim Special Edition (GOG)'
     my_games_name = 'Skyrim Special Edition GOG'
     appdata_name = 'Skyrim Special Edition GOG'
-    registry_keys = [(r'GOG.com\Games\1711230643', 'path'),
-                     (r'GOG.com\Games\1162721350', 'path')]
+    _gog_game_ids = _GOG_IDS
 
 class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
     """GameInfo override for the Windows Store version of Skyrim SE."""

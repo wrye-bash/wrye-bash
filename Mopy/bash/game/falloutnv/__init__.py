@@ -25,8 +25,11 @@ from os.path import join as _j
 
 from .. import WS_COMMON_FILES
 from ..fallout3 import Fallout3GameInfo
+from ..gog_game import GOGMixin
 from ..windows_store_game import WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
+
+_GOG_IDS = [1454587428]
 
 class FalloutNVGameInfo(Fallout3GameInfo):
     """GameInfo override for Fallout New Vegas."""
@@ -40,7 +43,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
     game_detect_includes = {'FalloutNV.exe'}
-    game_detect_excludes = WS_COMMON_FILES | {'EOSSDK-Win32-Shipping.dll'}
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES | {'EOSSDK-Win32-Shipping.dll'})
     version_detect_file = u'FalloutNV.exe'
     master_file = FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
@@ -115,6 +119,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         'fallout - textures2.bsa',
         'fallout - voices1.bsa',
         'falloutnv.esm',
+        'falloutnv_lang.esp', # non-Steam versions only
         'gunrunnersarsenal - main.bsa',
         'gunrunnersarsenal - sounds.bsa',
         'gunrunnersarsenal.esm',
@@ -499,8 +504,8 @@ FNV_LANG_DIRS = ['Fallout New Vegas English', 'Fallout New Vegas French',
                  'Fallout New Vegas Spanish']
 
 class EGSFalloutNVGameInfo(FalloutNVGameInfo):
-    """GameInfo override for the Epic Games Store version of Fallout New Vegas.
-    """
+    """GameInfo override for the Epic Games Store version of Fallout New
+    Vegas."""
     displayName = 'Fallout New Vegas (EGS)'
     my_games_name = 'FalloutNV_Epic'
     appdata_name = 'FalloutNV_Epic'
@@ -517,20 +522,22 @@ class EGSFalloutNVGameInfo(FalloutNVGameInfo):
         egs_app_names = ['5daeb974a22a435988892319b3a4f476']
         egs_language_dirs = FNV_LANG_DIRS
 
-    bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
+class GOGFalloutNVGameInfo(GOGMixin, FalloutNVGameInfo):
+    """GameInfo override for the GOG version of Fallout New Vegas."""
+    displayName = 'Fallout New Vegas (GOG)'
+    _gog_game_ids = _GOG_IDS
+    # appdata_name and my_games_name use the original locations
 
 class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     """GameInfo override for the Windows Store version of Fallout New Vegas."""
     displayName = 'Fallout New Vegas (WS)'
-    # `appdata_name` and `my_games_name` use the original locations, unlike
-    # newer Windows Store games.
+    # appdata_name and my_games_name use the original locations
 
     class Ws(FalloutNVGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
         ws_language_dirs = FNV_LANG_DIRS
 
-    bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
-
 GAME_TYPE = {g.displayName: g for g in
-             (FalloutNVGameInfo, EGSFalloutNVGameInfo, WSFalloutNVGameInfo)}
+             (FalloutNVGameInfo, EGSFalloutNVGameInfo, GOGFalloutNVGameInfo,
+              WSFalloutNVGameInfo)}

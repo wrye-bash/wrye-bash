@@ -21,14 +21,31 @@
 #
 # =============================================================================
 """Module providing a mixin class to set some common defaults for GOG games."""
-from . import GOG_COMMON_FILES
+from . import GameInfo
 from ..bolt import classproperty
 
-class GOGMixin:
-    @classproperty
-    def game_detect_includes(cls):
-        return super().game_detect_includes | GOG_COMMON_FILES
+class GOGMixin(GameInfo):
+    """Mixin for variants of games that are installed via GOG."""
+    _gog_game_ids: list[int]
+
+    @classmethod
+    def test_game_path(cls, test_path):
+        return (super().test_game_path(test_path) and
+                any(test_path.join(f).is_file()
+                    for f in cls.get_unique_filenames(cls._gog_game_ids)))
 
     @classproperty
     def game_detect_excludes(cls):
-        return super().game_detect_excludes - GOG_COMMON_FILES
+        return super().game_detect_excludes - set(cls.get_unique_filenames(
+            cls._gog_game_ids))
+
+    @classproperty
+    def registry_keys(cls):
+        return [(fr'GOG.com\Games\{gog_id}', 'path')
+                for gog_id in cls._gog_game_ids]
+
+    @staticmethod
+    def get_unique_filenames(gog_game_ids):
+        """Get a list of filenames that uniquely identify a GOG-bought game
+        based on the specified game's GOG game IDs."""
+        return [f'goggame-{gog_id}.ico' for gog_id in gog_game_ids]

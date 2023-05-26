@@ -20,10 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import GOG_COMMON_FILES
 from ..gog_game import GOGMixin
 from ..oblivion import OblivionGameInfo
 from ...bolt import DefaultFNDict, FName
+
+_GOG_IDS = [1497007810]
 
 class NehrimGameInfo(OblivionGameInfo):
     """GameInfo override for Nehrim: At Fate's Edge."""
@@ -32,7 +33,7 @@ class NehrimGameInfo(OblivionGameInfo):
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = {'NehrimLauncher.exe'}
-    game_detect_excludes = GOG_COMMON_FILES
+    game_detect_excludes = set(GOGMixin.get_unique_filenames(_GOG_IDS))
     master_file = FName('Nehrim.esm')
     loot_dir = u'Nehrim'
     loot_game_name = 'Nehrim'
@@ -133,6 +134,6 @@ class NehrimGameInfo(OblivionGameInfo):
 class GOGNehrimGameInfo(GOGMixin, NehrimGameInfo):
     """GameInfo override for the GOG version of Nehrim."""
     displayName = 'Nehrim (GOG)'
-    registry_keys = [(r'GOG.com\Games\1497007810', 'path')]
+    _gog_game_ids = _GOG_IDS
 
 GAME_TYPE = {g.displayName: g for g in (NehrimGameInfo, GOGNehrimGameInfo)}

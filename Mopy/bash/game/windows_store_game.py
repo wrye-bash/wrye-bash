@@ -25,7 +25,7 @@ games."""
 from . import WS_COMMON_FILES, GameInfo
 from ..bolt import classproperty
 
-class WindowsStoreMixin:
+class WindowsStoreMixin(GameInfo):
     registry_keys = []
 
     @classproperty
