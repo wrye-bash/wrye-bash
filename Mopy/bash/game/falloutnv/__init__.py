@@ -26,7 +26,7 @@ from os.path import join as _j
 from .. import WS_COMMON_FILES
 from ..fallout3 import Fallout3GameInfo
 from ..windows_store_game import WindowsStoreMixin
-from ... import bolt
+from ...bolt import DefaultFNDict, FName, classproperty
 
 class FalloutNVGameInfo(Fallout3GameInfo):
     """GameInfo override for Fallout New Vegas."""
@@ -40,9 +40,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
     game_detect_includes = {'FalloutNV.exe'}
-    game_detect_excludes = WS_COMMON_FILES
+    game_detect_excludes = WS_COMMON_FILES | {'EOSSDK-Win32-Shipping.dll'}
     version_detect_file = u'FalloutNV.exe'
-    master_file = bolt.FName(u'FalloutNV.esm')
+    master_file = FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
     loot_dir = u'FalloutNV'
     loot_game_name = 'FalloutNV'
@@ -64,7 +64,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url_tip = u'http://nvse.silverlock.org/'
 
     class Bsa(Fallout3GameInfo.Bsa):
-        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+        redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'Fallout - Meshes.bsa': 1104530400,    # '2005-01-01'
             u'Fallout - Meshes2.bsa': 1104616800,   # '2005-01-02'
             u'Fallout - Misc.bsa': 1104703200,      # '2005-01-03'
@@ -493,6 +493,32 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         # import our records from falloutnv.records as it imports fallout3 ones
         super()._import_records(__name__)
 
+# Language dirs, shared by EGS and WS versions
+FNV_LANG_DIRS = ['Fallout New Vegas English', 'Fallout New Vegas French',
+                 'Fallout New Vegas German', 'Fallout New Vegas Italian',
+                 'Fallout New Vegas Spanish']
+
+class EGSFalloutNVGameInfo(FalloutNVGameInfo):
+    """GameInfo override for the Epic Games Store version of Fallout New Vegas.
+    """
+    displayName = 'Fallout New Vegas (EGS)'
+    my_games_name = 'FalloutNV_Epic'
+    appdata_name = 'FalloutNV_Epic'
+
+    @classproperty
+    def game_detect_includes(cls):
+        return super().game_detect_includes | {'EOSSDK-Win32-Shipping.dll'}
+
+    @classproperty
+    def game_detect_excludes(cls):
+        return super().game_detect_excludes - {'EOSSDK-Win32-Shipping.dll'}
+
+    class Eg(FalloutNVGameInfo.Eg):
+        egs_app_names = ['5daeb974a22a435988892319b3a4f476']
+        egs_language_dirs = FNV_LANG_DIRS
+
+    bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
+
 class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     """GameInfo override for the Windows Store version of Fallout New Vegas."""
     displayName = 'Fallout New Vegas (WS)'
@@ -502,13 +528,9 @@ class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
     class Ws(FalloutNVGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
-        ws_language_dirs = ['Fallout New Vegas English',
-                            'Fallout New Vegas French',
-                            'Fallout New Vegas German',
-                            'Fallout New Vegas Italian',
-                            'Fallout New Vegas Spanish']
+        ws_language_dirs = FNV_LANG_DIRS
 
     bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
 
 GAME_TYPE = {g.displayName: g for g in
-             (FalloutNVGameInfo, WSFalloutNVGameInfo)}
+             (FalloutNVGameInfo, EGSFalloutNVGameInfo, WSFalloutNVGameInfo)}
