@@ -63,14 +63,16 @@ import wx
 
 # basher-local imports - maybe work towards dropping (some of) these?
 from .constants import colorInfo, settingDefaults
-from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification
+from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
+    DependentsAffectedDialog, MastersAffectedDialog, MultiWarningDialog, \
+    LoadOrderSanitizedDialog
 from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
     load_order
 from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
-    INIListCtrl, InstallerColorChecks, ItemLink, Link, Links, ListBoxes, \
-    NotebookPanel, Resources, SeparatorLink, colors, images
+    INIListCtrl, InstallerColorChecks, ItemLink, Link, Links, NotebookPanel, \
+    Resources, SeparatorLink, colors, images, UIList
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion
@@ -222,7 +224,7 @@ class SashUIListPanel(SashPanel):
     """SashPanel featuring a UIList and a corresponding listData datasource."""
     listData = None
     _status_str = 'OVERRIDE: %(status_num)d'
-    _ui_list_type: type[balt.UIList] = None
+    _ui_list_type: type[UIList] = None
 
     def __init__(self, parent, isVertical=True):
         super(SashUIListPanel, self).__init__(parent, isVertical)
@@ -277,8 +279,8 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
                 items=[self.uiList]).apply_to(self.left)
 
 #------------------------------------------------------------------------------
-class _ModsUIList(balt.UIList):
-    _masters_first_cols = balt.UIList.nonReversibleCols
+class _ModsUIList(UIList):
+    _masters_first_cols = UIList.nonReversibleCols
 
     @property
     def masters_first(self):
@@ -550,7 +552,7 @@ class MasterList(_ModsUIList):
             mouseText += _('Stored size does not match the one on disk.') + ' '
         if self.allowEdit:
             if masterInfo.old_name in settings[u'bash.mods.renames']:
-                item_format.strong = True
+                item_format.bold = True
         #--Image
         status = self.GetMasterStatus(mi)
         oninc = load_order.cached_is_active(masters_name) or (
@@ -651,7 +653,7 @@ class MasterList(_ModsUIList):
         return [v.curr_name for k, v in dict_sort(self.data_store)]
 
 #------------------------------------------------------------------------------
-class INIList(balt.UIList):
+class INIList(UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
@@ -1301,7 +1303,7 @@ class ModList(_ModsUIList):
                 if len(deactivated) > (act in deactivated):
                     # deactivated dependents
                     deactivated = [x for x in deactivated if x != act]
-                    changes[self.__deactivated_key][act] = \
+                    changes[self._deactivated_key][act] = \
                         load_order.get_ordered(deactivated)
             except (BoltError, NotImplementedError) as e:
                 showError(self, f'{e}')
@@ -1323,7 +1325,7 @@ class ModList(_ModsUIList):
                 touched |= set(activated)
                 if len(activated) > (inact in activated): # activated masters
                     activated = [x for x in activated if x != inact]
-                    changes[self.__activated_key][inact] = activated
+                    changes[self._activated_key][inact] = activated
             except (BoltError, NotImplementedError) as e:
                 showError(self, f'{e}')
                 break
@@ -1348,29 +1350,25 @@ class ModList(_ModsUIList):
             self.RefreshUI(redraw=self._lo_redraw_targets(touched),
                            refreshSaves=True)
 
-    __activated_key = _(u'Masters activated:')
-    __deactivated_key = _(u'Children deactivated:')
+    _activated_key = 0
+    _deactivated_key = 1
     def __toggle_active_msg(self, changes_dict):
-        masters_activated = changes_dict[self.__activated_key]
-        children_deactivated = changes_dict[self.__deactivated_key]
-        checklists = []
-        # It's one or the other !
+        masters_activated = self.decorate_tree_dict(
+            changes_dict[self._activated_key])
+        dependents_deactivated = self.decorate_tree_dict(
+            changes_dict[self._deactivated_key])
+        # If we have no changes, abort - if we do have changes, only one of
+        # these can be truthy at a time
+        if not masters_activated and not dependents_deactivated:
+            return
         if masters_activated:
-            checklists = [self.__activated_key, _(
-            u'Wrye Bash automatically activates the masters of activated '
-            u'plugins.'), masters_activated]
-            msg = _(u'Activating the following plugins caused their masters '
-                    u'to be activated')
-        elif children_deactivated:
-            checklists += [self.__deactivated_key, _(
-                u'Wrye Bash automatically deactivates the children of '
-                u'deactivated plugins.'), children_deactivated]
-            msg = _(u'Deactivating the following plugins caused their '
-                    u'children to be deactivated')
-        else: return
-        ListBoxes.display_dialog(self, _(u'Masters/Children affected'), msg,
-                                 [checklists], liststyle=u'tree',
-                                 canCancel=False)
+            target_dlg = MastersAffectedDialog
+            target_tree_dict = masters_activated
+        else:
+            target_dlg = DependentsAffectedDialog
+            target_tree_dict = dependents_deactivated
+        target_dlg(self, mods_list_images=self._icons,
+            decorated_plugins=target_tree_dict).show_modeless()
 
     # Undo/Redo ---------------------------------------------------------------
     def _undo_redo_op(self, undo_or_redo):
@@ -2260,7 +2258,7 @@ class ModPanel(BashTab):
         super(ModPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
-class SaveList(balt.UIList):
+class SaveList(UIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
@@ -2584,7 +2582,7 @@ class SavePanel(BashTab):
         super(SavePanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
-class InstallersList(balt.UIList):
+class InstallersList(UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
@@ -3585,7 +3583,7 @@ class InstallersPanel(BashTab):
         Link.Frame.warn_corrupted(warn_bsas=True)
 
 #------------------------------------------------------------------------------
-class ScreensList(balt.UIList):
+class ScreensList(UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
@@ -3717,7 +3715,7 @@ class ScreensPanel(BashTab):
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
-class BSAList(balt.UIList):
+class BSAList(UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
@@ -4285,96 +4283,145 @@ class BashFrame(WindowFrame):
 
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
-        def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
-            ListBoxes.display_dialog(self, title, message, [lists],
-                                     liststyle=u'list', canCancel=False)
+        def mk_warning(lo_warn_msg: str, warning_plugins: Iterable[FName]):
+            """Helper for creating a single warning change entry from the
+            specified warning message and to-be-highlighted plugins."""
+            warning_dec_plugins = self.modList.decorate_tree_dict(
+                {p: [] for p in sorted(warning_plugins)})
+            return LoadOrderSanitizedDialog.make_change_entry(
+                mods_list_images=self.modList._icons,
+                mods_change_desc=lo_warn_msg,
+                decorated_plugins=warning_dec_plugins)
+        lo_warnings = []
         if bosh.modInfos.selectedBad:
-           msg = [u'',_(u'Missing files have been removed from load list:')]
-           msg.extend(sorted(bosh.modInfos.selectedBad))
-           warn(_(u'Missing files have been removed from load list:'), msg)
-           bosh.modInfos.selectedBad = set()
-        #--Was load list too long? or bad filenames?
-        if bosh.modInfos.selectedExtra:## or bosh.modInfos.activeBad:
-           ## Disable this message for now, until we're done testing if
-           ## we can get the game to load these files
-           #if bosh.modInfos.activeBad:
-           #    msg = [u'Incompatible names:',
-           #           u'Incompatible file names deactivated:']
-           #    msg.extend(bosh.modInfos.bad_names)
-           #    bosh.modInfos.activeBad = set()
-           #    message.append(msg)
-           msg = [u'Too many files:', _(
-               u'Load list is overloaded.  Some files have been deactivated:')]
-           msg.extend(sorted(bosh.modInfos.selectedExtra))
-           warn(_(u'Files have been removed from load list:'), msg)
-           bosh.modInfos.selectedExtra = set()
+            lo_warnings.append(mk_warning(
+                _('The following plugins could not be found in the '
+                  '%(data_folder)s folder or are corrupt and have thus been '
+                  'removed from the load order.') % {
+                    'data_folder': bush.game.mods_dir,
+                }, bosh.modInfos.selectedBad))
+            bosh.modInfos.selectedBad = set()
+        if bosh.modInfos.selectedExtra:
+            if bush.game.has_esl:
+                warn_msg = _('The following plugins have been deactivated '
+                             'because only %(max_regular_plugins)d regular '
+                             'plugins and %(max_esl_plugins)d ESL-flagged '
+                             'plugins may be active at the same time.')
+            else:
+                warn_msg = _('The following plugins have been deactivated '
+                             'because only %(max_regular_plugins)d plugins '
+                             'may be active at the same time.')
+            lo_warnings.append(mk_warning(warn_msg % {
+                'max_regular_plugins': load_order.max_espms(),
+                'max_esl_plugins': load_order.max_esls(),
+            }, bosh.modInfos.selectedExtra))
+            bosh.modInfos.selectedExtra = set()
+        ##: Disable this message for now, until we're done testing if we can
+        # get the game to load these files
+        # if bosh.modInfos.activeBad:
+        #     lo_warnings.append(mk_warning(
+        #         _('The following plugins have been deactivated because they '
+        #           'have filenames that cannot be encoded in Windows-1252 and '
+        #           'thus cannot be loaded by %(game_name)s.') % {
+        #             'game_name': bush.game.displayName,
+        #         }, bosh.modInfos.activeBad))
+        #     bosh.modInfos.activeBad = set()
+        if lo_warnings:
+            LoadOrderSanitizedDialog(self,
+                highlight_changes=lo_warnings).show_modeless()
 
     def warn_corrupted(self, warn_mods=False, warn_saves=False,
                        warn_strings=False, warn_bsas=False):
-        #--Any new corrupted files?
-        message = []
+        def mk_warning(warn_msg: str, warning_items: Iterable[FName], *,
+                target_uil: UIList, target_tab_key: str):
+            """Helper for creating a single warning change entry from the
+            specified warning message and to-be-highlighted items, relative to
+            the specified UIList/Tab."""
+            if target_uil is not None:
+                warning_dec_items = target_uil.decorate_tree_dict(
+                    {i: [] for i in sorted(warning_items)})
+            else:
+                # Tab is not enabled, no way to decorate with it
+                warning_dec_items = {
+                    i: (None, []) for i in sorted(warning_items)}
+            return MultiWarningDialog.make_change_entry(
+                uil_images=target_uil._icons if target_uil else None,
+                origin_tab_key=target_tab_key, warn_change_desc=warn_msg,
+                decorated_items=warning_dec_items)
+        def mk_mods_warning(warn_msg: str, warning_items: Iterable[FName]):
+            """Version of mk_warning for the Mods tab."""
+            return mk_warning(warn_msg, warning_items,
+                target_uil=self.modList, target_tab_key='Mods')
+        def mk_saves_warning(warn_msg: str, warning_items: Iterable[FName]):
+            """Version of mk_warning for the Saves tab."""
+            return mk_warning(warn_msg, warning_items,
+                target_uil=self.saveList, target_tab_key='Saves')
+        def mk_bsa_warning(warn_msg: str, warning_items: Iterable[FName]):
+            """Version of mk_warning for the BSAs tab."""
+            return mk_warning(warn_msg, warning_items,
+                target_uil=self.bsaList, target_tab_key='BSAs')
+        multi_warnings = []
         corruptMods = set(bosh.modInfos.corrupted)
         if warn_mods and not corruptMods <= self.knownCorrupted:
-            m = [_('Plugin warnings'),
-                 _('The following mod files have unrecognized headers:')]
-            m.extend(sorted(corruptMods))
-            message.append(m)
+            multi_warnings.append(mk_mods_warning(
+                _('The following plugins could not be read. This most likely '
+                  'means that they are corrupt.'),
+                corruptMods - self.knownCorrupted))
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted)
         if warn_saves and not corruptSaves <= self.knownCorrupted:
-            m = [_('Save game warnings'),
-                 _('The following save files have errors:')]
-            m.extend(sorted(corruptSaves))
-            message.append(m)
+            multi_warnings.append(mk_saves_warning(
+                _('The following save files could not be read. This most '
+                  'likely means that they are corrupt.'),
+                corruptSaves - self.knownCorrupted))
             self.knownCorrupted |= corruptSaves
         valid_vers = bush.game.Esp.validHeaderVersions
         invalidVersions = {ck for ck, x in bosh.modInfos.items() if
                            all(x.header.version != v for v in valid_vers)}
         if warn_mods and not invalidVersions <= self.known_invalid_versions:
-            m = [_('Unrecognized Versions'),
-                 _('The following mods have unrecognized header versions:')]
-            m.extend(sorted(invalidVersions - self.known_invalid_versions))
-            message.append(m)
+            multi_warnings.append(mk_mods_warning(
+                _('The following plugins have header versions that are not '
+                  'valid for this game. This may mean that they are '
+                  'actually intended to be used for a different game.'),
+                invalidVersions - self.known_invalid_versions))
             self.known_invalid_versions |= invalidVersions
         old_fvers = bosh.modInfos.older_form_versions
         if warn_mods and not old_fvers <= self.known_older_form_versions:
-            m = [_('Old Header Form Versions'),
-                 _("The following mods don't use the current plugin Form "
-                   "Version:")]
-            m.extend(sorted(old_fvers - self.known_older_form_versions))
-            message.append(m)
+            multi_warnings.append(mk_mods_warning(
+                _('The following plugins use an older Form Version for their '
+                  'main header. This most likely means that they were not '
+                  'ported properly (if at all).'),
+                old_fvers - self.known_older_form_versions))
             self.known_older_form_versions |= old_fvers
         if warn_strings and bosh.modInfos.new_missing_strings:
-            m = [_('Missing String Localization Files'),
-                 _('This will cause CTDs if activated.')]
-            m.extend(sorted(bosh.modInfos.missing_strings))
-            message.append(m)
+            multi_warnings.append(mk_mods_warning(
+                _('The following plugins are marked as localized, but are '
+                  'missing strings localization files in the language your '
+                  'game is set to. This will cause CTDs if they are '
+                  'activated.'), bosh.modInfos.new_missing_strings))
             bosh.modInfos.new_missing_strings.clear()
         bsa_mvers = bosh.bsaInfos.mismatched_versions
         if warn_bsas and not bsa_mvers <= self.known_mismatched_version_bsas:
-            m = [_('Mismatched BSA Versions'),
-                 _('The following BSAs have a version other than the one '
-                   '%(game_name)s expects. This can lead to CTDs, please '
-                   'extract and repack them using the %(ck_name)s-provided '
-                   'tool:') % {'game_name': bush.game.displayName,
-                               'ck_name': bush.game.Ck.long_name}]
-            m.extend(sorted(bsa_mvers - self.known_mismatched_version_bsas))
-            message.append(m)
+            multi_warnings.append(mk_bsa_warning(
+                _('The following BSAs have a version different from the one '
+                  '%(game_name)s expects. This can lead to CTDs, please '
+                  'extract and repack them using the %(ck_name)s-provided '
+                  'tool.') % {'game_name': bush.game.displayName,
+                              'ck_name': bush.game.Ck.long_name},
+                bsa_mvers - self.known_mismatched_version_bsas))
             self.known_mismatched_version_bsas |= bsa_mvers
         ba2_colls = bosh.bsaInfos.ba2_collisions
         if warn_bsas and not ba2_colls <= self.known_ba2_collisions:
-            m = [_('BA2 Hash Collisions'),
-                 _('The following BA2s have filenames whose hashes collide, '
-                   'which will cause one or more of them to fail to work '
-                   'correctly. This should be corrected by the mod author(s) '
-                   'by renaming the files to avoid the collision:')]
-            m.extend(sorted(ba2_colls - self.known_ba2_collisions))
-            message.append(m)
+            multi_warnings.append(mk_bsa_warning(
+                _('The following BA2s have filenames whose hashes collide, '
+                  'which will cause one or more of them to fail to work '
+                  'correctly. This should be corrected by the mod author(s) '
+                  'by renaming the files to avoid the collision.'),
+                ba2_colls - self.known_ba2_collisions))
             self.known_ba2_collisions |= ba2_colls
-        if message:
-            ListBoxes.display_dialog(
-              self, _('Warnings'), _('The following warnings were found:'),
-            message, liststyle=u'list', canCancel=False)
+        if multi_warnings:
+            MultiWarningDialog(self,
+                highlight_changes=multi_warnings).show_modeless()
 
     _ini_missing = _('%(game_ini_file)s does not exist yet. %(game_name)s '
                      'will create this file on first run. INI tweaks will not '

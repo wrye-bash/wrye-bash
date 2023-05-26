@@ -27,17 +27,18 @@ import copy
 import io
 import traceback
 from collections import defaultdict
+from collections.abc import Iterable
 from itertools import chain
 
 from .constants import settingDefaults
-from .dialogs import ExportScriptsDialog
+from .dialogs import DeactivateBeforePatchEditor, ExportScriptsDialog, \
+    MasterErrorsDialog
 from .files_links import File_Duplicate, File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
-    ItemLink, Link, ListBoxes, MenuLink, OneItemLink, SeparatorLink, \
-    TransLink
+    ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
@@ -969,12 +970,12 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
         if _configIsCBash(bp_config):
             if not self._askYes(
-                    _(u'This patch was built in CBash mode. This is no longer '
-                      u'supported. You can either use Wrye Bash 307 to '
-                      u'convert it to PBash format, or you can click "Yes" '
-                      u'below to make Wrye Bash reset the configuration to '
-                      u'default. If you click "No", the patch building will '
-                      u'abort now.'), title=_(u'Unsupported CBash Patch')):
+                    _('This patch was built in CBash mode. This is no longer '
+                      'supported. You can either use Wrye Bash 307 to '
+                      'convert it to PBash format, or you can click "Yes" '
+                      'below to make Wrye Bash reset the configuration to '
+                      'default. If you click "No", the patch building will '
+                      'abort now.'), title=_('Unsupported CBash Patch')):
                 return False
             bp_config = {}
         # Create the PatchFile instance
@@ -984,22 +985,25 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             # we might have de-activated plugins so recalculate active sets
             bashed_patch.set_active_arrays(bosh.modInfos)
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
-        if missing or delinquent:
-            error_msg = _(
-                'The following plugins have master file errors. You will '
-                'have to fix these problems before Bashed Patch building can '
-                'begin.')
-            missing_msg = _(
+        def mk_error(warn_msg: str, warning_items: Iterable[FName]):
+            return MasterErrorsDialog.make_change_entry(
+                mods_list_images=self.window._icons, mods_change_desc=warn_msg,
+                decorated_plugins=self.window.decorate_tree_dict(
+                    {i: [] for i in sorted(warning_items)}))
+        bp_master_errors = []
+        if missing:
+            bp_master_errors.append(mk_error(_(
                 'The following plugins have missing masters and are active. '
-                'This will cause the game to crash. Please disable them.')
-            delinquent_msg = _(
+                'This will cause the game to crash. Please disable them.'),
+                missing))
+        if delinquent:
+            bp_master_errors.append(mk_error(_(
                 'These mods have delinquent masters, which means they load '
-                'before their masters. This will cause unpredictable '
-                'behavior. Please adjust your load order to fix this.')
-            ListBoxes.display_dialog(Link.Frame, _('Master Errors'),
-                error_msg, [[_('Missing Master Errors'), missing_msg, missing],
-                [_('Delinquent Master Errors'), delinquent_msg, delinquent]],
-                liststyle='tree', canCancel=False)
+                'before their masters. This is undefined behavior. Please '
+                'adjust your load order to fix this.'), delinquent))
+        if bp_master_errors:
+            MasterErrorsDialog.display_dialog(self.window,
+                highlight_changes=bp_master_errors)
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,
@@ -1011,49 +1015,27 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         for mod in bashed_patch.load_dict:
             tags = bosh.modInfos[mod].getBashTags()
             if not bush.game.check_esl and mod in bosh.modInfos.mergeable:
-                if u'MustBeActiveIfImported' in tags:
+                if 'MustBeActiveIfImported' in tags:
                     continue
-                if u'NoMerge' in tags: noMerge.append(mod)
-                else: merge.append(mod)
-            elif u'Deactivate' in tags: deactivate.append(mod)
-        checklists = []
-        mergeKey = _(u'Mergeable')
-        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
-        deactivateKey = _(u"Tagged 'Deactivate'")
-        if merge:
-            group = [mergeKey, _('These mods are mergeable.  '
-                'While it is not important to Wrye Bash functionality or '
-                'the end contents of the Bashed Patch, it is suggested that '
-                'they be deactivated and merged into the patch.  This helps '
-                'avoid the maximum plugin limit.'), ]
-            group.extend(merge)
-            checklists.append(group)
-        if noMerge:
-            group = [noMergeKey, _(u'These mods are mergeable, but tagged '
-                u"'NoMerge'.  They should be deactivated before building the "
-                u'patch and imported into the Bashed Patch.'), ]
-            group.extend(noMerge)
-            checklists.append(group)
-        if deactivate:
-            group = [deactivateKey, _(u"These mods are tagged 'Deactivate'.  "
-                u'They should be deactivated before building the patch, and '
-                u'merged or imported into the Bashed Patch.'), ]
-            group.extend(deactivate)
-            checklists.append(group)
-        if not checklists: return
-        getchecks = [(mergeKey, merge), (noMergeKey, noMerge),
-                     (deactivateKey, deactivate)]
-        deselect = set(chain(*ListBoxes.display_dialog(Link.Frame,
-            _('Deactivate these mods prior to patching'),
-            _('The following mods should be deactivated prior to building the '
-              'patch.'), checklists, bCancel=_('Skip'),
-            get_checked= getchecks)))
-        if not deselect:
-            return
-        self.mods_to_reselect = set(noMerge) & deselect
+                elif 'NoMerge' in tags:
+                    noMerge.append(mod)
+                else:
+                    merge.append(mod)
+            elif 'Deactivate' in tags:
+                deactivate.append(mod)
+        if not merge and not noMerge and not deactivate:
+            return False # Nothing to deselect
+        dbp_result = DeactivateBeforePatchEditor.display_dialog(self.window,
+            plugins_mergeable=merge, plugins_nomerge=noMerge,
+            plugins_deactivate=deactivate)
+        ed_ok, ed_mergeable, ed_nomerge, ed_deactivate = dbp_result
+        to_deselect = set(chain(ed_mergeable, ed_nomerge, ed_deactivate))
+        if not ed_ok or not to_deselect:
+            return False # Aborted by user or nothing left enabled
+        self.mods_to_reselect = ed_nomerge
         with BusyCursor():
-            bosh.modInfos.lo_deactivate(deselect, doSave=True)
-        self.window.RefreshUI(refreshSaves=True)
+            bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
+            self.window.RefreshUI(refreshSaves=True)
         return True
 
 #------------------------------------------------------------------------------

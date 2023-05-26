@@ -2315,8 +2315,8 @@ class ModInfos(FileInfos):
         for fileName in self:
             if self.isBadFileName(fileName):
                 if load_order.cached_is_active(fileName):
-                    ## For now, we'll leave them active, until
-                    ## we finish testing what the game will support
+                    ##: For now, we'll leave them active, until we finish
+                    # testing what the game will support
                     #self.lo_deactivate(fileName)
                     activeBad.add(fileName)
                 else:

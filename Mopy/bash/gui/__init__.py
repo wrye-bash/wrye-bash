@@ -40,4 +40,5 @@ from .multi_choices import *
 from .popups import *
 from .text_components import *
 from .top_level_windows import *
+from .trees import *
 from .wizards import *

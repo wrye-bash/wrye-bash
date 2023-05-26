@@ -27,6 +27,7 @@ from __future__ import annotations
 import threading
 import time
 from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import partial, wraps
 
 import wx
@@ -37,14 +38,14 @@ from . import bolt
 from .bolt import FName, Path, deprint, readme_url
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
-from .gui import RIGHT, BusyCursor, Button, CancelButton, CheckListBox, \
+from .gui import RIGHT, BusyCursor, Button, CheckListBox, \
     Color, DialogWindow, DirOpen, DocumentViewer, EventResult, FileOpen, \
-    FileOpenMultiple, FileSave, Font, GlobalMenu, HBoxedLayout, HLayout, \
+    FileOpenMultiple, FileSave, Font, GlobalMenu, HLayout, \
     ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
-    TextArea, UIListCtrl, VLayout, WindowFrame, WrappingLabel, bell, \
+    TextArea, UIListCtrl, VLayout, WindowFrame, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
-    askWarning, showOk, showError, showWarning, showInfo
+    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -709,6 +710,28 @@ def conversation(func):
                     Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class _ListItemFormat:
+    icon_key: str | None = None
+    back_key: str = 'default.bkgd'
+    text_key: str = 'default.text'
+    bold: bool = False
+    italics: bool = False
+    underline: bool = False
+
+    def to_tree_node_format(self, parent_uil: UIList):
+        """Convert this list item format to an equivalent tree node format,
+        relative to the specified parent UIList."""
+        return TreeNodeFormat(
+            icon_idx=parent_uil.lookup_icon_index(self.icon_key),
+            back_color=parent_uil.lookup_back_key(self.back_key),
+            text_color=parent_uil.lookup_text_key(self.text_key),
+            bold=self.bold, italics=self.italics, underline=self.underline)
+
+DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
+    list[tuple[FName, TreeNodeFormat | None]]]]
+
 class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
@@ -794,8 +817,8 @@ class UIList(PanelWin):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = wx.SystemSettings.GetColour(
-            wx.SYS_COLOUR_WINDOW)
+        self._defaultTextBackground = Color.from_wx(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     # Column properties
@@ -880,41 +903,6 @@ class UIList(PanelWin):
             self.__gList.set_item_data(itemDex, col_dex,
                                        self.labels[col](self, item))
 
-    class _ListItemFormat(object):
-        def __init__(self):
-            self.icon_key = None
-            self.back_key = u'default.bkgd'
-            self.text_key = u'default.text'
-            self.strong = False
-            self.italics = False
-            self.underline = False
-
-    def set_item_format(self, item, item_format, target_ini_setts):
-        """Populate item_format attributes for text and background colors
-        and set icon, font and mouse text. Responsible (applicable if the
-        data_store is a FileInfo subclass) for calling getStatus (or
-        tweak_status in Inis) to update respective info's status."""
-        pass # screens, bsas
-
-    def __setUI(self, fileName, target_ini_setts, gItem):
-        """Set font, status icon, background text etc."""
-        df = self._ListItemFormat()
-        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        if df.icon_key:
-            if isinstance(df.icon_key, tuple):
-                img = self._icons.Get(*df.icon_key)
-            else: img = self._icons[df.icon_key]
-            gItem.SetImage(img)
-        if df.text_key:
-            gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
-        else:
-            gItem.SetTextColour(self.__gList.get_text_color())
-        if df.back_key:
-            gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
-        else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
-                                 slant=df.italics, underline=df.underline))
-
     def populate_items(self):
         """Sort items and populate entire list."""
         # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
@@ -980,7 +968,69 @@ class UIList(PanelWin):
     def Focus(self):
         self.__gList.set_focus()
 
-    #--Column Menu
+    #--Decorating -------------------------------------------------------------
+    def set_item_format(self, item, item_format, target_ini_setts):
+        """Populate item_format attributes for text and background colors
+        and set icon, font and mouse text. Responsible (applicable if the
+        data_store is a FileInfo subclass) for calling getStatus (or
+        tweak_status in Inis) to update respective info's status."""
+        pass # screens, bsas
+
+    def __setUI(self, fileName, target_ini_setts, gItem):
+        """Set font, status icon, background text etc."""
+        df = _ListItemFormat()
+        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
+        icon_index = self.lookup_icon_index(df.icon_key)
+        if icon_index is not None:
+            gItem.SetImage(icon_index)
+        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
+        gItem.SetBackgroundColour(
+            self.lookup_back_key(df.back_key).to_rgba_tuple())
+        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
+                                 slant=df.italics, underline=df.underline))
+
+    def lookup_icon_index(self, target_icon_key: str | tuple) -> int | None:
+        """Helper method to look up an icon from a list item format and return
+        it as an index into the image list."""
+        if isinstance(target_icon_key, tuple):
+            return self._icons.Get(*target_icon_key)
+        elif target_icon_key is not None:
+            return self._icons[target_icon_key]
+        else:
+            return None # keep None as None
+
+    def lookup_text_key(self, target_text_color: str):
+        """Helper method to look up a text color from a list item format."""
+        if target_text_color:
+            return colors[target_text_color]
+        else:
+            return self.__gList.get_text_color()
+
+    def lookup_back_key(self, target_back_color: str):
+        """Helper method to look up a background color from a list item
+        format."""
+        if target_back_color:
+            return colors[target_back_color]
+        else:
+            return self._defaultTextBackground
+
+    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
+            target_ini_setts=None) -> DecoratedTreeDict:
+        """Add appropriate TreeNodeFormat instances to the specified dict
+        mapping items in this UIList to lists of items in this UIList."""
+        def _decorate(i):
+            lif = _ListItemFormat()
+            # Only run set_item_format when the item is actually present,
+            # otherwise just use the default settings (we do still have to use
+            # those since the default text/background colors may have been
+            # changed from the OS default)
+            if i in self.data_store:
+                self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+            return lif.to_tree_node_format(self)
+        return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
+                for i, i_children in tree_dict.items()}
+
+    #--Right Click Menus ------------------------------------------------------
     def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
         """Show column menu.
 
@@ -994,7 +1044,6 @@ class UIList(PanelWin):
                 self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
-    #--Item Menu
     def DoItemMenu(self):
         """Show item menu."""
         # Don't allow this if we are in the process of renaming because
@@ -2106,125 +2155,6 @@ wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
 _wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
-
-# ListBoxes -------------------------------------------------------------------
-class _CheckList_SelectAll(ItemLink):
-    """Menu item used in ListBoxes."""
-    def __init__(self,select=True):
-        super(_CheckList_SelectAll, self).__init__()
-        self.select = select
-        self._text = _(u'Select All') if select else _(u'Select None')
-
-    def Execute(self):
-        self.window.set_all_checkmarks(checked=self.select)
-
-# TODO(inf) Needs renaming, also need to make a virtual version eventually...
-class TreeCtrl(_AComponent):
-    _native_widget: wx.TreeCtrl
-
-    def __init__(self, parent, title, items_dict):
-        super(TreeCtrl, self).__init__(parent, size=(150, 200),
-            style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
-                  wx.TR_HIDE_ROOT)
-        root = self._native_widget.AddRoot(title)
-        self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
-        for item, subitems in items_dict.items():
-            if not isinstance(item, str):
-                deprint(f'Non-str {item!r} passed')
-                item = f'{item}'
-            child = self._native_widget.AppendItem(root, item)
-            for subitem in subitems:
-                if not isinstance(subitem, str):
-                    deprint(f'Non-str {subitem!r} passed')
-                    subitem = f'{subitem}'
-                self._native_widget.AppendItem(child, subitem)
-            self._native_widget.Expand(child)
-
-    def OnMotion(self, event): return
-
-class ListBoxes(DialogWindow):
-    """A window with 1 or more lists."""
-    def __init__(self, parent, title, message, lists, liststyle=u'check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
-        """lists is in this format:
-        if liststyle == u'check' or u'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == u'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
-            sizes_dict=sizes, style=style)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        # TODO(inf) de-wx!
-        minWidth = int(self._native_widget.ToDIP(
-            self._native_widget.GetTextExtent(title)).width * 1.2 + 64)
-        self._panel_text = WrappingLabel(self, message)
-        layout = VLayout(border=5, spacing=5, items=[self._panel_text])
-        self._ctrls = {}
-        # Size ourselves slightly larger than the wrapped text, otherwise some
-        # of it may be cut off and the buttons may become too small to read
-        # TODO(ut) we should set ourselves to min(minWidth, size(btns)) - how?
-        self.component_size = (minWidth + 64, -1)
-        min_height = 128 + 128 * len(lists) #arbitrary just fits well currently
-        if self.component_size[1] < min_height:
-            self.component_size = (minWidth + 64, min_height)
-        self.set_min_size(minWidth + 64, min_height)
-        for item_group in lists:
-            title = item_group[0] # also serves as key in self._ctrls dict
-            item_tip = item_group[1]
-            if not (strs := [f'{x}' for x in item_group[2:]]): # Path | str
-                continue
-            if liststyle == u'check':
-                checksCtrl = CheckListBox(self, choices=strs, isSingle=True,
-                                          isHScroll=True)
-                checksCtrl.on_context.subscribe(self._on_context)
-                checksCtrl.set_all_checkmarks(checked=True)
-            elif liststyle == u'list':
-                checksCtrl = ListBox(self, choices=strs, isHScroll=True)
-            else: # u'tree'
-                checksCtrl = TreeCtrl(self, title, item_group[2])
-            self._ctrls[title] = checksCtrl
-            checksCtrl.tooltip = item_tip
-            layout.add((HBoxedLayout(self, item_expand=True, title=title,
-                                     item_weight=1, items=[checksCtrl]),
-                        LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk),
-                CancelButton(self, btn_label=bCancel) if canCancel else None]
-        layout.add((HLayout(spacing=5, items=btns),
-                    LayoutOptions(h_align=RIGHT)))
-        layout.apply_to(self)
-
-    def _on_context(self, lb_instance):
-        """Context Menu"""
-        self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Return a tuple of lists of checked items"""
-        get_checked = kwargs.pop('get_checked', ())
-        with cls(*args, **kwargs) as dialog:
-            res = dialog.show_modal()
-            if not res: return tuple(() for __ in range(len(get_checked)))
-            return tuple(dialog._get_checked(*args_tuple) for args_tuple in
-                         get_checked) or res # or for when get_checked is empty
-
-    def _get_checked(self, cntrl_key, items):
-        """Return a sublist of 'items' containing (un)checked items.
-
-        The control only displays the string names of items, that is why items
-        needs to be passed in. If items is empty it will return an empty list.
-        :param cntrl_key: a key for the private _ctrls dictionary
-        :param items: the items that correspond to the _ctrls[key] checksCtrl
-        :rtype : list
-        :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
-        """
-        if not items or not (checkList := self._ctrls[cntrl_key]): return []
-        return [mod for i, mod in enumerate(items) if
-                checkList.lb_is_checked_at_index(i)]
 
 # Some UAC stuff --------------------------------------------------------------
 def ask_uac_restart(message, mopy):

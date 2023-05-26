@@ -21,9 +21,10 @@
 #
 # =============================================================================
 import webbrowser
+from dataclasses import dataclass
 
-from .. import balt, bass, bolt, bosh, bush, env, load_order
-from ..balt import ImageWrapper, colors
+from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
+from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
 from ..bolt import CIstr, FName, text_wrap, top_level_dirs
 from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
@@ -32,7 +33,8 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
     TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
-    MLEList, DocumentViewer, RadioButton, showOk, showError
+    MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
+    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode
 from ..update_checker import LatestVersion
 
 class ImportFaceDialog(DialogWindow):
@@ -498,10 +500,9 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
 
 #------------------------------------------------------------------------------
-class _ABainMLE(AMultiListEditor):
-    """Base class for BAIN-related multi-list editors. Passes some required
-    parameters that depend on balt automatically and automatically converts
-    back to CIstrs."""
+class _AWBMLE(AMultiListEditor):
+    """Base class for multi-list editors, passing required parameters that
+    depend on balt automatically."""
     def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
             **kwargs):
         cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
@@ -510,12 +511,16 @@ class _ABainMLE(AMultiListEditor):
             check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
             icon_bundle=balt.Resources.bashBlue, **kwargs)
 
+class _ABainMLE(_AWBMLE):
+    """Base class for BAIN-related multi-list editors. Automatically converts
+    results back to CIstrs."""
     def show_modal(self):
-        # Add the CIstrs we removed in __init__ back in
+        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
         result = super().show_modal()
         final_lists = [list(map(CIstr, l)) for l in result[1:]]
         return result[0], *final_lists
 
+#------------------------------------------------------------------------------
 class SyncFromDataEditor(_ABainMLE):
     """Template for a multi-list editor for Sync From Data."""
     title = _('Sync From Data - Preview')
@@ -572,20 +577,20 @@ class MonitorExternalInstallationEditor(_ABainMLE):
             deleted_files: list[CIstr]):
         mdir_fmt = {'data_folder': bush.game.mods_dir}
         newf_data = MLEList(
-            mlel_title=_('New Files %(new_file_cnt)d:') % {
+            mlel_title=_('New Files (%(new_file_cnt)d):') % {
                 'new_file_cnt': len(new_files)},
             mlel_desc=_('These files are newly added to the %(data_folder)s '
                         'folder. Uncheck any that you want to '
                         'skip.') % mdir_fmt,
             mlel_items=list(map(str, new_files)))
         changedf_data = MLEList(
-            mlel_title=_('Changed Files %(chg_file_cnt)d:') % {
+            mlel_title=_('Changed Files (%(chg_file_cnt)d):') % {
                 'chg_file_cnt': len(changed_files)},
             mlel_desc=_('These files were modified. Uncheck any that you want '
                         'to skip.'),
             mlel_items=list(map(str, changed_files)))
         touchedf_data = MLEList(
-            mlel_title=_('Touched Files %(tch_file_cnt)d:') % {
+            mlel_title=_('Touched Files (%(tch_file_cnt)d):') % {
                 'tch_file_cnt': len(touched_files)},
             mlel_desc=_('These files were not changed, but had their '
                         'modification time altered. These files were most '
@@ -594,7 +599,7 @@ class MonitorExternalInstallationEditor(_ABainMLE):
                         'the %(data_folder)s folder.') % mdir_fmt,
             mlel_items=list(map(str, touched_files)))
         deletedf_data = MLEList(
-            mlel_title=_('Deleted Files %(del_file_cnt)d:') % {
+            mlel_title=_('Deleted Files (%(del_file_cnt)d):') % {
                 'del_file_cnt': len(deleted_files)},
             mlel_desc=_("These files were deleted. BAIN does not have the "
                         "capability to remove files when installing, so these "
@@ -612,6 +617,47 @@ class MonitorExternalInstallationEditor(_ABainMLE):
         super().__init__(parent, data_desc=mei_desc,
             list_data=[newf_data, changedf_data, touchedf_data, deletedf_data],
             ok_label=ok_btn_label, cancel_label=cancel_btn_label)
+
+#------------------------------------------------------------------------------
+class DeactivateBeforePatchEditor(_AWBMLE):
+    """Template for a multi-list editor for pre-BP deactivation of plugins."""
+    title = _('Deactivate Prior to Patching')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, plugins_mergeable: list[FName],
+            plugins_nomerge: list[FName], plugins_deactivate: list[FName]):
+        pm_data = MLEList(
+            mlel_title=_('Mergeable (%(plgn_cnt)d):') % {
+                'plgn_cnt': len(plugins_mergeable)},
+            mlel_desc=_('These plugins are mergeable. It is suggested that '
+                        'they be deactivated and merged into the patch. This '
+                        'helps avoid the maximum plugin limit.'),
+            mlel_items=list(map(str, plugins_mergeable)))
+        pn_data = MLEList(
+            mlel_title=_("Mergeable, but Tagged 'NoMerge' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_nomerge)},
+            mlel_desc=_("These plugins are mergeable, but have been tagged "
+                        "with 'NoMerge'. They should be deactivated before "
+                        "building the patch, imported into it and reactivated "
+                        "afterwards."),
+            mlel_items=list(map(str, plugins_nomerge)))
+        pd_data = MLEList(
+            mlel_title=_("Tagged 'Deactivate' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_deactivate)},
+            mlel_desc=_("These mods have been tagged with 'Deactivate'. They "
+                        "should be deactivated and merged or imported into "
+                        "the Bashed Patch."),
+            mlel_items=list(map(str, plugins_deactivate)))
+        dbp_desc = _('The following plugins should be deactivated prior to '
+                     'building the Bashed Patch.')
+        super().__init__(parent, data_desc=dbp_desc,
+            list_data=[pm_data, pn_data, pd_data], cancel_label=_('Skip'))
+
+    def show_modal(self):
+        # Add the FNames we removed in __init__ (see map(str)'s above) back in
+        result = super().show_modal()
+        final_lists = [list(map(FName, l)) for l in result[1:]]
+        return result[0], *final_lists
 
 #------------------------------------------------------------------------------
 _uc_css = """body {
@@ -720,3 +766,158 @@ class UpdateNotification(DialogWindow):
         bass.rmTempDir()
         if self._do_quit:
             balt.Link.Frame.exit_wb()
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True, kw_only=True)
+class _ChangeData:
+    """Records a change to some items in a UIList."""
+    # An optional description for this change
+    change_desc: str | None
+    # The ImageList used by the parent UIList that hosts the items that this
+    # change happened to
+    uil_image_list: ImageList
+    # A decorated tree dict storing the items that the change happened to
+    changed_items: DecoratedTreeDict
+    # The internal key for the parent tab in tabInfo. E.g. 'Mods'
+    parent_tab_key: str
+
+def _mk_node_class(node_tab_key: str):
+    """Helper for creating a dynamic node class that jumps to an item on the
+    tab with the specified key."""
+    class _TabTreeNode(TreeNode):
+        """A node depicting an item on a certain tab."""
+        def on_activated(self):
+            try:
+                balt.Link.Frame.notebook.SelectPage(node_tab_key,
+                    self._node_text)
+            except KeyError:
+                balt.showError(self._parent_tree,
+                    _('%(target_item)s could not be found.') % {
+                        'target_item': self._node_text},
+                    title=_('Cannot Jump to Item'))
+            except exception.BoltError:
+                pass ##: BSAs tab, ignore for now
+            return EventResult.FINISH # Don't collapse/expand nodes
+    return _TabTreeNode
+
+class _AChangeHighlightDialog(MaybeModalDialogWindow):
+    """Base class for dialogs that highlights certain changes having been
+    made to UIList items."""
+    _def_size = (350, 400)
+    _min_size = (250, 300)
+
+    def __init__(self, parent, *, highlight_changes: list[_ChangeData],
+            add_cancel_btn=False):
+        super().__init__(parent, stay_over_parent=True, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue)
+        ch_layout = VLayout(border=4, spacing=6, item_expand=True)
+        labels_to_wrap = []
+        for change_data in highlight_changes:
+            # First add the description for the change, if any
+            if change_data.change_desc:
+                desc_label = WrappingLabel(self, change_data.change_desc)
+                ch_layout.add(desc_label)
+                labels_to_wrap.append(desc_label)
+            node_type = _mk_node_class(change_data.parent_tab_key)
+            # Then create the actual tree listing the changes, which will take
+            # up most of the space
+            new_tree = Tree(self, change_data.uil_image_list)
+            temp_root = new_tree.root_node
+            affected_items = change_data.changed_items
+            for hp, (hp_tf, hp_children) in affected_items.items():
+                hp_node = temp_root.append_child(hp,
+                    child_node_type=node_type)
+                hp_node.decorate_node(hp_tf)
+                if hp_children:
+                    for hpc, hpc_tf in hp_children:
+                        hpc_node = hp_node.append_child(hpc,
+                            child_node_type=node_type)
+                        hpc_node.decorate_node(hpc_tf)
+            new_tree.expand_everything()
+            ch_layout.add((new_tree, LayoutOptions(weight=1)))
+            # Separator between trees and also between the last tree and the OK
+            # button
+            ch_layout.add(HorizontalLine(self))
+        ch_layout.add(HLayout(spacing=6, item_expand=True, items=[
+            Stretch(),
+            OkButton(self),
+            CancelButton(self) if add_cancel_btn else None,
+        ]))
+        ch_layout.apply_to(self)
+        for wl in labels_to_wrap:
+            wl.auto_wrap()
+        self.update_layout()
+
+class _AModsChangeHighlightDialog(_AChangeHighlightDialog):
+    """Version of _AChangeHighlightDialog for the Mods tab."""
+    @staticmethod
+    def make_change_entry(*, mods_list_images: ImageList,
+            mods_change_desc: str, decorated_plugins: DecoratedTreeDict):
+        """Helper for creating a _ChangeData object for load order
+        sanitizations."""
+        return _ChangeData(uil_image_list=mods_list_images,
+            change_desc=mods_change_desc, changed_items=decorated_plugins,
+            parent_tab_key='Mods')
+
+# Note: we sometimes use 'unnecessary' subclasses here for the separate
+# balt.sizes key provided by the unique class name
+#------------------------------------------------------------------------------
+class _ALORippleHighlightDialog(_AChangeHighlightDialog):
+    """Base class for dialogs highlighting when a load order change had a
+    'ripple' effect, e.g. deactivating a certain master caused its dependents
+    to be deactivated too."""
+    _change_title: str
+    _change_desc: str
+
+    def __init__(self, parent, *, mods_list_images: ImageList,
+            decorated_plugins: DecoratedTreeDict):
+        # Only count the additional masters/dependents
+        total_affected = sum(len(v[1]) for v in decorated_plugins.values())
+        super().__init__(parent, highlight_changes=[_ChangeData(
+            uil_image_list=mods_list_images,
+            change_desc=self._change_desc % {'num_affected': total_affected},
+            changed_items=decorated_plugins, parent_tab_key='Mods')])
+
+class MastersAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was activated and thus its masters got
+    activated too."""
+    title = _('Masters Affected')
+    _change_desc = _('Wrye Bash automatically activates the masters of '
+                     'activated plugins. Activating the following plugins '
+                     'thus caused %(num_affected)d master(s) to be activated '
+                     'as well.')
+
+class DependentsAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was deactivated and thus its dependent
+    plugins got deactivated too."""
+    title = _('Dependents Affected')
+    _change_desc = _('Wrye Bash automatically deactivates the dependent '
+                     'plugins of deactivated plugins. Deactivating the '
+                     'following plugins thus caused %(num_affected)d '
+                     'dependent(s) to be deactivated as well.')
+
+#------------------------------------------------------------------------------
+class LoadOrderSanitizedDialog(_AModsChangeHighlightDialog):
+    """Dialog shown when certain load order problems have been fixed."""
+    title = _('Warning: Load Order Sanitized')
+
+#------------------------------------------------------------------------------
+class MultiWarningDialog(_AChangeHighlightDialog):
+    """Dialog shown when Wrye Bash detected certain problems with a user's
+    setup."""
+    title = _('Warnings')
+
+    @staticmethod
+    def make_change_entry(*, uil_images: ImageList, warn_change_desc: str,
+            decorated_items: DecoratedTreeDict, origin_tab_key: str):
+        """Helper for creating a _ChangeData object for multi-warning
+        dialogs."""
+        return _ChangeData(uil_image_list=uil_images,
+            change_desc=warn_change_desc, changed_items=decorated_items,
+            parent_tab_key=origin_tab_key)
+
+#------------------------------------------------------------------------------
+class MasterErrorsDialog(_AModsChangeHighlightDialog):
+    """Dialog shown when Wrye Bash detected master errors before building a
+    BP."""
+    title = _('Master Errors')

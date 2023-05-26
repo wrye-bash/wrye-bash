@@ -374,7 +374,7 @@ class HyperlinkLabel(_ALabel):
     _native_widget: _adv.HyperlinkCtrl
 
     def __init__(self, parent, init_text: str, url: str,
-            always_unvisited: bool = False):
+            always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
         URL.
 

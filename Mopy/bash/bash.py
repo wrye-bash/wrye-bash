@@ -612,8 +612,8 @@ def _show_boot_popup(msg, is_critical=True):
     try:
         from .balt import Resources
         from .gui import CENTER, CancelButton, Color, LayoutOptions, \
-            StartupDialog, TextArea, VLayout
-        class MessageBox(StartupDialog):
+            StartupDialogWindow, TextArea, VLayout
+        class MessageBox(StartupDialogWindow):
             def __init__(self, msg):
                 popup_title = (_(u'Wrye Bash Error') if is_critical else
                                _(u'Wrye Bash Warning'))
@@ -621,9 +621,8 @@ def _show_boot_popup(msg, is_critical=True):
                 # an early-boot file (see also #26)
                 # Using Resources.bashRed here is fine - at worst it's None,
                 # which will fall back to the default icon
-                super(MessageBox, self).__init__(title=popup_title,
-                                                 sizes_dict={},
-                                                 icon_bundle=Resources.bashRed)
+                super().__init__(title=popup_title, sizes_dict={},
+                    icon_bundle=Resources.bashRed)
                 self.component_size = (400, 300)
                 msg_text = TextArea(self, editable=False, init_text=msg,
                                     auto_tooltip=False)

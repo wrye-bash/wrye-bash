@@ -32,7 +32,8 @@ import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler
-from .base_components import WithCharEvents, WithMouseEvents, _auto_size_to_wx
+from .base_components import Color, WithCharEvents, WithMouseEvents, \
+    _auto_size_to_wx
 from .. import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
@@ -255,7 +256,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         gItem.SetData(i)
         ##: de-wx! This is a wx object escaping - should be internal-only,
         # need to absorb __setUI in gui and export a public API like
-        # _ListItemFormat for that
+        # ListItemFormat for that
         decorate_cb(gItem)
         # This commits the actual changed data in the ListCtrl
         self._native_widget.SetItem(gItem)
@@ -354,7 +355,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return self._native_widget.GetItem(dex)
 
     def get_text_color(self):
-        return self._native_widget.GetTextColour()
+        return Color.from_wx(self._native_widget.GetTextColour())
 
     def resize_last_col(self):
         self._native_widget.resizeLastColumn(0)

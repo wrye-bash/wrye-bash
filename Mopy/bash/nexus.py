@@ -693,7 +693,7 @@ class Nexus(ARestHandler):
             f'download_link.json', req_payload=mfdl_payload)
 
     # Games - operations on multiple games ------------------------------------
-    def games_list(self, include_unapproved: bool = False) -> list[NxGame]:
+    def games_list(self, include_unapproved=False) -> list[NxGame]:
         """Returns details for all games supported by the Nexus.
 
         :param include_unapproved: A boolean on whether to include unapproved

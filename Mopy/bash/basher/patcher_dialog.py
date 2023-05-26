@@ -384,12 +384,12 @@ class PatchDialog(DialogWindow):
             self._gui_patchers.index(patcher), enable_patcher)
         self._update_ok_btn()
 
-    def style_patcher(self, patcher, bold=False, slant=False):
+    def style_patcher(self, patcher, bold=False, italics=False):
         """Set the patcher label to bold and/or italicized font. Called from a
         patcher when it's new or detects that it has something new in its
         list."""
         self.gPatchers.lb_style_font_at_index(
-            self._gui_patchers.index(patcher), bold=bold, slant=slant)
+            self._gui_patchers.index(patcher), bold=bold, italics=italics)
 
     def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""

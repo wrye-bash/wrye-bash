@@ -163,12 +163,13 @@ class DialogWindow(_TopLevelWin):
     _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
-                 sizes_dict=None, caption=False, size_key=None, pos_key=None,
-                 style=0, **kwargs):
+            sizes_dict=None, caption=False, size_key=None, pos_key=None,
+            stay_over_parent=False, style=0, **kwargs):
         self._size_key = size_key or self.__class__.__name__
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
+        if stay_over_parent: style |= _wx.FRAME_FLOAT_ON_PARENT
         if sizes_dict is not None: style |= _wx.RESIZE_BORDER
         else: sizes_dict = {}
         if caption: style |= _wx.CAPTION
@@ -215,11 +216,19 @@ class DialogWindow(_TopLevelWin):
         clicking the Cancel button."""
         self._native_widget.EndModal(_wx.ID_CANCEL)
 
-class StartupDialog(DialogWindow):
+class StartupDialogWindow(DialogWindow):
     """Dialog shown during early boot, generally due to errors."""
     def __init__(self, *args, **kwargs):
         sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
-        super(StartupDialog, self).__init__(*args, style=sd_style, **kwargs)
+        super().__init__(*args, style=sd_style, **kwargs)
+
+class MaybeModalDialogWindow(DialogWindow):
+    """Dialog that may be modal or modeless."""
+    def show_modeless(self):
+        """Open this dialog in a modeless fashion. It will behave similarly to
+        a WindowFrame."""
+        self._native_widget.Show()
+        self._native_widget.Raise()
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):

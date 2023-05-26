@@ -119,9 +119,8 @@ class ListBox(WithMouseEvents):
     bind_motion = bind_rclick_down = bind_rclick_up = True
     _native_widget: _wx.ListBox
 
-    def __init__(self, parent, choices: list[str] | None = None,
-            isSingle: bool = True, isSort: bool = False,
-            isHScroll: bool = False, isExtended: bool = False, onSelect=None):
+    def __init__(self, parent, choices: list[str] | None = None, isSingle=True,
+            isSort=False, isHScroll=False, isExtended=False, onSelect=None):
         style = 0
         if isSingle: style |= _wx.LB_SINGLE
         if isSort: style |= _wx.LB_SORT
@@ -162,10 +161,10 @@ class ListBox(WithMouseEvents):
 
     def lb_clear(self): self._native_widget.Clear()
 
-    def lb_style_font_at_index(self, lb_selection_dex: int, bold: bool = False,
-                               slant: bool = False):
+    def lb_style_font_at_index(self, lb_selection_dex: int, bold=False,
+                               italics=False):
         curr_font = self._native_widget.GetFont()
-        styled_font = Font.Style(curr_font, bold=bold, slant=slant)
+        styled_font = Font.Style(curr_font, strong=bold, slant=italics)
         self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access
@@ -226,8 +225,8 @@ class CheckListBox(ListBox, WithCharEvents):
 
     # note isSingle=False by default
     def __init__(self, parent, choices: list[str] | None = None,
-            isSingle: bool = False, isSort: bool = False,
-            isHScroll: bool = False, isExtended: bool = False, onSelect=None):
+            isSingle=False, isSort=False, isHScroll=False, isExtended=False,
+            onSelect=None):
         super().__init__(parent, choices, isSingle, isSort, isHScroll,
             isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
