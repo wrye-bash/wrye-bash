@@ -14,11 +14,11 @@ packaging==23.1
 # For PDF support in the doc browser
 PyMuPDF==1.22.3
 # For various Internet-based functionality
-requests==2.30.0
+requests==2.31.0
 # For sending files to the recycle bin on non-Windows platforms
 send2trash==1.8.2; sys_platform != 'win32'
 # For Nexus Mods integration
-websocket-client==1.5.1
+websocket-client==1.5.2
 # Compile/Build-time ----------------------------------------------------------
 isort==5.12.0
 pygit2==1.12.1
