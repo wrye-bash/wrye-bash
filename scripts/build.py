@@ -42,7 +42,14 @@ import re
 import shutil
 import sys
 import tempfile
-import winreg
+import textwrap
+
+try:
+    import winreg
+except ImportError:
+    # Linux - unused there right now because we abort before trying to build
+    # the executable
+    winreg = None
 import zipfile
 from contextlib import contextmanager, suppress
 
@@ -82,11 +89,15 @@ TO_PRESERVE = [NSIS_PATH, TAGLISTS_PATH, TAGINFO, update_taglist.LOGFILE,
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
 
-NSIS_VERSION = u'3.08'
-if sys.platform.lower().startswith(u'linux'):
-    EXE_7z = u'7z'
+# Linux or macOS, we don't support anything but building the source
+# distributable right now
+NOT_WINDOWS = os.name != 'nt'
+
+NSIS_VERSION = '3.08'
+if NOT_WINDOWS:
+    EXE_7z = '7z'
 else:
-    EXE_7z = os.path.join(MOPY_PATH, u'bash', u'compiled', u'7z.exe')
+    EXE_7z = os.path.join(MOPY_PATH, 'bash', 'compiled', '7z.exe')
 
 def setup_parser(parser):
     version_group = parser.add_mutually_exclusive_group()
@@ -412,7 +423,7 @@ def check_timestamp(build_version):
     try:
         # check whether the previous build is also a nightly
         previous_version = nightly_re.search(os.listdir(DIST_PATH)[0])
-    except (WindowsError, IndexError):
+    except (OSError, IndexError):
         # if no output folder exists or nothing exists in output folder
         previous_version = None
     if None not in (nightly_version, previous_version):
@@ -474,6 +485,10 @@ def main(args):
             if args.manual:
                 LOGGER.info(u'Creating python source distributable...')
                 pack_manual(args.version)
+            if NOT_WINDOWS:
+                LOGGER.info('Non-Windows OS detected, skipping standalone and '
+                            'installer distributables.')
+                return
             if not args.standalone and not args.installer:
                 return
             with build_executable():
@@ -545,8 +560,13 @@ def clean_repo():
             repo.status()
             repo.stash_pop(index=0)
 
-if __name__ == u'__main__':
-    argparser = argparse.ArgumentParser(description=__doc__,
+if __name__ == '__main__':
+    temp_desc = __doc__
+    if NOT_WINDOWS:
+        temp_desc += '\n\n' + '\n'.join(textwrap.wrap(
+            'NOTE: On operating systems besides Windows, only building of '
+            'source distributables is supported right now.', width=80))
+    argparser = argparse.ArgumentParser(description=temp_desc,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     utils.setup_common_parser(argparser)
     setup_parser(argparser)
