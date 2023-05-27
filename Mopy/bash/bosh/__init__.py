@@ -543,15 +543,14 @@ class ModInfo(FileInfo):
 
     def setGhost(self, isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
-        # Refresh current status - it may have changed due to things like
-        # libloadorder automatically unghosting plugins when activating them.
-        # Libloadorder only un-ghosts automatically, so if both the normal
-        # and ghosted version exist, treat the normal as the real one.
-        # Both should never exist simultaneously, Bash will warn in BashBugDump
-        # Current status == what we want it?
-        if isGhost == self.isGhost: return isGhost
+        if isGhost == self.isGhost:
+            # Current status is already what we want it to be
+            return isGhost
+        if self.fn_key == bush.game.master_file:
+            # Don't allow the master ESM to be ghosted, we need that one
+            return self.isGhost
         normal = self._file_key
-        ghost = normal + u'.ghost'
+        ghost = normal + '.ghost'
         # Current status != what we want, so change it
         try:
             if not normal.editable() or not ghost.editable():
