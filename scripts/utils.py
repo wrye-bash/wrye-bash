@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Provides various utility functions to scripts."""
 
 from __future__ import annotations
 
@@ -32,6 +33,23 @@ import subprocess
 import sys
 from urllib.request import urlopen
 
+import pygit2
+
+# Reusable path definitions
+SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
+BUILD_LOGFILE = os.path.join(SCRIPTS_PATH, 'build.log')
+TAGINFO = os.path.join(SCRIPTS_PATH, 'taginfo.txt')
+WBSA_PATH = os.path.join(SCRIPTS_PATH, 'build', 'standalone')
+DIST_PATH = os.path.join(SCRIPTS_PATH, 'dist')
+ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
+MOPY_PATH = os.path.join(ROOT_PATH, 'Mopy')
+APPS_PATH = os.path.join(MOPY_PATH, 'Apps')
+NSIS_PATH = os.path.join(SCRIPTS_PATH, 'build', 'nsis')
+TESTS_PATH = os.path.join(MOPY_PATH, 'bash', 'tests')
+TAGLISTS_PATH = os.path.join(MOPY_PATH, 'taglists')
+IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
+VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
+
 # verbosity:
 #  quiet (warnings and above)
 #  regular (info and above)
@@ -39,13 +57,13 @@ from urllib.request import urlopen
 def setup_log(logger, verbosity=logging.INFO, logfile=None):
     logger.setLevel(logging.DEBUG)
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_formatter = logging.Formatter(u'%(message)s')
+    stdout_formatter = logging.Formatter('%(message)s')
     stdout_handler.setFormatter(stdout_formatter)
     stdout_handler.setLevel(verbosity)
     logger.addHandler(stdout_handler)
     if logfile is not None:
         file_handler = logging.FileHandler(logfile)
-        file_formatter = logging.Formatter(u'%(levelname)s: %(message)s')
+        file_formatter = logging.Formatter('%(levelname)s: %(message)s')
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
@@ -53,27 +71,27 @@ def setup_log(logger, verbosity=logging.INFO, logfile=None):
 def setup_common_parser(parser):
     verbose_group = parser.add_mutually_exclusive_group()
     verbose_group.add_argument(
-        u'-v',
-        u'--verbose',
-        action=u'store_const',
+        '-v',
+        '--verbose',
+        action='store_const',
         const=logging.DEBUG,
-        dest=u'verbosity',
-        help=u'Print all output to console.',
+        dest='verbosity',
+        help='Print all output to console.',
     )
     verbose_group.add_argument(
-        u'-q',
-        u'--quiet',
-        action=u'store_const',
+        '-q',
+        '--quiet',
+        action='store_const',
         const=logging.WARNING,
-        dest=u'verbosity',
-        help=u'Do not print any output to console.',
+        dest='verbosity',
+        help='Do not print any output to console.',
     )
     parser.set_defaults(verbosity=logging.INFO)
 
 def convert_bytes(size_bytes):
     if size_bytes == 0:
-        return u'0B'
-    size_name = (u'B', u'KB', u'MB', u'GB', u'TB', u'PB', u'EB', u'ZB', u'YB')
+        return '0B'
+    size_name = ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
@@ -87,7 +105,7 @@ def download_file(url, fpath):
     converted_size = convert_bytes(file_size)
     file_size_dl = 0
     block_sz = 8192
-    with open(fpath, u'wb') as dl_file:
+    with open(fpath, 'wb') as dl_file:
         while True:
             buff = response.read(block_sz)
             if not buff:
@@ -98,7 +116,7 @@ def download_file(url, fpath):
             status = f'{file_name:>20}  -----  [{percentage:6.2f}%] ' \
                      f'{convert_bytes(file_size_dl):>10}/{converted_size}'
             status += chr(8) * (len(status) + 1)
-            print(status, end=u' ')
+            print(status, end=' ')
     print()
 
 def run_subprocess(command, logger, **kwargs):
@@ -113,10 +131,39 @@ def run_subprocess(command, logger, **kwargs):
     stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)
-        raise subprocess.CalledProcessError(sp.returncode, u' '.join(command))
-    logger.debug(u'--- COMMAND OUTPUT START ---')
+        raise subprocess.CalledProcessError(sp.returncode, ' '.join(command))
+    logger.debug('--- COMMAND OUTPUT START ---')
     logger.debug(stdout)
-    logger.debug(u'---  COMMAND OUTPUT END  ---')
+    logger.debug('---  COMMAND OUTPUT END  ---')
+
+def get_repo_sig(repo):
+    """Wrapper around pygit2 that shows a helpful error message to the user if
+    their credentials have not been configured yet."""
+    try:
+        return repo.default_signature
+    except KeyError:
+        print('\n'.join(['', # empty line before the error
+            'ERROR: You have not set up your git identity yet.',
+            'This is necessary for the git operations that the build script '
+            'uses.',
+            'You can configure them as follows:',
+            '   git config --global user.name "Your Name"',
+            '   git config --global user.email "you@example.com"']))
+        sys.exit(1)
+
+def commit_changes(*, changed_files: list[os.PathLike | str], commit_msg: str):
+    """Commit changes to the specified files by creating a commit with the
+    specified message."""
+    repo = pygit2.Repository(ROOT_PATH)
+    user = get_repo_sig(repo)
+    parent = [repo.head.target]
+    for cf in changed_files:
+        rel_path = os.path.relpath(cf, repo.workdir).replace('\\', '/')
+        if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
+            repo.index.add(rel_path)
+    tree = repo.index.write_tree()
+    repo.create_commit('HEAD', user, user, commit_msg, tree, parent)
+    repo.index.write()
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily

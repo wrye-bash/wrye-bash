@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""
-Builds and packages Wrye Bash.
+"""Build and package Wrye Bash.
 
 Creates three different types of distributables:
  - Manual     - the python source files, requires Wrye Bash's development
@@ -31,8 +29,7 @@ Creates three different types of distributables:
  - Standalone - a portable distributable with the pre-built executable;
  - Installer  - a binary distribution containing a custom installer.
 
-Most steps of the build process can be customized, see the options below.
-"""
+Most steps of the build process can be customized, see the options below."""
 import argparse
 import datetime
 import glob
@@ -57,23 +54,11 @@ import pygit2
 import PyInstaller.__main__
 import update_taglist
 import utils
-from utils import LooseVersion
+from utils import APPS_PATH, BUILD_LOGFILE, DIST_PATH, IDEA_PATH, MOPY_PATH, \
+    NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, VSCODE_PATH, \
+    WBSA_PATH, LooseVersion, commit_changes, get_repo_sig
 
 LOGGER = logging.getLogger(__name__)
-
-SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
-LOGFILE = os.path.join(SCRIPTS_PATH, u'build.log')
-TAGINFO = os.path.join(SCRIPTS_PATH, u'taginfo.txt')
-WBSA_PATH = os.path.join(SCRIPTS_PATH, u'build', u'standalone')
-DIST_PATH = os.path.join(SCRIPTS_PATH, u'dist')
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
-MOPY_PATH = os.path.join(ROOT_PATH, u'Mopy')
-APPS_PATH = os.path.join(MOPY_PATH, u'Apps')
-NSIS_PATH = os.path.join(SCRIPTS_PATH, u'build', u'nsis')
-TESTS_PATH = os.path.join(MOPY_PATH, u'bash', u'tests')
-TAGLISTS_PATH = os.path.join(MOPY_PATH, u'taglists')
-IDEA_PATH = os.path.join(ROOT_PATH, u'.idea')
-VSCODE_PATH = os.path.join(ROOT_PATH, u'.vscode')
 
 # List of files that should be preserved during the repo cleaning
 #  NSIS_PATH, REDIST_PATH: Not tracked, should only be downloaded once
@@ -341,21 +326,6 @@ def pack_installer(nsis_path, version, file_version):
         LOGGER,
     )
 
-def get_repo_sig(repo):
-    """Wrapper around pygit2 that shows a helpful error message to the user if
-    their credentials have not been configured yet."""
-    try:
-        return repo.default_signature
-    except KeyError:
-        print(u'\n'.join([u'', # empty line before the error
-            u'ERROR: You have not set up your git identity yet.',
-            u'This is necessary for the git operations that the build script '
-            u'uses.',
-            u'You can configure them as follows:',
-            u'   git config --global user.name "Your Name"',
-            u'   git config --global user.email "you@example.com"']))
-        sys.exit(1)
-
 @contextmanager
 def update_file_version(version, commit=False):
     fname = u'bass.py'
@@ -372,22 +342,7 @@ def update_file_version(version, commit=False):
         fopen.flush()
         os.fsync(fopen.fileno())
     if commit:
-        repo = pygit2.Repository(ROOT_PATH)
-        user = get_repo_sig(repo)
-        parent = [repo.head.target]
-        rel_path = os.path.relpath(orig_path, repo.workdir).replace(u'\\', u'/')
-        if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
-            repo.index.add(rel_path)
-            tree = repo.index.write_tree()
-            repo.create_commit(
-                u'HEAD',
-                user,
-                user,
-                version,
-                tree,
-                parent
-            )
-            repo.index.write()
+        commit_changes(changed_files=[orig_path], commit_msg=version)
     try:
         yield
     finally:
@@ -461,8 +416,8 @@ def taglists_need_update():
     return False
 
 def main(args):
-    setup_pyinstaller_logger(LOGFILE)
-    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=LOGFILE)
+    setup_pyinstaller_logger(BUILD_LOGFILE)
+    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=BUILD_LOGFILE)
     # check nightly timestamp is different than previous
     if not check_timestamp(args.version):
         raise OSError(u'Aborting build due to equal nightly timestamps.')
@@ -572,7 +527,7 @@ if __name__ == '__main__':
     setup_parser(argparser)
     parsed_args = argparser.parse_args()
     print(f'Building on Python {sys.version}')
-    rm(LOGFILE)
+    rm(BUILD_LOGFILE)
     rm(DIST_PATH)
     with clean_repo():
         main(parsed_args)
