@@ -38,8 +38,11 @@ for root, _, filenames in os.walk(GAME_PATH):
         hiddenimports.append(import_path.replace(os.sep, '.'))
 
 # See sys.modules hack above - we don't need Tkinter, just bloats the EXE
+# Same story regarding cryptography (transitive from our compile-time
+# dependency PyGithub)
 excluded_modules = [
     '_tkinter',
+    'cryptography',
     'FixTk',
     'tcl',
     'tk',
