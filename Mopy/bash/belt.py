@@ -1374,6 +1374,8 @@ class WryeParser(ScriptParser.Parser):
                 std_img_path = to_os_path(bass.dirs['images'].join(i).s)
                 if std_img_path and std_img_path.is_file():
                     image_paths.append(std_img_path)
+                else:
+                    image_paths.append(None)
             else:
                 image_paths.append(None)
         self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,

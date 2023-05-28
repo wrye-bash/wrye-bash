@@ -452,7 +452,7 @@ class SaveFile(object):
         created_sizes = defaultdict(int)
         created_counts = Counter()
         for citem in self.created.values():
-            created_sizes[citem._rec_sig] += citem.size
+            created_sizes[citem._rec_sig] += citem.header.blob_size
             created_counts[citem._rec_sig] += 1
         for rsig, csize in dict_sort(created_sizes):
             log(f'  {created_counts[rsig]}\t{csize // 1024} kb\t'

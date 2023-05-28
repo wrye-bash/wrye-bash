@@ -685,7 +685,7 @@ class MorrowindSaveHeader(SaveFileHeader):
         from . import ModInfo
         save_info = ModInfo(self._save_info.abs_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
-        self.header_size = save_info.header.size
+        self.header_size = save_info.header.header.blob_size
         self.pcName = remove_newlines(save_info.header.pc_name)
         self.pcLevel = 0
         self.pcLocation = remove_newlines(save_info.header.curr_cell)
