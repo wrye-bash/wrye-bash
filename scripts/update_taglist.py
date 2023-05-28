@@ -30,7 +30,7 @@ import logging
 import os
 import sys
 
-import utils
+from helpers import utils
 
 LOGGER = logging.getLogger(__name__)
 

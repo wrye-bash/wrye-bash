@@ -36,7 +36,7 @@ from urllib.request import urlopen
 import pygit2
 
 # Reusable path definitions
-SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
+SCRIPTS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUILD_LOGFILE = os.path.join(SCRIPTS_PATH, 'build.log')
 TAGINFO = os.path.join(SCRIPTS_PATH, 'taginfo.txt')
 WBSA_PATH = os.path.join(SCRIPTS_PATH, 'build', 'standalone')
@@ -49,6 +49,13 @@ TESTS_PATH = os.path.join(MOPY_PATH, 'bash', 'tests')
 TAGLISTS_PATH = os.path.join(MOPY_PATH, 'taglists')
 IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
 VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
+OUT_PATH = os.path.join(SCRIPTS_PATH, 'out')
+CHANGELOGS_PATH = os.path.join(SCRIPTS_PATH, 'changelogs')
+
+# Other constants
+DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
+DEFAULT_AUTHORS = 'Various community members'
+ALL_ISSUES = 'all'
 
 # verbosity:
 #  quiet (warnings and above)
@@ -164,6 +171,15 @@ def commit_changes(*, changed_files: list[os.PathLike | str], commit_msg: str):
     tree = repo.index.write_tree()
     repo.create_commit('HEAD', user, user, commit_msg, tree, parent)
     repo.index.write()
+
+def out_path(dir_=OUT_PATH, name='out.txt'):
+    """Returns a path joining the dir_ and name parameters. Will create the
+    dirs in dir_ if not existing.
+
+    :param dir_: a directory path
+    :param name: a filename"""
+    os.makedirs(dir_, exist_ok=True)
+    return os.path.join(dir_, name)
 
 # Copy-pasted from bolt.py
 # We need to split every time we hit a new 'type' of component. So greedily

@@ -29,7 +29,7 @@ import sys
 
 import pyfiglet
 
-from utils import MOPY_PATH, commit_changes
+from helpers.utils import MOPY_PATH, commit_changes
 
 sys.path.insert(0, MOPY_PATH)
 from bash import bass

@@ -53,10 +53,10 @@ from contextlib import contextmanager, suppress
 import pygit2
 import PyInstaller.__main__
 import update_taglist
-import utils
-from utils import APPS_PATH, BUILD_LOGFILE, DIST_PATH, IDEA_PATH, MOPY_PATH, \
-    NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, VSCODE_PATH, \
-    WBSA_PATH, LooseVersion, commit_changes, get_repo_sig
+from helpers import utils
+from helpers.utils import APPS_PATH, BUILD_LOGFILE, DIST_PATH, IDEA_PATH, \
+    MOPY_PATH, NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, \
+    VSCODE_PATH, WBSA_PATH, LooseVersion, commit_changes, get_repo_sig
 
 LOGGER = logging.getLogger(__name__)
 
