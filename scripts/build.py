@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""
-Builds and packages Wrye Bash.
+"""Build and package Wrye Bash.
 
 Creates three different types of distributables:
  - Manual     - the python source files, requires Wrye Bash's development
@@ -31,8 +29,7 @@ Creates three different types of distributables:
  - Standalone - a portable distributable with the pre-built executable;
  - Installer  - a binary distribution containing a custom installer.
 
-Most steps of the build process can be customized, see the options below.
-"""
+Most steps of the build process can be customized, see the options below."""
 import argparse
 import datetime
 import glob
@@ -42,31 +39,26 @@ import re
 import shutil
 import sys
 import tempfile
-import winreg
+import textwrap
+
+try:
+    import winreg
+except ImportError:
+    # Linux - unused there right now because we abort before trying to build
+    # the executable
+    winreg = None
 import zipfile
 from contextlib import contextmanager, suppress
 
 import pygit2
 import PyInstaller.__main__
 import update_taglist
-import utils
-from utils import LooseVersion
+from helpers import utils
+from helpers.utils import APPS_PATH, BUILD_LOGFILE, DIST_PATH, IDEA_PATH, \
+    MOPY_PATH, NSIS_PATH, ROOT_PATH, SCRIPTS_PATH, TAGINFO, TAGLISTS_PATH, \
+    VSCODE_PATH, WBSA_PATH, LooseVersion, commit_changes, get_repo_sig
 
 LOGGER = logging.getLogger(__name__)
-
-SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
-LOGFILE = os.path.join(SCRIPTS_PATH, u'build.log')
-TAGINFO = os.path.join(SCRIPTS_PATH, u'taginfo.txt')
-WBSA_PATH = os.path.join(SCRIPTS_PATH, u'build', u'standalone')
-DIST_PATH = os.path.join(SCRIPTS_PATH, u'dist')
-ROOT_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, os.pardir))
-MOPY_PATH = os.path.join(ROOT_PATH, u'Mopy')
-APPS_PATH = os.path.join(MOPY_PATH, u'Apps')
-NSIS_PATH = os.path.join(SCRIPTS_PATH, u'build', u'nsis')
-TESTS_PATH = os.path.join(MOPY_PATH, u'bash', u'tests')
-TAGLISTS_PATH = os.path.join(MOPY_PATH, u'taglists')
-IDEA_PATH = os.path.join(ROOT_PATH, u'.idea')
-VSCODE_PATH = os.path.join(ROOT_PATH, u'.vscode')
 
 # List of files that should be preserved during the repo cleaning
 #  NSIS_PATH, REDIST_PATH: Not tracked, should only be downloaded once
@@ -82,11 +74,15 @@ TO_PRESERVE = [NSIS_PATH, TAGLISTS_PATH, TAGINFO, update_taglist.LOGFILE,
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
 
-NSIS_VERSION = u'3.08'
-if sys.platform.lower().startswith(u'linux'):
-    EXE_7z = u'7z'
+# Linux or macOS, we don't support anything but building the source
+# distributable right now
+NOT_WINDOWS = os.name != 'nt'
+
+NSIS_VERSION = '3.08'
+if NOT_WINDOWS:
+    EXE_7z = '7z'
 else:
-    EXE_7z = os.path.join(MOPY_PATH, u'bash', u'compiled', u'7z.exe')
+    EXE_7z = os.path.join(MOPY_PATH, 'bash', 'compiled', '7z.exe')
 
 def setup_parser(parser):
     version_group = parser.add_mutually_exclusive_group()
@@ -330,21 +326,6 @@ def pack_installer(nsis_path, version, file_version):
         LOGGER,
     )
 
-def get_repo_sig(repo):
-    """Wrapper around pygit2 that shows a helpful error message to the user if
-    their credentials have not been configured yet."""
-    try:
-        return repo.default_signature
-    except KeyError:
-        print(u'\n'.join([u'', # empty line before the error
-            u'ERROR: You have not set up your git identity yet.',
-            u'This is necessary for the git operations that the build script '
-            u'uses.',
-            u'You can configure them as follows:',
-            u'   git config --global user.name "Your Name"',
-            u'   git config --global user.email "you@example.com"']))
-        sys.exit(1)
-
 @contextmanager
 def update_file_version(version, commit=False):
     fname = u'bass.py'
@@ -361,22 +342,7 @@ def update_file_version(version, commit=False):
         fopen.flush()
         os.fsync(fopen.fileno())
     if commit:
-        repo = pygit2.Repository(ROOT_PATH)
-        user = get_repo_sig(repo)
-        parent = [repo.head.target]
-        rel_path = os.path.relpath(orig_path, repo.workdir).replace(u'\\', u'/')
-        if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
-            repo.index.add(rel_path)
-            tree = repo.index.write_tree()
-            repo.create_commit(
-                u'HEAD',
-                user,
-                user,
-                version,
-                tree,
-                parent
-            )
-            repo.index.write()
+        commit_changes(changed_paths=[orig_path], commit_msg=version)
     try:
         yield
     finally:
@@ -412,7 +378,7 @@ def check_timestamp(build_version):
     try:
         # check whether the previous build is also a nightly
         previous_version = nightly_re.search(os.listdir(DIST_PATH)[0])
-    except (WindowsError, IndexError):
+    except (OSError, IndexError):
         # if no output folder exists or nothing exists in output folder
         previous_version = None
     if None not in (nightly_version, previous_version):
@@ -450,8 +416,8 @@ def taglists_need_update():
     return False
 
 def main(args):
-    setup_pyinstaller_logger(LOGFILE)
-    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=LOGFILE)
+    setup_pyinstaller_logger(BUILD_LOGFILE)
+    utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=BUILD_LOGFILE)
     # check nightly timestamp is different than previous
     if not check_timestamp(args.version):
         raise OSError(u'Aborting build due to equal nightly timestamps.')
@@ -474,6 +440,10 @@ def main(args):
             if args.manual:
                 LOGGER.info(u'Creating python source distributable...')
                 pack_manual(args.version)
+            if NOT_WINDOWS:
+                LOGGER.info('Non-Windows OS detected, skipping standalone and '
+                            'installer distributables.')
+                return
             if not args.standalone and not args.installer:
                 return
             with build_executable():
@@ -545,14 +515,19 @@ def clean_repo():
             repo.status()
             repo.stash_pop(index=0)
 
-if __name__ == u'__main__':
-    argparser = argparse.ArgumentParser(description=__doc__,
+if __name__ == '__main__':
+    temp_desc = __doc__
+    if NOT_WINDOWS:
+        temp_desc += '\n\n' + '\n'.join(textwrap.wrap(
+            'NOTE: On operating systems besides Windows, only building of '
+            'source distributables is supported right now.', width=80))
+    argparser = argparse.ArgumentParser(description=temp_desc,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     utils.setup_common_parser(argparser)
     setup_parser(argparser)
     parsed_args = argparser.parse_args()
     print(f'Building on Python {sys.version}')
-    rm(LOGFILE)
+    rm(BUILD_LOGFILE)
     rm(DIST_PATH)
     with clean_repo():
         main(parsed_args)
