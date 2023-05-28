@@ -1533,6 +1533,8 @@ class UIList(PanelWin):
     def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
         srcDir = self.data_store.hidden_dir
+        # Otherwise the unhide command will open some random directory
+        srcDir.makedirs()
         wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
