@@ -1167,6 +1167,54 @@ class AINIInfo(AIniFile):
 
     def reset_status(self): self._status = None
 
+    def listErrors(self):
+        """Returns ini tweak errors as text."""
+        ini_infos_ini = iniInfos.ini
+        errors = [f'{self.fn_key}:']
+        pseudosections_lower = {s.lower() for s in
+                                OBSEIniFile.ci_pseudosections.values()}
+        if self._incompatible(ini_infos_ini):
+            errors.append(' ' + _('Format mismatch:'))
+            if isinstance(self, OBSEIniFile):
+                errors.append('  ' + _('Target format is INI, tweak format is '
+                                       'Batch Script.'))
+            else:
+                errors.append('  ' + _('Target format is Batch Script, tweak '
+                                       'format is INI.'))
+        else:
+            tweak_settings = self.get_ci_settings()
+            ini_settings = ini_infos_ini.get_ci_settings()
+            if len(tweak_settings) == 0:
+                if not isinstance(self, OBSEIniFile):
+                    errors.append(' ' + _('No valid INI format lines.'))
+                else:
+                    errors.append(' ' + _('No valid Batch Script format '
+                                          'lines.'))
+            else:
+                missing_settings = []
+                for key in tweak_settings:
+                    # Properly handle OBSE pseudosections - they're always
+                    # missing from the ini_settings
+                    is_pseudosection = key.lower() in pseudosections_lower
+                    if not is_pseudosection and key not in ini_settings:
+                        errors.append(f' [{key}] - ' + _('Invalid Header'))
+                    else:
+                        for item in tweak_settings[key]:
+                            # Avoid modifying ini_settings by using get
+                            if item not in ini_settings.get(key, ()):
+                                missing_settings.append(
+                                    f'  {item}' if is_pseudosection
+                                    else f'  [{key}] {item}')
+                if missing_settings:
+                    errors.append(' ' + _('Settings missing from target INI:'))
+                    errors.extend(missing_settings)
+        if len(errors) == 1:
+            errors.append(' ' + _('None'))
+        log = bolt.LogFile(io.StringIO())
+        for line in errors:
+            log(line)
+        return log.out.getvalue()
+
 #------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
@@ -1682,6 +1730,7 @@ class FileInfos(TableFileInfos):
         srcPath.moveTo(destPath)
 
 #------------------------------------------------------------------------------
+##: Can we simplify this now and obsolete AINIInfo?
 class INIInfo(IniFile, AINIInfo):
     _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
@@ -1689,54 +1738,6 @@ class INIInfo(IniFile, AINIInfo):
     def _reset_cache(self, stat_tuple, load_cache):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
         if load_cache: self._status = None ##: is the if check needed here?
-
-    def listErrors(self):
-        """Returns ini tweak errors as text."""
-        ini_infos_ini = iniInfos.ini
-        errors = [f'{self.abs_path.stail}:']
-        pseudosections_lower = {s.lower() for s in
-                                OBSEIniFile.ci_pseudosections.values()}
-        if self._incompatible(ini_infos_ini):
-            errors.append(' ' + _('Format mismatch:'))
-            if isinstance(self, OBSEIniFile):
-                errors.append('  ' + _('Target format is INI, tweak format is '
-                                       'Batch Script.'))
-            else:
-                errors.append('  ' + _('Target format is Batch Script, tweak '
-                                       'format is INI.'))
-        else:
-            tweak_settings = self.get_ci_settings()
-            ini_settings = ini_infos_ini.get_ci_settings()
-            if len(tweak_settings) == 0:
-                if not isinstance(self, OBSEIniFile):
-                    errors.append(' ' + _('No valid INI format lines.'))
-                else:
-                    errors.append(' ' + _('No valid Batch Script format '
-                                          'lines.'))
-            else:
-                missing_settings = []
-                for key in tweak_settings:
-                    # Properly handle OBSE pseudosections - they're always
-                    # missing from the ini_settings
-                    is_pseudosection = key.lower() in pseudosections_lower
-                    if not is_pseudosection and key not in ini_settings:
-                        errors.append(f' [{key}] - ' + _('Invalid Header'))
-                    else:
-                        for item in tweak_settings[key]:
-                            # Avoid modifying ini_settings by using get
-                            if item not in ini_settings.get(key, ()):
-                                missing_settings.append(
-                                    f'  {item}' if is_pseudosection
-                                    else f'  [{key}] {item}')
-                if missing_settings:
-                    errors.append(' ' + _('Settings missing from target INI:'))
-                    errors.extend(missing_settings)
-        if len(errors) == 1:
-            errors.append(' ' + _('None'))
-        log = bolt.LogFile(io.StringIO())
-        for line in errors:
-            log(line)
-        return log.out.getvalue()
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
