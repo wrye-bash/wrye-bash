@@ -118,6 +118,8 @@ class File_Duplicate(ItemLink):
             r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
+            # This directory may not exist yet (e.g. INI Tweaks)
+            destDir.makedirs()
             if len(self.selected) == 1: # ask the user for a filename
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
