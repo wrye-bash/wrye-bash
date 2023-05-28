@@ -344,6 +344,7 @@ def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
 
 _not_cached = object()
 
+# PY3.12: Benchmark to see if we can now replace this with cached_property
 class fast_cached_property:
     """Similar to functools.cached_property, but ~2x faster because it does not
     feature locking and lacks that decorator's runtime error checking."""

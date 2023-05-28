@@ -1,6 +1,6 @@
 # Runtime, required -----------------------------------------------------------
 chardet==5.1.0
-ifileoperation==1.2.3; sys_platform == 'win32'
+ifileoperation==1.2.4; sys_platform == 'win32'
 lz4==4.3.2
 pywin32==306; sys_platform == 'win32'
 PyYAML==6.0
