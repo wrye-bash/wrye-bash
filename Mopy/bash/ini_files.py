@@ -46,8 +46,9 @@ def _to_lower(ini_settings):
         return ret_type(input_dict)
     return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
 
-def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
-    """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
+def get_ini_type_and_encoding(abs_ini_path, fallback_type=None) -> tuple[
+        type['IniFileInfo'], str]:
+    """Return ini type (one of IniFileInfo, OBSEIniFile) and inferred encoding
     of the file at abs_ini_path. It reads the file and performs heuristics
     for detecting the encoding, then decodes and applies regexes to every
     line to detect the ini type. Those operations are somewhat expensive, so
@@ -66,7 +67,7 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
     detected_encoding, _confidence = getbestencoding(content)
     # If the game does not have OBSE INIs, just the encoding suffices
     if not bush.game.Ini.has_obse_inis:
-        return IniFile, detected_encoding
+        return IniFileInfo, detected_encoding
     ##: Add a 'return encoding' param to decoder to avoid the potential double
     # chardet here!
     decoded_content = decoder(content, detected_encoding)
@@ -85,7 +86,7 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
 
 def _scan_ini(lines, scan_comments=False):
     count = Counter()
-    for ini_type in (IniFile, OBSEIniFile):
+    for ini_type in (IniFileInfo, OBSEIniFile):
         comment_re = _comment_start_re if scan_comments else ini_type.reComment
         for line in lines:
             line_stripped = comment_re.sub('', line).strip()
@@ -97,7 +98,7 @@ def _scan_ini(lines, scan_comments=False):
                     break
     return count.most_common(1)[0][0] if count else None
 
-class AIniFile(ListInfo):
+class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*')
@@ -149,7 +150,7 @@ class AIniFile(ListInfo):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
-        Only used in get_ci_settings should be bypassed for DefaultIniFile.
+        Only used in get_ci_settings should be bypassed for ADefaultIniInfo.
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
@@ -229,7 +230,7 @@ class AIniFile(ListInfo):
                           is_deleted))
         return lines
 
-class IniFile(AIniFile, AFile):
+class IniFileInfo(AIniInfo, AFile):
     """Any old ini file."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
@@ -264,7 +265,7 @@ class IniFile(AIniFile, AFile):
         super()._reset_cache(stat_tuple, **kwargs)
         self._ci_settings_cache_linenum = self.__empty_settings
 
-    # AIniFile overrides ------------------------------------------------------
+    # AIniInfo overrides ------------------------------------------------------
     def read_ini_content(self, as_unicode=True):
         try:
             with self.abs_path.open(u'rb') as f:
@@ -304,7 +305,6 @@ class IniFile(AIniFile, AFile):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
-        Only used in get_ci_settings should be bypassed for DefaultIniFile.
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
@@ -460,39 +460,7 @@ class IniFile(AIniFile, AFile):
                         out.write(line + '\n')
             self.abs_path.replace_with_temp(out_path)
 
-class DefaultIniFile(AIniFile):
-    """A default ini tweak - hardcoded."""
-
-    def __init__(self, default_ini_name, settings_dict):
-        super().__init__(default_ini_name)
-        #--Settings cache
-        self.lines, current_line = [], 0
-        self._ci_settings_cache_linenum = OrderedLowerDict()
-        for sect, setts in settings_dict.items():
-            self.lines.append(f'[{sect}]')
-            self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
-            current_line += 1
-            for sett, val in setts.items():
-                self.lines.append(f'{sett}={val}')
-                self._ci_settings_cache_linenum[sect][sett] = (
-                    val, current_line)
-                current_line += 1
-
-    def get_ci_settings(self, with_deleted=False):
-        if with_deleted:
-            return self._ci_settings_cache_linenum, self._deleted_cache
-        return self._ci_settings_cache_linenum
-
-    def read_ini_content(self, as_unicode=True):
-        """Note as_unicode=True strips line endings as opposed to parent -
-        this is wanted and does not harm in this case. Note also, the binary
-        instantiation of the default ini is with windows EOL."""
-        if as_unicode:
-            return iter(self.lines) # do not modify return value directly
-        # Add a newline at the end of the INI
-        return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
-
-class TomlFile(IniFile):
+class TomlFile(IniFileInfo):
     """A TOML file. Encoding is always UTF-8 (demanded by spec). Note that
     ini_files only supports INI-like TOML files right now. That means TOML
     files must be tables of key-value pairs and the values may not be arrays or
@@ -508,7 +476,7 @@ class TomlFile(IniFile):
     def _fmt_setting(self, setting, value):
         return f'{setting} = {value}'
 
-class OBSEIniFile(IniFile):
+class OBSEIniFile(IniFileInfo):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
     reDeleted = re.compile(r';-(\w.*?)$')
@@ -715,7 +683,7 @@ class OBSEIniFile(IniFile):
                         out.write(f'{line}\n')
             self.abs_path.replace_with_temp(out_path)
 
-class GameIni(IniFile):
+class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
     bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
                       u'..\\obmm\\bsaredirection.bsa'}

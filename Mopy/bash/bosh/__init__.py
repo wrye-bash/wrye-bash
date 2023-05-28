@@ -31,7 +31,7 @@ import pickle
 import re
 import sys
 from collections import defaultdict, deque, OrderedDict
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from functools import wraps
 from itertools import chain
 
@@ -46,7 +46,8 @@ from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
+    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
+    OrderedLowerDict
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -54,8 +55,8 @@ from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError, InvalidPluginFlagsError
 from ..game import MergeabilityCheck
-from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
-    OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
+from ..ini_files import AIniInfo, GameIni, IniFileInfo, OBSEIniFile, \
+    get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
 from ..wbtemp import TempFile
 
@@ -64,7 +65,7 @@ empty_path = GPath(u'') # evaluates to False in boolean expressions
 _ListInf = AFile | ListInfo | None| FName
 
 #--Singletons
-gameInis: tuple[GameIni | IniFile] | None = None
+gameInis: tuple[GameIni | IniFileInfo] | None = None
 oblivionIni: GameIni | None = None
 modInfos: ModInfos | None = None
 saveInfos: SaveInfos | None = None
@@ -1130,7 +1131,7 @@ def read_loot_tags(plugin_name):
 
 #------------------------------------------------------------------------------
 def get_game_ini(ini_path, is_abs=True):
-    """:rtype: GameIni | IniFile | None"""
+    """:rtype: GameIni | IniFileInfo | None"""
     for game_ini in gameInis:
         game_ini_path = game_ini.abs_path
         if ini_path == ((is_abs and game_ini_path) or game_ini_path.stail):
@@ -1138,7 +1139,7 @@ def get_game_ini(ini_path, is_abs=True):
     return None
 
 def BestIniFile(abs_ini_path):
-    """:rtype: IniFile"""
+    """:rtype: IniFileInfo"""
     game_ini = get_game_ini(abs_ini_path)
     if game_ini:
         return game_ini
@@ -1148,7 +1149,7 @@ def BestIniFile(abs_ini_path):
 
 def best_ini_files(abs_ini_paths):
     """Similar to BestIniFile, but takes an iterable of INI paths and returns a
-    dict mapping those paths to the created IniFile objects. The functional
+    dict mapping those paths to the created IniFileInfo objects. The functional
     difference is that this method can handle empty INI files, as long as all
     other INIs passed in have the same INI type (i.e. no mixing of OBSE INIs
     and regular INIs). Meant to be used if you have multiple versions of the
@@ -1160,7 +1161,7 @@ def best_ini_files(abs_ini_paths):
         game_ini = get_game_ini(aip)
         if game_ini:
             ret[aip] = game_ini
-            found_types.add(IniFile)
+            found_types.add(IniFileInfo)
             continue
         try:
             detected_type, detected_enc = get_ini_type_and_encoding(aip)
@@ -1181,7 +1182,7 @@ def best_ini_files(abs_ini_paths):
         ret[aip] = detected_type(aip, detected_enc)
     return ret
 
-class AINIInfo(AIniFile):
+class AINIInfo(AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
     is_default_tweak = False
@@ -1595,6 +1596,7 @@ class DataStore(DataDict):
 class TableFileInfos(DataStore):
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
+    factory: type[AFile]
 
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
@@ -1615,10 +1617,10 @@ class TableFileInfos(DataStore):
         self._data = FNDict()
         return self._data
 
-    def __init__(self, dir_, factory=AFile):
+    def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
         super().__init__(self._initDB(dir_))
-        self.factory=factory
+        self.factory = factory
 
     def new_info(self, fileName, *, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
@@ -1839,8 +1841,7 @@ class FileInfos(TableFileInfos):
         srcPath.moveTo(destPath)
 
 #------------------------------------------------------------------------------
-##: Can we simplify this now and obsolete AINIInfo?
-class INIInfo(IniFile, AINIInfo):
+class INIInfo(IniFileInfo, AINIInfo):
     _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
 
@@ -1850,16 +1851,45 @@ class INIInfo(IniFile, AINIInfo):
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
-class DefaultIniInfo(DefaultIniFile, AINIInfo):
+class DefaultIniInfo(AINIInfo):
+    """A default ini tweak - hardcoded."""
     is_default_tweak = True
+
+    def __init__(self, default_ini_name, settings_dict):
+        super().__init__(default_ini_name)
+        #--Settings cache
+        self.lines, current_line = [], 0
+        self._ci_settings_cache_linenum = OrderedLowerDict()
+        for sect, setts in settings_dict.items():
+            self.lines.append(f'[{sect}]')
+            self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
+            current_line += 1
+            for sett, val in setts.items():
+                self.lines.append(f'{sett}={val}')
+                self._ci_settings_cache_linenum[sect][sett] = (
+                    val, current_line)
+                current_line += 1
+
+    def get_ci_settings(self, with_deleted=False):
+        if with_deleted:
+            return self._ci_settings_cache_linenum, self._deleted_cache
+        return self._ci_settings_cache_linenum
+
+    def read_ini_content(self, as_unicode=True):
+        """Note as_unicode=True strips line endings as opposed to parent -
+        this is wanted and does not harm in this case. Note also, the binary
+        instantiation of the default ini is with windows EOL."""
+        if as_unicode:
+            return iter(self.lines) # do not modify return value directly
+        # Add a newline at the end of the INI
+        return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
 
     @property
     def info_dir(self):
         return dirs['ini_tweaks']
 
 # noinspection PyUnusedLocal
-def ini_info_factory(fullpath, load_cache=u'Ignored',
-        itsa_ghost=False) -> INIInfo:
+def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     """INIInfos factory
 
     :param fullpath: Full path to the INI file to wrap
@@ -1871,16 +1901,17 @@ def ini_info_factory(fullpath, load_cache=u'Ignored',
     return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
-    """:type _ini: IniFile
-    :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
     unique_store_key = Store.INIS
+    _ini: IniFileInfo | None
+    _data: dict[FName, AINIInfo]
+    factory: Callable[[...], INIInfo]
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
                                       bush.game.default_tweaks.items())
-        super().__init__(dirs['ini_tweaks'], factory=ini_info_factory)
+        super().__init__(dirs['ini_tweaks'], ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -2084,6 +2115,7 @@ class INIInfos(TableFileInfos):
         else:
             super()._do_copy(cp_file_info, cp_dest_path)
 
+#-- ModInfos ------------------------------------------------------------------
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
     whenever I change (or attempt to change) the latter, and that I do
@@ -2146,7 +2178,7 @@ class ModInfos(FileInfos):
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
-        FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
+        FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--Info lists/sets. Most are set in refresh and used in the UI. Some
         # of those could be set JIT in set_item_format, for instance, however
         # the catch is that the UI refresh is triggered by
@@ -2415,7 +2447,7 @@ class ModInfos(FileInfos):
             acti_ini_path = data_folder_path.join(acti_ini_name)
             acti_ini = prev_inis.get(acti_ini_path)
             if acti_ini is None or acti_ini.do_update():
-                acti_ini = IniFile(acti_ini_path, 'cp1252')
+                acti_ini = IniFileInfo(acti_ini_path, 'cp1252')
             inis_active.append(acti_ini)
         # values in active order, later loading inis override previous settings
         ##: What about SkyrimCustom.ini etc?
@@ -3427,8 +3459,7 @@ class SaveInfos(FileInfos):
     def __init__(self):
         self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
-        super(SaveInfos, self).__init__(dirs[u'saveBase'].join(self.localSave),
-                                        factory=SaveInfo)
+        super().__init__(dirs['saveBase'].join(self.localSave), SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3627,7 +3658,7 @@ class BSAInfos(FileInfos):
                     if self.file_mod_time != default_mtime:
                         self.setmtime(default_mtime)
 
-        super(BSAInfos, self).__init__(dirs[u'mods'], factory=BSAInfo)
+        super().__init__(dirs['mods'], BSAInfo)
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
@@ -3677,7 +3708,7 @@ class ScreenInfos(FileInfos):
             r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
             re.I | re.U)
         self._set_store_dir()
-        super().__init__(self.store_dir, factory=ScreenInfo)
+        super().__init__(self.store_dir, ScreenInfo)
 
     def _set_store_dir(self):
         # Check if we need to adjust the screenshot dir
@@ -3750,7 +3781,7 @@ def initBosh(game_ini_path):
     global oblivionIni, gameInis
     oblivionIni = GameIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
-    gameInis.extend(IniFile(dirs[u'saveBase'].join(x), 'cp1252') for x in
+    gameInis.extend(IniFileInfo(dirs[u'saveBase'].join(x), 'cp1252') for x in
                     bush.game.Ini.dropdown_inis[1:])
     load_order.initialize_load_order_files()
     if os_name != 'nt':

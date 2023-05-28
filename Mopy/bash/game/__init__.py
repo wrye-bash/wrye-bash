@@ -553,7 +553,7 @@ class GameInfo(object):
     # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
     # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
     # deleted) to OrderedDicts that implement the actual tweaks. See
-    # DefaultIniFile.__init__ for how the tweaks are parsed.
+    # DefaultIniInfo.__init__ for how the tweaks are parsed.
     default_tweaks = {}
 
     # Set in game/*/vanilla_files.py, this is a set listing every file that
