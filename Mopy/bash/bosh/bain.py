@@ -1782,15 +1782,16 @@ class InstallerProject(_InstallerPackage):
         if recalculate_project_crc:
             to_calc = size_apath_date
         else:
-            oldGet = self.src_sizeCrcDate.get
             to_calc = bolt.LowerDict()
-            for k, ls in size_apath_date.items():
-                cached_val = oldGet(k)
-                if not cached_val or (
-                        cached_val[0] != ls[0] or cached_val[2] != ls[2]):
-                    to_calc[k] = ls
-                else:
-                    size_apath_date[k] = cached_val
+            for k, (s, ap, d) in size_apath_date.items():
+                try:
+                    oSize, oCrc, oDate = self.src_sizeCrcDate[k]
+                    if oSize == s and oDate == d:
+                        size_apath_date[k] = oSize, oCrc, oDate
+                        continue
+                except KeyError:
+                    pass
+                to_calc[k] = s, ap, d
         #--Update crcs?
         Installer.calc_crcs(to_calc, rootName, size_apath_date, progress)
         self.src_sizeCrcDate = size_apath_date
