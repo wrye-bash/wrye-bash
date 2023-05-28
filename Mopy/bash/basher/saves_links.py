@@ -223,11 +223,11 @@ class Saves_Profiles(ChoiceLink):
 class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
-        errorMessage = self._lo_operation()
+        lo_warn_msg = self._lo_operation()
         BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
         self.window.Focus()
-        if errorMessage:
-            self._showError(errorMessage, self._selected_item)
+        if lo_warn_msg:
+            self._showWarning(lo_warn_msg, self._selected_item)
 
     def _lo_operation(self):
         raise NotImplementedError

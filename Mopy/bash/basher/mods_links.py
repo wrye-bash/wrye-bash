@@ -82,9 +82,10 @@ class _AMods_ActivePlugins(ItemLink):
         self.window.RefreshUI(refreshSaves=True)
 
     def _select_exact(self, mods):
-        lo_error_msg = bosh.modInfos.lo_activate_exact(mods)
+        lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
         self._refresh_mods_ui()
-        if lo_error_msg: self._showError(lo_error_msg, title=self._text)
+        if lo_warn_msg:
+            self._showWarning(lo_warn_msg, title=self._text)
 
 class _Mods_ActivateAll(_AMods_ActivePlugins):
     _text = _('Activate All')

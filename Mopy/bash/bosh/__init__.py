@@ -2753,8 +2753,7 @@ class ModInfos(FileInfos):
     def lo_activate_exact(self, partial_actives: Iterable[FName]):
         """Activate exactly the specified iterable of plugin names (plus
         required masters and plugins that can't be deactivated). May contain
-        missing plugins. Returns an error/warning message or an empty
-        string."""
+        missing plugins. Returns a warning message or an empty string."""
         partial_set = set(partial_actives)
         present_plugins = set(self)
         missing_plugins = partial_set - present_plugins
@@ -2798,7 +2797,7 @@ class ModInfos(FileInfos):
         plugins that don't exist in the Data folder and tries to insert plugins
         that are present in the Data folder but not in the partial order before
         the same plugin that they are placed before in the current load
-        order."""
+        order. Returns a warning message or an empty string."""
         present_plugins = set(self)
         partial_plugins = set(partial_order)
         # Plugins in the partial order that are missing from the Data folder
