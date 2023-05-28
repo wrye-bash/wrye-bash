@@ -55,12 +55,11 @@ class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
-    persistent = (u'fn_key', u'order', u'group', u'modified', u'fsize',
-        u'crc', u'fileSizeCrcs', u'type', u'is_active', u'subNames',
-        u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
-        u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
-        u'skipVoices', u'espmNots', u'isSolid', u'blockSize', u'overrideSkips',
-        u'_remaps', u'skipRefresh', u'fileRootIdex')
+    persistent = ('fn_key', 'order', 'group', 'file_mod_time', 'fsize', 'crc',
+        'fileSizeCrcs', 'type', 'is_active', 'subNames', 'subActives',
+        'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
+        'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
+        'blockSize', 'overrideSkips', '_remaps', 'skipRefresh', 'fileRootIdex')
     volatile = (u'ci_dest_sizeCrc', u'skipExtFiles', u'skipDirFiles',
         u'status', u'missingFiles', u'mismatchedFiles', u'project_refreshed',
         u'mismatchedEspms', u'unSize', u'espms', u'underrides', u'hasWizard',
@@ -207,7 +206,7 @@ class Installer(ListInfo):
         """Initialize everything to default values."""
         self.fn_key = FName('')
         #--Persistent: set by _refreshSource called by refreshBasic
-        self.modified = 0 #--Modified date
+        self.file_mod_time = 0 #--Modified date
         self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
         self.isSolid = False #--archives only - solid 7z archive
@@ -1172,9 +1171,6 @@ class Installer(ListInfo):
             proj_dir.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
-    def size_or_mtime_changed(self, apath):
-        return (self.fsize, self.modified) != apath.size_mtime()
-
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
@@ -1328,7 +1324,7 @@ class InstallerMarker(Installer):
 
     def __init__(self, marker_key):
         Installer.__init__(self, marker_key)
-        self.modified = time.time()
+        self.file_mod_time = time.time()
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
@@ -1367,7 +1363,7 @@ class InstallerMarker(Installer):
         return bolt.LowerDict()
 
 #------------------------------------------------------------------------------
-class InstallerArchive(Installer):
+class InstallerArchive(Installer, AFile):
     """Represents an archive installer entry."""
     type_string = _('Archive')
     _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in archives.readExts)}))'
@@ -1414,7 +1410,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.fsize, self.modified = self.abs_path.size_mtime() ##: aka _file_mod_time
+        self.fsize, self.file_mod_time = self._stat_tuple()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1583,7 +1579,7 @@ class InstallerArchive(Installer):
         return FName(self.fn_key.fn_body + archives.defaultExt)
 
 #------------------------------------------------------------------------------
-class InstallerProject(Installer):
+class InstallerProject(Installer, AFile):
     """Represents a directory/build installer entry."""
     type_string = _('Project')
     is_project = True
@@ -1598,7 +1594,7 @@ class InstallerProject(Installer):
             *(getattr(self, a) for a in self.persistent[1:]))
 
     def _refresh_from_project_dir(self, progress=None,
-                                  recalculate_all_crcs=False):
+            recalculate_all_crcs=False, *, __lstat=os.lstat):
         """Update src_sizeCrcDate cache from project directory. Used by
         _refreshSource() to populate the project's src_sizeCrcDate with
         _all_ files present in the project dir. src_sizeCrcDate is then used
@@ -1610,8 +1606,8 @@ class InstallerProject(Installer):
         apRoot = self.abs_path
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
-        progress_msg = rootName + u'\n' + _(u'Scanning...')
-        progress(0, progress_msg + u'\n')
+        progress_msg = f'{rootName}\n%s\n' % _('Scanning...')
+        progress(0, progress_msg)
         progress.setFull(1)
         asRoot = apRoot.s
         relPos = len(asRoot) + 1
@@ -1619,20 +1615,19 @@ class InstallerProject(Installer):
         pending, pending_size = bolt.LowerDict(), 0
         new_sizeCrcDate = bolt.LowerDict()
         oldGet = self.src_sizeCrcDate.get
-        walk = self._dir_dirs_files if self._dir_dirs_files is not None else os.walk(asRoot)
+        walk = os.walk(asRoot) if self._dir_dirs_files is None else self._dir_dirs_files
         for asDir, __sDirs, sFiles in walk:
-            rsDir = asDir[relPos:]
-            progress(0.05, progress_msg + (u'\n%s' % rsDir))
+            progress(0.05, f'{progress_msg}{asDir[relPos:]}')
             get_mtime = os.path.getmtime(asDir)
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
             for sFile in sFiles:
                 asFile = os.path.join(asDir, sFile)
-                rpFile = os.path.join(rsDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
-                lstat = os.lstat(asFile)
+                lstat = __lstat(asFile)
                 st_size, date = lstat.st_size, lstat.st_mtime
                 max_mtime = max_mtime if max_mtime >= date else date
-                oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                oSize, oCrc, oDate = oldGet(rpFile := asFile[relPos:]) or (
+                    0, 0, 0)
                 if st_size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 else:
@@ -1644,7 +1639,7 @@ class InstallerProject(Installer):
         #--Done
         return max_mtime
 
-    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
+    def needs_update(self, *, __lstat=os.lstat):
         #FIXME(ut): getmtime(True) won't detect all changes - for instance COBL
         # has 3/25/2020 8:02:00 AM modification time if unpacked and no
         # amount of internal shuffling won't change its apath.getmtime(True)
@@ -1652,9 +1647,9 @@ class InstallerProject(Installer):
         c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
-        for root, _d, files in os.walk(apath):
+        for root, _d, files in os.walk(self.abs_path):
             cAppend(getM(root))
-            lstats = [_lstat(join(root, f)) for f in files]
+            lstats = [__lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
             proj_size += sum(ls.st_size for ls in lstats)
             self._dir_dirs_files.append((root, [], files)) # dirs is unused
@@ -1667,12 +1662,12 @@ class InstallerProject(Installer):
             mtime = max(c)
         except ValueError: # int(max([]))
             mtime = 0.0
-        return self.modified != mtime
+        return self.file_mod_time != mtime
 
-    def _refreshSource(self, progress, recalculate_project_crc):
+    def _refreshSource(self, progress, recalculate_project_crc): ##: _reset_cache?
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
-        self.modified = self._refresh_from_project_dir(progress,
+        self.file_mod_time = self._refresh_from_project_dir(progress,
                                                        recalculate_project_crc)
         cumCRC = 0
 ##        cumDate = 0
@@ -1721,7 +1716,7 @@ class InstallerProject(Installer):
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I don't leak self._dir_dirs_files project cache.
-    Must decorate all methods that may call size_or_mtime_changed (only
+    Must decorate all methods that may call needs_update (only
     called in scan_installers_dir). For self._dir_dirs_files to be of any use
     the call to scan_installers_dir must be followed by refreshBasic calls
     on the projects."""
@@ -2141,8 +2136,7 @@ class InstallersData(DataStore):
                                 'bash.installers.autoRefreshProjects']:
                             installers.add(item) # installer is present
                             continue # and needs not refresh
-                    pending.add(item) if inst.size_or_mtime_changed(
-                        inst.abs_path) else installers.add(item)
+                    (pending if inst.needs_update() else installers).add(item)
         deleted = set(self.ipackages(self)) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, folders)
         return refresh_info

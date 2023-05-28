@@ -2593,7 +2593,7 @@ class InstallersList(UIList):
     _sort_keys = {
         u'Package' : None,
         u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].modified,
+        u'Modified': lambda self, x: self.data_store[x].file_mod_time,
         u'Size'    : lambda self, x: self.data_store[x].fsize,
         u'Files'   : lambda self, x: self.data_store[x].num_of_files,
     }
@@ -2612,7 +2612,7 @@ class InstallersList(UIList):
     labels = {
         'Package':  lambda self, p: p,
         'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].modified),
+        'Modified': lambda self, p: format_date(self.data_store[p].file_mod_time),
         'Size':     lambda self, p: self.data_store[p].size_string(),
         'Files':    lambda self, p: self.data_store[p].number_string(
             self.data_store[p].num_of_files),
@@ -3222,7 +3222,7 @@ class InstallersDetails(_SashDetailsPanel):
             inf_.extend([
                 _('Modified: %(modified_date)s') % {
                     'modified_date': 'N/A' if is_mark else
-                    format_date(installer.modified)},
+                    format_date(installer.file_mod_time)},
                 _('Data CRC: %(data_crc)s') % {
                     'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
                 _('Files: %(num_files)s') % {

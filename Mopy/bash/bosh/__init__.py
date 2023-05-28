@@ -195,10 +195,10 @@ class FileInfo(AFile, ListInfo):
         self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self._file_mod_time, self.ctime) != stat_tuple
+        return (self.fsize, self.file_mod_time, self.ctime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        self.fsize, self._file_mod_time, self.ctime = stat_tuple
+        self.fsize, self.file_mod_time, self.ctime = stat_tuple
         if load_cache: self.readHeader()
 
     def _mark_unchanged(self):
@@ -207,13 +207,13 @@ class FileInfo(AFile, ListInfo):
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
     @property
-    def mtime(self): return self._file_mod_time
+    def mtime(self): return self.file_mod_time
     #--------------------------------------------------------------------------
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset)."""
         set_time = set_time or self.mtime
         self.abs_path.mtime = set_time
-        self._file_mod_time = set_time
+        self.file_mod_time = set_time
         return set_time
 
     def readHeader(self):
@@ -305,7 +305,7 @@ class FileInfo(AFile, ListInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        self.setmtime(self._file_mod_time, crc_changed=True)
+        self.setmtime(self.file_mod_time, crc_changed=True)
         self.get_store().new_info(self.fn_key, notify_bain=True)
 
     def getNextSnapshot(self):
@@ -470,7 +470,7 @@ class ModInfo(FileInfo):
         cached_crc = self.get_table_prop(u'crc')
         if not recalculate:
             recalculate = cached_crc is None \
-                          or self._file_mod_time != self.get_table_prop(u'crc_mtime') \
+                    or self.file_mod_time != self.get_table_prop('crc_mtime') \
                           or self.fsize != self.get_table_prop(u'crc_size')
         path_crc = cached_crc
         if recalculate:
@@ -478,7 +478,7 @@ class ModInfo(FileInfo):
             if path_crc != cached_crc:
                 self.set_table_prop(u'crc', path_crc)
                 self.set_table_prop(u'ignoreDirty', False)
-            self.set_table_prop(u'crc_mtime', self._file_mod_time)
+            self.set_table_prop('crc_mtime', self.file_mod_time)
             self.set_table_prop(u'crc_size', self.fsize)
         return path_crc, cached_crc
 
@@ -3412,7 +3412,7 @@ class BSAInfos(FileInfos):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
                     u'ResetBSATimestamps']:
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
-                    if self._file_mod_time != default_mtime:
+                    if self.file_mod_time != default_mtime:
                         self.setmtime(default_mtime)
 
         super(BSAInfos, self).__init__(dirs[u'mods'], factory=BSAInfo)
