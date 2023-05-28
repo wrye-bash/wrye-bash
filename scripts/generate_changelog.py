@@ -35,9 +35,9 @@ from functools import partial
 from html import escape as html_escape
 
 from helpers import github_login
-from helpers.html_gen import h3, ul, bb_list, size, markdown_list, spoiler, \
-    a, markdown_link, markdown_escape, closed_issue
 from helpers.github_wrapper import get_closed_issues
+from helpers.html_gen import a, bb_list, closed_issue, h3, markdown_escape, \
+    markdown_link, markdown_list, size, spoiler, ul
 from helpers.utils import CHANGELOGS_PATH, DEFAULT_AUTHORS, \
     DEFAULT_MILESTONE_TITLE, out_path
 

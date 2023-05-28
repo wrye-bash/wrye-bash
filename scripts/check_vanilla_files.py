@@ -33,17 +33,18 @@ game_info_name = 'WSOblivionGameInfo'
 # Should be an absolute path
 game_path_name = r'C:\Program Files\ModifiableWindowsApps\Oblivion GOTY (PC)\Oblivion GOTY Spanish'
 
-from pprint import pprint
 import gettext
+from pprint import pprint
 
 # Initialize translations before importing any Bash modules
 gettext.NullTranslations().install()
-from bash.bolt import Path
 import bash.bush as bush
+from bash.bolt import Path
 
 def import_game_type(game_info_name):
-    import bash.game as game_init
     import pkgutil
+
+    import bash.game as game_init
     for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"

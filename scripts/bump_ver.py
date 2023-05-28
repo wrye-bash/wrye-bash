@@ -28,7 +28,6 @@ import re
 import sys
 
 import pyfiglet
-
 from helpers.utils import MOPY_PATH, commit_changes
 
 sys.path.insert(0, MOPY_PATH)
@@ -107,7 +106,7 @@ def main(args):
             bd_ini.truncate(0)
             bd_ini.write('\n'.join(fmt_header + ini_rest) + '\n')
         files_bumped.append(os.path.join(MOPY_PATH, b_ini_name))
-    commit_changes(changed_files=files_bumped,
+    commit_changes(changed_paths=files_bumped,
         commit_msg=f'Bump Wrye Bash version to {new_ver}')
     print(f'Version successfully bumped to {new_ver}.')
 

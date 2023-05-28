@@ -22,8 +22,8 @@
 # =============================================================================
 """This module wraps github API calls. Features caching."""
 
-from configparser import ConfigParser, NoOptionError, NoSectionError
 import os
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 import github
 

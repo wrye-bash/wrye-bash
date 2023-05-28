@@ -51,6 +51,8 @@ IDEA_PATH = os.path.join(ROOT_PATH, '.idea')
 VSCODE_PATH = os.path.join(ROOT_PATH, '.vscode')
 OUT_PATH = os.path.join(SCRIPTS_PATH, 'out')
 CHANGELOGS_PATH = os.path.join(SCRIPTS_PATH, 'changelogs')
+WB_STATUS_PATH = os.path.abspath(os.path.join(
+    ROOT_PATH, os.pardir, 'wb_status'))
 
 # Other constants
 DEFAULT_MILESTONE_TITLE = 'Bug fixes and enhancements'
@@ -158,13 +160,14 @@ def get_repo_sig(repo):
             '   git config --global user.email "you@example.com"']))
         sys.exit(1)
 
-def commit_changes(*, changed_files: list[os.PathLike | str], commit_msg: str):
+def commit_changes(*, changed_paths: list[os.PathLike | str], commit_msg: str,
+        repo_path: os.PathLike | str = ROOT_PATH):
     """Commit changes to the specified files by creating a commit with the
     specified message."""
-    repo = pygit2.Repository(ROOT_PATH)
+    repo = pygit2.Repository(repo_path)
     user = get_repo_sig(repo)
     parent = [repo.head.target]
-    for cf in changed_files:
+    for cf in changed_paths:
         rel_path = os.path.relpath(cf, repo.workdir).replace('\\', '/')
         if repo.status_file(rel_path) == pygit2.GIT_STATUS_WT_MODIFIED:
             repo.index.add(rel_path)

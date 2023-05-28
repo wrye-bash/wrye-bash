@@ -342,7 +342,7 @@ def update_file_version(version, commit=False):
         fopen.flush()
         os.fsync(fopen.fileno())
     if commit:
-        commit_changes(changed_files=[orig_path], commit_msg=version)
+        commit_changes(changed_paths=[orig_path], commit_msg=version)
     try:
         yield
     finally:
