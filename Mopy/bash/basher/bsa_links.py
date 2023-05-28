@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -47,7 +47,7 @@ class BSA_ExtractToProject(ItemLink):
             if not result: return
             # Error checking
             if (result := FName(result)).fn_ext in archives.readExts:
-                self._showWarning(_(u'%s is not a valid project name.') %
+                self._showWarning(_('%s is not a valid project name.') %
                                   result)
                 return
             to_unpack = [(result, selected_bsas[0])]
@@ -59,11 +59,11 @@ class BSA_ExtractToProject(ItemLink):
         for project, _bsa_inf in to_unpack:
             proj_path = bass.dirs[u'installers'].join(project)
             if proj_path.is_file():
-                self._showWarning(_(u'%s is a file.') % project)
+                self._showWarning(_('%s is a file.') % project)
                 return
             if proj_path.is_dir():
-                question = _(u'%s already exists. Overwrite it?') % project
-                if not self._askYes(question, default=False):
+                question = _('%s already exists. Overwrite it?') % project
+                if not self._askYes(question, default_is_yes=False):
                     return
                 # Clear existing project, user wanted to overwrite it
                 proj_path.rmtree(safety=u'Installers')
@@ -81,10 +81,9 @@ class BSA_ExtractToProject(ItemLink):
                     progress=SubProgress(prog, prog_curr, prog_next))
                 prog_curr += step_size
                 prog_next += step_size
-        self._showOk(_(u'Successfully extracted all selected BSAs. Open the '
-                       u'Installers tab to view and manage the created '
-                       u'project(s).'),
-                     _(u'Extraction Completed'))
+        msg = _('Successfully extracted all selected BSAs. Open the '
+                'Installers tab to view and manage the created project(s).')
+        self._showOk(msg, _('Extraction Completed'))
 
 class BSA_ListContents(ItemLink):
     """Lists the contents of one or more BSAs."""
@@ -93,11 +92,11 @@ class BSA_ListContents(ItemLink):
               u'clipboard.')
 
     def Execute(self):
-        full_text = u'=== Selected BSA Contents:'
-        full_text += u'\n[spoiler]'
+        full_text = ['=== Selected BSA Contents:', '[spoiler]']
         for bsa_inf in self.iselected_infos():
-            full_text += f'\n\n* {bsa_inf.fn_key}:\n'
-            full_text += u'\n'.join(sorted(bsa_inf.assets))
-        full_text += u'\n[/spoiler]'
+            full_text.append(f'\n* {bsa_inf.fn_key}:')
+            full_text.extend(sorted(bsa_inf.assets))
+        full_text.append('[/spoiler]')
+        full_text = '\n'.join(full_text)
         copy_text_to_clipboard(full_text)
-        self._showLog(full_text, _(u'BSA Contents'))
+        self._showLog(full_text, _('BSA Contents'))

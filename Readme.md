@@ -1,4 +1,4 @@
-<img align="left" src="Mopy/bash/images/bash.svg" width="120" alt="Wrye Bash Icon">
+<img align="left" src="Mopy/bash/images/bash.svg" width="120" alt="">
 
 Wrye Bash
 =========
@@ -14,8 +14,7 @@ This is a fork of the Wrye Bash related code from the
 [SVN 3177 trunk revision][1].
 We are in the process of refactoring the code to eventually support more games,
 offering the same feature set for all of them.
-Please read the [Contributing](#contributing) section below if interested in
-contributing.
+Please see our [Contributing.md][24] if interested in contributing.
 
 #### Supported Games
 
@@ -23,20 +22,17 @@ Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
 * Enderal (patch 1.6.4.0)
-* Enderal: Special Edition (patch 2.0.11)
+* Enderal: Special Edition (patch 2.0.12.4)
 * Fallout 3 (patch 1.7.0.3)
 * Fallout 4 (patch 1.10.163.0)
 * Fallout 4 VR (patch 1.2.72.0)
 * Fallout New Vegas (patch 1.4.0.525)
-* Morrowind (very early support, patch 1.6.1820)
+* Morrowind (very early support, patch 1.6.1820.0)
 * Nehrim (patch 2.0.2.4)
 * Oblivion (patch 1.2.0.416)
 * Skyrim (patch 1.9.36.0)
-* Skyrim Special Edition (patch 1.6.353.0)
+* Skyrim Special Edition (patch 1.6.640.0)
 * Skyrim VR (patch 1.4.15.0)
-
-**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
-Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well.
 
 ### Download
 
@@ -65,7 +61,7 @@ To run Wrye Bash from the latest `dev` code (download from [here][12])
 you need:
 
 * A game to manage from the supported games.
-* [Python 3.9 64-bit](http://www.python.org/) (latest 3.9 is recommended)
+* [Python 3.11 64-bit](http://www.python.org/) (latest 3.11 is recommended)
 
 **NB**: the 64-bit version is **required**. 32-bit operating systems are no
 longer supported.
@@ -132,7 +128,7 @@ bleeding edge branch. Commits land here for testing.
   [5]: https://www.nexusmods.com/skyrim/mods/1840
   [6]: https://www.nexusmods.com/fallout4/mods/20032
   [7]: https://www.nexusmods.com/skyrimspecialedition/mods/6837
-  [8]: https://github.com/wrye-bash/wrye-bash/releases/latest
+  [8]: https://github.com/wrye-bash/wrye-bash/releases
   [9]: http://wrye-bash.github.io/
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install

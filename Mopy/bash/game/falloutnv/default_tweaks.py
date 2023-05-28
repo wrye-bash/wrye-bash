@@ -16,9 +16,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-# TODO(inf) FNV-specific tweaks?
+# noinspection PyUnresolvedReferences
 from ..fallout3.default_tweaks import default_tweaks

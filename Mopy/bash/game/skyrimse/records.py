@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
-from ...bolt import Flags
-from ...brec import MelRecord, MelGroups, MelStruct, MelString, MelSet, \
-    MelFloat, MelUInt32, MelCounter, MelEdid
+from ...brec import MelEdid, MelFloat, MelLensShared, MelRecord, MelSet, \
+    lens_distributor
 
 #------------------------------------------------------------------------------
 # Added in SSE ----------------------------------------------------------------
@@ -33,28 +32,9 @@ class MreLens(MelRecord):
     """Lens Flare."""
     rec_sig = b'LENS'
 
-    LensFlareFlags = Flags.from_names('rotates', 'shrinksWhenOccluded')
-
     melSet = MelSet(
-        MelEdid(),
-        MelFloat(b'CNAM', 'colorInfluence'),
-        MelFloat(b'DNAM', 'fadeDistanceRadiusScale'),
-        MelCounter(MelUInt32(b'LFSP', 'sprite_count'),
-                   counts='lensFlareSprites'),
-        MelGroups('lensFlareSprites',
-            MelString(b'DNAM','spriteID'),
-            MelString(b'FNAM','texture'),
-            MelStruct(b'LFSD', [u'f', u'8I'], 'tintRed', 'tintGreen', 'tintBlue',
-                'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, u'lensFlags'), ),
-        )
-    ).with_distributor({
-        b'DNAM': u'fadeDistanceRadiusScale',
-        b'LFSP': {
-            b'DNAM': u'lensFlareSprites',
-        },
-    })
-    __slots__ = melSet.getSlotsUsed()
+        MelLensShared(sprites_are_sorted=False),
+    ).with_distributor(lens_distributor)
 
 #------------------------------------------------------------------------------
 class MreVoli(MelRecord):
@@ -76,4 +56,3 @@ class MreVoli(MelRecord):
         MelFloat(b'MNAM', 'phaseFunctionScattering'),
         MelFloat(b'NNAM', 'samplingRepartitionRangeFactor'),
     )
-    __slots__ = melSet.getSlotsUsed()

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,36 +25,39 @@ current session. Exports the somewhat unfortunately named `game` GameInfo
 instance, which encapsulates static info on current game for the rest of
 Bash to use, so must be imported and run high up in the booting sequence.
 """
+from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-import collections
 import pkgutil
 import textwrap
+from collections import defaultdict
+from configparser import ConfigParser
 
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
-from .env import get_registry_game_paths, get_win_store_game_paths, \
-    get_win_store_game_info
+from .env import get_egs_game_paths, get_legacy_ws_game_info, \
+    get_legacy_ws_game_paths, get_registry_game_paths, get_ws_game_paths
 from .exception import BoltError
+from .game import GameInfo, patch_game
 from .initialization import get_path_from_ini
-from .game import patch_game
 
 # Game detection --------------------------------------------------------------
-game = None         # type: patch_game.PatchGame
-ws_info = None      # type: env.WinAppInfo
-foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
+game: 'patch_game.PatchGame' | None = None
+ws_info = None                      # type: env._LegacyWinAppInfo | None
+foundGames: dict[str, Path] = {}    # dict used by the Settings switch game menu
 
 # Module Cache
-_allGames = {}        # 'name' -> GameInfo
-_registryGames = {}   # 'name' -> list[path]
-_win_store_games = {} # 'name' -> list[path]
+_allGames: dict[str, type[GameInfo]] = {}
+_registry_games: dict[str, list[Path]] = {}
+_ws_legacy_games: dict[str, list[Path]] = {}
+_ws_games: dict[str, list[Path]] = {}
+_egs_games: dict[str, list[Path]] = {}
 
 def reset_bush_globals():
     global game
     global ws_info
     game = None
     ws_info = None
-    for d in (_allGames, _registryGames):
+    for d in (_allGames, _registry_games):
         d.clear()
 
 def _print_found_games(game_dict):
@@ -75,7 +78,7 @@ def _print_found_games(game_dict):
             msgs.append(msg)
     return msgs
 
-def _supportedGames():
+def _supportedGames(skip_ws_games=False):
     """Set games supported by Bash and return their paths from the registry."""
     # rebuilt cache
     reset_bush_globals()
@@ -84,74 +87,107 @@ def _supportedGames():
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
-            module = __import__(u'game', globals(), locals(), [modname], 1)
+            module = __import__('game', globals(), locals(), [modname], 1)
             module_container = getattr(module, modname)
             if not hasattr(module_container, 'GAME_TYPE'):
                 # PyInstaller's iter_modules gives us an __init__.py file with
                 # ispkg=True, skip it
                 continue
-            game_type = module_container.GAME_TYPE
-            _allGames[game_type.displayName] = game_type
+            gtype = module_container.GAME_TYPE
+            game_types = gtype if isinstance(gtype, dict) else {
+                gtype.displayName: gtype}
+            _allGames.update(game_types)
         except (ImportError, AttributeError):
             deprint(f'Error in game support module {modname}', traceback=True)
             continue
-        try:
-            # Get this game's install path(s)
+        # Get this game's install path(s)
+        for gt_display_name, game_type in game_types.items():
             registry_paths = get_registry_game_paths(game_type)
-        except AttributeError:
-            deprint(f'Error getting registry paths for '
-                    f'{game_type.displayName}', traceback=True)
-        else:
             if registry_paths:
-                _registryGames[game_type.displayName] = registry_paths
-        try:
-            win_store_paths = get_win_store_game_paths(game_type)
-        except AttributeError:
-            deprint(f'Error getting windows store paths for '
-                    f'{game_type.displayName}', traceback=True)
-        else:
-            if win_store_paths:
-                _win_store_games[game_type.displayName] = win_store_paths
+                _registry_games[gt_display_name] = registry_paths
+            ws_legacy_paths = get_legacy_ws_game_paths(game_type)
+            if ws_legacy_paths:
+                _ws_legacy_games[gt_display_name] = ws_legacy_paths
+            if not skip_ws_games:
+                ws_paths = get_ws_game_paths(game_type)
+                if ws_paths:
+                    _ws_games[gt_display_name] = ws_paths
+            egs_paths = get_egs_game_paths(game_type)
+            if egs_paths:
+                _egs_games[gt_display_name] = egs_paths
         del module
-    # Dump out info about all games that we *could* launch, but wrap it
+    # Dump out info about all games that we *could* launch, but deduplicate for
+    # games with versions from multiple store fronts
+    ##: This is pretty hacky - these should be 'variants' instead (see also the
+    # hack in settings_dialog)
     msg = ['The following games are supported by this version of Wrye Bash:']
-    all_supported_games = u', '.join(sorted(_allGames))
-    msg.extend(f'  {wrapped_line}' for wrapped_line in
-               textwrap.wrap(all_supported_games))
+    deduped_games = defaultdict(set)
+    for g in _allGames:
+        g_split = g.split('(')
+        base_game_name = g_split[0].strip()
+        if len(g_split) > 1:
+            deduped_games[base_game_name].add(g_split[1][:-1])
+        else:
+            deduped_games[base_game_name].add('Steam')
+    for base_game_name, game_variants in deduped_games.items():
+        fmt_game_variants = ', '.join(sorted(game_variants))
+        msg.append(f'  - {base_game_name} ({fmt_game_variants})')
     # Dump out info about all games that we *actually* found
-    msg.append(u'Wrye Bash looked for games in the following places:')
-    msg.append(u' 1. Windows Registry:')
-    if _registryGames:
-        msg.append(
-            u'  The following installed games were found via the registry:')
-        msg.extend(_print_found_games(_registryGames))
+    msg.append('Wrye Bash looked for installations of supported games in the '
+               'following places:')
+    msg.append(' 1. Windows Registry:')
+    if _registry_games:
+        msg.append('  The following supported games were found via the '
+                   'registry:')
+        msg.extend(_print_found_games(_registry_games))
     else:
-        msg.append(u'  No installed games were found via the registry')
+        msg.append('  No supported games were found via the registry.')
     msg.extend(f'  {wrapped_line}' for wrapped_line in textwrap.wrap(
         'Make sure to run the launcher of each game you installed through '
         'Steam once, otherwise Wrye Bash will not be able to find it.'))
-    msg.append(u' 2. Windows Store:')
-    if _win_store_games:
-        msg.append('  The following installed games with modding enabled were '
-                   'found via the Windows Store:')
-        msg.extend(_print_found_games(_win_store_games))
+    msg.append(' 2. Windows Store (Legacy):')
+    if _ws_legacy_games:
+        msg.append('  The following supported games with modding enabled were '
+                   'found via the legacy Windows Store:')
+        msg.extend(_print_found_games(_ws_legacy_games))
     else:
-        msg.append(u'  No installed games with modding enabled were found via '
-                   u'the Windows Store.')
-    msg.extend(f'  {wrapped_line}' for wrapped_line in textwrap.wrap(
-        'Make sure to enable mods for each Windows Store game you have '
-        'installed, otherwise Wrye Bash will not be able to find it.'))
+        msg.append('  No supported games with modding enabled were found via '
+                   'the legacy Windows Store.')
+    msg.append(' 3. Windows Store:')
+    if skip_ws_games:
+        msg.append('  Windows Store game detection was disabled via bash.ini.')
+    elif _ws_games:
+        msg.append('  The following supported games were found via the '
+                   'Windows Store:')
+        msg.extend(_print_found_games(_ws_games))
+    else:
+        msg.append('  No supported games were found via the Windows Store.')
+    msg.append(' 4. Epic Games Store:')
+    if _egs_games:
+        msg.append('  The following supported games were found via the Epic '
+                   'Games Store:')
+        msg.extend(_print_found_games(_egs_games))
+    else:
+        msg.append('  No supported games were found via the Epic Games '
+                   'Store.')
     deprint('\n'.join(msg))
     # Merge the dicts of games we found from all global sources
-    all_found_games = _registryGames.copy()
-    for found_game, found_paths in _win_store_games.items():
-        if found_game in all_found_games:
-            all_found_games[found_game].extend(found_paths)
-        else:
-            all_found_games[found_game] = found_paths
+    all_found_games = _registry_games.copy()
+    def merge_games(to_merge_games):
+        """Helper method for merging games and install paths from various
+        sources into the final all_found_games dict."""
+        for found_game, found_paths in to_merge_games.items():
+            if found_game in all_found_games:
+                all_found_games[found_game].extend(found_paths)
+            else:
+                all_found_games[found_game] = found_paths
+    merge_games(_ws_legacy_games)
+    merge_games(_ws_games)
+    merge_games(_egs_games)
     return all_found_games
 
-def _detectGames(cli_path=u'', bash_ini_=None):
+def _detectGames(cli_path: str = '', bash_ini_: ConfigParser | None = None
+) -> tuple[dict[str, list[Path]], str | None, Path | None]:
     """Detect which supported games are installed.
 
     - If Bash supports no games raise.
@@ -161,18 +197,21 @@ def _detectGames(cli_path=u'', bash_ini_=None):
        - the sOblivionPath bash ini entry if present
        - one directory up from Mopy
     If a game exe is found update the path to this game and return immediately.
-    Return (foundGames, gamename)
+    Return (foundGames, gamename, test_path)
       - foundGames: a dict from supported games to their paths (the path will
       default to the windows registry path to the game, if present)
       - gamename: the game found in the first installDir or None if no game was
-      found - a 'suggestion' for a game to use.
+      - test_path: Path to the game directory that was tested for `gamename`.
     """
-    #--Find all supported games and all games in the windows registry
-    foundGames_ = _supportedGames() # sets _allGames if not set
+    #--Find all supported games and all games installed via various sources
+    skip_new_ws = bool(bash_ini_) and bash_ini_.getboolean(
+        'Settings', 'bSkipWSDetection', fallback=False)
+    # _supportedGames sets _allGames if not set
+    foundGames_ = _supportedGames(skip_new_ws)
     if not _allGames: # if allGames is empty something goes badly wrong
         raise BoltError(_(u'No game support modules found in Mopy/bash/game.'))
     # check in order of precedence the -o argument, the ini and our parent dir
-    installPaths = collections.OrderedDict() #key->(path, found msg, error msg)
+    installPaths = {} # key -> (path, found msg, error msg)
     #--First: path specified via the -o command line argument
     if cli_path != u'':
         test_path = GPath(cli_path)
@@ -223,7 +262,7 @@ def __setGame(gamename, gamePath, msg):
     if game is not None or ws_info is not None:
         raise BoltError(u'Trying to reset the game')
     game = _allGames[gamename](gamePath)
-    ws_info = get_win_store_game_info(game)
+    ws_info = get_legacy_ws_game_info(game)
     deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()

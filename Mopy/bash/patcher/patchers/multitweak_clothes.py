@@ -16,14 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the tweaker itself."""
-from .base import MultiTweaker, MultiTweakItem, CustomChoiceTweak
+from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
 
 # Patchers: 30 ----------------------------------------------------------------
 class _AClothesTweak(MultiTweakItem):
@@ -41,14 +41,14 @@ class _AClothesTweak(MultiTweakItem):
         u'rings':    0x000000C0, # (1<<6) | (1<<7),
     }
 
-    def __init__(self):
-        super(_AClothesTweak, self).__init__()
+    def __init__(self, bashed_patch):
+        super(_AClothesTweak, self).__init__(bashed_patch)
         type_key = self.tweak_key[:self.tweak_key.find(u'.')]
         self.or_type_flags = type_key == u'rings'
         self.type_flags = self.clothes_flags[type_key]
 
     def wants_record(self, record):
-        if self._is_nonplayable(record):
+        if record.is_not_playable():
             return False
         rec_type_flags = int(record.biped_flags) & 0xFFFF
         my_type_flags = self.type_flags
@@ -73,10 +73,8 @@ class _AClothesTweak_MaxWeight(_AClothesTweak, CustomChoiceTweak):
     def tweak_record(self, record):
         record.weight = self.chosen_weight
 
-    def tweak_log(self, log, count):
-        self.tweak_log_header = (self.tweak_name +
-                                 u' [%4.2f]' % self.chosen_weight)
-        super(_AClothesTweak_MaxWeight, self).tweak_log(log, count)
+    def _tweak_make_log_header(self, log):
+        log.setHeader(f'=== {self.tweak_name} [{self.chosen_weight:4.2f}]')
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeightAmulets(_AClothesTweak_MaxWeight):

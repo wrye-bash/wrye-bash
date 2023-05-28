@@ -38,8 +38,11 @@ for root, _, filenames in os.walk(GAME_PATH):
         hiddenimports.append(import_path.replace(os.sep, '.'))
 
 # See sys.modules hack above - we don't need Tkinter, just bloats the EXE
+# Same story regarding cryptography (transitive from our compile-time
+# dependency PyGithub)
 excluded_modules = [
     '_tkinter',
+    'cryptography',
     'FixTk',
     'tcl',
     'tk',
@@ -75,13 +78,11 @@ a = Analysis([entry_point],
 
 # Remove binaries we don't want to include
 excluded_binaries = {
-    'MSVCP140.dll',
-    'VCRUNTIME140.dll',
-    'VCRUNTIME140_1.dll',
     'api-ms-win-core-console-l1-1-0.dll',
     'api-ms-win-core-datetime-l1-1-0.dll',
     'api-ms-win-core-debug-l1-1-0.dll',
     'api-ms-win-core-errorhandling-l1-1-0.dll',
+    'api-ms-win-core-fibers-l1-1-0.dll',
     'api-ms-win-core-file-l1-1-0.dll',
     'api-ms-win-core-file-l1-2-0.dll',
     'api-ms-win-core-file-l2-1-0.dll',
@@ -118,11 +119,15 @@ excluded_binaries = {
     'api-ms-win-crt-time-l1-1-0.dll',
     'api-ms-win-crt-utility-l1-1-0.dll',
     'mfc140u.dll',
+    'msvcp140.dll',
     'tcl86t.dll',
     'tk86t.dll',
     'ucrtbase.dll',
+    'vcruntime140_1.dll',
+    'vcruntime140.dll',
 }
-a.binaries = TOC([x for x in a.binaries if x[0] not in excluded_binaries])
+a.binaries = [x for x in a.binaries
+              if os.path.basename(x[0]).lower() not in excluded_binaries]
 
 pyz = PYZ(a.pure, a.zipped_data,
           cipher=block_cipher)

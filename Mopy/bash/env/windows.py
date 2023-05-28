@@ -16,103 +16,137 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
+from __future__ import annotations
+
 import datetime
 import functools
+import json
 import os
 import re
+import sys
 import winreg
-import xml.etree.ElementTree as xml
-from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
-    wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
-    c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
+from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
+    c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
+    c_wchar_p, sizeof, windll, wintypes, wstring_at
+from ctypes.wintypes import MAX_PATH as _MAX_PATH
 from uuid import UUID
+
+try:
+    from lxml import etree # lxml is optional
+except ImportError:
+    from xml.etree import ElementTree as etree
 
 import win32api
 import win32com.client as win32client
 import win32gui
 
-from .common import WinAppInfo, WinAppVersionInfo, real_sys_prefix
+from .common import _find_legendary_games, _get_language_paths, \
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo
+from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
+from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..exception import AccessDeniedError, BoltError, SkipError, \
-    FileOperationError
-from ..exception import CancelError as _CancelError
+from ..bolt import unpack_int as _unpack_int
+from ..exception import BoltError, CancelError, SkipError
 
 # File operations -------------------------------------------------------------
 try:
-    from win32com.shell import shell, shellcon
-    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
-        FO_RENAME, FOF_NOCONFIRMMKDIR
-
-    # NOTE(lojack): AccessDenied can be a result of many error codes,
-    # According to
-    # https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
-    # If you receive an error code not on that list, then you assume it is
-    # one of the default WinError.h error codes, in this case 5 is
-    # `ERROR_ACCESS_DENIED`. I actually DO get error code 5, when the game
-    # detection for WS games wasn't including the language directories (
-    # which caused us to attempt one directory too high in the tree).
-    _file_op_error_map = {
-        # Returned for Windows Store games that need admin access
-        5: AccessDeniedError,    # ERROR_ACCESS_DENIED
-        17: AccessDeniedError,   # ERROR_INVALID_ACCESS
-        120: AccessDeniedError,  # DE_ACCESSDENIEDSRC -> source AccessDenied
-        # https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299-
-        1223: _CancelError,
-    }
-    def shfo(operation, source, target=None, allowUndo=True,
-             confirm=True, renameOnCollision=False, silent=False,
-             parent=None):
-        """Wrapper around (deprecated!) SHFileOperation."""
-        # flags
-        flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
-        flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
-        flgs |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
-        if allowUndo: flgs |= shellcon.FOF_ALLOWUNDO
-        if not confirm: flgs |= shellcon.FOF_NOCONFIRMATION
-        if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
-        if silent: flgs |= shellcon.FOF_SILENT
-        # null terminated strings
-        _source, _target = source, target # keep to display in debug messages
-        source = u'\x00'.join(source) # don't add a null! # + u'\x00'
-        target = u'\x00'.join(target)
-        # get the handle to parent window to feed to win api
-        parent = parent.GetHandle() if parent else None
-        # See SHFILEOPSTRUCT for deciphering return values
-        # result: a windows error code (or 0 for success)
-        # aborted: True if any operations aborted, False otherwise
-        # mapping: maps the old and new names of the renamed files
-        result, aborted, mapping = shell.SHFileOperation(
-            (parent, operation, source, target, flgs, None, None))
-        if result == 0:
-            if aborted: raise SkipError()
-            return dict(mapping)
-        elif result == 2 and operation == FO_DELETE:
-            # Delete failed because file didnt exist
-            return dict(mapping)
-        else:
-            if result == 124:
-                src_list = u'\n'.join(_source)
-                trg_list = u'\n'.join(_target)
-                _deprint(f'Invalid paths:\nsource: {src_list}\ntarget: '
-                         f'{trg_list}\nRetrying')
-                return None
-            raise _file_op_error_map.get(result, FileOperationError(result))
+    # Need to guard this import, since we get imported *before* the startup
+    # code check for required dependencies, and we want the nice error messages
+    # to be shown instead of an ImportError
+    import ifileoperation
+    from ifileoperation import FileOperationFlags, FileOperator
 except ImportError:
-    shell = shellcon = shfo = None
+    pass # We'll raise an error in bash.py
+from .common import FileOperationType, _StrPath
+
+def file_operation(operation: str | FileOperationType,
+        sources_dests: dict[_StrPath, _StrPath], allow_undo: bool = True,
+        ask_confirm: bool = True, rename_on_collision: bool = False,
+        silent: bool = False, parent=None) -> dict[str, str]:
+    """file_operation API. Performs a filesystem operation on the specified
+    files using the Windows API.
+
+    :param operation: One of the FileOperationType enum values, corresponding
+        to a move, copy, rename, or delete operation.
+    :param sources_dests: A mapping of source paths to destinations. The format
+        of destinations depends on the operation:
+        - For FileOperationTYpe.DELETE: destinations are ignored, they may be
+          anything.
+        - For FileOperationType.COPY, MOVE: destinations should be the path
+          to the full destination name (not the destination containing
+          directory).
+        - For FileOperationType.RENAME: destinations should be file names only,
+          without directories.
+        Destinations may be anythin supporting the os.PathLike interface: str,
+        bolt.Path, pathlib.Path, etc).
+    :param allow_undo: If possible, preserve undo information so the operation
+        can be undone. For deletions, this will attempt to use the recylce bin.
+    :param ask_confirm: If True, responds to any OS dialog boxes with "Yes to
+        All".
+    :param rename_on_collision: If True, automatically renames files on a move
+        or copy when collisions occcur.
+    :param silent: If True, do not display progress dialogs.
+    :param parent: The parent window for any dialogs.
+
+    :return: A mapping of source file paths to their final new path.  For a
+        deletion operation, the final path will be None."""
+    # Options for the file operation
+    op_flgs = FileOperationFlags.NO_CONFIRM_MKDIR
+    if allow_undo: op_flgs |= FileOperator.UNDO_FLAGS
+    if not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
+    if rename_on_collision: op_flgs |= FileOperationFlags.RENAMEONCOLLISION
+    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS
+    try:
+        with FileOperator(parent, op_flgs) as fo:
+            # Queue the operations
+            if operation == FileOperationType.DELETE:
+                for source in sources_dests:
+                    try:
+                        fo.delete_file(source)
+                    except FileNotFoundError:
+                        pass
+            elif operation in (FileOperationType.MOVE, FileOperationType.COPY):
+                queue_it =  fo.move_file if operation == FileOperationType.MOVE else fo.copy_file
+                for source, target in sources_dests.items():
+                    # Need to get destination directory, name for these operations
+                    target_dir = os.path.dirname(target)
+                    target_name = os.path.basename(target)
+                    queue_it(source, target_dir, target_name)
+            elif operation == FileOperationType.RENAME:
+                for source, target in sources_dests.items():
+                    fo.rename_file(source, os.fspath(target))
+            # Do the operations
+            fo.commit()
+        if fo.aborted:
+            raise SkipError()
+    except ifileoperation.errors.UserCancelledError as e:
+        # Convert to our own exception type
+        raise CancelError() from e
+    except ifileoperation.errors.InterfaceNotImplementedError as e:
+        # Most likely due to running on WINE
+        import warnings
+        warnings.warn(f'Exception in ifileoperation: {e}. If you are running on'
+            ' WINE this is expected, otherwise please report this issue. '
+            'Falling back to standard library implementation.')
+        return _default_file_operation(operation, sources_dests, allow_undo,
+            ask_confirm, rename_on_collision, silent,)
+    # Filter out deletions:
+    return {
+        source: target
+        for source, target in fo.results.items()
+        if target not in ('DELETED', 'RECYCLED')
+    }
 
 # API - Constants =============================================================
 _isUAC = False
-
-from ctypes.wintypes import MAX_PATH
 
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
@@ -137,8 +171,8 @@ def _subEnv(match):
     # then raise BoltError(...) from None
     env_val = os.environ.get(env_var, None)
     if not env_val:
-        raise BoltError(u"Can't find user directories in windows registry."
-            u'\n>> See "If Bash Won\'t Start" in bash docs for help.')
+        raise BoltError("Can't find user directories in windows registry.\n>> "
+                        'See "If Bash Won\'t Start" in bash docs for help.')
     return env_val
 
 def _getShellPath(folderKey):
@@ -158,8 +192,6 @@ def _getShellPath(folderKey):
 __folderIcon = None # cached here
 def _get_default_app_icon(idex, target):
     # Use the default icon for that file type
-    if winreg is None: # FIXME(inf) linux.py
-        return u'not\\a\\path', idex
     try:
         if target.is_dir():
             global __folderIcon
@@ -296,13 +328,13 @@ def _datetime_from_windows_filetime(filetime):
         # Can occur if delta is very large
         return time_zero
 
-class _WindowsStoreFinder(object):
-    developer_ids = {
-        u'Bethesda': u'3275kfvn8vcwc'
+class _LegacyWindowsStoreFinder(object):
+    _developer_ids = {
+        'Bethesda': '3275kfvn8vcwc'
     }
 
     def __init__(self):
-        self.info_cache = {} # app_name -> WinAppInfo
+        self.info_cache = {} # app_name -> _LegacyWinAppInfo
 
     @staticmethod
     def _read_registry_string(reg_key, string_name):
@@ -395,9 +427,9 @@ class _WindowsStoreFinder(object):
         entry_point = u''
         try:
             manifest = mutable_location.join(u'appxmanifest.xml')
-            tree = xml.parse(manifest.s)
+            tree = etree.parse(manifest.s)
             root = tree.getroot()
-            # AppxManifest.xml uses XML namespaces, don't try to hard to
+            # AppxManifest.xml uses XML namespaces, don't try too hard to
             # extract the applicable namespace
             namespace = root.tag.split(u'}')[0].strip(u'{')
             version_template = u"{%s}Identity[@Version][@Name='%s']"
@@ -412,32 +444,32 @@ class _WindowsStoreFinder(object):
             entry = root.find(entry_template % (namespace, namespace))
             if entry is not None:
                 entry_point = entry.get(u'Id')
-        except (xml.ParseError, OSError):
+        except (etree.ParseError, OSError):
             # Parsing error, or the file doesn't exist
             pass
         return version, entry_point
 
-    def get_app_info(self, app_name, publisher_name=None, publisher_id=None):
-        """Public interface: returns a WinAppInfo object with all applicable
-           information about the application."""
-        if not publisher_id:
-            publisher_id = self.developer_ids.get(publisher_name)
-        if not publisher_id:
-            # Not a common publisher name, need the publisher id
-            return WinAppInfo()
-        package_name = app_name + '_' + publisher_id
+    def get_app_info(self, app_name, publisher_name=None):
+        """Public interface: returns a _LegacyWinAppInfo object with all applicable
+        information about the application."""
+        publisher_id = self._developer_ids.get(publisher_name)
+        package_name = f'{app_name}_{publisher_id}'
         try:
             return self.info_cache[package_name]
         except KeyError:
             # Not cached, look everything up
             pass
-        app_info = WinAppInfo(publisher_name, publisher_id, package_name)
+        app_info = _LegacyWinAppInfo(publisher_name, publisher_id, package_name)
         # Gather all versions of the app
         package_full_names = self._get_package_full_names(package_name)
         for full_name in package_full_names:
             package_index = self._get_package_index(full_name)
+            if package_index is None:
+                continue # Installation is not using the legacy method
             install_location, mutable_location = \
                 self._get_package_locations(package_index)
+            if install_location is None or mutable_location is None:
+                continue # Installation is not using the legacy method
             install_location = _GPath(install_location)
             mutable_location = _GPath(mutable_location)
             install_time = self._get_package_install_time(package_name,
@@ -447,14 +479,88 @@ class _WindowsStoreFinder(object):
             if not version:
                 version = self._get_package_version_from_full_name(full_name)
             version = _parse_version_string(version)
-            version_info = WinAppVersionInfo(
+            version_info = _LegacyWinAppVersionInfo(
                 full_name, install_location, mutable_location, version,
                 install_time, entry_point)
             app_info.versions[full_name] = version_info
         self.info_cache[package_name] = app_info
         return app_info
 
-_win_store_finder = _WindowsStoreFinder()
+_legacy_win_store_finder = _LegacyWindowsStoreFinder()
+
+# GamingRoot-based Windows Store games
+_gr_magic = b'XBGR' # [XB]ox [G]aming [R]oot
+
+def _parse_gamingroot(gamingroot_path: str) -> str | None:
+    """Parses a .GamingRoot file. The format is: magic (FourCC), version
+    (uint32), library path (string, encoded as UTF-16LE, ends with a null byte
+    after decoding)."""
+    try:
+        with open(gamingroot_path, 'rb') as ins:
+            actual_magic = ins.read(4)[::-1]
+            if actual_magic != _gr_magic:
+                _deprint(f'Failed to parse {gamingroot_path}: Magic wrong - '
+                         f'expected {_gr_magic}, but got {actual_magic}')
+                return None
+            gr_version = _unpack_int(ins)
+            if gr_version != 1:
+                _deprint(f'Unknown .GamingRoot version {gr_version}, only'
+                         f'version 1 is supported')
+                return None
+            # Do *not* strip the null byte before decoding, that will cause
+            # UTF-16LE to fail
+            return ins.read().decode('utf-16le').rstrip('\x00')
+    except FileNotFoundError:
+        return None # No .GamingRoot -> no games installed here
+    except OSError:
+        return None # Happens when we access a disk drive - just skip
+
+def _get_msgame_name(game_content_path: _Path) -> str | None:
+    """Given a game's content path, parses the MicrosoftGame.Config file to
+    determine the game's internal name on the Windows Store."""
+    try:
+        xml_conf = etree.parse(game_content_path.join('MicrosoftGame.Config'))
+    except (etree.ParseError, OSError):
+        _deprint('Failed to parse MicrosoftGame.Config file', traceback=True)
+        return None # Doesn't exist or the XML is invalid
+    try:
+        return xml_conf.getroot().find('Identity').get('Name')
+    except AttributeError:
+        _deprint('MicrosoftGame.Config file has unknown or invalid syntax',
+            traceback=True)
+        return None
+
+@functools.cache
+def _find_ws_games() -> dict[str, _Path]:
+    """Scans all drives for .GamingRoot files, reads those and looks for
+    installed games in the resulting 'Xbox' game libraries."""
+    # First, look for the libraries
+    found_libraries = []
+    # Couldn't just return a list of strings of course - thanks pywin32
+    all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
+    for curr_drive in all_drives:
+        library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
+        if library_path is None:
+            continue # No .GamingRoot or failed to parse - either way, skip
+        full_library_path = _GPath(curr_drive + library_path)
+        if full_library_path.is_dir():
+            found_libraries.append(full_library_path)
+    # Then, collect all installed games
+    found_ws_games = {}
+    for ws_library in found_libraries:
+        for ws_game_fname in ws_library.ilist():
+            # Every WS game installed this way has a 'Content' subfolder that
+            # contains the actual game - e.g. Morrowind could be at
+            # E:\XboxGames\The Elder Scrolls III- Morrowind (PC)\Content
+            ws_content_path = ws_library.join(ws_game_fname, 'Content')
+            if ws_content_path.is_dir():
+                msgame_name = _get_msgame_name(ws_content_path)
+                if msgame_name is None:
+                    # File is missing or failed to parse - may just be a random
+                    # game with a 'Content' folder - in any case, skip
+                    continue
+                found_ws_games[msgame_name] = ws_content_path
+    return found_ws_games
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -861,7 +967,7 @@ class _SHSTOCKICONINFO(Structure):
                 (u'hIcon', c_void_p),
                 (u'iSysImageIndex', c_int),
                 (u'iIcon', c_int),
-                (u'szPath', c_wchar*MAX_PATH)]
+                (u'szPath', c_wchar * _MAX_PATH)]
 
 #------------------------------------------------------------------------------
 
@@ -885,14 +991,45 @@ def drive_exists(dir_path):
     """Check if the drive the dir is on exists."""
     return dir_path.s.startswith('\\') or dir_path.drive().exists()
 
+@functools.cache
+def find_egs_games():
+    """Reads the manifests from the EGS launcher (and the third-party Legendary
+    launcher) to find all games installed via the Epic Games Store."""
+    egs_path_app_data = get_registry_path(r'Epic Games\EpicGamesLauncher',
+        'AppDataPath', lambda p: p.join('Manifests').is_dir())
+    if not egs_path_app_data:
+        # EGS is not installed, just use the Legendary games
+        return _find_legendary_games()
+    found_egs_games = {}
+    egs_path_manifests = egs_path_app_data.join('Manifests')
+    # Start by reading the regular EGS manifests
+    for egs_manifest in egs_path_manifests.ilist():
+        if egs_manifest.fn_ext == '.item':
+            try:
+                with open(egs_path_manifests.join(egs_manifest), 'r',
+                        encoding='utf-8') as ins:
+                    egs_manifest_data = json.load(ins)
+                # The InstallLocation sometimes has mixed path separators, so
+                # make sure to normalize them!
+                found_egs_games[egs_manifest_data['AppName']] = _GPath(
+                    egs_manifest_data['InstallLocation'])
+            except (json.JSONDecodeError, KeyError):
+                # Log, but move on to the other manifests
+                _deprint('Failed to parse Epic Games Store manifest file',
+                    traceback=True)
+    # Add in the ones from the third-party Legendary launcher, overriding EGS
+    # entries in case of conflict (since people using Legendary will probably
+    # prefer it over EGS)
+    found_egs_games.update(_find_legendary_games())
+    return found_egs_games
+
 def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
-    if not winreg: return None
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
                 reg_key = winreg.OpenKey(
-                    hkey, f'Software\\{wow6432}{subkey}', 0,
+                    hkey, fr'Software\{wow6432}{subkey}', 0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
                 reg_val = winreg.QueryValueEx(reg_key, entry)
             except OSError:
@@ -906,20 +1043,30 @@ def get_registry_path(subkey, entry, test_path_callback):
 
 def get_registry_game_paths(submod):
     """Check registry-supplied game paths for the game detection file(s)."""
-    reg_keys = submod.regInstallKeys
+    reg_keys = submod.registry_keys
     if not reg_keys:
         return [] # Game is not detectable via registry
-    subkey, entry = reg_keys
-    reg_path = get_registry_path(subkey, entry, submod.test_game_path)
-    return [] if not reg_path else [reg_path]
+    for subkey, entry in reg_keys:
+        reg_path = get_registry_path(subkey, entry, submod.test_game_path)
+        if reg_path:
+            return [reg_path]
+    return []
 
-def get_win_store_game_info(submod):
-    """Get all information about a Windows Store application."""
-    publisher_name = submod.Ws.publisher_name
-    publisher_id = submod.Ws.publisher_id
-    app_name = submod.Ws.win_store_name
-    return _win_store_finder.get_app_info(
-        app_name, publisher_name, publisher_id)
+def get_legacy_ws_game_info(submod):
+    """Get all information about a legacy Windows Store application."""
+    publisher_name = submod.Ws.legacy_publisher_name
+    ws_app_name = submod.Ws.win_store_name
+    return _legacy_win_store_finder.get_app_info(ws_app_name, publisher_name)
+
+def get_ws_game_paths(submod):
+    """Check the .GamingRoot files on each drive to find if the specified game
+    is installed via the Windows Store and return its install path."""
+    if ws_app_name := submod.Ws.win_store_name:
+        all_ws_games = _find_ws_games()
+        if ws_app_name in all_ws_games:
+            return _get_language_paths(submod.Ws.ws_language_dirs,
+                all_ws_games[ws_app_name])
+    return []
 
 def get_personal_path():
     return (_GPath(_get_known_path(_FOLDERID.Documents)),
@@ -1003,10 +1150,11 @@ def testUAC(gameDataPath):
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
-    from . import shellMove, shellDeletePass ##: ugh
+    ##: ugh
+    from . import shellDeletePass, shellMove
     try: # to move it into the Data directory
-        shellMove(tempFile, dest, silent=True)
-    except AccessDeniedError:
+        shellMove({tempFile: dest}, silent=True)
+    except PermissionError:
         global _isUAC
         _isUAC = True
     finally:
@@ -1067,14 +1215,33 @@ def mark_high_dpi_aware():
     except (AttributeError, WindowsError):
         pass  # We are on an unsupported Windows version
 
+def _real_sys_prefix():
+    """Small helper that returns the real prefix when running in a virtual
+    environment."""
+    if hasattr(sys, 'real_prefix'):  # running in virtualenv
+        return sys.real_prefix
+    elif hasattr(sys, 'base_prefix'):  # running in venv
+        return sys.base_prefix
+    else:
+        return sys.prefix
+
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(real_sys_prefix(), u'Tools') # easy on Windows
+    return os.path.join(_real_sys_prefix(), 'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')
+
+def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+    """Alter the case of a case-insensitive path to match directories and files
+    actually present in the filesystem, if any. This is basically identical to
+    what Wine does when emulating case insensitivity. If this returns None, the
+    path does not exist. However, if this does not return None then there is no
+    guarantee that the path exists, so check using exists()/is_file()/etc."""
+    # Windows is case-insensitive, nothing to do here
+    return _Path(os.fspath(ci_path))
 
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section
@@ -1095,7 +1262,7 @@ class TaskDialog(object):
     stock_button_ids = {u'ok': 1, u'cancel': 2, u'retry': 4, u'yes': 6,
                         u'no': 7, u'close': 8}
 
-    def __init__(self, title, heading, content, buttons=(), main_icon=None,
+    def __init__(self, title, heading, content, tsk_buttons=(), main_icon=None,
                  parenthwnd=None, footer=None):
         """Initialize the dialog."""
         self.__events = {_CREATED:[],
@@ -1122,8 +1289,8 @@ class TaskDialog(object):
         self._main_icon = self.stock_icons[
             main_icon] if self._main_is_stock else main_icon
         # buttons
-        buttons = list(buttons)
-        self.set_buttons(buttons)
+        tsk_buttons = list(tsk_buttons)
+        self.set_buttons(tsk_buttons)
         # parent handle
         self._parent = parenthwnd
 
@@ -1165,7 +1332,7 @@ class TaskDialog(object):
         if self.__handle is not None:
             self.__update_element_text(_FOOTER, footer)
 
-    def set_buttons(self, buttons, convert_stock_buttons=True):
+    def set_buttons(self, tsk_buttons, convert_stock_buttons=True):
         """
 
            Set the buttons on the dialog using the list of strings in *buttons*
@@ -1174,18 +1341,18 @@ class TaskDialog(object):
            See the official documentation.
 
         """
-        self._buttons = buttons
+        self._buttons = tsk_buttons
         self._conv_stock = convert_stock_buttons
         return self
 
-    def set_radio_buttons(self, buttons, default=0):
+    def set_radio_buttons(self, radio_buttons, default=0):
         """
 
            Add radio buttons to the dialog using the list of strings in
            *buttons*.
 
         """
-        self._radio_buttons = buttons
+        self._radio_buttons = radio_buttons
         self._default_radio = default
         return self
 

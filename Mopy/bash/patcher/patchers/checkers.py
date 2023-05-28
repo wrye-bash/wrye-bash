@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,20 +26,24 @@ notices a problem."""
 
 import random
 import re
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from itertools import chain
 
 from .base import is_templated
-from ..base import Patcher, ModLoader
-from ... import bush, bolt
-from ...bolt import FName, deprint, dict_sort, sig_to_str
-from ...brec import strFid
-from ...mod_files import LoadFactory
+from ..base import ScanPatcher
+from ... import bush
+from ...bolt import FName, dict_sort, sig_to_str
+from ...brec import FormId
 
-class ContentsCheckerPatcher(Patcher):
+class _Checker(ScanPatcher):
+    """Common checkers code."""
+    patcher_group = 'Special'
+    patcher_order = 40
+    _filter_in_patch = True
+
+class ContentsCheckerPatcher(_Checker):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
-    patcher_group = u'Special'
     patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
@@ -55,37 +59,27 @@ class ContentsCheckerPatcher(Patcher):
     def active_write_sigs(self):
         return tuple(self.contTypes) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         """Scan modFile."""
         # First, map fids to record type for all records for the valid record
         # types. We need to know if a given fid belongs to one of the valid
         # types, otherwise we want to remove it.
         id_type = self.fid_to_type
-        for entry_type in self.entryTypes:
-            if entry_type not in modFile.tops: continue
-            for record in modFile.tops[entry_type].getActiveRecords():
-                fid = record.fid
-                if fid not in id_type:
-                    id_type[fid] = entry_type
+        for entry_type, block in modFile.iter_tops(self.entryTypes):
+            for rid, _record in block.iter_present_records():
+                if rid not in id_type:
+                    id_type[rid] = entry_type
         # Second, make sure the Bashed Patch contains all records for all the
         # types we may end up patching
-        for cont_type in self.contTypes:
-            if cont_type not in modFile.tops: continue
-            patchBlock = self.patchFile.tops[cont_type]
-            pb_add_record = patchBlock.setRecord
-            id_records = patchBlock.id_records
-            for record in modFile.tops[cont_type].getActiveRecords():
-                if record.fid not in id_records:
-                    pb_add_record(record.getTypeCopy())
+        super().scanModFile(modFile, progress, self.contTypes)
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
-        modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         fid_to_type = self.fid_to_type
         id_eid = self.id_eid
-        log.setHeader(u'= ' + self._patcher_name)
+        log.setHeader(f'= {self._patcher_name}')
         # Execute each pass - one pass is needed for every distinct record
         # class layout, e.g. leveled list classes generally share the same
         # layout (LVLI.entries[i].listId, LVLN.entries[i].listId, etc.)
@@ -94,22 +88,21 @@ class ContentsCheckerPatcher(Patcher):
         for cc_pass in bush.game.cc_passes:
             # Validate our pass syntax first
             if len(cc_pass) not in (2, 3):
-                raise RuntimeError(u'Unknown Contents Checker pass type %r' %
-                                   cc_pass)
+                raise RuntimeError(
+                    f'Unknown Contents Checker pass type {cc_pass!r}')
             # See explanation below (entry_fid definition)
             needs_entry_attr = len(cc_pass) == 3
             group_attr = cc_pass[1]
             entry_attr = cc_pass[2] if needs_entry_attr else None
             # First entry in the pass is always the record types this pass
             # applies to
-            for rec_type in cc_pass[0]:
-                if rec_type not in modFile.tops: continue
+            for rec_type, block in self.patchFile.iter_tops(cc_pass[0]):
                 # Set up a dict to track which entries we have removed per fid
                 id_removed = defaultdict(list)
                 # Grab the types that are actually valid for our current record
                 # types
                 valid_types = set(self.contType_entryTypes[rec_type])
-                for record in modFile.tops[rec_type].records:
+                for rid, record in block.id_records.items():
                     # Set up two lists, one containing the current record
                     # contents, and a second one that we will be filling with
                     # only valid entries.
@@ -133,182 +126,45 @@ class ContentsCheckerPatcher(Patcher):
                             # point, we know that the lists have diverged - but
                             # we need to keep going, there may be more invalid
                             # entries for this record.
-                            id_removed[record.fid].append(entry_fid)
-                            id_eid[record.fid] = record.eid
+                            id_removed[rid].append(entry_fid)
+                            id_eid[rid] = record.eid
                     # Check if after filtering using the code above, our two
                     # lists have diverged and, if so, keep the changed record
                     if len(new_entries) != len(current_entries):
                         setattr(record, group_attr, new_entries)
-                        keep(record.fid)
+                        keep(rid, record)
                 # Log the result if we removed at least one entry
                 if id_removed:
-                    log(u'\n=== ' + sig_to_str(rec_type))
+                    log(f'\n=== {sig_to_str(rec_type)}')
                     for contId in sorted(id_removed):
-                        log(u'* ' + id_eid[contId])
+                        log(f'* {id_eid[contId]}')
                         for removedId in sorted(id_removed[contId]):
-                            log(u'  . %s: %06X' % (removedId[0],
-                                                   removedId[1]))
+                            log(f'  . {removedId.mod_fn}: '
+                                f'{removedId.object_dex:06X}')
 
 #------------------------------------------------------------------------------
-_main_master = bush.game.master_file
-class EyeCheckerPatcher(Patcher):
-    patcher_group = u'Special'
-    patcher_order = 29 # Run before Tweak Races
-    _read_sigs = (b'EYES', b'RACE')
-
-    def __init__(self, p_name, p_file):
-        super(EyeCheckerPatcher, self).__init__(p_name, p_file)
-        self.isActive = True ##: Always enabled to support eye filtering?
-        self.eye_mesh = {}
-
-    @property
-    def active_write_sigs(self):
-        return (b'RACE',) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress):
-        if b'RACE' not in modFile.tops: return
-        eye_mesh = self.eye_mesh
-        patchBlock = self.patchFile.tops[b'RACE']
-        id_records = patchBlock.id_records
-        srcEyes = {record.fid for record in
-                   modFile.tops[b'EYES'].getActiveRecords()}
-        for record in modFile.tops[b'RACE'].getActiveRecords():
-            if record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy())
-            if not record.rightEye or not record.leftEye:
-                # Don't complain if the FULL is missing, that probably means
-                # it's an internal or unused RACE
-                if record.full:
-                    deprint(f'No right and/or no left eye recorded in race '
-                            f'{record.full}, from mod {modFile.fileInfo}')
-                continue
-            for eye in record.eyes:
-                if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),
-                                     record.leftEye.modPath.lower())
-
-    def buildPatch(self, log, progress):
-        if not self.isActive: return
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        racesFiltered = []
-        keep = patchFile.getKeeper()
-        #--Eye Mesh filtering
-        eye_mesh = self.eye_mesh
-        try:
-            blueEyeMesh = eye_mesh[(_main_master, 0x27308)]
-        except KeyError:
-            deprint(u'error getting blue eye mesh:')
-            deprint(u'eye meshes:', eye_mesh)
-            raise
-        argonianEyeMesh = eye_mesh[(_main_master, 0x3e91e)]
-        for eye in (
-            (_main_master, 0x1a), #--Reanimate
-            (_main_master, 0x54bb9), #--Dark Seducer
-            (_main_master, 0x54bba), #--Golden Saint
-            (_main_master, 0x5fa43), #--Ordered
-            ):
-            eye_mesh.setdefault(eye,blueEyeMesh)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
-        for race in patchFile.tops[b'RACE'].records:
-            if not race.eyes: continue  #--Sheogorath. Assume is handled
-            # correctly.
-            if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match('^117[a-zA-Z]', race.eid): continue #--x117 race?
-            raceChanged = False
-            mesh_eye = {}
-            for eye in race.eyes:
-                if eye not in eye_mesh:
-                    deprint(
-                        _(u'Mesh undefined for eye %s in race %s, eye removed '
-                          u'from race list.') % (
-                            strFid(eye), race.eid,))
-                    continue
-                mesh = eye_mesh[eye]
-                if mesh not in mesh_eye:
-                    mesh_eye[mesh] = []
-                mesh_eye[mesh].append(eye)
-            currentMesh = (
-                race.rightEye.modPath.lower(), race.leftEye.modPath.lower())
-            try:
-                maxEyesMesh = sorted(mesh_eye, key=lambda a: len(mesh_eye[a]),
-                                     reverse=True)[0]
-            except IndexError:
-                maxEyesMesh = blueEyeMesh
-            #--Single eye mesh, but doesn't match current mesh?
-            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
-                setRaceEyeMesh(race,*maxEyesMesh)
-                raceChanged = True
-            #--Multiple eye meshes (and playable)?
-            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)):
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present,
-                # use that.
-                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
-                    setRaceEyeMesh(race,*blueEyeMesh)
-                    race.eyes = mesh_eye[blueEyeMesh]
-                    raceChanged = True
-                elif argonianEyeMesh in mesh_eye:
-                    setRaceEyeMesh(race,*argonianEyeMesh)
-                    race.eyes = mesh_eye[argonianEyeMesh]
-                    raceChanged = True
-                #--Else figure that current eye mesh is the correct one
-                elif currentMesh in mesh_eye:
-                    race.eyes = mesh_eye[currentMesh]
-                    raceChanged = True
-                #--Else use most popular eye mesh
-                else:
-                    setRaceEyeMesh(race,*maxEyesMesh)
-                    race.eyes = mesh_eye[maxEyesMesh]
-                    raceChanged = True
-            if raceChanged:
-                racesFiltered.append(race.eid)
-                keep(race.fid)
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'\n=== ' + _(u'Eye Meshes Filtered'))
-        if not racesFiltered:
-            log(u'. ~~%s~~' % _(u'None'))
-        else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
-                  u'been removed from the following races.'))
-            for eid in sorted(racesFiltered):
-                log(u'* ' + eid)
-
-#------------------------------------------------------------------------------
-class RaceCheckerPatcher(Patcher):
-    patcher_group = u'Special'
-    patcher_order = 40 # Run after Tweak Races
+class RaceCheckerPatcher(_Checker): # patcher_order 40 to run after Tweak Races
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
 
-    def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for record in modFile.tops[pb_sig].getActiveRecords():
-                if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
-
     def buildPatch(self, log, progress):
         if not self.isActive: return
-        patchFile = self.patchFile
-        if b'RACE' not in patchFile.tops: return
-        keep = patchFile.getKeeper()
+        if b'RACE' not in self.patchFile.tops: return
+        keep = self.patchFile.getKeeper()
         racesSorted = []
-        eyeNames = {x.fid: x.full for x in patchFile.tops[b'EYES'].records}
-        hairNames = {x.fid: x.full for x in patchFile.tops[b'HAIR'].records}
-        for race in patchFile.tops[b'RACE'].records:
-            if (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)) and race.eyes:
+        eyeNames = {k: x.full for k, x in
+                    self.patchFile.tops[b'EYES'].id_records.items()}
+        hairNames = {k: x.full for k, x in
+                     self.patchFile.tops[b'HAIR'].id_records.items()}
+        skip_race_fid = bush.game.master_fid(0x038010)
+        for rid, race in self.patchFile.tops[b'RACE'].id_records.items():
+            if (race.flags.playable or rid == skip_race_fid) and race.eyes:
                 prev_hairs = race.hairs[:]
                 race.hairs.sort(key=lambda x: hairNames.get(x) or '')
                 prev_eyes = race.eyes[:]
                 race.eyes.sort(key=lambda x: eyeNames.get(x) or '')
                 if race.hairs != prev_hairs or race.eyes != prev_eyes:
                     racesSorted.append(race.eid)
-                    keep(race.fid)
+                    keep(rid, race)
         log.setHeader(f'= {self._patcher_name}')
         log(f'\n=== {_("Eyes/Hair Sorted")}')
         if not racesSorted:
@@ -324,8 +180,8 @@ def _find_vanilla_eyes():
     def _conv_fid(rc_fid):
         rc_file, rc_obj = rc_fid
         if rc_file is None: # special case: None = game master
-            rc_file = bush.game.master_file
-        return FName(rc_file), rc_obj
+            return bush.game.master_fid(rc_obj)
+        return FormId.from_tuple((FName(rc_file), rc_obj))
     ret = {}
     for race_fid, race_eyes in bush.game.default_eyes.items():
         new_key = _conv_fid(race_fid)
@@ -333,25 +189,12 @@ def _find_vanilla_eyes():
         ret[new_key] = new_val
     return ret
 
-class NpcCheckerPatcher(Patcher):
-    """Race patcher."""
-    patcher_group = u'Special'
-    patcher_order = 40
+class NpcCheckerPatcher(_Checker):
     _read_sigs = (b'HAIR', b'NPC_', b'RACE')
 
     def __init__(self, p_name, p_file):
         super(NpcCheckerPatcher, self).__init__(p_name, p_file)
         self.vanilla_eyes = _find_vanilla_eyes()
-
-    def scanModFile(self, modFile, progress):
-        """Add appropriate records from modFile."""
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[pb_sig]
-            id_records = patchBlock.id_records
-            for record in modFile.tops[pb_sig].getActiveRecords():
-                if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -367,49 +210,47 @@ class NpcCheckerPatcher(Patcher):
         final_eyes = {}
         defaultMaleHair = {}
         defaultFemaleHair = {}
-        maleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
-                     if not x.flags.notMale}
-        femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
-                       if not x.flags.notFemale}
-        for race in patchFile.tops[b'RACE'].records:
-            if (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)) and race.eyes:
-                final_eyes[race.fid] = [x for x in
-                                        self.vanilla_eyes.get(race.fid, [])
-                                        if x in race.eyes]
-                if not final_eyes[race.fid]:
-                    final_eyes[race.fid] = [race.eyes[0]]
-                defaultMaleHair[race.fid] = [x for x in race.hairs if
-                                             x in maleHairs]
-                defaultFemaleHair[race.fid] = [x for x in race.hairs if
-                                               x in femaleHairs]
+        maleHairs = {f for f, x in patchFile.tops[b'HAIR'].id_records.items()
+                     if not x.flags.not_male}
+        femaleHairs = {f for f, x in patchFile.tops[b'HAIR'].id_records.items()
+                       if not x.flags.not_female}
+        skip_race_fid = bush.game.master_fid(0x038010)
+        for rid, race in patchFile.tops[b'RACE'].id_records.items():
+            if (race.flags.playable or rid == skip_race_fid) and race.eyes:
+                final_eyes[rid] = [x for x in self.vanilla_eyes.get(rid, [])
+                                   if x in race.eyes]
+                if not final_eyes[rid]:
+                    final_eyes[rid] = [race.eyes[0]]
+                defaultMaleHair[rid] = [x for x in race.hairs if
+                                        x in maleHairs]
+                defaultFemaleHair[rid] = [x for x in race.hairs if
+                                          x in femaleHairs]
         #--Npcs with unassigned eyes/hair
-        for npc in patchFile.tops[b'NPC_'].records:
-            npc_fid = npc.fid
-            if npc_fid == (_main_master, 0x000007): continue # skip player
-            if npc.full is not None and npc.race == (
-                    _main_master, 0x038010) and not reProcess.search(
-                    npc.full): continue
+        player_fid = bush.game.master_fid(0x000007)
+        for npc_fid, npc in patchFile.tops[b'NPC_'].id_records.items():
+            if npc_fid == player_fid: continue # skip player
+            if (npc.full is not None and npc.race == skip_race_fid and
+                    not reProcess.search(npc.full)): continue
             if is_templated(npc, u'useModelAnimation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
-            npc_src_plugin, npc_obj_id = npc_fid
-            random.seed(npc_obj_id) # make it deterministic
+            npc_src_plugin = npc_fid.mod_fn
+            random.seed(npc_fid.object_dex)  # make it deterministic
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             raceHair = (
                 (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
             if not npc.hairLength:
                 npc.hairLength = random.random()
                 mod_npcsFixed[npc_src_plugin] += 1
-                keep(npc_fid)
+                keep(npc_fid, npc)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         if mod_npcsFixed:
@@ -418,25 +259,17 @@ class NpcCheckerPatcher(Patcher):
                 log(f'* {src_mod}: {num_fixed:d}')
 
 #------------------------------------------------------------------------------
-class TimescaleCheckerPatcher(ModLoader):
-    patcher_group = u'Special'
-    patcher_order = 40
+class TimescaleCheckerPatcher(_Checker):
     _read_sigs = (b'GRAS',)
 
     def __init__(self, p_name, p_file):
-        super(TimescaleCheckerPatcher, self).__init__(p_name, p_file)
-        # We want to use _mod_read_records for GLOB records, not GRAS records
-        self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
+        super().__init__(p_name, p_file)
+        # needed for build patch - few mods actually have GLOB so doesn't harm
+        # but reloading the main master just for GLOB sucks
+        p_file.update_read_factories([b'GLOB'], p_file.merged_or_loaded_ord)
 
-    def scanModFile(self, modFile, progress):
-        if not (set(modFile.tops) & set(self._read_sigs)): return
-        for pb_sig in self._read_sigs:
-            patch_block = self.patchFile.tops[pb_sig]
-            id_records = patch_block.id_records
-            for rfid, record in modFile.tops[pb_sig].iter_present_records():
-                if rfid in id_records: continue
-                if record.wave_period == 0.0: continue # type: bolt.Rounder
-                patch_block.setRecord(record.getTypeCopy())
+    def _add_to_patch(self, rid, record, top_sig):
+        return record.wave_period != 0.0
 
     def buildPatch(self, log, progress):
         if not self.isActive: return
@@ -445,9 +278,9 @@ class TimescaleCheckerPatcher(ModLoader):
         # First, look in the BP to see if we have a record that overrides the
         # timescale
         def find_timescale(glob_file):
-            if b'GLOB' not in glob_file.tops: return None
-            for glob_eid, glob_rec in glob_file.tops[
-                b'GLOB'].iter_present_records(rec_key=u'eid'):
+            if not (glob_block := glob_file.tops.get(b'GLOB')): return None
+            glob_recs = glob_block.iter_present_records()
+            for glob_eid, glob_rec in ((r.eid, r) for _gkey, r in glob_recs):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value
             return None
@@ -456,11 +289,9 @@ class TimescaleCheckerPatcher(ModLoader):
         # override the timescale and look for the last override (hence the
         # reversed order)
         if final_timescale is None:
-            pf_minfs = self.patchFile.p_file_minfos
-            relevant_plugins = [pf_minfs[p] for p
-                                in self.patchFile.merged_or_loaded_ord]
-            for r_plugin in reversed(relevant_plugins):
-                final_timescale = find_timescale(self._mod_file_read(r_plugin))
+            for r_plugin in reversed(self.patchFile.merged_or_loaded_ord):
+                final_timescale = find_timescale(
+                    self.patchFile.get_loaded_mod(r_plugin))
                 if final_timescale is not None:
                     break
         # If none of the plugins had it (this should be impossible), assume the
@@ -476,12 +307,12 @@ class TimescaleCheckerPatcher(ModLoader):
         # doing, e.g. changing timescale from 30 to 20 -> multiply wave period
         # by 1.5 (= 30/20)
         wp_multiplier = def_timescale / final_timescale
-        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
+        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].id_records.items():
             grass_rec.wave_period *= wp_multiplier
-            grasses_changed[grass_fid[0]] += 1
-            keep(grass_fid)
+            grasses_changed[grass_fid.mod_fn] += 1
+            keep(grass_fid, grass_rec)
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:
             log(u'\n=== ' + _(u'Wave Periods changed'))
             for src_mod, num_fixed in dict_sort(grasses_changed):
-                log(u'* %s: %d' % (src_mod, num_fixed))
+                log(f'* {src_mod}: {num_fixed:d}')

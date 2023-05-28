@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,8 +24,8 @@
 to the Settings Multitweaker - as well as the tweaker itself."""
 from __future__ import annotations
 
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
-from ... import bush  # for game
+from .base import CustomChoiceTweak, MultiTweaker, MultiTweakItem
+from ... import bush # for game
 
 class _ASettingsTweak(MultiTweakItem):
     """Shared code of GLOB and GMST tweaks."""
@@ -175,7 +175,7 @@ class _AGmstTweak(_ASettingsTweak):
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
-        if record.fid[0] not in bush.game.bethDataFiles:
+        if record.fid.mod_fn not in bush.game.bethDataFiles:
             return False # Avoid adding new masters just for a game setting
         rec_eid = record.eid.lower()
         if rec_eid not in self.eid_was_itpo: return False # not needed
@@ -1194,6 +1194,10 @@ class GmstTweak_Gore_CombatDismemberPartChance(_AGmstCCTweak):
                      (u'100', 100)]
     default_choice = u'50'
 
+class GmstTweak_Gore_CombatDismemberPartChance_Fo4(
+    GmstTweak_Gore_CombatDismemberPartChance):
+    default_choice = '25'
+
 #------------------------------------------------------------------------------
 class GmstTweak_Gore_CombatExplodePartChance(_AGmstCCTweak):
     tweak_name = _(u'Gore: Combat Explode Part Chance')
@@ -1205,6 +1209,28 @@ class GmstTweak_Gore_CombatExplodePartChance(_AGmstCCTweak):
                      (u'75',   75),
                      (u'100', 100)]
     default_choice = u'75'
+
+class GmstTweak_Gore_CombatExplodePartChance_Fo4(
+    GmstTweak_Gore_CombatExplodePartChance):
+    tweak_choices = [('0',     0),
+                     ('5',     5),
+                     ('25',   25),
+                     ('50',   50),
+                     ('75',   75),
+                     ('100', 100)]
+    default_choice = '5'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Gore_CombatTorsoExplodeChance(_AGmstCCTweak):
+    tweak_name = _('Gore: Combat Torso Explode Chance')
+    tweak_tip = _('The chance your hits will make enemies explode.')
+    tweak_key = ('iMessTorsoExplodeChance' ,)
+    tweak_choices = [('0',     0),
+                     ('25',   25),
+                     ('50',   50),
+                     ('75',   75),
+                     ('100', 100)]
+    default_choice = '75'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Movement_BaseSpeed(_AGmstCCTweak):
@@ -1299,6 +1325,15 @@ class GmstTweak_Hacking_MaximumNumberOfWords(_AGmstCCTweak):
                      (u'16', 16),
                      (u'20', 20)]
     default_choice = u'20'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Visuals_TerminalDisplayRate(_AGmstCCTweak):
+    tweak_name = _('Visuals: Terminal Display Rate')
+    tweak_tip = _('Controls terminal text display speed.')
+    tweak_key = ('iTerminalDisplayRate',)
+    tweak_choices = [('60',     60),
+                     ('1000', 1000)]
+    default_choice = '60'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Visuals_ShellCameraDistance(_AGmstCCTweak):
@@ -1562,9 +1597,9 @@ class GmstTweak_Visuals_SecundaSpeed(_AGmstCCUnitsTweak):
 #------------------------------------------------------------------------------
 class GmstTweak_AI_BumpReactionDelay(_AGmstCCTweak):
     tweak_name = _(u'AI: Bump Reaction Delay')
-    tweak_tip = _(u'Changes how long it takes until NPCs (particularly '
-                  u'followers) that have commented on you bumping into them '
-                  u'repeat that dialogue. Infinite effectively disables it.')
+    tweak_tip = _('Changes how long it takes until NPCs (particularly '
+                  'followers) that have commented on you bumping into them '
+                  'repeat that dialog. Infinite effectively disables it.')
     tweak_key = (u'fBumpReactionSmallDelayTime',)
     tweak_choices = [(_(u'Infinite'), 99999.0),
                      (_(u'10x Longer'),  10.0),

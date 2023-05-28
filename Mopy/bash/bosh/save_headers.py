@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -33,24 +33,36 @@ import copy
 import io
 import sys
 import zlib
-from collections import OrderedDict
 from functools import partial
 
 import lz4.block
 
 from .. import bolt
-from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
-    unpack_short, unpack_float, unpack_str16, unpack_byte, \
-    unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
-    unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
-    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
-    struct_error, remove_newlines, deprint, FName
-from ..exception import SaveHeaderError, AbstractError
+from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
+    pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
+    remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
+    unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
+    unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
+    unpack_str_int_delim
+from ..exception import SaveHeaderError
 
 # Utilities -------------------------------------------------------------------
-def _pack_c(out, value, __pack=structs_cache[u'=c'].pack):
+def _unpack_fstr8(ins) -> bytes:
+    return ins.read(8)
+def _unpack_fstr16(ins) -> bytes:
+    return ins.read(16)
+def _pack_c(out, value, __pack=structs_cache['=c'].pack):
     out.write(__pack(value))
-unpack_fstr16 = partial(unpack_string, string_len=16)
+def _pack_string(out, val: bytes):
+    out.write(val)
+def _skip_str8(ins):
+    ins.seeek(unpack_byte(ins), 1)
+def _skip_str16(ins):
+    ins.seek(unpack_short(ins), 1)
+def _write_s16_list(out, master_bstrs):
+    for master_bstr in master_bstrs:
+        pack_short(out, len(master_bstr))
+        out.write(master_bstr)
 
 class SaveFileHeader(object):
     save_magic = b'OVERRIDE'
@@ -61,7 +73,7 @@ class SaveFileHeader(object):
                  u'masters', u'_save_info', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
-    unpackers = OrderedDict()
+    _unpackers = {}
 
     def __init__(self, save_inf, load_image=False, ins=None):
         self._save_info = save_inf
@@ -78,17 +90,17 @@ class SaveFileHeader(object):
             else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, struct_error, OverflowError) as e:
+        except (OSError, struct_error) as e:
             err_msg = f'Failed to read {self._save_info.abs_path}'
             deprint(err_msg, traceback=True)
             raise SaveHeaderError(err_msg) from e
 
     def load_header(self, ins, load_image=False):
-        save_magic = unpack_string(ins, len(self.__class__.save_magic))
+        save_magic = ins.read(len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
-        for attr, (__pack, _unpack) in self.__class__.unpackers.items():
+        for attr, (__pack, _unpack) in self.__class__._unpackers.items():
             setattr(self, attr, _unpack(ins))
         self.load_image_data(ins, load_image)
         self._load_masters(ins)
@@ -101,7 +113,7 @@ class SaveFileHeader(object):
         self._decode_masters()
 
     def dump_header(self, out):
-        raise AbstractError
+        raise NotImplementedError
 
     def load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)
@@ -123,6 +135,14 @@ class SaveFileHeader(object):
         self.masters = [FName(decoder(x, bolt.pluginEncoding,
             avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters]
 
+    def _encode_masters(self):
+        self.masters = [encode(x) for x in self.masters] ##: encoding?
+
+    def remap_masters(self, master_map):
+        """Remaps all masters in this save header according to the specified
+        master map (dict mapping old -> new FNames)."""
+        self.masters = [master_map.get(x, x) for x in self.masters]
+
     def calc_time(self): pass
 
     @property
@@ -139,21 +159,26 @@ class SaveFileHeader(object):
     def image_parameters(self):
         return self.ssWidth, self.ssHeight, self.ssData, self.has_alpha
 
-    def writeMasters(self, ins, out):
-        """Rewrites masters of existing save file."""
+    def write_header(self, ins, out):
+        """Write out the full save header. Needs the unaltered file stream as
+        input."""
+        # Work with encoded masters for the entire writing process
+        self._encode_masters()
+        self._do_write_header(ins, out)
+        self._decode_masters()
+
+    def _do_write_header(self, ins, out):
         out.write(ins.read(self._mastersStart))
-        oldMasters = self._write_masters(ins, out)
+        self._write_masters(ins, out)
         #--Copy the rest
         for block in iter(partial(ins.read, 0x5000000), b''):
             out.write(block)
-        return oldMasters
 
     def _write_masters(self, ins, out):
         ins.seek(4, 1) # Discard oldSize
         pack_int(out, self._master_block_size())
-        #--Skip old masters
-        numMasters = unpack_byte(ins)
-        oldMasters = self._dump_masters(ins, numMasters, out)
+        ins.seek(1, 1) # Skip old master count
+        self._dump_masters(ins, out)
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
@@ -163,22 +188,13 @@ class SaveFileHeader(object):
             # changeFormsOffset, globalDataTable3Offset
             oldOffset = unpack_int(ins)
             pack_int(out, oldOffset + offset)
-        return oldMasters
 
-    def _dump_masters(self, ins, numMasters, out):
-        oldMasters = []
-        for x in range(numMasters):
-            oldMasters.append(unpack_str16(ins))
+    def _dump_masters(self, ins, out):
+        for _x in range(len(self.masters)):
+            _skip_str16(ins)
         #--Write new masters
         pack_byte(out, len(self.masters))
-        self._encode_masters(out, self.masters)
-        return oldMasters
-
-    def _encode_masters(self, out, masters_fns):
-        for fn_master in masters_fns:
-            encoded = encode(fn_master)
-            pack_short(out, len(encoded))
-            out.write(encoded)
+        _write_s16_list(out, self.masters)
 
     def _master_block_size(self):
         return 1 + sum(len(x) + 2 for x in self.masters)
@@ -200,47 +216,45 @@ class OblivionSaveHeader(SaveFileHeader):
 
     ##: exe_time and gameTime are SYSTEMTIME structs, as described here:
     # https://docs.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-systemtime
-    unpackers = OrderedDict([
-        (u'major_version',  (pack_byte, unpack_byte)),
-        (u'minor_version',  (pack_byte, unpack_byte)),
-        (u'exe_time',       (pack_string, unpack_fstr16)),
-        (u'header_version', (pack_int, unpack_int)),
-        (u'header_size',    (pack_int, unpack_int)),
-        (u'saveNum',        (pack_int, unpack_int)),
-        (u'pcName',         (_pack_str8_1, unpack_str8)),
-        (u'pcLevel',        (pack_short, unpack_short)),
-        (u'pcLocation',     (_pack_str8_1, unpack_str8)),
-        (u'gameDays',       (pack_float, unpack_float)),
-        (u'gameTicks',      (pack_int, unpack_int)),
-        (u'gameTime',       (pack_string, unpack_fstr16)),
-        (u'ssSize',         (pack_int, unpack_int)),
-        (u'ssWidth',        (pack_int, unpack_int)),
-        (u'ssHeight',       (pack_int, unpack_int)),
-    ])
+    _unpackers = {
+        'major_version':  (pack_byte, unpack_byte),
+        'minor_version':  (pack_byte, unpack_byte),
+        'exe_time':       (_pack_string, _unpack_fstr16),
+        'header_version': (pack_int, unpack_int),
+        'header_size':    (pack_int, unpack_int),
+        'saveNum':        (pack_int, unpack_int),
+        'pcName':         (_pack_str8_1, unpack_str8),
+        'pcLevel':        (pack_short, unpack_short),
+        'pcLocation':     (_pack_str8_1, unpack_str8),
+        'gameDays':       (pack_float, unpack_float),
+        'gameTicks':      (pack_int, unpack_int),
+        'gameTime':       (_pack_string, _unpack_fstr16),
+        'ssSize':         (pack_int, unpack_int),
+        'ssWidth':        (pack_int, unpack_int),
+        'ssHeight':       (pack_int, unpack_int),
+    }
 
     def _write_masters(self, ins, out):
         #--Skip old masters
-        numMasters = unpack_byte(ins)
-        oldMasters = []
-        for x in range(numMasters):
-            oldMasters.append(unpack_str8(ins))
+        ins.skip(1, 1)
+        for x in range(len(self.masters)):
+            _skip_str8(ins)
         #--Write new masters
         self.__write_masters_ob(out)
         #--Fids Address
         offset = out.tell() - ins.tell()
         fidsAddress = unpack_int(ins)
         pack_int(out, fidsAddress + offset)
-        return oldMasters
 
     def __write_masters_ob(self, out):
         pack_byte(out, len(self.masters))
-        for master in self.masters:
-            pack_str8(out, encode(master))
+        for master_bstr in self.masters:
+            pack_str8(out, master_bstr)
 
     def dump_header(self, out):
         out.write(self.__class__.save_magic)
         var_fields_size = 0
-        for attr, (_pack, __unpack) in self.unpackers.items():
+        for attr, (_pack, __unpack) in self._unpackers.items():
             ret = _pack(out, getattr(self, attr))
             if ret is not None:
                 var_fields_size += ret
@@ -252,10 +266,12 @@ class OblivionSaveHeader(SaveFileHeader):
         self.header_size = var_fields_size + 42 + len(self.ssData)
         self._mastersStart = out.tell()
         out.seek(34)
-        self.unpackers[u'header_size'][0](out, self.header_size)
+        self._unpackers['header_size'][0](out, self.header_size)
         out.seek(self._mastersStart)
         out.write(self.ssData)
+        self._encode_masters()
         self.__write_masters_ob(out)
+        self._decode_masters()
 
 class SkyrimSaveHeader(SaveFileHeader):
     """Valid Save Game Versions 8, 9, 12 (?)"""
@@ -268,32 +284,26 @@ class SkyrimSaveHeader(SaveFileHeader):
                  u'_compressType', u'_sse_start', u'has_esl_masters',
                  'masters_regular', 'masters_esl')
 
-    unpackers = OrderedDict([
-        (u'header_size', (00, unpack_int)),
-        (u'version',     (00, unpack_int)),
-        (u'saveNumber',  (00, unpack_int)),
-        (u'pcName',      (00, unpack_str16)),
-        (u'pcLevel',     (00, unpack_int)),
-        (u'pcLocation',  (00, unpack_str16)),
-        (u'gameDate',    (00, unpack_str16)),
-        (u'raceEid',     (00, unpack_str16)), # pcRace
-        (u'pcSex',       (00, unpack_short)),
-        (u'pcExp',       (00, unpack_float)),
-        (u'pcLvlExp',    (00, unpack_float)),
-        (u'filetime',    (00, lambda ins: unpack_string(ins, 8))),
-        (u'ssWidth',     (00, unpack_int)),
-        (u'ssHeight',    (00, unpack_int)),
-    ])
+    _unpackers = {
+        'header_size': (00, unpack_int),
+        'version':     (00, unpack_int),
+        'saveNumber':  (00, unpack_int),
+        'pcName':      (00, unpack_str16),
+        'pcLevel':     (00, unpack_int),
+        'pcLocation':  (00, unpack_str16),
+        'gameDate':    (00, unpack_str16),
+        'raceEid':     (00, unpack_str16), # pcRace
+        'pcSex':       (00, unpack_short),
+        'pcExp':       (00, unpack_float),
+        'pcLvlExp':    (00, unpack_float),
+        'filetime':    (00, _unpack_fstr8),
+        'ssWidth':     (00, unpack_int),
+        'ssHeight':    (00, unpack_int),
+    }
 
     def __is_sse(self): return self.version == 12
 
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
-
-    @property
-    def can_edit_header(self):
-        ##: In order to re-enable this, we have to handle ESL and regular
-        # masters separately when editing the masterlist
-        return False
 
     @property
     def masters(self):
@@ -361,6 +371,15 @@ class SkyrimSaveHeader(SaveFileHeader):
             avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_regular]
         self.masters_esl = [FName(decoder(x, bolt.pluginEncoding,
             avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_esl]
+
+    def _encode_masters(self):
+        self.masters_regular = [encode(x) for x in self.masters_regular]
+        self.masters_esl = [encode(x) for x in self.masters_esl]
+
+    def remap_masters(self, master_map):
+        self.masters_regular = [master_map.get(x, x)
+                                for x in self.masters_regular]
+        self.masters_esl = [master_map.get(x, x) for x in self.masters_esl]
 
     def _sse_compress(self, to_compress):
         """Compresses the specified data using either LZ4 or zlib, depending on
@@ -481,10 +500,10 @@ class SkyrimSaveHeader(SaveFileHeader):
         self.gameDays = float(playSeconds) / (24 * 60 * 60)
         self.gameTicks = playSeconds * 1000
 
-    def writeMasters(self, ins, out):
+    def _do_write_header(self, ins, out):
         if not self.__is_sse() or self._compressType == 0:
             # Skyrim LE or uncompressed - can use the default implementation
-            return super(SkyrimSaveHeader, self).writeMasters(ins, out)
+            return super()._do_write_header(ins, out)
         # Write out everything up until the compressed portion
         out.write(ins.read(self._sse_start))
         # Now we need to decompress the portion again
@@ -495,7 +514,7 @@ class SkyrimSaveHeader(SaveFileHeader):
         to_compress = io.BytesIO()
         pack_byte(to_compress, self._formVersion)
         ins.seek(1, 1) # skip the form version
-        old_masters = self._write_masters(ins, to_compress)
+        self._write_masters(ins, to_compress)
         for block in iter(partial(ins.read, 0x5000000), b''):
             to_compress.write(block)
         # Compress the gathered data, write out the sizes and finally write out
@@ -504,31 +523,25 @@ class SkyrimSaveHeader(SaveFileHeader):
         pack_int(out, to_compress.tell())   # decompressed_size
         pack_int(out, len(compressed_data)) # compressed_size
         out.write(compressed_data)
-        return old_masters
 
-    def _dump_masters(self, ins, numMasters, out):
-        # Store these two blocks distinctly, *never* combine them - that
-        # destroys critical information since there is no way to tell ESL
-        # status just from the name
-        regular_masters = []
-        esl_masters = []
-        for x in range(numMasters):
-            regular_masters.append(unpack_str16(ins))
+    def _dump_masters(self, ins, out):
+        # Skip the old masters
+        reg_master_count = len(self.masters_regular)
+        esl_master_count = len(self.masters_esl)
+        for x in range(reg_master_count):
+            _skip_str16(ins)
         # SSE/FO4 format has separate ESL block
         has_esl_block = self._esl_block()
         if has_esl_block:
-            _num_esl_masters = unpack_short(ins)
-            for count in range(_num_esl_masters):
-                esl_masters.append(unpack_str16(ins))
-        # Write out the (potentially altered) masters - note that we have to
-        # encode here, since we may be writing to BytesIO instead of a file
-        num_regulars = len(regular_masters)
-        pack_byte(out, num_regulars)
-        self._encode_masters(out, self.masters[:num_regulars])
+            ins.seek(2, 1) # skip ESL count
+            for count in range(esl_master_count):
+                _skip_str16(ins)
+        # Write out the (potentially altered) masters
+        pack_byte(out, len(self.masters_regular))
+        _write_s16_list(out, self.masters_regular)
         if has_esl_block:
-            pack_short(out, len(esl_masters))
-            self._encode_masters(out, self.masters[num_regulars:])
-        return regular_masters + esl_masters
+            pack_short(out, len(self.masters_esl))
+            _write_s16_list(out, self.masters_esl)
 
     def _master_block_size(self):
         return (3 if self._esl_block() else 1) + sum(
@@ -562,9 +575,8 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
         # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
         # So handle it by concatenating digits until we hit a non-digit char
-        def parse_int(gd_bytes):
+        def parse_int(gd_bytes: bytes):
             int_data = b''
-            ##: PY3.10: Use iterbytes (PEP 467)
             for i in gd_bytes:
                 c = i.to_bytes(1, sys.byteorder)
                 if c.isdigit():
@@ -580,28 +592,28 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         self.gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes
                              * 60) * 1000
 
-    def writeMasters(self, ins, out):
+    def _do_write_header(self, ins, out):
         # Call the SaveFileHeader version - *not* the Skyrim one
-        return super(SkyrimSaveHeader, self).writeMasters(ins, out)
+        return super(SkyrimSaveHeader, self)._do_write_header(ins, out)
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = b'FO3SAVEGAME'
     __slots__ = (u'language', u'save_number', u'pcNick', u'version',
                  u'gameDate')
     _masters_unknown_byte = 0x1B
-    unpackers = OrderedDict([
-        (u'header_size', (00, unpack_int)),
-        (u'version',     (00, unpack_str_int_delim)),
-        (u'language',    (00, lambda ins: unpack_many(ins, u'64sc')[0])),
-        (u'ssWidth',     (00, unpack_str_int_delim)),
-        (u'ssHeight',    (00, unpack_str_int_delim)),
-        (u'save_number', (00, unpack_str_int_delim)),
-        (u'pcName',      (00, unpack_str16_delim)),
-        (u'pcNick',      (00, unpack_str16_delim)),
-        (u'pcLevel',     (00, unpack_str_int_delim)),
-        (u'pcLocation',  (00, unpack_str16_delim)),
-        (u'gameDate',    (00, unpack_str16_delim)),
-    ])
+    _unpackers = {
+        'header_size': (00, unpack_int),
+        'version':     (00, unpack_str_int_delim),
+        'language':    (00, lambda ins: unpack_many(ins, '64sc')[0]),
+        'ssWidth':     (00, unpack_str_int_delim),
+        'ssHeight':    (00, unpack_str_int_delim),
+        'save_number': (00, unpack_str_int_delim),
+        'pcName':      (00, unpack_str16_delim),
+        'pcNick':      (00, unpack_str16_delim),
+        'pcLevel':     (00, unpack_str_int_delim),
+        'pcLocation':  (00, unpack_str16_delim),
+        'gameDate':    (00, unpack_str16_delim),
+    }
 
     def _load_masters(self, ins):
         self._mastersStart = ins.tell()
@@ -623,8 +635,8 @@ class FalloutNVSaveHeader(SaveFileHeader):
         pack_byte(out, self._masters_unknown_byte)
         pack_int(out, self._master_block_size())
         #--Skip old masters
-        numMasters = unpack_str_byte_delim(ins) # get me the Byte
-        oldMasters = self._dump_masters(ins, numMasters, out)
+        unpack_str_byte_delim(ins)
+        self._dump_masters(ins, out)
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
@@ -632,21 +644,18 @@ class FalloutNVSaveHeader(SaveFileHeader):
             # formIdArrayCount offset and 5 others
             oldOffset = unpack_int(ins)
             pack_int(out, oldOffset + offset)
-        return oldMasters
 
-    def _dump_masters(self, ins, numMasters, out):
-        oldMasters = []
-        for count in range(numMasters):
-            oldMasters.append(unpack_str16_delim(ins))
+    def _dump_masters(self, ins, out):
+        for _x in range(len(self.masters)):
+            unpack_str16_delim(ins)
         # Write new masters - note the silly delimiters
         pack_byte(out, len(self.masters))
         _pack_c(out, b'|')
-        for master in self.masters:
-            pack_short(out, len(master))
+        for master_bstr in self.masters:
+            pack_short(out, len(master_bstr))
             _pack_c(out, b'|')
-            out.write(encode(master))
+            out.write(master_bstr)
             _pack_c(out, b'|')
-        return oldMasters
 
     def _master_block_size(self):
         return 2 + sum(len(x) + 4 for x in self.masters)
@@ -662,8 +671,8 @@ class Fallout3SaveHeader(FalloutNVSaveHeader):
     save_magic = b'FO3SAVEGAME'
     __slots__ = ()
     _masters_unknown_byte = 0x15
-    unpackers = copy.copy(FalloutNVSaveHeader.unpackers)
-    del unpackers[u'language']
+    _unpackers = copy.copy(FalloutNVSaveHeader._unpackers)
+    del _unpackers['language']
 
 class MorrowindSaveHeader(SaveFileHeader):
     """Morrowind saves are identical in format to record definitions.
@@ -676,7 +685,7 @@ class MorrowindSaveHeader(SaveFileHeader):
         from . import ModInfo
         save_info = ModInfo(self._save_info.abs_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
-        self.header_size = save_info.header.size
+        self.header_size = save_info.header.header.blob_size
         self.pcName = remove_newlines(save_info.header.pc_name)
         self.pcLevel = 0
         self.pcLocation = remove_newlines(save_info.header.curr_cell)
@@ -706,11 +715,10 @@ def get_save_header_type(game_fsName):
     """:rtype: type"""
     if game_fsName == u'Oblivion':
         return OblivionSaveHeader
-    elif game_fsName in (u'Enderal', u'Skyrim',  u'Skyrim Special Edition',
-                         u'Skyrim VR', u'Enderal Special Edition',
-                         u'Skyrim Special Edition MS'):
+    elif game_fsName in ('Enderal', 'Skyrim',  'Skyrim Special Edition',
+                         'Skyrim VR', 'Enderal Special Edition'):
         return SkyrimSaveHeader
-    elif game_fsName in (u'Fallout4',  u'Fallout4VR', u'Fallout4 MS'):
+    elif game_fsName in ('Fallout4',  'Fallout4VR'):
         return Fallout4SaveHeader
     elif game_fsName == u'FalloutNV':
         return FalloutNVSaveHeader

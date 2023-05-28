@@ -16,14 +16,29 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses DocumentViewer, a class for viewing various types of documents (e.g.
 webpages, text and PDFs)."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
+
+import webbrowser
+from enum import Enum
+from urllib.parse import urljoin
+from urllib.request import pathname2url
+
+import wx as _wx
+
+from .base_components import _AComponent
+from .buttons import PureImageButton
+from .layouts import VLayout
+from .text_components import TextArea
+from ..bolt import decoder, deprint, redirect_stdout_to_deprint
+from ..exception import StateError
 
 # Try to import html2 webview, may not be available everywhere
 try:
@@ -36,38 +51,11 @@ except ImportError:
     _wx_html2 = _browser_backend = None
 # Try to import the PDF viewer, may not be available everywhere
 try:
-    ##: HACK until wxPython is updated to account for PyMuPDF 1.19+ renames
-    # See https://github.com/wxWidgets/Phoenix/issues/2204
-    import fitz
-    class _BackwardsCompatDocument(fitz.Document):
-        @property
-        def pageCount(self):
-            return self.page_count
-        def loadPage(self, page_id):
-            ret_page = self.load_page(page_id)
-            ret_page.getPixmap = ret_page.get_pixmap
-            return ret_page
-    fitz.open = _BackwardsCompatDocument
     # wx.lib.pdfviewer uses a raw print statment, UGH!
-    from ..bolt import redirect_stdout_to_deprint
     with redirect_stdout_to_deprint():
         from wx.lib.pdfviewer import pdfViewer as _PdfViewer
 except ImportError:
     _PdfViewer = None
-import wx as _wx
-
-import webbrowser
-from enum import Enum
-from urllib.request import pathname2url
-from urllib.parse import urljoin
-
-from .base_components import _AComponent
-from .buttons import BackwardButton, ForwardButton, ReloadButton
-from .text_components import TextArea
-from .layouts import VLayout
-from .. import bass ##: drop this
-from ..bolt import decoder, deprint
-from ..exception import StateError
 
 def web_viewer_available():
     """Checks if WebViewer and its wx backing are available, meaning that we
@@ -99,24 +87,28 @@ class WebViewer(_AComponent):
     reloading the current page."""
     _native_widget: _wx_html2.WebView
 
-    def __init__(self, parent, reload_ico, buttons_parent=None):
+    def __init__(self, parent, icon_list, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
 
         :param parent: The object that this web viewer belongs to. May be a wx
-                       object or a component.
-        :param reload_ico: a _wx.Bitmap to use for the reload button
+            object or a component.
+        :param icon_list: A tuple of _wx.Bitmaps to use for the image buttons.
+            Order is back, forward, reload.
         :param buttons_parent: The object that the navigation buttons belong
-                               to. If None, the same parent will be used."""
+            to. If None, the same parent will be used."""
         if buttons_parent is None: buttons_parent = parent
         # Can't use _AComponent.__init__ because we can't instantiate WebView
         # directly
         self._native_widget = _wx_html2.WebView.New(
             self._resolve(parent), backend=_browser_backend)
-        self._back_button = BackwardButton(buttons_parent)
+        self._back_button = PureImageButton(buttons_parent, icon_list[0],
+            btn_tooltip=_('Go Back'))
         self._back_button.on_clicked.subscribe(self.go_back)
-        self._forward_button = ForwardButton(buttons_parent)
+        self._forward_button = PureImageButton(buttons_parent, icon_list[1],
+            btn_tooltip=_('Go Forwards'))
         self._forward_button.on_clicked.subscribe(self.go_forward)
-        self._reload_button = ReloadButton(buttons_parent, reload_ico)
+        self._reload_button = PureImageButton(buttons_parent, icon_list[2],
+            btn_tooltip=_('Reload'))
         self._reload_button.on_clicked.subscribe(self.reload)
         # Events - internal use only for now, expose if needed
         self._on_new_window = self._evt_handler(
@@ -126,7 +118,7 @@ class WebViewer(_AComponent):
         self._on_loading.subscribe(self.update_buttons)
 
     @staticmethod
-    def _handle_new_window_opened(new_url): # type: (str) -> None
+    def _handle_new_window_opened(new_url: str):
         """Internal method used as a callback when attempting to open a link
         in a new tab or window. We don't support that, so we just open it in
         the user's browser instead.
@@ -168,14 +160,14 @@ class WebViewer(_AComponent):
         # do this just in case CanGoForward() is false and we're out of sync
         self.update_buttons()
 
-    def open_file(self, file_path): # type: (str) -> None
+    def open_file(self, file_path: str):
         """Opens the specified file by turning it into a 'file:' URL.
 
         :param file_path: The path to the file to open."""
         file_url = urljoin(u'file:', pathname2url(file_path))
         self.open_url(file_url)
 
-    def open_url(self, url): # type: (str) -> None
+    def open_url(self, url: str):
         """Opens the specified URL.
 
         :param url: The URL to open."""
@@ -224,29 +216,32 @@ class DocumentViewer(_AComponent):
     """A viewer for a variety of document types. Can display webpages, text and
     PDFs."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, icon_list):
         """Creates a new DocumentViewer with the specified parent.
 
         :param parent: The object that this HTML display belongs to. May be a
-                       wx object or a component."""
-        super(DocumentViewer, self).__init__(parent)
+            wx object or a component.
+        :param icon_list: A tuple of _wx.Bitmaps to use for the image buttons.
+            Order is back, forward, reload."""
+        super().__init__(parent)
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
-        reload_ico = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
-                                _wx.BITMAP_TYPE_PNG)
         if web_viewer_available():
             # We can render HTML, create the WebViewer and use its buttons
-            self._html_ctrl = WebViewer(self, reload_ico, parent)
+            self._html_ctrl = WebViewer(self, icon_list, parent)
             self._prev_button, self._next_button, self._reload_button = \
                 self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
             self._text_ctrl.enabled = False
         else:
             # Emulate the buttons WebViewer would normally provide
-            self._prev_button = BackwardButton(parent)
-            self._next_button = ForwardButton(parent)
-            self._reload_button = ReloadButton(parent, reload_ico)
+            self._prev_button = PureImageButton(parent, icon_list[0],
+                btn_tooltip='')
+            self._next_button = PureImageButton(parent, icon_list[1],
+                btn_tooltip='')
+            self._reload_button = PureImageButton(parent, icon_list[2],
+                btn_tooltip='')
         if pdf_viewer_available():
             self._pdf_ctrl = PDFViewer(self)
             items.append(self._pdf_ctrl)
@@ -297,8 +292,7 @@ class DocumentViewer(_AComponent):
         """Changes whether the text display is marked as modified or not."""
         self._text_ctrl.modified = text_modified
 
-    def set_text_editable(self, text_editable):
-        # type: (bool) -> None
+    def set_text_editable(self, text_editable: bool):
         """Changes whether or not the text display is editable."""
         self._text_ctrl.editable = text_editable
 
@@ -322,7 +316,8 @@ class DocumentViewer(_AComponent):
         self.update_layout()
 
     def get_buttons(self):
-        """Returns the three navigation buttons as a tuple."""
+        """Returns the three navigation buttons as a tuple. Order is prev,
+        next, reload."""
         return self._prev_button, self._next_button, self._reload_button
 
     def try_load_html(self, file_path):

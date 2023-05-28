@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,22 +24,21 @@
 special.py."""
 
 from ....bolt import FName
-from ....patcher.base import Abstract_Patcher
+from ....patcher.base import ScanPatcher
 
 cobl_main = FName(u'Cobl Main.esm')
 
-class ExSpecial(Abstract_Patcher):
+class ExSpecial(ScanPatcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
     sense as they did not use scan_more."""
     patcher_group = u'Special'
     patcher_order = 40
     patcher_name = u'UNDEFINED'
     patcher_desc = u'UNDEFINED'
-    _config_key = None # type: str
+    _config_key: str = None
 
     @classmethod
     def gui_cls_vars(cls):
         """Class variables for gui patcher classes created dynamically."""
-        return {u'patcher_type': cls, u'patcher_desc': cls.patcher_desc,
-                u'patcher_name': cls.patcher_name,
-                u'_config_key': cls._config_key}
+        return {'patcher_type': cls, 'patcher_desc': cls.patcher_desc,
+            'patcher_name': cls.patcher_name, '_config_key': cls._config_key}

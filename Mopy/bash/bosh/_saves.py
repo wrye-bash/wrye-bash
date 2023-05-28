@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,17 +27,17 @@ coded for rest of the games."""
 import array
 from collections import Counter, defaultdict
 from io import BytesIO
-from itertools import starmap, repeat
+from itertools import repeat, starmap
 
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
-    unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache, unpack_str8, dict_sort, sig_to_str
-from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
-    unpack_header, int_unpacker
-from ..exception import ModError, StateError, AbstractError
-from ..mod_files import ModFile, LoadFactory
+from ..bolt import Flags, SubProgress, deprint, dict_sort, encode, flag, \
+    pack_byte, pack_int, pack_short, sig_to_str, struct_unpack, \
+    structs_cache, unpack_int, unpack_many, unpack_short, unpack_str8
+from ..brec import FormId, ModReader, MreRecord, RecordType, \
+    ShortFidWriteContext, int_unpacker, unpack_header
+from ..exception import ModError, StateError
+from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -48,18 +48,18 @@ class SreNPC(object):
     """NPC change record."""
     __slots__ = ('form', 'health', 'unused2', 'attributes', 'acbs', 'spells',
                  'factions', 'full', 'ai', 'skills', 'modifiers')
-    sre_flags = Flags.from_names(
-        (0, 'form'),
-        (2, 'health'),
-        (3, 'attributes'),
-        (4, 'acbs'),
-        (5, 'spells'),
-        (6, 'factions'),
-        (7, 'full'),
-        (8, 'ai'),
-        (9, 'skills'),
-        (28, 'modifiers'),
-    )
+
+    class sre_flags(Flags):
+        form: bool
+        health: bool = flag(2)
+        attributes: bool
+        acbs: bool
+        spells: bool
+        factions: bool
+        full: bool
+        ai: bool
+        skills: bool
+        modifiers: bool = flag(28)
 
     class ACBS(object):
         __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
@@ -70,7 +70,7 @@ class SreNPC(object):
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = MreRecord.type_class[b'NPC_']._flags(self.flags)
+            self.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(self.flags)
 
         def __str__(self):
             return '\n'.join(
@@ -139,8 +139,8 @@ class SreNPC(object):
         #--Factions
         if self.factions is not None:
             pack_short(out, len(self.factions))
-            for faction in self.factions:
-                _pack(u'=Ib', *faction)
+            for fa in self.factions:
+                _pack(u'=Ib', *fa)
         #--Spells
         if self.spells is not None:
             num = len(self.spells)
@@ -186,8 +186,8 @@ class SreNPC(object):
             buff.append(f'{self.acbs}')
         if self.factions is not None:
             buff.append('Factions:')
-            for faction in self.factions:
-                buff.append(f'  {fids[faction[0]]:8X} {faction[1]:2X}')
+            for fa in self.factions:
+                buff.append(f'  {fids[fa[0]]:8X} {fa[1]:2X}')
         if self.spells is not None:
             buff.append('Spells:')
             for spell in self.spells:
@@ -219,12 +219,32 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags.from_names('form', 'baseid', 'moved', 'havocMoved',
-        'scale', 'allExtra', 'lock', 'owner', 'unk8', 'unk9', 'mapMarkerFlags',
-        'hadHavokMoveFlag', 'unk12', 'unk13', 'unk14', 'unk15', 'emptyFlag',
-        'droppedItem', 'doorDefaultState', 'doorState', 'teleport',
-        'extraMagic', 'furnMarkers', 'oblivionFlag', 'movementExtra',
-        'animation', 'script', 'inventory', 'created', 'unk29', 'enabled')
+
+    class recordFlags(Flags):
+        form: bool
+        baseid: bool
+        moved: bool
+        havokMoved: bool
+        scale: bool
+        allExtra: bool
+        lock: bool
+        owner: bool
+        mapMarkerFlags: bool = flag(10)
+        hadHavokMoveFlag: bool
+        emptyFlag: bool = flag(16)
+        droppedItem: bool
+        doorDefaultSate: bool
+        doorState: bool
+        teleport: bool
+        extraMagic: bool
+        furnMarkers: bool
+        oblivionFlag: bool
+        movementExtra: bool
+        animation: bool
+        script: bool
+        inventory: bool
+        created: bool
+        enabled: bool = flag(30)
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo
@@ -322,7 +342,7 @@ class SaveFile(object):
         if not self.canSave:
             raise StateError('Insufficient data to write file.')
         outPath = outPath or self.fileInfo.getPath()
-        with outPath.open(u'wb') as out:
+        with ShortFidWriteContext(outPath) as out:
             def _pack(fmt, *args):
                 out.write(structs_cache[fmt].pack(*args))
             #--Progress
@@ -385,12 +405,12 @@ class SaveFile(object):
         if master not in self._masters:
             self._masters.append(master)
 
-    def getFid(self,iref,default=None):
+    def getFid(self, iref, iref_default=None):
         """Returns fid corresponding to iref."""
-        if not iref: return default
+        if not iref: return iref_default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(self.fileInfo.fn_key,
-                                                  u'IRef from Mars.')
+        if iref >= len(self.fids):
+            raise ModError(self.fileInfo.fn_key, 'IRef from Mars.')
         return self.fids[iref]
 
     def getIref(self,fid):
@@ -432,7 +452,7 @@ class SaveFile(object):
         created_sizes = defaultdict(int)
         created_counts = Counter()
         for citem in self.created.values():
-            created_sizes[citem._rec_sig] += citem.size
+            created_sizes[citem._rec_sig] += citem.header.blob_size
             created_counts[citem._rec_sig] += 1
         for rsig, csize in dict_sort(created_sizes):
             log(f'  {created_counts[rsig]}\t{csize // 1024} kb\t'
@@ -482,11 +502,11 @@ class SaveFile(object):
         rec_type_map = bush.game.save_rec_types
         #--Fids log
         log.setHeader(_(u'Fids'))
-        log(u'  Refed\tChanged\tMI    Mod Name')
+        log('  Refed\tChanged\tMI    Mod Name')
         log(f'  {lostRefs:d}\t\t     Lost Refs (Fid == 0)')
-        for modIndex, (irefed,changed) in enumerate(zip(idHist, changeHisto)):
-            if irefed or changed:
-                log(f'  {irefed:d}\t{changed:d}\t{modIndex:02X}   '
+        for modIndex, (irefed, changes) in enumerate(zip(idHist, changeHisto)):
+            if irefed or changes:
+                log(f'  {irefed:d}\t{changes:d}\t{modIndex:02X}   '
                     f'{getMaster(modIndex)}')
         #--Lost Changes
         if lostChanges:
@@ -629,14 +649,15 @@ class _SaveData:
         self.saveFile = SaveFile(self.saveInfo)
         self.saveFile.load(progress)
 
-    def load_data(self, progress=None): raise AbstractError
+    def load_data(self, progress=None): raise NotImplementedError
 
 class SaveSpells(_SaveData):
     """Player spells of a savegame."""
 
     def __init__(self, saveInfo):
         super().__init__(saveInfo)
-        self.allSpells = {} #--spells[(modName,objectIndex)] = (name,type)
+        #--spells[(modName,objectIndex)] = (name,type)
+        self.allSpells: dict[FormId, (str, int)] = {}
 
     def load_data(self, progress, modInfos):
         """Load savegame and extract created spells from it and its masters."""
@@ -654,26 +675,30 @@ class SaveSpells(_SaveData):
         progress(progress.full - 1, saveName)
         for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
-                allSpells[(saveName,getObjectIndex(rfid))] = record.getTypeCopy()
+                save_fid = FormId.from_tuple((saveName, rfid.object_dex))
+                allSpells[save_fid] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
         if 'bash.spellList' in modInfo.extras:
-            self.allSpells.update(modInfo.extras['bash.spellList'])
+            self.allSpells.update((FormId.from_tuple(k), v) for k, v in
+                                  modInfo.extras['bash.spellList'].items())
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
-        modFile = ModFile(modInfo, loadFactory)
-        try: modFile.load(True, catch_errors=False)
+        spell_lf = LoadFactory(False, by_sig=[b'SPEL'])
+        modFile = ModFile(modInfo, spell_lf)
+        try: modFile.load_plugin(catch_errors=False)
         except ModError as err:
             deprint(f'skipped mod due to read error ({err})')
             return
-        spells = modInfo.extras['bash.spellList'] = {record.fid: record for
-            record in modFile.tops[b'SPEL'].getActiveRecords()}
+        spells = {rid: record for rid, record in
+                  modFile.tops[b'SPEL'].iter_present_records()}
+        modInfo.extras['bash.spellList'] = {k.long_fid: v for k, v in
+                                            spells.items()}
         self.allSpells.update(spells)
 
-    def getPlayerSpells(self):
+    def getPlayerSpells(self): ##: could be refactored to use FormId machinery
         """Returns players spell list from savegame. (Returns ONLY spells. I.e., not abilities, etc.)"""
         saveFile = self.saveFile
         npc, _version = saveFile.get_npc()
@@ -690,7 +715,7 @@ class SaveSpells(_SaveData):
                 fid = iref
             else:
                 fid = saveFile.fids[iref]
-            modIndex,objectIndex = getFormIndices(fid)
+            modIndex, objectIndex = fid >> 24, fid & 0x00FFFFFF
             if modIndex == 255:
                 master = self.saveInfo.fn_key
             elif modIndex <= maxMasters:
@@ -739,11 +764,11 @@ class SaveEnchantments(_SaveData):
         enchant cost)."""
         count = 0
         for record in self.createdEnchantments:
-            if record.itemType in [1,2]:
+            if record.item_type in (1, 2):
                 charge_over_uses = 0 if uses == 0 else max(
-                    record.chargeAmount // uses, 1)
-                if record.enchantCost == charge_over_uses: continue
-                record.enchantCost = charge_over_uses
+                    record.charge_amount // uses, 1)
+                if record.enchantment_cost == charge_over_uses: continue
+                record.enchantment_cost = charge_over_uses
                 record.setChanged()
                 record.getSize()
                 count += 1

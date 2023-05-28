@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,17 +25,17 @@ from collections import defaultdict
 
 from . import SaveDetails
 from .settings_dialog import SettingsDialog
-from .. import bass, balt, bosh, bush
-from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceMenuLink, CheckLink, UIList_Rename, OneItemLink, SeparatorLink
+from .. import balt, bass, bosh, bush
+from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
+    ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
 from ..bolt import GPath
-from ..gui import ImageWrapper
+from ..gui import AutoSize, BusyCursor, ImageWrapper
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
-           u'Screens_JpgQualityCustom', u'Screen_Rename', u'Screen_ConvertTo',
+           'Screens_JpgQualityCustom', 'Screen_ConvertTo',
            u'Master_AllowEdit', u'Master_ClearRenames', u'SortByMenu',
-           u'Misc_SettingsDialog', u'Master_JumpTo']
+           'Misc_SettingsDialog', 'Master_JumpTo', 'Misc_SaveData']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -85,13 +85,13 @@ class Screens_NextScreenShot(EnabledLink):
 #------------------------------------------------------------------------------
 class Screen_ConvertTo(EnabledLink):
     """Converts selected images to another type."""
-    _help = _(u'Convert selected images to another format')
+    _help = _('Converts selected images to another format.')
 
     def __init__(self, ext):
-        super(Screen_ConvertTo, self).__init__()
-        self._ext = f'.{ext}'
-        self.imageType = ImageWrapper.typesDict[ext]
-        self._text = _('Convert to %s') % ext
+        super().__init__()
+        self._ext = ext
+        self.imageType = ImageWrapper.img_types[ext]
+        self._text = _('Convert to %(img_ext)s') % {'img_ext': ext}
 
     def _enable(self):
         self.convertable = [s for s in self.selected if s.fn_ext != self._ext]
@@ -139,18 +139,13 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
         self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
-        quality = self._askNumber(_(u'JPEG Quality'), value=self.quality,
-                                  min=0, max=100)
+        quality = self._askNumber(_(u'JPEG Quality'), initial_num=self.quality,
+                                  min_num=0, max_num=100)
         if quality is None: return
         self.quality = quality
         bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
         super().Execute()
-
-#------------------------------------------------------------------------------
-class Screen_Rename(UIList_Rename):
-    """Renames files by pattern."""
-    _help = _(u'Renames files by pattern')
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -184,7 +179,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
-    _text = _(u'Change to...')
+    _text = _('Change To...')
     _help = _(u'Rename or replace the selected master through a file dialog.')
 
     @balt.conversation
@@ -248,7 +243,6 @@ class Master_JumpTo(OneItemLink):
     def Execute(self):
         balt.Link.Frame.notebook.SelectPage(u'Mods', self._sel_master)
 
-# Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _Column(CheckLink, EnabledLink):
 
@@ -278,39 +272,42 @@ class _Column(CheckLink, EnabledLink):
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
+class _AAutoWidthLink(RadioLink):
+    """Base class for links that change the automatic column width sizing."""
+    _auto_type: int
+
+    def _check(self):
+        return self._auto_type == self.window.auto_col_widths
+
+    def Execute(self):
+        self.window.auto_col_widths = self._auto_type
+        self.window.autosizeColumns()
+
+class _FitManual(_AAutoWidthLink):
+    _text = _('Manual')
+    _help = _('Allow manual resizing of the columns.')
+    _auto_type = AutoSize.FIT_MANUAL
+
+class _FitContents(_AAutoWidthLink):
+    _text = _('Fit Contents')
+    _help = _('Fit columns to their content.')
+    _keyboard_hint = 'Ctrl+Num +'
+    _auto_type = AutoSize.FIT_CONTENTS
+
+class _FitHeader(_AAutoWidthLink):
+    _text = _('Fit Header')
+    _help = _('Fit columns to their content, keep header always visible.')
+    _auto_type = AutoSize.FIT_HEADER
+
 class ColumnsMenu(ChoiceMenuLink):
     """Customize visible columns."""
-    _text = _(u'Columns')
+    _text = _('Columns..')
     choiceLinkType = _Column
-
-    class _AutoWidth(RadioLink):
-        wxFlag = 0
-        def _check(self): return self.wxFlag == self.window.autoColWidths
-        def Execute(self):
-            self.window.autoColWidths = self.wxFlag
-            self.window.autosizeColumns()
-
-    class _Manual(_AutoWidth):
-        _text = _(u'Manual')
-        _help = _(
-            u'Allow to manually resize columns. Applies to all Bash lists')
-
-    class _Contents(_AutoWidth):
-        _text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
-        _help = _(u'Fit columns to their content. Applies to all Bash lists.'
-                 u' You can hit Ctrl + Numpad+ to the same effect')
-
-    class _Header(_AutoWidth):
-        _text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
-        _help = _(u'Fit columns to their content, keep header always visible. '
-                 u' Applies to all Bash lists')
-
-    extraItems = [_Manual(), _Contents(), _Header(), SeparatorLink()]
+    extraItems = [_FitManual(), _FitContents(), _FitHeader(), SeparatorLink()]
 
     @property
     def _choices(self): return self.window.all_allowed_cols
 
-# Sort By menu ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
@@ -326,7 +323,7 @@ class _SortBy(RadioLink):
 
 class SortByMenu(ChoiceMenuLink):
     """Link-based interface to decide what to sort the list by."""
-    _text = _(u'Sort by')
+    _text = _('Sort By..')
     choiceLinkType = _SortBy
 
     def __init__(self, sort_options=None):
@@ -342,7 +339,6 @@ class SortByMenu(ChoiceMenuLink):
     @property
     def _choices(self): return self.window.allowed_cols
 
-# Settings Dialog -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Misc_SettingsDialog(ItemLink):
     _text = _(u'Global Settings...')
@@ -351,3 +347,14 @@ class Misc_SettingsDialog(ItemLink):
 
     def Execute(self):
         SettingsDialog.display_dialog()
+
+#------------------------------------------------------------------------------
+class Misc_SaveData(ItemLink):
+    """Saves WB settings and data."""
+    _text = _('Save Data')
+    _help = _("Saves Wrye Bash's settings and data.")
+    _keyboard_hint = 'Ctrl+S'
+
+    def Execute(self):
+        with BusyCursor():
+            Link.Frame.SaveSettings()

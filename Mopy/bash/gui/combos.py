@@ -16,34 +16,38 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses some high-level components that are formed by combining other
 components."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
 
+from itertools import chain
+from collections.abc import Iterable
+
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, scaled
 from .buttons import Button
 from .events import EventResult
 from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
     VLayout
 from .misc_components import HorizontalLine
 from .multi_choices import ListBox
-from .text_components import Label, HyperlinkLabel
-from .top_level_windows import _APageComponent, PanelWin
+from .text_components import HyperlinkLabel, WrappingLabel
+from .top_level_windows import PanelWin, _APageComponent
 from ..bolt import dict_sort
 
 class DoubleListBox(PanelWin):
     """A combination of two ListBoxes and left/right buttons to move items
     between the two lists. Note that this implementation currently only works
     with sorted ListBoxes."""
-    def __init__(self, parent, left_label, right_label, left_btn_tooltip=u'',
-            right_btn_tooltip=u''):
+    def __init__(self, parent, left_label: str, right_label: str,
+            left_btn_tooltip='', right_btn_tooltip=''):
         super(DoubleListBox, self).__init__(parent)
         self._left_list = ListBox(self, isSort=True, isHScroll=True,
             onSelect=lambda _lb_dex, _item_text: self._handle_list_selected(
@@ -179,25 +183,22 @@ class DoubleListBox(PanelWin):
                 and not self._right_list.lb_get_selections()):
             self._disable_move_buttons()
 
-class WrappingTextMixin(_AComponent):
-    """Mixin for components with a label that needs to be wrapped whenever the
-    component is resized."""
-    # Optional offset - wrap this many pixels sooner than we would otherwise
-    _wrapping_offset = 0
+class ATreeMixin(_AComponent):
+    """A mixin for all pages in a TreePanel."""
+    _page_desc_label: WrappingLabel
 
-    def __init__(self, panel_desc, *args, **kwargs):
-        super(WrappingTextMixin, self).__init__(*args, **kwargs)
-        self._panel_text = Label(self, panel_desc)
-        self._panel_text.wrap(self.component_size[0] - self._wrapping_offset)
-        self._last_width = self.component_size[0]
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_size_changed.subscribe(self._wrap_text)
+    @staticmethod
+    def should_appear():
+        """This component will only be constructed and shown to the user in the
+        TreePanel if this method returns True. You can override this and use it
+        to hide components that aren't relevant for the current state. Only
+        relevant for leaf pages."""
+        return True
 
-    def _wrap_text(self):
-        """Internal callback that wraps the panel text."""
-        if self._last_width != self.component_size[0]:
-            self._last_width = self.component_size[0]
-            self._panel_text.wrap(self._last_width - self._wrapping_offset)
+    def wrap_page_description(self, parent_width: int):
+        """Wraps the description of this page to the parent's width (in
+        DIP)."""
+        #self._page_desc_label.wrap(parent_width)
 
 class TreePanel(_APageComponent):
     """A panel with a tree of options where each leaf corresponds to a
@@ -208,18 +209,20 @@ class TreePanel(_APageComponent):
     name."""
     _native_widget: _wx.Treebook
 
-    class _LinkPage(WrappingTextMixin, PanelWin):
+    class _LinkPage(ATreeMixin, PanelWin):
         """A panel with links to each subpage, that will take the user there
         when they click on them."""
-        def __init__(self, parent, page_desc, select_page_callback,
-                parent_page_name, sub_pages):
-            super(TreePanel._LinkPage, self).__init__(page_desc, parent)
-            def make_link(subpage_name):
-                new_link = HyperlinkLabel(self, subpage_name, u'%s/%s' % (
-                    parent_page_name, subpage_name), always_unvisited=True)
+        def __init__(self, parent, page_desc: str, select_page_callback,
+                parent_page_name: str, sub_pages: Iterable[str]):
+            super().__init__(parent)
+            def make_link(subpage_name: str):
+                new_link = HyperlinkLabel(self, subpage_name,
+                    f'{parent_page_name}/{subpage_name}',
+                    always_unvisited=True)
                 new_link.on_link_clicked.subscribe(select_page_callback)
                 return new_link
-            layout_items = [self._panel_text, HorizontalLine(self)]
+            self._page_desc_label = WrappingLabel(self, page_desc)
+            layout_items = [self._page_desc_label, HorizontalLine(self)]
             layout_items.extend(HLayout(items=[Spacer(6), make_link(p)])
                                 for p in sorted(sub_pages))
             VLayout(border=6, spacing=4, item_expand=True,
@@ -238,18 +241,20 @@ class TreePanel(_APageComponent):
         :param page_descriptions: A dict mapping page names to descriptions."""
         super(TreePanel, self).__init__(parent)
         self._all_leaf_pages = []
+        self._all_link_pages = []
         for page_name, page_val in dict_sort(tree_geometry):
             page_desc = page_descriptions.get(page_name, u'')
             if isinstance(page_val, dict):
                 # This is not a leaf, add a link page and then the subpages
                 link_page = self._LinkPage(self, page_desc, self.select_page,
                                            page_name, page_val)
+                self._all_link_pages.append(link_page)
                 self.add_page(link_page, page_name)
                 for subpage_name in sorted(page_val):
                     subpage_val = page_val[subpage_name]
                     if subpage_val.should_appear():
                         new_subpage = subpage_val(self, page_descriptions.get(
-                            u'%s/%s' % (page_name, subpage_name), u''))
+                            f'{page_name}/{subpage_name}', ''))
                         self._all_leaf_pages.append(new_subpage)
                         self.add_sub_page(new_subpage, subpage_name)
             else:
@@ -275,6 +280,7 @@ class TreePanel(_APageComponent):
         parent_page, sub_page = page_path.split(u'/')
         ##: wx.TreeCtrl has the worst API ever, this desperately needs wrapping
         # and some rethinking (plus virtualizing etc.)
+        ##: We have tree_ctrl.Tree now, can we use that here somehow?
         tree_ctrl = self._native_widget.GetTreeCtrl()
         root_item = tree_ctrl.GetRootItem()
         # The root does not actually exist, so look at its first child. The
@@ -322,7 +328,7 @@ class TreePanel(_APageComponent):
                 subchild_name = tree_ctrl.GetItemText(curr_subchild)
                 if tree_ctrl.IsSelected(curr_subchild):
                     # Found it as a subchild, separate them with a slash
-                    return u'%s/%s' % (child_name, subchild_name)
+                    return f'{child_name}/{subchild_name}'
                 curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
                     curr_child, sub_cookie)
             # None of the subchildren of this child are selected, move on to
@@ -330,11 +336,14 @@ class TreePanel(_APageComponent):
             curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
         return None
 
-class ATreeMixin(_AComponent):
-    """A mixin for all leaf pages in a TreePanel."""
-    @staticmethod
-    def should_appear():
-        """This component will only be constructed and shown to the user in the
-        TreePanel if this method returns True. You can override this and use it
-        to hide components that aren't relevant for the current state."""
-        return True
+    def wrap_page_descriptions(self, parent_width: int):
+        """Wraps all page descriptions to the specified parent width (in
+        DIP)."""
+        # We've got the parent width now, but that's not what's actually
+        # available to the page panels. Extra space is taken away by the tree
+        # on the left side and the borders (6 * 2 + 6 * 2 + 4 * 2 = 32)
+        tree_ctrl = self._native_widget.GetTreeCtrl()
+        tree_width = tree_ctrl.ToDIP(tree_ctrl.GetSize()).width
+        effective_width = parent_width - tree_width - scaled(32)
+        for child_page in chain(self._all_leaf_pages, self._all_link_pages):
+            child_page.wrap_page_description(effective_width)

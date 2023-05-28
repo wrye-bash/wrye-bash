@@ -16,42 +16,39 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-# Set MelModel in brec, in this case it's identical to the fallout 3 one
-from ..fallout3.records import MelDestructible, MelConditions
-from ...bolt import Flags, struct_calcsize
-from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, MelUInt8, \
-    MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
-    MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
-    MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
-    MelSorted, MelValueWeight
-from ...exception import ModSizeError
+from ..fallout3.records import MelDestructible, MelModel
+from ...bolt import Flags, flag
+from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
+    MelDescription, MelEdid, MelFid, MelFids, MelFloat, MelFull, MelGroups, \
+    MelIco2, MelIcon, MelIcons, MelNull, MelRecord, MelScript, MelSet, \
+    MelSimpleArray, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
+    MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
+    MelValueWeight
 
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = {b'ONAM', b'SCRN'}
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.34), 'numRecords',
-                  ('nextObject', 0x800)),
-        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
-        MelBase(b'DELE','dele_p',),  #--Obsolete?
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.34), 'numRecords',
+                  ('nextObject', 0x800), is_required=True),
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAloc(MelRecord):
@@ -77,7 +74,6 @@ class MreAloc(MelRecord):
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreAmef(MelRecord):
@@ -87,9 +83,8 @@ class MreAmef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'DATA', [u'2I', u'f'],'type','operation','value'),
+        MelStruct(b'DATA', ['2I', 'f'], 'type', 'operation', 'value'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCcrd(MelRecord):
@@ -103,19 +98,17 @@ class MreCcrd(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickupDrop(),
         MelString(b'TX00','textureFace'),
         MelString(b'TX01','textureBack'),
         MelUInt32(b'INTV', 'card_suit'),
         MelUInt32(b'INTV', 'card_value'),
         MelUInt32(b'DATA', 'value'),
     ).with_distributor({
-        b'INTV': (u'card_suit', {
-            b'INTV': u'card_value',
+        b'INTV': ('card_suit', {
+            b'INTV': 'card_value',
         }),
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCdck(MelRecord):
@@ -128,7 +121,6 @@ class MreCdck(MelRecord):
         MelSorted(MelFids('cards', MelFid(b'CARD'))),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreChal(MelRecord):
@@ -141,12 +133,12 @@ class MreChal(MelRecord):
         MelIcons(),
         MelScript(),
         MelDescription(),
-        MelStruct(b'DATA', [u'4I', u'2s', u'2s', u'4s'],'type','threshold','flags','interval',
-                  'dependOnType1','dependOnType2','dependOnType3'),
+        MelStruct(b'DATA', ['4I', '2s', '2s', '4s'], 'type', 'threshold',
+                  'flags', 'interval', 'dependOnType1', 'dependOnType2',
+                  'dependOnType3'),
         MelFid(b'SNAM','dependOnType4'),
         MelFid(b'XNAM','dependOnType5'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreChip(MelRecord):
@@ -160,10 +152,8 @@ class MreChip(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickupDrop(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCmny(MelRecord):
@@ -176,11 +166,9 @@ class MreCmny(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickupDrop(),
         MelUInt32(b'DATA', 'absoluteValue'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreCsno(MelRecord):
@@ -190,9 +178,11 @@ class MreCsno(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'DATA', [u'2f', u'9I', u'2I', u'I'],'decksPercentBeforeShuffle','BlackjackPayoutRatio',
-            'slotReel0','slotReel1','slotReel2','slotReel3','slotReel4','slotReel5','slotReel6',
-            'numberOfDecks','maxWinnings',(FID,'currency'),(FID,'casinoWinningQuest'),'flags'),
+        MelStruct(b'DATA', ['2f', '9I', '2I', 'I'],
+            'decksPercentBeforeShuffle', 'BlackjackPayoutRatio', 'slotReel0',
+            'slotReel1', 'slotReel2', 'slotReel3', 'slotReel4', 'slotReel5',
+            'slotReel6', 'numberOfDecks', 'maxWinnings', (FID, 'currency'),
+            (FID, 'casinoWinningQuest'), 'flags'),
         MelGroups('chipModels',
             MelString(b'MODL','model')
         ),
@@ -201,13 +191,12 @@ class MreCsno(MelRecord):
         MelString(b'MODT','extraBlackjackTableModel'),
         MelString(b'MOD4','rouletteTableModel'),
         MelGroups('slotReelTextures',
-            MelIcon(u'texture'),
+            MelIcon('texture'),
         ),
         MelGroups('blackjackDecks',
-            MelIco2(u'texture'),
+            MelIco2('texture'),
         ),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDehy(MelRecord):
@@ -216,16 +205,21 @@ class MreDehy(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'
 
-    _DialFlags = Flags.from_names('rumors', 'toplevel')
+    class _DialFlags(Flags):
+        rumors: bool
+        toplevel: bool
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return {b'INFO'}
 
     melSet = MelSet(
         MelEdid(),
@@ -245,16 +239,15 @@ class MreDial(MelRecord):
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),
-        MelTruncatedStruct(b'DATA', [u'2B'], 'dialType',
-                           (_DialFlags, u'dialFlags'), old_versions={'B'}),
+        MelTruncatedStruct(b'DATA', ['2B'], 'dialType',
+                           (_DialFlags, 'dialFlags'), old_versions={'B'}),
     ).with_distributor({
-        b'INFC': u'broken_infc',
-        b'INFX': u'broken_infx',
+        b'INFC': 'broken_infc',
+        b'INFX': 'broken_infx',
         b'QSTI': {
-            b'INFC|INFX': u'added_quests',
+            b'INFC|INFX': 'added_quests',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreHung(MelRecord):
@@ -263,9 +256,8 @@ class MreHung(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreImod(MelRecord):
@@ -281,11 +273,9 @@ class MreImod(MelRecord):
         MelScript(),
         MelDescription(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLsct(MelRecord):
@@ -294,26 +284,26 @@ class MreLsct(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'5I', u'f', u'I', u'3f', u'I', u'20s', u'I', u'3f', u'4s', u'I'],'type','data1X','data1Y','data1Width',
-                         'data1Height','data1Orientation',
-            'data1Font','data1ColorR','data1ColorG','data1ColorB','data1Align','unknown1',
-            'data2Font','data2ColorR','data2ColorG','data2ColorB','unknown2','stats'),
+        MelStruct(b'DATA',
+            ['5I', 'f', 'I', '3f', 'I', '20s', 'I', '3f', '4s', 'I'],
+            'type', 'data1X', 'data1Y', 'data1Width', 'data1Height',
+            'data1Orientation', 'data1Font', 'data1ColorR', 'data1ColorG',
+            'data1ColorB', 'data1Align', 'unknown1', 'data2Font',
+            'data2ColorR', 'data2ColorG', 'data2ColorB', 'unknown2', 'stats'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMset(MelRecord):
     """Media Set."""
     rec_sig = b'MSET'
 
-    _flags = Flags.from_names(
-        ( 0,'dayOuter'),
-        ( 1,'dayMiddle'),
-        ( 2,'dayInner'),
-        ( 3,'nightOuter'),
-        ( 4,'nightMiddle'),
-        ( 5,'nightInner'),
-    )
+    class _flags(Flags):
+        dayOuter: bool = flag(0)
+        dayMiddle: bool = flag(1)
+        dayInner: bool = flag(2)
+        nightOuter: bool = flag(3)
+        nightMiddle: bool = flag(4)
+        nightInner: bool = flag(5)
 
     melSet = MelSet(
         MelEdid(),
@@ -337,7 +327,7 @@ class MreMset(MelRecord):
         MelFloat(b'MNAM', 'mnam'),
         MelFloat(b'NNAM', 'nnam'),
         MelFloat(b'ONAM', 'onam'),
-        MelUInt8Flags(b'PNAM', u'enableFlags', _flags),
+        MelUInt8Flags(b'PNAM', 'enableFlags', _flags),
         MelFloat(b'DNAM', 'dnam'),
         MelFloat(b'ENAM', 'enam'),
         MelFloat(b'FNAM', 'fnam'),
@@ -346,7 +336,6 @@ class MreMset(MelRecord):
         MelFid(b'INAM', 'inam'),
         MelBase(b'DATA','data'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRcct(MelRecord):
@@ -358,7 +347,6 @@ class MreRcct(MelRecord):
         MelFull(),
         MelUInt8(b'DATA', 'flags'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRcpe(MelRecord):
@@ -368,8 +356,9 @@ class MreRcpe(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelConditions(),
-        MelStruct(b'DATA', [u'4I'],'skill','level',(FID,'category'),(FID,'subCategory')),
+        MelConditionsFo3(),
+        MelStruct(b'DATA', ['4I'], 'skill', 'level', (FID, 'category'),
+                  (FID, 'subCategory')),
         MelGroups('ingredients',
             MelFid(b'RCIL','item'),
             MelUInt32(b'RCQY', 'quantity'),
@@ -380,13 +369,12 @@ class MreRcpe(MelRecord):
         ),
     ).with_distributor({
         b'RCIL': {
-            b'RCQY': u'ingredients',
+            b'RCQY': 'ingredients',
         },
         b'RCOD': {
-            b'RCQY': u'outputs',
+            b'RCQY': 'outputs',
         },
     })
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreRepu(MelRecord):
@@ -399,7 +387,6 @@ class MreRepu(MelRecord):
         MelIcons(),
         MelFloat(b'DATA', 'value'),
     )
-    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreSlpd(MelRecord):
@@ -408,91 +395,5 @@ class MreSlpd(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),
+        MelStruct(b'DATA', ['2I'], 'trigerThreshold', (FID, 'actorEffect')),
     )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MelWthrColorsFnv(MelArray):
-    """Used twice in WTHR for PNAM and NAM0. Needs to handle older versions
-    as well. Can't simply use MelArray because MelTruncatedStruct does not
-    have a static_size."""
-    # TODO(inf) Rework MelArray - instead of static_size, have a
-    #  get_entry_size that receives the total size_ of load_mel.
-    #  MelTruncatedStruct could override that and make a guess based on its
-    #  sizes. If that guess doesn't work, a small override class can be
-    #  created by hand
-    _new_sizes = {b'PNAM': 96, b'NAM0': 240}
-    _old_sizes = {b'PNAM': 64, b'NAM0': 160}
-
-    def __init__(self, wthr_sub_sig, wthr_attr):
-        struct_definition = [
-            [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's',
-             u'3B', u's'], u'riseRed', u'riseGreen', u'riseBlue',
-            u'unused1', u'dayRed', u'dayGreen', u'dayBlue',
-            u'unused2', u'setRed', u'setGreen', u'setBlue',
-            u'unused3', u'nightRed', u'nightGreen', u'nightBlue',
-            u'unused4', u'noonRed', u'noonGreen', u'noonBlue',
-            u'unused5', u'midnightRed', u'midnightGreen',
-            u'midnightBlue', u'unused6'
-        ]
-        super(MelWthrColorsFnv, self).__init__(wthr_attr,
-            MelStruct(wthr_sub_sig, *struct_definition),
-        )
-        self._element_old = MelTruncatedStruct(
-            wthr_sub_sig, *struct_definition,
-            old_versions={u'3Bs3Bs3Bs3Bs'})
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        if size_ == self._new_sizes[sub_type]:
-            super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
-                                                   size_, *debug_strs)
-        elif size_ == self._old_sizes[sub_type]:
-            # Copied and adjusted from MelArray. Yuck. See comment below
-            # docstring for some ideas for getting rid of this
-            append_entry = getattr(record, self.attr).append
-            entry_slots = self._element_old.attrs
-            entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
-            load_entry = self._element_old.load_mel
-            for x in range(size_ // entry_size):
-                arr_entry = MelObject()
-                append_entry(arr_entry)
-                arr_entry.__slots__ = entry_slots
-                load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
-        else:
-            _expected_sizes = (self._new_sizes[sub_type],
-                               self._old_sizes[sub_type])
-            raise ModSizeError(ins.inName, debug_strs, _expected_sizes, size_)
-
-class MreWthr(MelRecord):
-    """Weather."""
-    rec_sig = b'WTHR'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFid(b'\x00IAD', 'sunriseImageSpaceModifier'),
-        MelFid(b'\x01IAD', 'dayImageSpaceModifier'),
-        MelFid(b'\x02IAD', 'sunsetImageSpaceModifier'),
-        MelFid(b'\x03IAD', 'nightImageSpaceModifier'),
-        MelFid(b'\x04IAD', 'unknown1ImageSpaceModifier'),
-        MelFid(b'\x05IAD', 'unknown2ImageSpaceModifier'),
-        MelString(b'DNAM','upperLayer'),
-        MelString(b'CNAM','lowerLayer'),
-        MelString(b'ANAM','layer2'),
-        MelString(b'BNAM','layer3'),
-        MelModel(),
-        MelBase(b'LNAM','unknown1'),
-        MelStruct(b'ONAM', [u'4B'],'cloudSpeed0','cloudSpeed1','cloudSpeed3','cloudSpeed4'),
-        MelWthrColorsFnv(b'PNAM', u'cloudColors'),
-        MelWthrColorsFnv(b'NAM0', u'daytimeColors'),
-        MelStruct(b'FNAM', [u'6f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
-        MelBase(b'INAM', 'unused1', null1 * 304),
-        MelStruct(b'DATA', [u'15B'],
-            'windSpeed','lowerCloudSpeed','upperCloudSpeed','transDelta',
-            'sunGlare','sunDamage','rainFadeIn','rainFadeOut','boltFadeIn',
-            'boltFadeOut','boltFrequency','weatherType','boltRed','boltBlue','boltGreen'),
-        MelGroups('sounds',
-            MelStruct(b'SNAM', [u'2I'], (FID, 'sound'), 'type'),
-        ),
-    )
-    __slots__ = melSet.getSlotsUsed()

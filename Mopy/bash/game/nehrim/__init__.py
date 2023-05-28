@@ -16,32 +16,35 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES IV: Oblivion."""
-import struct as _struct
-
+from ..gog_game import GOGMixin
 from ..oblivion import OblivionGameInfo
-from ... import brec, bolt
-from ...brec import MreGlob, MreLand
+from ...bolt import DefaultFNDict, FName
+
+_GOG_IDS = [1497007810]
 
 class NehrimGameInfo(OblivionGameInfo):
+    """GameInfo override for Nehrim: At Fate's Edge."""
     displayName = u'Nehrim'
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
-    game_detect_includes = [u'NehrimLauncher.exe']
-    master_file = bolt.FName(u'Nehrim.esm')
+    game_detect_includes = {'NehrimLauncher.exe'}
+    game_detect_excludes = set(GOGMixin.get_unique_filenames(_GOG_IDS))
+    master_file = FName('Nehrim.esm')
     loot_dir = u'Nehrim'
+    loot_game_name = 'Nehrim'
     boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'
+    check_legacy_paths = False
 
     class Bsa(OblivionGameInfo.Bsa):
-        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+        redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'N - Textures1.bsa': 1104530400, # '2005-01-01'
             u'N - Textures2.bsa': 1104616800, # '2005-01-02'
             u'L - Voices.bsa': 1104703200,    # '2005-01-03'
@@ -92,6 +95,29 @@ class NehrimGameInfo(OblivionGameInfo):
 
     nirnroots = _(u'Vynroots')
 
+    #--------------------------------------------------------------------------
+    # NPC Checker
+    #--------------------------------------------------------------------------
+    _standard_eyes = [(None, x) for x in # None <=> game master
+                      (0x27306, 0x27308, 0x27309)]
+    default_eyes = {
+        (None, 0x224FC): _standard_eyes, # Alemanne
+        (None, 0x18D9E5): [(None, x) for x in  (
+            0x47EF, 0x18D9D9, 0x18D9DA, 0x18D9DB, 0x18D9DC, 0x18D9DD, 0x18D9DE,
+            0x18D9DF, 0x18D9E0, 0x18D9E1, 0x18D9E2)], # Half-Aeterna
+        (None, 0x224FD): _standard_eyes, # Normanne
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'VanillaNPCSkeletonPatcher',
+        'NoBloodCreaturesPatcher',
+        'QuietFeetPatcher',
+        'IrresponsibleCreaturesPatcher',
+    }
+
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         # bypass setting the patchers in super class
@@ -102,72 +128,12 @@ class NehrimGameInfo(OblivionGameInfo):
             u'ImportRoads': preservers.ImportRoadsPatcher, }
 
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from ..oblivion.records import MreActi, MreAlch, MreAmmo, MreAnio, \
-            MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
-            MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
-            MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
-            MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, \
-            MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
-            MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
-            MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-            MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
-            MrePgrd, MreAppa
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
-            MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
-            MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
-            MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
-            MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace,
-            MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
-            MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
-            MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
-            MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
-        )}
-        cls.readClasses = (b'MGEF', b'SCPT')
-        cls.writeClasses = (b'MGEF',)
-        # Setting RecordHeader class variables - Oblivion is special
-        header_type = brec.RecordHeader
-        header_type.rec_header_size = 20
-        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
-        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = _struct.Struct(
-            header_type.rec_pack_format_str).unpack
-        header_type.pack_formats = {0: u'=4sI4s2I'}
-        header_type.pack_formats.update(
-            {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
-        header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
-        header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
-        # Similar to other games
-        header_type.top_grup_sigs = [
-            b'GMST', b'GLOB', b'CLAS', b'FACT', b'HAIR', b'EYES', b'RACE',
-            b'SOUN', b'SKIL', b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL',
-            b'BSGN', b'ACTI', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
-            b'DOOR', b'INGR', b'LIGH', b'MISC', b'STAT', b'GRAS', b'TREE',
-            b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_', b'CREA', b'LVLC',
-            b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST', b'LVLI', b'WTHR',
-            b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE',
-            b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
-        ]
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ROAD', b'REFR',
-                                         b'ACHR', b'ACRE', b'PGRD', b'LAND',
-                                         b'INFO'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
-            MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
-            MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor,
-            MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym,
-            MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc,
-            MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
-            MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
-            MreTes4, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
-            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo, MreLand,
-            MrePgrd)}
-        brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
-            b'TES4', b'ACHR', b'ACRE', b'REFR', b'CELL', b'PGRD', b'ROAD',
-            b'LAND', b'WRLD', b'INFO', b'DIAL'})
-        cls._validate_records()
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
 
-GAME_TYPE = NehrimGameInfo
+class GOGNehrimGameInfo(GOGMixin, NehrimGameInfo):
+    """GameInfo override for the GOG version of Nehrim."""
+    displayName = 'Nehrim (GOG)'
+    _gog_game_ids = _GOG_IDS
+
+GAME_TYPE = {g.displayName: g for g in (NehrimGameInfo, GOGNehrimGameInfo)}

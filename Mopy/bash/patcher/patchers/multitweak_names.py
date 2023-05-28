@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,13 +28,11 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-# Internal
-from .base import MultiTweakItem, IndexingTweak, MultiTweaker, \
-    CustomChoiceTweak
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
 from ... import bush
-from ...bolt import build_esub, RecPath, setattr_deep
-from ...brec import MelObject
-from ...exception import AbstractError, BPConfigError
+from ...bolt import RecPath, build_esub, setattr_deep
+from ...exception import BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
 
@@ -44,8 +42,6 @@ _ignored_chars = frozenset(u'+-=.()[]<>')
 
 class _ANamesTweak(CustomChoiceTweak):
     """Shared code of names tweaks."""
-    _tweak_mgef_hostiles = set()
-    _tweak_mgef_school = {}
     _choice_formats = [] # The default formats for this tweak
     _example_item = _example_code = u'' # An example item name and its code
     _example_stat = 0 # The example item's stat
@@ -53,7 +49,7 @@ class _ANamesTweak(CustomChoiceTweak):
     _may_lack_specifiers = False # Whether formats without '%s' in them are OK
     _prepends_name = False # Whether the tweak prepends or appends the name
 
-    def __init__(self):
+    def __init__(self, bashed_patch):
         # Generate choices based on the example item, code and stat
         dynamic_choices = []
         for choice_fmt in self._choice_formats:
@@ -73,7 +69,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     formatted_label += self._example_item
             dynamic_choices.append((formatted_label, choice_fmt))
         self.tweak_choices = dynamic_choices
-        super(_ANamesTweak, self).__init__()
+        super(_ANamesTweak, self).__init__(bashed_patch)
 
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
@@ -147,20 +143,17 @@ class _ANamesTweak(CustomChoiceTweak):
 
     def _exec_rename(self, record):
         """Does the actual renaming, returning the new name as its result."""
-        raise AbstractError(u'_exec_rename not implemented')
+        raise NotImplementedError
 
 class _AMgefNamesTweak(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
+    _tweak_mgef_hostiles = set()
+    _look_up_mgef = None
+
     def prepare_for_tweaking(self, patch_file):
         self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
-        self._tweak_mgef_school = patch_file.getMgefSchool()
         super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
-
-    def _get_effect_school(self, magic_effect):
-        """Returns the school of the specified MGEF."""
-        return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
-                else self._tweak_mgef_school.get(magic_effect.effect_sig, 6))
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
@@ -169,99 +162,10 @@ class _AMgefNamesTweak(_ANamesTweak):
         return (old_full and (not self._tweak_mgef_hostiles or
                 old_full != self._exec_rename(record)))
 
-class _AEffectsTweak(_ANamesTweak):
-    """Base class for shared code between the ingestibles, scrolls and spells
-    tweakers."""
-    def _get_spell_school(self, record):
-        """Returns the school for this record as a single letter, based on its
-        first effect (e.g. 'D' for a spell where the first effect belongs to
-        the school of Destruction)."""
-        raise AbstractError('_get_spell_school not implemented')
-
-    def _get_spell_level(self, record):
-        """Returns the level for this spell as an integer:
-
-        Oblivion:
-          0: Novice
-          1: Apprentice
-          2: Journeyman
-          3: Expert
-          4: Master
-
-        Skyrim:
-          0: Novice (level 0)
-          1: Apprentice (level 25)
-          2: Adept (level 50)
-          3: Expert (level 75)
-          4: Master (level 100)"""
-        raise AbstractError('_get_spell_level not implemented')
-
-class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
-    """Oblivion implementation of _AEffectsTweak's API."""
-    def _get_spell_school(self, record):
-        if record.effects:
-            return 'ACDIMRU'[self._get_effect_school(record.effects[0])]
-        return 'U' # default to 'U' (unknown)
-
-    def _get_spell_level(self, record):
-        return record.level
-
-##: These will have to be moved to game/ in the future
-# Maps actor value IDs to a tag for the school they represent
-_av_to_school = defaultdict(lambda: 'U', {
-    18: 'A', # Alteration
-    19: 'C', # Conjuration
-    20: 'D', # Destruction
-    21: 'I', # Illusion
-    22: 'R', # Restoration
-})
-# Maps perk ObjectIDs (in the game master, e.g. Skyrim.esm) to levels. See
-# _get_spell_level for more information
-_perk_to_level = defaultdict(lambda: 0, {
-    0x0F2CA6: 0, # AlterationNovice00
-    0x0C44B7: 1, # AlterationApprentice25
-    0x0C44B8: 2, # AlterationAdept50
-    0x0C44B9: 3, # AlterationExpert75
-    0x0C44BA: 4, # AlterationMaster100
-    0x0F2CA7: 0, # ConjurationNovice00
-    0x0C44BB: 1, # ConjurationApprentice25
-    0x0C44BC: 2, # ConjurationAdept50
-    0x0C44BD: 3, # ConjurationExpert75
-    0x0C44BE: 4, # ConjurationMaster100
-    0x0F2CA8: 0, # DestructionNovice00
-    0x0C44BF: 1, # DestructionApprentice25
-    0x0C44C0: 2, # DestructionAdept50
-    0x0C44C1: 3, # DestructionExpert75
-    0x0C44C2: 4, # DestructionMaster100
-    0x0F2CA9: 0, # IllusionNovice00
-    0x0C44C3: 1, # IllusionApprentice25
-    0x0C44C4: 2, # IllusionAdept50
-    0x0C44C5: 3, # IllusionExpert75
-    0x0C44C6: 4, # IllusionMaster100
-    0x0F2CAA: 0, # RestorationNovice00
-    0x0C44C7: 1, # RestorationApprentice25
-    0x0C44C8: 2, # RestorationAdept50
-    0x0C44C9: 3, # RestorationExpert75
-    0x0C44CA: 4, # RestorationMaster100
-})
-
-class _AEffectsTweak_Tes5(IndexingTweak, _AEffectsTweak):
+class _AEffectsTweak_Tes5(IndexingTweak, _ANamesTweak):
     """Skyrim implementation of _AEffectsTweak's API."""
     _index_sigs = [b'MGEF']
     _look_up_mgef = None
-
-    def _get_spell_school(self, record):
-        spell_effects = record.effects
-        if spell_effects:
-            first_effect = self._look_up_mgef[spell_effects[0].effect_formid]
-            return _av_to_school[first_effect.magic_skill]
-        return 'U' # default to 'U' (unknown)
-
-    def _get_spell_level(self, record):
-        hc_perk = record.halfCostPerk
-        if hc_perk:
-            return _perk_to_level[hc_perk[1]]
-        return 0 # default to 0 (novice)
 
     def wants_record(self, record):
         # If we haven't indexed MGEFs yet, we have to forward all records
@@ -283,8 +187,8 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
     tweak_choices = [(c, c) for c in bush.game.body_part_codes]
     tweak_order = 9 # Run before all other tweaks
 
-    def __init__(self):
-        super(NamesTweak_BodyPartCodes, self).__init__()
+    def __init__(self, bashed_patch):
+        super(NamesTweak_BodyPartCodes, self).__init__(bashed_patch)
         len_first = len(self.tweak_choices[0][0])
         # Verify that the body_part_codes constant is valid
         for tc in self.tweak_choices[1:]:
@@ -310,9 +214,7 @@ class _ANamesTweak_Body(_ANamesTweak):
     _tweak_body_tags = u'' # Set in TweakNamesPatcher.__init__
 
     def wants_record(self, record):
-        if self._is_nonplayable(record):
-            return False
-        return super(_ANamesTweak_Body, self).wants_record(record)
+        return not record.is_not_playable() and super().wants_record(record)
 
 class _ANamesTweak_Body_Tes4(_ANamesTweak_Body):
     def _exec_rename(self, record):
@@ -420,7 +322,6 @@ class NamesTweak_Body_Armor_Fo3(_ANamesTweak_Body_Armor):
                 prefix_subs += (record.dr / 100,)
         return prefix_format % prefix_subs + record.full
 
-
 class NamesTweak_Body_Armor_Tes5(_ANamesTweak_Body_Armor):
     _example_item = _('Iron Armor')
     _example_code = 'AH'
@@ -488,7 +389,7 @@ class _ANamesTweak_Ingestibles(_ANamesTweak):
     _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
 
 class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
-                                  _AEffectsTweak_Tes4):
+                                  _AMgefNamesTweak):
     tweak_tip = _(u'Label ingestibles (potions and drinks) to sort by type '
                   u'and effect.')
     _example_item = _('Poison of Illness')
@@ -498,11 +399,11 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         # Remove existing label and ending
         wip_name = _re_old_potion_label.sub('', record.full)
         wip_name = _re_old_potion_end.sub('', wip_name)
-        if record.flags.isFood:
+        if record.flags.alch_is_food:
             return '.' + wip_name
         else:
             poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
-            effect_label = poison_tag + self._get_spell_school(record)
+            effect_label = poison_tag + record.get_spell_school()
             return self.chosen_format % effect_label + wip_name
 
 class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
@@ -520,8 +421,8 @@ class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
             etyp_label = u'U' # Unknown
         # Food doubles as the miscellaneous category, so label non-food in the
         # food category as 'other'
-        if etyp_label == u'F' and not record.flags.isFood:
-            etyp_label = u'O'
+        if etyp_label == 'F' and not record.flags.alch_is_food:
+            etyp_label = 'O'
         # Remove existing label and ending
         wip_name = _re_old_potion_label.sub('', record.full)
         wip_name = _re_old_potion_end.sub('', wip_name)
@@ -536,7 +437,7 @@ class _ANamesTweak_Scrolls(IndexingTweak, _ANamesTweak):
     _example_code = 'D'
 
 class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
-    """Names tweaker for notes and scrolls."""
+    """Names tweaker for notes and scrolls - Oblivion only!"""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Sort: Notes/Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
@@ -554,13 +455,13 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
         rec_ench = record.enchantment
         is_enchanted = bool(rec_ench)
         if is_enchanted and u'%s' in magic_format:
-            school = 6 # Default to 6 (U: unknown)
             enchantment = self._look_up_ench[rec_ench]
-            if enchantment and enchantment.effects:
-                school = self._get_effect_school(enchantment.effects[0])
+            if enchantment: ##: true?
+                school = enchantment.get_spell_school()
+            else: school = 'U' # U: unknown
             # Remove existing label
             wip_name = _re_old_magic_label.sub(u'', wip_name)
-            wip_name = magic_format[1:] % u'ACDIMRU'[school] + wip_name
+            wip_name = magic_format[1:] % school + wip_name
         # Order by whether or not the scroll is enchanted
         return order_format[is_enchanted] + wip_name
 
@@ -582,6 +483,7 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
 
 #------------------------------------------------------------------------------
 class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AEffectsTweak_Tes5):
+    """Skyrim!"""
     tweak_read_classes = b'SCRL',
     tweak_name = _('Sort: Scrolls')
     tweak_tip = _('Mark scrolls to sort by magic school.')
@@ -590,13 +492,13 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AEffectsTweak_Tes5):
                        '%s - ', '(%s) ']
 
     def _exec_rename(self, record):
-        school_tag = self._get_spell_school(record)
+        school_tag = record.get_spell_school(self._look_up_mgef)
         # Remove existing label
         wip_name = _re_old_magic_label.sub('', record.full)
         return self.chosen_format % school_tag + wip_name
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Spells(_AEffectsTweak):
+class _ANamesTweak_Spells(_ANamesTweak):
     """Names tweaker for spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Sort: Spells')
@@ -616,8 +518,8 @@ class _ANamesTweak_Spells(_AEffectsTweak):
         return record.spellType == 0 and super().wants_record(record)
 
     def _exec_rename(self, record):
-        school_tag = self._get_spell_school(record)
-        level_tag = self._get_spell_level(record)
+        school_tag = record.get_spell_school(self._look_up_mgef)
+        level_tag = record.get_spell_level()
         # Remove existing label
         wip_name = _re_old_magic_label.sub(u'', record.full)
         if u'%s' in self.chosen_format: # show spell school
@@ -633,7 +535,7 @@ class _ANamesTweak_Spells(_AEffectsTweak):
                 wip_name = self.chosen_format + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _AEffectsTweak_Tes4):
+class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
     # Upgrade older format that used different values - we'll probably have to
     # keep this around indefinitely, unfortunately
     def init_tweak_config(self, configs):
@@ -705,7 +607,7 @@ class NamesTweak_Weapons_Fo3(_ANamesTweak_Weapons):
     _example_code = u'S'
     _example_stat = 10
     _valid_weapons = set(range(0, 7))
-    _w_type_attr = u'equipment_type'
+    _w_type_attr = 'equipment_type'
     _weapon_tags = 'BESMUTL'
 
 class NamesTweak_Weapons_Tes5(_ANamesTweak_Weapons):
@@ -754,8 +656,8 @@ class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
                   u'end of the ammunition name.')
     _index_sigs = [b'FLST']
 
-    def __init__(self):
-        super(NamesTweak_AmmoWeight_Fo3, self).__init__()
+    def __init__(self, bashed_patch):
+        super(NamesTweak_AmmoWeight_Fo3, self).__init__(bashed_patch)
         self._look_up_weight = None
 
     def prepare_for_tweaking(self, patch_file):
@@ -765,8 +667,7 @@ class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
         for flst_rec in self._indexed_records[b'FLST'].values():
             ma_flst = _re_flst_ammo_weight.match(flst_rec.eid)
             if ma_flst:
-                flst_weight = float(u'%s.%s' % (ma_flst.group(1),
-                                                ma_flst.group(2)))
+                flst_weight = float(f'{ma_flst.group(1)}.{ma_flst.group(2)}')
                 for ammo_fid in flst_rec.formIDInList:
                     luw[ammo_fid] = flst_weight
 
@@ -785,10 +686,10 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
     """Base class for Rename Gold/Caps tweaks."""
     tweak_read_classes = b'MISC',
     tweak_key = 'rename_gold'
-    _gold_fid = (bush.game.master_file, 0x00000F)
+    _gold_fid = bush.game.master_fid(0x00000F)
     # Only interested in one specific record, see finish_tweaking below
     _found_gold = False
-    _gold_attrs = bush.game.gold_attrs(bush.game.master_file)
+    _gold_attrs = bush.game.gold_attrs()
 
     def wants_record(self, record):
         return record.fid == self._gold_fid
@@ -810,7 +711,8 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
                     ##: This should have a better solution (in records?)
                     obj_attr = gold_attr.split('.', maxsplit=1)[0]
                     if getattr(gold_rec, obj_attr) is None:
-                        setattr(gold_rec, obj_attr, MelObject())
+                        setattr(gold_rec, obj_attr,
+                                gold_rec.getDefault(obj_attr))
                 setattr_deep(gold_rec, gold_attr, gold_value)
 
     def tweak_log(self, log, count):
@@ -852,8 +754,8 @@ class _ATextReplacer(MultiTweakItem):
     _tr_replacements = {}
     _tr_extra_gmsts = {} # override in implementations
 
-    def __init__(self):
-        super(_ATextReplacer, self).__init__()
+    def __init__(self, bashed_patch):
+        super(_ATextReplacer, self).__init__(bashed_patch)
         self._re_mapping = {re.compile(m): r for m, r
                             in self._tr_replacements.items()}
         # Convert the match/replace strings to record paths
@@ -983,7 +885,7 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 if not body_part_tags:
-                    raise BPConfigError(_("'Body Part Codes' must be enabled "
-                                          "when using the '%s' tweak.")
-                                        % names_tweak.tweak_name)
+                    msg = _("'Body Part Codes' must be enabled when using the "
+                            "'%s' tweak.")
+                    raise BPConfigError(msg % names_tweak.tweak_name)
                 names_tweak._tweak_body_tags = body_part_tags

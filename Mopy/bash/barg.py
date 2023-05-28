@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,9 +30,9 @@ def parse():
     parser = argparse.ArgumentParser()
 
     #### Groups ####
-    def arg(group, dashed, descr, dest, action=u'store', default=None):
+    def arg(group, dashed, descr, dest, action=u'store', dflt=None):
         group.add_argument(dashed, descr, dest=dest, action=action,
-                           default=u'' if default is None else default,
+                           default='' if dflt is None else dflt,
                            help=h) # so we can wrap help but not too much
 
     ### Path Group ###
@@ -76,13 +76,13 @@ def parse():
          u'launches. You have to specify the filepath with the -f/--filename '
          u'option. If also -r is specified Bash will not start.')
     arg(backupGroup, u'-b', u'--backup', dest=u'backup', action=u'store_true',
-        default=False)
+        dflt=False)
     # restore #
     h = (u'Restore all Bash settings from an archive file before the app '
          u'launches. You have to specify the filepath with the -f/--filename '
          u'option. If also -b is specified Bash will not start.')
     arg(backupGroup, u'-r', u'--restore', dest=u'restore', action=u'store_true',
-        default=False)
+        dflt=False)
     # filename #
     h = (u"The file to use with the -r or -b options. For -r must be a '.7z' "
          u'backup file or a dir where such a file was extracted. For -b must '
@@ -93,7 +93,7 @@ def parse():
     h = (u'Close Bash after creating or restoring backup and do not display '
          u'any prompts or message dialogs.')
     arg(backupGroup, u'-q', u'--quiet-quit', dest=u'quietquit',
-        action=u'store_true', default=False)
+        action=u'store_true', dflt=False)
 
     #### Individual Arguments ####
     parser.add_argument(u'-d', u'--debug',

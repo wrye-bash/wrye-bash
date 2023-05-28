@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -171,7 +171,7 @@ schema_string = br"""<?xml version="1.0" encoding="utf-8"?>
             </xs:choice>
         </xs:sequence>
     </xs:group>
-    
+
     <xs:complexType name="compositeDependency">
         <xs:annotation>
             <xs:documentation>A dependency that is made up of one or more dependencies.</xs:documentation>

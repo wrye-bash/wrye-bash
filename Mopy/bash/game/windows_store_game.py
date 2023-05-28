@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,34 +14,27 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Module providing a Mixin class to set some common defaults for Windows Store
-   games.  Cannot handle modifying an attribute based on a parent class
-   attribute."""
-from . import GameInfo
+"""Module providing a mixin class to set some common defaults for Windows Store
+games."""
+from . import WS_COMMON_FILES, GameInfo
+from ..bolt import classproperty
 
-class classproperty(object):
-    # This is a more general tool, maybe stick it in...bolt?
-    def __init__(self, fget):
-        self.fget = fget
-    def __get__(self, obj, owner):
-        return self.fget(owner)
+class WindowsStoreMixin(GameInfo):
+    registry_keys = []
 
-class WindowsStoreMixin(object):
-    regInstallKeys = ()
-    game_detect_excludes = []
-    # We'd also like to set `game_detect_includes` but to do so we need the
-    # parent class's attribute value:
     @classproperty
     def game_detect_includes(cls):
-        return super(WindowsStoreMixin,
-            cls).game_detect_includes + [u'appxmanifest.xml']
+        return super().game_detect_includes | WS_COMMON_FILES
+
+    @classproperty
+    def game_detect_excludes(cls):
+        return super().game_detect_excludes - WS_COMMON_FILES
 
     # Disable any tools that require hooking into the game's executable. Even
     # if the user manually installs these, they will not work, with no workable
@@ -49,6 +42,4 @@ class WindowsStoreMixin(object):
     class Se(GameInfo.Se):
         pass
     class Sd(GameInfo.Sd):
-        pass
-    class Laa(GameInfo.Laa):
         pass

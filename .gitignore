@@ -27,7 +27,11 @@ desktop.ini
 # Build-related folders
 scripts/build/standalone/dist/
 scripts/build/standalone/temp/
+scripts/changelogs/
 scripts/dist/
+
+# Make sure no one pushes their tokens...
+scripts/github.ini
 
 # Local NSIS
 scripts/build/nsis/

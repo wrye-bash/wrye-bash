@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #  Mopy/bash/games.py copyright (C) 2016 Utumno: Original design
 #
@@ -28,15 +28,14 @@ load_order.py."""
 # number, e.g. 5 older versions)
 from __future__ import annotations
 
-__author__ = u'Utumno'
+__author__ = 'Utumno'
 
 import re
 import time
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
-# Local
 from . import bass, bolt, env, exception
-from .bolt import dict_sort, FName, Path
+from .bolt import FName, Path, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -139,7 +138,8 @@ class FixInfo(object):
         return bool(
             self.act_removed or self.act_added or self.act_duplicates or
             self.act_reordered or self.act_order_differs_from_load_order or
-            self.master_not_active or self.missing_must_be_active)
+            self.master_not_active or self.missing_must_be_active or
+            self.selectedExtra)
 
     def lo_deprint(self):
         self.warn_lo()
@@ -341,11 +341,11 @@ class LoGame(object):
     def has_load_order_conflict_active(self, mod_name, active): return False
     # force installation last - only for timestamp games
     def get_free_time(self, start_time, end_time=None):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def active_changed(self): return self._plugins_txt_modified()
 
@@ -372,36 +372,36 @@ class LoGame(object):
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
         active plugins list."""
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _backup_load_order(self):
         """This method should make a backup of whatever file is storing the
         load order plugins list."""
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _fetch_load_order(self, cached_load_order: _LoTuple | None,
             cached_active: _LoTuple):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _fetch_active_plugins(self) -> list[FName]:
-        raise exception.AbstractError # no override for AsteriskGame
+        raise NotImplementedError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active, *, _cleaned=False):
         """Persist the fixed lord to disk - will break conflicts for
         timestamp games.
         :param _cleaned: internal, used in AsteriskGame - whether lists are
             already cleaned."""
-        raise exception.AbstractError(f'{type(self)} does not define '
-                                      f'_persist_load_order')
+        raise NotImplementedError(f'{type(self)} does not define '
+                                  f'_persist_load_order')
 
     def _persist_active_plugins(self, active, lord):
-        raise exception.AbstractError
+        raise NotImplementedError
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
         # Override for fallout4 to write the file once and oblivion to save
         # active only if needed. Both active and lord must not be None.
-        raise exception.AbstractError
+        raise NotImplementedError
 
     # MODFILES PARSING --------------------------------------------------------
     def _parse_modfile(self, path, do_raise=False) -> _ParsedLo:
@@ -487,7 +487,8 @@ class LoGame(object):
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as save load and active should be an atomic operation -
         leads to hacks (like the _selected parameter)."""
-        if fix_lo is None: fix_lo = FixInfo() # discard fix info
+        quiet = fix_lo is None
+        if quiet: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -512,6 +513,8 @@ class LoGame(object):
         loadorder_set = set(lord)
         mods_set = set(cached_minfs)
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
+        if fix_lo.lo_removed and not quiet:
+            cached_minfs.selectedBad |= fix_lo.lo_removed
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
         # Remove non existent plugins from load order
@@ -555,7 +558,7 @@ class LoGame(object):
         fix_active.act_removed = set(acti) - acti_filtered_set
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt
-            cached_minfs.selectedBad = fix_active.lo_removed
+            cached_minfs.selectedBad |= fix_active.act_removed
         if not self.allow_deactivate_master:
             if self.master_path not in acti_filtered_set:
                 acti_filtered.insert(0, self.master_path)
@@ -581,7 +584,7 @@ class LoGame(object):
         if disable: # chop off extra
             cached_minfs.selectedExtra = fix_active.selectedExtra = [
                 x for x in acti_filtered if x in disable]
-        before_reorder = acti # with overflowed plugins removed
+        before_reorder = acti[:] # with overflowed plugins removed
         if self._order_fixed(acti):
             fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
@@ -606,14 +609,18 @@ class LoGame(object):
                      if x in self.mod_infos]
         return [self.master_path] + fixed_ord
 
-    def _order_fixed(self, lord):
-        fixed_order = self._fixed_order_plugins()
+    def _order_fixed(self, lord_or_acti):
+        # This may be acti, so don't force-activate fixed-order plugins
+        # (plugins with a missing LO when this is lord will already have had a
+        # load order set earlier in _fix_load_order)
+        la_set = set(lord_or_acti)
+        fixed_order = [p for p in self._fixed_order_plugins() if p in la_set]
         if not fixed_order: return False # nothing to do
         fixed_order_set = set(fixed_order)
-        filtered_lo = [x for x in lord if x not in fixed_order_set]
+        filtered_lo = [x for x in lord_or_acti if x not in fixed_order_set]
         lo_with_fixed = fixed_order + filtered_lo
-        if lord != lo_with_fixed:
-            lord[:] = lo_with_fixed
+        if lord_or_acti != lo_with_fixed:
+            lord_or_acti[:] = lo_with_fixed
             return True
         return False
 
@@ -740,9 +747,8 @@ class INIGame(LoGame):
         # different case
         cached_ini.remove_section(ini_key[1])
         # Now, write out the changed values - no backup here
-        section_contents = OrderedDict()
-        for i, lo_mod in enumerate(mod_list):
-            section_contents[ini_key[2] % {u'lo_idx': i}] = lo_mod
+        section_contents = {ini_key[2] % {'lo_idx': i}: lo_mod for i, lo_mod in
+                            enumerate(mod_list)}
         cached_ini.saveSettings({ini_key[1]: section_contents})
 
     # Backups
@@ -846,12 +852,12 @@ class INIGame(LoGame):
                     self._mk_ini(move_ini), ini_key))
                 return True
             return False
-        changed = False
+        swapped = False
         if self._handles_actives:
-            changed = _do_swap(self._cached_ini_actives, self.ini_key_actives)
+            swapped = _do_swap(self._cached_ini_actives, self.ini_key_actives)
         if self._handles_lo:
-            changed |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        return super().swap(old_dir, new_dir) or changed
+            swapped |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
+        return super().swap(old_dir, new_dir) or swapped
 
     def get_acti_file(self):
         if self._handles_actives:
@@ -864,12 +870,12 @@ class INIGame(LoGame):
         return super().get_lo_file()
 
     def _set_acti_file(self, new_acti_file):
-        raise exception.AbstractError(u'INIGame does not support'
-                                      u'_set_acti_file right now')
+        raise NotImplementedError('INIGame does not support'
+                                  '_set_acti_file right now')
 
     def _set_lo_file(self, new_lo_file):
-        raise exception.AbstractError(u'INIGame does not support _set_lo_file '
-                                      u'right now')
+        raise NotImplementedError('INIGame does not support _set_lo_file '
+                                  'right now')
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
@@ -1302,98 +1308,6 @@ class AsteriskGame(LoGame):
                          f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
 
-class WindowsStoreGame(LoGame):
-    """Mixin for Windows Store games, which have a second, fallback directory
-    which we must keep in sync with the main one."""
-    _second_acti_file: Path | None
-    _second_lo_file: Path | None
-
-    @property
-    def _fallback_lo_files(self):
-        """Returns a tuple containing the fallback actives/LO files"""
-        try:
-            return self._second_acti_file, self._second_lo_file
-        except AttributeError:
-            from . import bush
-            sec_path = bass.dirs[u'local_appdata'].join(bush.game.appdata_name)
-            acti_file = self.get_acti_file()
-            self._second_acti_file = (sec_path.join(acti_file.stail)
-                                      if acti_file else None)
-            lo_file = self.get_lo_file()
-            self._second_lo_file = (sec_path.join(lo_file.stail)
-                                    if lo_file else None)
-            return self._second_acti_file, self._second_lo_file
-
-    def _fetch_load_order(self, cached_load_order, cached_active):
-        _fb_acti_file, fb_lo_file = self._fallback_lo_files
-        lo_file = self.get_lo_file()
-        if lo_file and fb_lo_file:
-            # Use the main LO file if possible, but if the main file is missing
-            # or the fallback file is newer, use that one
-            if lo_file.is_file():
-                file_to_use = lo_file
-                if fb_lo_file.is_file() and fb_lo_file.mtime > lo_file.mtime:
-                    file_to_use = fb_lo_file
-            else:
-                file_to_use = fb_lo_file
-            swap_files = file_to_use is not lo_file
-        else:
-            # We don't even have LO files for this game, skip right to parent
-            file_to_use = None
-            swap_files = False
-        if swap_files:
-            self._set_lo_file(file_to_use)
-        ret_lo = super()._fetch_load_order(cached_load_order, cached_active)
-        if swap_files:
-            self._set_lo_file(lo_file)
-        return ret_lo
-
-    def _fetch_active_plugins(self):
-        fb_acti_file, _fb_lo_file = self._fallback_lo_files
-        acti_file = self.get_acti_file()
-        if acti_file and fb_acti_file:
-            # Use the main actives file if possible, but if the main file is
-            # missing or the fallback file is newer, use that one
-            if acti_file.is_file():
-                file_to_use = acti_file
-                if (fb_acti_file.is_file() and
-                        fb_acti_file.mtime > acti_file.mtime):
-                    file_to_use = fb_acti_file
-            else:
-                file_to_use = fb_acti_file
-            swap_files = file_to_use is not acti_file
-        else:
-            # We don't even have actives files for this game, skip right to
-            # parent
-            file_to_use = None
-            swap_files = False
-        if swap_files:
-            self._set_acti_file(file_to_use)
-        ret_acti = super()._fetch_active_plugins()
-        if swap_files:
-            self._set_acti_file(acti_file)
-        return ret_acti
-
-    def _persist_active_plugins(self, active, lord):
-        super()._persist_active_plugins(active, lord)
-        fb_acti_file, _fb_lo_file = self._fallback_lo_files
-        if fb_acti_file:
-            self.get_acti_file().copyTo(fb_acti_file)
-
-    def _persist_load_order(self, lord, active, *, _cleaned=False):
-        super()._persist_load_order(lord, active, _cleaned=_cleaned)
-        _fb_acti_file, fb_lo_file = self._fallback_lo_files
-        if fb_lo_file:
-            self.get_lo_file().copyTo(fb_lo_file)
-
-    def print_lo_paths(self):
-        super().print_lo_paths()
-        fb_acti_file, fb_lo_file = self._fallback_lo_files
-        if fb_lo_file:
-            bolt.deprint(u' - Load order (fallback): %s' % fb_lo_file)
-        if fb_acti_file and fb_acti_file != fb_lo_file:
-            bolt.deprint(u' - Active plugins (fallback): %s' % fb_acti_file)
-
 # TextfileGame overrides
 class Skyrim(TextfileGame):
     must_be_active_if_present = tuple(map(FName, (
@@ -1575,7 +1489,10 @@ class Fallout4(AsteriskGame):
 class Fallout4VR(Fallout4):
     must_be_active_if_present = (
         *Fallout4.must_be_active_if_present, FName(u'Fallout4_VR.esm'))
-    _ccc_filename = u''
+    # No ESLs, reset these back to their pre-ESL versions
+    _ccc_filename = ''
+    max_espms = 255
+    max_esls = 0
 
 class SkyrimSE(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
@@ -1662,7 +1579,10 @@ class SkyrimSE(AsteriskGame):
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = (
     *SkyrimSE.must_be_active_if_present, FName(u'SkyrimVR.esm'))
-    _ccc_filename = u''
+    # No ESLs, reset these back to their pre-ESL versions
+    _ccc_filename = ''
+    max_espms = 255
+    max_esls = 0
 
 class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
@@ -1678,10 +1598,6 @@ class EnderalSE(SkyrimSE):
             FName(u'Enderal - Forgotten Stories.esm'),
         }
 
-# WindowsStoreGame overrides
-class SkyrimSEWS(WindowsStoreGame, SkyrimSE): pass
-class Fallout4WS(WindowsStoreGame, Fallout4): pass
-
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
@@ -1693,18 +1609,14 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif game_fsName == u'Enderal Special Edition':
         return EnderalSE(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Skyrim Special Edition':
+    elif game_fsName  == 'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim VR':
         return SkyrimVR(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Skyrim Special Edition MS':
-        return SkyrimSEWS(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Fallout4':
+    elif game_fsName == 'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4VR':
         return Fallout4VR(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Fallout4 MS':
-        return Fallout4WS(mod_infos, plugins_txt_path)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

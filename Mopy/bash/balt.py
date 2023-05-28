@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,28 +24,28 @@
 now. See #190, its code should be refactored and land in basher and/or gui."""
 from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-from . import bass # for dirs - try to avoid
-from . import bolt
-from .bolt import deprint, readme_url, Path
-from .exception import AbstractError, AccessDeniedError, BoltError, \
-    CancelError, SkipError, StateError
-#--Python
-import time
 import threading
+import time
+from collections.abc import Iterable
+from dataclasses import dataclass
 from functools import partial, wraps
-from collections import OrderedDict
-#--wx
+
 import wx
 import wx.adv
-#--gui
-from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
-    web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
-    ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave, DirOpen
+
+from . import bass # for dirs - try to avoid
+from . import bolt
+from .bolt import FName, Path, deprint, readme_url
+from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
+from .exception import CancelError, SkipError, StateError
+from .gui import RIGHT, BusyCursor, Button, CheckListBox, \
+    Color, DialogWindow, DirOpen, DocumentViewer, EventResult, FileOpen, \
+    FileOpenMultiple, FileSave, Font, GlobalMenu, HLayout, \
+    ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
+    TextArea, UIListCtrl, VLayout, WindowFrame, bell, \
+    copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
+    AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
+    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -60,16 +60,16 @@ class Resources(object):
 
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
-    red_bundle = ImageBundle()
-    red_bundle.Add(bass.dirs[u'images'].join(u'bash_32-2.ico'))
-    Resources.bashRed = red_bundle.GetIconBundle()
-    blue_bundle = ImageBundle()
-    blue_bundle.Add(bass.dirs[u'images'].join(u'bash_blue.svg-2.ico'))
-    Resources.bashBlue = blue_bundle.GetIconBundle()
+    def _get_bundle(img_path):
+        bundle = wx.IconBundle()
+        bundle.AddIcon(bass.dirs['images'].join(img_path).s,
+                       ImageWrapper.img_types['.ico'])
+        return bundle
+    Resources.bashRed = _get_bundle('bash_icons_red.ico')
+    Resources.bashBlue = _get_bundle('bash_icons_blue.ico')
 
 # Settings --------------------------------------------------------------------
-__unset = bolt.Settings(dictFile=None) # type information
-_settings = __unset # must be bound to bosh.settings - smelly, see #174
+_settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
@@ -79,44 +79,23 @@ colors: dict[str, Color] = {}
 images = {} #--Singleton for collection of images.
 
 #------------------------------------------------------------------------------
-class ImageBundle(object):
-    """Wrapper for bundle of images.
-
-    Allows image bundle to be specified before wx.App is initialized.""" # TODO: unneeded?
-    def __init__(self):
-        self._image_paths = []
-        self.iconBundle = None
-
-    def Add(self, img_path):
-        self._image_paths.append(img_path)
-
-    def GetIconBundle(self):
-        if not self.iconBundle:
-            self.iconBundle = wx.IconBundle()
-            for img_path in self._image_paths:
-                self.iconBundle.AddIcon(
-                    img_path.s, ImageWrapper.typesDict[img_path.cext[1:]])
-        return self.iconBundle
-
-#------------------------------------------------------------------------------
 class ImageList(object):
     """Wrapper for wx.ImageList.
 
     Allows ImageList to be specified before wx.App is initialized.
     Provides access to ImageList integers through imageList[key]."""
-    def __init__(self,width,height):
-        self.width = width
-        self.height = height
+    def __init__(self, il_width, il_height):
+        self.width = scaled(il_width)
+        self.height = scaled(il_height)
         self.images = []
         self.indices = {}
         self.imageList = None
 
     def GetImageList(self):
         if not self.imageList:
-            indices = self.indices
-            imageList = self.imageList = wx.ImageList(self.width,self.height)
-            for key,image in self.images:
-                indices[key] = imageList.Add(image.get_bitmap())
+            imageList = self.imageList = wx.ImageList(self.width, self.height)
+            self.indices = {k: imageList.Add(im.get_bitmap()) for k, im in
+                            self.images}
         return self.imageList
 
     def get_icon(self, key): return self.images[self[key]][1].GetIcon() # YAK !
@@ -129,7 +108,7 @@ class ImageList(object):
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
     def __init__(self):
-        ImageList.__init__(self, 16, 16)
+        super().__init__(16, 16)
         if not (im_dir := Path.getcwd().join('bash', 'images')).exists(): ##: CI Hack
             im_dir = Path.getcwd().join('Mopy', 'bash', 'images')
         for state in (u'on', u'off', u'inc', u'imp'):
@@ -138,7 +117,7 @@ class ColorChecks(ImageList):
                 shortKey = f'{status}.{state}'
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
-                image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
+                image = images[image_key] = ImageWrapper(img, iconSize=16)
                 self.images.append((shortKey, image))
 
     def Get(self,status,on):
@@ -173,189 +152,105 @@ class ColorChecks(ImageList):
             else: shortKey = u'red.off'
         return self.indices[shortKey]
 
+class InstallerColorChecks(ImageList):
+    def __init__(self):
+        super().__init__(16, 16)
+        imDirJn = bass.dirs['images'].join
+        def _icc(fname): return ImageWrapper(imDirJn(fname), iconSize=16)
+        self.images.extend({
+            #--Off/Archive
+            'off.green':  _icc('checkbox_green_off.png'),
+            'off.grey':   _icc('checkbox_grey_off.png'),
+            'off.red':    _icc('checkbox_red_off.png'),
+            'off.white':  _icc('checkbox_white_off.png'),
+            'off.orange': _icc('checkbox_orange_off.png'),
+            'off.yellow': _icc('checkbox_yellow_off.png'),
+            #--Off/Archive - Wizard
+            'off.green.wiz':    _icc('checkbox_green_off_wiz.png'),
+            #grey
+            'off.red.wiz':      _icc('checkbox_red_off_wiz.png'),
+            'off.white.wiz':    _icc('checkbox_white_off_wiz.png'),
+            'off.orange.wiz':   _icc('checkbox_orange_off_wiz.png'),
+            'off.yellow.wiz':   _icc('checkbox_yellow_off_wiz.png'),
+            #--On/Archive
+            'on.green':  _icc('checkbox_green_inc.png'),
+            'on.grey':   _icc('checkbox_grey_inc.png'),
+            'on.red':    _icc('checkbox_red_inc.png'),
+            'on.white':  _icc('checkbox_white_inc.png'),
+            'on.orange': _icc('checkbox_orange_inc.png'),
+            'on.yellow': _icc('checkbox_yellow_inc.png'),
+            #--On/Archive - Wizard
+            'on.green.wiz':  _icc('checkbox_green_inc_wiz.png'),
+            #grey
+            'on.red.wiz':    _icc('checkbox_red_inc_wiz.png'),
+            'on.white.wiz':  _icc('checkbox_white_inc_wiz.png'),
+            'on.orange.wiz': _icc('checkbox_orange_inc_wiz.png'),
+            'on.yellow.wiz': _icc('checkbox_yellow_inc_wiz.png'),
+            #--Off/Directory
+            'off.green.dir':  _icc('diamond_green_off.png'),
+            'off.grey.dir':   _icc('diamond_grey_off.png'),
+            'off.red.dir':    _icc('diamond_red_off.png'),
+            'off.white.dir':  _icc('diamond_white_off.png'),
+            'off.orange.dir': _icc('diamond_orange_off.png'),
+            'off.yellow.dir': _icc('diamond_yellow_off.png'),
+            #--Off/Directory - Wizard
+            'off.green.dir.wiz':  _icc('diamond_green_off_wiz.png'),
+            #grey
+            'off.red.dir.wiz':    _icc('diamond_red_off_wiz.png'),
+            'off.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'off.orange.dir.wiz': _icc('diamond_orange_off_wiz.png'),
+            'off.yellow.dir.wiz': _icc('diamond_yellow_off_wiz.png'),
+            #--On/Directory
+            'on.green.dir':  _icc('diamond_green_inc.png'),
+            'on.grey.dir':   _icc('diamond_grey_inc.png'),
+            'on.red.dir':    _icc('diamond_red_inc.png'),
+            'on.white.dir':  _icc('diamond_white_inc.png'),
+            'on.orange.dir': _icc('diamond_orange_inc.png'),
+            'on.yellow.dir': _icc('diamond_yellow_inc.png'),
+            #--On/Directory - Wizard
+            'on.green.dir.wiz':  _icc('diamond_green_inc_wiz.png'),
+            #grey
+            'on.red.dir.wiz':    _icc('diamond_red_inc_wiz.png'),
+            'on.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
+            'on.orange.dir.wiz': _icc('diamond_orange_inc_wiz.png'),
+            'on.yellow.dir.wiz': _icc('diamond_yellow_inc_wiz.png'),
+            #--Broken
+            'corrupt': _icc('red_x.svg'),
+        }.items())
+
+def get_dv_bitmaps():
+    """Returns the bitmaps needed for DocumentViewer."""
+    return tuple(images[i].get_bitmap() for i in (
+        'back.16', 'forward.16', 'reload.16'))
+
+# TODO(inf) de-wx! Actually, don't - absorb via better API
+def staticBitmap(parent, bitmap=None):
+    """Tailored to current usages - IAW: do not use."""
+    return wx.StaticBitmap(_AComponent._resolve(parent),
+        bitmap=images['warning.32'].get_bitmap() if bitmap is None else bitmap)
+
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-def askContinue(parent, message, continueKey, title=_(u'Warning')):
-    """Show a modal continue query if value of continueKey is false. Return
-    True to continue.
-    Also provides checkbox "Don't show this in future." to set continueKey
-    to true. continueKey must end in '.continue' - should be enforced
-    """
+def askContinue(parent, message, continueKey=None, title=_('Warning'),
+                show_cancel=True):
+    """Show a modal continue query if continueKey is provided and the value of
+    the corresponding setting is False. Return True to continue.
+    Also provides checkbox "Don't show this in the future." to set continueKey
+    to True. continueKey must end in '.continue' - should be enforced. If
+    continueKey is None however, it provides a "Don't show this for the rest of
+    operation." checkbox instead."""
     #--ContinueKey set?
-    if _settings.get(continueKey): return True
+    if continueKey and _settings.get(continueKey):
+        return True
     #--Generate/show dialog
-    checkBoxTxt = _(u"Don't show this in the future.")
-    result, check = _ContinueDialog.display_dialog(parent, title=title,
-        message=message, checkBoxTxt=checkBoxTxt)
-    if check:
+    checkBoxTxt = _("Don't show this in the future.") if continueKey else _(
+        "Don't show this for the rest of operation.")
+    result, check = ContinueDialog.display_dialog(parent, message, title,
+        checkBoxTxt, show_cancel=show_cancel, sizes_dict=sizes)
+    if continueKey and result and check: # Don't store setting if user canceled
         _settings[continueKey] = 1
-    return result
-
-def askContinueShortTerm(parent, message, title=_(u'Warning')):
-    """Shows a modal continue query  Returns True to continue.
-    Also provides checkbox "Don't show this for rest of operation."."""
-    #--Generate/show dialog
-    checkBoxTxt = _(u"Don't show this for the rest of operation.")
-    result, check = _ContinueDialog.display_dialog(parent, title=title,
-        message=message, checkBoxTxt=checkBoxTxt)
-    return (result + bool(check)) if result else False # 2: checked 1: OK
-
-class _ContinueDialog(DialogWindow):
-    _def_size = _min_size = (360, 150)
-
-    def __init__(self, parent, message, title, checkBoxTxt):
-        super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
-        self.gCheckBox = CheckBox(self, checkBoxTxt)
-        #--Layout
-        VLayout(border=6, spacing=6, item_expand=True, items=[
-            (HLayout(spacing=6, items=[
-                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
-                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
-             LayoutOptions(weight=1)),
-            Stretch(),
-            HorizontalLine(self),
-            HLayout(spacing=4, item_expand=True, items=[
-                self.gCheckBox, Stretch(), OkButton(self), CancelButton(self),
-            ]),
-        ]).apply_to(self)
-
-    def show_modal(self):
-        #--Get continue key setting and return
-        result = super(_ContinueDialog, self).show_modal()
-        check = self.gCheckBox.is_checked
-        return result, check
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        #--Get continue key setting and return
-        if canVista:
-            parent, *args = args
-            result, check = vistaDialog(cls._resolve(parent), *args, **kwargs)
-        else:
-            return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
-        return result, check
-
-#------------------------------------------------------------------------------
-def askText(parent, message, title=u'', default=u'', strip=True):
-    """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.TextEntryDialog(_AComponent._resolve(parent), message, title,
-                            default) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        txt = dialog.GetValue()
-        return txt.strip() if strip else txt
-
-#------------------------------------------------------------------------------
-def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
-    """Shows a text entry dialog and returns result or None if canceled."""
-    with wx.NumberEntryDialog(_AComponent._resolve(parent), message, prompt,
-                              title, value, min, max) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        return dialog.GetValue()
-
-# Message Dialogs -------------------------------------------------------------
-from .env import TASK_DIALOG_AVAILABLE, TaskDialog, BTN_OK, BTN_CANCEL, \
-    BTN_YES, BTN_NO, GOOD_EXITS
-canVista = TASK_DIALOG_AVAILABLE
-
-def vistaDialog(parent, message, title, checkBoxTxt=None,
-                buttons=None, icon=u'warning', commandLinks=True, footer=u'',
-                expander=[], heading=u''):
-    """Always guard with canVista == True"""
-    buttons = buttons if buttons is not None else (
-        (BTN_OK, u'ok'), (BTN_CANCEL, u'cancel'))
-    heading = heading if heading is not None else title
-    title = title if title is not None else u'Wrye Bash'
-    dialog = TaskDialog(title, heading, message,
-                        buttons=[x[1] for x in buttons], main_icon=icon,
-                        parenthwnd=parent.GetHandle() if parent else None,
-                        footer=footer)
-    if expander:
-        dialog.set_expander(expander,False,not footer)
-    if checkBoxTxt:
-        if isinstance(checkBoxTxt, bytes):
-            raise RuntimeError(u'Do not pass bytes to vistaDialog!')
-        elif isinstance(checkBoxTxt, str):
-            dialog.set_check_box(checkBoxTxt,False)
-        else:
-            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
-    button, radio, checkbox = dialog.show(commandLinks)
-    for id_, title in buttons:
-        if title.startswith(u'+'): title = title[1:]
-        if title == button:
-            if checkBoxTxt:
-                return id_ in GOOD_EXITS, checkbox
-            else:
-                return id_ in GOOD_EXITS, None
-    return False, checkbox
-
-def askStyled(parent, message, title, style, do_center=False):
-    """Shows a modal MessageDialog.
-    Use ErrorMessage, WarningMessage or InfoMessage."""
-    parent = _AComponent._resolve(parent)
-    if do_center: style |= wx.CENTER
-    if canVista:
-        vista_btn = []
-        icon = None
-        if style & wx.YES_NO:
-            yes = u'yes'
-            no = u'no'
-            if style & wx.YES_DEFAULT:
-                yes = u'Yes'
-            elif style & wx.NO_DEFAULT:
-                no = u'No'
-            vista_btn.append((BTN_YES, yes))
-            vista_btn.append((BTN_NO, no))
-        if style & wx.OK:
-            vista_btn.append((BTN_OK, u'ok'))
-        if style & wx.CANCEL:
-            vista_btn.append((BTN_CANCEL, u'cancel'))
-        if style & wx.ICON_INFORMATION:
-            icon = 'information'
-        if style & wx.ICON_WARNING:
-            icon = 'warning'
-        if style & wx.ICON_ERROR:
-            icon = 'error'
-        result, _check = vistaDialog(parent, message=message, title=title,
-                                     icon=icon, buttons=vista_btn)
-    else:
-        dialog = wx.MessageDialog(parent,message,title,style) # TODO de-wx!
-        result = dialog.ShowModal() in (wx.ID_OK, wx.ID_YES)
-        dialog.Destroy()
-    return result
-
-def askOk(parent, message, title=u''):
-    """Shows a modal error message."""
-    return askStyled(parent, message, title, wx.OK | wx.CANCEL)
-
-def askYes(parent, message, title=u'', default=True, questionIcon=False):
-    """Shows a modal warning or question message."""
-    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_WARNING
-    style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
-    return askStyled(parent, message, title, style)
-
-def askWarning(parent, message, title=_(u'Warning')):
-    """Shows a modal warning message."""
-    return askStyled(parent, message, title,
-                     wx.OK | wx.CANCEL | wx.ICON_WARNING)
-
-def showOk(parent, message, title=u''):
-    """Shows a modal error message."""
-    if isinstance(title, bolt.Path): title = title.s
-    return askStyled(parent, message, title, wx.OK)
-
-def showError(parent, message, title=_(u'Error')):
-    """Shows a modal error message."""
-    if isinstance(title, bolt.Path): title = title.s
-    return askStyled(parent, message, title, wx.OK | wx.ICON_ERROR)
-
-def showWarning(parent, message, title=_(u'Warning'), do_center=False):
-    """Shows a modal warning message."""
-    return askStyled(parent, message, title, wx.OK | wx.ICON_WARNING,
-                     do_center=do_center)
-
-def showInfo(parent, message, title=_(u'Information')):
-    """Shows a modal information message."""
-    return askStyled(parent, message, title, wx.OK | wx.ICON_INFORMATION)
+    return result if continueKey else ( # 2: checked 1: OK
+        (result + bool(check)) if result else False)
 
 #------------------------------------------------------------------------------
 class _Log(object):
@@ -363,9 +258,9 @@ class _Log(object):
     def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
         self.asDialog = asDialog
         #--Sizing
-        key__pos_ = self._settings_key + u'.pos'
-        key__size_ = self._settings_key + u'.size'
-        if isinstance(title, bolt.Path): title = title.s
+        key__pos_ = f'{self._settings_key}.pos'
+        key__size_ = f'{self._settings_key}.size'
+        if isinstance(title, Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
             window = DialogWindow(parent, title, sizes_dict=_settings,
@@ -420,15 +315,15 @@ class WryeLog(_Log):
                  log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
-        if isinstance(logText, bolt.Path):
+        if isinstance(logText, Path):
             logPath = logText
         else:
             logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
             bolt.convert_wtext_to_html(logPath, logText, css_dir)
-        super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
+        super().__init__(parent, title, asDialog, log_icons)
         #--Text
-        self._html_ctrl = DocumentViewer(self.window)
+        self._html_ctrl = DocumentViewer(self.window, get_dv_bitmaps())
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
         gOkButton = OkButton(self.window)
@@ -450,7 +345,8 @@ def playSound(parent,sound):
     if sound.IsOk():
         sound.Play(wx.adv.SOUND_ASYNC)
     else:
-        showError(parent,_(u'Invalid sound file %s.') % sound)
+        showError(parent, _('Invalid sound file %(sound_file)s.') % {
+            'sound_file': sound})
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -472,16 +368,16 @@ class ListEditorData(object):
     #--List
     def getItemList(self):
         """Returns item list in correct order."""
-        raise AbstractError # return []
+        raise NotImplementedError # return []
     def add(self):
         """Performs add operation. Return new item on success."""
-        raise AbstractError # return None
+        raise NotImplementedError # return None
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
-        raise AbstractError # return False
+        raise NotImplementedError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
-        raise AbstractError # return False
+        raise NotImplementedError # return False
 
     #--Info box
     def getInfo(self,item):
@@ -489,12 +385,11 @@ class ListEditorData(object):
         return u''
     def setInfo(self, item, info_text):
         """Sets string info on specified item."""
-        raise AbstractError
+        raise NotImplementedError
 
     #--Save/Cancel
     def save(self):
         """Handles save button."""
-        pass
 
 #------------------------------------------------------------------------------
 class ListEditor(DialogWindow):
@@ -511,7 +406,7 @@ class ListEditor(DialogWindow):
         :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
-        self._listEditorData = lid_data # type: ListEditorData
+        self._listEditorData: ListEditorData = lid_data
         self._list_items = lid_data.getItemList()
         #--GUI
         self._size_key = self._listEditorData.__class__.__name__
@@ -521,7 +416,7 @@ class ListEditor(DialogWindow):
                                onSelect=self.OnSelect)
         self.listBox.set_min_size(125, 150)
         #--Infobox
-        self.gInfoBox = None # type: TextArea
+        self.gInfoBox: TextArea | None = None
         if lid_data.showInfo:
             editable = not self._listEditorData.infoReadOnly
             self.gInfoBox = TextArea(self, editable=editable)
@@ -543,17 +438,17 @@ class ListEditor(DialogWindow):
                 new_button = Button(self, btn_label)
                 new_button.on_clicked.subscribe(btn_callback)
                 return new_button
-            new_buttons = [_btn(defLabel, func) for flag, defLabel, func
-                           in buttonSet if flag]
-            buttons = VLayout(spacing=4, items=new_buttons)
+            new_buttons = [_btn(defLabel, func) for def_flag, defLabel, func
+                           in buttonSet if def_flag]
+            le_buttons = VLayout(spacing=4, items=new_buttons)
         else:
-            buttons = None
+            le_buttons = None
         #--Layout
         layout = VLayout(border=4, spacing=4, items=[
             (HLayout(spacing=4, item_expand=True, items=[
                 (self.listBox, LayoutOptions(weight=1)),
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
-                buttons
+                le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
         #--Done
         if self._size_key in sizes:
@@ -569,12 +464,7 @@ class ListEditor(DialogWindow):
         if newItem and newItem not in self._list_items:
             self._list_items = self._listEditorData.getItemList()
             index = self._list_items.index(newItem)
-            self.listBox.lb_insert_items([newItem], index)
-
-    def SetItemsTo(self, items):
-        if self._listEditorData.setTo(items):
-            self._list_items = self._listEditorData.getItemList()
-            self.listBox.lb_set_items(self._list_items)
+            self.listBox.lb_insert(newItem, index)
 
     def DoRename(self):
         """Renames selected item."""
@@ -588,7 +478,7 @@ class ListEditor(DialogWindow):
         if not newName or newName == curName:
             return
         elif newName in self._list_items:
-            showError(self,_(u'Name must be unique.'))
+            showError(self, _('Name must be unique.'))
         elif self._listEditorData.rename(curName,newName):
             self._list_items[itemDex] = newName
             self.listBox.lb_set_label_at_index(itemDex, newName)
@@ -820,7 +710,29 @@ def conversation(func):
                     Link.Frame.bind_refresh(bind=True)
     return _conversation_wrapper
 
-class UIList(wx.Panel):
+#------------------------------------------------------------------------------
+@dataclass(slots=True)
+class _ListItemFormat:
+    icon_key: str | None = None
+    back_key: str = 'default.bkgd'
+    text_key: str = 'default.text'
+    bold: bool = False
+    italics: bool = False
+    underline: bool = False
+
+    def to_tree_node_format(self, parent_uil: UIList):
+        """Convert this list item format to an equivalent tree node format,
+        relative to the specified parent UIList."""
+        return TreeNodeFormat(
+            icon_idx=parent_uil.lookup_icon_index(self.icon_key),
+            back_color=parent_uil.lookup_back_key(self.back_key),
+            text_color=parent_uil.lookup_text_key(self.text_key),
+            bold=self.bold, italics=self.italics, underline=self.underline)
+
+DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
+    list[tuple[FName, TreeNodeFormat | None]]]]
+
+class UIList(PanelWin):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
     column_links = None # A list of all links to show in the column menu
@@ -831,8 +743,6 @@ class UIList(wx.Panel):
     global_links = None
     #--gList image collection
     _icons = ColorChecks()
-    _shellUI = False # only True in Screens/INIList/Installers
-    _recycle = True # False on tabs that recycle makes no sense (People)
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -849,7 +759,7 @@ class UIList(wx.Panel):
     _sort_keys = {} # sort_keys[col] provides the sort key for this col
     _extra_sortings = [] #extra self.methods for fancy sortings - order matters
     # Labels, map the (permanent) order of columns to the label generating code
-    labels = OrderedDict()
+    labels = {}
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
@@ -857,14 +767,14 @@ class UIList(wx.Panel):
     _copy_paths = False # enable the Ctrl+C shortcut
 
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
-        wx.Panel.__init__(self, _AComponent._resolve(parent), style=wx.WANTS_CHARS)
+        super().__init__(parent, wants_chars=True, no_border=False)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
-        self._colDict = {} # used in setting column sort indicator
+        self._col_index = {} # used in setting column sort indicator
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
                                   self.__class__._sunkenBorder,
@@ -876,21 +786,20 @@ class UIList(wx.Panel):
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
         checkboxesIL = self._icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
-        self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
-        self.__gList._native_widget.SetImageList(checkboxesIL,
-                                                 wx.IMAGE_LIST_SMALL)
+        self.sm_up = checkboxesIL.Add(images['arrow.up.16'].get_bitmap())
+        self.sm_dn = checkboxesIL.Add(images['arrow.down.16'].get_bitmap())
+        self.__gList.set_image_list(checkboxesIL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
             self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
         # gList callbacks
         self.__gList.on_lst_col_rclick.subscribe(self.DoColumnMenu)
         self.__gList.on_context_menu.subscribe(self.DoItemMenu)
-        self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
+        self.__gList.on_lst_col_click.subscribe(self._on_column_click)
         self.__gList.on_key_up.subscribe(self._handle_key_up)
         self.__gList.on_key_down.subscribe(self._handle_key_down)
         #--Events: Columns
-        self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
+        self.__gList.on_lst_col_end_drag.subscribe(self._on_column_resize)
         #--Events: Items
         self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
         self.__gList.on_item_selected.subscribe(self._handle_select)
@@ -908,8 +817,8 @@ class UIList(wx.Panel):
         self._clean_column_settings()
         self.PopulateColumns()
         #--Items
-        self._defaultTextBackground = wx.SystemSettings.GetColour(
-            wx.SYS_COLOUR_WINDOW)
+        self._defaultTextBackground = Color.from_wx(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
     # Column properties
@@ -919,28 +828,30 @@ class UIList(wx.Panel):
     def all_allowed_cols(self):
         return [c for c in self.allCols if c not in self.banned_columns]
     @property
-    def colWidths(self): return _settings[self.keyPrefix + u'.colWidths']
+    def colWidths(self): return _settings[f'{self.keyPrefix}.colWidths']
     @property
     def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings[self.keyPrefix + u'.colReverse']
+        return _settings[f'{self.keyPrefix}.colReverse']
     @property
-    def cols(self): return _settings[self.keyPrefix + u'.cols']
+    def cols(self): return _settings[f'{self.keyPrefix}.cols']
     @property
     def allowed_cols(self):
         """Version of cols that filters out banned_columns."""
         return [c for c in self.cols if c not in self.banned_columns]
     @property
-    def autoColWidths(self):
-        return _settings[u'bash.autoSizeListColumns']
-    @autoColWidths.setter
-    def autoColWidths(self, val): _settings[u'bash.autoSizeListColumns'] = val
+    def auto_col_widths(self):
+        return _settings.get(f'{self.keyPrefix}.auto_size_columns',
+            AutoSize.FIT_MANUAL)
+    @auto_col_widths.setter
+    def auto_col_widths(self, val):
+        _settings[f'{self.keyPrefix}.auto_size_columns'] = val
     # the current sort column
     @property
     def sort_column(self):
-        return _settings.get(self.keyPrefix + u'.sort', self._default_sort_col)
+        return _settings.get(f'{self.keyPrefix}.sort', self._default_sort_col)
     @sort_column.setter
-    def sort_column(self, val): _settings[self.keyPrefix + u'.sort'] = val
+    def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
 
     def _handle_select(self, item_key):
         self._select(item_key)
@@ -954,25 +865,25 @@ class UIList(wx.Panel):
     def PopulateItem(self, itemDex=-1, item=None, target_ini_setts=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
+
         :param itemDex: the index of the item in the list - must be given if
         item is None
         :param item: an FName or an int (Masters), the key in self.data
-        """
+        :param target_ini_setts: Cached information about the INI settings.
+            Used on the INI Edits tab"""
         insert = False
-        gl_set_item = self.__gList._native_widget.SetItem
         allow_cols = self.allowed_cols # property, calculate once
         if not allow_cols:
             return # No visible columns, nothing to do
         if item is not None:
             try:
-                itemDex = self.GetIndex(item)
+                itemDex = self._get_uil_index(item)
             except KeyError: # item is not present, so inserting
                 itemDex = self.item_count # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        ##: HACK or workaround for installer labels giving back Paths
-        str_label = '%s' % self.labels[allow_cols[0]](self, item)
+        str_label = self.labels[allow_cols[0]](self, item)
         if insert:
             # We're inserting a new item, so we need special handling for the
             # first SetItem call - see InsertListCtrlItem
@@ -982,83 +893,43 @@ class UIList(wx.Panel):
         else:
             # The item is already in the UIList, so we only need to redecorate
             # and set text for all labels
-            gItem = self.__gList._native_widget.GetItem(itemDex)
+            gItem = self.__gList.get_item_data(itemDex)
             self.__setUI(item, target_ini_setts, gItem)
             # Piggyback off the SetItem call we need for __setUI to also set
             # the first column's text
             gItem.SetText(str_label)
-            gl_set_item(gItem)
-        for col_index, col in enumerate(allow_cols[1:], start=1):
-            ##: HACK, same as above
-            gl_set_item(itemDex, col_index, '%s' % self.labels[col](
-                self, item))
-
-    class _ListItemFormat(object):
-        def __init__(self):
-            self.icon_key = None
-            self.back_key = u'default.bkgd'
-            self.text_key = u'default.text'
-            self.strong = False
-            self.italics = False
-            self.underline = False
-
-    def set_item_format(self, item, item_format, target_ini_setts):
-        """Populate item_format attributes for text and background colors
-        and set icon, font and mouse text. Responsible (applicable if the
-        data_store is a FileInfo subclass) for calling getStatus (or
-        tweak_status in Inis) to update respective info's status."""
-        pass # screens, bsas
-
-    def __setUI(self, fileName, target_ini_setts, gItem):
-        """Set font, status icon, background text etc."""
-        df = self._ListItemFormat()
-        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        if df.icon_key:
-            if isinstance(df.icon_key, tuple):
-                img = self._icons.Get(*df.icon_key)
-            else: img = self._icons[df.icon_key]
-            gItem.SetImage(img)
-        if df.text_key:
-            gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())
-        else:
-            gItem.SetTextColour(self.__gList._native_widget.GetTextColour())
-        if df.back_key:
-            gItem.SetBackgroundColour(colors[df.back_key].to_rgba_tuple())
-        else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
-                                 slant=df.italics, underline=df.underline))
+            self.__gList.set_item_data(gItem)
+        for col_dex, col in enumerate(allow_cols[1:], start=1):
+            self.__gList.set_item_data(itemDex, col_dex,
+                                       self.labels[col](self, item))
 
     def populate_items(self):
         """Sort items and populate entire list."""
         # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
         # GUI lag
-        self.Freeze()
-        self._PopulateItems()
-        self.Thaw()
-
-    def _PopulateItems(self):
-        self.mouseTexts.clear()
-        items = set(self.data_store)
-        if self.__class__._target_ini:
-            # hack for avoiding the syscall in get_ci_settings
-            target_setts = self.data_store.ini.get_ci_settings()
-        else:
-            target_setts = None
-        #--Update existing items.
-        index = 0
-        while index < self.item_count:
-            item = self.GetItem(index)
-            if item not in items: self.__gList.RemoveItemAt(index)
+        with self.pause_drawing():
+            self.mouseTexts.clear()
+            items = set(self.data_store)
+            if self.__class__._target_ini:
+                # hack for avoiding the syscall in get_ci_settings
+                t_setts = self.data_store.ini.get_ci_settings()
             else:
-                self.PopulateItem(itemDex=index, target_ini_setts=target_setts)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.PopulateItem(item=item, target_ini_setts=target_setts)
-        #--Sort
-        self.SortItems()
-        self.autosizeColumns()
+                t_setts = None
+            #--Update existing items.
+            index = 0
+            while index < self.item_count:
+                item = self.GetItem(index)
+                if item not in items: self.__gList.RemoveItemAt(index)
+                else:
+                    self.PopulateItem(itemDex=index, target_ini_setts=t_setts)
+                    items.remove(item)
+                    index += 1
+            #--Add remaining new items
+            for item in items:
+                self.PopulateItem(item=item, target_ini_setts=t_setts)
+            #--Sort
+            self.SortItems()
+            self.autosizeColumns()
 
     __all = ()
     _same_item = object()
@@ -1071,15 +942,14 @@ class UIList(wx.Panel):
         else:  #--Iterable
             # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
             # the GUI lag
-            self.Freeze()
-            for d in to_del:
-                self.__gList.RemoveItemAt(self.GetIndex(d))
-            for upd in redraw:
-                self.PopulateItem(item=upd)
-            #--Sort
-            self.SortItems()
-            self.autosizeColumns()
-            self.Thaw()
+            with self.pause_drawing():
+                for d in to_del:
+                    self.__gList.RemoveItemAt(self._get_uil_index(d))
+                for upd in redraw:
+                    self.PopulateItem(item=upd)
+                #--Sort
+                self.SortItems()
+                self.autosizeColumns()
         self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
@@ -1098,15 +968,82 @@ class UIList(wx.Panel):
     def Focus(self):
         self.__gList.set_focus()
 
-    #--Column Menu
-    def DoColumnMenu(self, evt_col):
-        """Show column menu."""
+    #--Decorating -------------------------------------------------------------
+    def set_item_format(self, item, item_format, target_ini_setts):
+        """Populate item_format attributes for text and background colors
+        and set icon, font and mouse text. Responsible (applicable if the
+        data_store is a FileInfo subclass) for calling getStatus (or
+        tweak_status in Inis) to update respective info's status."""
+        pass # screens, bsas
+
+    def __setUI(self, fileName, target_ini_setts, gItem):
+        """Set font, status icon, background text etc."""
+        df = _ListItemFormat()
+        self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
+        icon_index = self.lookup_icon_index(df.icon_key)
+        if icon_index is not None:
+            gItem.SetImage(icon_index)
+        gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
+        gItem.SetBackgroundColour(
+            self.lookup_back_key(df.back_key).to_rgba_tuple())
+        gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
+                                 slant=df.italics, underline=df.underline))
+
+    def lookup_icon_index(self, target_icon_key: str | tuple) -> int | None:
+        """Helper method to look up an icon from a list item format and return
+        it as an index into the image list."""
+        if isinstance(target_icon_key, tuple):
+            return self._icons.Get(*target_icon_key)
+        elif target_icon_key is not None:
+            return self._icons[target_icon_key]
+        else:
+            return None # keep None as None
+
+    def lookup_text_key(self, target_text_color: str):
+        """Helper method to look up a text color from a list item format."""
+        if target_text_color:
+            return colors[target_text_color]
+        else:
+            return self.__gList.get_text_color()
+
+    def lookup_back_key(self, target_back_color: str):
+        """Helper method to look up a background color from a list item
+        format."""
+        if target_back_color:
+            return colors[target_back_color]
+        else:
+            return self._defaultTextBackground
+
+    def decorate_tree_dict(self, tree_dict: dict[FName, list[FName]],
+            target_ini_setts=None) -> DecoratedTreeDict:
+        """Add appropriate TreeNodeFormat instances to the specified dict
+        mapping items in this UIList to lists of items in this UIList."""
+        def _decorate(i):
+            lif = _ListItemFormat()
+            # Only run set_item_format when the item is actually present,
+            # otherwise just use the default settings (we do still have to use
+            # those since the default text/background colors may have been
+            # changed from the OS default)
+            if i in self.data_store:
+                self.set_item_format(i, lif, target_ini_setts=target_ini_setts)
+            return lif.to_tree_node_format(self)
+        return {i: (_decorate(i), [(c, _decorate(c)) for c in i_children])
+                for i, i_children in tree_dict.items()}
+
+    #--Right Click Menus ------------------------------------------------------
+    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
+        """Show column menu.
+
+        :param evt_col: The index of the column that the user clicked on.
+        :param bypass_gm_setting: If set to True, ignore the bash.global_menu
+            setting when determining whether to show a column menu or not."""
         # See DoItemMenu below
         if self.column_links and not self.__gList.ec_rename_prompt_opened():
-            self.column_links.popup_menu(self, evt_col)
+            # bash.global_menu == 1 -> Global Menu Only
+            if bypass_gm_setting or _settings['bash.global_menu'] != 1:
+                self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
-    #--Item Menu
     def DoItemMenu(self):
         """Show item menu."""
         # Don't allow this if we are in the process of renaming because
@@ -1134,6 +1071,7 @@ class UIList(wx.Panel):
                     if item_txt != self.mouseTextPrev:
                         Link.Frame.set_status_info(item_txt)
                         self.mouseTextPrev = item_txt
+
     def _handle_mouse_leaving(self):
         if self.mouse_index is not None:
             self.mouse_index = None
@@ -1152,22 +1090,38 @@ class UIList(wx.Panel):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
-        elif self.__class__._editLabels and kcode == wx.WXK_F2: self.Rename()
-        elif kcode in _wx_delete:
+        elif self.__class__._editLabels and kcode == wx.WXK_F2: # F2 - rename
+            self.Rename()
+        elif kcode in _wx_delete: # Del - delete selected file(s)
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
         elif cmd_down and kcode == ord(u'O'): # Ctrl+O - open data folder
             self.open_data_store()
+        elif cmd_down and kcode == ord('S'): # Ctrl+S - save data
+            with BusyCursor():
+                Link.Frame.SaveSettings()
+        # Ctrl+Num + - auto-size columns to fit contents
+        elif cmd_down and kcode == wx.WXK_NUMPAD_ADD:
+            self.auto_col_widths = AutoSize.FIT_CONTENTS
+            # On Windows, this happens automatically (due to the native widget
+            # handling it), so all we have to do there is update our internal
+            # state to match. On all (?, only tested on wxGTK) other platforms
+            # we have to implement it ourselves
+            if wx.Platform != '__WXMSW__':
+                self.autosizeColumns()
         # Ctrl+C - copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])
+        else:
+            return EventResult.CONTINUE
+        return EventResult.FINISH
 
     # Columns callbacks
-    def OnColumnClick(self, evt_col):
-        """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[evt_col],u'INVERT')
+    def _on_column_click(self, evt_col):
+        """Column header was left-clicked on. Sort on that column."""
+        self.SortItems(self.cols[evt_col], 'INVERT')
 
-    def OnColumnResize(self, evt_col):
+    def _on_column_resize(self, evt_col):
         """Column resized: enforce minimal width and save column size info."""
         colName = self.cols[evt_col]
         width = self.__gList.lc_get_column_width(evt_col)
@@ -1175,40 +1129,64 @@ class UIList(wx.Panel):
             width = self._min_column_width
             self.__gList.lc_set_column_width(evt_col, self._min_column_width)
             # if we do not veto the column will be resized anyway!
-            self.__gList._native_widget.resizeLastColumn(0) # resize last column to fill
+            self.__gList.resize_last_col() # resize last column to fill
             self.colWidths[colName] = width
             return EventResult.CANCEL
         self.colWidths[colName] = width
 
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
-        if self.autoColWidths:
+        if self.auto_col_widths != AutoSize.FIT_MANUAL:
             colCount = range(self.__gList.lc_get_columns_count())
             for i in colCount:
-                self.__gList.lc_set_column_width(i, -self.autoColWidths)
+                self.__gList.lc_set_auto_column_width(i, self.auto_col_widths)
 
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
     def OnDClick(self, lb_dex_and_flags): pass
     def _handle_key_down(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
-    def _rename_type(self):
-        """Check if the operation is allowed and return the item type of the
-        selected labels to be renamed."""
-        to_rename = self.GetSelectedInfos()
-        return (to_rename and type(to_rename[0])) or None
+    def _check_rename_requirements(self):
+        """Check if the renaming operation is allowed and return the item type
+        of the selected labels to be renamed as well as an error to show the
+        user."""
+        sel_original = self.GetSelected()
+        sel_filtered = list(self.data_store.filter_essential(sel_original))
+        if not sel_filtered:
+            # None of the selected items may be renamed, so this whole renaming
+            # attempt is a nonstarter
+            return None, _('The selected items cannot be renamed.')
+        if (sel_original and sel_filtered and
+                sel_filtered[0] != sel_original[0]):
+            # The currently selected/detail item cannot be renamed, so we can't
+            # edit labels, which means we have to abort the renaming attempt
+            return None, _('Renaming %(first_item)s is not allowed.') % {
+                'first_item': sel_original[0]}
+        to_rename = [self.data_store[i] for i in sel_filtered]
+        if to_rename:
+            return type(to_rename[0]), ''
+        # I don't see how this would be possible, but just in case...
+        return None, _('No items selected for renaming.')
+
+    def could_rename(self):
+        """Returns True if the currently selected item(s) would allow
+        renaming."""
+        return self._check_rename_requirements()[0] is not None
+
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        rename_type = self._rename_type()
+        rename_type, rename_err = self._check_rename_requirements()
         if not rename_type:
-            # Nothing selected / rename mixed installer types / last marker
+            # We can't rename for some reason, let the user know
+            showError(self, rename_err)
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
+
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
-        raise AbstractError
+        raise NotImplementedError
 
     def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
         """For pressing F2 on the edit box for renaming"""
@@ -1265,30 +1243,31 @@ class UIList(wx.Panel):
         return self.data_store[item_key] if item_key else item_key
 
     #--Item selection ---------------------------------------------------------
-    def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
-                      __state_selected=wx.LIST_STATE_SELECTED):
+    def _get_selected(self, items=False):
+        """Return the list of indexes highlighted in the interface in
+        display order - if items is True return the list of items instead."""
         listCtrl, selected_list = self.__gList, []
-        i = listCtrl._native_widget.GetNextItem(-1, __next_all, __state_selected)
+        i = listCtrl.get_selected_index()
         while i != -1:
-            selected_list.append(lam(i))
-            i = listCtrl._native_widget.GetNextItem(i, __next_all, __state_selected)
-        return selected_list
+            selected_list.append(i)
+            i = listCtrl.get_selected_index(i)
+        return [*map(self.GetItem, selected_list)] if items else selected_list
 
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
-        return self._get_selected(lam=self.GetItem)
-
-    def GetSelectedIndexes(self):
-        """Return list of indexes highlighted in the interface in display
-        order."""
-        return self._get_selected()
+        return self._get_selected(items=True)
 
     def GetSelectedInfos(self, selected=None):
         """Return list of infos selected (highlighted) in the interface."""
         return [self.data_store[k] for k in (selected or self.GetSelected())]
 
+    def get_selected_infos_filtered(self, selected=None):
+        """Version of GetSelectedInfos that filters out essential infos."""
+        return [self.data_store[i] for i in self.data_store.filter_essential(
+            selected or self.GetSelected())]
+
     def SelectItem(self, item, deselectOthers=False):
-        dex = self.GetIndex(item)
+        dex = self._get_uil_index(item)
         if deselectOthers: self.ClearSelected()
         else: #we must deselect the item and then reselect for callbacks to run
             self.__gList.lc_select_item_at_index(dex, select=False)
@@ -1310,19 +1289,16 @@ class UIList(wx.Panel):
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
-    def EnsureVisibleItem(self, itm_name, focus=False):
-        self.EnsureVisibleIndex(self.GetIndex(itm_name), focus=focus)
-
     def EnsureVisibleIndex(self, dex, focus=False):
         if focus:
-            self.__gList._native_widget.Focus(dex)
+            self.__gList.focus_index(dex)
         else:
-            self.__gList._native_widget.EnsureVisible(dex)
+            self.__gList.ensure_visible_index(dex)
         self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
         self.SelectItem(item, deselectOthers=deselectOthers)
-        self.EnsureVisibleItem(item, focus=focus)
+        self.EnsureVisibleIndex(self._get_uil_index(item), focus=focus)
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
@@ -1349,12 +1325,19 @@ class UIList(wx.Panel):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        column, reverse, oldcol = self._GetSortSettings(column, reverse)
+        column, reverse, oldcol = self._get_sort_settings(column, reverse)
         items = self._SortItems(column, reverse)
         self.__gList.ReorderDisplayed(items)
-        self._setColumnSortIndicator(column, oldcol, reverse)
+        # check if old column is present then clear the sort indicator - not
+        # needed if column stays the same (set_col_image will replace the icon)
+        if column != oldcol and oldcol in self._col_index:
+            self.__gList.clear_col_image(self._col_index[oldcol])
+        # set column sort image - runs also on disabling columns
+        if column in self._col_index: # check if the column was not just hidden
+            self.__gList.set_col_image(self._col_index[column],
+                                       self.sm_dn if reverse else self.sm_up)
 
-    def _GetSortSettings(self, column, reverse):
+    def _get_sort_settings(self, column, reverse):
         """Return parsed col, reverse arguments. Used by SortItems.
         col: sort variable.
           Defaults to last sort. (self.sort)
@@ -1399,26 +1382,12 @@ class UIList(wx.Panel):
             for lamda in self._extra_sortings: lamda(self, items)
         return items
 
-    def _setColumnSortIndicator(self, col, oldcol, reverse):
-        # set column sort image
-        try:
-            listCtrl = self.__gList
-            try: listCtrl._native_widget.ClearColumnImage(self._colDict[oldcol])
-            except KeyError:
-                pass # if old column no longer is active this will fail but
-                #  not a problem since it doesn't exist anyways.
-            listCtrl._native_widget.SetColumnImage(self._colDict[col],
-                                    self.sm_dn if reverse else self.sm_up)
-        except KeyError: pass
-
     #--Item/Index Translation -------------------------------------------------
-    def GetItem(self,index):
-        """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.FName | int
-        """
+    def GetItem(self, index) -> FName | int:
+        """Return item (key in self.data_store) for specified list index."""
         return self.__gList.FindItemAt(index)
 
-    def GetIndex(self,item):
+    def _get_uil_index(self, item):
         """Return index for item, raise KeyError if item not present."""
         return self.__gList.FindIndexOf(item)
 
@@ -1426,14 +1395,12 @@ class UIList(wx.Panel):
     def _clean_column_settings(self):
         """Removes columns that no longer exist from settings files."""
         valid_columns = set(self.allCols)
-        # Clean the widths/reverse dictionaries - extracted into helper method
-        def clean_dict(dict_key):
-            stored_dict = _settings[self.keyPrefix + dict_key]
+        # Clean the widths/reverse dictionaries
+        for dict_key in ('.colWidths', '.colReverse'):
+            stored_dict = _settings[f'{self.keyPrefix}{dict_key}']
             invalid_columns = set(stored_dict) - valid_columns
             for c in invalid_columns:
                 del stored_dict[c]
-        clean_dict(u'.colWidths')
-        clean_dict(u'.colReverse')
         # Clean the list of enabled columns for this UIList
         stored_cols = self.cols
         invalid_columns = set(stored_cols) - valid_columns
@@ -1450,7 +1417,7 @@ class UIList(wx.Panel):
         allow_cols = self.allowed_cols
         numCols = len(allow_cols)
         names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
-        self._colDict.clear()
+        self._col_index.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = allow_cols[colDex]
@@ -1472,78 +1439,69 @@ class UIList(wx.Panel):
                 else: # New column
                     listCtrl.lc_insert_column(colDex, colName)
                     listCtrl.lc_set_column_width(colDex, colWidth)
-            self._colDict[colKey] = colDex
+            self._col_index[colKey] = colDex
             colDex += 1
         while listCtrl.lc_get_columns_count() > numCols:
             listCtrl.lc_delete_column(numCols)
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
-    def dndAllow(self, event): # Disallow drag an drop by default
+    def dndAllow(self, event): # Disallow drag and drop by default
         if event: event.Veto()
         return False
 
-    def OnDropFiles(self, x, y, filenames): raise AbstractError
-    def OnDropIndexes(self, indexes, newPos): raise AbstractError
+    def OnDropFiles(self, x, y, filenames): raise NotImplementedError
+    def OnDropIndexes(self, indexes, newPos): raise NotImplementedError
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[self.keyPrefix + u'.scrollPos'] = self.__gList._native_widget.GetScrollPos(
-            wx.VERTICAL if isVertical else wx.HORIZONTAL)
+        _settings[f'{self.keyPrefix}.scrollPos'] = self.__gList.get_scroll_pos(
+            isVertical)
 
     def SetScrollPosition(self):
-        if _settings[u'bash.restore_scroll_positions']:
-            self.__gList._native_widget.ScrollLines(
-                _settings.get(self.keyPrefix + u'.scrollPos', 0))
+        if _settings['bash.restore_scroll_positions']:
+            with self.__gList.pause_drawing():
+                self.__gList.set_scroll_pos(
+                    _settings.get(f'{self.keyPrefix}.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
         if not selected: selected = self.GetSelected()
         if selected:
-            index = self.GetIndex(selected[0])
+            index = self._get_uil_index(selected[0])
             if index != -1:
-                self.__gList._native_widget.EditLabel(index)
+                self.__gList.edit_label(index)
 
     @conversation
     def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
-        recycle = (self.__class__._recycle and
-        # menu items fire 'CommandEvent' - I need a workaround to detect Shift
-            (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
-        items = self._toDelete(items)
-        if not self.__class__._shellUI:
-            items, = self._promptDelete(items, dialogTitle, order, recycle)
-        if not items: return
-        if not self.__class__._shellUI: # non shellUI path used to delete as
-            # many as possible, mainly to show an error on trying to delete
-            # the master esm - I kept this behavior
-            for i in items:
-                try:
-                    self.data_store.delete([i], doRefresh=False,
-                                           recycle=recycle)
-                except BoltError as e: showError(self, f'{e}')
-                except (AccessDeniedError, CancelError, SkipError): pass
-            else:
-                self.data_store.delete_refresh(items, None,
-                                               check_existence=True)
-        else: # shellUI path tries to delete all at once
-            try:
-                self.data_store.delete(items, confirm=True, recycle=recycle)
-            except (AccessDeniedError, CancelError, SkipError): pass
-        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
-
-    def _toDelete(self, items):
-        return items if items is not None else self.GetSelected()
-
-    def _promptDelete(self, items, dialogTitle, order, recycle):
-        if not items: return items
-        message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
+        items = items if items is not None else self.GetSelected()
+        if not items:
+            # Sometimes we get a double Del key event on GTK, but with no
+            # selection present for the second one - just skip that
+            return
+        # We need a copy of the original items for the error below
+        orig_items = items
+        if wrapped_evt is None: # Called from menu item
+            recycle = not get_shift_down()
+        else:
+            recycle = not wrapped_evt.is_shift_down
+        items = list(self.data_store.filter_essential(items))
+        if not items and orig_items:
+            # Only undeletable items selected, inform the user
+            showError(self, _('The selected items cannot be deleted.'))
+            return
         if order: items.sort()
-        message.extend(items)
-        msg = _(u'Delete these items to the recycling bin ?') if recycle else \
-            _(u'Delete these items?  This operation cannot be undone.')
-        return ListBoxes.display_dialog(self, dialogTitle, msg, [message],
-                                        get_checked=[(message[0], items)])
+        # Let the user adjust deleted items and recycling state via GUI
+        dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
+            title=dialogTitle, items_to_delete=items, default_recycle=recycle,
+            sizes_dict=sizes, icon_bundle=Resources.bashBlue,
+            trash_icon=images['trash_can.32'].get_bitmap())
+        if not dd_ok or not dd_items: return
+        try:
+            self.data_store.delete(dd_items, recycle=dd_recycle)
+        except (PermissionError, CancelError, SkipError): pass
+        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:
@@ -1554,14 +1512,16 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, items):
+    def hide(self, items: Iterable[FName]):
+        """Hides the items in the specified iterable."""
         hidden_ = []
-        for fnkey, inf in items:
-            destDir = inf.get_hide_dir()
+        for fnkey in items:
+            destDir = self.data_store[fnkey].get_hide_dir()
             if destDir.join(fnkey).exists():
-                message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % fnkey)
-                if not askYes(self, message, _(u'Hide Files')): continue
+                message = (_('A file named %(target_file_name)s already '
+                             'exists in the hidden files directory. Overwrite '
+                             'it?') % {'target_file_name': fnkey})
+                if not askYes(self, message, _('Hide Files')): continue
             #--Do it
             with BusyCursor():
                 self.data_store.move_info(fnkey, destDir)
@@ -1570,14 +1530,35 @@ class UIList(wx.Panel):
         self.data_store.delete_refresh(hidden_, None, check_existence=True)
 
     @staticmethod
-    def _unhide_wildcard(): raise AbstractError
+    def _unhide_wildcard(): raise NotImplementedError
     def unhide(self):
         srcDir = self.data_store.hidden_dir
+        # Otherwise the unhide command will open some random directory
+        srcDir.makedirs()
         wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
             defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    def jump_to_source(self, uil_item: FName) -> bool:
+        """Jumps to the installer associated with the specified UIList item."""
+        fn_package = self.get_source(uil_item)
+        if fn_package is None:
+            return False
+        Link.Frame.notebook.SelectPage('Installers', fn_package)
+        return True
+
+    def get_source(self, uil_item: FName) -> FName | None:
+        """Returns the package associated with the specified UIList item, or
+        None if the Installers tab is not enabled or the Installers tab is
+        enabled but not constructed (i.e. hidden) or the item does not have an
+        associated package."""
+        if (not Link.Frame.iPanel or
+                not _settings['bash.installers.enabled']):
+            return None # Installers disabled or not initialized
+        pkg_column = self.data_store.table.getColumn('installer')
+        return FName(pkg_column.get(uil_item))
 
     # Global Menu -------------------------------------------------------------
     def populate_category(self, cat_label, target_category):
@@ -1643,31 +1624,32 @@ class Link(object):
     # Menu label (may depend on UI state when the menu is shown)
     _text = u''
 
-    def __init__(self, _text=None): ##: is the _text param even used anymore?
+    def __init__(self, _text=None):
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
-        specify text as a class attribute (or set in it _initData())."""
+        specify text as a class attribute (or set it via link_text). Used by
+        ChoiceLink however, so it *is* still used."""
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 
-    def _initData(self, window, selection):
+    def _initData(self,
+            window: UIList | wx.Panel | Button | DnDStatusBar | CheckListBox,
+            selection: list[FName | int] | int | None):
         """Initialize the Link instance data based on UI state when the
         menu is Popped up.
 
         Called from AppendToMenu - DO NOT call directly. If you need to use the
         initialized data in setting instance attributes (such as text) override
         and always _call super_ when overriding.
+
         :param window: the element the menu is being popped from (usually a
-        UIList subclass)
+            UIList subclass)
         :param selection: the selected items when the menu is appended or None.
-        In modlist/installers it's a list<Path> while in subpackage it's the
-        index of the right-clicked item. In main (column header) menus it's
-        the column clicked on or the first column. Set in Links.popup_menu().
-        :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
-            gui.misc_components.CheckListBox
-        :type selection: list[FName | int] | int | None
-        """
+            In modlist/installers it's a list<Path> while in sub-package it's
+            the index of the right-clicked item. In main (column header) menus
+            it's the column clicked on or the first column. Set in
+            Links.popup_menu()."""
         self.window = window
         self.selected = selection
 
@@ -1691,19 +1673,22 @@ class Link(object):
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
     ##: avoid respecifying default params
-    def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
+    def _showWarning(self, message, title=_('Warning')):
         return showWarning(self.window, message, title=title)
 
-    def _askYes(self, message, title=u'', default=True, questionIcon=False):
+    def _askYes(self, message, title='', default_is_yes=True,
+                questionIcon=False):
         if not title: title = self._text
-        return askYes(self.window, message, title=title, default=default,
-                      questionIcon=questionIcon)
+        return askYes(self.window, message, title=title,
+            default_is_yes=default_is_yes, question_icon=questionIcon)
 
-    def _askContinue(self, message, continueKey, title=_(u'Warning')):
-        return askContinue(self.window, message, continueKey, title=title)
+    def _askContinue(self, message, continueKey, title=_('Warning'),
+            show_cancel=True):
+        return askContinue(self.window, message, continueKey, title=title,
+            show_cancel=show_cancel)
 
-    def _askContinueShortTerm(self, message, title=_(u'Warning')):
-        return askContinueShortTerm(self.window, message, title=title)
+    def _askContinueShortTerm(self, message, title=_('Warning')):
+        return askContinue(self.window, message, continueKey=None, title=title)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -1714,7 +1699,7 @@ class Link(object):
 
     def _askText(self, message, title=u'', default=u'', strip=True):
         if not title: title = self._text
-        return askText(self.window, message, title=title, default=default,
+        return askText(self.window, message, title=title, default_txt=default,
                        strip=strip)
 
     def _showError(self, message, title=_(u'Error')):
@@ -1736,9 +1721,10 @@ class Link(object):
         if not title: title = self._text
         WryeLog(self.window, logText, title, asDialog, log_icons=lg_icons)
 
-    def _askNumber(self, message, prompt='', title='', value=0, min=0,
-                   max=10000):
-        return askNumber(self.window, message, prompt, title, value, min, max)
+    def _askNumber(self, message, prompt='', title='', initial_num=0,
+            min_num=0, max_num=10000):
+        return askNumber(self.window, message, prompt, title,
+            initial_num=initial_num, min_num=min_num, max_num=max_num)
 
     # De-wx'd File/dir dialogs
     def _askOpen(self, title='', defaultDir='', defaultFile='', wildcard=''):
@@ -1789,10 +1775,10 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
-        full_link_text = self.link_text
+        full_link_text = _AComponent._escape(self.link_text)
         if self._keyboard_hint:
             full_link_text += f'\t{self._keyboard_hint}'
+        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
         menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
         Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
@@ -1805,10 +1791,11 @@ class ItemLink(Link):
     def __Execute(self, __event):
         """Eat up wx event - code outside balt should not use it."""
         self.Execute()
+        return EventResult.FINISH
 
     def Execute(self):
         """Event: link execution."""
-        raise AbstractError(u'Execute not implemented')
+        raise NotImplementedError
 
     @staticmethod
     def ShowHelp(event): # <wx._core.MenuEvent>
@@ -1822,7 +1809,7 @@ class MenuLink(Link):
 
     def __init__(self, menu_name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
-        super(MenuLink, self).__init__()
+        super().__init__()
         self._text = menu_name or self.__class__._text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
@@ -1833,7 +1820,7 @@ class MenuLink(Link):
 
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
-        super(MenuLink, self).AppendToMenu(menu, window, selection)
+        super().AppendToMenu(menu, window, selection)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():
@@ -1845,8 +1832,13 @@ class MenuLink(Link):
         return subMenu
 
     def _enable_menu(self):
-        """Disable ourselves if none of our children are visible."""
-        for l in self.links:
+        """Disable ourselves if none of our children are usable."""
+        return self._any_link_usable(self.links)
+
+    def _any_link_usable(self, candidate_links):
+        """Helper method that returns True if at least one of the candidate links
+        can be interacted with by the user."""
+        for l in candidate_links:
             if isinstance(l, SeparatorLink):
                 # SeparatorLinks are not interactable links, so there is no
                 # need to worry about their enabled status
@@ -1860,6 +1852,14 @@ class MenuLink(Link):
             elif isinstance(l, EnabledLink):
                 # This is an EnabledLink, check if it's enabled
                 if l._enable(): return True
+                if isinstance(l, MultiLink): # not elif!
+                    # This is a MultiLink (appended and enabled), check if any
+                    # of its child links are usable
+                    if self._any_link_usable(l._links()): return True
+            elif isinstance(l, MultiLink):
+                # This is a MultiLink (appended and not an EnabledLink), check
+                # if any of its child links are usable
+                if self._any_link_usable(l._links()): return True
             else:
                 # This is some other type of link that's always enabled
                 return True
@@ -1907,7 +1907,7 @@ class TransLink(Link):
 
     def _decide(self, window, selection):
         """Return a Link subclass instance to call AppendToMenu on."""
-        raise AbstractError
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         return self._decide(window, selection).AppendToMenu(menu, window,
@@ -1931,7 +1931,7 @@ class AppendableLink(Link):
 
     def _append(self, window):
         """"Override as needed to append or not the menu item."""
-        raise AbstractError
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         if not self._append(window): return
@@ -1942,7 +1942,7 @@ class MultiLink(Link):
     """A link that resolves to several links when appended."""
     def _links(self):
         """Returns the list of links that this link resolves to."""
-        raise AbstractError(u'_links not implemented')
+        raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         last_ret = None
@@ -1986,7 +1986,7 @@ class OneItemLink(EnabledLink):
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK
 
-    def _check(self): raise AbstractError
+    def _check(self): raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         menuItem = super(CheckLink, self).AppendToMenu(menu, window, selection)
@@ -2008,35 +2008,97 @@ class BoolLink(CheckLink):
     def Execute(self): _settings[self._bl_key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
-class UIList_Delete(ItemLink):
+class UIList_Delete(EnabledLink):
     """Delete selected item(s) from UIList."""
-    _text = _(u'Delete')
-    _help = _(u'Delete selected item(s)')
+    _text = _('Delete')
     _keyboard_hint = 'Del'
 
-    def Execute(self):
-        # event is a 'CommandEvent' and I can't check if shift is pressed - duh
-        with BusyCursor(): self.window.DeleteItems(items=self.selected)
+    def _filter_undeletable(self, to_delete_items):
+        """Filters out undeletable items from the specified iterable."""
+        return self.window.data_store.filter_essential(to_delete_items)
 
-class UIList_Rename(ItemLink):
-    """Rename selected UIList item(s)."""
-    _text = _(u'Rename...')
-    _keyboard_hint = 'F2'
-
-    def Execute(self): self.window.Rename(selected=self.selected)
-
-class UIList_OpenItems(ItemLink):
-    """Open specified file(s)."""
-    _text = _(u'Open...')
-    _keyboard_hint = 'Enter'
+    def _enable(self):
+        # Only enable if at least one deletable file is selected
+        return bool(list(self._filter_undeletable(self.selected)))
 
     @property
     def link_help(self):
-        return _(u"Open '%s' with the system's default program.") % \
-               self.selected[0] if len(self.selected) == 1 else _(
-            u'Open the selected files.')
+        sel_filtered = list(self._filter_undeletable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Delete '%(filename)s'.") % {
+                    'filename': sel_filtered[0]}
+            return _('Delete the selected items.')
+        else:
+            if sel_filtered:
+                return _('Delete the selected items (some of the selected '
+                         'items cannot be deleted and will be skipped).')
+            return _('The selected items cannot be deleted.')
 
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
+    def Execute(self):
+        # event is a 'CommandEvent' and I can't check if shift is pressed - duh
+        with BusyCursor():
+            self.window.DeleteItems(items=self.selected)
+
+class UIList_Rename(EnabledLink):
+    """Rename selected UIList item(s)."""
+    _text = _('Rename...')
+    _keyboard_hint = 'F2'
+
+    @property
+    def link_help(self):
+        if self.window.could_rename():
+            sel_filtered = list(self.window.data_store.filter_essential(
+                self.selected))
+            if len(sel_filtered) == 1:
+                return _('Renames the selected item.')
+            elif sel_filtered == self.selected:
+                return _('Renames the selected items.')
+            else:
+                return _('Renames the selected items (some of the selected '
+                         'items cannot be renamed and will be skipped).')
+        return _('The selected items cannot be renamed.')
+
+    def _enable(self):
+        return self.window.could_rename()
+
+    def Execute(self):
+        self.window.Rename(selected=self.selected)
+
+class UIList_OpenItems(EnabledLink):
+    """Open specified file(s)."""
+    _text = _('Open...')
+    _keyboard_hint = 'Enter'
+
+    def _filter_unopenable(self, to_open_items):
+        """Filters out unopenable items from the specified iterable. Default
+        behavior is to not filter out anything."""
+        return to_open_items
+
+    @property
+    def link_help(self):
+        sel_filtered = list(self._filter_unopenable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Open '%(item_to_open)s' with the system's default "
+                         "program.") % {'item_to_open': sel_filtered[0]}
+            return _("Open the selected items with the system's default "
+                     "program.")
+        else:
+            if sel_filtered:
+                return _("Open the selected items with the system's default "
+                         "program (some of the selected items cannot be "
+                         "opened and will be skipped).")
+            return _("The selected items cannot be opened with the system's "
+                     "default program.")
+
+    def _enable(self):
+        # Enable if we have at least one openable file
+        return bool(list(self._filter_unopenable(self.selected)))
+
+    def Execute(self):
+        self.window.OpenSelected(
+            selected=self._filter_unopenable(self.selected))
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
@@ -2045,15 +2107,38 @@ class UIList_OpenStore(ItemLink):
 
     @property
     def link_help(self):
-        return _(u"Open '%s'") % self.window.data_store.store_dir
+        return _("Open '%(data_store_path)s'.") % {
+            'data_store_path': self.window.data_store.store_dir}
 
     def Execute(self): self.window.open_data_store()
 
-class UIList_Hide(ItemLink):
+class UIList_Hide(EnabledLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    _text = _(u'Hide...')
-    _help = _(u"Hide the selected file(s) by moving them to the 'Hidden' "
-              u'directory.')
+    _text = _('Hide...')
+
+    def _filter_unhideable(self, to_hide_items):
+        """Filters out unhideable items from the specified iterable."""
+        return self.window.data_store.filter_essential(to_hide_items)
+
+    def _enable(self):
+        # Only enable if at least one hideable file is selected
+        return bool(list(self._filter_unhideable(self.selected)))
+
+    @property
+    def link_help(self):
+        sel_filtered = list(self._filter_unhideable(self.selected))
+        if sel_filtered == self.selected:
+            if len(sel_filtered) == 1:
+                return _("Hide '%(filename)s' by moving it to the 'Hidden' "
+                         "directory.") % {'filename': sel_filtered[0]}
+            return _("Hide the selected items by moving them to the 'Hidden' "
+                     "directory.")
+        else:
+            if sel_filtered:
+                return _("Hide the selected items by moving them to the "
+                         "'Hidden' directory (some of the selected items "
+                         "cannot be hidden and will be skipped).")
+            return _('The selected items cannot be hidden.')
 
     @conversation
     def Execute(self):
@@ -2062,7 +2147,7 @@ class UIList_Hide(ItemLink):
                         u'moved to the %(hdir)s directory.') % (
                           {u'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self.iselected_pairs())
+        self.window.hide(self._filter_unhideable(self.selected))
         self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
@@ -2073,144 +2158,24 @@ wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
 _wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
-# ListBoxes -------------------------------------------------------------------
-class _CheckList_SelectAll(ItemLink):
-    """Menu item used in ListBoxes."""
-    def __init__(self,select=True):
-        super(_CheckList_SelectAll, self).__init__()
-        self.select = select
-        self._text = _(u'Select All') if select else _(u'Select None')
-
-    def Execute(self):
-        self.window.set_all_checkmarks(checked=self.select)
-
-# TODO(inf) Needs renaming, also need to make a virtual version eventually...
-class TreeCtrl(_AComponent):
-    _native_widget: wx.TreeCtrl
-
-    def __init__(self, parent, title, items_dict):
-        super(TreeCtrl, self).__init__(parent, size=(150, 200),
-            style=wx.TR_DEFAULT_STYLE | wx.TR_FULL_ROW_HIGHLIGHT |
-                  wx.TR_HIDE_ROOT)
-        root = self._native_widget.AddRoot(title)
-        self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
-        for item, subitems in items_dict.items():
-            if not isinstance(item, str):
-                deprint(f'{item!r} passed')
-                item = '%s' % item
-            child = self._native_widget.AppendItem(root, item)
-            for subitem in subitems:
-                if not isinstance(subitem, str):
-                    deprint(f'{subitem!r} passed')
-                    subitem = '%s' % subitem
-                self._native_widget.AppendItem(child, subitem)
-            self._native_widget.Expand(child)
-
-    def OnMotion(self, event): return
-
-class ListBoxes(WrappingTextMixin, DialogWindow):
-    """A window with 1 or more lists."""
-    _wrapping_offset = 64
-
-    def __init__(self, parent, title, message, lists, liststyle=u'check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
-        """lists is in this format:
-        if liststyle == u'check' or u'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == u'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        super(ListBoxes, self).__init__(message, parent, title=title,
-                                        icon_bundle=Resources.bashBlue,
-                                        sizes_dict=sizes, style=style)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        # TODO(inf) de-wx!
-        minWidth = self._native_widget.ToDIP(
-            self._native_widget.GetTextExtent(title)).width * 1.2 + 64
-        self._panel_text.wrap(minWidth) # otherwise expands to max width
-        layout = VLayout(border=5, spacing=5, items=[self._panel_text])
-        self._ctrls = {}
-        # Size ourselves slightly larger than the wrapped text, otherwise some
-        # of it may be cut off and the buttons may become too small to read
-        # TODO(ut) we should set ourselves to min(minWidth, size(btns)) - how?
-        self.component_size = (minWidth + 64, -1)
-        min_height = 128 + 128 * len(lists) #arbitrary just fits well currently
-        if self.component_size[1] < min_height:
-            self.component_size = (minWidth + 64, min_height)
-        self.set_min_size(minWidth + 64, min_height)
-        for item_group in lists:
-            title = item_group[0] # also serves as key in self._ctrls dict
-            item_tip = item_group[1]
-            if not (strs := [u'%s' % x for x in item_group[2:]]): # Path | str
-                continue
-            if liststyle == u'check':
-                checksCtrl = CheckListBox(self, choices=strs, isSingle=True,
-                                          isHScroll=True)
-                checksCtrl.on_context.subscribe(self._on_context)
-                checksCtrl.set_all_checkmarks(checked=True)
-            elif liststyle == u'list':
-                checksCtrl = ListBox(self, choices=strs, isHScroll=True)
-            else: # u'tree'
-                checksCtrl = TreeCtrl(self, title, item_group[2])
-            self._ctrls[title] = checksCtrl
-            checksCtrl.tooltip = item_tip
-            layout.add((HBoxedLayout(self, item_expand=True, title=title,
-                                     item_weight=1, items=[checksCtrl]),
-                        LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk),
-                CancelButton(self, btn_label=bCancel) if canCancel else None]
-        layout.add((HLayout(spacing=5, items=btns),
-                    LayoutOptions(h_align=RIGHT)))
-        layout.apply_to(self)
-
-    def _on_context(self, lb_instance):
-        """Context Menu"""
-        self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Return a tuple of lists of checked items"""
-        get_checked = kwargs.pop('get_checked', ())
-        with cls(*args, **kwargs) as dialog:
-            res = dialog.show_modal()
-            if not res: return tuple(() for __ in range(len(get_checked)))
-            return tuple(dialog._get_checked(*args_tuple) for args_tuple in
-                         get_checked) or res # or for when get_checked is empty
-
-    def _get_checked(self, cntrl_key, items):
-        """Return a sublist of 'items' containing (un)checked items.
-
-        The control only displays the string names of items, that is why items
-        needs to be passed in. If items is empty it will return an empty list.
-        :param cntrl_key: a key for the private _ctrls dictionary
-        :param items: the items that correspond to the _ctrls[key] checksCtrl
-        :rtype : list
-        :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
-        """
-        if not items or not (checkList := self._ctrls[cntrl_key]): return []
-        return [mod for i, mod in enumerate(items) if
-                checkList.lb_is_checked_at_index(i)]
-
 # Some UAC stuff --------------------------------------------------------------
-def ask_uac_restart(message, title, mopy):
-    if not canVista:
-        return askYes(None, message + u'\n\n' + _(
-            u'Start Wrye Bash with Administrator Privileges?'), title)
-    admin = _(u'Run with Administrator Privileges')
-    readme = readme_url(mopy) + u'#trouble-permissions'
-    return vistaDialog(None, message=message,
-        buttons=[(BTN_YES, u'+' + admin), (BTN_NO, _(u'Run normally'))],
-        title=title, expander=[_(u'How to avoid this message in the future'),
-            _(u'Less information'),
-            _(u'Use one of the following command line switches:') +
-            u'\n\n' + _(u'--no-uac: always run normally') +
-            u'\n' + _(u'--uac: always run with Admin Privileges') +
-            u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
-                u'for more information.') % {u'readmePath': readme}])[0]
+def ask_uac_restart(message, mopy):
+    if not TASK_DIALOG_AVAILABLE:
+        message += '\n\n' + _('Start Wrye Bash with Administrator Privileges?')
+        btns = ex = None
+    else:
+        admin = _('Run with Administrator Privileges')
+        readme = readme_url(mopy) + '#trouble-permissions'
+        btns = [(BTN_YES, f'+{admin}'), (BTN_NO, _('Run normally'))]
+        switches = [_('Use one of the following command line switches:'), '',
+                    _('--no-uac: always run normally'),
+                    _('--uac: always run with Admin Privileges'), '',
+                    _('See the <A href="%(readmePath)s">readme</A> '
+                      'for more information.') % {'readmePath': readme}]
+        ex = [_('How to avoid this message in the future'),
+              _('Less information'), '\n'.join(switches)]
+    return askYes(None, message, _('UAC Protection'), vista_buttons=btns,
+                  expander=ex)
 
 class INIListCtrl(wx.ListCtrl):
 
@@ -2225,22 +2190,28 @@ class INIListCtrl(wx.ListCtrl):
         self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
         iniLine = self._get_selected_line(index)
         if iniLine != -1:
-            self._contents.EnsureVisible(iniLine)
-            scroll = iniLine - self._contents.GetScrollPos(wx.VERTICAL) - index
-            self._contents.ScrollLines(scroll)
+            self._contents.Freeze()
+            try:
+                # First calculate what we need to scroll to get to the top of
+                # the window, then add the amount we'd have to scroll to get to
+                # our target line to that
+                top_scroll = -self._contents.GetScrollPos(wx.VERTICAL)
+                self._contents.ScrollLines(top_scroll + iniLine)
+            finally:
+                self._contents.Thaw()
         event.Skip()
 
     def fit_column_to_header(self, column):
         self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
 
-    def _get_selected_line(self, index): raise AbstractError
+    def _get_selected_line(self, index): raise NotImplementedError
 
 # Status bar ------------------------------------------------------------------
 # TODO(inf) de_wx! Wrap wx.StatusBar
 # It's currently full of _native_widget hacks to keep it functional, this one
 # is the next big step
 class DnDStatusBar(wx.StatusBar):
-    buttons = Links()
+    all_sb_links: dict = {} # all possible status bar links - visible or not
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
@@ -2253,17 +2224,16 @@ class DnDStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
-    def UpdateIconSizes(self, skip_refresh=False): raise AbstractError
-    def GetLink(self,uid=None,index=None,button=None): raise AbstractError
+    def UpdateIconSizes(self, skip_refresh=False): raise NotImplementedError
 
     @property
     def iconsSize(self): # +8 as each button has 4 px border on left and right
         return _settings[u'bash.statusbar.iconSize'] + 8
 
     def _addButton(self, link):
-        gButton = link.GetBitmapButton(self)
-        if gButton:
-            self.buttons.append(gButton)
+        link.SetBitmapButton(self)
+        if gButton := link.gButton:
+            self.buttons[link.uid] = link
             # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
             if wx.Platform != u'__WXGTK__':
@@ -2274,34 +2244,33 @@ class DnDStatusBar(wx.StatusBar):
                 gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
-        id_ = mouseEvent.GetId()
-        for i, button in enumerate(self.buttons):
-            if button.wx_id_() == id_:
+        native_button = mouseEvent.EventObject
+        for i, button_link in enumerate(self.buttons.values()):
+            if button_link.gButton._native_widget == native_button:
                 x = mouseEvent.GetPosition()[0]
                 # position is 0 at the beginning of the button's _icon_
                 # negative beyond that (on the left) and positive after
                 if x < -4:
-                    return max(i - 1, 0)
+                    return max(i - 1, 0), button_link
                 elif x > self.iconsSize - 4:
-                    return min(i + 1, len(self.buttons) - 1)
-                return i
-        return wx.NOT_FOUND
+                    return min(i + 1, len(self.buttons) - 1), button_link
+                return i, button_link
+        return wx.NOT_FOUND, None
 
     def OnDragStart(self, event):
-        self.dragging = self._getButtonIndex(event)
+        self.dragging, button_link = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
-            button = self.buttons[self.dragging]
-            if not button._native_widget.HasCapture():
+            if not button_link.gButton._native_widget.HasCapture():
                 self.dragStart = event.GetPosition()[0]
-                button._native_widget.CaptureMouse()
+                button_link.gButton._native_widget.CaptureMouse()
                 # Otherwise blows up on py3
-                button._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                                           lambda e: None)
+                button_link.gButton._native_widget.Bind(
+                    wx.EVT_MOUSE_CAPTURE_LOST, lambda e: None)
         event.Skip()
 
     def OnDragEndForced(self, event):
         if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
-            # The even for clicking the button sends a force capture loss
+            # The event for clicking the button sends a force capture loss
             # message.  Ignore lost capture messages if we're the active
             # window.  If we're not, that means something else forced the
             # loss of mouse capture.
@@ -2313,9 +2282,9 @@ class DnDStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             try:
                 if self.moved:
-                    for button in self.buttons:
-                        if button._native_widget.HasCapture():
-                            button._native_widget.ReleaseMouse()
+                    for button in self.buttons.values():
+                        if button.gButton._native_widget.HasCapture():
+                            button.gButton._native_widget.ReleaseMouse()
                             break
             except:
                 # deprint(u'Exception while handling mouse up on button',
@@ -2332,29 +2301,33 @@ class DnDStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            over = self._getButtonIndex(event)
+            over, button_link = self._getButtonIndex(event)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
-                button = self.buttons[self.dragging]
                 # update settings
-                uid = self.GetLink(button=button).uid
-                overUid = self.GetLink(index=over).uid
-                overIndex = _settings[u'bash.statusbar.order'].index(overUid)
-                _settings[u'bash.statusbar.order'].remove(uid)
-                _settings[u'bash.statusbar.order'].insert(overIndex, uid)
-                # update self.buttons
-                self.buttons.remove(button)
-                self.buttons.insert(over, button)
+                uid = button_link.uid
+                overUid = self.buttons[[*self.buttons][over]].uid
+                uid_order = _settings['bash.statusbar.order']
+                overIndex = uid_order.index(overUid)
+                uid_order.remove(uid)
+                uid_order.insert(overIndex, uid)
+                # resort self.buttons
+                self._sort_buttons(uid_order)
                 self.dragging = over
                 # Refresh button positions
                 self.OnSize()
         event.Skip()
 
+    def _sort_buttons(self, uid_order):
+        uid_order = {k: j for j, k in enumerate(uid_order)}
+        self.buttons = {k: self.buttons[k] for k in
+                        sorted(self.buttons, key=uid_order.get)}
+
     def OnSize(self, event=None):
         rect = self.GetFieldRect(0)
         xPos, yPos = rect.x + 4, rect.y
-        for button in self.buttons:
-            button.component_position = (xPos, yPos)
+        for button_link in self.buttons.values():
+            button_link.gButton.component_position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
 

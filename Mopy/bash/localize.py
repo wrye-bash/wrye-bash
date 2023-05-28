@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -37,32 +37,6 @@ import time
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
-
-def __init_gui_images(_wx):
-    """The images API to be - we need to initialize wx images before we
-    touch the locale and once we have a wx app instance. This is in hopes we
-    will not crash due to the mismatch between wx/python/OS locale
-    conventions that seems to plague windoz. See:
-    - https://github.com/wxWidgets/Phoenix/issues/1616
-    - https://github.com/python/cpython/issues/87281
-    """
-    wxart = _wx.ArtProvider.GetBitmap
-    siz16 = (16, 16)
-    for wx_id, internal_id in [(_wx.ART_PLUS, 'ART_PLUS'),
-                               (_wx.ART_MINUS, 'ART_MINUS')]:
-        bass.wx_bitmap[internal_id] = wxart(wx_id, size=siz16)
-    ids = [(_wx.ART_GO_BACK, 'ART_GO_BACK', siz16),
-           (_wx.ART_GO_FORWARD, 'ART_GO_FORWARD', siz16),
-           (_wx.ART_ERROR, 'ART_ERROR', (32, 32))]
-    fromdip = _wx.Window.FromDIP ##: should we dpi previous also?
-    for wx_id, internal_id, size_tup in ids:
-        bass.wx_bitmap[internal_id] = wxart(wx_id, _wx.ART_HELP_BROWSER,
-                                            size=fromdip(size_tup, None))
-    bass.wx_bitmap['ART_WARNING'] = wxart(_wx.ART_WARNING,
-        _wx.ART_MESSAGE_BOX, size=fromdip((32, 32), None))
-    for ico_size in (16, 24, 32):
-        bass.wx_bitmap[('ART_UNDO', ico_size)] = wxart(_wx.ART_UNDO,
-            _wx.ART_TOOLBAR, size=fromdip((ico_size, ico_size), None))
 
 def set_c_locale():
     # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
@@ -89,8 +63,6 @@ def setup_locale(cli_lang, _wx):
     :param cli_lang: The language the user specified on the command line, or
         None.
     :return: The wx.Locale object we ended up using."""
-    # try loading the images before we touch the locale
-    __init_gui_images(_wx)
     # Set the wx language - otherwise we will crash when loading any images
     cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
     if cli_target:
@@ -213,11 +185,11 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     if _files is None: _files = []
     _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
-    # Find subpackages - returned format is (module_loader, name, is_pkg)
+    # Find packages - returned format is (module_loader, name, is_pkg)
     for module_loader, pkg_name, is_pkg in pkgutil.iter_modules([cur_dir]):
         if not is_pkg: # Skip it if it's not a package
             continue
-        # Recurse into the subpackage we just found
+        # Recurse into the package we just found
         _find_all_bash_modules(
             os.path.join(bash_path, pkg_name) if bash_path else u'bash',
             os.path.join(cur_dir, pkg_name), _files)
@@ -341,7 +313,7 @@ def dump_translator(out_path, lang):
 
 #------------------------------------------------------------------------------
 # Formatting
-def format_date(secs): # type: (float) -> str
+def format_date(secs: float) -> str:
     """Convert time to string formatted to to locale's default date/time.
 
     :param secs: Formats the specified number of seconds into a string."""
@@ -351,18 +323,3 @@ def format_date(secs): # type: (float) -> str
         # local time in windows can't handle negative values
         local = time.gmtime(secs)
     return time.strftime(u'%c', local)
-
-# PY3: Probably drop in py3?
-def unformat_date(date_str):
-    """Basically a wrapper around time.strptime. Exists to get around bug in
-    strptime for Japanese locale.
-
-    :type date_str: str"""
-    try:
-        return time.strptime(date_str, u'%c')
-    except ValueError:
-        if bass.active_locale.startswith(u'ja_'):
-            date_str = re.sub('^([0-9]{4})/([1-9])', r'\1/0\2', date_str)
-            return time.strptime(date_str, u'%c')
-        else:
-            raise

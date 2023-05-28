@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,13 +26,11 @@ to the Assorted Multitweaker - as well as the tweaker itself."""
 
 from __future__ import annotations
 
-import random
 import re
-# Internal
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
-    IndexingTweak
-from ... import bush, load_order, bolt
-from ...bolt import deprint
+
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
+from ... import bolt, bush
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -41,7 +39,7 @@ class _AShowsTweak(MultiTweakItem):
 
     def wants_record(self, record):
         return (record.biped_flags[self._hides_bit] and
-                not self._is_nonplayable(record))
+                not record.is_not_playable())
 
     def tweak_record(self, record):
         record.biped_flags[self._hides_bit] = False
@@ -149,12 +147,10 @@ class _APlayableTweak(MultiTweakItem):
 
     @staticmethod
     def _any_body_flag_set(record):
-        return any(getattr(record.biped_flags, bd_flag) for bd_flag
-                   in (set(bush.game.Esp.biped_flag_names) -
-                       bush.game.nonplayable_biped_flags))
+        return record.biped_flags.any_body_flag_set
 
     @staticmethod
-    def _should_skip(test_str):
+    def _playable_skip(test_str):
         """Small helper method for wants_record, checks if the specified string
         (either from a FULL or EDID subrecord) indicates that the record it
         comes from should remain nonplayable."""
@@ -164,19 +160,17 @@ class _APlayableTweak(MultiTweakItem):
 
     def wants_record(self, record):
         # 'script_fid' does not exist for later games, so use getattr
-        if (not self._is_nonplayable(record) or
-            not self._any_body_flag_set(record) or
-                getattr(record, u'script_fid', None)): return False
+        if (not record.is_not_playable() or not self._any_body_flag_set(record)
+                or getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
-        if clothing_eid and self._should_skip(clothing_eid.lower()):
+        if clothing_eid and self._playable_skip(clothing_eid.lower()):
             return False
         clothing_name = record.full
-        return clothing_name and not self._should_skip(clothing_name.lower())
+        return clothing_name and not self._playable_skip(clothing_name.lower())
 
     def tweak_record(self, record):
-        np_flag_attr, np_flag_name = bush.game.not_playable_flag
-        setattr(getattr(record, np_flag_attr), np_flag_name, False) # yuck
+        record.set_playable()
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(_APlayableTweak):
@@ -232,10 +226,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         """Darnifies the text of the specified record and returns it as a
         string."""
         self.inBold = False
-        # There are some FUNKY quotes that don't translate properly (they are
-        # in *latin* encoding, not even cp1252 or something normal but
-        # non-unicode). Get rid of those before we blow up.
-        rec_text = record.book_text.replace(u'\u201d', u'')
+        rec_text = record.book_text
         if self._re_head_2.match(rec_text):
             rec_text = self._re_head_2.sub(
                 r'\1<font face=1 color=220000>\2<font face=3 '
@@ -282,11 +273,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
     tweak_log_msg = _(u'Cells With Fog Tweaked To 0.0001: %(total_changed)d')
     # Probably not needed on newer games, so default-enable only on TES4
     default_enabled = bush.game.fsName == u'Oblivion'
-    supports_pooling = False
-    tweak_read_classes = b'CELL', b'WRLD', # WRLD is useless, but we want this
-    # patcher to run in the same group as Import Cells, so we'll have to
-    # skip worldspaces. It shouldn't be a problem in those CELLs. ##: ?
-    ##: Does this even make sense without CBash now?
+    tweak_read_classes = b'CELL',
 
     def wants_record(self, record):
         # All of these floats must be approximately equal to 0
@@ -294,29 +281,10 @@ class AssortedTweak_FogFix(MultiTweakItem):
             fog_val = getattr(record, fog_attr)
             if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
                 return False
-        return True
+        return not record.should_skip()
 
     def tweak_record(self, record):
         record.fogNear = 0.0001
-
-    def tweak_scan_file(self, mod_file, patch_file):
-        if b'CELL' not in mod_file.tops: return
-        should_add_cell = self.wants_record
-        add_cell = patch_file.tops[b'CELL'].setCell
-        for cell_block in mod_file.tops[b'CELL'].id_cellBlock.values():
-            current_cell = cell_block.cell
-            if should_add_cell(current_cell):
-                add_cell(current_cell)
-
-    def tweak_build_patch(self, log, count, patch_file):
-        """Adds merged lists to patchfile."""
-        keep = patch_file.getKeeper()
-        for cfid, cellBlock in patch_file.tops[b'CELL'].id_cellBlock.items():
-            cell = cellBlock.cell
-            if self.wants_record(cell):
-                self.tweak_record(cell)
-                keep(cfid)
-                count[cfid[0]] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):
@@ -328,30 +296,31 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
     tweak_key = u'NoLightFlicker'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Lights Unflickered: %(total_changed)d')
-    _flicker_flags = 0x000001C8 # (flickers, flickerSlow, pulse, pulseSlow)
+    _interested_flags = ('light_flickers', 'light_flickers_slow',
+                         'light_pulses', 'light_pulses_slow')
 
     def wants_record(self, record):
-        return int(record.flags & self._flicker_flags)
+        return any(getattr(record.light_flags, f_attr)
+                   for f_attr in self._interested_flags)
 
     def tweak_record(self, record):
-        record.flags &= ~self._flicker_flags
+        for f_attr in self._interested_flags:
+            setattr(record.light_flags, f_attr, False)
+
+class AssortedTweak_NoLightFlicker_Fo4(AssortedTweak_NoLightFlicker):
+    _interested_flags = ('light_flickers', 'light_pulses')
 
 #------------------------------------------------------------------------------
 class _AWeightTweak(CustomChoiceTweak):
     """Base class for weight tweaks."""
-    _log_weight_value = u'OVERRIDE' # avoid pycharm warning
+    _log_weight_value: str
 
     @property
     def chosen_weight(self): return self.choiceValues[self.chosen][0]
 
-    def tweak_log(self, log, count):
-        """Will write to log for a class that has a weight field"""
-        log.setHeader(u'=== ' + self.tweak_log_header)
-        log(self._log_weight_value % self.chosen_weight)
-        log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
-        for src_plugin in load_order.get_ordered(count):
-            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
+    def _tweak_make_log_header(self, log):
+        super()._tweak_make_log_header(log)
+        log(self._log_weight_value % {'weight_value': self.chosen_weight})
 
     def wants_record(self, record):
         return record.weight > self.chosen_weight # type: bolt.Rounder
@@ -382,7 +351,7 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6)]
     tweak_log_msg = _(u'Potions Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Potions set to maximum weight of %f.')
+    _log_weight_value = _('Potions set to maximum weight of %(weight_value)f.')
 
     def validate_values(self, chosen_values: tuple) -> str | None:
         if chosen_values[0] >= 1.0:
@@ -405,7 +374,8 @@ class AssortedTweak_IngredientWeight(_AWeightTweak_SEFF):
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
                      (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ingredients Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
+    _log_weight_value = _('Ingredients set to maximum weight of '
+                          '%(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
@@ -419,15 +389,25 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
                      (u'2.0', 2.0), (u'4.0', 4.0)]
     tweak_log_msg = _(u'Ingestibles Reweighed: %(total_changed)d')
     tweak_order = 11 # Run after Reweigh: Potions (Maximum) for consistency
-    _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
+    _log_weight_value = _('Ingestibles set to minimum weight of '
+                          '%(weight_value)f.')
 
     def wants_record(self, record): ##: no SEFF condition - intended?
         return record.weight < self.chosen_weight
 
 #------------------------------------------------------------------------------
-class AssortedTweak_StaffWeight(_AWeightTweak):
-    """Reweighs staves."""
+class _AStaffTweak(MultiTweakItem):
+    """Base class for tweaks that target staves."""
     tweak_read_classes = b'WEAP',
+    tweak_log_msg = _('Staves Changed: %(total_changed)d')
+
+    def wants_record(self, record):
+        staff_attr, staff_val = bush.game.staff_condition
+        return super().wants_record(record) and getattr(
+            record, staff_attr) == staff_val
+
+class AssortedTweak_StaffWeight(_AStaffTweak, _AWeightTweak):
+    """Reweighs staves."""
     tweak_name = _(u'Reweigh: Staves')
     tweak_tip =  _(u'Staff weight will be capped.')
     tweak_key = u'StaffWeight'
@@ -435,12 +415,7 @@ class AssortedTweak_StaffWeight(_AWeightTweak):
                      (u'4.0', 4.0), (u'5.0', 5.0), (u'6.0', 6.0),
                      (u'7.0', 7.0), (u'8.0', 8.0)]
     tweak_log_msg = _(u'Staves Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Staves set to maximum weight of %f.')
-
-    def wants_record(self, record):
-        staff_attr, staff_val = bush.game.staff_condition
-        return getattr(record, staff_attr) == staff_val and super(
-            AssortedTweak_StaffWeight, self).wants_record(record)
+    _log_weight_value = _('Staves set to maximum weight of %(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ArrowWeight(_AWeightTweak):
@@ -452,7 +427,8 @@ class AssortedTweak_ArrowWeight(_AWeightTweak):
     tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
                      (u'0.4', 0.4), (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ammunition Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Ammunition set to maximum weight of %f.')
+    _log_weight_value = _('Ammunition set to maximum weight of '
+                          '%(weight_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_BookWeight(_AWeightTweak):
@@ -463,7 +439,52 @@ class AssortedTweak_BookWeight(_AWeightTweak):
     tweak_choices = [(u'0.0', 0.0), (u'0.3', 0.3), (u'0.5', 0.5),
                      (u'0.75', 0.75), (u'1.0', 1.0)]
     tweak_log_msg = _(u'Books Reweighed: %(total_changed)d')
-    _log_weight_value = _(u'Books set to maximum weight of %f.')
+    _log_weight_value = _('Books set to maximum weight of %(weight_value)f.')
+
+#------------------------------------------------------------------------------
+class _AASTweakMin(MultiTweakItem):
+    """Base class for tweaks that alter minimum attack speeds."""
+    _log_attack_speed_value: str
+
+    @property
+    def chosen_attack_speed(self): return self.choiceValues[self.chosen][0]
+
+    def _tweak_make_log_header(self, log):
+        super()._tweak_make_log_header(log)
+        log(self._log_attack_speed_value % {
+            'attack_speed_value': self.chosen_attack_speed})
+
+    def wants_record(self, record):
+        return record.speed < self.chosen_attack_speed
+
+    def tweak_record(self, record):
+        record.speed = self.chosen_attack_speed
+
+class AssortedTweak_AttackSpeedStavesMinimum(_AStaffTweak, _AASTweakMin):
+    """Sets a floor for staff attack speeds."""
+    tweak_name = _('Attack Speed: Staves (Minimum)')
+    tweak_tip = _('Ensures every staff has at least the chosen attack speed.')
+    tweak_key = 'attack_speed_staves_min'
+    tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
+    default_choice = '1.0'
+    _log_attack_speed_value = _('Staff attack speed set to minimum of '
+                                '%(attack_speed_value)f.')
+
+#------------------------------------------------------------------------------
+class _AASTweakMax(_AASTweakMin):
+    """Base class for tweaks that alter maximum attack speeds."""
+    def wants_record(self, record):
+        return record.speed > self.chosen_attack_speed
+
+class AssortedTweak_AttackSpeedStavesMaximum(_AStaffTweak, _AASTweakMax):
+    """Sets a ceiling for staff attack speeds."""
+    tweak_name = _('Attack Speed: Staves (Maximum)')
+    tweak_tip = _('Ensures every staff has at most the chosen attack speed.')
+    tweak_key = 'attack_speed_staves_max'
+    tweak_choices = [('0.1', 0.1), ('0.5', 0.5), ('1.0', 1.0), ('2.0', 2.0)]
+    default_choice = '1.0'
+    _log_attack_speed_value = _('Staff attack speed set to maximum of '
+                                '%(attack_speed_value)f.')
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
@@ -476,12 +497,11 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     tweak_choices = [(u'0', 0)]
     tweak_log_msg = _(u'Script Effect Silenced.')
     default_enabled = True
-    _null_ref = (bush.game.master_file, 0)
-    _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
-                     u'light': _null_ref, u'effectShader': _null_ref,
-                     u'enchantEffect': _null_ref, u'castingSound': _null_ref,
-                     u'boltSound': _null_ref, u'hitSound': _null_ref,
-                     u'areaSound': _null_ref}
+    _silent_attrs = dict.fromkeys(
+        ['areaSound', 'boltSound', 'castingSound', 'effectShader',
+         'enchantEffect', 'hitSound', 'light'], bush.game.master_fid(0))
+    _silent_attrs['model'] = None
+    _silent_attrs['projectileSpeed'] = 9999
 
     def wants_record(self, record):
         # u'' here is on purpose! We're checking the EDID, which gets decoded
@@ -495,7 +515,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
 
     def tweak_log(self, log, count):
         # count would be pointless, always one record
-        super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
+        super().tweak_log(log, {})
 
 #------------------------------------------------------------------------------
 class AssortedTweak_HarvestChance(CustomChoiceTweak):
@@ -509,7 +529,7 @@ class AssortedTweak_HarvestChance(CustomChoiceTweak):
                      (u'50%', 50), (u'60%', 60), (u'70%', 70), (u'80%', 80),
                      (u'90%', 90), (u'100%', 100)]
     tweak_log_msg = _(u'Harvest Chances Changed: %(total_changed)d')
-    _season_attrs = (u'spring', u'summer', u'fall', u'winter')
+    _season_attrs = ('sip_spring', 'sip_summer', 'sip_fall', 'sip_winter')
 
     @property
     def chosen_chance(self):
@@ -552,10 +572,10 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
     tweak_log_msg = _(u'Grasses Normalized: %(total_changed)d')
 
     def wants_record(self, record):
-        return record.heightRange != 0.0 # type: bolt.Rounder
+        return record.height_range != 0.0 # type: bolt.Rounder
 
     def tweak_record(self, record):
-        record.heightRange = 0.0
+        record.height_range = 0.0
 
 #------------------------------------------------------------------------------
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):
@@ -576,27 +596,26 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):
     tweak_log_msg = _(u'Enchantments Set: %(total_changed)d')
 
     def wants_record(self, record):
-        if record.itemType not in (1, 2): return False
+        if record.item_type not in (1, 2): return False
         new_cost, new_amount = self._calc_cost_and_amount(record)
-        return (record.enchantCost != new_cost or
-                record.chargeAmount != new_amount)
+        return (record.enchantment_cost != new_cost or
+                record.charge_amount != new_amount)
 
     def tweak_record(self, record):
         new_cost, new_amount = self._calc_cost_and_amount(record)
-        record.enchantCost = new_cost
-        record.chargeAmount = new_amount
+        record.enchantment_cost = new_cost
+        record.charge_amount = new_amount
 
     def _calc_cost_and_amount(self, record):
         """Calculates the new enchantment cost and charge amount for the
         specified record based on the number of uses the user chose."""
         chosen_uses = self.choiceValues[self.chosen][0]
-        final_cost = (max(record.chargeAmount // chosen_uses, 1)
+        final_cost = (max(record.charge_amount // chosen_uses, 1)
                       if chosen_uses != 0 else 0)
         return final_cost, final_cost * chosen_uses
 
 #------------------------------------------------------------------------------
-##: It's possible to simplify this further, but will require some effort
-##: Also, will have to become more powerful in the process if we want it to
+##: This will have to become more powerful in the process if we want it to
 # support FO3/FNV eventually ##: does it even make sense there?
 class AssortedTweak_DefaultIcons(MultiTweakItem):
     """Sets a default icon for any records that don't have any icon
@@ -606,113 +625,17 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                   u'icon assigned.')
     tweak_key = u'icons'
     tweak_choices = [(u'1', 1)]
-    _default_icons = {
-        b'ALCH': u'Clutter\\Potions\\IconPotion01.dds',
-        b'AMMO': u'Weapons\\IronArrow.dds',
-        b'APPA': u'Clutter\\IconMortarPestle.dds',
-        b'ARMO': ((u'Armor\\Iron\\M\\Cuirass.dds',
-                   u'Armor\\Iron\\F\\Cuirass.dds'),
-                 (u'Armor\\Iron\\M\\Greaves.dds',
-                  u'Armor\\Iron\\F\\Greaves.dds'),
-                 (u'Armor\\Iron\\M\\Helmet.dds',),
-                 (u'Armor\\Iron\\M\\Gauntlets.dds',
-                  u'Armor\\Iron\\F\\Gauntlets.dds'),
-                 (u'Armor\\Iron\\M\\Boots.dds',),
-                 (u'Armor\\Iron\\M\\Shield.dds',),
-                 (u'Armor\\Iron\\M\\Shield.dds',),), # Default Armor icon
-        b'BOOK': u'Clutter\\iconbook%d.dds',
-        b'BSGN': u'Clutter\\iconbook%d.dds',
-        b'CLAS': u'Clutter\\iconbook%d.dds',
-        b'CLOT': ((u'Clothes\\MiddleClass\\01\\M\\Shirt.dds',
-                   u'Clothes\\MiddleClass\\01\\F\\Shirt.dds'),
-                 (u'Clothes\\MiddleClass\\01\\M\\Pants.dds',
-                  u'Clothes\\MiddleClass\\01\\F\\Pants.dds'),
-                 (u'Clothes\\MythicDawnrobe\\hood.dds',),
-                 (u'Clothes\\LowerClass\\Jail\\M\\'
-                  u'JailShirtHandcuff.dds',),
-                 (u'Clothes\\MiddleClass\\01\\M\\Shoes.dds',
-                  u'Clothes\\MiddleClass\\01\\F\\Shoes.dds'),
-                 (u'Clothes\\Ring\\RingNovice.dds',),
-                 (u'Clothes\\Amulet\\AmuletSilver.dds',),),
-##                'FACT': u"", ToDo
-        b'INGR': u'Clutter\\IconSeeds.dds',
-        b'KEYM': (u'Clutter\\Key\\Key.dds', u'Clutter\\Key\\Key02.dds'),
-        b'LIGH': u'Lights\\IconTorch02.dds',
-        b'MISC': u'Clutter\\Soulgems\\AzurasStar.dds',
-        b'QUST': u'Quest\\icon_miscellaneous.dds',
-        b'SGST': u'IconSigilStone.dds',
-        b'SLGM': u'Clutter\\Soulgems\\AzurasStar.dds',
-        b'WEAP': (u'Weapons\\IronDagger.dds', u'Weapons\\IronClaymore.dds',
-                  u'Weapons\\IronMace.dds', u'Weapons\\IronBattleAxe.dds',
-                  u'Weapons\\Staff.dds', u'Weapons\\IronBow.dds',),
-    }
-    tweak_read_classes = tuple(_default_icons)
+    tweak_read_classes = (b'ALCH', b'AMMO', b'APPA', b'BOOK', b'BSGN', b'CLAS',  # ToDo 'FACT', / per game
+        b'INGR', b'KEYM', b'LIGH', b'MISC', b'QUST', b'SGST', b'SLGM', b'WEAP'
+    )
     tweak_log_msg = _(u'Default Icons Set: %(total_changed)d')
     default_enabled = True
 
     def wants_record(self, record):
-        rsig = record._rec_sig
-        if (rsig == b'LIGH' and not record.flags.canTake or
-                rsig == b'QUST' and not record.stages or
-                rsig in (b'ARMO', b'CLOT') and
-                self._is_nonplayable(record)): return False
-        return (not getattr(record, u'iconPath', None) and
-                not getattr(record, u'maleIconPath', None) and
-                not getattr(record, u'femaleIconPath', None))
-
-    @staticmethod
-    def _assign_icons(record, d_icons):
-        """Assigns the specified default icons to the specified record."""
-        try:
-            if isinstance(d_icons, tuple):
-                if len(d_icons) == 1:
-                    record.maleIconPath = d_icons[0]
-                else:
-                    record.maleIconPath, record.femaleIconPath = d_icons
-            else:
-                record.iconPath = d_icons
-        except ValueError:
-            deprint(u'Error while assigning default icons to %r' % record)
-            raise
+        return record.can_set_icon()
 
     def tweak_record(self, record):
-        curr_sig = record._rec_sig
-        d_icons = self._default_icons[curr_sig]
-        if isinstance(d_icons, tuple):
-            if curr_sig in (b'ARMO', b'CLOT'):
-                # Choose based on body flags:
-                body_flags = record.biped_flags
-                if body_flags.upperBody:
-                    d_icons = d_icons[0]
-                elif body_flags.lowerBody:
-                    d_icons = d_icons[1]
-                elif body_flags.head or body_flags.hair:
-                    d_icons = d_icons[2]
-                elif body_flags.hand:
-                    d_icons = d_icons[3]
-                elif body_flags.foot:
-                    d_icons = d_icons[4]
-                elif (curr_sig == b'ARMO' and body_flags.shield or
-                      curr_sig == b'CLOT' and (
-                              body_flags.leftRing or
-                              body_flags.rightRing)):
-                    d_icons = d_icons[5]
-                else: # Default icon, probably a token or somesuch
-                    d_icons = d_icons[6]
-            elif curr_sig == b'KEYM':
-                random.seed(record.fid[1]) # make it deterministic
-                d_icons = d_icons[random.randint(0, 1)]
-            elif curr_sig == b'WEAP':
-                # Choose based on weapon type:
-                try:
-                    d_icons = d_icons[record.weaponType]
-                except IndexError: # just in case
-                    d_icons = d_icons[0]
-        elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
-            # Just a random book icon - for class/birthsign as well.
-            random.seed(record.fid[1]) # make it deterministic
-            d_icons %= random.randint(1, 13)
-        self._assign_icons(record, d_icons)
+        record.set_default_icon()
 
 #------------------------------------------------------------------------------
 class _AAttenuationTweak(CustomChoiceTweak):
@@ -784,7 +707,7 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class AssortedTweak_LightFadeValueFix(MultiTweakItem):
-    """Remove light flickering for low end machines."""
+    """Fix lights with missing fade value."""
     tweak_read_classes = b'LIGH',
     tweak_name = _(u'No Light Fade Value Fix')
     tweak_tip = _(u'Sets Light Fade values to default of 1.0 if not set.')
@@ -793,10 +716,10 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
     tweak_log_msg = _(u'Lights With Fade Values Added: %(total_changed)d')
 
     def wants_record(self, record):
-        return record.fade is None
+        return record.light_fade is None
 
     def tweak_record(self, record):
-        record.fade = 1.0
+        record.light_fade = 1.0
 
 #------------------------------------------------------------------------------
 class AssortedTweak_TextlessLSCRs(MultiTweakItem):

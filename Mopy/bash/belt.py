@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,16 +27,15 @@ import os
 import traceback
 from collections import OrderedDict, defaultdict
 
-from . import ScriptParser  # generic parser class
-from . import bass, bolt, bosh, bush, load_order
-from .ScriptParser import error
-from .bolt import FNDict, FName
-from .env import get_file_version, get_game_version_fallback
-from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
-    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
-    WizardPage, staticBitmap
+from . import ScriptParser, bass, bolt, bosh, bush, load_order
+from .balt import ItemLink, Links, images, staticBitmap
+from .bolt import FName, FNDict, LooseVersion
+from .env import get_file_version, get_game_version_fallback, to_os_path
+from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
+    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
+    PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
+from .ScriptParser import error
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -50,7 +49,7 @@ class WizInstallInfo(object):
     # select_plugins: List of plugins to 'select' for install
     # rename_plugins: Dictionary of renames for plugins.  In the format of:
     #   'original name':'new name'
-    # select_sub_packages: List of Subpackages to 'select' for install
+    # select_sub_packages: List of sub-packages to 'select' for install
     # ini_edits: Dictionary of INI edits to apply/create.  In the format of:
     #   'ini file': {
     #      'section': {
@@ -177,15 +176,21 @@ class PageSelect(PageInstaller):
         kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         self._page_parent = parent
+        # Create links to facilitate mass (de)selection
+        self._page_links = Links()
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
-            for index, default in enumerate(items_default.values()):
-                self.listOptions.lb_check_at_index(index, default)
+            self.listOptions.on_mouse_right_up.subscribe(self._on_right_click)
+            self._page_links.append(_Page_SelectAll(self.listOptions))
+            self._page_links.append(_Page_DeselectAll(self.listOptions))
+            self._page_links.append(_Page_ToggleAll(self.listOptions))
+            for index, dflt in enumerate(items_default.values()):
+                self.listOptions.lb_check_at_index(index, dflt)
         else:
             self.listOptions = ListBox(self, **kwargs)
             parent.enable_forward(False)
-            for index, default in enumerate(items_default.values()):
-                if default:
+            for index, dflt in enumerate(items_default.values()):
+                if dflt:
                     self.listOptions.lb_select_index(index)
                     self.Selection(index)
                     break
@@ -209,9 +214,19 @@ class PageSelect(PageInstaller):
 
     def _click_on_image(self):
         img = self.images[self.index]
-        try: img.start()
-        except FileNotFoundError: pass
-        except OSError: bolt.deprint(f'Failed to open {img}.', traceback=True)
+        if not img:
+            return # None - no image path specified
+        try:
+            img.start()
+        except FileNotFoundError:
+            pass # Image path specified, but no image present at that path
+        except OSError:
+            bolt.deprint(f'Failed to open {img}.', traceback=True)
+
+    def _on_right_click(self, lb_selection_dex):
+        """Internal callback to show the context menu for appropriate pages."""
+        self._page_links.popup_menu(self, None)
+        self.Selection(lb_selection_dex)
 
     def Selection(self, index):
         self._page_parent.enable_forward(True)
@@ -242,6 +257,44 @@ class PageSelect(PageInstaller):
         else:
             self._wiz_parent.parser.choices.append(temp_items)
         self._wiz_parent.parser.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values=temp_items, hitCase=False)
+
+class _PageLink(ItemLink):
+    """Base class for mass (de)select page links."""
+    def __init__(self, link_clb: CheckListBox):
+        super().__init__()
+        self._link_clb = link_clb
+
+    def Execute(self):
+        with self._link_clb.pause_drawing():
+            for i in range(self._link_clb.lb_get_items_count()):
+                self._link_clb.lb_check_at_index(i, self._should_enable(
+                    self._link_clb.lb_is_checked_at_index(i)))
+
+    def _should_enable(self, check_state):
+        """Returns True if a checkbox with the specified state should be
+        enabled."""
+        raise NotImplementedError
+
+class _Page_SelectAll(_PageLink):
+    """Select all options on this page."""
+    _text = _('Select All')
+    _help = _('Selects all options on this page.')
+
+    def _should_enable(self, check_state): return True
+
+class _Page_DeselectAll(_PageLink):
+    """Deselect all options on this page."""
+    _text = _('Deselect All')
+    _help = _('Deselects all options on this page.')
+
+    def _should_enable(self, check_state): return False
+
+class _Page_ToggleAll(_PageLink):
+    """Toggle all options on this page."""
+    _text = _('Toggle Selection')
+    _help = _('Deselects all selected options on this page and vice versa.')
+
+    def _should_enable(self, check_state): return not check_state
 
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',
@@ -290,14 +343,13 @@ class PageFinish(PageInstaller):
                                   u'will apply the following settings:'))
         textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(self, choices=subs, ampersand=True)
+        self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if sublist[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
-                                             ampersand=True)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index, (key, do_enable) in enumerate(plugin_enabled.items()):
             if do_enable:
@@ -369,20 +421,14 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [ImageWrapper(bass.dirs['images'].join(x)).get_bitmap() for x in
-                (u'error_cross_24.png', u'checkmark_24.png')]
+        bmps = [images[i].get_bitmap() for i in (
+            'error_cross.16', 'checkmark.16')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
                                     Label(self, _(u'Have'))])
         # Game
-        if bush.game.patchURL != u'':
-            linkGame = HyperlinkLabel(self, bush.game.displayName,
-                                      bush.game.patchURL,
-                                      always_unvisited=True)
-        else:
-            linkGame = Label(self, bush.game.displayName)
-        linkGame.tooltip = bush.game.patchTip
+        linkGame = Label(self, bush.game.displayName)
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
                                     staticBitmap(self, bmps[bGameOk])])
@@ -410,7 +456,7 @@ class PageVersions(PageInstaller):
                                      u'requirements are not met for using '
                                      u'this installer.'))
         text_warning.wrap(parent.get_page_size()[0] - 20)
-        self.checkOk = CheckBox(self, _(u'Install anyway.'))
+        self.checkOk = CheckBox(self, _('Install anyway'))
         self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
@@ -567,7 +613,7 @@ class WryeParser(ScriptParser.Parser):
                 outLine = u'<span class="code-n" style="display: inline;">%s</span>\n' % outLine
             else:
                 if br:
-                    outLine = u'<span class="code-n">%s</span><br />\n' % outLine
+                    outLine = u'<span class="code-n">%s</span><br>\n' % outLine
                 else:
                     outLine = u'<span class="code-n">%s</span>' % outLine
             outLines.append(outLine)
@@ -723,7 +769,8 @@ class WryeParser(ScriptParser.Parser):
         try:
             with file_path.open(u'r', encoding=u'utf-8-sig') as wiz_script:
                 # Ensure \n line endings for the script parser
-                self.lines = [x.replace(u'\r\n', u'\n') for x in wiz_script.readlines()]
+                self.lines = [bolt.to_unix_newlines(x)
+                              for x in wiz_script.readlines()]
             return None
         except UnicodeError:
             return _(u'Could not read the wizard file.  Please ensure it is '
@@ -925,7 +972,8 @@ class WryeParser(ScriptParser.Parser):
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs[u'app'].join(ver_file)
                 if ver_path.exists(): break
-            return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
+            ret = self._TestVersion(self._TestVersion_Want(seWant), ver_path)
+            return ret[0]
         else:
             # No script extender available for this game
             return 1
@@ -940,7 +988,7 @@ class WryeParser(ScriptParser.Parser):
 
     def fnCompareWBVersion(self, wbWant):
         wbHave = bass.AppVersion
-        return bolt.cmp_(float(wbHave), float(wbWant))
+        return bolt.cmp_(LooseVersion(wbHave), LooseVersion(wbWant))
 
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
@@ -1196,7 +1244,7 @@ class WryeParser(ScriptParser.Parser):
             self.variables[varname.text] = start
             self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
         elif args[1].text == u'in':
-            # For sub_name in SubPackages / For sub_name in SubPackage
+            # For sub in SubPackages / For file in sub
             if args[2].text == u'SubPackages':
                 if len(args) > 4:
                     error(_(u"Invalid syntax for 'For' statement.  Expected format:")
@@ -1207,7 +1255,8 @@ class WryeParser(ScriptParser.Parser):
                 sub_name = self.ExecuteTokens(args[2:])
                 subpackage = sub_name if sub_name in self.sublist else None
                 if subpackage is None:
-                    error(_(u"SubPackage '%s' does not exist.") % sub_name)
+                    error(_("Sub-package '%(sp_name)s' does not exist.") % {
+                        'sp_name': sub_name})
                 List = []
                 if self.installer.is_project:
                     sub = bass.dirs[u'installers'].join(self._path, subpackage)
@@ -1275,8 +1324,7 @@ class WryeParser(ScriptParser.Parser):
             #this select
             self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'EndSelect'])
             return
-        # Escape ampersands, since they're treated as escape characters by wx
-        main_desc = args.pop(0).replace(u'&', u'&&')
+        main_desc = args.pop(0)
         if len(args) % 3:
             error(MISSING_ARGS % name_)
         images_ = []
@@ -1294,7 +1342,7 @@ class WryeParser(ScriptParser.Parser):
         if self.bAuto:
             # auto wizard will resolve SelectOne/SelectMany only if default(s)
             # were specified.
-            defaults_ = [t for t, default in titles.items() if default]
+            defaults_ = [t for t, dflt in titles.items() if dflt]
             if not bMany: defaults_ = defaults_[:1]
             if defaults_:
                 self.PushFlow(u'Select', False,
@@ -1315,13 +1363,21 @@ class WryeParser(ScriptParser.Parser):
             imageJoin = bass.dirs[u'installers'].join(self._path).join
         for i in images_:
             # Try looking inside the package first, then look if it's using one
-            # of the images packaged with Wrye Bash (from Mopy/bash/images)
-            wiz_img_path = imageJoin(i)
-            if not wiz_img_path.is_file():
-                std_img_path = bass.dirs[u'images'].join(i)
-                if std_img_path.is_file():
-                    wiz_img_path = std_img_path
-            image_paths.append(wiz_img_path)
+            # of the images packaged with Wrye Bash (from
+            # Mopy/bash/images/Wizard Images)
+            # Note that these are almost always Windows paths, so we have to
+            # convert them if we're on Linux
+            wiz_img_path = to_os_path(imageJoin(i))
+            if wiz_img_path and wiz_img_path.is_file():
+                image_paths.append(wiz_img_path)
+            elif i.lower().startswith('wizard images'):
+                std_img_path = to_os_path(bass.dirs['images'].join(i).s)
+                if std_img_path and std_img_path.is_file():
+                    image_paths.append(std_img_path)
+                else:
+                    image_paths.append(None)
+            else:
+                image_paths.append(None)
         self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,
                                descs, image_paths)
 
@@ -1480,11 +1536,7 @@ class WryeParser(ScriptParser.Parser):
         else:
             bGEOk = True
             geHave = u'None'
-        try:
-            bWBOk = float(wbHave) >= float(wbWant)
-        except ValueError:
-            # Error converting to float, just assume it's OK
-            bWBOk = True
+        bWBOk = LooseVersion(wbHave) >= LooseVersion(wbWant)
         if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
             self.page = PageVersions(self._wiz_parent, bGameOk, gameHave, game,
                                      bSEOk, seHave, se, bGEOk, geHave, ge,
@@ -1513,18 +1565,20 @@ class WryeParser(ScriptParser.Parser):
         if not have and file_ and file_.exists():
             have = get_file_version(file_.s)
         if have:
-            ver = u'.'.join([str(i) for i in have])
-            if need == u'None':
-                return [1, ver]
-            elif have > need:
-                return [1, ver]
-            elif have < need:
-                return [-1, ver]
+            have_fmt = '.'.join([str(i) for i in have])
+            if need == 'None':
+                return [1, have_fmt]
+            need_ver = LooseVersion('.'.join([str(i) for i in need]))
+            have_ver = LooseVersion(have_fmt)
+            if have_ver > need_ver:
+                return [1, have_fmt]
+            elif have_ver < need_ver:
+                return [-1, have_fmt]
             else:
-                return [0, ver]
-        elif need == u'None':
-            return [0, u'None']
-        return [-1, u'None']
+                return [0, have_fmt]
+        elif need == 'None':
+            return [0, 'None']
+        return [-1, 'None']
 
     def kwdReturn(self):
         self.page = PageFinish(self._wiz_parent, self.sublist,

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,9 +27,9 @@ import gettext
 import locale
 import os
 import sys
+import tomllib
 import traceback
 
-import tomli
 import wx as _wx
 
 # set in _emulate_startup used in set_game - we need to init translations
@@ -51,10 +51,10 @@ def get_meta_value(base_file_path, meta_key):
     except KeyError:
         try:
             with open(meta_file, 'rb') as ins:
-                parsed_meta = _meta_cache[base_file_path] = tomli.load(ins)
+                parsed_meta = _meta_cache[base_file_path] = tomllib.load(ins)
         except FileNotFoundError:
             raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
-        except tomli.TOMLDecodeError:
+        except tomllib.TOMLDecodeError:
             traceback.print_exc()
             raise FailedTest(u'%s has malformed TOML syntax. Check the log '
                              u'for a traceback pointing to the '
@@ -79,6 +79,7 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
     that absolute paths are returned, as the intended use case of this method
     is for testing AFile-based classes.
 
+    :param resource_subfolder: The subfolder to test_resources to iterate.
     :param filter_by_game: If nonempty, limits yielded resources to ones from
         that game's subfolder only."""
     full_subfolder = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -110,18 +111,16 @@ resource_to_displayName = {
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
-def set_game(game_fsName):
+def set_game(gm_displayName):
     """Hotswitches bush.game to the game with the specified resource subfolder
     name."""
     # noinspection PyProtectedMember
     try:
-        bush.game = _game_cache[game_fsName]
+        bush.game = _game_cache[gm_displayName]
     except KeyError:
-        bush.game = new_game = bush._allGames[game_fsName](u'')
-        from .. import brec
-        brec.MelModel = None
+        bush.game = new_game = bush._allGames[gm_displayName]('')
         new_game.init()
-        _game_cache[game_fsName] = new_game
+        _game_cache[gm_displayName] = new_game
 
 _wx_app = None
 
@@ -149,6 +148,12 @@ def _emulate_startup():
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()
-    set_game(u'Oblivion') # just need to pick one to start
+    from ..game.patch_game import PatchGame
+    for gm_display_name in sorted(game_class.displayName for game_class in
+                                  PatchGame.supported_games()):
+        if gm_display_name != 'Oblivion':
+            set_game(gm_display_name)
+    else: # pick Oblivion as the most fully supported
+        set_game('Oblivion')
 
 _emulate_startup()

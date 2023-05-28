@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,9 +24,9 @@ import copy
 
 import pytest
 
-from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding, GPath, Path, Rounder, SigToStr, StrToSig, \
-    LooseVersion, FName, FNDict, os_name, CIstr, GPath_no_norm, DefaultFNDict
+from ..bolt import CIstr, DefaultFNDict, DefaultLowerDict, FName, FNDict, \
+    GPath, GPath_no_norm, LooseVersion, LowerDict, OrderedLowerDict, Path, \
+    Rounder, SigToStr, StrToSig, decoder, encode, getbestencoding, os_name
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -35,8 +35,8 @@ def test_getbestencoding():
     assert getbestencoding(b'\xe8\xad\xa6\xe5\x91\x8a')[0] == u'utf8'
     assert getbestencoding(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd'
                            b'\xd0\xb8\xd0\xb5')[0] == u'utf8'
-    # chardet not confident enough to say - this is Windows-932
-    assert getbestencoding(b'\x8cx\x8d\x90')[0] == None
+    # Since chardet 5.1.0 wrongly detected as MacRoman - this is Windows-932
+    assert getbestencoding(b'\x8cx\x8d\x90')[0] == 'MacRoman'
     # Wrong - this is GBK, not ISO-8859-1!
     assert getbestencoding(b'\xbe\xaf\xb8\xe6')[0] == u'ISO-8859-1'
     # Since chardet 5.0, detected correctly as Windows-1251 - before 5.0 it got
@@ -280,6 +280,7 @@ class TestLowerDict(object):
         a = self.dict_type()
         a.update(dict(sape=4139, guido=4127, jack=4098))
         # Needed for the eval below, not unused!
+        # noinspection PyUnresolvedReferences
         from ..bolt import CIstr
         assert eval(repr(a)) == a
 

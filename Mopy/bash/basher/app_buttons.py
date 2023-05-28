@@ -16,26 +16,28 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 import os
+import shlex
 import subprocess
 import webbrowser
-from . import BashStatusBar, BashFrame
-from .frames import PluginChecker, DocBrowser
-from .settings_dialog import SettingsDialog
-from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
-from ..env import getJava, get_game_version_fallback
-from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
-__all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
-           u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
-           u'App_DocBrowser', u'App_PluginChecker', u'App_Settings',
-           u'App_Restart', u'app_button_factory']
+from . import BashFrame, BashStatusBar
+from .frames import DocBrowser, PluginChecker
+from .settings_dialog import SettingsDialog
+from .. import balt, bass, bolt, bosh, bush, load_order
+from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
+from ..env import get_game_version_fallback, getJava
+from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
+    showError
+
+__all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
+           'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
+           'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
+           'App_Restart', 'app_button_factory']
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -44,13 +46,14 @@ class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     @property
     def link_text(self):
-        return _(u"Hide '%s'") % self.window.tooltip
+        return _("Hide '%(status_btn_name)s'") % {
+            'status_btn_name': self.window.tooltip}
 
     @property
     def link_help(self):
-        return _(u"Hides %(buttonname)s's status bar button (can be restored "
-                 u"through the settings menu).") % {
-            u'buttonname': self.window.tooltip}
+        return _("Hides %(status_btn_name)s's status bar button (can be "
+                 "restored through the settings menu).") % {
+            'status_btn_name': self.window.tooltip}
 
     def Execute(self): Link.Frame.statusBar.HideButton(self.window)
 
@@ -61,8 +64,8 @@ class StatusBar_Button(ItemLink):
     def sb_button_tip(self): return self._tip
 
     def __init__(self, uid=None, canHide=True, button_tip=u''):
-        """ui: Unique identifier, used for saving the order of status bar icons
-               and whether they are hidden/shown.
+        """uid: Unique identifier, used for saving the order of status bar
+                icons and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
         super(StatusBar_Button, self).__init__()
         self.mainMenu = Links()
@@ -78,7 +81,7 @@ class StatusBar_Button(ItemLink):
         existent buttons."""
         return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
+    def SetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
         btn_image = image or balt.images[self.imageKey % bass.settings[
             u'bash.statusbar.iconSize']].get_bitmap()
@@ -88,7 +91,6 @@ class StatusBar_Button(ItemLink):
                                       btn_tooltip=self.sb_button_tip)
         self.gButton.on_clicked.subscribe(self.Execute)
         self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
-        return self.gButton
 
     def DoPopupMenu(self):
         if self.canHide:
@@ -108,8 +110,8 @@ class StatusBar_Button(ItemLink):
         for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs[u'app'].join(ver_file)
             if ver_path.exists():
-                return u' ' + u'.'.join([u'%s' % x for x
-                                         in ver_path.strippedVersion])
+                return ' ' + '.'.join([f'{x}' for x
+                                       in ver_path.strippedVersion])
         else:
             return u''
 
@@ -128,7 +130,7 @@ class _App_Button(StatusBar_Button):
         if self.IsPresent():
             version = self.exePath.strippedVersion
             if version != (0,):
-                version = u'.'.join([u'%s'%x for x in version])
+                version = '.'.join([f'{x}' for x in version])
                 return version
         return u''
 
@@ -139,12 +141,12 @@ class _App_Button(StatusBar_Button):
     def sb_button_tip(self):
         if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
-            return self._tip + u' ' + self.version
+            return f'{self._tip} {self.version}'
 
     @property
     def obseTip(self):
         if self._obseTip is None: return None
-        return self._obseTip % {u'version': self.version}
+        return self._obseTip % {'app_version': self.version}
 
     def __init__(self, exePath, exeArgs, images, tip, obseTip=None, uid=None,
                  canHide=True):
@@ -163,36 +165,35 @@ class _App_Button(StatusBar_Button):
         return self.exePath not in bosh.undefinedPaths and \
                self.exePath.exists()
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self.IsPresent(): return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self.IsPresent(): return
         iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2, duh
-        super(_App_Button, self).GetBitmapButton(
-            window, self.images[idex].get_bitmap(), onRClick)
+        super().SetBitmapButton(window, self.images[idex].get_bitmap(),
+                                onRClick)
         if self.obseTip is not None:
             _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
                 self.gButton.tooltip = self.obseTip
-        return self.gButton
 
-    def ShowError(self,error):
-        balt.showError(Link.Frame,
-                       (f'{error}\n\n' +
-                        _(u'Used Path: ') + f'{self.exePath}\n' +
-                        _(u'Used Arguments: ') + f'{self.exeArgs}'),
-                       _(u"Could not launch '%s'") % self.exePath.stail)
+    def ShowError(self, error=None, *, msg=None):
+        if error is not None:
+            msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
+                'launched_exe_path': self.exePath} + '\n' + _(
+                'Used Arguments: %(launched_exe_args)s') % {
+                       'launched_exe_args': self.exeArgs})
+        showError(Link.Frame, msg,
+                  title=_("Could Not Launch '%(launched_exe_name)s'") % {
+                'launched_exe_name': self.exePath.stail})
 
     def _showUnicodeError(self):
-        balt.showError(Link.Frame, _(
-            u'Execution failed, because one or more of the command line '
-            u'arguments failed to encode.'),
-                       _(u"Could not launch '%s'") % self.exePath.stail)
+        self.ShowError(msg=_('Execution failed because one or more of the '
+                             'command line arguments failed to encode.'))
 
     def Execute(self):
         if not self.IsPresent():
-            balt.showError(Link.Frame,
-                           _(u'Application missing: %s') % self.exePath,
-                           _(u"Could not launch '%s'") % self.exePath.stail)
+            msg = _('Application missing: %(launched_exe_path)s')
+            self.ShowError(msg=msg % {'launched_exe_path': self.exePath})
             return
         self._app_button_execute()
 
@@ -242,7 +243,14 @@ class _ExeButton(_App_Button):
         try:
             popen = subprocess.Popen(exe_args, close_fds=True)
             if self.wait:
-                popen.wait()
+                with balt.Progress(_('Waiting for %(other_process)s...') % {
+                    'other_process': exe_path.stail}) as progress:
+                    progress(0, bolt.text_wrap(
+                        _('Wrye Bash will be paused until you have completed '
+                          'your work in %(other_process)s and closed '
+                          'it.') % {'other_process': exe_path.stail}, 50))
+                    progress.setFull(1)
+                    popen.wait()
         except UnicodeError:
             self._showUnicodeError()
         except WindowsError as werr:
@@ -251,7 +259,7 @@ class _ExeButton(_App_Button):
             try:
                 import win32api
                 win32api.ShellExecute(0, 'runas', exe_path.s,
-                    u'%s' % self.exeArgs, bass.dirs[u'app'].s, 1)
+                    shlex.join(exe_args[1:]), exe_path.head.s, 1)
             except:
                 self.ShowError(werr)
         except Exception as error:
@@ -329,59 +337,55 @@ def app_button_factory(exePathArgs, *args, **kwargs):
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
     """Toggle xEdit expert mode (when launched via Bash)."""
-    _text = _(u'Expert Mode')
-    _help = _(u'Launch %s in expert mode.') % bush.game.Xe.full_name
-    _bl_key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
+    _text = _('Expert Mode')
+    _help = _('Launch %(xedit_name)s in expert mode.') % {
+        'xedit_name': bush.game.Xe.full_name}
+    _bl_key = bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing'
 
 class _Mods_xEditSkipBSAs(BoolLink):
     """Toggle xEdit skip bsa mode (when launched via Bash)."""
-    _text = _(u'Skip BSAs')
-    _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
-              u'functions.') % bush.game.Xe.full_name
-    _bl_key = bush.game.Xe.xe_key_prefix + u'.skip_bsas'
+    _text = _('Skip BSAs')
+    _help = _('Skip loading BSAs when opening %(xedit_name)s. Will disable '
+              'some of its functions.') % {
+        'xedit_name': bush.game.Xe.full_name}
+    _bl_key = bush.game.Xe.xe_key_prefix + '.skip_bsas'
 
-class App_Tes4View(_ExeButton):
-    """Allow some extra args for Tes4View."""
+class _AMods_xEditLaunch(ItemLink):
+    """Base class for launching xEdit via link."""
+    _custom_arg: str
 
-# arguments
-# -fixup (wbAllowInternalEdit true default)
-# -nofixup (wbAllowInternalEdit false)
-# -showfixup (wbShowInternalEdit true default)
-# -hidefixup (wbShowInternalEdit false)
-# -skipbsa (wbLoadBSAs false)
-# -forcebsa (wbLoadBSAs true default)
-# -fixuppgrd
-# -IKnowWhatImDoing
-# -FNV
-#  or name begins with FNV
-# -FO3
-#  or name begins with FO3
-# -TES4
-#  or name begins with TES4
-# -TES5
-#  or name begins with TES5
-# -lodgen
-#  or name ends with LODGen.exe
-#  (requires TES4 mode)
-# -masterupdate
-#  or name ends with MasterUpdate.exe
-#  (requires FO3 or FNV)
-#  -filteronam
-#  -FixPersistence
-#  -NoFixPersistence
-# -masterrestore
-#  or name ends with MasterRestore.exe
-#  (requires FO3 or FNV)
-# -edit
-#  or name ends with Edit.exe
-# -translate
-#  or name ends with Trans.exe
+    def __init__(self, parent_link):
+        super().__init__()
+        self._xedit_link = parent_link
+
+    def Execute(self):
+        self._xedit_link.launch_with_args(custom_args=(self._custom_arg,))
+
+class _Mods_xEditQAC(_AMods_xEditLaunch):
+    """Launch xEdit in QAC mode."""
+    _text = _('Quick Auto Clean')
+    _help = _('Launch %(xedit_name)s in QAC mode to clean a single '
+              'plugin.') % {'xedit_name': bush.game.Xe.full_name}
+    _custom_arg = '-qac'
+
+class _Mods_xEditVQSC(_AMods_xEditLaunch):
+    """Launch xEdit in VQSC mode."""
+    _text = _('Very Quick Show Conflicts')
+    _help = _('Launch %(xedit_name)s in VQSC mode to detect '
+              'conflicts.') % {'xedit_name': bush.game.Xe.full_name}
+    _custom_arg = '-vqsc'
+
+class App_xEdit(_ExeButton):
+    """Launch xEdit, potentially with some extra args."""
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
-        super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
+        super().__init__(exePath, exeArgs, *args[1:], **kwdargs)
         if bush.game.Xe.xe_key_prefix:
             self.mainMenu.append(_Mods_xEditExpert())
             self.mainMenu.append(_Mods_xEditSkipBSAs())
+            self.mainMenu.append(SeparatorLink())
+            self.mainMenu.append(_Mods_xEditQAC(self))
+            self.mainMenu.append(_Mods_xEditVQSC(self))
 
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
         if not super().IsPresent():
@@ -393,74 +397,112 @@ class App_Tes4View(_ExeButton):
         return True
 
     def Execute(self):
+        self.launch_with_args(custom_args=())
+
+    def launch_with_args(self, custom_args: tuple[str, ...]):
+        """Computes arguments based on checked links and INI settings, then
+        appends the specified custom arguments only for this launch."""
         is_expert = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing']
+            bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing']
         skip_bsas = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + u'.skip_bsas']
+            bush.game.Xe.xe_key_prefix + '.skip_bsas']
         extraArgs = bass.inisettings[
-            u'xEditCommandLineArguments'].split() if is_expert else []
+            'xEditCommandLineArguments'].split() if is_expert else []
         if is_expert:
-            extraArgs.append(u'-IKnowWhatImDoing')
+            extraArgs.append('-IKnowWhatImDoing')
         if skip_bsas:
-            extraArgs.append(u'-skipbsa')
-        self.extraArgs = tuple(extraArgs)
-        super(App_Tes4View, self).Execute()
+            extraArgs.append('-skipbsa')
+        self.extraArgs = old_args = tuple(extraArgs)
+        self.extraArgs += custom_args
+        super().Execute()
+        self.extraArgs = old_args
 
 #------------------------------------------------------------------------------
-class _Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    _text = _(u'BOSS Disable Lock Load Order')
-    _bl_key = u'BOSS.ClearLockTimes'
-    _help = _(u"If selected, will temporarily disable Bash's Lock Load Order "
-              u'when running BOSS through Bash.')
+class _Mods_SuspendLockLO(BoolLink):
+    """Toggle Lock Load Order disabling when launching BOSS/LOOT through WB."""
+    _text = _('Suspend Lock Load Order')
+    _bl_key = 'BOSS.ClearLockTimes'
+    _help = _("If enabled, will temporarily disable 'Lock Load Order' "
+              "when running this program through Wrye Bash.")
 
-#------------------------------------------------------------------------------
-class _Mods_BOSSLaunchGUI(BoolLink):
-    """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text, _bl_key, _help = _(u'Launch using GUI'), u'BOSS.UseGUI', \
-                            _(u"If selected, Bash will run BOSS's GUI.")
-
-class App_BOSS(_ExeButton):
-    """loads BOSS"""
-    def __init__(self, *args, **kwdargs):
-        exePath, exeArgs = _parse_button_arguments(args[0])
-        super(App_BOSS, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
-        self.boss_path = self.exePath
-        self.mainMenu.append(_Mods_BOSSLaunchGUI())
-        self.mainMenu.append(_Mods_BOSSDisableLockTimes())
+class _AApp_LOManager(_ExeButton):
+    """Base class for load order managers like BOSS and LOOT."""
+    def __init__(self, lom_path, *args, **kwargs):
+        super().__init__(lom_path, (), *args, **kwargs)
+        self.mainMenu.append(_Mods_SuspendLockLO())
 
     def Execute(self):
-        if bass.settings[u'BOSS.UseGUI']:
-            self.exePath = self.boss_path.head.join(u'boss_gui.exe')
-        else:
-            self.exePath = self.boss_path
-        self.wait = bool(bass.settings[u'BOSS.ClearLockTimes'])
-        extraArgs = []
-        ##: These should become right click options instead
-        if get_key_down(u'R'):
-            if get_shift_down():
-                extraArgs.append(u'-r 2') # Revert level 2 - BOSS version 1.6+
-            else:
-                extraArgs.append(u'-r 1') # Revert level 1 - BOSS version 1.6+
-        if get_key_down(u'S'):
-            extraArgs.append(u'-s') # Silent Mode - BOSS version 1.6+
-        if get_key_down(u'C'): # Print crc calculations in BOSS log.
-            extraArgs.append(u'-c')
-        if bass.tooldirs[u'boss'].version >= (2, 0, 0, 0):
-            # After version 2.0, need to pass in the -g argument
-            extraArgs.append(u'-g%s' % bush.game.boss_game_name)
-        self.extraArgs = tuple(extraArgs)
-        super(App_BOSS, self).Execute()
-        if bass.settings[u'BOSS.ClearLockTimes']:
+        self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
+        if bass.settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
             with load_order.Unlock():
-                # Refresh to get the new load order that BOSS specified. If
-                # on timestamp method scan the data dir, if not loadorder.txt
-                # should have changed, refreshLoadOrder should detect that
+                super().Execute()
+                # Refresh to get the new load order that the manager specified.
+                # If on timestamp method scan the data dir, if not
+                # loadorder.txt should have changed, refreshLoadOrder should
+                # detect that
                 bosh.modInfos.refresh(
                     refresh_infos=not bush.game.using_txt_file)
             # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
+        else:
+            super().Execute()
+
+#------------------------------------------------------------------------------
+class _Mods_BOSSLaunchGUI(BoolLink):
+    """If BOSS.exe is available then boss_gui.exe should be too."""
+    _text = _('Launch Using GUI')
+    _bl_key = 'BOSS.UseGUI'
+    _help = _("If enabled, Bash will run BOSS's GUI.")
+
+class App_BOSS(_AApp_LOManager):
+    """Runs BOSS if it's present."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.boss_path = self.exePath
+        self.mainMenu.append(_Mods_BOSSLaunchGUI())
+
+    def Execute(self):
+        if bass.settings['BOSS.UseGUI']:
+            self.exePath = self.boss_path.head.join('boss_gui.exe')
+        else:
+            self.exePath = self.boss_path
+        curr_args = []
+        ##: These should become right click options instead
+        if get_key_down('R'):
+            if get_shift_down():
+                curr_args.append('-r 2') # Revert level 2 - BOSS version 1.6+
+            else:
+                curr_args.append('-r 1') # Revert level 1 - BOSS version 1.6+
+        if get_key_down('S'):
+            curr_args.append('-s') # Silent Mode - BOSS version 1.6+
+        if get_key_down('C'): # Print crc calculations in BOSS log.
+            curr_args.append('-c')
+        if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
+            # After version 2.0, need to pass in the -g argument
+            curr_args.append(f'-g{bush.game.boss_game_name}')
+        self.extraArgs = tuple(curr_args)
+        super().Execute()
+
+#------------------------------------------------------------------------------
+class _Mods_LOOTAutoSort(BoolLink):
+    _text = _('Auto-Sort')
+    _bl_key = 'LOOT.AutoSort'
+    _help = _('If enabled, LOOT will automatically sort the load order for '
+              'the current game, then apply the result and quit.')
+
+class App_LOOT(_AApp_LOManager):
+    """Runs LOOT if it's present."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mainMenu.append(_Mods_LOOTAutoSort())
+
+    def Execute(self):
+        curr_args = [f'--game={bush.game.loot_game_name}']
+        if bass.settings['LOOT.AutoSort']:
+            curr_args.append('--auto-sort')
+        self.extraArgs = tuple(curr_args)
+        super().Execute()
 
 #------------------------------------------------------------------------------
 class Game_Button(_ExeButton):
@@ -473,37 +515,27 @@ class Game_Button(_ExeButton):
 
     @property
     def sb_button_tip(self):
-        tip_ = self._tip + u' ' + self.version if self.version else self._tip
-        if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.Laa.laa_name
-        return tip_
+        return f'{self._tip} {self.version}' if self.version else self._tip
 
     @property
     def obseTip(self):
         # Oblivion (version)
-        tip_ = self._obseTip % {u'version': self.version}
+        tip_ = self._obseTip % {'app_version': self.version}
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
-        # + LAA
-        if BashStatusBar.laaButton.button_state:
-            tip_ += u' + ' + bush.game.Laa.laa_name
+        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         return tip_
 
     def _app_button_execute(self):
         if bush.ws_info.installed:
             version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
-            gm_cmd = u'shell:AppsFolder\\%s!%s' % (
-                bush.ws_info.app_name, version_info.entry_point)
+            gm_cmd = (f'shell:AppsFolder\\{bush.ws_info.app_name}!'
+                      f'{version_info.entry_point}')
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
             exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
-            exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
             exe_path = self.exePath # Default to the regular launcher
-            if BashStatusBar.laaButton.button_state:
-                # Should use the LAA Launcher if it's present
-                exe_path = (exe_laa if exe_laa.is_file() else exe_path)
-            elif BashStatusBar.obseButton.button_state:
+            if BashStatusBar.obseButton.button_state:
                 # OBSE refuses to start when its EXE is launched on a Steam
                 # installation
                 if (bush.game.fsName != u'Oblivion'
@@ -512,7 +544,7 @@ class Game_Button(_ExeButton):
                     exe_path = (exe_xse if exe_xse.is_file() else exe_path)
             self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
-            Link.Frame.close_win(True)
+            Link.Frame.exit_wb()
 
     @property
     def version(self):
@@ -526,7 +558,7 @@ class Game_Button(_ExeButton):
             version = get_game_version_fallback(
                 self._version_path, bush.ws_info)
         if version != (0,):
-            version = u'.'.join([u'%s' % x for x in version])
+            version = '.'.join([f'{x}' for x in version])
             return version
         return u''
 
@@ -549,20 +581,20 @@ class TESCS_Button(_ExeButton):
     @property
     def obseTip(self):
         # CS/CK (version)
-        tip_ = self._obseTip % {u'version': self.version}
+        tip_ = self._obseTip % {'app_version': self.version}
         if not self.xse_args: return tip_
         # + OBSE
-        tip_ += u' + %s%s' % (bush.game.Se.se_abbrev, self.obseVersion)
+        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         # + CSE
-        cse_path = bass.dirs[u'mods'].join(u'obse', u'plugins',
-                                           u'Construction Set Extender.dll')
+        cse_path = bass.dirs['mods'].join('obse', 'plugins',
+            'Construction Set Extender.dll')
         if cse_path.exists():
-            version = cse_path.strippedVersion
-            if version != (0,):
-                version = u'.'.join([u'%i'%x for x in version])
-            else:
-                version = u''
-            tip_ += u' + CSE %s' % version
+            cse_version = ''
+            if bass.settings['bash.statusbar.showversion']:
+                cse_ver = cse_path.strippedVersion
+                if cse_ver != (0,):
+                    cse_version = ' ' + '.'.join([f'{x}' for x in cse_ver])
+            tip_ += f' + CSE{cse_version}'
         return tip_
 
     def _app_button_execute(self):
@@ -584,7 +616,7 @@ class _StatefulButton(StatusBar_Button):
     _default_state = True
 
     @property
-    def sb_button_tip(self): raise AbstractError
+    def sb_button_tip(self): raise NotImplementedError
 
     def SetState(self, state=None):
         """Set state related info. If newState != None, sets to new state
@@ -612,11 +644,10 @@ class _StatefulButton(StatusBar_Button):
     @property
     def _present(self): return True
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        if not self._present: return None
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        if not self._present: return
         self.SetState()
-        return super(_StatefulButton, self).GetBitmapButton(window, image,
-                                                            onRClick)
+        super().SetBitmapButton(window, image, onRClick)
 
     def IsPresent(self):
         return self._present
@@ -629,51 +660,29 @@ class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
     _state_key = u'bash.obse.on'
     _state_img_key = u'checkbox.green.%s.%s'
+
     @property
     def _present(self):
         return (bool(bush.game.Se.se_abbrev)
                 and bass.dirs[u'app'].join(bush.game.Se.exe).exists())
 
     def SetState(self,state=None):
-        super(Obse_Button, self).SetState(state)
-        if bush.game.Laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
-            # 4GB Launcher automatically launches the SE, so turning of the SE
-            # required turning off the 4GB Launcher as well
-            BashStatusBar.laaButton.SetState(state)
+        super().SetState(state)
         self.UpdateToolTips()
         return state
 
     @property
-    def sb_button_tip(self): return ((_(u'%s%s Disabled'), _(u'%s%s Enabled'))[
-        self.button_state]) % (bush.game.Se.se_abbrev, self.obseVersion)
+    def sb_button_tip(self):
+        tip_to_fmt = (
+            _('%(se_name)s%(se_ver)s Enabled') if self.button_state else
+            _('%(se_name)s%(se_ver)s Disabled'))
+        return tip_to_fmt % {'se_name': bush.game.Se.se_abbrev,
+                             'se_ver': self.obseVersion}
 
     def UpdateToolTips(self):
         tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
         for button in _App_Button.obseButtons:
             button.gButton.tooltip = getattr(button, tipAttr, u'')
-
-class LAA_Button(_StatefulButton):
-    """4GB Launcher on/off state button."""
-    _state_key = u'bash.laa.on'
-    _state_img_key = u'checkbox.blue.%s.%s'
-    @property
-    def _present(self):
-        return bass.dirs[u'app'].join(bush.game.Laa.exe).exists()
-
-    def SetState(self,state=None):
-        super(LAA_Button, self).SetState(state)
-        if bush.game.Laa.launchesSE and BashStatusBar.obseButton.gButton is not None:
-            if state:
-                # If the 4gb launcher launches the SE, enable the SE when enabling this
-                BashStatusBar.obseButton.SetState(state)
-            else:
-                # We need the obse button to update the tooltips anyway
-                BashStatusBar.obseButton.UpdateToolTips()
-        return state
-
-    @property
-    def sb_button_tip(self): return bush.game.Laa.laa_name + (
-        _(u' Disabled'), _(u' Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------
 class AutoQuit_Button(_StatefulButton):
@@ -683,17 +692,13 @@ class AutoQuit_Button(_StatefulButton):
     _default_state = False
 
     @property
-    def imageKey(self): return self._state_img_key % (
-        [u'off', u'x'][self.button_state], u'%d')
-
-    @property
     def sb_button_tip(self): return (_(u'Auto-Quit Disabled'), _(u'Auto-Quit Enabled'))[
         self.button_state]
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
     """Show help browser."""
-    imageKey, _tip = u'help.%s', _(u'Help File')
+    imageKey, _tip = 'help.%s', _('Help')
 
     def Execute(self):
         webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))
@@ -701,22 +706,21 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    imageKey, _tip = u'doc.%s', _(u'Doc Browser')
+    imageKey = 'doc_browser.%s'
+    _tip = _('Doc Browser')
 
     def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
-            bass.settings[u'bash.modDocs.show'] = True
         Link.Frame.docBrowser.raise_frame()
 
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
     """Show settings dialog."""
-    imageKey, _tip = u'settingsbutton.%s', _(u'Settings')
+    imageKey, _tip = 'settings_button.%s', _('Settings')
 
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        return super(App_Settings, self).GetBitmapButton(
-            window, image, lambda: self.Execute())
+    def SetBitmapButton(self, window, image=None, onRClick=None):
+        super().SetBitmapButton(window, image, lambda: self.Execute())
 
     def Execute(self):
         SettingsDialog.display_dialog()
@@ -725,11 +729,7 @@ class App_Settings(StatusBar_Button):
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u'Restart')
-
-    def GetBitmapButton(self, window, image=None, onRClick=None):
-        iconSize = bass.settings[u'bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(window,
-            bass.wx_bitmap[('ART_UNDO', iconSize)], onRClick)
+    imageKey = 'reload.%s'
 
     def Execute(self): Link.Frame.Restart()
 
@@ -737,7 +737,7 @@ class App_Restart(StatusBar_Button):
 class App_PluginChecker(StatusBar_Button):
     """Show plugin checker."""
     _tip = _(u'Plugin Checker')
-    imageKey = u'modchecker.%s'
+    imageKey = 'plugin_checker.%s'
 
     def Execute(self):
         PluginChecker.create_or_raise()

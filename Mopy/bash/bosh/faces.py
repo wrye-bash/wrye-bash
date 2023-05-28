@@ -16,28 +16,38 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 import io
 import re
+
 from . import SaveInfo
-from ._saves import SreNPC, SaveFile
+from ._saves import SaveFile, SreNPC
 from .. import bush
-from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
-    pack_byte, structs_cache
-from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2, \
-    int_unpacker
+from ..bolt import Flags, Path, encode, pack_byte, pack_int, struct_pack, \
+    struct_unpack, structs_cache
+from ..brec import FormId, int_unpacker, null2
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
+_player_fid = FormId.from_object_id(0, 0x7)
+
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags.from_names('pcf_name', 'race', 'gender', 'hair', 'eye',
-                                 'iclass', 'stats', 'factions', 'modifiers',
-                                 'spells')
+    class pcf_flags(Flags):
+        pcf_name: bool
+        race: bool
+        gender: bool
+        hair: bool
+        eye: bool
+        iclass: bool
+        stats: bool
+        factions: bool
+        modifiers: bool
+        spells: bool
 
     class PCFace(object):
         """Represents a face."""
@@ -101,7 +111,7 @@ class PCFaces(object):
         """Returns player and created faces from a save file or saveInfo."""
         faces = PCFaces._save_getCreatedFaces(saveFile)
         playerFace = PCFaces.save_getPlayerFace(saveFile)
-        faces[7] = playerFace
+        faces[_player_fid] = playerFace
         return faces
 
     @staticmethod
@@ -140,10 +150,10 @@ class PCFaces(object):
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for a in ('attributes', 'skills', 'health', 'unused2'):
-            npc_val = getattr(npc, a)
+        for att in ('attributes', 'skills', 'health', 'unused2'):
+            npc_val = getattr(npc, att)
             if npc_val is not None:
-                setattr(face, a, npc_val)
+                setattr(face, att, npc_val)
         #--Iref >> fid
         getFid = saveFile.getFid
         face.spells = [getFid(x) for x in (npc.spells or [])]
@@ -180,7 +190,7 @@ class PCFaces(object):
         face.eye = getFid(face.eye)
         face.iclass = getFid(face.iclass)
         #--Changed NPC Record
-        PCFaces.save_getChangedNpc(saveFile,7,face)
+        PCFaces.save_getChangedNpc(saveFile, _player_fid, face)
         #--Done
         return face
 
@@ -213,24 +223,13 @@ class PCFaces(object):
         for save_rec_fid in (face.race, face.eye, face.hair):
             if not save_rec_fid: continue
             maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(save_rec_fid)
+            mod = save_rec_fid >> 24
             master = face.face_masters[min(mod, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
-        npc.full = face.pcName
         npc.flags.female = (face.gender & 0x1)
-        npc.setRace(masterMap(face.race,0x00907)) #--Default to Imperial
-        npc.eye = masterMap(face.eye,None)
-        npc.hair = masterMap(face.hair,None)
-        npc.hairLength = face.hairLength
-        npc.hairRed = face.hairRed
-        npc.hairBlue = face.hairBlue
-        npc.hairGreen = face.hairGreen
-        npc.unused3 = face.unused3
-        npc.fggs_p = face.fggs_p
-        npc.fgga_p = face.fgga_p
-        npc.fgts_p = face.fgts_p
+        PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats: Skip Level, baseSpell, fatigue and factions since they're discarded by game engine.
         if face.skills: npc.skills = face.skills
         if face.health:
@@ -262,11 +261,10 @@ class PCFaces(object):
         """Write a pcFace to a save file."""
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
+        maxMaster = len(face.face_masters) - 1
         for fid in (face.race, face.eye, face.hair, face.iclass):
             if not fid: continue
-            maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(fid)
-            master = face.face_masters[min(mod, maxMaster)]
+            master = face.face_masters[min(fid >> 24, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Player ACHR
@@ -347,7 +345,7 @@ class PCFaces(object):
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
         #--Save
-        saveFile.fid_recNum[7] = npc.getTuple(version)
+        saveFile.fid_recNum[_player_fid] = npc.getTuple(version)
 
     # Save Misc ----------------------------------------------------------------
     @staticmethod
@@ -377,10 +375,10 @@ class PCFaces(object):
     # MODS --------------------------------------------------------------------
     @staticmethod
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
-        loadFactory = LoadFactory(keepAll=keepAll, by_sig=by_sig)
-        modFile = ModFile(modInfo,loadFactory)
+        lf = LoadFactory(keepAll=keepAll, by_sig=by_sig)
+        modFile = ModFile(modInfo, lf)
         if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
-            modFile.load(True)
+            modFile.load_plugin()
         return modFile
 
     @staticmethod
@@ -388,23 +386,21 @@ class PCFaces(object):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
         modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
-        short_mapper = modFile.getShortMapper()
         faces = {}
-        for npc in modFile.tops[b'NPC_'].getActiveRecords():
+        for _rid, npc in modFile.tops[b'NPC_'].iter_present_records():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
-            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
-                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
-                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
-                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
-                npc_val = getattr(npc, a)
-                if isinstance(npc_val, tuple): # Hacky check for FormIDs
-                    npc_val = short_mapper(npc_val)
-                setattr(face, a, npc_val)
+            for att in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                        'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                        'fgts_p', 'level_offset', 'skills', 'health', 'iclass',
+                        'unused2', 'baseSpell', 'fatigue', 'attributes'):
+                npc_val = getattr(npc, att)
+                if isinstance(npc_val, FormId):
+                    npc_val = npc_val.short_fid # saves code uses the ints...
+                setattr(face, att, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face
-            #print face.pcName, face.race, face.hair, face.eye, face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3
         return faces
 
     @staticmethod
@@ -412,7 +408,7 @@ class PCFaces(object):
         """Returns an array of Race Faces from a mod file."""
         modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'RACE'])
         faces = {}
-        for race in modFile.tops[b'RACE'].getActiveRecords():
+        for _rid, race in modFile.tops[b'RACE'].iter_present_records():
             face = PCFaces.PCFace()
             face.face_masters = []
             for field in (u'eid',u'fggs_p',u'fgga_p',u'fgts_p'):
@@ -436,7 +432,7 @@ class PCFaces(object):
             tes4.masters.append(bush.game.master_file)
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
-        npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}
+        npcEids = {r.eid for r in modFile.tops[b'NPC_'].iter_records(skip_flagged=False)}
         eidForm = u''.join(('sg', bush.game.raceShortNames.get(face.race, 'Unk'),
             (face.gender and 'a' or 'u'), re.sub(r'\W', '', face.pcName), '%02d'))
         count,eid = 0, eidForm % 0
@@ -444,24 +440,12 @@ class PCFaces(object):
             count += 1
             eid = eidForm % count
         #--NPC
-        npcid = genFid(tes4.num_masters, tes4.getNextObject())
-        npc = MreRecord.type_class[b'NPC_'](
-            RecHeader(b'NPC_', 0, 0x40000, npcid, 0))
+        npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
+        npc = modFile.create_record(b'NPC_', npcid, head_flags=0x40000)
         npc.eid = eid
-        npc.full = face.pcName
         npc.flags.female = face.gender
         npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
-        npc.setRace(masterMap(face.race,0x00907)) #--Default to Imperial
-        npc.eye = masterMap(face.eye,None)
-        npc.hair = masterMap(face.hair,None)
-        npc.hairLength = face.hairLength
-        npc.hairRed = face.hairRed
-        npc.hairBlue = face.hairBlue
-        npc.hairGreen = face.hairGreen
-        npc.unused3 = face.unused3
-        npc.fggs_p = face.fggs_p
-        npc.fgga_p = face.fgga_p
-        npc.fgts_p = face.fgts_p
+        PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats
         npc.level_offset = face.level_offset
         npc.baseSpell = face.baseSpell
@@ -471,8 +455,21 @@ class PCFaces(object):
             npc.health = face.health
             npc.unused2 = face.unused2
         if face.attributes: npc.attributes = face.attributes
-        npc.setChanged()
-        modFile.tops[b'NPC_'].records.append(npc)
         #--Save
         modFile.safeSave()
         return npc
+
+    @staticmethod
+    def _set_npc_attrs(npc, face, masterMap):
+        npc.full = face.pcName
+        npc.setRace(masterMap(face.race, 0x00907))  #--Default to Imperial
+        npc.eye = masterMap(face.eye, None)
+        npc.hair = masterMap(face.hair, None)
+        npc.hairLength = face.hairLength
+        npc.hairRed = face.hairRed
+        npc.hairBlue = face.hairBlue
+        npc.hairGreen = face.hairGreen
+        npc.unused3 = face.unused3
+        npc.fggs_p = face.fggs_p
+        npc.fgga_p = face.fgga_p
+        npc.fgts_p = face.fgts_p

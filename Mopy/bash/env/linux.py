@@ -16,32 +16,28 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Encapsulates Linux-specific classes and methods."""
 
+import functools
 import os
 import subprocess
 import sys
-import functools
+from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 
-from .common import WinAppInfo
+from .common import _find_legendary_games, _LegacyWinAppInfo
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import Path as _Path
 from ..bolt import GPath as _GPath
+from ..bolt import GPath_no_norm as _GPath_no_norm
+from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..bolt import structs_cache, dict_sort
+from ..bolt import dict_sort, structs_cache
 from ..exception import EnvError
 
 # API - Constants =============================================================
-try:
-    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/'])) # 1024 on mac!
-except (ValueError, subprocess.CalledProcessError, OSError):
-    _deprint(u'calling getconf failed - error:', traceback=True)
-    MAX_PATH = 4096
-
 FO_MOVE = 1
 FO_COPY = 2
 FO_DELETE = 3
@@ -58,8 +54,10 @@ GOOD_EXITS = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 def _getShellPath(folderKey): ##: mkdirs
     home = os.path.expanduser(u'~')
-    return _GPath({u'Personal': home,
-                   u'Local AppData': home + u'/.local/share'}[folderKey])
+    return _GPath({
+        'Personal': f'{home}/Documents',
+        'Local AppData': f'{home}/.local/share',
+    }[folderKey])
 
 def _get_error_info():
     return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))
@@ -74,14 +72,22 @@ def drive_exists(dir_path):
     except PermissionError: # as e: # PE on mac
         return False # [Errno 13] Permission denied: '/Volumes/Samsung_T5'
 
+@functools.cache
+def find_egs_games():
+    # No EGS on Linux, so use only Legendary
+    return _find_legendary_games()
+
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
 def get_registry_game_paths(_submod):
     return [] # no registry on Linux
 
-def get_win_store_game_info(_submod):
-    return WinAppInfo() # no Windows Store on Linux
+def get_legacy_ws_game_info(_submod):
+    return _LegacyWinAppInfo() # no Windows Store on Linux
+
+def get_ws_game_paths(_submod):
+    return [] # no Windows Store on Linux
 
 def get_personal_path():
     return _getShellPath(u'Personal'), _get_error_info()
@@ -94,7 +100,8 @@ def init_app_links(_apps_dir, _badIcons, _iconList):
     # The 'shortcuts' concept is hard for users to grasp anyways (remember how
     # many people have trouble setting up a shortcut for QACing using xEdit!),
     # so a better design would be e.g. using our settings dialog to add new
-    # launchers, similar to how MO2 does it
+    # launchers, similar to how MO2 does it - scratch that, I'm actually
+    # thinking about making this a separate tab to make it *super* easy
     return []
 
 def testUAC(_gameDataPath):
@@ -225,8 +232,39 @@ def python_tools_dir():
 def convert_separators(p):
     return p.replace(u'\\', u'/')
 
+##: A more performant implementation would maybe cache folder contents or
+# something similar, as it stands this is not usable for fixing BAIN on Linux
+def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+    if os.path.exists(ci_path):
+        # Fast path, but GPath it as we haven't normpathed it yet
+        return _GPath(ci_path)
+    # The first part is root, which we can obviously skip (has no other case)
+    ci_parts = PPath(os.path.normpath(os.fspath(ci_path))).parts[1:]
+    constructed_path = '/'
+    for ci_part in ci_parts:
+        new_ci_path = os.path.join(constructed_path, ci_part)
+        if os.path.exists(new_ci_path):
+            # If this part exists with the correct case, keep going
+            constructed_path = new_ci_path
+        else:
+            # Otherwise we have to list the entire folder and
+            # case-insensitively look for a match
+            ci_part_lower = ci_part.lower()
+            for candidate_file in os.listdir(constructed_path):
+                if candidate_file.lower() == ci_part_lower:
+                    # We found a matching file, construct the new path with the
+                    # right case and resume the outer loop
+                    constructed_path = os.path.join(constructed_path,
+                        candidate_file)
+                    break
+            else:
+                # We can't find this part at all, so the whole path can't be
+                # found -> None
+                return None
+    return _GPath_no_norm(constructed_path)
+
 # API - Classes ===============================================================
 class TaskDialog(object):
-    def __init__(self, title, heading, content, buttons=(), 
+    def __init__(self, title, heading, content, tsk_buttons=(),
                  main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')

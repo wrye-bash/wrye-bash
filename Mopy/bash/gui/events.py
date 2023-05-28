@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -106,12 +106,14 @@ Return Values:
     3. EventResult.CANCEL: Indicates that the event should not be allowed to
        execute. Only events that explicitly mention it in their documentation
        can be canceled, all others will raise a RuntimeError instead."""
+from __future__ import annotations
 
 __author__ = u'Infernio'
 
 from enum import Enum
 
-from ..exception import UnknownListener, ListenerBound
+from ..exception import ListenerBound, UnknownListener
+
 # no other imports, everything else needs to be able to import this
 
 def null_processor(_event):
@@ -134,7 +136,7 @@ class EventResult(Enum):
     events that clearly state so in their documentation may be canceled, all
     others will raise a RuntimeError instead."""
 
-class _EHPauseSubcription(object):
+class _EHPauseSubscription:
     """Helper for EventHandler.pause_subscription."""
     def __init__(self, event_handler, listener):
         self._event_handler = event_handler
@@ -222,7 +224,7 @@ class EventHandler(object):
            for use with a context manager (with statement).
 
            :param listener: The listener to unsubscribe."""
-        return _EHPauseSubcription(self, listener)
+        return _EHPauseSubscription(self, listener)
 
     def _update_wx_binding(self):
         """Creates or removes a wx binding if necessary. If we have listeners

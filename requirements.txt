@@ -1,17 +1,28 @@
 # Runtime, required -----------------------------------------------------------
-chardet==5.0.0
-lz4==4.0.1
-pywin32==304
+chardet==5.1.0
+ifileoperation==1.2.4; sys_platform == 'win32'
+lz4==4.3.2
+pywin32==306; sys_platform == 'win32'
 PyYAML==6.0
-wxPython==4.1.1
+wxPython==4.2.0; sys_platform != 'win32'
+https://raw.githubusercontent.com/wrye-bash/dev-tools/master/wheels/wxPython-4.2.1a1-cp311-cp311-win_amd64.whl; sys_platform == 'win32'
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==4.9.1
+lxml==4.9.2
+# For parsing download conditions when checking for updates
+packaging==23.1
 # For PDF support in the doc browser
-PyMuPDF==1.20.1
+PyMuPDF==1.22.3
+# For various Internet-based functionality
+requests==2.31.0
+# For sending files to the recycle bin on non-Windows platforms
+send2trash==1.8.2; sys_platform != 'win32'
+# For Nexus Mods integration
+websocket-client==1.5.2
 # Compile/Build-time ----------------------------------------------------------
-pygit2==1.9.2
+isort==5.12.0
 pyfiglet==0.8.post1
-pyinstaller==5.2
-pytest==7.1.2
-tomli==2.0.1
+pygit2==1.12.1
+PyGithub==1.58.2
+pyinstaller==5.11.0
+pytest==7.3.1

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,6 +24,7 @@
 together to create a GUI. In doing so, it is also responsible for making the
 rest of the gui modules work by chaining the _AComponent-based high-level
 components into actual wx calls."""
+from __future__ import annotations
 
 __author__ = u'nycz'
 
@@ -43,6 +44,7 @@ _V_ALIGNS = {None: _wx.ALIGN_CENTER_VERTICAL,
              BOTTOM: _wx.ALIGN_BOTTOM}
 ##: Figure out a nicer way to do this
 _res_parent = _AComponent._resolve
+_esc_label = _AComponent._escape
 
 class Spacer(object):
     """A fixed-size space in a layout."""
@@ -56,7 +58,7 @@ class Stretch(object):
 
 class LayoutOptions(object):
     """Container for all layouts' options. Note that some options may only
-    work with certain kinds of layouts (eg. col_span and row_span).
+    work with certain kinds of layouts (e.g. col_span and row_span).
 
     border (int)
         The width (in pixels) of the empty space around an item.
@@ -84,9 +86,10 @@ class LayoutOptions(object):
     __slots__ = (u'border', u'expand', u'weight', u'h_align', u'v_align',
                  u'col_span', u'row_span')
 
-    def __init__(self, border=None, expand=None, weight=None,
-                 h_align=None, v_align=None, col_span=None, row_span=None):
-        # type: (int, bool, int, str, str, int, int) -> None
+    def __init__(self, border: int | None = None, expand: bool | None = None,
+            weight: int | None = None, h_align: str | None = None,
+            v_align: str | None = None, col_span: int | None = None,
+            row_span: int | None = None):
         self.border = border
         self.expand = expand
         self.weight = weight
@@ -169,7 +172,7 @@ class _ALayout(object):
 
 class _ALineLayout(_ALayout):
     """Abstract base class for one-dimensional layouts."""
-    _is_vertical = False
+    _is_vertical: bool
 
     def __init__(self, sizer, spacing=0, item_weight=0, items=(), **kwargs):
         """Initiate the layout - in addition to _ALayout arguments, that you
@@ -180,7 +183,7 @@ class _ALineLayout(_ALayout):
         :param items: Items or (item, options) pairs to add directly.
         """
         self.spacing = spacing
-        super(_ALineLayout, self).__init__(sizer, **kwargs)
+        super().__init__(sizer, **kwargs)
         self._default_item_loptions.weight = item_weight
         for item in items:
             self.add(item)
@@ -222,35 +225,53 @@ class _ALineLayout(_ALayout):
         self._sizer.Replace(_res_parent(old_component),
                             _res_parent(new_component))
 
-class HLayout(_ALineLayout):
-    """A simple horizontal layout."""
-    def __init__(self, *args, **kwargs):
-        super(HLayout, self).__init__(_wx.BoxSizer(_wx.HORIZONTAL), *args,
-                                      **kwargs)
+class _ASimpleLayout(_ALineLayout):
+    def __init__(self, **kwargs):
+        sl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
+        super().__init__(_wx.BoxSizer(sl_orientation), **kwargs)
 
-class VLayout(_ALineLayout):
+class HLayout(_ASimpleLayout):
+    """A simple horizontal layout."""
+    _is_vertical = False
+
+class VLayout(_ASimpleLayout):
     """A simple vertical layout."""
     _is_vertical = True
 
-    def __init__(self, *args, **kwargs):
-        super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
-                                      **kwargs)
+class _ABoxedLayout(_ALineLayout):
+    """Base class for layouts with a border and an optional title."""
+    def __init__(self, parent, title: str = '', **kwargs):
+        self._static_box = _wx.StaticBox(_res_parent(parent),
+            label=_esc_label(title))
+        bl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
+        super().__init__(_wx.StaticBoxSizer(self._static_box, bl_orientation),
+            **kwargs)
 
-class HBoxedLayout(_ALineLayout):
+    def set_title(self, new_title_text: str):
+        """Changes this layout's title to the specified string."""
+        esc_new_tt = _esc_label(new_title_text)
+        if self._static_box.GetLabel() != esc_new_tt:
+            self._static_box.SetLabel(esc_new_tt)
+
+    def set_title_color(self, new_color):
+        """Changes the foreground color of this layout's title to the specified
+        color. See gui.Color."""
+        self._static_box.SetForegroundColour(new_color.to_rgba_tuple())
+        self._static_box.Refresh()
+
+    def reset_title_color(self):
+        """Resets the foreground color of this layout's title to the default
+        one."""
+        self._static_box.SetForegroundColour(_wx.NullColour)
+        self._static_box.Refresh()
+
+class HBoxedLayout(_ABoxedLayout):
     """A horizontal layout with a border around it and an optional title."""
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
-            label=title), _wx.HORIZONTAL)
-        super(HBoxedLayout, self).__init__(sizer, **kwargs)
+    _is_vertical = False
 
-class VBoxedLayout(_ALineLayout):
+class VBoxedLayout(_ABoxedLayout):
     """A vertical layout with a border around it and an optional title."""
     _is_vertical = True
-
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
-            label=title), _wx.VERTICAL)
-        super(VBoxedLayout, self).__init__(sizer, **kwargs)
 
 class GridLayout(_ALayout):
     """A flexible grid layout.

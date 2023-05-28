@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,15 +24,16 @@
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
 from __future__ import annotations
+
 import io
 from configparser import ConfigParser, MissingSectionHeaderError
 
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
-from .env import get_personal_path, get_local_app_data_path, \
-    get_win_store_game_info, shellMakeDirs
-from .exception import BoltError, NonExistentDriveError
+from .env import get_legacy_ws_game_info, get_local_app_data_path, \
+    get_personal_path, shellMakeDirs
+from .exception import BoltError
 
 ##: we need to import LOOTParser after defining this as LOOTParser imports bush
 # (via loot_conditions) - a solution is to make dirs pathlib.Paths so this
@@ -52,21 +53,27 @@ def getPersonalPath(bash_ini_, my_docs_path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
-        sErrorInfo = _(u'Folder path specified on command line (-p)')
+        sErrorInfo = _('Folder path specified on command line '
+                       '(%(cli_switch)s)') % {'cli_switch': '-p'}
     else:
         my_docs_path = get_path_from_ini(bash_ini_, u'sPersonalPath')
         if my_docs_path:
-            sErrorInfo = _(
-                u'Folder path specified in bash.ini (%s)') % u'sPersonalPath'
+            sErrorInfo = _('Folder path specified in bash.ini '
+                           '(%(bash_ini_setting)s)') % {
+                'bash_ini_setting': 'sPersonalPath'}
         else:
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
     if not my_docs_path.is_absolute():
-        my_docs_path = dirs[u'app'].join(my_docs_path)
+        my_docs_path = dirs['app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
-        raise BoltError(f'Personal folder does not exist.\nPersonal folder: '
-                        f'{my_docs_path}\nAdditional info:\n{sErrorInfo}')
+        raise BoltError('\n'.join([
+            _('Personal folder does not exist.'),
+            _('Personal folder: %(pers_folder)s') % {
+                'pers_folder': my_docs_path},
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     return my_docs_path
 
 def getLocalAppDataPath(bash_ini_, app_data_local_path):
@@ -74,12 +81,15 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
-        sErrorInfo = _(u'Folder path specified on command line (-l)')
+        sErrorInfo = _('Folder path specified on command line '
+                       '(%(cli_switch)s)') % {'cli_cli_switch': '-l'}
     else:
         app_data_local_path = get_path_from_ini(bash_ini_,
                                                 u'sLocalAppDataPath')
         if app_data_local_path:
-            sErrorInfo = _(u'Folder path specified in bash.ini (%s)') % u'sLocalAppDataPath'
+            sErrorInfo = _('Folder path specified in bash.ini '
+                           '(%(bash_ini_setting)s)') % {
+                'bash_ini_setting': 'sLocalAppDataPath'}
         else:
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
@@ -87,13 +97,17 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
         app_data_local_path = dirs[u'app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
-        raise BoltError(f'Local AppData folder does not exist.\nLocal AppData '
-            f'folder: {app_data_local_path}\nAdditional info:\n{sErrorInfo}')
+        raise BoltError('\n'.join([
+            _('LocalAppData folder does not exist.'),
+            _('LocalAppData folder: %(lad_folder)s') % {
+                'lad_folder': app_data_local_path},
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     return app_data_local_path
 
 def getOblivionModsPath(bash_ini_, game_info):
     ob_mods_path = get_path_from_ini(bash_ini_, u'sOblivionMods')
-    ws_info = get_win_store_game_info(game_info)
+    ws_info = get_legacy_ws_game_info(game_info)
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
     elif not ws_info.installed:
@@ -167,7 +181,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
                                                                 localAppData)
     # AppData for the game, depends on if it's a WS game or not.
-    ws_info = get_win_store_game_info(game_info)
+    ws_info = get_legacy_ws_game_info(game_info)
     if ws_info.installed:
         version_info = ws_info.get_installed_version()
         dirs[u'userApp'] = localAppData.join(
@@ -190,7 +204,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     game_ini_path = dirs[u'saveBase'].join(first_ini_name)
     dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
     if data_oblivion_ini.is_file():
-        oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here
+        ##: use GameIni here
+        oblivionIni = ConfigParser(allow_no_value=True, strict=False)
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
@@ -202,12 +217,12 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                 oblivionIni.read_file(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
             # Probably not actually a game INI - might be reshade
-            init_warnings.append(
-                _(u'The global INI file in your game directory (%s) does not '
-                  u'appear to be a valid game INI. It might come from an '
-                  u'incorrectly installed third party tool. Consider '
-                  u'deleting it and validating your game files.') %
-                data_oblivion_ini)
+            init_warnings.append(_(
+                'The global INI file in your game directory (%(global_ini)s) '
+                'does not appear to be a valid game INI. It might come from '
+                'an incorrectly installed third party tool. Consider deleting '
+                'it and validating your game files.') % {
+                'global_ini': data_oblivion_ini})
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini
@@ -225,13 +240,15 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'bash_root'] = oblivionMods
     deprint(f'Game Mods location set to {oblivionMods}')
     dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
-    dirs[u'modsBash'], modsBashSrc = getLegacyPathWithSource(
-        dirs[u'modsBash'], dirs[u'app'].join(game_info.mods_dir, u'Bash'),
-        modsBashSrc, u'Relative Path')
+    if game_info.check_legacy_paths:
+        dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
+            dirs['modsBash'], dirs['app'].join(game_info.mods_dir, 'Bash'),
+            modsBashSrc, 'Relative Path')
     deprint(f'Bash Mod Data location set to {dirs[u"modsBash"]}')
     dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
-    dirs[u'installers'] = getLegacyPath(dirs[u'installers'],
-                                        dirs[u'app'].join(u'Installers'))
+    if game_info.check_legacy_paths:
+        dirs['installers'] = getLegacyPath(dirs['installers'],
+                                           dirs['app'].join('Installers'))
     deprint(f'Installers location set to {dirs[u"installers"]}')
     dirs[u'bainData'], bainDataSrc = getBainDataPath(bashIni_)
     deprint(f'Installers bash data location set to {dirs[u"bainData"]}')
@@ -248,8 +265,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             wanted_dir = dirs[dir_key]
             deprint(f' - {wanted_dir}')
             shellMakeDirs([wanted_dir])
-    except NonExistentDriveError as e:
-        # NonExistentDriveError is thrown by shellMakeDirs if any of the
+    except NotADirectoryError as e:
+        # NotADirectoryError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive (in posix if permission is denied). Find which keys are
         # causing the errors

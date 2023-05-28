@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,7 +24,7 @@ import os
 import re
 
 from . import bass
-from .bolt import FName, deprint, popen_common, os_name
+from .bolt import FName, deprint, os_name, popen_common
 from .exception import StateError
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'

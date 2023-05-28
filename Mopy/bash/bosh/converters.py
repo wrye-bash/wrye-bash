@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,14 +25,15 @@
 from __future__ import annotations
 
 import io
+import os
 import pickle
 from collections import defaultdict
 from itertools import chain
 
-from .. import bolt, archives, bass, balt
+from .. import archives, balt, bass, bolt
 from ..archives import defaultExt, readExts
-from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
-    forward_compat_path_to_fn_list
+from ..bolt import DataDict, Path, PickleDict, SubProgress, \
+    forward_compat_path_to_fn_list, top_level_files
 from ..exception import ArgumentError, StateError
 
 converters_dir: Path | None = None
@@ -65,9 +66,9 @@ class ConvertersData(DataDict):
         convs = set(self.bcfCRC_converter.values())
         refs = set(chain(*self.srcCRC_converters.values()))
         if not ((has_scr := convs & refs) == convs):
-            bolt.deprint(f'converters with no source: {len(convs - has_scr)}')
+            bolt.deprint(f'BCFs with no source: {len(convs - has_scr)}')
         if references_miss := refs - convs:
-            bolt.deprint(f'missing converters for {len(references_miss)}')
+            bolt.deprint(f'missing BCFs for {len(references_miss)}')
             self.__prune_srcCRC(lambda c: c not in convs)
         #Partly reconstruct bcfPath_sizeCrcDate to avoid a full refresh on boot
         self.bcfPath_sizeCrcDate = {co.fullPath: (None, c, None) for c, co in
@@ -91,7 +92,7 @@ class ConvertersData(DataDict):
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
                      if self.validConverterName(bcf_arch)] # few files
-        if changed := fullRefresh: # clear all data structures
+        if change := fullRefresh: # clear all data structures
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
@@ -102,15 +103,15 @@ class ConvertersData(DataDict):
             present_bcfs = [*map(converters_dir.join, bcfs_list)]
             for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
                 # on first run it needs to repopulate the bcfPath_sizeCrcDate
-                size, crc, mod_time = self.bcfPath_sizeCrcDate.get(bcfPath, (
-                    None, None, None))
+                cached_size, crc, mod_time = self.bcfPath_sizeCrcDate.get(
+                    bcfPath, (None, None, None))
                 size_mtime = bcfPath.size_mtime()
-                if crc is None or (size, mod_time) != size_mtime:
+                if crc is None or (cached_size, mod_time) != size_mtime:
                     crc_changed = crc != (crc := bcfPath.crc)
                     self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
                                                          size_mtime[1])
                     if crc_changed:
-                        changed = True  # added or changed - we must re-add it
+                        change = True  # added or changed - we must re-add it
                         pending.add(bcfPath)
                         continue
                 newData[crc] = self.bcfCRC_converter[crc] # should be unique
@@ -118,7 +119,7 @@ class ConvertersData(DataDict):
             # Remove any converters that no longer exist
             for bcfPath in list(self.bcfPath_sizeCrcDate):
                 if bcfPath not in present_bcfs:
-                    changed = True
+                    change = True
                     self.removeConverter(bcfPath)
             old_new = set(newData.values())
             self.__prune_srcCRC(
@@ -144,8 +145,8 @@ class ConvertersData(DataDict):
                         bcfPath.moveTo(cor_dir.join(bcfPath.tail))
                         del self.bcfPath_sizeCrcDate[bcfPath]
                         continue
-                    changed |= self.addConverter(converter, update_cache=False)
-        return changed
+                    change |= self.addConverter(converter, update_cache=False)
+        return change
 
     def addConverter(self, converter: InstallerConverter, update_cache=True):
         """Links the new converter to installers"""
@@ -374,28 +375,29 @@ class InstallerConverter(object):
                 self.convertedFiles):
             srcDir, srcFile = srcDir_File
             #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
-            srcFile = tempJoin(
-                srcDir if type(srcDir) is str else f'{srcDir:08X}', srcFile)
-            destFile = destJoin(destFile)
-            if not srcFile.exists():
-                raise StateError(
-                    f'{self.fullPath.stail}: Missing source file:\n{srcFile}')
+            srcDir = f'{srcDir:08X}' if isinstance(srcDir, int) else srcDir
+            src_rel = os.path.join(srcDir, srcFile)
+            src_full = tempJoin(src_rel)
+            if not src_full.exists():
+                raise StateError(_('%(bcf_rel)s: Missing source file:') % {
+                    'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
             if destFile is None:
-                raise StateError(
-                    f'{self.fullPath.stail}: Unable to determine file '
-                    f'destination for:\n{srcFile}')
+                raise StateError(_('%(bcf_rel)s: Unable to determine file '
+                                   'destination for:') % {
+                    'bcf_rel': self.fullPath.stail} + f'\n{src_rel}')
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
             #--This allows files to be moved whenever possible, speeding
             # file operations up
+            dest_full = destJoin(destFile)
             if numDupes > 1:
-                progress(index, _(u'Copying file...') + u'\n' + destFile.stail)
+                progress(index, _('Copying file...') + f'\n{destFile}')
                 dupes[crcValue] = numDupes - 1
-                srcFile.copyTo(destFile)
+                src_full.copyTo(dest_full)
             else:
-                progress(index, _(u'Moving file...') + u'\n' + destFile.stail)
-                srcFile.moveTo(destFile)
+                progress(index, _('Moving file...') + f'\n{destFile}')
+                src_full.moveTo(dest_full)
         #--Done with unpacked directory
         tmpDir.rmtree(safety=tmpDir.s)
 
@@ -449,7 +451,9 @@ class InstallerConverter(object):
                 for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
                     for file in files:
                         file = root_dir.join(file)
-                        archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:]) # +1 for '/'
+                        # crc is an FName, but we want to store strings
+                        archivedFiles[file.crc] = (
+                            str(crc), file.s[len(fpath)+1:]) # +1 for '/'
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
             bass.rmTempDir()
@@ -486,10 +490,10 @@ class InstallerConverter(object):
         sProgress(0, f'{BCFArchive}\n' + _(u'Mapping files...'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
+        sprog_msg = f'{BCFArchive}\n' + _('Mapping files...') + '\n'
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
-            sProgress(index, f'{BCFArchive}\n' + _(
-                u'Mapping files...') + u'\n' + fileName)
+            sProgress(index, sprog_msg + fileName)
         #--Build the BCF
         if len(self.bcf_missing_files):
             tempDir2 = bass.newTempDir().join(bcf_missing)

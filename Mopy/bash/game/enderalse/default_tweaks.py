@@ -16,21 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
-
 from ..enderal.default_tweaks import default_tweaks
 
 # Add new Enderal SE-specific tweaks
 add_tweaks = {
-    u'Save Game Compression, LZ4 ~Default [Enderal].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'2')]))]),
-    u'Save Game Compression, zlib [Enderal].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'1')]))]),
-    u'Save Game Compression, Off [Enderal].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'0')]))]),
+    'Save Game Compression, LZ4 ~Default [Enderal].ini': {
+        'SaveGame': {'uiCompression': '2'}},
+    'Save Game Compression, zlib [Enderal].ini': {
+        'SaveGame': {'uiCompression': '1'}},
+    'Save Game Compression, Off [Enderal].ini': {
+        'SaveGame': {'uiCompression': '0'}},
 }
 default_tweaks.update(add_tweaks)

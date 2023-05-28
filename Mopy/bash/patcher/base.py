@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,28 +28,30 @@ from this module outside of the patcher package."""
 # classes and the patching process. Once this is done we should delete the (
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
-# instance Patcher.buildPatch() apparently is NOT always overridden
+# instance APatcher.buildPatch() apparently is NOT always overridden
 from __future__ import annotations
 
-from .. import load_order
-from ..bolt import dict_sort, sig_to_str
-from ..exception import AbstractError, BPConfigError
-from ..mod_files import LoadFactory, ModFile
+from collections.abc import Iterable
+from itertools import chain
+
+from .. import load_order, bass
+from ..bolt import deprint, dict_sort, sig_to_str
+from ..exception import BPConfigError
+from ..parsers import _HandleAliases
 
 #------------------------------------------------------------------------------
-# Abstract_Patcher and subclasses ---------------------------------------------
+# APatcher and subclasses -----------------------------------------------------
 #------------------------------------------------------------------------------
-class Abstract_Patcher(object):
+class APatcher:
     """Abstract base class for patcher elements - must be the penultimate class
-     in MRO (method resolution order), just before object"""
-    patcher_group = u'UNDEFINED'
+    in MRO (method resolution order), just before object."""
+    patcher_group = 'UNDEFINED'
     patcher_order = 10
     iiMode = False
-    _read_sigs = () # top group signatures this patcher patches ##: type: tuple | set
-
-    def getName(self):
-        """Return patcher name passed in by the gui, needed for logs."""
-        return self._patcher_name
+    _read_sigs: Iterable[bytes] = () #top group signatures this patcher patches
+    # Whether this patcher will get inactive plugins passed to its scanModFile
+    ##: Once _AMerger is rewritten, this may become obsolete
+    _scan_inactive = False
 
     def __init__(self, p_name, p_file):
         """Initialization of common values to defaults."""
@@ -57,13 +59,9 @@ class Abstract_Patcher(object):
         self.patchFile = p_file
         self._patcher_name = p_name
 
-class Patcher(Abstract_Patcher):
-    """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # Whether or not this patcher will get inactive plugins passed to its
-    # scanModFile method
-    ##: Once _AMerger is rewritten, this may become obsolete
-    _scan_inactive = False
+    def getName(self):
+        """Return patcher name passed in by the gui, needed for logs."""
+        return self._patcher_name
 
     @property
     def active_read_sigs(self):
@@ -76,8 +74,7 @@ class Patcher(Abstract_Patcher):
         return self.active_read_sigs
 
     def initData(self,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
+        """Compiles material, i.e. reads esp's, etc. as necessary."""
 
     def scan_mod_file(self, modFile, progress):
         """Scans specified mod file to extract info. May add record to patch
@@ -91,68 +88,160 @@ class Patcher(Abstract_Patcher):
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
-        mod, but won't alter it. If adds record, should first convert it to
-        long fids."""
+        mod, but won't alter it."""
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class ListPatcher(Patcher):
+class ListPatcher(APatcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
-    srcsHeader = u'=== '+ _(u'Source Mods')
+    srcsHeader = '=== ' + _('Source Mods')
+    # a CsvParser type to parse the csv sources of this patcher
+    _csv_parser = None
+    patcher_tags = set()
+    # CSV files for this patcher have to end with _{this value}.csv
+    _csv_key = None ##: todo this belongs to the parsers would deduplicate mod_links wildcards also
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
         ListPatcher attribute."""
         super(ListPatcher, self).__init__(p_name, p_file)
-        self.srcs = p_sources
-        self.isActive = bool(self.srcs)
-
-    def _srcMods(self,log):
-        """Logs the Source mods for this patcher."""
-        log(self.__class__.srcsHeader)
-        if not self.srcs:
-            log(f'. ~~{_("None")}~~')
-        else:
-            for srcFile in self.srcs:
-                log(f'* {srcFile}')
-
-class AMultiTweaker(Abstract_Patcher):
-    """Combines a number of sub-tweaks which can be individually enabled and
-    configured through a choice menu."""
-    patcher_group = u'Tweakers'
-    patcher_order = 30
-    _tweak_classes = set() # override in implementations
-
-    def __init__(self, p_name, p_file, enabled_tweaks: list[AMultiTweakItem]):
-        super(AMultiTweaker, self).__init__(p_name, p_file)
-        for e_tweak in enabled_tweaks:
-            if e_tweak.custom_choice:
-                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
-                validation_err = e_tweak.validate_values(e_values)
-                # We've somehow ended up with a custom value that is not
-                # accepted by the tweak itself, this will almost certainly fail
-                # at runtime so abort the BP process now with a more
-                # informative error message
-                if validation_err is not None:
-                    err_header = e_tweak.validation_error_header(e_values)
-                    raise BPConfigError(err_header + '\n\n' + validation_err)
-        self.enabled_tweaks = enabled_tweaks
-        self.isActive = bool(enabled_tweaks)
+        self.isActive = self._process_sources(p_sources, p_file)
 
     @classmethod
-    def tweak_instances(cls):
-        # Sort alphabetically first for aesthetic reasons
-        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
-        # After that, sort to make tweaks instantiate & run in the right order
-        tweak_classes.sort(key=lambda c: c.tweak_order)
-        return [t() for t in tweak_classes]
+    def get_sources(cls, p_file, p_sources=None, raise_on_error=False):
+        """Get a list of plugin/csv sources for this patcher. If p_sources are
+        passed in filter/validate them."""
+        if p_sources is None: # getting the sources
+            p_sources = [*p_file.all_plugins]
+            if cls._csv_key:
+                p_sources.extend(sorted(p_file.patches_set))
+        return [src_fn for src_fn in p_sources if
+                cls._validate_src(p_file, src_fn, raise_on_error)]
+
+    @classmethod
+    def _validate_src(cls, p_file, src_fn, raise_on_error):
+        try:
+            return cls._validate_mod(p_file, src_fn, raise_on_error)
+        except KeyError:
+            if src_fn[-4:] == '.csv':
+                if cls._csv_key:
+                    if src_fn not in p_file.patches_set:
+                        err = f'{cls.__name__}: {src_fn} is not present'
+                    elif src_fn.endswith(f'_{cls._csv_key}.csv'):
+                        return True
+                    else:
+                        err = f'{cls.__name__}: invalid csv type {src_fn}'
+                else:
+                    err = f'{cls.__name__}: csv src passed in: {src_fn}'
+            else:
+                err = f'{cls.__name__}: {src_fn} is not loading before the ' \
+                      f'BP or is not a mod'
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    @classmethod
+    def _validate_mod(cls, p_file, src_fn, raise_on_error):
+        """Return True if the src_fn plugin should be part of the sources
+        for this patcher."""
+        # Must have an appropriate tag and no missing masters or a Filter tag
+        if src_fn in p_file.inactive_mm: ##fixme or active_mm
+            err = f'{cls.__name__}: {src_fn} is inactive'
+        elif not (cls.patcher_tags & p_file.all_tags[src_fn]):
+            err = f'{cls.__name__}: {src_fn} is not tagged with supported ' \
+                  f'tags {cls.patcher_tags}'
+        else:
+            return True
+        if raise_on_error:
+            raise BPConfigError(err)
+        return False
+
+    def _process_sources(self, p_sources, p_file):
+        """Validate srcs and update p_file read factories."""
+        self.get_sources(p_file, p_sources, raise_on_error=True)
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
+        self._update_patcher_factories(p_file)
+        self._parse_csv_sources()
+        return bool(self.srcs or self.csv_srcs)
+
+    def _update_patcher_factories(self, p_file):
+        # run before _parse_csv_sources as the latter updates srcs_sigs for
+        # APreserver - we want _read_sigs to return rec_type_attrs here
+        p_file.update_read_factories(self._read_sigs, self.srcs)
+
+    def _log_srcs(self, log):
+        """Logs the Source mods/csvs for this patcher."""
+        log(self.__class__.srcsHeader)
+        all_srcs = [*self.srcs, *self.csv_srcs]
+        if not all_srcs:
+            log(f'. ~~{_("None")}~~')
+        else:
+            for srcFile in all_srcs:
+                log(f'* {srcFile}')
+
+    # CSV helpers
+    def _parse_csv_sources(self):
+        """Parses CSV files. Only called if _parser_instance returns a
+        parser."""
+        if not (parser_instance := self._parser_instance):
+            return {}
+        loaded_csvs = []
+        for src_path in self.csv_srcs:
+            try:
+                try: ##: the correct path must be passed from gui_patchers.py
+                    csv_path = bass.dirs['patches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                except OSError:
+                    csv_path = bass.dirs['defaultPatches'].join(src_path)
+                    parser_instance.read_csv(csv_path)
+                loaded_csvs.append(src_path)
+            except OSError:
+                deprint(f'{src_path} is no longer in patches set',
+                        traceback=True)
+            except UnicodeError:
+                deprint(f'{src_path} is not saved in UTF-8 format',
+                        traceback=True)
+        self.csv_srcs = loaded_csvs
+        filtered_dict = self._filter_csv_fids(parser_instance, loaded_csvs)
+        return filtered_dict
+
+    def _filter_csv_fids(self, parser_instance, loaded_csvs):
+        # Filter out any entries that don't actually have data or whose
+        # record signatures do not appear in _parser_sigs - these might not
+        # always be a subset of read_sigs for instance CoblExhaustionPatcher
+        # which reads b'FACT' but _read_sigs is b'SPEL'
+        rec_att = {*parser_instance._parser_sigs}
+        sig_data = parser_instance.id_stored_data
+        if s := (sig_data.keys() - rec_att):
+            deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
+                    f'{loaded_csvs}')
+        ##: make sure k is always bytes and drop encode below
+        earlier_loading = self.patchFile.all_plugins
+        filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
+            k, d in sig_data.items() if (k in rec_att) and (v := {f: j for
+                f, j in d.items() if f.mod_fn in earlier_loading})}
+        return filtered_dict
+
+    @property
+    def _parser_instance(self):
+        return self._csv_parser and self._csv_parser(
+            self.patchFile.pfile_aliases, called_from_patcher=True)
+
+class CsvListPatcher(_HandleAliases, ListPatcher):
+    """List patcher that is-a CsvParser - we could change this to has-a,
+    would retire this class."""
+
+    @property
+    def _parser_instance(self):
+        return self
 
 #------------------------------------------------------------------------------
-# AMultiTweakItem(object) -----------------------------------------------------
+# MultiTweakItem --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class AMultiTweakItem(object):
+class MultiTweakItem:
     """A tweak item, optionally with configuration choices. See tweak_
     attribute comments below for information on how to specify names, tooltips,
     dropdown choices, etc."""
@@ -214,19 +303,18 @@ class AMultiTweakItem(object):
     # If True, tweak_key will be shown in the 'custom value' popup
     show_key_for_custom = False
 
-    def __init__(self):
+    def __init__(self, bashed_patch):
         # Don't check tweak_log_msg, settings tweaks don't use it
         for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
                            u'tweak_log_msg'):
             if getattr(self, tweak_attr) == u'OVERRIDE':
-                self._raise_tweak_syntax_error(u"A '%s' attribute is still "
-                                               u'set to the default '
-                                               u"('OVERRIDE')" % tweak_attr)
+                self._raise_tweak_syntax_error(f"A '{tweak_attr}' attribute "
+                    f"is still set to the default ('OVERRIDE')")
         # TODO: docs for attributes below! - done for static ones above
         self.choiceLabels = []
         self.choiceValues = []
         self.default = None
-        # Caught some copy-paste mistakes where I forgot to make a it list,
+        # Caught some copy-paste mistakes where I forgot to make it a list,
         # left it in for that reason
         if not isinstance(self.tweak_choices, list):
             self._raise_tweak_syntax_error(u'tweak_choices must be a list of '
@@ -235,7 +323,7 @@ class AMultiTweakItem(object):
             # See comments above for the syntax definition
             choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
             if choice_label == self.default_choice:
-                choice_label = u'[%s]' % choice_label
+                choice_label = f'[{choice_label}]'
                 self.default = choice_index
             self.choiceLabels.append(choice_label)
             self.choiceValues.append(choice_items)
@@ -260,11 +348,15 @@ class AMultiTweakItem(object):
 
     def tweak_log(self, log, count):
         """Logs the total changes and details for each plugin."""
-        log.setHeader(u'=== ' + self.tweak_log_header)
-        log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
+        self._tweak_make_log_header(log)
+        log('* ' + self.tweak_log_msg % {'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
-            log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
+            log(f'  * {src_plugin}: {count[src_plugin]}')
+
+    def _tweak_make_log_header(self, log):
+        """Sets the header - override if you only need to add something to the
+        header."""
+        log.setHeader('=== ' + self.tweak_log_header)
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -288,18 +380,18 @@ class AMultiTweakItem(object):
         else: value = None
         configs[self.tweak_key] = self.isEnabled,value
 
-    # Methods particular to AMultiTweakItem
+    # Methods particular to MultiTweakItem
     def _raise_tweak_syntax_error(self, err_msg):
         """Small helper method to aid in validation. Raises a SyntaxError with
         the specified error message and some information that should make
         identifying the offending tweak much easier appended."""
         err_msg += u'\nOffending tweak:'
         # To distinguish dynamic tweaks, which have the same class
-        err_msg += u"\n Name: '%s'" % self.tweak_name
+        err_msg += f"\n Name: '{self.tweak_name}'"
         # To identify problems with e.g. duplicate custom values immediately
-        err_msg += u'\n Choices: %s' % self.tweak_choices
-        err_msg += u'\n Class: %s.%s' % (self.__class__.__module__,
-                                         self.__class__.__name__)
+        err_msg += f'\n Choices: {self.tweak_choices}'
+        err_msg += (f'\n Class: {self.__class__.__module__}.'
+                    f'{self.__class__.__name__}')
         raise SyntaxError(err_msg)
 
     def isNew(self):
@@ -311,7 +403,7 @@ class AMultiTweakItem(object):
         """Returns label to be used in list"""
         tweakname = self.tweak_name
         if len(self.choiceLabels) > 1:
-            tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
+            tweakname += f' [{self.choiceLabels[self.chosen]}]'
         return tweakname
 
     def validate_values(self, chosen_values: tuple) -> str | None:
@@ -336,11 +428,18 @@ class AMultiTweakItem(object):
                   "'%(t_name)s' tweak.") % {'t_val': t_val,
                                             't_name': self.tweak_name})
 
+    # Tweaking API ------------------------------------------------------------
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
-        specified record. Must be implemented by every PBash tweak that
-        supports pooling (see MultiTweakItem.supports_pooling)."""
-        raise AbstractError(u'wants_record not implemented')
+        specified record."""
+        raise NotImplementedError
+
+    def prepare_for_tweaking(self, patch_file):
+        """Gives this tweak a chance to prepare for the phase where it gets
+        its tweak_record calls using the specified patch file instance. At this
+        point, all relevant files have been scanned, wanted records have been
+        forwarded into the BP, MGEFs have been indexed, etc. Default
+        implementation does nothing."""
 
     def tweak_record(self, record):
         """This is where each tweak gets a chance to change the specified
@@ -349,34 +448,74 @@ class AMultiTweakItem(object):
         before this call. Note that there is no taking that back: right after
         this call, keep() will be called and the record will be kept as an
         override in the BP. So make sure wants_record *never* lets ITMs and
-        ITPOs through! Must be implemented by every PBash tweak that supports
-        pooling (see MultiTweakItem.supports_pooling)."""
-        raise AbstractError(u'tweak_record not implemented')
+        ITPOs through!"""
+        raise NotImplementedError
 
-class ModLoader(Patcher):
-    """Mixin for patchers loading mods"""
-    loadFactory = None
+    def finish_tweaking(self, patch_file):
+        """Gives this tweak a chance to clean up and do any work after the
+        tweak_records phase is over using the specified patch file instance. At
+        this point, all tweak_record calls for all tweaks belonging to the
+        parent 'tweaker' have been executed. Default implementation does
+        nothing."""
 
-    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
-        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
+class ScanPatcher(APatcher):
+    """WIP class to encapsulate scanModFile common logic."""
+    # filter records that exist in corresponding patch block
+    _filter_in_patch = False
 
-    def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo,
-                          self.loadFactory or self._patcher_read_fact())
-        modFile.load(True)
-        return modFile
+    @property
+    def _keep_ids(self):
+        return None
+
+    def scanModFile(self, modFile, progress, scan_sigs=None):
+        """Add records from modFile."""
+        for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
+            # do not create the patch block till needed
+            patchBlock = self.patchFile.tops.get(top_sig)
+            rid_rec = block.iter_present_records()
+            if self._filter_in_patch and patchBlock:
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid not in patchBlock.id_records)
+            if self._keep_ids is not None:
+                if not self._keep_ids: return # won't add to patch
+                rid_rec = ((rid, rec) for rid, rec in rid_rec if
+                           rid in self._keep_ids)
+            try:
+                rid_rec = [(rid, rec) for rid, rec in rid_rec if
+                           self._add_to_patch(rid, rec, top_sig)]
+            except NotImplementedError:
+                pass
+            for rid, rec in rid_rec:
+                try:
+                    patchBlock.setRecord(rec)
+                except AttributeError:
+                    patchBlock = self.patchFile.tops[top_sig]
+                    patchBlock.setRecord(rec)
+
+    def _add_to_patch(self, rid, record, top_sig):
+        """Decide if this record should be added to the patch top_sig block.
+        Records that have been copied into the BP once will automatically
+        be updated by update_patch_records_from_mod/mergeModFile so skip if
+        we've already copied this record or if we're not interested in it."""
+        raise NotImplementedError
 
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(ListPatcher, ModLoader):
+class ImportPatcher(ListPatcher, ScanPatcher):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
     patcher_order = 20
     # Override in subclasses as needed
     logMsg = u'\n=== ' + _(u'Modified Records')
 
+    def _update_patcher_factories(self, p_file):
+        # most of the import patchers scan their sources' masters
+        mast = (p_file.all_plugins[s].masterNames for s in self.srcs)
+        sources = set(chain(self.srcs, *mast))
+        p_file.update_read_factories(self._read_sigs, sources)
+
     def _patchLog(self,log,type_count):
-        log.setHeader(u'= %s' % self._patcher_name)
-        self._srcMods(log)
+        log.setHeader(f'= {self._patcher_name}')
+        self._log_srcs(log)
         self._plog(log,type_count)
 
     ##: Unify these - decide which one looks best in the end and make all
@@ -385,10 +524,11 @@ class ImportPatcher(ListPatcher, ModLoader):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
         for top_grup_sig, count in dict_sort(type_count):
-            if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                % {u'type': sig_to_str(top_grup_sig), u'count': count})
+            if count:
+                log('* ' + _('Modified %(tg_type)s Records: %(rec_cnt)d') % {
+                    'tg_type': sig_to_str(top_grup_sig), 'rec_cnt': count})
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
-            log(u'* %s: %3d' % (mod, mod_count[mod]))
+            log(f'* {mod}: {mod_count[mod]:3d}')

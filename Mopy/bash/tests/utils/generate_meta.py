@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,7 +34,7 @@ import sys
 
 from .. import resource_to_displayName, set_game
 from ... import bush
-from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader
+from ...bosh.cosaves import _xSEHeader, get_cosave_types, xSECosave
 
 def generate_meta_bsa(target_file):
     print(u"Skipping '%s': bsa .meta generation not implemented yet" %
@@ -43,13 +43,13 @@ def generate_meta_bsa(target_file):
 def generate_meta_cosave_xse(target_file):
     gm_name = os.path.basename(os.path.dirname(target_file))
     try:
-        gm_fsName = resource_to_displayName[gm_name]
+        gm_displayName = resource_to_displayName[gm_name]
     except KeyError:
-        print(u"No valid game found in parent directories of file "
-              u"'%s'" % target_file)
+        print(f"No valid game found in parent directories of file '"
+              f"{target_file}'")
         sys.exit(4)
-    set_game(gm_fsName)
-    get_cosave_types(gm_fsName, None, bush.game.Se.cosave_tag,
+    set_game(gm_displayName)
+    get_cosave_types(gm_displayName, None, bush.game.Se.cosave_tag,
                      bush.game.Se.cosave_ext)
     test_cosave = xSECosave(target_file)
     test_cosave.read_cosave()

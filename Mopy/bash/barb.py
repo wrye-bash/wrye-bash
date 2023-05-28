@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -40,12 +40,10 @@ import os
 import pickle
 from os.path import join as jo
 
-from . import archives
 from . import bass # for settings (duh!)
-from . import bolt
-from . import initialization
-from .bass import dirs, AppVersion
-from .bolt import GPath, deprint, top_level_files, FName
+from . import archives, bolt, initialization
+from .bass import AppVersion, dirs
+from .bolt import FName, GPath, deprint, top_level_files
 from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
@@ -134,12 +132,14 @@ class BackupSettings(object):
         if previous_bash_version == 0 or AppVersion == previous_bash_version:
             return False
         # return True if not same app version and user opts to backup settings
-        return balt_.askYes(balt_.Link.Frame, u'\n'.join([
-            _(u'A different version of Wrye Bash was previously installed.'),
-            _(u'Previous Version: ') + f'{previous_bash_version}',
-            _(u'Current Version: ') + f'{AppVersion}',
-            _(u'Do you want to create a backup of your Bash settings before '
-              u'they are overwritten?')]), title=_(u'Create backup?'))
+        return balt_.askYes(balt_.Link.Frame, '\n'.join([
+            _('A different version of Wrye Bash was previously installed.'),
+            _('Previous Version: %(prev_bash_ver)s') % {
+                'prev_bash_ver': previous_bash_version},
+            _('Current Version: %(curr_bash_ver)s') % {
+                'curr_bash_ver': AppVersion},
+            _('Do you want to create a backup of your Bash settings before '
+              'they are overwritten?')]), title=_('Create Backup?'))
 
     @staticmethod
     def backup_filename(bak_name):
@@ -179,16 +179,18 @@ class BackupSettings(object):
     def _backup_success(self, balt_):
         if balt_ is None: return
         balt_.showInfo(balt_.Link.Frame, u'\n'.join([
-            _(u'Your Bash settings have been backed up successfully.'),
-            _(u'Backup Path: ') + f'{self._backup_dest_file}']),
-                       _(u'Backup File Created'))
+            _('Your Wrye Bash settings have been backed up successfully.'),
+            _('Backup Path: %(backup_dest_file)s') % {
+                'backup_dest_file': self._backup_dest_file}]),
+            title=_('Backup File Created'))
 
     @staticmethod
     def warn_message(balt_):
         if balt_ is None: return
         balt_.showWarning(balt_.Link.Frame, u'\n'.join([
-            _(u'There was an error while trying to backup the Bash settings!'),
-            _(u'No backup was created.')]), _(u'Unable to create backup!'))
+            _("There was an error while trying to back up Wrye Bash's "
+              "settings!"),
+            _('No backup was created.')]), title=_('Unable to Create Backup!'))
 
 def is_backup(backup_path):
     """Return True if the specified path is a backup. Currently only
@@ -282,7 +284,7 @@ class RestoreSettings(object):
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(
                     True, None, relative=True):
-                root_dir = GPath(u'.%s' % root_dir)
+                root_dir = GPath(f'.{root_dir}')
                 for fname in files_:
                     _restore_file(saves_dir, back_path, root_dir, fname)
 
@@ -290,38 +292,42 @@ class RestoreSettings(object):
     def incompatible_backup_error(self, curr_bak_name):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions()
-        if saved_settings_version > bass.settings[u'bash.version']:
+        if saved_settings_version > bass.settings['bash.version']:
             # Disallow restoring settings saved on a newer version of bash # TODO(ut) drop?
             return u'\n'.join([
-                _(u'The data format of the selected backup file is newer than '
-                  u'the current Bash version!'),
-                _(u'Backup v%s is not compatible with v%s') % (
-                    saved_settings_version, bass.settings[u'bash.version']),
-                u'', _(u'You cannot use this backup with this version of '
-                       u'Bash.')]), _(
-                u'Error: Settings are from newer Bash version')
+                _('The data format of the selected backup file is newer than '
+                  'the current Wrye Bash version!'),
+                _('Backup %(saved_backup_ver)s is not compatible with '
+                  '%(wb_ver)s.') % {
+                    'saved_backup_ver': f'v{saved_settings_version}',
+                    'wb_ver': f'v{bass.settings["bash.version"]}'}, '',
+                _('You cannot use this backup with this version of Wrye '
+                  'Bash.')]), _('Error: Settings Are From Newer Wrye Bash '
+                                'Version')
         else:
             game_name = self._get_backup_game()
             if game_name != curr_bak_name:
-                return u'\n'.join(
-                    [_(u'The selected backup file is for %(game_name)s while '
-                       u'your current game is %(current_game)s') % locals(),
-                     _(u'You cannot use this backup with this game.')]), _(
-                    u'Error: Settings are from a different game')
-        return u'', u''
+                return '\n'.join(
+                    [_('The selected backup file is for %(game_name)s while '
+                       'your current game is %(curr_bak_name)s') % locals(),
+                     _('You cannot use this backup with this game.')]), _(
+                    'Error: Settings Are From a Different Game')
+        return '', ''
 
     def incompatible_backup_warn(self):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions()
-        if settings_saved_with != bass.settings[u'bash.version']:
-            return u'\n'.join(
-                [_(u'The version of Bash used to create the selected backup '
-                   u'file does not match the current Bash version!'),
-                 _(u'Backup v%s does not match v%s') % (
-                     settings_saved_with, bass.settings[u'bash.version']), u'',
-                 _(u'Do you want to restore this backup anyway?')]), _(
-                u'Warning: Version Mismatch!')
-        return u'', u''
+        if settings_saved_with != bass.settings['bash.version']:
+            return '\n'.join(
+                [_('The version of Bash used to create the selected backup '
+                   'file does not match the current Bash version!'),
+                 _('Backup %(saved_backup_ver)s does not match '
+                   '%(wb_ver)s.') % {
+                     'saved_backup_ver': f'v{settings_saved_with}',
+                     'wb_ver': f'v{bass.settings["bash.version"]}'}, '',
+                 _('Do you want to restore this backup anyway?')]), _(
+                'Warning: Version Mismatch')
+        return '', ''
 
     def _get_settings_versions(self):
         if self._extract_dir is self.__unset: raise BoltError(

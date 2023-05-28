@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses functions and function-like objects (e.g. BusyCursor). Everything
 that isn't a component, basically."""
+from __future__ import annotations
 
 import wx as _wx
-
-from .base_components import _AComponent
-from .. import bass
 
 class _OpenClipboard(object):
     """Internal wrapper around wx.TheClipboard for use with Python's 'with'
@@ -96,21 +94,15 @@ def read_files_from_clipboard_cb(files_callback):
             _wx.TheClipboard.GetData(clip_data)
             _wx.CallAfter(files_callback, clip_data.GetFilenames())
 
-def get_ctrl_down(): # type: () -> bool
+def get_ctrl_down() -> bool:
     """Returns True if the Ctrl key is currently down."""
     return _wx.GetKeyState(_wx.WXK_CONTROL)
 
-def get_key_down(key_char): # type: (str) -> bool
+def get_key_down(key_char: str) -> bool:
     """Returns True if the key corresponding to the specified character is
     currently down."""
     return _wx.GetKeyState(ord(key_char))
 
-def get_shift_down(): # type: () -> bool
+def get_shift_down() -> bool:
     """Returns True if the Shift key is currently down."""
     return _wx.GetKeyState(_wx.WXK_SHIFT)
-
-# TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bitmap=None):
-    """Tailored to current usages - IAW: do not use."""
-    return _wx.StaticBitmap(_AComponent._resolve(parent),
-        bitmap=bass.wx_bitmap['ART_WARNING'] if bitmap is None else bitmap)

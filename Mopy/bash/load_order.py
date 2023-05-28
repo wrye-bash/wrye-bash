@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #  Mopy/bash/load_order.py copyright (C) 2016 Utumno: Original design
 #
@@ -44,10 +44,9 @@ import math
 import sys
 import time
 
-# Internal
-from . import bass, bolt, exception
 from . import _games_lo # LoGame instance providing load order operations API
-from .bolt import sig_to_str, forward_compat_path_to_fn_list
+from . import bass, bolt, exception
+from .bolt import forward_compat_path_to_fn_list, sig_to_str
 
 _game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
@@ -275,7 +274,18 @@ def find_first_difference(lo_a, acti_a, lo_b, acti_b):
     if low_diff != (None, None):
         low_acti = min(lindex_a[low_diff[0]], lindex_b[low_diff[1]])
     elif len(acti_a) != len(acti_b):
-        low_acti = min(len(acti_a), len(acti_b))
+        if not acti_a and acti_b:
+            # Actives were empty and got filled, diff at first new active
+            low_acti = lindex_b[acti_b[0]]
+        elif not acti_b and acti_a:
+            # Actives were filled and are now empty, diff at first old active
+            low_acti = lindex_a[acti_a[0]]
+        else:
+            # This points into the actives list, need to convert to LO index
+            if len(acti_a) < len(acti_b):
+                low_acti = lindex_a[acti_a[-1]]
+            else:
+                low_acti = lindex_b[acti_b[-1]]
     else: low_acti = None
     # Finally, we need to deal with cases where one of the two is None and
     # return the smaller result

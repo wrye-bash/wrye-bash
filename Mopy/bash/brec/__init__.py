@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,11 +26,11 @@ classes used to build up the PBash record definitions for each game, as well as
 shared definitions for some common records and subrecords. Any code outside the
 brec package should import from here, so that classes may be moved around
 without breaking third-party code."""
-
 from .advanced_elements import *
 from .basic_elements import *
 from .common_records import *
 from .common_subrecords import *
+from .complex_subrecords import *
 from .mod_io import *
 from .record_groups import *
 from .record_structs import *

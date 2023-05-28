@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,12 +24,12 @@
 state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
-
 import importlib
 from itertools import chain
 from os.path import join as _j
 
-from .. import brec, bolt
+from .. import bolt
+from ..bolt import FNDict, fast_cached_property
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
@@ -42,7 +42,7 @@ class GameInfo(object):
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
     # Name of the icon to use for the game, including a %u specifier for the
-    # icon size (16/24/32)
+    # icon size (16/24/32). Relative to images/games/
     game_icon = u'' ## Example: u'skyrim_%u.png'
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
     # Preferably pick a single word without spaces here, but don't change it
@@ -77,11 +77,12 @@ class GameInfo(object):
     # file is shared by multiple games, in which case you MUST find unique
     # files - for an example, see Enderal and Skyrim (and the SE versions of
     # both).
-    game_detect_includes = []
+    game_detect_includes = set()
     # Path to one or more files to look for to see if this is *not* the right
-    # game when joined with the game's root path. Used to differentia between
-    # versions of the game distributed on different platforms (Windows Store).
-    game_detect_excludes = []
+    # game when joined with the game's root path. Used to differentiate between
+    # versions of the game distributed on different platforms (at the moment
+    # these are GOG, Steam and Windows Store).
+    game_detect_excludes = set()
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
@@ -98,17 +99,23 @@ class GameInfo(object):
     # The name of the directory that LOOT writes its masterlist into, relative
     # to '%LocalAppData%\LOOT'
     loot_dir = u''
+    # The name that this game has on the LOOT command line. If empty, indicates
+    # that LOOT does not support this game
+    loot_game_name = ''
     # The name that this game has on the BOSS command line. If empty, indicates
     # that BOSS does not support this game
     boss_game_name = u''
-    # Registry keys to read to find the install location
+    # Registry keys to read to find the install location. This is a list of
+    # tuples of two strings, where each tuple defines the subkey and entry to
+    # try. Multiple tuples in the list will be tried in order, with the first
+    # one that works being used.
     # These are relative to:
     #  HKLM\Software
     #  HKLM\Software\Wow6432Node
     #  HKCU\Software
     #  HKCU\Software\Wow6432Node
-    # Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
-    regInstallKeys = ()
+    # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
+    registry_keys = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -116,10 +123,6 @@ class GameInfo(object):
                      # settings.dat
 
     # Additional game info - override as needed -------------------------------
-    # URL to download patches for the main game.
-    patchURL = u''
-    # Tooltip to display over the URL when displayed
-    patchTip = u'Update via Steam'
     # plugin extensions
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Load order info
@@ -136,29 +139,52 @@ class GameInfo(object):
     # ones. An empty list means that the game does not have any such
     # directories.
     plugin_name_specific_dirs = [_j(u'sound', u'voice')]
+    # Whether or not to check for 'Bash' and 'Installers' folders inside the
+    # game folder and use those instead of the default paths when present
+    check_legacy_paths = False
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
 
+    # Master esm form ids factory
+    __master_fids = {}
+    @classmethod
+    def master_fid(cls, object_id):
+        """Create a FormId subclass representing a particular master record."""
+        try:
+            return cls.__master_fids[object_id]
+        except KeyError:
+            from .. import brec
+            return cls.__master_fids.setdefault(object_id,
+                brec.FormId.from_tuple((cls.master_file, object_id)))
+
     class Ws(object):
         """Information about this game on the Windows Store."""
-        # A list of directory names for different language versions that ship
-        # with this game. Each one acts as a separate game installation under
-        # the main Windows Store path. If empty, indicates that the Windows
-        # Store location is the game installtion
-        game_language_dirs = []
-        # The publisher name for common games. Currently only 'Bethesda' is
-        # allowed for Bethesda games. If specified, publisher_id is not
-        # required
-        publisher_name = u''
-        # The publisher ID for the publisher of the game. Required except for
-        # common publishers supported above. For example, Bethesda's publisher
-        # ID is '3275kfvn8vcwc'
-        publisher_id = u''
+        # The publisher name for common games. Only needed for games that had
+        # the older legacy installation method available. Can only be
+        # 'Bethesda' or empty
+        legacy_publisher_name = ''
         # The internal name used by the Windows Store to identify the game.
         # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
-        win_store_name = u''
+        win_store_name = ''
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Windows Store path. If empty, indicates that the main path
+        # *is* the game installation
+        ws_language_dirs = []
+
+    class Eg:
+        """Information about this game on the Epic Games Store."""
+        # The AppName in the Epic Games Store manifest for this game. May
+        # contain multiple, in which case the first one that is present is
+        # used. Empty if this game is not available on the Epic Games Store
+        egs_app_names = []
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Epic Games Store path. If empty, indicates that the main path
+        # *is* the game installation
+        egs_language_dirs = []
 
     class Ck(object):
         """Information about the official plugin editor (generally called some
@@ -172,7 +198,7 @@ class GameInfo(object):
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
         se_args = None
-        # Image name template for the status bar
+        # Image name template for the status bar, relative to images/tools
         image_name = u''
 
     class Se(object):
@@ -249,16 +275,6 @@ class GameInfo(object):
         # Tooltip for mouse over the URL
         url_tip = u''
 
-    class Laa(object):
-        """Information about the LAA (Large Address Aware) launcher for this
-        game."""
-        # Display name of the launcher
-        laa_name = u''
-        # Executable to run
-        exe = u'*DNE*'
-        # Whether the launcher will automatically launch the SE
-        launchesSE = False
-
     class Ini(object):
         """Information about this game's INI handling."""
         # True means new lines are allowed to be added via INI tweaks
@@ -269,10 +285,14 @@ class GameInfo(object):
         bsa_redirection_key = (u'', u'')
         # Name of game's default ini file.
         default_ini_file = u''
+        # The default value for the [General] sLanguage setting
+        default_game_lang = 'English'
         # INI files that should show up in the INI Edits tab. Note that the
         # first one *must* be the main INI!
         #  Example: [u'Oblivion.ini']
         dropdown_inis = []
+        # Whether or not this game supports the OBSE INI format
+        has_obse_inis = False
         # INI setting used to setup Save Profiles
         #  (section, key)
         save_profiles_key = (u'General', u'SLocalSavePath')
@@ -381,13 +401,15 @@ class GameInfo(object):
         lod_textures_dir = _j('textures', 'lod')
         # The suffix that LOD textures used as normals have in this game
         lod_textures_normals_suffix = '_n'
-        # Files BAIN shouldn't skip
-        no_skip = ()
+        # Literal file paths BAIN shouldn't skip
+        no_skip = set()
         # Directories where specific file extensions should not be skipped
         no_skip_dirs = {
             # BashTags files are obviously not docs, so don't skip them
-            u'bashtags': [u'.txt'],
+            'bashtags': {'.txt'},
         }
+        # Compiled regex patterns matching files BAIN shouldn't skip
+        no_skip_regexes = ()
         # Folders BAIN should never CRC check in the Data directory
         skip_bain_refresh = set(
             # Use lowercase names
@@ -399,52 +421,53 @@ class GameInfo(object):
 
     # Plugin format stuff
     class Esp(object):
-        # Wrye Bash capabilities
-        # Can create Bashed Patches
+        # WB can create Bashed Patches
         canBash = False
-        # Can edit basic info in the main header record - generally has
+        # WB can edit basic info in the main header record - generally has
         # signature b'TES4'
         canEditHeader = False
-        # Valid ESM/ESP header versions. These are the valid 'version' numbers
-        # for the game file headers
-        validHeaderVersions = tuple()
+        # If True, check if the main header's DATA subrecords match the on-disk
+        # master sizes and highlight the corresponding masters with a light
+        # background color if that is the case. Needs meaningful information in
+        # the DATA subrecords.
+        check_master_sizes = False
+        # If True, then plugins with at least one master can use the
+        # 0x000-0x800 range for their own records.
+        # If False, that range is reserved for hardcoded engine records.
+        expanded_plugin_range = False
+        # If True, then plugins with a .esm extension will always be treated
+        # as having the ESM flag set and plugins with a .esl extension will
+        # always be treated as having the ESL and ESM flags set
+        extension_forces_flags = False
+        # If True, generate ONAM by reading each temp CELL child when adding
+        # the ESM flag to plugins and discard it when removing the ESM flag.
+        generate_temp_child_onam = False
+        # The maximum number of masters that a plugin can have for this game.
+        master_limit = 255 # 256 - 1 for the plugin itself
+        # Maximum length of the Author string in the plugin header
+        max_author_length = 511 # 512 - 1 for the null terminator
+        # Maximum length of the Description string in the plugin header
+        max_desc_length = 511 # 512 - 1 for the null terminator
+        # The maximum number of entries inside a leveled list for this game.
+        # Zero means no limit.
+        max_lvl_list_size = 0
+        # Signature of the main plugin header record type
+        plugin_header_sig = b'TES4'
+        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
+        ##: Workaround, see MelSpellsTes4 for the proper solution
+        sort_lvsp_after_spel = False
         # used to locate string translation files
         stringsFiles = [
             u'%(body)s_%(language)s.STRINGS',
             u'%(body)s_%(language)s.DLSTRINGS',
             u'%(body)s_%(language)s.ILSTRINGS',
         ]
-        # Signature of the main plugin header record type
-        plugin_header_sig = b'TES4'
-        # If True, then plugins with at least one master can use the
-        # 0x000-0x800 range for their own records.
-        # If False, that range is reserved for hardcoded engine records.
-        expanded_plugin_range = False
-        # If True, check if the main header's DATA subrecords match the on-disk
-        # master sizes and highlight the corresponding masters with a light
-        # background color if that is the case. Needs meaningful information in
-        # the DATA subrecords.
-        check_master_sizes = False
-        # If True, generate ONAM by reading each temp CELL child when adding
-        # the ESM flag to plugins and discard it when removing the ESM flag.
-        generate_temp_child_onam = False
-        # The maximum number of entries inside a leveled list for this game.
-        # Zero means no limit.
-        max_lvl_list_size = 0
-        # A tuple containing all biped flag names (in order) for this game
-        biped_flag_names = ()
-        # The maximum number of masters that a plugin can have for this game.
-        master_limit = 255 # 256 - 1 for the plugin itself
-        # All 'reference' types, i.e. record types that occur in CELL/WLRD
-        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
-        # PMIS, etc.)
-        reference_types = set()
+        # Valid ESM/ESP header versions. These are the valid 'version' numbers
+        # for the game file headers
+        validHeaderVersions = tuple()
         # Whether to warn about plugins with header form
         # versions < RecordHeader.plugin_form_version
         warn_older_form_versions = False
-        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
-        ##: Workaround, see MelSpellsTes4 for the proper solution
-        sort_lvsp_after_spel = False
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
@@ -468,49 +491,64 @@ class GameInfo(object):
     # and would make editing the constants a miserable experience if included
     # (see e.g. skyrim/vanilla_files.py).
     vanilla_files = set()
+    # property fields set in _init_records to avoid brec import
+    _plugin_header_rec_type = None
 
     @property
     def plugin_header_class(self):
-        return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
+        return self._plugin_header_rec_type
+
+    @fast_cached_property
+    def modding_esm_size(self):
+        if self.displayName != 'Oblivion': # hack to avoid a bunch of overrides
+            return FNDict()
+        b, e = self.master_file.rsplit('.', 1)
+        return FNDict({
+            f'{b}_1.1.{e}':         247388848, #--Standard
+            f'{b}_1.1b.{e}':        247388894, # Arthmoor has this size.
+            f'{b}_GOTY non-SI.{e}': 247388812, # GOTY version
+            f'{b}_SI.{e}':          277504985, # Shivering Isles 1.2
+            f'{b}_GBR SI.{e}':      260961973, # GBR Main File Patch
+        })
+
+    @fast_cached_property
+    def size_esm_version(self):
+        return {y: x.split('_', 1)[1].rsplit('.', 1)[0] for x, y in
+                self.modding_esm_size.items()}
+
+    def modding_esms(self, mod_infos):
+        """Set current (and available) master game esm(s) - Oblivion only."""
+        if not self.modding_esm_size: return set(), None
+        version_strs, current_esm = set(), None
+        for modding_esm, esm_size in self.modding_esm_size.items():
+            if (info := mod_infos.get(modding_esm)) and info.fsize == esm_size:
+                version_strs.add(self.size_esm_version[esm_size])
+        if _master_esm := mod_infos.get(self.master_file):
+            current_esm = self.size_esm_version.get(_master_esm.fsize, None)
+        return version_strs, current_esm
 
     @classmethod
-    def init(cls):
-        # Setting RecordHeader class variables --------------------------------
-        # Top types in order of the main ESM
-        header_type = brec.RecordHeader
-        header_type.top_grup_sigs = []
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4'])
-        # Record Types
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ()}
-        # Simple records
-        brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {b'TES4'})
-        cls._validate_records()
+    def init(cls, _package_name=None):
+        """Dynamically import modules - Record[Type] variables not yet set!
+        :param _package_name: the name of the game package to load if loading
+                              from a derived game - used internally - don't
+                              pass!"""
+        cls._dynamic_import_modules(_package_name) # this better be not None
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         """Dynamically import package modules to avoid importing them for every
         game. We need to pass the package name in for importlib to work.
-        Currently populates the GameInfo namespace with the members defined in
-        the relevant constants.py and imports default_tweaks.py and
-        vanilla_files.py."""
+        Populates the GameInfo namespace with the members defined in
+        default_tweaks.py and vanilla_files.py and also imports game
+        specific patchers. The patcher modules should not rely on records
+        being initialized."""
         tweaks_module = importlib.import_module(u'.default_tweaks',
             package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
         vf_module = importlib.import_module(u'.vanilla_files',
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
-
-    @staticmethod
-    def _validate_records():
-        """Performs validation on the record syntax for all decoded records."""
-        sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
-        for rec_class in brec.MreRecord.type_class.values():
-            if issubclass(rec_class, brec.MelRecord):
-                rec_class.validate_record_syntax()
-                for sr_sig in rec_class.melSet.loaders:
-                    sr_to_r[sr_sig].add(rec_class.rec_sig)
 
     @classmethod
     def supported_games(cls):
@@ -528,6 +566,9 @@ class GameInfo(object):
                 any(test_path.join(p).exists()
                 for p in cls.game_detect_excludes))
 
-WS_COMMON = [u'appxmanifest.xml']
+# Constants -------------------------------------------------------------------
+# Files shared by versions of games that are published on the Windows Store
+WS_COMMON_FILES = {'appxmanifest.xml'}
 
-GAME_TYPE = None
+# The GameInfo-derived type used for this game
+GAME_TYPE: type[GameInfo] | dict[str, type[GameInfo]]

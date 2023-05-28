@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,28 +24,28 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-from .. import bass, bosh, balt
-from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
-from ..bolt import FName
+from .. import balt, bass, bosh
+from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
+    UIList_OpenItems
 from ..gui import copy_text_to_clipboard
 
-__all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
-           u'INI_Apply', u'INI_CreateNew', u'INI_ListErrors',
-           u'INI_FileOpenOrCopy', u'INI_Delete']
+__all__ = ['INI_ValidTweaksFirst', 'INI_AllowNewLines', 'INI_ListINIs',
+           'INI_Apply', 'INI_CreateNew', 'INI_ListErrors', 'INI_Open']
 
-class INI_SortValid(BoolLink):
+class INI_ValidTweaksFirst(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    _text, _bl_key, _help = _(u'Valid Tweaks First'), u'bash.ini.sortValid', \
-                            _(u'Valid tweak files will be shown first.')
+    _text = _('Valid Tweaks First')
+    _bl_key = 'bash.ini.sortValid'
+    _help = _('Valid tweak files will be shown first.')
 
     def Execute(self):
-        super(INI_SortValid, self).Execute()
+        super().Execute()
         self.window.SortItems()
 
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
-    _text = _(u'Allow Tweaks with New Settings')
+    _text = _('Allow Tweaks With New Settings')
     _bl_key = u'bash.ini.allowNewLines'
     _help = _(u'Tweak files adding new sections/settings are considered valid')
 
@@ -72,59 +72,22 @@ class INI_ListErrors(EnabledLink):
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        return any(map(lambda inf: inf.tweak_status() < 0,
-                        self.iselected_infos()))
+        self._erroneous = [inf for inf in self.iselected_infos()
+                           if inf.tweak_status() < 0]
+        return bool(self._erroneous)
 
     def Execute(self):
         """Handle printing out the errors."""
-        error_text = u'\n'.join(inf.listErrors() for inf in
-                                self.iselected_infos())
+        error_text = '\n'.join(inf.listErrors() for inf in self._erroneous)
         copy_text_to_clipboard(error_text)
         self._showLog(error_text, title=_(u'INI Tweak Errors'),
                       fixedFont=False)
 
 #------------------------------------------------------------------------------
-class INI_FileOpenOrCopy(EnabledLink):
-    """Open specified file(s) only if they aren't Bash supplied defaults."""
-    def _targets_default(self):
-        return next(self.iselected_infos()).is_default_tweak
-
-    def _enable(self):
-        first_default = self._targets_default()
-        return all(i.is_default_tweak == first_default
-                   for i in self.iselected_infos())
-
-    @property
-    def link_text(self):
-        return [_(u'Open...'), _(u'Copy...')][self._targets_default()]
-
-    @property
-    def link_help(self):
-        return  [_(u"Open the selected INI file(s) with the system's default "
-                   u"program."),
-                 _(u"Make an editable copy of the selected default "
-                   u"tweak(s).")][self._targets_default()]
-
-    def Execute(self):
-        newly_copied = [i for i in self.selected if
-                        bosh.iniInfos.open_or_copy(i)]
-        self.window.RefreshUI(redraw=newly_copied)
-
-#------------------------------------------------------------------------------
-class INI_Delete(balt.UIList_Delete, EnabledLink):
-    """Delete the file and all backups."""
-
-    def _initData(self, window, selection):
-        super(INI_Delete, self)._initData(window, selection)
-        self.selected = self.window.filterOutDefaultTweaks(self.selected)
-        if len(self.selected) and len(selection) == 1:
-            self._help = _(u'Delete %(filename)s.') % ({u'filename': selection[0]})
-        elif len(self.selected):
-            self._help = _(
-                u"Delete selected tweaks (default tweaks won't be deleted)")
-        else: self._help = _(u"Bash default tweaks can't be deleted")
-
-    def _enable(self): return len(self.selected) > 0
+class INI_Open(UIList_OpenItems):
+    """Version of UIList_OpenItems that skips default tweaks."""
+    def _filter_unopenable(self, to_open_items):
+        return self.window.data_store.filter_essential(to_open_items)
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):
@@ -153,29 +116,34 @@ class INI_Apply(EnabledLink):
 class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
-    _text = _(u'Create Tweak with current settings...')
+    _text = _('Create Tweak With Current Settings...')
 
     @property
     def link_help(self):
-        if not len(self.selected) == 1:
-            return _(u'Please choose one Ini Tweak')
-        return _(u"Creates a new tweak based on '%(tweak)s' but with "
-                 u"values from '%(ini)s'.") % {u'tweak': (self.selected[0]),
-                   u'ini': self.window.current_ini_name}
+        if len(self.selected) != 1:
+            return _('Please choose one INI Tweak')
+        return _("Create a new tweak based on '%(target_tweak)s' but with "
+                 "values from '%(target_ini)s'.") % {
+            'target_tweak': (self.selected[0]),
+            'target_ini': self.window.current_ini_name,
+        }
 
-    def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              self._selected_info.tweak_status() >= 0
+    def _enable(self):
+        return super()._enable() and self._selected_info.tweak_status() >= 0
 
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
-        pathFrom = self._selected_item
-        fileName = f'{pathFrom.fn_body} - Copy{pathFrom.fn_ext}'
+        ini_info, ini_key = self._selected_info, self._selected_item
+        fileName = ini_info.unique_key(ini_key.fn_body, add_copy=True)
         tweak_path = self._askSave(
-            title=_(u'Copy Tweak with current settings...'),
+            title=self._text,
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
-            wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
-        fn_tweak = FName(tweak_path.stail)
-        if bosh.iniInfos.duplicate_ini(self._selected_item, fn_tweak):
+            wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini")
+        fn_tweak, msg = ini_info.validate_filename_str(tweak_path.stail)
+        if msg is None:
+            self._showError(fn_tweak) # it's an error message in this case
+            return
+        if bosh.iniInfos.copy_tweak_from_target(ini_key, fn_tweak):
             ##: we need a 'to_add' param in RefreshUI
             self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)

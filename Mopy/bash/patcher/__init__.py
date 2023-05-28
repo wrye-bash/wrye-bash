@@ -16,11 +16,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import bolt, bass, gui
+from .. import bolt, gui
 
 def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'
@@ -35,24 +35,3 @@ def exportConfig(patch_name, config, win, outDir):
         gkey = bolt.GPath_no_norm('Saved Bashed Patch Configuration (Python)')
         pd.pickled_data[gkey] = {'bash.patch.configs': config}
         pd.save()
-
-def getPatchesPath(fileName):
-    """Choose the correct Bash Patches path for the file."""
-    if (patches_fpath := bass.dirs[u'patches'].join(fileName)).is_file():
-        return patches_fpath
-    else:
-        return bass.dirs[u'defaultPatches'].join(fileName)
-
-# this is set once and stays the same for the patch execution session
-_patches_set = None
-
-def list_patches_dir():
-    """Get a basic list of potential Bash Patches csv sources."""
-    global _patches_set
-    _patches_set = set(bass.dirs[u'patches'].ilist())
-    if bass.dirs[u'defaultPatches']:
-        _patches_set.update(bass.dirs[u'defaultPatches'].ilist())
-
-def patches_set():
-    if _patches_set is None: list_patches_dir()
-    return _patches_set

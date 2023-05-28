@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +29,6 @@ import time
 
 import wx as _wx
 
-from .. import bolt
 from ..localize import setup_locale
 
 _pj = os.path.join
@@ -50,8 +48,8 @@ class TestLocalize:
             # call the wx API that blows
             assert _wx.ArtProvider.GetBitmap(_wx.ART_PLUS, size=(16, 16))
             assert _wx.ArtProvider.GetBitmap(_wx.ART_MINUS, size=(16, 16))
-            assert _wx.Bitmap(_pj(_img_folder, 'reload16.png'),
-                              _wx.BITMAP_TYPE_PNG)
+            assert _wx.Bitmap(_pj(_img_folder, 'people', 'wryeavi.jpg'),
+                              _wx.BITMAP_TYPE_JPEG)
             assert time.strptime('2006-01-01', '%Y-%m-%d')
             # assert time.strptime('2006-01-01', '%c')
             print(f'******* Tested {loc=} *******')

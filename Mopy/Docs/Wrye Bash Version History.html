@@ -35,6 +35,28 @@
 
 <p class="history-veranc">All versions by Wrye unless otherwise noted.
 
+<h3>311 Fallout 4 preparation [2023/05/28] [Various community members]</h3>
+<ul>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/663">#663</a>: Check for Wrye Bash updates on startup [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/661">#661</a>: Support TOML files on the INI Edits tab [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/656">#656</a>: Restrict red background highlighting to timestamp conflicts [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/655">#655</a>: Remove the Eye Checker [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/654">#654</a>: Document and improve behavior of the Filter tag [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/652">#652</a>: Improve the usability of the INI Edits tab [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/650">#650</a>: Port Tweak Settings to Fallout 4 [BeermotorWB]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/646">#646</a>: Add support for the GOG versions of Bethesda games [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/645">#645</a>: Rework column header menus [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/643">#643</a>: Rework Mods and Saves tabs&#x27; context menus [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/642">#642</a>: Show byte counts for author and description fields [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/639">#639</a>: Support new method of Windows Store game installation [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/625">#625</a>: Allow customizing column auto-width per tab [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/606">#606</a>: Offer an option to export and import BAIN package order [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/557">#557</a>: Replace some images with SVGs for high DPI scaling [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/454">#454</a>: Mark Skyrim VR as supported [Infernio, LunNova]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/401">#401</a>: Mark Fallout 4 VR as supported [Infernio, nephatrine]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/81">#81</a>: Add status bar launcher for LOOT [Infernio]</li>
+</ul>
+
 <h3>310 Python 3 upgrade [2022/07/24] [Infernio, Lojack, sibir, Utumno]</h3>
 <ul>
 <li><a href="https://github.com/wrye-bash/wrye-bash/issues/638">#638</a>: Remove debug mode, always enable debug printing [Infernio]</li>
@@ -57,6 +79,7 @@
 </ul>
 
 <h3>309.1 Bug fixes for 309 [2021/06/09] [Infernio]</h3>
+<p><strong>Note: this is the last release to support Windows 7!</strong></p>
 <p>This release fixes a few critical bugs and regressions that made
 their way into 309.</p>
 
@@ -97,6 +120,7 @@ their way into 309.</p>
 </ul>
 
 <h3>307 Refactoring, new features &amp; games [2020/09/16] [Various community members]</h3>
+<p><strong>Note: this is the last release to support 32-bit operating systems!</strong></p>
 <ul>
 <li><a href="https://github.com/wrye-bash/wrye-bash/issues/528">#528</a>: Import Enchantment Stats &amp; Import Effect Stats [Infernio]</li>
 <li><a href="https://github.com/wrye-bash/wrye-bash/issues/527">#527</a>: Import Cells causes duplicate CELLs to be written into the BP [Infernio]</li>
@@ -462,9 +486,9 @@ their way into 309.</p>
  <li>Some more installer improvements. [Alt3rn1ty]
  <li>Fixed <q>Espify/Esmify Self</q> not refreshing the load order display. [cdcooley]
  <li>Fixed BAIN's <q>Clean Data</q> command removing some Bethesda-supplied files. [Daidalos, WrinklyNinja]
- <li>Added some UI feedback messages for certain plugin-related situations where Wrye Bash would previously silently prevent user action (eg. deleting the main master file, loading plugins before masters). [WrinklyNinja]
+ <li>Added some UI feedback messages for certain plugin-related situations where Wrye Bash would previously silently prevent user action (e.g. deleting the main master file, loading plugins before masters). [WrinklyNinja]
  <li>Fixed Wrye Bash not ensuring plugins.txt / loadorder.txt synchronisation when it regains window focus. [cdcooley]
- <li>Removed the <q>Lock Load Order</q> command when running for Skyrim, as this functionality is effectively taken care of by the above synchronisation fix. When running for Skyrim, Wrye Bash will now allow any changes to load order that are made in accordance with the textfile-based standard (eg. changes by BOSS, NMM), but revert any other changes made (eg. changes by the Skyrim launcher). This is to ensure data integrity. [Arthmoor]
+ <li>Removed the <q>Lock Load Order</q> command when running for Skyrim, as this functionality is effectively taken care of by the above synchronisation fix. When running for Skyrim, Wrye Bash will now allow any changes to load order that are made in accordance with the textfile-based standard (e.g. changes by BOSS, NMM), but revert any other changes made (e.g. changes by the Skyrim launcher). This is to ensure data integrity. [Arthmoor]
  <li>Moved Wrye Bash's Documentation from the Mopy folder to Mopy\Docs. [WrinklyNinja]
  <li>Fixed the background highlighting of ghosted plugins not always being in sync with which plugins were ghosted. [cdcooley]
  <li>Fixed crash when selecting another plugin after opening the Doc Browser. [WrinklyNinja]
@@ -834,7 +858,7 @@ their way into 309.</p>
       <li>Installer-&gt;open readme command added.
       <li>Modified <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files
       <li>It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
-      <li>Don't reset subpackage selections if a wizard is started but cancelled
+      <li>Don't reset sub-package selections if a wizard is started but cancelled
       <li>Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)
 </ul>
     <li>Unicode Mode:
@@ -844,11 +868,11 @@ their way into 309.</p>
     <li>Added activation status as a new mods column/sort option.
     <li>New mod commands:
 <ul>
-      <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsLoadAll">Load All</a> will activate all mods (up to 255 of them, at least)
+      <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsActivateAll">Load All</a> will activate all mods (up to 255 of them, at least)
       <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateLOOTEntry">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.
-      <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.
+      <li><a href="Wrye%20Bash%20Advanced%20Readme.html#mods-copy-plugin-info">Copy Mod Info</a> will automatically gather the displayed info on a mod.
       <li>Ghost will ghost just the selected mod(s)
-      <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportPatchConfig">Export Patch Config...</a> exports the selected patch's configuration to a file.
+      <li>Export Patch Config... exports the selected patch's configuration to a file.
       <li>File-&gt;<a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
       <li>File-&gt;<a href="Wrye%20Bash%20Advanced%20Readme.html#modsNewBashedPatch">New Bashed Patch</a> will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
       <li>Mods Tab-&gt;<a href="Wrye%20Bash%20Advanced%20Readme.html#modsRemoveDummyMasters">Remove Dummy Masters</a> will delete any empty plugins created using the <a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateDummyMasters">Create Dummy Masters</a> command.
@@ -874,7 +898,7 @@ their way into 309.</p>
       <li>Added option to toggle display of version numbers for mods in the mod list.
       <li>Display note if no dirty mods are found (so that users know that it did successfully check and isn't malfunctioning).
 </ul>
-    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>: crc display is off by default and added code to enable crc display if 'c' is pressed.
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPlugins">List Mods</a>: crc display is off by default and added code to enable crc display if 'c' is pressed.
     <li>Most untranslatable strings adjusted to be translatable (adds more than 240 strings that can now be translated).
     <li>UI components in the Mods and Saves Tabs are now resizable
     <li>Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
@@ -951,7 +975,7 @@ their way into 309.</p>
   <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainUninstallAll">Uninstall All</a> command.
   <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command
   <li>Fixed markers disappearing on edit
-  <li>Fixed a processing error when subpackages have ampersands in their names
+  <li>Fixed a processing error when sub-packages have ampersands in their names
 </ul>
 <li>Bugs fixed (General):
 <ul>
@@ -1104,8 +1128,8 @@ their way into 309.</p>
 </ul>
     <li>Improved <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> loops, for iterating over files in an installer:
 <ul>
-      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>subpackage</var> in Subpackages
-      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>file</var> in <var>subpackage</var>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>sub</var> in SubPackages
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>file</var> in <var>sub</var>
 </ul>
     <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizards-operators-ci">Case Insensitive Operators</a>: Operators that ignore the case of a string when comparing.
     <li>The <a href="Wrye%20Bash%20Technical%20Readme.html#wizards-operators-dot">Dot Operator</a>
@@ -1226,7 +1250,7 @@ their way into 309.</p>
 <ul>
   <li>fix so that the end of the display of the number of packages does not get cut off.
   <li>Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
-  <li>Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+  <li>Sub-packages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force sub-packages to be recognized in some instances).
   <li>Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
   <li>Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
   <li>New keyboard shortcuts added:
@@ -1579,7 +1603,7 @@ their way into 309.</p>
 <li>BAIN Changes:
 <ul>
   <li>fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position.
-  <li>above fix also applied to subpackages list.
+  <li>above fix also applied to sub-packages list.
   <li>Wizards changes:
 </ul>
 <ul>
@@ -2047,7 +2071,7 @@ their way into 309.</p>
     <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsDuplicate">Duplicate</a>
     <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsSnapshot">Snapshot</a>
     <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsDecompileAll">Decompile All</a>
-    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCopyToEsm">Copy to Esp/Esm</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#mods-copy-to">Copy to Esp/Esm</a>
     <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsEsmifySelf">Espify/Esmify Self</a>
     <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsRemoveWorldOrphans">Remove World Orphans</a>
     <li>Undelete Refs</li>
@@ -2313,7 +2337,7 @@ their way into 309.</p>
 <li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
 <ul>
   <li>Fix an version updating bug.
-  <li>Add Unpack to Project and Sync from Data commands.
+  <li>Add Unpack to Project and Sync From Data commands.
 </ul>
 </ul>
 
@@ -2674,7 +2698,7 @@ their way into 309.</p>
 
 <h3>189 [2008/07/05]</h3>
 <ul>
-<li>Fix a bug with Merge Filtering.
+<li>Fix a bug with <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-filter">Merge Filtering</a>.
 <li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportSounds">Import Sound</a>.
 <li>Can now choose body part codes in <a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>.
 </ul>
@@ -3025,7 +3049,7 @@ their way into 309.</p>
 <li>Fix order of MGEF sub-records.
 <li>Disable ctrl-up/down for auto-sorted files.
 <li>Refactor saveFile.getRecord.
-<li>Upgraded <a href="Wrye%20Bash%20Advanced%20Readme.html#savesListMasters">List Masters</a> to be like <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>.
+<li>Upgraded <a href="Wrye%20Bash%20Advanced%20Readme.html#savesListMasters">List Masters</a> to be like <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPlugins">List Mods</a>.
 <li>Bashed Patch: <a href="Wrye%20Bash%20General%20Readme.html#patchMorphFactions">Morph Factions</a>.
 <li>Wrye Morph support: In progress.
 </ul>
@@ -3393,7 +3417,7 @@ their way into 309.</p>
 <h3>0.91 [2007/08/11]</h3>
 <ul>
 <li>Merged mods now marked by '+' checkbox.
-<li>Updated <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a> command to list merged mods.
+<li>Updated <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPlugins">List Mods</a> command to list merged mods.
 <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> now checks for associated bsa files.
 <li><a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a> will skip name types that aren't supported.
 <li>Various patchers no longer throw errors if source mod/file has been removed.
@@ -3484,7 +3508,7 @@ their way into 309.</p>
 
 <h3>0.83 [2007/07/13]</h3>
 <ul>
-<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>.
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPlugins">List Mods</a>.
 <li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>.
 <li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-face">Stats Import</a> when importing faces.
 <li>Import Names now handles magic effects records.
@@ -4329,7 +4353,7 @@ their way into 309.</p>
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v310</div>
+    <div id="version">Wrye Bash v311</div>
     <a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;Versions
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

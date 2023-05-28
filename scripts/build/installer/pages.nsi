@@ -4,8 +4,8 @@
 !include "macros.nsh"
 
 ;---------------------------- Install Locations Page
-    Function PAGE_INSTALLLOCATIONS_ES
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(PAGE_INSTALLLOCATIONS_ES_SUBTITLE)
+    Function PAGE_INSTALLLOCATIONS_ES_STEAM
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_STEAM_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
         GetFunctionAddress $Function_Browse OnClick_Browse
 
         nsDialogs::Create 1018
@@ -15,7 +15,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls Game(s) you would like to install Wrye Bash for.$\nFallout Install Locations are on the next page."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls game(s) on Steam you would like to install Wrye Bash for.$\nIf any installed games are missing, run them through Steam once."
             Pop $Label
             IntOp $0 0 + 25
 
@@ -71,6 +71,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_SkyrimVR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for SkyrimVR"
+                Pop $Check_SkyrimVR
+                ${NSD_SetState} $Check_SkyrimVR $CheckState_SkyrimVR
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimVR"
+                Pop $PathDialogue_SkyrimVR
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_SkyrimVR
+                nsDialogs::OnClick $Browse_SkyrimVR $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         ${If} $Path_Enderal != $Empty
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Enderal"
                 Pop $Check_Enderal
@@ -100,12 +113,13 @@
         nsDialogs::Show
     FunctionEnd
 
-    Function PAGE_INSTALLLOCATIONS_ES_Leave
+    Function PAGE_INSTALLLOCATIONS_ES_STEAM_Leave
         ; Game paths
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+        ${NSD_GetText} $PathDialogue_SkyrimVR $Path_SkyrimVR
         ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
         ${NSD_GetText} $PathDialogue_EnderalSE $Path_EnderalSE
 
@@ -114,12 +128,13 @@
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_SkyrimVR $CheckState_SkyrimVR
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
         ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
     FunctionEnd
 
-    Function PAGE_INSTALLLOCATIONS_FALLOUT
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE)
+    Function PAGE_INSTALLLOCATIONS_ES_GOG
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_GOG_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
         GetFunctionAddress $Function_Browse OnClick_Browse
 
         nsDialogs::Create 1018
@@ -129,7 +144,46 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Fallout Game(s) you would like to install Wrye Flash for.$\nExtra Install Location are on the next page."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls game(s) on GOG you would like to install Wrye Bash for."
+            Pop $Label
+            IntOp $0 0 + 25
+
+        ${If} $Path_SkyrimSE_GOG != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for SkyrimSE"
+                Pop $Check_SkyrimSE_GOG
+                ${NSD_SetState} $Check_SkyrimSE_GOG $CheckState_SkyrimSE_GOG
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE_GOG"
+                Pop $PathDialogue_SkyrimSE_GOG
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_SkyrimSE_GOG
+                nsDialogs::OnClick $Browse_SkyrimSE_GOG $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        nsDialogs::Show
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_ES_GOG_Leave
+        ; Game paths
+        ${NSD_GetText} $PathDialogue_SkyrimSE_GOG $Path_SkyrimSE_GOG
+
+        ; Game states
+        ${NSD_GetState} $Check_SkyrimSE_GOG $CheckState_SkyrimSE_GOG
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_FALLOUT_STEAM
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_STEAM_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
+        GetFunctionAddress $Function_Browse OnClick_Browse
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Fallout Game(s) you would like to install Wrye Bash for."
             Pop $Label
             IntOp $0 0 + 25
 
@@ -172,20 +226,34 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_Fallout4VR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Fallout4VR"
+                Pop $Check_Fallout4VR
+                ${NSD_SetState} $Check_Fallout4VR $CheckState_Fallout4VR
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout4VR"
+                Pop $PathDialogue_Fallout4VR
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Fallout4VR
+                nsDialogs::OnClick $Browse_Fallout4VR $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         nsDialogs::Show
     FunctionEnd
 
-    Function PAGE_INSTALLLOCATIONS_FALLOUT_Leave
+    Function PAGE_INSTALLLOCATIONS_FALLOUT_STEAM_Leave
         ; Game paths
         ${NSD_GetText} $PathDialogue_Fallout3 $Path_Fallout3
         ${NSD_GetText} $PathDialogue_FalloutNV $Path_FalloutNV
         ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
+        ${NSD_GetText} $PathDialogue_Fallout4VR $Path_Fallout4VR
 
         ; Game states
         ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
         ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
-        ${NSD_GetState} $Check_Extra $CheckState_Extra
+        ${NSD_GetState} $Check_Fallout4VR $CheckState_Fallout4VR
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_EXTRA
@@ -287,8 +355,29 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout4VR == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Fallout4VR "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${StrLoc} $0 $Path_SkyrimSE "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimVR == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_SkyrimVR "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_SkyrimSE_GOG "$PROGRAMFILES\" ">"
             ${If} "0" == $0
                 StrCpy $1 $True
             ${EndIf}
@@ -403,6 +492,18 @@
             IntOp $0 $0 + 9
         ${EndIf}
 
+        ${If} $Path_SkyrimSE_GOG != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "SkyrimSE (GOG)"
+                Pop $Check_SkyrimSE_GOG
+            IntOp $0 $0 + 9
+        ${EndIf}
+
+        ${If} $Path_SkyrimVR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "SkyrimVR"
+                Pop $Check_SkyrimVR
+            IntOp $0 $0 + 9
+        ${EndIf}
+
         ${If} $Path_Enderal != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u "Enderal"
                 Pop $Check_Enderal
@@ -433,6 +534,12 @@
             IntOp $0 $0 + 9
         ${EndIf}
 
+        ${If} $Path_Fallout4VR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout4VR"
+                Pop $Check_Fallout4VR
+            IntOp $0 $0 + 9
+        ${EndIf}
+
         ${If} $Path_Ex1 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u $Path_Ex1
                 Pop $Check_Ex1
@@ -448,6 +555,9 @@
         IntOp $0 $0 + 9
         IntOp $1 0 + 0
 
+        ${NSD_CreateLabel} 0 $0u 100% 8u "Additional options:"
+        IntOp $0 $0 + 17
+
         ${NSD_CreateCheckBox} $1% $0u 25% 8u "View Readme"
             Pop $Check_Readme
             ${NSD_SetState} $Check_Readme ${BST_CHECKED}
@@ -457,6 +567,12 @@
             Pop $Check_DeleteOldFiles
             EnableWindow $Check_DeleteOldFiles 0 ; always delete old files
             ${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
+            IntOp $0 $0 + 17
+            IntOp $1 0 + 0
+
+        ${NSD_CreateCheckBox} 0 $0u 100% 8u "Disable Windows 255 character path limit"
+            Pop $Check_PathLimit
+            ${NSD_SetState} $Check_PathLimit ${BST_CHECKED}
 
         nsDialogs::Show
     FunctionEnd
@@ -466,7 +582,10 @@
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
+        ${NSD_GetState} $Check_Fallout4VR $CheckState_Fallout4VR
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_SkyrimSE_GOG $CheckState_SkyrimSE_GOG
+        ${NSD_GetState} $Check_SkyrimVR $CheckState_SkyrimVR
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
         ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
         ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
@@ -494,9 +613,24 @@
             ExecShell "open" "$Path_Fallout4\Mopy\Wrye Bash.exe"
         ${EndIf}
 
+        ${If} $CheckState_Fallout4VR == ${BST_CHECKED}
+            SetOutPath "$Path_Fallout4VR\Mopy"
+            ExecShell "open" "$Path_Fallout4VR\Mopy\Wrye Bash.exe"
+        ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             SetOutPath "$Path_SkyrimSE\Mopy"
             ExecShell "open" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_GOG == ${BST_CHECKED}
+            SetOutPath "$Path_SkyrimSE_GOG\Mopy"
+            ExecShell "open" "$Path_SkyrimSE_GOG\Mopy\Wrye Bash.exe"
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimVR == ${BST_CHECKED}
+            SetOutPath "$Path_SkyrimVR\Mopy"
+            ExecShell "open" "$Path_SkyrimVR\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Enderal == ${BST_CHECKED}
@@ -529,6 +663,12 @@
             ExecShell "open" "$Path_Ex2\Mopy\Wrye Bash.exe"
         ${EndIf}
 
+        !insertmacro UpdateRegistryPaths
+        ${NSD_GetState} $Check_PathLimit $0
+        ${If} $0 == ${BST_CHECKED}
+            WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Control\FileSystem" "LongPathsEnabled" 1
+        ${EndIf}
+
         ${NSD_GetState} $Check_Readme $0
 
         ${If} $0 == ${BST_CHECKED}
@@ -540,8 +680,14 @@
                 ExecShell "open" "$Path_Skyrim\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Fallout4 != $Empty
                 ExecShell "open" "$Path_Fallout4\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_Fallout4VR != $Empty
+                ExecShell "open" "$Path_Fallout4VR\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_SkyrimSE != $Empty
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_SkyrimSE_GOG != $Empty
+                ExecShell "open" "$Path_SkyrimSE_GOG\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_SkyrimVR != $Empty
+                ExecShell "open" "$Path_SkyrimVR\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Enderal != $Empty
                 ExecShell "open" "$Path_Enderal\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_EnderalSE != $Empty
@@ -572,8 +718,17 @@
             ${If} $Path_Fallout4 != $Empty
                 !insertmacro RemoveOldFiles "$Path_Fallout4"
             ${EndIf}
+            ${If} $Path_Fallout4VR != $Empty
+                !insertmacro RemoveOldFiles "$Path_Fallout4VR"
+            ${EndIf}
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro RemoveOldFiles "$Path_SkyrimSE"
+            ${EndIf}
+            ${If} $Path_SkyrimSE_GOG != $Empty
+                !insertmacro RemoveOldFiles "$Path_SkyrimSE_GOG"
+            ${EndIf}
+            ${If} $Path_SkyrimVR != $Empty
+                !insertmacro RemoveOldFiles "$Path_SkyrimVR"
             ${EndIf}
             ${If} $Path_Enderal != $Empty
                 !insertmacro RemoveOldFiles "$Path_Enderal"
@@ -598,8 +753,8 @@
 
 
 ;----------------------------- Custom Uninstallation Pages and their Functions:
-    Function un.PAGE_SELECT_GAMES_ES
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(unPAGE_SELECT_GAMES_ES_SUBTITLE)
+    Function un.PAGE_SELECT_GAMES_ES_STEAM
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_STEAM_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
@@ -609,7 +764,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s) and version(s) to uninstall Wrye Bash from:"
+        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s) to uninstall Wrye Bash from:"
             Pop $Label
             IntOp $0 0 + 9
 
@@ -665,6 +820,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_SkyrimVR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&SkyrimVR"
+                Pop $Check_SkyrimVR
+                ${NSD_SetState} $Check_SkyrimVR $CheckState_SkyrimVR
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimVR"
+                Pop $PathDialogue_SkyrimVR
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_SkyrimVR
+                nsDialogs::OnClick $Browse_SkyrimVR $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         ${If} $Path_Enderal != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Enderal"
                 Pop $Check_Enderal
@@ -691,29 +859,64 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
-        ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
-        ;    Pop $Check_RemoveUserFiles
-        ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
         nsDialogs::Show
     FunctionEnd
 
-    Function un.PAGE_SELECT_GAMES_ES_Leave
+    Function un.PAGE_SELECT_GAMES_ES_STEAM_Leave
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+        ${NSD_GetText} $PathDialogue_SkyrimVR $Path_SkyrimVR
         ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
         ${NSD_GetText} $PathDialogue_EnderalSE $Path_EnderalSE
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_SkyrimVR $CheckState_SkyrimVR
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
         ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
     FunctionEnd
 
-    Function un.PAGE_SELECT_GAMES_FALLOUT
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(unPAGE_SELECT_GAMES_FALLOUT_SUBTITLE)
+    Function un.PAGE_SELECT_GAMES_ES_GOG
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_GOG_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        GetFunctionAddress $unFunction_Browse un.OnClick_Browse
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s) to uninstall Wrye Bash from:"
+            Pop $Label
+            IntOp $0 0 + 9
+
+        ${If} $Path_SkyrimSE_GOG != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&SkyrimSE"
+                Pop $Check_SkyrimSE_GOG
+                ${NSD_SetState} $Check_SkyrimSE_GOG $CheckState_SkyrimSE_GOG
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE_GOG"
+                Pop $PathDialogue_SkyrimSE_GOG
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_SkyrimSE_GOG
+                nsDialogs::OnClick $Browse_SkyrimSE_GOG $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        nsDialogs::Show
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_ES_GOG_Leave
+        ${NSD_GetText} $PathDialogue_SkyrimSE_GOG $Path_SkyrimSE_GOG
+        ${NSD_GetState} $Check_SkyrimSE_GOG $CheckState_SkyrimSE_GOG
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_FALLOUT_STEAM
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_STEAM_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
@@ -722,7 +925,7 @@
             Abort
             ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 16u "Please select which game(s) and version(s) to uninstall Wrye Flash from:"
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which game(s) to uninstall Wrye Bash from:"
             Pop $Label
             IntOp $0 0 + 17
 
@@ -765,19 +968,31 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
-        ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
-        ;    Pop $Check_RemoveUserFiles
-        ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
+        ${If} $Path_Fallout4VR != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Fallout4VR"
+                Pop $Check_Fallout4VR
+                ${NSD_SetState} $Check_Fallout4VR $CheckState_Fallout4VR
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout4VR"
+                Pop $PathDialogue_Fallout4VR
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Fallout4VR
+                nsDialogs::OnClick $Browse_Fallout4VR $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         nsDialogs::Show
     FunctionEnd
 
-    Function un.PAGE_SELECT_GAMES_FALLOUT_Leave
+    Function un.PAGE_SELECT_GAMES_FALLOUT_STEAM_Leave
         ${NSD_GetText} $PathDialogue_Fallout3 $Path_Fallout3
         ${NSD_GetText} $PathDialogue_FalloutNV $Path_FalloutNV
         ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
+        ${NSD_GetText} $PathDialogue_Fallout4VR $Path_Fallout4VR
         ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
         ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
+        ${NSD_GetState} $Check_Fallout4VR $CheckState_Fallout4VR
     FunctionEnd
 
     Function un.PAGE_SELECT_GAMES_EXTRA
@@ -820,9 +1035,6 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
-        ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
-        ;    Pop $Check_RemoveUserFiles
-        ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
         nsDialogs::Show
     FunctionEnd
 

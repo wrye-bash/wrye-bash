@@ -16,19 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """High level API for implementing wizard dialogs."""
+from __future__ import annotations
 
 import wx as _wx
 
 from .buttons import BackButton, CancelButton, NextButton, OkButton
-from .misc_components import HorizontalLine
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout
+from .misc_components import HorizontalLine
 from .top_level_windows import DialogWindow, PanelWin
-from ..exception import AbstractError
 
 class WizardDialog(DialogWindow):
     """A wizard dialog, which can show multiple WizardPage instances."""
@@ -64,7 +64,7 @@ class WizardDialog(DialogWindow):
             self._cancel_wizard()
         super(WizardDialog, self).on_closing(destroy)
 
-    def _refresh_buttons(self):
+    def _refresh_buttons(self, *, moving_back: bool):
         """Enables or disables and hides or unhides buttons based on whether or
         not there are pages to go to in either direction. You can override this
         if you want to enable or disable buttons under other conditions."""
@@ -72,9 +72,15 @@ class WizardDialog(DialogWindow):
         can_move_next = self._has_next_page()
         self._next_button.visible = can_move_next
         self._finish_button.visible = not can_move_next
-        # If the finish button is now visible, focus it
+        # Focus the most likely target - finish button if it's now visible,
+        # otherwise the Next or Back button, depending on if we're moving
+        # forwards or backwards
         if not can_move_next:
             self._finish_button.set_focus()
+        elif moving_back:
+            self._back_button.set_focus()
+        else:
+            self._next_button.set_focus()
 
     def _change_page(self, new_page):
         """Changes the page that the wizard is currently on to the specified
@@ -88,16 +94,18 @@ class WizardDialog(DialogWindow):
     def _move_next(self):
         """Moves to the next page in the wizard."""
         if self._has_next_page():
-            self._change_page(self._get_next_page())
-            self._refresh_buttons()
-            self.update_layout()
+            with self.pause_drawing():
+                self._change_page(self._get_next_page())
+                self._refresh_buttons(moving_back=False)
+                self.update_layout()
 
     def _move_prev(self):
         """Moves to the previous page in the wizard."""
         if self._has_prev_page():
-            self._change_page(self._get_prev_page())
-            self._refresh_buttons()
-            self.update_layout()
+            with self.pause_drawing():
+                self._change_page(self._get_prev_page())
+                self._refresh_buttons(moving_back=True)
+                self.update_layout()
 
     def _run_wizard(self):
         """Runs this wizard and block until it is done."""
@@ -115,29 +123,29 @@ class WizardDialog(DialogWindow):
     def _has_next_page(self):
         """Returns True if there is a next page that the wizard can be moved
         to."""
-        raise AbstractError(u'_has_next_page not implemented')
+        raise NotImplementedError
 
     def _has_prev_page(self):
         """Returns True if there is a previous page that the wizard can be
         moved to."""
-        raise AbstractError(u'_has_prev_page not implemented')
+        raise NotImplementedError
 
     def _get_next_page(self):
         """Returns a WizardPage to move to next when moving forwards. Returns
         None if _has_next_page would return False right now, i.e. there is no
         next page to move to."""
-        raise AbstractError(u'_get_next_page not implemented')
+        raise NotImplementedError
 
     def _get_prev_page(self):
         """Returns a WizardPage to move to next when moving backwards. Returns
         None if _has_prev_page would return False right now, i.e. there is no
         previous page to move to."""
-        raise AbstractError(u'_get_prev_page not implemented')
+        raise NotImplementedError
 
     def _cancel_wizard(self):
         """Called when the wizard is cancelled via the Cancel button or via the
         'X' window button."""
-        raise AbstractError(u'_cancel_wizard not implemented')
+        raise NotImplementedError
 
 class WizardPage(PanelWin):
     """A single wizard page."""

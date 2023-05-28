@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,37 +26,146 @@ Wrye Bash. This file handles the evaluation of conditions.
 Recommended reading before working on this file:
 https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
-__author__ = u'Infernio'
+__author__ = 'Infernio'
 
 import operator
 import os
 import re
 
-from . import bass, bush ##: drop the bush import!
-from .bolt import FName, Path, deprint, LooseVersion
+##: drop the bush import!
+from . import bass, bush
+from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
-from .exception import AbstractError, EvalError, FileError
+from .exception import EvalError, FileError
 ##: below is too tight coupling with Bash internals - pass those as
 # parameters along with modInfos currently imported locally
 from .load_order import cached_active_tuple, cached_is_active
 
-# Conditions
+# Internal helpers
+def _process_path(file_path: str) -> Path:
+    """Processes a file path, prepending the path to the Data folder and
+    resolving any '../' specifiers that it may have. Note that LOOT's file
+    paths always use slashes as separators, so this methods also converts those
+    into the platform-appropriate representation. The result is returned as a
+    bolt.Path instance.
+
+    :param file_path: The file path to process."""
+    # File paths are always relative to the Data folder, but may have ../ in
+    # front of them, which takes them n levels above the Data folder. They are
+    # also *always* delimited by slashes, *not* backslashes.
+    parents = 0
+    parents_done = False
+    child_components = []
+    for path_component in file_path.split('/'):
+        if not path_component: continue # skip empty components
+        if path_component == '..':
+            # Check if this is a misplaced parent specifier
+            if parents_done:
+                raise EvalError("Illegal file path: Unexpected '..' (may "
+                                'only be at the start of the path).',
+                                file_path)
+            parents += 1
+        else:
+            # Remember that we're done parsing any parent specifiers
+            parents_done = True
+            child_components.append(path_component)
+    relative_path = bass.dirs['mods']
+    # Move up by the number of requested parents, then join with the requested
+    # child components
+    for x in range(parents):
+        relative_path = relative_path.head
+    final_path = relative_path.join(*child_components)
+    # If moving up put us outside the game folder, the path is invalid
+    final_game_folder = bass.dirs['app'].cs
+    if not final_game_folder.endswith(os.sep):
+        final_game_folder += os.sep
+    if not final_path.cs.startswith(final_game_folder):
+        raise EvalError(
+            f"Illegal file path: May not specify paths that resolve to "
+            f"outside the game folder.\nResolved path is {final_path}, game "
+            f"folder is {final_game_folder}.", file_path)
+    return final_path
+
+def _read_binary_ver(binary_path):
+    """Reads version information from a binary at the specified path, returning
+    it as a string for LooseVersion."""
+    binary_ver = get_file_version(binary_path)
+    # Handle special case of (0, 0, 0, 0) - no version present
+    if binary_ver == (0, 0, 0, 0):
+        return '0'
+    return '.'.join(map(str, binary_ver))
+
+def _iter_dir(parent_dir):
+    """Takes a path and returns an iterator of the filenames (as strings) of
+    files in that folder. .ghost extensions will be chopped off."""
+    return (f.fn_body if f.fn_ext == '.ghost' else f
+            for f in parent_dir.ilist())
+
+# Misc API
+def is_regex(string_to_check: str) -> bool:
+    """Checks if the specified string is to be treated as a regex for purposes
+    of differentiating between file paths and regexes for the functions that
+    can take either one. This is done by checking if the string contains one of
+    several special characters - see
+    https://loot-api.readthedocs.io/en/latest/metadata/conditions.html#functions
+    for the details.
+
+    :param string_to_check: The string to check for regex characters."""
+    for regex_char in r':\*?|':
+        if regex_char in string_to_check:
+            return True
+    return False
+
+class Comparison(object):
+    """Implements a comparison operator. Takes a unicode string containing the
+    operator."""
+    __slots__ = ('cmp_operator',)
+
+    # Maps each operator string to an appropriate implementation
+    _cmp_functions = {
+        '>': operator.gt,
+        '<': operator.lt,
+        '>=': operator.ge,
+        '<=': operator.le,
+        '==': operator.eq,
+        '!=': operator.ne,
+    }
+
+    def __init__(self, cmp_operator: str):
+        self.cmp_operator = cmp_operator
+
+    def compare(self, first_val, second_val):
+        """Executes the comparison on the two specified values.
+
+        :param first_val: The first value to compare.
+        :param second_val: The second value to compare."""
+        # Ordered by frequency - for performance
+        try:
+            return self._cmp_functions[self.cmp_operator](
+                first_val, second_val)
+        except KeyError:
+            raise EvalError(f"Invalid comparison operator "
+                            f"'{self.cmp_operator}', expected one of "
+                            f"{list(self._cmp_functions)}")
+
+    def __repr__(self):
+        return f'{self.cmp_operator}'
+
+# Conditions API
 class _ACondition(object):
     """Abstract base class for all conditions."""
     __slots__ = ()
 
-    def evaluate(self):
-        # type: () -> bool
+    def evaluate(self) -> bool:
         """Evaluates this condition, resolving it to a boolean value."""
-        raise AbstractError()
+        raise NotImplementedError
 
 class ConditionAnd(_ACondition):
     """Combines two conditions, evaluates to True iff both conditions evaluate
     to True."""
-    __slots__ = (u'first_cond', u'second_cond')
+    __slots__ = ('first_cond', 'second_cond')
 
-    def __init__(self, first_cond, second_cond):
-        # type: (_ACondition, _ACondition) -> None
+    def __init__(self, first_cond: _ACondition, second_cond: _ACondition):
         self.first_cond = first_cond
         self.second_cond = second_cond
 
@@ -64,7 +173,7 @@ class ConditionAnd(_ACondition):
         return self.first_cond.evaluate() and self.second_cond.evaluate()
 
     def __repr__(self):
-        return u'(%r and %r)' % (self.first_cond, self.second_cond)
+        return f'({self.first_cond!r} and {self.second_cond!r})'
 
 class ConditionFunc(_ACondition):
     """Calls a function of the specified name with the specified arguments.
@@ -77,10 +186,9 @@ class ConditionFunc(_ACondition):
         - many_active
         - product_version
         - version"""
-    __slots__ = (u'func_name', u'func_args')
+    __slots__ = ('func_name', 'func_args')
 
-    def __init__(self, func_name, func_args):
-        # type: (str, list) -> None
+    def __init__(self, func_name: str, func_args: list):
         self.func_name = func_name
         self.func_args = func_args
 
@@ -97,42 +205,40 @@ class ConditionFunc(_ACondition):
         except Exception:
             # Reraise because we can gracefully handle this by skipping the
             # tags for this plugin
-            deprint(u'Error while evaluating function', traceback=True)
-            raise EvalError(u'Error while evaluating function')
+            deprint('Error while evaluating function', traceback=True)
+            raise EvalError('Error while evaluating function')
 
     def __repr__(self):
         fmt_args = []
         for a in self.func_args:
             if isinstance(a, str): # String
-                fmt_a = u'"%s"' % a
+                fmt_a = f'"{a}"'
             elif isinstance(a, int): # Checksum
-                fmt_a = u'%X' % a
+                fmt_a = f'{a:08X}'
             else: # Comparison
-                fmt_a = u'%r' % a
+                fmt_a = f'{a!r}'
             fmt_args.append(fmt_a)
         return f'{self.func_name}({u", ".join(fmt_args)})'
 
 class ConditionNot(_ACondition):
     """Evaluates to True iff the specified condition evaluates to False."""
-    __slots__ = (u'target_cond',)
+    __slots__ = ('target_cond',)
 
-    def __init__(self, target_cond):
-        # type: (_ACondition) -> None
+    def __init__(self, target_cond: _ACondition):
         self.target_cond = target_cond
 
     def evaluate(self):
         return not self.target_cond.evaluate()
 
     def __repr__(self):
-        return u'(not %r)' % self.target_cond
+        return f'(not {self.target_cond!r})'
 
 class ConditionOr(_ACondition):
     """Combines two conditions, evaluates to True iff at least one of the two
     evaluates to True."""
-    __slots__ = (u'first_cond', u'second_cond')
+    __slots__ = ('first_cond', 'second_cond')
 
-    def __init__(self, first_cond, second_cond):
-        # type: (_ACondition, _ACondition) -> None
+    def __init__(self, first_cond: _ACondition, second_cond: _ACondition):
         self.first_cond = first_cond
         self.second_cond = second_cond
 
@@ -140,11 +246,10 @@ class ConditionOr(_ACondition):
         return self.first_cond.evaluate() or self.second_cond.evaluate()
 
     def __repr__(self):
-        return u'(%r or %r)' % (self.first_cond, self.second_cond)
+        return f'({self.first_cond!r} or {self.second_cond!r})'
 
 # Functions
-def _fn_active(path_or_regex):
-    # type: (str) -> bool
+def _fn_active(path_or_regex: str) -> bool:
     """Takes either a file path or a regex. Returns True iff at least one
     active plugin matches the specified path or regex.
 
@@ -157,8 +262,7 @@ def _fn_active(path_or_regex):
     else:
         return cached_is_active(FName(path_or_regex))
 
-def _fn_checksum(file_path, expected_crc):
-    # type: (str, int) -> bool
+def _fn_checksum(file_path: str, expected_crc: int) -> bool:
     """Takes a file path. Returns True if the file that the path resolves to
     exists and its CRC32 matches the specified expected CRC.
 
@@ -169,8 +273,7 @@ def _fn_checksum(file_path, expected_crc):
     except OSError:
         return False # Doesn't exist or is a directory
 
-def _fn_file(path_or_regex):
-    # type: (str) -> bool
+def _fn_file(path_or_regex: str) -> bool:
     """Takes either a file path or a regex. Returns True iff at least one
     file exists that matches the specified path or regex.
 
@@ -180,7 +283,7 @@ def _fn_file(path_or_regex):
         # Regex means we have to look at each file in the parent directory
         # Note that only the last part of the path may be a regex, so no need
         # to check every step of the way
-        final_sep = path_or_regex.rfind(u'/')
+        final_sep = path_or_regex.rfind('/')
         # Note that we don't have to error check here due to the +1 offset
         matches_regex = re.compile(path_or_regex[final_sep + 1:]).match
         parent_dir = _process_path(path_or_regex[:final_sep + 1])
@@ -191,24 +294,23 @@ def _fn_file(path_or_regex):
     else:
         return _process_path(path_or_regex).exists()
 
-def _fn_is_master(file_name):
-    # type: (str) -> bool
+def _fn_is_master(file_name: str) -> bool:
     """Takes a file name. Returns True iff a plugin with the specified name
     exists and is treated as a master by the currently managed game.
 
     :param file_name: The file path to check."""
     from .bosh import modInfos
+
     # Need to check if it's on disk first, otherwise modInfos[x] errors
     return file_name in modInfos and modInfos[file_name].in_master_block()
 
-def _fn_many(path_regex):
-    # type: (str) -> bool
+def _fn_many(path_regex: str) -> bool:
     """Takes a regex. Returns True iff more than 1 file matching the specified
     regex exists.
 
     :param path_regex: The regex to check."""
     # Same idea as in _fn_file
-    final_sep = path_regex.rfind(u'/')
+    final_sep = path_regex.rfind('/')
     matches_regex = re.compile(path_regex[final_sep + 1:]).match
     parent_dir = _process_path(path_regex[:final_sep + 1])
     # Check if we have more than one matching file
@@ -220,8 +322,7 @@ def _fn_many(path_regex):
                 return True
     return False
 
-def _fn_many_active(path_regex):
-    # type: (str) -> bool
+def _fn_many_active(path_regex: str) -> bool:
     """Takes a regex. Returns True iff more than 1 active plugin matches the
     specified regex.
 
@@ -238,8 +339,8 @@ def _fn_many_active(path_regex):
 
 ##: Maybe tweak the implementation to match LOOT's by adding some params to
 # env.get_file_version?
-def _fn_product_version(file_path, expected_ver, comparison):
-    # type: (str, str, Comparison) -> bool
+def _fn_product_version(file_path: str, expected_ver: str,
+        comparison: Comparison) -> bool:
     """Takes a file path, an expected version and a comparison operator.
     Returns True iff the file path resolves to an executable (.exe or .dll) and
     its version compares successfully against the specified expected version,
@@ -282,8 +383,8 @@ def _fn_readable(file_path):
     except OSError:
         return False
 
-def _fn_version(file_path, expected_ver, comparison):
-    # type: (str, str, Comparison) -> bool
+def _fn_version(file_path: str, expected_ver: str,
+        comparison: Comparison) -> bool:
     """Behaves like product_version, but extends its behavior to also allow
     plugin version checks. If the plugin's description contains a
     'Version: ...' section, then the version specified by that section is
@@ -323,107 +424,3 @@ _function_mapping = {
     'readable':        _fn_readable,
     'version':         _fn_version,
 }
-
-# Misc
-def is_regex(string_to_check):
-    # type: (str) -> bool
-    """Checks if the specified string is to be treated as a regex for purposes
-    of differentiating between file paths and regexes for the functions that
-    can take either one. This is done by checking if the string contains one of
-    several special characters - see
-    https://loot-api.readthedocs.io/en/latest/metadata/conditions.html#functions
-    for the details.
-
-    :param string_to_check: The string to check for regex characters."""
-    for regex_char in r':\*?|':
-        if regex_char in string_to_check:
-            return True
-    return False
-
-def _process_path(file_path):
-    # type: (str) -> Path
-    """Processes a file path, prepending the path to the Data folder and
-    resolving any '../' specifiers that it may have. Note that LOOT's file
-    paths always use slashes as separators, so this methods also converts those
-    into the platform-appropriate representation. The result is returned as a
-    bolt.Path instance.
-
-    :param file_path: The file path to process."""
-    # File paths are always relative to the Data folder, but may have ../ in
-    # front of them, which takes them n levels above the Data folder. They are
-    # also *always* delimited by slashes, *not* backslashes.
-    parents = 0
-    parents_done = False
-    child_components = []
-    for path_component in file_path.split(u'/'):
-        if not path_component: continue # skip empty components
-        if path_component == u'..':
-            # Check if this is a misplaced parent specifier
-            if parents_done:
-                raise EvalError(u"Illegal file path: Unexpected '..' (may "
-                                u'only be at the start of the path).',
-                                file_path)
-            parents += 1
-        else:
-            # Remember that we're done parsing any parent specifiers
-            parents_done = True
-            child_components.append(path_component)
-    relative_path = bass.dirs[u'mods']
-    # Move up by the number of requested parents
-    for x in range(parents):
-        relative_path = relative_path.head
-    # If that put us outside the game folder, the path is invalid
-    if not os.path.realpath(relative_path).startswith(bass.dirs[u'app'].s):
-        raise EvalError(u'Illegal file path: May not specify paths that '
-                        u'resolve to outside the game folder.', file_path)
-    return relative_path.join(*child_components)
-
-def _read_binary_ver(binary_path):
-    """Reads version information from a binary at the specified path, returning
-    it as a string for LooseVersion."""
-    binary_ver = get_file_version(binary_path)
-    # Handle special case of (0, 0, 0, 0) - no version present
-    if binary_ver == (0, 0, 0, 0):
-        return '0'
-    return '.'.join(map(str, binary_ver))
-
-def _iter_dir(parent_dir):
-    """Takes a path and returns an iterator of the filenames (as strings) of
-    files in that folder. .ghost extensions will be chopped off."""
-    return (f.fn_body if f.fn_ext == '.ghost' else f for f in parent_dir.ilist())
-
-class Comparison(object):
-    """Implements a comparison operator. Takes a unicode string containing the
-    operator."""
-    __slots__ = (u'cmp_operator',)
-
-    # Maps each operator string to an appropriate implementation
-    _cmp_functions = {
-        u'>': operator.gt,
-        u'<': operator.lt,
-        u'>=': operator.ge,
-        u'<=': operator.le,
-        u'==': operator.eq,
-        u'!=': operator.ne,
-    }
-
-    def __init__(self, cmp_operator):
-        # type: (str) -> None
-        self.cmp_operator = cmp_operator
-
-    def compare(self, first_val, second_val):
-        """Executes the comparison on the two specified values.
-
-        :param first_val: The first value to compare.
-        :param second_val: The second value to compare."""
-        # Ordered by frequency - for performance
-        try:
-            return self._cmp_functions[self.cmp_operator](
-                first_val, second_val)
-        except KeyError:
-            raise EvalError(u"Invalid comparison operator '%s', expected one "
-                            u"of [%s]" % (self.cmp_operator, u', '.join([
-                u'%s' % x for x in self._cmp_functions])))
-
-    def __repr__(self):
-        return u'%s' % self.cmp_operator

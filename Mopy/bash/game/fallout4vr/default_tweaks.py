@@ -16,32 +16,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
-
 from ..fallout4.default_tweaks import default_tweaks
 
 # Add new FO4VR-specific tweaks
 default_tweaks.update({
-    u'VR Render Size Multiplier, 0.8 [Fallout4].ini': OrderedDict(
-        [(u'VRDisplay', OrderedDict(
-            [(u'fRenderTargetSizeMultiplier', u'0.8')]))]),
-    u'VR Render Size Multiplier, 1.0 [Fallout4].ini': OrderedDict(
-        [(u'VRDisplay', OrderedDict(
-            [(u'fRenderTargetSizeMultiplier', u'1.0')]))]),
-    u'VR Render Size Multiplier, 1.2 [Fallout4].ini': OrderedDict(
-        [(u'VRDisplay', OrderedDict(
-            [(u'fRenderTargetSizeMultiplier', u'1.2')]))]),
-    u'VR Render Size Multiplier, 1.4 [Fallout4].ini': OrderedDict(
-        [(u'VRDisplay', OrderedDict(
-            [(u'fRenderTargetSizeMultiplier', u'1.4')]))]),
-    u'VR Scale, 70 [Fallout4VrCustom].ini': OrderedDict(
-        [(u'VR', OrderedDict([(u'fVrScale', u'70')]))]),
-    u'VR Scale, 75 [Fallout4VrCustom].ini': OrderedDict(
-        [(u'VR', OrderedDict([(u'fVrScale', u'75')]))]),
-    u'VR Scale, 80 [Fallout4VrCustom].ini': OrderedDict(
-        [(u'VR', OrderedDict([(u'fVrScale', u'80')]))]),
+    'VR Render Size Multiplier, 0.8 [Fallout4].ini': {
+        'VRDisplay': {'fRenderTargetSizeMultiplier': '0.8'}},
+    'VR Render Size Multiplier, 1.0 [Fallout4].ini': {
+        'VRDisplay': {'fRenderTargetSizeMultiplier': '1.0'}},
+    'VR Render Size Multiplier, 1.2 [Fallout4].ini': {
+        'VRDisplay': {'fRenderTargetSizeMultiplier': '1.2'}},
+    'VR Render Size Multiplier, 1.4 [Fallout4].ini': {
+        'VRDisplay': {'fRenderTargetSizeMultiplier': '1.4'}},
+    'VR Scale, 70 [Fallout4VrCustom].ini': {'VR': {'fVrScale': '70'}},
+    'VR Scale, 75 [Fallout4VrCustom].ini': {'VR': {'fVrScale': '75'}},
+    'VR Scale, 80 [Fallout4VrCustom].ini': {'VR': {'fVrScale': '80'}},
 })

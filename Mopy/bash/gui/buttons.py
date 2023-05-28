@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module defines buttons, offering several predefined templates (e.g. OK
 buttons, Cancel buttons, Save As... buttons, etc.)."""
+from __future__ import annotations
 
 __author__ = u'nycz, Infernio'
 
@@ -45,8 +46,8 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     _default_label = u''
 
-    def __init__(self, parent, btn_label=u'', btn_tooltip=u'', default=False,
-                 exact_fit=False, no_border=False):
+    def __init__(self, parent, btn_label='', btn_tooltip='', default=False,
+            exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -68,8 +69,8 @@ class Button(_AComponent):
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        super(Button, self).__init__(parent, self.__class__._id,
-                                     label=btn_label, style=btn_style)
+        super().__init__(parent, self.__class__._id, style=btn_style,
+            label=self._escape(btn_label))
         if default:
             self._native_widget.SetDefault()
         if btn_tooltip:
@@ -77,6 +78,21 @@ class Button(_AComponent):
         # Events
         self.on_clicked = self._evt_handler(_wx.EVT_BUTTON)
         self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
+
+    @property
+    def button_label(self) -> str:
+        """Returns the label on this button as a string.
+
+        :return: The label on this button."""
+        return self._unescape(self._native_widget.GetLabel())
+
+    @button_label.setter
+    def button_label(self, new_btn_label):
+        """Changes the label on this button to the specified string.
+
+        :param new_btn_label: The new label to use."""
+        if self.button_label != new_btn_label:
+            self._native_widget.SetLabel(new_btn_label)
 
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the
@@ -181,29 +197,24 @@ class NextButton(Button):
 class ImageButton(Button):
     """A button that display an image alongside its label.
 
-    See Button for documentation on button events. Note: this implementation
-    locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
-    """
-    def __init__(self, parent, image_id=None, **kwargs):
+    See Button for documentation on button events."""
+    def __init__(self, parent, wx_bitmap=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.
 
-        :param image_id: The internal id for the image shown on this button."""
+        :param wx_bitmap: The bitmap shown on this button."""
         super(ImageButton, self).__init__(parent, **kwargs)
-        if isinstance(image_id, str):
-            self.image = bass.wx_bitmap[image_id]
-        elif isinstance(image_id, _wx.Bitmap):
-            self.image = image_id
+        self.image = wx_bitmap
 
     @property
-    def image(self): # type: () -> _wx.Bitmap
+    def image(self) -> _wx.Bitmap:
         """Returns the image that is shown on this button.
 
         :return: The image on this button."""
         return self._native_widget.GetBitmap()
 
     @image.setter
-    def image(self, new_image): # type: (_wx.Bitmap) -> None
+    def image(self, new_image: _wx.Bitmap):
         """Changes the image that is shown on this button to the specified
         image.
 
@@ -212,69 +223,38 @@ class ImageButton(Button):
         # Changing bitmap may change the 'best size', so resize it
         self._native_widget.SetInitialSize()
 
-class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
-    """Base class for ImageButtons that come with a standard wx-supplied
-    image."""
-    _wx_icon_key = 'OVERRIDE'
+class PureImageButton(ImageButton):
+    """An image that acts like a button. Has no text, but does have a border.
 
-    def __init__(self, parent, **kwargs):
-        super(_StdImageButton, self).__init__(parent, **kwargs)
-        ##: maybe rescale to self._native_widget.FromDIP(self._dip_size)) ?
-        self.image = bass.wx_bitmap[self._wx_icon_key]
+    See Button for documentation on button events.
 
-class BackwardButton(_StdImageButton):
-    """An image button with no text that displays an arrow pointing to the
-    right. Used for navigation, e.g. in a browser.
-
-    See Button for documentation on button events."""
-    _wx_icon_key = 'ART_GO_BACK'
-
-    def __init__(self, parent):
-        super(BackwardButton, self).__init__(parent, exact_fit=True,
-                                             btn_tooltip=_(u'Go Back'))
-
-class ForwardButton(_StdImageButton):
-    """An image button with no text that displays an arrow pointing to the
-    right. Used for navigation, e.g. in a browser.
-
-    See Button for documentation on button events."""
-    _wx_icon_key = 'ART_GO_FORWARD'
-
-    def __init__(self, parent):
-        super(ForwardButton, self).__init__(parent, exact_fit=True,
-                                            btn_tooltip=_(u'Go Forwards'))
-
-class QuitButton(_StdImageButton, CancelButton):
-    """Similar to CancelButton, also has a standard image shown on it."""
-    _default_label =_(u'Quit')
-    _wx_icon_key = 'ART_ERROR'
-
-class ReloadButton(ImageButton):
-    """An image button with no text that displays two arrows in a circle. Used
-    for reloading documents, websites, etc.
-
-    See Button for documentation on button events."""
-    def __init__(self, parent, reload_icon):
-        """Creates a new ReloadButton with the specified parent.
-
-        :param parent: The object that this button belongs to. May be a wx
-                       object or a component."""
-        super(ReloadButton, self).__init__(parent, reload_icon,
-                                           btn_tooltip=_(u'Reload'),
-                                           exact_fit=True)
-
-class ClickableImage(ImageButton):
-    """An image that acts like a button. Has no text and no borders.
-
-    See Button for documentation on button events."""
-    def __init__(self, parent, image_id, btn_tooltip=None, no_border=True):
+    See also ClickableImage."""
+    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param image_id: The image id to be shown on this button.
+        :param wx_bitmap: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
-                            button."""
-        super(ClickableImage, self).__init__(
-            parent, image_id, btn_tooltip=btn_tooltip, exact_fit=True,
-            no_border=no_border)
+            button. Required for accessibility purposes - without it users
+            would have to guess based on the image."""
+        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
+            exact_fit=True)
+
+class ClickableImage(ImageButton):
+    """An image that acts like a button. Has no text and no borders.
+
+    See Button for documentation on button events.
+
+    See also PureImageButton."""
+    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
+        """Creates a new ClickableImage with the specified properties.
+
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component.
+        :param wx_bitmap: The image id to be shown on this button.
+        :param btn_tooltip: A tooltip to show when the user hovers over this
+            button. Required for accessibility purposes - without it users
+            would have to guess based on the image."""
+        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
+            exact_fit=True, no_border=True)

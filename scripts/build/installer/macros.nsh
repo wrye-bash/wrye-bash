@@ -4,10 +4,8 @@
 
 ; Prevent redefining the macro if included multiple times
 !ifmacrondef InstallBashFiles
-    !macro InstallBashFiles GameName GameTemplate GameDir RegPath
+    !macro InstallBashFiles GameDir RegPath
         ; Parameters:
-        ;  GameName - name of the game files are being installed for.  This is used for registry entries
-        ;  GameTemplate - name of the game that the template files are coming from (for example, Nehrim uses Oblivion files for templates)
         ;  GameDir - base directory for the game (one folder up from the Data directory)
         ;  RegPath - Name of the registry string that will hold the path installing to
 
@@ -482,12 +480,7 @@
         Delete "${Path}\Mopy\bash\compiled\7zCon.sfx"
         Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.txt"
         Delete "${Path}\Mopy\Bash Patches\Skyrim\taglist.txt"
-        ${If} ${AtLeastWinXP}
-            # Running XP or later, w9xpopen is only for 95/98/ME
-            # Bash no longer ships with w9xpopen, but it may be left
-            # over from a previous install
-            Delete "${Path}\Mopy\w9xpopen.exe"
-        ${EndIf}
+        Delete "${Path}\Mopy\w9xpopen.exe"
         ; As of 307, the following are obsolete:
         Delete "${Path}\Mopy\bash\compiled\loot32.dll"
         Delete "${Path}\Mopy\bash\images\tools\gimpshop16.png"
@@ -658,6 +651,150 @@
         ; As of 310, lzma.exe and pngcrush.exe are gone
         Delete "${Path}\Mopy\bash\compiled\lzma.exe"
         Delete "${Path}\Mopy\bash\compiled\pngcrush.exe"
+        ; As of 311, some image files got replaced with SVGs
+        Delete "${Path}\Mopy\bash\images\arrow_down.png"
+        Delete "${Path}\Mopy\bash\images\arrow_up.png"
+        Delete "${Path}\Mopy\bash\images\calendar*.png"
+        Delete "${Path}\Mopy\bash\images\checkmark_*.png"
+        Delete "${Path}\Mopy\bash\images\docbrowser*.png"
+        Delete "${Path}\Mopy\bash\images\error_cross_*.png"
+        Delete "${Path}\Mopy\bash\images\help*.png"
+        Delete "${Path}\Mopy\bash\images\icon_licenses.txt"
+        Delete "${Path}\Mopy\bash\images\loot*.png"
+        Delete "${Path}\Mopy\bash\images\modchecker*.png"
+        Delete "${Path}\Mopy\bash\images\red_x.png"
+        Delete "${Path}\Mopy\bash\images\reload*.png"
+        Delete "${Path}\Mopy\bash\images\settingsbutton*.png"
+        Delete "${Path}\Mopy\bash\images\steam*.png"
+        ; As of 311, some unused image files got deleted
+        Delete "${Path}\Mopy\bash\images\brick*.png"
+        Delete "${Path}\Mopy\bash\images\bug*.png"
+        Delete "${Path}\Mopy\bash\images\database_connect*.png"
+        Delete "${Path}\Mopy\bash\images\devsettings32.png"
+        Delete "${Path}\Mopy\bash\images\doc_on.png"
+        Delete "${Path}\Mopy\bash\images\dos.png"
+        Delete "${Path}\Mopy\bash\images\errormarker*.png"
+        Delete "${Path}\Mopy\bash\images\exclamation.png"
+        Delete "${Path}\Mopy\bash\images\group_gear*.png"
+        Delete "${Path}\Mopy\bash\images\mcowavi32.png"
+        Delete "${Path}\Mopy\bash\images\nexusmodmanager*.png"
+        Delete "${Path}\Mopy\bash\images\page_find*.png"
+        Delete "${Path}\Mopy\bash\images\pickle*.png"
+        Delete "${Path}\Mopy\bash\images\prompt*.png"
+        Delete "${Path}\Mopy\bash\images\save_off.png"
+        Delete "${Path}\Mopy\bash\images\save_on.png"
+        Delete "${Path}\Mopy\bash\images\scintilla*.png"
+        Delete "${Path}\Mopy\bash\images\scrolltools*.png"
+        Delete "${Path}\Mopy\bash\images\settings16.png"
+        Delete "${Path}\Mopy\bash\images\table_error*.png"
+        Delete "${Path}\Mopy\bash\images\wrye_monkey_*.png"
+        Delete "${Path}\Mopy\bash\images\zoom_on.png"
+        ; As of 311, some image files got moved and reorganized
+        Delete "${Path}\Mopy\bash\images\bash_32.ico"
+        Delete "${Path}\Mopy\bash\images\bash_32-2.ico"
+        Delete "${Path}\Mopy\bash\images\bash_32_2.png"
+        Delete "${Path}\Mopy\bash\images\bash_blue.svg-2.ico"
+        Delete "${Path}\Mopy\bash\images\bash_head.png"
+        Delete "${Path}\Mopy\bash\images\boss*.png"
+        Delete "${Path}\Mopy\bash\images\creationkit*.png"
+        Delete "${Path}\Mopy\bash\images\enderal_*.png"
+        Delete "${Path}\Mopy\bash\images\enderalse_*.png"
+        Delete "${Path}\Mopy\bash\images\fallout3_*.png"
+        Delete "${Path}\Mopy\bash\images\fallout4_*.png"
+        Delete "${Path}\Mopy\bash\images\fallout4vr_*.png"
+        Delete "${Path}\Mopy\bash\images\falloutnv_*.png"
+        Delete "${Path}\Mopy\bash\images\geck*.png"
+        Delete "${Path}\Mopy\bash\images\Flag_of_*.png"
+        Delete "${Path}\Mopy\bash\images\morrowind_*.png"
+        Delete "${Path}\Mopy\bash\images\nehrim_*.png"
+        Delete "${Path}\Mopy\bash\images\oblivion_*.png"
+        Delete "${Path}\Mopy\bash\images\obmm*.png"
+        Delete "${Path}\Mopy\bash\images\skyrim_*.png"
+        Delete "${Path}\Mopy\bash\images\skyrimse_*.png"
+        Delete "${Path}\Mopy\bash\images\skyrimvr_*.png"
+        Delete "${Path}\Mopy\bash\images\tescs*.png"
+        ; As of 311, some (mostly unused) readme files got removed and some
+        ; others got renamed
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-3.png"
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-4.png"
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-5-build_progress.png"
+        Delete "${Path}\Mopy\bash\images\readme\bashed-patch-dialogue-6-build_report.png"
+        Delete "${Path}\Mopy\bash\images\readme\cancel.png"
+        Delete "${Path}\Mopy\bash\images\readme\doc-browser-set-doc-dialogue.png"
+        Delete "${Path}\Mopy\bash\images\readme\error.png"
+        Delete "${Path}\Mopy\bash\images\readme\finish.png"
+        Delete "${Path}\Mopy\bash\images\readme\ini-edits-rclick-ini-menu.png"
+        Delete "${Path}\Mopy\bash\images\readme\installers-rclick-installer-menu-4-list-packages.png"
+        Delete "${Path}\Mopy\bash\images\readme\mod-checker-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\mod-checker-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\mods-feat-add-tags.png"
+        Delete "${Path}\Mopy\bash\images\readme\mods-feat-change-mtime.png"
+        Delete "${Path}\Mopy\bash\images\readme\mods-feat-del-tags.png"
+        Delete "${Path}\Mopy\bash\images\readme\mods-rclick-file-header-menu-7-list-mods.png"
+        Delete "${Path}\Mopy\bash\images\readme\mods-rclick-mod-menu-8-list-patch-config.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-3.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-4.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-5.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-1-rclick-header-menu-6.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-3.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-4.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-5.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-6.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-2-rclick-save-7.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-click-masters-dialogue.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-delete-spells.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-enchantment-uses.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-rename-player.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-repair-abomb.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-reweigh-potions.png"
+        Delete "${Path}\Mopy\bash\images\readme\saves-update-npc-levels.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-3-rclick-screenshot-menu-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-3-rclick-screenshot-menu-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-3-rclick-screenshot-menu-3.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-4-rclick-header-menu-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-4-rclick-header-menu-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-4-rclick-header-menu-3.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-4-rclick-header-menu-4.png"
+        Delete "${Path}\Mopy\bash\images\readme\screenshots-4-rclick-header-menu-5.png"
+        Delete "${Path}\Mopy\bash\images\readme\selectmany.png"
+        Delete "${Path}\Mopy\bash\images\readme\selectone.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-1-hover-helpfile.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-2-hover-settings.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-3-hover-modchecker.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-4-hover-docbrowser.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-5-hover-creationkit.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-6-hover-launchboss.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-7-hover-launchgame.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-8-hover-launchgameviaobse.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-9-hover-autoquit.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-10-hover-obse-toggle.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-11-rclick-hide-gamelauncher.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-12-rclick-hide-autoquit.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-12-rclick-hide-boss.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-13-rclick-hide-obse-toggle.png"
+        Delete "${Path}\Mopy\bash\images\readme\versions.png"
+        Delete "${Path}\Mopy\bash\images\readme\wizard.png"
+        ; As of 311, the flag images have been replaced with SVGs in a 'flags'
+        ; folder
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_Brazil_32.png"
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_China_32.png"
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_Germany_32.png"
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_Italy_32.png"
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_Japan_32.png"
+        Delete "${Path}\Mopy\bash\images\readme\Flag_of_Russia_32.png"
+        ; This isn't European Portuguese, it's Brazilian Portuguese
+        ; TODO Once/if we get a separate European Portuguese translation, drop
+        ; this (duh)
+        Delete "${Path}\Mopy\l10n\pt_PT.po"
+        ; As of 311, Auto-Quit uses a checkmark instead of an X
+        Delete "${Path}\Mopy\bash\images\checkbox_red_x_24.png"
+        Delete "${Path}\Mopy\bash\images\checkbox_red_x_32.png"
     !macroend
 
 
@@ -698,9 +835,24 @@
             ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
         ${EndIf}
 
+        ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\Wrye Bash" "Fallout4VR Path"
+        ${If} $Path_Fallout4VR == $Empty
+            ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4VR Path"
+        ${EndIf}
+
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
+        ${If} $Path_SkyrimSE_GOG == $Empty
+            ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\Wrye Bash" "SkyrimVR Path"
+        ${If} $Path_SkyrimVR == $Empty
+            ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimVR Path"
         ${EndIf}
 
         ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Wrye Bash" "Fallout3 Path"
@@ -756,9 +908,24 @@
             ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
         ${EndIf}
 
+        ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\Wrye Bash" "Fallout4VR Path"
+        ${If} $Path_Fallout4VR == $Empty
+            ReadRegStr $Path_Fallout4VR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4VR Path"
+        ${EndIf}
+
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\Wrye Bash" "SkyrimSE_GOG Path"
+        ${If} $Path_SkyrimSE_GOG == $Empty
+            ReadRegStr $Path_SkyrimSE_GOG HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE_GOG Path"
+        ${EndIf}
+
+        ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\Wrye Bash" "SkyrimVR Path"
+        ${If} $Path_SkyrimVR == $Empty
+            ReadRegStr $Path_SkyrimVR HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimVR Path"
         ${EndIf}
 
         ReadRegStr $Path_Fallout3 HKLM "Software\Wrye Bash" "Fallout3 Path"

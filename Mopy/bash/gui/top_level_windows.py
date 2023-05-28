@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Top level windows in wx is Frame and Dialog. I added some more like Panels
 and the wx.adv (wizards) stuff."""
+from __future__ import annotations
+
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, Color, scaled
+from .base_components import Color, _AComponent, scaled
 from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
@@ -47,7 +49,7 @@ class _TopLevelWin(_AComponent):
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
-        super(_TopLevelWin, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         self._set_pos_size(kwargs, sizes_dict)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
@@ -157,22 +159,22 @@ class WindowFrame(_TopLevelWin):
 
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
-    title = u'OVERRIDE'
+    title: str
     _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
-                 sizes_dict=None, caption=False, size_key=None, pos_key=None,
-                 style=0, **kwargs):
+            sizes_dict=None, caption=False, size_key=None, pos_key=None,
+            stay_over_parent=False, style=0, **kwargs):
         self._size_key = size_key or self.__class__.__name__
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
+        if stay_over_parent: style |= _wx.FRAME_FLOAT_ON_PARENT
         if sizes_dict is not None: style |= _wx.RESIZE_BORDER
         else: sizes_dict = {}
         if caption: style |= _wx.CAPTION
-        super(DialogWindow, self).__init__(parent, sizes_dict, icon_bundle,
-                                           title=self.title, style=style,
-                                           **kwargs)
+        super().__init__(parent, sizes_dict, icon_bundle, title=self.title,
+                         style=style, **kwargs)
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
         self._on_size_changed.subscribe(self.save_size) # save dialog size
 
@@ -195,9 +197,10 @@ class DialogWindow(_TopLevelWin):
         with cls(*args, **kwargs) as dialog:
             return dialog.show_modal()
 
-    def show_modal(self):
+    def show_modal(self) -> bool:
         """Begins a new modal dialog and returns a boolean indicating if the
-        exit code was fine.
+        exit code was fine. Note that some subclasses override this to return
+        more than just that boolean.
 
         :return: True if the dialog was closed with a good exit code (e.g. by
             clicking an 'OK' or 'Yes' button), False otherwise."""
@@ -213,19 +216,28 @@ class DialogWindow(_TopLevelWin):
         clicking the Cancel button."""
         self._native_widget.EndModal(_wx.ID_CANCEL)
 
-class StartupDialog(DialogWindow):
+class StartupDialogWindow(DialogWindow):
     """Dialog shown during early boot, generally due to errors."""
     def __init__(self, *args, **kwargs):
         sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
-        super(StartupDialog, self).__init__(*args, style=sd_style, **kwargs)
+        super().__init__(*args, style=sd_style, **kwargs)
+
+class MaybeModalDialogWindow(DialogWindow):
+    """Dialog that may be modal or modeless."""
+    def show_modeless(self):
+        """Open this dialog in a modeless fashion. It will behave similarly to
+        a WindowFrame."""
+        self._native_widget.Show()
+        self._native_widget.Raise()
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
     _native_widget: _wx.Panel
 
-    def __init__(self, parent, no_border=True):
-        super(PanelWin, self).__init__(
-            parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
+    def __init__(self, parent, no_border=True, wants_chars=False):
+        super().__init__(parent,
+            style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER) | (
+                        wants_chars and _wx.WANTS_CHARS))
 
 class Splitter(_AComponent):
     _native_widget: _wx.SplitterWindow

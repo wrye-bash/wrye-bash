@@ -16,20 +16,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
-import collections
 import io
 import lzma
 import re
 import subprocess
-from .. import env, bolt, bass, archives
-from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
-    pack_byte, pack_int_signed, popen_common
+
+from .. import archives, bass, bolt, env
+from ..bolt import Path, decoder, encode, pack_byte, pack_byte_signed, \
+    pack_int_signed, popen_common, startupinfo, unpack_byte, \
+    unpack_int64_signed, unpack_int_signed, unpack_short
 from ..exception import StateError
 
 def _readNetString(open_file):
@@ -41,7 +41,7 @@ def _readNetString(open_file):
         strLen = unpack_short(open_file)
         strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
         if strLen > 0x7FFF:
-            raise NotImplementedError(u'String too long to convert.')
+            raise NotImplementedError('String too long to convert.')
     return open_file.read(strLen)
 
 def _writeNetString(open_file, string):
@@ -50,7 +50,7 @@ def _writeNetString(open_file, string):
     if strLen < 128:
         pack_byte_signed(open_file, strLen)
     elif strLen > 0x7FFF: #--Actually probably fails earlier.
-        raise NotImplementedError(u'String too long to convert.')
+        raise NotImplementedError('String too long to convert.')
     else:
         strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
         pack_byte_signed(open_file, strLen)
@@ -113,7 +113,7 @@ class OmodFile(object):
     def getOmodContents(self):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
-        filesizes = collections.OrderedDict()
+        filesizes = {}
         reFileSize = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+'
                                 r'[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+'
                                 r'([0-9]+)\s+[0-9]*\s+(.+?)$')
@@ -128,7 +128,7 @@ class OmodFile(object):
         del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.values())
 
-    def extractToProject(self,outDir,progress=None):
+    def extractToProject(self, outDir: Path, progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
         progress = progress if progress else bolt.Progress()
         extractDir = stageBaseDir = Path.tempDir()
@@ -142,8 +142,8 @@ class OmodFile(object):
                 self._extract_omod(progress, extractDir, stageDir)
             progress(1, stail_ + _('Extracted'))
             # Move files to final directory
-            env.shellMove(stageDir, outDir.head, parent=None,
-                          askOverwrite=True, allowUndo=True, autoRename=True)
+            env.shellMove({stageDir: outDir}, ask_confirm=True, allow_undo=True,
+                auto_rename=True)
         except Exception:
             # Error occurred, see if final output dir needs deleting
             env.shellDeletePass(outDir, parent=progress.getParent())
@@ -225,7 +225,7 @@ class OmodFile(object):
         # parent dir into its subdir (duh), so just make a small temp subdir
         temp_extract = extractDir.join(u'out')
         archives.extract7z(self.omod_path, temp_extract)
-        env.shellMove(temp_extract, stageDir, parent=None)
+        env.shellMove({temp_extract: stageDir})
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)

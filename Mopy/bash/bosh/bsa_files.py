@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,36 +27,37 @@ For the file format see:
 http://www.uesp.net/wiki/Tes4Mod:BSA_File_Format
 http://www.uesp.net/wiki/Tes5Mod:Archive_File_Format
 """
+from __future__ import annotations
 
-__author__ = u'Utumno'
+__author__ = 'Utumno'
 
-import collections
 import os
+import typing
 import zlib
+from collections import defaultdict
 from functools import partial
-from itertools import groupby
+from itertools import chain, groupby
 from operator import itemgetter
 from struct import unpack_from as _unpack_from
 
 import lz4.frame
 
 from .dds_files import DDSFile, mk_dxgi_fmt
-from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
-    unpack_string, unpack_int, Flags, AFile, structs_cache, struct_calcsize, \
-    struct_error
-from ..exception import AbstractError, BSAError, BSADecodingError, \
-    BSAFlagError, BSACompressionError, BSADecompressionError, \
-    BSADecompressionSizeError
+from ..bolt import AFile, Flags, Progress, deprint, struct_calcsize, \
+    struct_error, struct_unpack, structs_cache, unpack_byte, unpack_int
+from ..env import convert_separators
+from ..exception import BSACompressionError, BSADecodingError, \
+    BSADecompressionError, BSADecompressionSizeError, BSAError, BSAFlagError
 
-_bsa_encoding = u'cp1252' #rumor has it that's the files/folders names encoding
+_bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 path_sep = u'\\'
 
 # Utilities -------------------------------------------------------------------
-def _decode_path(string_path, bsa_name):
+def _decode_path(byte_path: bytes, bsa_name: str):
     try:
-        return str(string_path, encoding=_bsa_encoding)
+        return byte_path.decode(_bsa_encoding).replace('/', path_sep)
     except UnicodeDecodeError:
-        raise BSADecodingError(bsa_name, string_path)
+        raise BSADecodingError(bsa_name, byte_path)
 
 class _BsaCompressionType(object):
     """Abstractly represents a way of compressing and decompressing BSA
@@ -66,7 +67,7 @@ class _BsaCompressionType(object):
         """Compresses the specified record data. Raises a BSAError if the
         underlying compression library raises an error. Returns the resulting
         compressed data."""
-        raise AbstractError()
+        raise NotImplementedError
 
     @staticmethod
     def decompress_rec(compressed_data, decompressed_size, bsa_name):
@@ -74,7 +75,7 @@ class _BsaCompressionType(object):
         number of bytes of decompressed data and raises a BSAError if a
         mismatch occurs or if the underlying compression library raises an
         error. Returns the resulting decompressed data."""
-        raise AbstractError()
+        raise NotImplementedError
 
 # Note that I mirrored BSArch here by simply leaving zlib and lz4 at their
 # defaults for compression
@@ -183,8 +184,8 @@ class _Header(object):
     bsa_magic = b'BSA\x00'
 
     def load_header(self, ins, bsa_name):
-        for f, a in zip(_Header.formats, _Header.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(_Header.formats, _Header.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
             raise BSAError(bsa_name, f'Magic wrong: got {self.file_id!r}, '
@@ -197,32 +198,33 @@ class BsaHeader(_Header):
          u'file_flags')
     formats = [(f, struct_calcsize(f)) for f in [u'I'] * 8]
     header_size = 36
-    _archive_flags = Flags.from_names(
-        u'include_directory_names',
-        u'include_file_names',
-        u'compressed_archive',
-        u'retain_directory_names',
-        u'retain_file_names',
-        u'retain_file_name_offsets',
-        u'xbox360_archive',
-        u'retain_strings_during_startup',
-        u'embed_file_names',
-        u'xmem_codec',
-    )
+
+    class _archive_flags(Flags):
+        include_directory_names: bool
+        include_file_names: bool
+        compressed_archive: bool
+        retain_directory_names: bool
+        retain_file_names: bool
+        retain_file_name_offsets: bool
+        xbox360_archive: bool
+        retain_strings_during_startup: bool
+        embed_file_names: bool
+        xmem_codec: bool
 
     def load_header(self, ins, bsa_name):
         super(BsaHeader, self).load_header(ins, bsa_name)
-        for f, a in zip(BsaHeader.formats, BsaHeader.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(BsaHeader.formats, BsaHeader.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         self.archive_flags = self._archive_flags(self.archive_flags)
         # error checking
         if self.folder_records_offset != self.__class__.header_size:
-            raise BSAError(bsa_name, u'Header size wrong: %r. Should be %r' % (
-                self.folder_records_offset, self.__class__.header_size))
+            msg = f'Header size wrong: {self.folder_records_offset}. Should ' \
+                  f'be {self.__class__.header_size}'
+            raise BSAError(bsa_name, msg)
         if not self.archive_flags.include_directory_names:
-            raise BSAFlagError(bsa_name, u"'Has Names For Folders'", 1)
+            raise BSAFlagError(bsa_name, "'Has Names For Folders'", 1)
         if not self.archive_flags.include_file_names:
-            raise BSAFlagError(bsa_name, u"'Has Names For Files'", 2)
+            raise BSAFlagError(bsa_name, "'Has Names For Files'", 2)
 
     def is_compressed(self): return self.archive_flags.compressed_archive
     def embed_filenames(self): return self.archive_flags.embed_file_names
@@ -237,13 +239,15 @@ class Ba2Header(_Header):
 
     def load_header(self, ins, bsa_name):
         super(Ba2Header, self).load_header(ins, bsa_name)
-        for f, a in zip(Ba2Header.formats, Ba2Header.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(Ba2Header.formats, Ba2Header.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         # error checking
-        if not self.ba2_files_type in self.file_types:
-            raise BSAError(bsa_name, u'Unrecognised file type: %r. Should be '
-                                     u'%s' % (
-                self.ba2_files_type, u' or '.join(self.file_types)))
+        if self.ba2_files_type not in self.file_types:
+            err_types = ' or '.join([s.decode('ascii')
+                                     for s in self.file_types])
+            raise BSAError(
+                bsa_name, f'Unrecognised file type: {self.ba2_files_type!r}. '
+                          f'Should be {err_types}')
 
 class MorrowindBsaHeader(_Header):
     __slots__ = (u'file_id', u'hash_offset', u'file_count')
@@ -251,9 +255,9 @@ class MorrowindBsaHeader(_Header):
     bsa_magic = b'\x00\x01\x00\x00'
 
     def load_header(self, ins, bsa_name):
-        for f, a in zip(MorrowindBsaHeader.formats,
-                         MorrowindBsaHeader.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(MorrowindBsaHeader.formats,
+                                     MorrowindBsaHeader.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         self.version = None # Morrowind BSAs have no version
         # error checking
         if self.file_id != self.__class__.bsa_magic:
@@ -270,7 +274,7 @@ class _HashedRecord(object):
     __slots__ = (u'record_hash',)
     formats = [(u'Q', struct_calcsize(u'Q'))]
 
-    def load_record(self, ins):
+    def load_record(self, ins): # make this into a cls static factory?
         f, f_size = _HashedRecord.formats[0]
         self.record_hash, = struct_unpack(f, ins.read(f_size))
 
@@ -309,15 +313,17 @@ class _BsaHashedRecord(_HashedRecord):
     def load_record(self, ins):
         super(_BsaHashedRecord, self).load_record(ins)
         ins_read = ins.read
-        for f, a in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins_read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(self.__class__.formats,
+                                     self.__class__.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins_read(fmt_siz))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
                                                                       start)
-        for f, a in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, a, _unpack_from(f[0], memview, start)[0])
-            start += f[1]
+        for (fmt, fmt_siz), a in zip(self.__class__.formats,
+                                     self.__class__.__slots__):
+            setattr(self, a, _unpack_from(fmt, memview, start)[0])
+            start += fmt_siz
         return start
 
     @classmethod
@@ -364,26 +370,6 @@ class BSAMorrowindFileRecord(_HashedRecord):
             start += f[1]
         return start
 
-    def load_name(self, ins, bsa_name):
-        """Loads the file name from the specified input stream."""
-        read_name = b''
-        while(True):
-            candidate = ins.read(1)
-            if candidate == b'\x00': break # null terminator
-            read_name += candidate
-        self.file_name = _decode_path(read_name, bsa_name)
-
-    def load_name_from_buffer(self, memview, start, bsa_name):
-        """Loads the file name from the specified memory buffer."""
-        read_name = b''
-        offset = 0
-        while(True):
-            candidate = memview[start + offset]
-            if candidate == b'\x00': break # null terminator
-            read_name += candidate
-            offset += 1
-        self.file_name = _decode_path(read_name, bsa_name)
-
     def load_hash(self, ins):
         """Loads the hash from the specified input stream."""
         super(BSAMorrowindFileRecord, self).load_record(ins)
@@ -394,8 +380,7 @@ class BSAMorrowindFileRecord(_HashedRecord):
                                                                     start)
 
     def __repr__(self):
-        return super(BSAMorrowindFileRecord, self).__repr__() + (
-                u': %r' % self.file_name)
+        return f'{super().__repr__()}: {self.file_name}'
 
 class BSAOblivionFileRecord(BSAFileRecord):
     # Note: Here, we (ab)use the usage of zip() in _BsaHashedRecord.load_record
@@ -445,38 +430,41 @@ class Ba2TexChunk(object):
                                                  u'I')]
 
     def load_chunk(self, ins): ##: Centralize this, copy-pasted everywhere
-        for f, a in zip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+        for (fmt, fmt_siz), a in zip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
 
     def __repr__(self):
-        return u'Ba2TexChunk<mipmaps #%u to #%u>' % (
-            self.start_mip, self.end_mip)
+        return f'Ba2TexChunk<mipmaps #{self.start_mip:d} to #{self.end_mip:d}>'
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
-    """:type folder_assets: collections.OrderedDict[str, BSAFileRecord]"""
+    folder_assets: dict[str, BSAFileRecord]
 
     def __init__(self, folder_record):
         self.folder_record = folder_record
-        self.folder_assets = collections.OrderedDict() # keep files order
+        self.folder_assets = {} # keep files order
+
+class BSAOblivionFolder(BSAFolder):
+    folder_assets: dict[str, BSAOblivionFileRecord]
 
 class Ba2Folder(object):
 
     def __init__(self):
-        self.folder_assets = collections.OrderedDict() # keep files order
+        self.folder_assets = {} # keep files order
 
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
-    """:type bsa_folders: collections.OrderedDict[str, BSAFolder]"""
-    _header_type = BsaHeader
-    _assets = None # type: frozenset
-    _compression_type = _Bsa_zlib # type: _BsaCompressionType
+    bsa_header: BsaHeader
+    _assets: frozenset[str] = None
+    _compression_type: _BsaCompressionType = _Bsa_zlib
+    _folder_type = BSAFolder
+    bsa_folders: defaultdict[str, _folder_type]
 
     def __init__(self, fullpath, load_cache=False, names_only=True):
         super(ABsa, self).__init__(fullpath)
         self.bsa_name = self.abs_path.stail
-        self.bsa_header = self.__class__._header_type()
-        self.bsa_folders = collections.OrderedDict() # keep folder order
+        self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
+        self.bsa_folders = defaultdict(self._folder_type) # keep folder order
         self._filenames = []
         self.total_names_length = 0 # reported wrongly at times - calculate it
         if load_cache: self.__load(names_only)
@@ -487,8 +475,8 @@ class ABsa(AFile):
             try:
                 self.bsa_header.load_header(ins, self.bsa_name)
             except struct_error as e:
-                raise BSAError(self.bsa_name, u'Error while unpacking header: '
-                                              u'%r' % e)
+                raise BSAError(self.bsa_name,
+                               f'Error while unpacking header: {e!r}')
             return self.bsa_header.version
 
     def __load(self, names_only):
@@ -498,15 +486,15 @@ class ABsa(AFile):
             else:
                 self._load_bsa_light()
         except struct_error as e:
-            raise BSAError(self.bsa_name, u'Error while unpacking: %r' % e)
+            raise BSAError(self.bsa_name, f'Error while unpacking: {e!r}')
 
     @staticmethod
     def _map_files_to_folders(asset_paths): # lowercase keys and values
         folder_file = []
         for a in asset_paths:
-            split = a.rsplit(path_sep, 1)
+            split = a.rsplit(os.sep, 1)
             if len(split) == 1:
-                split = [u'', split[0]]
+                split = ['', split[0]]
             folder_file.append(split)
         # group files by folder
         folder_files_dict = {}
@@ -520,12 +508,11 @@ class ABsa(AFile):
         """Extracts certain assets from this BSA into the specified folder.
 
         :param asset_paths: An iterable specifying which files should be
-            extracted.
+            extracted. Path separators in these *must* match the OS.
         :param dest_folder: The folder into which the results should be
             extracted.
         :param progress: The progress callback to use. None if unwanted."""
-        folder_files_dict = self._map_files_to_folders(
-            map(str.lower, asset_paths))
+        folder_files_dict = self._map_files_to_folders(asset_paths)
         del asset_paths # forget about this
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
@@ -534,17 +521,15 @@ class ABsa(AFile):
         self.bsa_folders.clear()
         # get the data from the file
         global_compression = self.bsa_header.is_compressed()
-        i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
         with open(self.abs_path, u'rb') as bsa_file:
-            for folder, file_records in folder_to_assets.items():
+            for i, (folder, file_records) in enumerate(folder_to_assets.items()):
                 if progress:
                     progress(i, f'Extracting {self.bsa_name}...\n{folder}')
-                    i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
+                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
                 os.makedirs(target_dir, exist_ok=True)
                 for filename, record in file_records:
                     data_size = record.raw_data_size()
@@ -576,7 +561,7 @@ class ABsa(AFile):
                         out.write(raw_data)
 
     def _map_assets_to_folders(self, folder_files_dict):
-        folder_to_assets = collections.OrderedDict()
+        folder_to_assets = {}
         for folder_path, bsa_folder in self.bsa_folders.items():
             if folder_path.lower() not in folder_files_dict: continue
             # Has assets we need to extract. Keep order to avoid seeking
@@ -589,28 +574,32 @@ class ABsa(AFile):
         return folder_to_assets
 
     # Abstract
-    def _load_bsa(self): raise AbstractError()
-    def _load_bsa_light(self): raise AbstractError()
+    def _load_bsa(self): raise NotImplementedError
+    def _load_bsa_light(self): raise NotImplementedError
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
+        """Checks if this BSA has the requested assets and returns a list of
+        assets out of those that it contains.
+
+        :param asset_paths: The paths to check. Path separators in these *must*
+            match the OS."""
         cached_assets = self.assets
         matched_assets = []
         add_asset = matched_assets.append
         for a in asset_paths:
+            # self.assets uses OS path separators, so this is fine
             if a.lower() in cached_assets:
                 add_asset(a)
         return matched_assets
 
     @property
-    def assets(self):
-        """Set of full paths in the bsa in lowercase.
-        :rtype: frozenset[str]
-        """
+    def assets(self) -> frozenset[str]:
+        """Set of full paths in the bsa in lowercase and using the OS path
+        separator."""
         wanted_assets = self._assets
         if wanted_assets is None:
             self.__load(names_only=True)
-            from ..env import convert_separators
             self._assets = wanted_assets = frozenset(
                 convert_separators(f.lower()) for f in self._filenames)
             del self._filenames[:]
@@ -650,40 +639,34 @@ class BSA(ABsa):
             rec.load_record(bsa_file)
             file_records.append(rec)
 
-    def _load_bsa_light(self, __ps=path_sep):
+    def _load_bsa_light(self):
         folder_records = [] # we need those to parse the folder names
-        _filenames = []
-        folder_name_record = {} # type: dict[str, _BsaHashedRecord]
+        folder_path_record: dict[str, BSAFolderRecord] = {}
         rs = self.file_record_type.total_record_size()
-        def _discard_file_records(bsa_file, folder_name, folder_record, rs=rs):
-            bsa_file.seek(rs * folder_record.files_count, 1)
-            folder_name_record[folder_name] = folder_record
+        def _discard_file_records(bsa_file, folder_name, folder_record,
+                __rs=rs):
+            bsa_file.seek(__rs * folder_record.files_count, 1)
+            folder_path_record[folder_name] = folder_record
         file_names = self._read_bsa_file(folder_records, _discard_file_records)
-        filenames_append = _filenames.append
-        filename = 'none' ###: XXX debug #629
-        for folder_path, folder_record in folder_name_record.items():
-            start = len(_filenames)
-            for list_index in range(start, start + folder_record.files_count):
-                try:
-                    # Inlined from _decode_path for startup performance
-                    filename = str(file_names[list_index],
-                                   encoding=_bsa_encoding)
-                except UnicodeDecodeError:
-                    raise BSADecodingError(self.bsa_name,
-                                           file_names[list_index])
-                except IndexError as ie: ###: XXX debug #629
-                    deprint(f'{file_names=}')
-                    deprint(f'{list_index=}')
-                    deprint(f'{filename=}')
-                    raise BSAError(self.bsa_name, 'failed to read bsa') from ie
-                filenames_append(f'{folder_path}{__ps}{filename}')
-        self._filenames = _filenames
+        start = 0
+        names_pairs = ((folder_path, file_names[start: (
+            start := (start + folder_record.files_count))]) for
+            folder_path, folder_record in folder_path_record.items())
+        try:
+            self._filenames = [*chain.from_iterable(
+                # Inlined from _decode_path for startup performance - no
+                # need to replace slashes though since these are file names
+                (f'{fp}{path_sep}{fname.decode(_bsa_encoding)}' for
+                 fname in fnames) for fp, fnames in names_pairs)]
+        except UnicodeDecodeError:
+            raise BSADecodingError(self.bsa_name, file_names)
 
     def _read_bsa_file(self, folder_records, read_file_records) -> list[bytes]:
         total_names_length = 0
         my_bsa_name = self.bsa_name
         with open(self.abs_path, u'rb') as bsa_file:
             bsa_seek = bsa_file.seek
+            bsa_read = bsa_file.read
             # load the header from input stream
             self.bsa_header.load_header(bsa_file, my_bsa_name)
             # load the folder records from input stream
@@ -699,24 +682,32 @@ class BSA(ABsa):
                 # have been intended to be used though?
                 #folder_path = u'?%d' % folder_record.record_hash # hack - untested
                 name_size = unpack_byte(bsa_file)
-                folder_path = _decode_path(
-                    unpack_string(bsa_file, name_size - 1), my_bsa_name)
-                total_names_length += name_size
-                bsa_seek(1, 1) # discard null terminator
+                if not name_size:
+                    # Files sit at root level - read nothing
+                    folder_path = ''
+                    # Size is summed as strlen() + 1, so use +1 for root
+                    total_names_length += 1
+                else:
+                    folder_path = _decode_path(bsa_read(name_size - 1),
+                        my_bsa_name)
+                    bsa_seek(1, 1) # discard null terminator
+                    total_names_length += name_size
                 read_file_records(bsa_file, folder_path, folder_record)
             if total_names_length != self.bsa_header.total_folder_name_length:
-                deprint(u'%s reports wrong folder names length %d'
-                    u' - actual: %d (number of folders is %d)' % (
-                    self.abs_path, self.bsa_header.total_folder_name_length,
-                    total_names_length, self.bsa_header.folder_count))
+                deprint(f'{self.abs_path} reports wrong folder names length '
+                        f'{self.bsa_header.total_folder_name_length:d} - '
+                        f'actual: {total_names_length:d} (number of folders '
+                        f'is {self.bsa_header.folder_count:d})')
             self.total_names_length = total_names_length
-            file_names = bsa_file.read( # has an empty string at the end
+            file_names = bsa_read( # has an empty string at the end
                 self.bsa_header.total_file_name_length).split(b'\00')
             # close the file
         return file_names
 
 class BA2(ABsa):
-    _header_type = Ba2Header
+    bsa_header: Ba2Header
+    _folder_type = Ba2Folder
+    bsa_folders: defaultdict[str, _folder_type] # we need to repeat this
 
     def extract_assets(self, asset_paths, dest_folder, progress=None):
         # map files to folders
@@ -724,13 +715,12 @@ class BA2(ABsa):
         del asset_paths # forget about this
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
-        my_header = self.bsa_header # type: Ba2Header
+        my_header = self.bsa_header
         is_dx10 = my_header.ba2_files_type == b'DX10'
         folder_to_assets = self._map_assets_to_folders(folder_files_dict)
         # unload the bsa
         self.bsa_folders.clear()
         # get the data from the file
-        i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
         with open(self.abs_path, u'rb') as bsa_file:
@@ -767,38 +757,38 @@ class BA2(ABsa):
                 # This needs to be last, it uses the header's width and height
                 record.dxgi_format.setup_file(
                     dds_file, use_legacy_formats=True)
-            for folder, file_records in folder_to_assets.items():
+            for i, (folder, file_records) in enumerate(
+                    folder_to_assets.items()):
                 if progress:
                     progress(i, f'Extracting {self.bsa_name}...\n{folder}')
-                    i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
+                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
                 os.makedirs(target_dir, exist_ok=True)
-                for filename, record in file_records:
+                for filename, f_record in file_records:
                     if is_dx10:
                         # We're dealing with a DX10 BA2, need to combine all
                         # the texture chunks in the record first
                         dds_data = b''
-                        for tex_chunk in record.tex_chunks:
+                        for tex_chunk in f_record.tex_chunks:
                             dds_data += _read_rec_or_chunk(tex_chunk)
                         # Add a DDS header based on the data in the record,
                         # then dump the resulting DDS file - cf. BSArch
-                        dds_file = DDSFile(u'')
-                        _build_dds_header(dds_file, record)
-                        dds_file.dds_contents = dds_data
-                        raw_data = dds_file.dump_file()
+                        new_dds_file = DDSFile('')
+                        _build_dds_header(new_dds_file, f_record)
+                        new_dds_file.dds_contents = dds_data
+                        raw_data = new_dds_file.dump_file()
                     else:
                         # Otherwise, we're dealing with a GNRL BA2, just
                         # read/decompress/write the record directly
-                        raw_data = _read_rec_or_chunk(record)
+                        raw_data = _read_rec_or_chunk(f_record)
                     with open(os.path.join(target_dir, filename), 'wb') as out:
                         out.write(raw_data)
 
     def _load_bsa(self):
         with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
-            my_header = self.bsa_header # type: Ba2Header
+            my_header = self.bsa_header
             my_header.load_header(bsa_file, self.bsa_name)
             # load the folder records from input stream
             if my_header.ba2_files_type == b'GNRL':
@@ -813,42 +803,32 @@ class BA2(ABsa):
             # load the file names block
             bsa_file.seek(my_header.ba2_name_table_offset)
             file_names_block = memoryview(bsa_file.read())
-            # close the file
-        current_folder_name = current_folder = None
         for index in range(my_header.ba2_num_files):
             name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
             file_names_block = file_names_block[name_size + 2:]
-            folder_dex = filename.rfind(u'\\')
-            if folder_dex == -1:
-                folder_name = u''
-            else:
-                folder_name = filename[:folder_dex]
-            if current_folder_name != folder_name:
-                current_folder = self.bsa_folders.setdefault(folder_name,
-                                                             Ba2Folder())
-                current_folder_name = folder_name
-            current_folder.folder_assets[filename[folder_dex + 1:]] = \
-                file_records[index]
+            folder_dex = filename.rfind(path_sep)
+            folder_name = '' if folder_dex == -1 else filename[:folder_dex]
+            self.bsa_folders[folder_name].folder_assets[
+                filename[folder_dex + 1:]] = file_records[index]
 
     def _load_bsa_light(self):
-        my_header = self.bsa_header # type: Ba2Header
+        my_header = self.bsa_header
         with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header.load_header(bsa_file, self.bsa_name)
             # load the file names block
             bsa_file.seek(my_header.ba2_name_table_offset)
             file_names_block = memoryview(bsa_file.read())
-            # close the file
-        _filenames = []
+        filenames = []
         for index in range(my_header.ba2_num_files):
             name_size = _unpack_from(u'H', file_names_block)[0]
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
-            _filenames.append(filename)
+            filenames.append(filename)
             file_names_block = file_names_block[name_size + 2:]
-        self._filenames = _filenames
+        self._filenames = filenames
 
     def ba2_hash(self):
         """Calculates Bethesda's nonstandard CRC hash for the filename of this
@@ -858,7 +838,7 @@ class BA2(ABsa):
         return _hash_ba2_string(self.abs_path.sbody)
 
 class MorrowindBsa(ABsa):
-    _header_type = MorrowindBsaHeader
+    bsa_header: MorrowindBsaHeader
 
     def _load_bsa_light(self):
         self.file_records = []
@@ -877,7 +857,12 @@ class MorrowindBsa(ABsa):
             # load names and hashes, also take the opportunity to fill
             # _filenames
             for file_record in self.file_records:
-                file_record.load_name(bsa_file, self.bsa_name)
+                read_name = b''
+                while True:
+                    candidate = bsa_file.read(1)
+                    if candidate == b'\x00': break  # null terminator
+                    read_name += candidate
+                file_record.file_name = _decode_path(read_name, self.bsa_name)
                 self._filenames.append(file_record.file_name)
             for file_record in self.file_records:
                 file_record.load_hash(bsa_file)
@@ -897,18 +882,16 @@ class MorrowindBsa(ABsa):
         # Keep only the file records that correspond to asset_paths
         target_records = [x for x in self.file_records
                           if x.file_name in asset_paths]
-        i = 0
         if progress:
             progress.setFull(len(target_records))
         with open(self.abs_path, u'rb') as bsa_file:
-            for file_record in target_records:
+            for i, file_record in enumerate(target_records):
                 rec_name = file_record.file_name
                 if progress:
                     # No folder records, simulate them to avoid updating the
                     # progress bar too frequently
-                    progress(i, u'Extracting %s...\n%s' % (
-                        self.bsa_name, os.path.dirname(rec_name)))
-                    i += 1
+                    progress(i, f'Extracting {self.bsa_name}...\n'
+                                f'{os.path.dirname(rec_name)}')
                 # There is no compression for Morrowind BSAs, but all offsets
                 # are relative to the final_offset we read earlier
                 bsa_file.seek(self.final_offset + file_record.relative_offset)
@@ -922,17 +905,17 @@ class MorrowindBsa(ABsa):
                     out.write(raw_data)
 
 class OblivionBsa(BSA):
-    _header_type = OblivionBsaHeader
+    bsa_header: OblivionBsaHeader
     file_record_type = BSAOblivionFileRecord
+    _folder_type = BSAOblivionFolder
+    bsa_folders: defaultdict[str, _folder_type] # for proper typing
     # A dictionary mapping file extensions to hash components. Used by Oblivion
     # when hashing file names for its BSAs.
-    _bsa_ext_lookup = collections.defaultdict(int)
-    for ext, hash_part in [(u'.kf', 0x80), (u'.nif', 0x8000),
-                           (u'.dds', 0x8080), (u'.wav', 0x80000000)]:
-        _bsa_ext_lookup[ext] = hash_part
+    _bsa_ext_lookup = defaultdict(int, [('.kf', 0x80),
+        ('.nif', 0x8000), ('.dds', 0x8080), ('.wav', 0x80000000)])
 
     @staticmethod
-    def calculate_hash(file_name):
+    def calculate_hash(filename):
         """Calculates the hash used by Oblivion BSAs for the provided file
         name.
         Based on Timeslips code with cleanup and pythonization.
@@ -940,7 +923,7 @@ class OblivionBsa(BSA):
         See here for more information:
         https://en.uesp.net/wiki/Tes4Mod:Hash_Calculation"""
         #--NOTE: fileName is NOT a Path object!
-        root, ext = os.path.splitext(file_name.lower())
+        root, ext = os.path.splitext(filename.lower())
         chars = [ord(x) for x in root]
         hash_part_1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 \
                       | len(chars) << 16 | chars[0] << 24
@@ -968,18 +951,18 @@ class OblivionBsa(BSA):
 
         :param progress: The progress indicator to use for this process."""
         progress.setFull(self.bsa_header.folder_count)
-        with open(self.abs_path, u'r+b') as bsa_file:
+        with open(self.abs_path, 'r+b') as bsa_file:
             reset_count = 0
             for folder_name, folder in self.bsa_folders.items():
-                for file_name, file_info in folder.folder_assets.items():
-                    rebuilt_hash = self.calculate_hash(file_name)
+                for filename, file_info in folder.folder_assets.items():
+                    rebuilt_hash = self.calculate_hash(filename)
                     if file_info.record_hash != rebuilt_hash:
                         bsa_file.seek(file_info.file_pos)
                         bsa_file.write(
                             structs_cache[_HashedRecord.formats[0][0]].pack(
                                 rebuilt_hash))
                         reset_count += 1
-                progress(progress.state + 1, u'Rebuilding Hashes...\n' +
+                progress(progress.state + 1, 'Rebuilding Hashes...\n' +
                          folder_name)
         return reset_count
 
@@ -988,19 +971,18 @@ class SkyrimSeBsa(BSA):
     _compression_type = _Bsa_lz4
 
 # Factory
-def get_bsa_type(game_fsName):
-    """:rtype: type"""
-    if game_fsName == u'Morrowind':
+def get_bsa_type(game_fsName) -> type[ABsa]:
+    """Return the bsa type for this game."""
+    if game_fsName == 'Morrowind':
         return MorrowindBsa
-    elif game_fsName == u'Oblivion':
+    elif game_fsName == 'Oblivion':
         return OblivionBsa
-    elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
+    elif game_fsName in ('Enderal', 'Fallout3', 'FalloutNV', 'Skyrim'):
         return BSA
-    elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR',
-                         u'Enderal Special Edition',
-                         u'Skyrim Special Edition MS'):
+    elif game_fsName in ('Skyrim Special Edition', 'Skyrim VR',
+                         'Enderal Special Edition'):
         return SkyrimSeBsa
-    elif game_fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
+    elif game_fsName in ('Fallout4', 'Fallout4VR'):
         # Hashes are I not Q in BA2s!
-        _HashedRecord.formats = [(u'I', struct_calcsize(u'I'))]
+        _HashedRecord.formats = [('I', struct_calcsize('I'))]
         return BA2

@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,6 +24,8 @@
 import importlib
 
 from . import GameInfo
+from .. import bolt
+from ..bolt import structs_cache
 
 class PatchGame(GameInfo):
     """Game that supports a Bashed patch. Provides record related values used
@@ -34,10 +35,17 @@ class PatchGame(GameInfo):
     too specific (and often big) data structures - however the exact constants
     included here is still WIP."""
 
+    @classmethod
+    def check_loaded_mod(cls, patch_file, modFile):
+        """Perform some game specific validation on a loaded modFile and update
+        PatchFile instance variables."""
+        if (wrld_block := modFile.tops.get(b'WRLD')) and wrld_block.orphansSkipped:
+            patch_file.worldOrphanMods.append(modFile.fileInfo.fn_key)
+
     # Bash Tags supported by this game. List only tags that aren't used by
     # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
     # dynamically added in gui_patchers.
-    allTags = {u'Deactivate', u'Filter', u'MustBeActiveIfImported'}
+    allTags = {'Deactivate', 'Filter', 'MustBeActiveIfImported'}
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
     # name, see gui_patchers.py for their definitions).
@@ -49,6 +57,9 @@ class PatchGame(GameInfo):
     game_specific_import_patchers = {}
 
     # Record information - set in cls.init ------------------------------------
+    top_groups = [] # list of the top groups ordered as in the main esm
+    # those records have nested record groups
+    complex_groups = {b'CELL', b'WRLD', b'DIAL'}
     # Mergeable record types
     mergeable_sigs = {}
     # Extra read classes: these record types will always be loaded, even if
@@ -68,7 +79,7 @@ class PatchGame(GameInfo):
     # Function Info -----------------------------------------------------------
     # CTDA Data for the game. Maps function ID to tuple with name of function
     # and the parameter types of the function.
-    # 0: no param; 1: int param; 2: formid param; 3: float param
+    # 0: no param; 1: int param; 2: FormID param; 3: float param
     # Note that each line must have the same number of parameters after the
     # function name - so pad out functions with fewer parameters with zeroes
     condition_function_data = {}
@@ -76,44 +87,6 @@ class PatchGame(GameInfo):
     # special, because the type of its second parameter depends on the value of
     # the first parameter.
     getvatsvalue_index = 0
-
-    # Dynamic importer --------------------------------------------------------
-    _constants_members = {
-        # patcher and tweaks constants
-        u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'assorted_tweaks', u'names_tweaks', u'cc_passes',
-        'cc_valid_types', 'cellRecAttrs', 'spell_types',
-        u'cell_skip_interior_attrs', u'condition_function_data',
-        u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'getvatsvalue_index', u'graphicsFidTypes',
-        u'graphicsModelAttrs', u'graphicsTypes',
-        u'import_races_attrs', u'inventoryTypes', u'default_wp_timescale',
-        u'keywords_types', u'listTypes',
-        u'mgef_stats_attrs', u'namesTypes',
-        u'nonplayable_biped_flags', u'not_playable_flag', u'body_part_codes',
-        u'object_bounds_types', u'pricesTypes', u'race_tweaks',
-        'race_tweaks_need_collection', 'relations_attrs', 'gold_attrs',
-        u'save_rec_types', u'scripts_types', u'settings_tweaks',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'staff_condition', 'enchantment_types',
-        u'static_attenuation_rec_type', u'statsTypes', 'text_replacer_rpaths',
-        u'text_types',
-    }
-
-    _patcher_package = u'' # read the patcher of another (parent) game
-    @classmethod
-    def _dynamic_import_modules(cls, package_name):
-        """Dynamically import the patcher module."""
-        super(PatchGame, cls)._dynamic_import_modules(package_name)
-        package_name = cls._patcher_package or package_name
-        patchers_module = importlib.import_module(u'.patcher',
-            package=package_name)
-        for k in dir(patchers_module):
-            if k.startswith(u'_'): continue
-            if k not in cls._constants_members:
-                raise SyntaxError(u"Unexpected game constant '%s', check for "
-                                  u'typos or update _constants_members' % k)
-            setattr(cls, k, getattr(patchers_module, k))
 
     #--------------------------------------------------------------------------
     # Leveled Lists
@@ -133,12 +106,15 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    statsTypes = {}
+    stats_csv_attrs = {}
+    stats_fid_attrs = {}
+    stats_attrs = {}
 
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    soundsTypes = {}
+    sounds_attrs = {}
+    sounds_fid_attrs = {}
 
     #--------------------------------------------------------------------------
     # Import Cells
@@ -151,7 +127,7 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     graphicsTypes = {}
     graphicsFidTypes = {}
-    graphicsModelAttrs = ()
+    graphicsModelAttrs = set()
 
     #--------------------------------------------------------------------------
     # Import Inventory
@@ -200,6 +176,7 @@ class PatchGame(GameInfo):
     # Import Actors
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
+    actor_importer_fid_attrs = {}
     actor_types = (b'NPC_',)
     spell_types = (b'SPEL',)
 
@@ -207,6 +184,8 @@ class PatchGame(GameInfo):
     # Import Spell Stats
     #--------------------------------------------------------------------------
     spell_stats_attrs = ()
+    spell_stats_fid_attrs = ()
+    spell_stats_csv_attrs = ()
     spell_stats_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -223,9 +202,8 @@ class PatchGame(GameInfo):
     ##: This is a pretty ugly hack. We need to be able to create FormIDs in
     # these for newer games than Oblivion, but master_file is only defined in
     # here and importing it in the patcher files is probably a huge headache.
-    # The first parameter is required since Python automatically passes it when
-    # called: bush.game.gold_attrs(x) -> _gm_master == x
-    gold_attrs = lambda _self_ignore, _gm_master: {}
+    # The first (self) parameter is automatically passed by Python when called
+    gold_attrs = lambda _self: {}
 
     #--------------------------------------------------------------------------
     # Tweak Settings
@@ -241,11 +219,13 @@ class PatchGame(GameInfo):
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
     ench_stats_attrs = ()
+    ench_stats_fid_attrs = ()
 
     #--------------------------------------------------------------------------
     # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = ()
+    mgef_stats_fid_attrs = ()
 
     #--------------------------------------------------------------------------
     # Import Enchantments
@@ -256,12 +236,6 @@ class PatchGame(GameInfo):
     # Tweak Assorted
     #--------------------------------------------------------------------------
     assorted_tweaks = set()
-    # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
-    # as playable if it has at least one biped flag that is not in this set.
-    nonplayable_biped_flags = set()
-    # The record attribute and flag name needed to find out if a piece of armor
-    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
-    not_playable_flag = (u'flags1', u'isNotPlayable')
     # Tuple containing the name of the attribute and the value it has to be set
     # to in order for a weapon to count as a staff for reweighing purposes
     staff_condition = ()
@@ -269,12 +243,13 @@ class PatchGame(GameInfo):
     # static attenuation tweaks. SNDR on newer games, SOUN on older games.
     static_attenuation_rec_type = b'SNDR'
     # Localized version of 'Nirnroots' in Tamriel, 'Vynroots' in Vyn
-    nirnroots = _(u'Nirnroots')
+    nirnroots = _('Nirnroots')
 
     #--------------------------------------------------------------------------
     # Import Races
     #--------------------------------------------------------------------------
     import_races_attrs = {}
+    import_races_fid_attrs = {}
 
     #--------------------------------------------------------------------------
     # Tweak Races
@@ -290,3 +265,61 @@ class PatchGame(GameInfo):
     # The effective timescale to which the wave periods of this game's grass
     # are specified
     default_wp_timescale = 10
+
+    @classmethod
+    def _import_records(cls, package_name, plugin_form_vers=None, *,
+                        __unp=structs_cache['I'].unpack):
+        """Import the records, perform validation on the record syntax for
+        all decoded records and have the RecordType class variables updated.
+        :param plugin_form_vers: if not None set RecordHeader variable"""
+        importlib.import_module('.records', package=package_name)
+        from .. import brec as _brec_
+        rtype, rec_head = _brec_.RecordType, _brec_.RecordHeader
+        _sig_class = rtype.sig_to_class
+        cls._plugin_header_rec_type = _sig_class[cls.Esp.plugin_header_sig]
+        if plugin_form_vers is not None:
+            rec_head.plugin_form_version = plugin_form_vers
+        rec_head.top_grup_sigs = {k: k for k in cls.top_groups}
+        rec_head.top_grup_sigs.update((__unp(k)[0], k) for k in cls.top_groups)
+        ##: complex_groups should not be needed but added due to fo4 DIAL (?)
+        valid_header_sigs = {cls.Esp.plugin_header_sig, *cls.top_groups,
+                             *rtype.nested_to_top, *cls.complex_groups}
+        for rec_sig, rec_class in list(_sig_class.items()):
+            if issubclass(rec_class, _brec_.MelRecord):
+                # when emulating startup in tests, an earlier loaded game may
+                # override the rec_class in sig_to_class with a stub (for
+                # instance <class 'bash.game.fallout4.records.MreCell'>)
+                if rec_class.melSet is None:
+                    bolt.deprint(f'{rec_class}: no melSet')
+                    continue
+                rec_class.validate_record_syntax()
+        if miss := [s for s in valid_header_sigs if s not in _sig_class]:
+            bolt.deprint(f'Signatures {miss} lack an implementation - '
+                         f'defaulting to MreRecord')
+            _sig_class.update(dict.fromkeys(miss, _brec_.MreRecord))
+        rtype.sig_to_class = {k: v for k, v in _sig_class.items() if
+                              k in valid_header_sigs}
+        rec_head.valid_record_sigs = valid_header_sigs
+        from ..mod_files import LoadFactory as Lf
+        Lf.grup_class = dict.fromkeys(cls.top_groups, _brec_.TopGrup)
+        Lf.grup_class[b'DIAL'] = _brec_.MobDials
+        Lf.grup_class[b'CELL'] = _brec_.MobICells
+        Lf.grup_class[b'WRLD'] = _brec_.MobWorlds
+        # that's the case for most games so do it here and override if needed
+        rtype.simpleTypes = set(cls.top_groups) - cls.complex_groups
+        # set GRUP class variables
+        mobs = _brec_.record_groups
+        cell_class = _sig_class[b'CELL']
+        mobs.CellRefs._accepted_sigs = cell_class.ref_types
+        mobs.TempRefs._accepted_sigs = mobs.CellChildren._accepted_sigs = {
+            *cell_class.ref_types, *(ite := cell_class.interior_temp_extra)}
+        mobs.TempRefs._sort_overrides = {s: j for j, s in enumerate(ite)}
+        wrld_class = _sig_class[b'WRLD']
+        wrld_cell = {*wrld_class.ref_types,
+                     *(ete := wrld_class.exterior_temp_extra)}
+        mobs.WrldTempRefs._accepted_sigs = \
+            mobs.ExtCellChildren._accepted_sigs = wrld_cell
+        mobs.WrldTempRefs._sort_overrides = {s: j for j, s in enumerate(ete)}
+        mobs.WorldChildren._accepted_sigs = {*wrld_cell,
+                                             *wrld_class.wrld_children_extra}
+        mobs.WorldChildren._extra_records = wrld_class.wrld_children_extra

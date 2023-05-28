@@ -16,18 +16,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES III: Morrowind."""
 import struct as _struct
 
-from ..patch_game import GameInfo, PatchGame
-from .. import WS_COMMON
-from ... import brec, bolt
+from .. import WS_COMMON_FILES, GameInfo
+from ..gog_game import GOGMixin
+from ..patch_game import PatchGame
+from ..windows_store_game import WindowsStoreMixin
+from ... import bolt
+
+_GOG_IDS = [
+    1435828767, # Game
+    1432185303, # GOG Amazon Prime game
+    1440163901, # Package
+]
 
 class MorrowindGameInfo(PatchGame):
+    """GameInfo override for TES III: Morrowind."""
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
@@ -37,21 +45,25 @@ class MorrowindGameInfo(PatchGame):
     uses_personal_folders = False
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
-    game_detect_includes = [u'Morrowind.exe']
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {'Morrowind.exe'}
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES)
     version_detect_file = u'Morrowind.exe'
     master_file = bolt.FName(u'Morrowind.esm')
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
+    loot_game_name = 'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
-    regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Morrowind', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/morrowind/'
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
 
     using_txt_file = False
     plugin_name_specific_dirs = [] # Morrowind seems to have no such dirs
+
+    allTags = set() # no BP functionality yet
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
@@ -103,6 +115,8 @@ class MorrowindGameInfo(PatchGame):
 
     class Esp(GameInfo.Esp):
         check_master_sizes = True
+        max_author_length = 32 # Does not have to have a null terminator
+        max_desc_length = 256 # Does not have to have a null terminator
         max_lvl_list_size = 2 ** 32 - 1
         plugin_header_sig = b'TES3'
         stringsFiles = []
@@ -117,53 +131,46 @@ class MorrowindGameInfo(PatchGame):
         'tribunal.esm',
     }
 
-    @classmethod
-    def _dynamic_import_modules(cls, package_name):
-        """morrowind has no patcher currently - read tweaks, vanilla_files"""
-        super(PatchGame, cls)._dynamic_import_modules(package_name)
+    top_groups = [
+        b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL', b'MGEF',
+        b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT', b'DOOR', b'MISC',
+        b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY', b'LIGH', b'ENCH', b'NPC_',
+        b'ARMO', b'CLOT', b'REPA', b'ACTI', b'APPA', b'LOCK', b'PROB', b'INGR',
+        b'BOOK', b'ALCH', b'LEVI', b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG',
+        b'DIAL', b'INFO']
 
     @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        from .records import MreActi, MreAlch, MreAppa, MreArmo, MreBody, \
-            MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, \
-            MreDial, MreDoor, MreEnch, MreFact, MreGmst, MreGlob, MreInfo, \
-            MreIngr, MreLand, MreLevc, MreLevi, MreLigh, MreLock, MreLtex, \
-            MreMgef, MreMisc, MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, \
-            MreRepa, MreScpt, MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, \
-            MreStat, MreTes3, MreWeap
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
         # Setting RecordHeader class variables - Morrowind is special
-        header_type = brec.RecordHeader
+        from ... import brec as _brec_
+        header_type = _brec_.RecordHeader
         header_type.rec_header_size = 16
-        header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']
-        header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = _struct.Struct(
-            header_type.rec_pack_format_str).unpack
-        from ...brec import Subrecord
-        Subrecord.sub_header_fmt = u'=4sI'
-        Subrecord.sub_header_unpack = _struct.Struct(
-            Subrecord.sub_header_fmt).unpack
-        Subrecord.sub_header_size = 8
-        header_type.top_grup_sigs = [
-            b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',
-            b'MGEF', b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT',
-            b'DOOR', b'MISC', b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY',
-            b'LIGH', b'ENCH', b'NPC_', b'ARMO', b'CLOT', b'REPA', b'ACTI',
-            b'APPA', b'LOCK', b'PROB', b'INGR', b'BOOK', b'ALCH', b'LEVI',
-            b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG', b'DIAL', b'INFO']
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'TES3'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreActi, MreAlch, MreAppa, MreArmo, MreBody, MreBook, MreBsgn,
-            MreCell, MreClas, MreClot, MreCont, MreCrea, MreDial, MreDoor,
-            MreEnch, MreFact, MreGmst, MreGlob, MreInfo, MreIngr, MreLand,
-            MreLevc, MreLevi, MreLigh, MreLock, MreLtex, MreMgef, MreMisc,
-            MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, MreRepa, MreScpt,
-            MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, MreStat, MreTes3,
-            MreWeap,
-        )}
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES3', b'CELL', b'DIAL'})
-        cls._validate_records()
+        header_type.rec_pack_format_str = '=4sIII'
+        header_type.header_unpack = bolt.structs_cache['=4sIII'].unpack
+        sub = _brec_.Subrecord
+        sub.sub_header_fmt = '=4sI'
+        sub.sub_header_unpack = _struct.Struct(sub.sub_header_fmt).unpack
+        sub.sub_header_size = 8
+        cls._import_records(__name__)
 
-GAME_TYPE = MorrowindGameInfo
+class GOGMorrowindGameInfo(GOGMixin, MorrowindGameInfo):
+    """GameInfo override for the GOG version of Morrowind."""
+    displayName = 'Morrowind (GOG)'
+    _gog_game_ids = _GOG_IDS
+    # Morrowind does not use the personal folders, so no my_games_name etc.
+
+class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
+    """GameInfo override for the Windows Store version of Morrowind."""
+    displayName = 'Morrowind (WS)'
+    # Morrowind does not use the personal folders, so no my_games_name etc.
+
+    class Ws(MorrowindGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
+        ws_language_dirs = ['Morrowind GOTY English',
+                            'Morrowind GOTY French',
+                            'Morrowind GOTY German']
+
+GAME_TYPE = {g.displayName: g for g in
+             (MorrowindGameInfo, GOGMorrowindGameInfo, WSMorrowindGameInfo)}

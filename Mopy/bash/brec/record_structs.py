@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,13 +27,15 @@ import copy
 import io
 import zlib
 from collections import defaultdict
+from typing import Self
 
+from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
-from .mod_io import ModReader
-from .utils_constants import strFid, int_unpacker
+from .mod_io import ModReader, RecordHeader
+from .utils_constants import int_unpacker
 from .. import bolt, exception
-from ..bolt import decoder, struct_pack, sig_to_str
-from ..bolt import float_or_none, int_or_zero, str_or_none
+from ..bolt import decoder, flag, float_or_none, int_or_zero, sig_to_str, \
+    str_or_none, struct_pack
 
 def _str_to_bool(value, __falsy=frozenset(
     ['', 'none', 'false', 'no', '0', '0.0'])):
@@ -150,14 +152,18 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
+        self._sort_elements = []
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
+            if element.needs_sorting():
+                self._sort_elements.append(element)
         for sig_candidate in self.loaders:
-            if len(sig_candidate) != 4 or not isinstance(sig_candidate, bytes):
-                raise SyntaxError(f"Invalid signature '{sig_candidate}': "
-                    f"Signatures must be bytestrings and 4 bytes in length.")
+            if not isinstance(sig_candidate, bytes) or len(sig_candidate) != 4:
+                raise SyntaxError(f"Invalid signature '{sig_candidate!r}': "
+                                  f"Signatures must be bytestrings and 4 "
+                                  f"bytes in length.")
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances
@@ -176,13 +182,12 @@ class MelSet(object):
         all_slots = set()
         for element in self.elements:
             element_slots = set(element.getSlotsUsed())
-            duplicate_slots = sorted(all_slots & element_slots)
-            if duplicate_slots:
+            if duplicate_slots := (all_slots & element_slots):
                 raise SyntaxError(
-                    u'Duplicate element attributes in record type %s: %s. '
-                    u'This most likely points at an attribute collision, make '
-                    u'sure to choose unique attribute names!' % (
-                        curr_rec_sig, repr(duplicate_slots)))
+                    f'Duplicate element attributes in record type '
+                    f'{curr_rec_sig}: {sorted(duplicate_slots)}. This '
+                    f'most likely points at an attribute collision, '
+                    f'make sure to choose unique attribute names!')
             all_slots.update(element_slots)
 
     def getDefault(self,attr):
@@ -200,10 +205,12 @@ class MelSet(object):
                 bolt.deprint(u'Occurred while dumping '
                              u'<%(eid)s[%(signature)s:%(fid)s]>' % {
                     u'signature': record.rec_str,
-                    u'fid': strFid(record.fid),
+                    u'fid': f'{record.fid}',
                     u'eid': (record.eid + u' ') if getattr(record, u'eid',
                                                            None) else u'',
                 })
+                bolt.deprint('element:', element)
+                bolt.deprint('record flags:', getattr(record, 'flags1', None))
                 for attr in record.__slots__:
                     attr1 = getattr(record, attr, None)
                     if attr1 is not None:
@@ -215,25 +222,25 @@ class MelSet(object):
         for element in self.formElements:
             element.mapFids(record, mapper, save_fids)
 
-    def convertFids(self,record, mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        if record.longFids == toLong: return
-        record.fid = mapper(record.fid)
-        for element in self.formElements:
-            element.mapFids(record, mapper, True)
-        record.longFids = toLong
-        record.setChanged()
+    def sort_subrecords(self, record):
+        """Sorts all subrecords of the specified record that need sorting."""
+        for element in self._sort_elements:
+            element.sort_subrecord(record)
 
-    def with_distributor(self, distributor_config):
-        # type: (dict) -> MelSet
+    def with_distributor(self, distributor_config: dict) -> Self:
         """Adds a distributor to this MelSet. See _MelDistributor for more
         information. Convenience method that avoids having to import and
         explicitly construct a _MelDistributor. This is supposed to be chained
         immediately after MelSet.__init__.
 
-        :param distributor_config: The config to pass to the distributor.
+        :param distributor_config: The config to pass to the distributor. If
+            this is None, no distributor will be set and self will be returned
+            unmodified.
         :return: self, for ease of construction."""
+        if distributor_config is None:
+            # Happens when using fnv_only etc. to have a decider for only one
+            # game
+            return self
         # Make a copy, that way one distributor config can be used for multiple
         # record classes. _MelDistributor may modify its parameter, so not
         # making a copy wouldn't be safe in such a scenario.
@@ -247,149 +254,114 @@ class MelSet(object):
 #------------------------------------------------------------------------------
 # Records ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreRecord(object):
-    """Generic Record. flags1 are game specific see comments."""
-    subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
-    flags1_ = bolt.Flags.from_names(
-        # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
-        ( 0,'esm'), # {0x00000001}
-        # {Sky}, {FNV} 0x00000004 ARMO: Not playable
-        ( 2,'isNotPlayable'), # {0x00000004}
-        # {FNV} 0x00000010 ????: Form initialized (Runtime only)
-        ( 4,'formInitialized'), # {0x00000010}
-        ( 5,'deleted'), # {0x00000020}
-        # {Sky}, {FNV} 0x00000040 ACTI: Has Tree LOD
-        # {Sky}, {FNV} 0x00000040 REGN: Border Region
-        # {Sky}, {FNV} 0x00000040 STAT: Has Tree LOD
-        # {Sky}, {FNV} 0x00000040 REFR: Hidden From Local Map
-        # {TES4} 0x00000040 ????:  Actor Value
-        # Constant HiddenFromLocalMap BorderRegion HasTreeLOD ActorValue
-        ( 6,'borderRegion'), # {0x00000040}
-        # {Sky} 0x00000080 TES4: Localized
-        # {Sky}, {FNV} 0x00000080 PHZD: Turn Off Fire
-        # {Sky} 0x00000080 SHOU: Treat Spells as Powers
-        # {Sky}, {FNV} 0x00000080 STAT: Add-on LOD Object
-        # {TES4} 0x00000080 ????:  Actor Value
-        # Localized IsPerch AddOnLODObject TurnOffFire TreatSpellsAsPowers  ActorValue
-        ( 7,'turnFireOff'), # {0x00000080}
-        ( 7,'hasStrings'), # {0x00000080}
-        # {Sky}, {FNV} 0x00000100 ACTI: Must Update Anims
-        # {Sky}, {FNV} 0x00000100 REFR: Inaccessible
-        # {Sky}, {FNV} 0x00000100 REFR for LIGH: Doesn't light water
-        # MustUpdateAnims Inaccessible DoesntLightWater
-        ( 8,'inaccessible'), # {0x00000100}
-        # {Sky}, {FNV} 0x00000200 ACTI: Local Map - Turns Flag Off, therefore it is Hidden
-        # {Sky}, {FNV} 0x00000200 REFR: MotionBlurCastsShadows
-        # HiddenFromLocalMap StartsDead MotionBlur CastsShadows
-        ( 9,'castsShadows'), # {0x00000200}
-        # New Flag for FO4 and SSE used in .esl files
-        ( 9, 'eslFile'), # {0x00000200}
-        # {Sky}, {FNV} 0x00000400 LSCR: Displays in Main Menu
-        # PersistentReference QuestItem DisplaysInMainMenu
-        (10,'questItem'), # {0x00000400}
-        (10,'persistent'), # {0x00000400}
-        (11,'initiallyDisabled'), # {0x00000800}
-        (12,'ignored'), # {0x00001000}
-        # {FNV} 0x00002000 ????: No Voice Filter
-        (13,'noVoiceFilter'), # {0x00002000}
-        # {FNV} 0x00004000 STAT: Cannot Save (Runtime only) Ignore VC info
-        (14,'cannotSave'), # {0x00004000}
-        # {Sky}, {FNV} 0x00008000 STAT: Has Distant LOD
-        (15,'visibleWhenDistant'), # {0x00008000}
-        # {Sky}, {FNV} 0x00010000 ACTI: Random Animation Start
-        # {Sky}, {FNV} 0x00010000 REFR light: Never fades
-        # {FNV} 0x00010000 REFR High Priority LOD
-        # RandomAnimationStart NeverFades HighPriorityLOD
-        (16,'randomAnimationStart'), # {0x00010000}
-        # {Sky}, {FNV} 0x00020000 ACTI: Dangerous
-        # {Sky}, {FNV} 0x00020000 REFR light: Doesn't light landscape
-        # {Sky} 0x00020000 SLGM: Can hold NPC's soul
-        # {Sky}, {FNV} 0x00020000 STAT: Use High-Detail LOD Texture
-        # {FNV} 0x00020000 STAT: Radio Station (Talking Activator)
-        # {FNV} 0x00020000 STAT: Off limits (Interior cell)
-        # Dangerous OffLimits DoesntLightLandscape HighDetailLOD CanHoldNPC RadioStation
-        (17,'dangerous'), # {0x00020000}
-        (18,'compressed'), # {0x00040000}
-        # {Sky}, {FNV} 0x00080000 STAT: Has Currents
-        # {FNV} 0x00080000 STAT: Platform Specific Texture
-        # {FNV} 0x00080000 STAT: Dead
-        # CantWait HasCurrents PlatformSpecificTexture Dead
-        (19,'cantWait'), # {0x00080000}
-        # {Sky}, {FNV} 0x00100000 ACTI: Ignore Object Interaction
-        (20,'ignoreObjectInteraction'), # {0x00100000}
-        # {???} 0x00200000 ????: Used in Memory Changed Form
-        # {Sky}, {FNV} 0x00800000 ACTI: Is Marker
-        (23,'isMarker'), # {0x00800000}
-        # {FNV} 0x01000000 ????: Destructible (Runtime only)
-        (24,'destructible'), # {0x01000000} {FNV}
-        # {Sky}, {FNV} 0x02000000 ACTI: Obstacle
-        # {Sky}, {FNV} 0x02000000 REFR: No AI Acquire
-        (25,'obstacle'), # {0x02000000}
-        # {Sky}, {FNV} 0x04000000 ACTI: Filter
-        (26,'navMeshFilter'), # {0x04000000}
-        # {Sky}, {FNV} 0x08000000 ACTI: Bounding Box
-        # NavMesh BoundingBox
-        (27,'boundingBox'), # {0x08000000}
-        # {Sky}, {FNV} 0x10000000 STAT: Show in World Map
-        # {FNV} 0x10000000 STAT: Reflected by Auto Water
-        # {FNV} 0x10000000 STAT: Non-Pipboy
-        # MustExitToTalk ShowInWorldMap NonPipboy',
-        (28,'nonPipboy'), # {0x10000000}
-        # {Sky}, {FNV} 0x20000000 ACTI: Child Can Use
-        # {Sky}, {FNV} 0x20000000 REFR: Don't Havok Settle
-        # {FNV} 0x20000000 REFR: Refracted by Auto Water
-        # ChildCanUse DontHavokSettle RefractedbyAutoWater
-        (29,'refractedbyAutoWater'), # {0x20000000}
-        # {Sky}, {FNV} 0x40000000 ACTI: GROUND
-        # {Sky}, {FNV} 0x40000000 REFR: NoRespawn
-        # NavMeshGround NoRespawn
-        (30,'noRespawn'), # {0x40000000}
-        # {Sky}, {FNV} 0x80000000 REFR: MultiBound
-        # MultiBound
-        (31,'multiBound'), # {0x80000000}
-    )
-    __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
-                 u'changed', u'data', u'inName', u'longFids']
-    isKeyedByEid = False
-    #--Set at end of class data definitions.
-    type_class = {}
+class RecordType(type):
+    """Metaclass responsible for adding slots in MreRecord type instances and
+    collecting signature and type information on class creation."""
+    # record sigs to class implementing them - collected at class creation
+    sig_to_class = {}
+    # Record types that *don't* have a complex child structure (e.g. CELL), are
+    # *not* part of such a complex structure (e.g. REFR), or are *not* the file
+    # header (TES3/TES4)
     simpleTypes = set()
     # Maps subrecord signatures to a set of record signatures that can contain
     # those subrecords
     subrec_sig_to_record_sig = defaultdict(set)
+    # nested record types mapped to top record type they belong to
+    nested_to_top = defaultdict(set)
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
-        self.header = header
-        self._rec_sig = header.recType
-        self.fid = header.fid
-        self.flags1 = MreRecord.flags1_(header.flags1)
-        self.size = header.size
-        self.flags2 = header.flags2
-        self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)
-        self.changed = False
-        self.data = None
-        self.inName = ins and ins.inName
+    def __new__(cls, name, bases, classdict):
+        slots = classdict.get('__slots__', ())
+        classdict['__slots__'] = (*slots, *melSet.getSlotsUsed()) if (
+            melSet := classdict.get('melSet', ())) else slots
+        new = super(RecordType, cls).__new__(cls, name, bases, classdict)
+        if rsig := getattr(new, 'rec_sig', None):
+            cls.sig_to_class[rsig] = new
+            if new.melSet:
+                for sr_sig in new.melSet.loaders:
+                    RecordType.subrec_sig_to_record_sig[sr_sig].add(rsig)
+            for sig in new.nested_records_sigs():
+                RecordType.nested_to_top[sig].add(rsig)
+        return new
+
+class MreRecord(metaclass=RecordType):
+    """Generic Record. See the Wrye Bash wiki for information on all possible
+    header flags:
+    https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Record-Header-Flags
+    """
+    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'changed', 'data',
+                 'inName')
+    subtype_attr = {b'EDID': u'eid', b'FULL': u'full', b'MODL': u'model'}
+    isKeyedByEid = False
+
+    class HeaderFlags(bolt.Flags):
+        """Common flags to all (most) record types, based on Oblivion flags.
+        NOTE: Use explicit indices here and in subclasses, otherwise the order
+        can be messed up (due to type hints being saved in dicts which are
+        ordered by insertion order, not update order).
+        """
+        deleted: bool = flag(5)
+        quest_item: bool = flag(10)             # types??
+        initially_disabled: bool = flag(11)     # REFR/??
+        ignored: bool = flag(12)
+        compressed: bool = flag(18)
+
+    def __init__(self, header, ins=None, *, do_unpack=True):
+        self.header = header # type: RecHeader
+        self._rec_sig: bytes = header.recType
+        self.fid: utils_constants.FormId = header.fid
+        flags1_class = RecordType.sig_to_class[self._rec_sig].HeaderFlags
+        self.flags1: MreRecord.HeaderFlags = flags1_class(header.flags1)
+        self.changed: bool = False
+        self.data: bytes | None = None
+        self.inName: str | None = ins and ins.inName
         if ins: # Load data from ins stream
             file_offset = ins.tell()
-            self.data = ins.read(self.size, self._rec_sig,
+            ##: Couldn't we toss this data if we unpacked it? (memory!)
+            self.data = ins.read(header.blob_size, self._rec_sig,
                                  file_offset=file_offset)
             if not do_unpack: return  #--Read, but don't analyze.
             if self.__class__ is MreRecord: return  # nothing to be done
             ins_ins, ins_size = ins.ins, ins.size
+            ins_debug_offset = ins.debug_offset
             try: # swap the wrapped io stream with our (decompressed) data
                 ins.ins, ins.size = self.getDecompressed()
+                ins.debug_offset = ins_debug_offset + file_offset
                 self.loadData(ins, ins.size, file_offset=file_offset)
             finally: # restore the wrapped stream to read next record
                 ins.ins, ins.size = ins_ins, ins_size
+                ins.debug_offset = ins_debug_offset
+
+    @classmethod
+    def nested_records_sigs(cls):
+        return set()
 
     def __repr__(self):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
-        return f'<{reid}[{self.rec_str}:{strFid(self.fid)}]>'
+        return f'<{reid}[{self.rec_str}:{self.fid}]>'
+
+    # Group element API -------------------------------------------------------
+    def should_skip(self):
+        """Returns True if this record should be skipped by most processing,
+        i.e. if it is ignored or deleted."""
+        return self.flags1.ignored or self.flags1.deleted
+
+    def group_key(self): ##: we need an MreRecord mixin - too many ifs
+        """Return a key for indexing the record on the parent (MobObjects)
+        grup."""
+        record_id = self.fid
+        if self.isKeyedByEid and record_id.is_null():
+            record_id = self.eid
+        return record_id
+
+    @staticmethod
+    def get_num_headers():
+        """Hacky way of simplifying _AMobBase API."""
+        return 1
 
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
         instance of the appropriate subclass (!)"""
-        subclass = MreRecord.type_class[self._rec_sig]
+        subclass = type(self).sig_to_class[self._rec_sig]
         myCopy = subclass(self.header)
         myCopy.data = self.data
         with ModReader(self.inName, *self.getDecompressed()) as reader:
@@ -398,11 +370,11 @@ class MreRecord(object):
         myCopy.data = None
         return myCopy
 
-    def mergeFilter(self,modSet):
-        """This method is called by the bashed patch mod merger. The
-        intention is to allow a record to be filtered according to the
-        specified modSet. E.g. for a list record, items coming from mods not
-        in the modSet could be removed from the list."""
+    def keep_fids(self, keep_plugins):
+        """Filter specific record elements that contain fids to only keep
+        those whose fids come from keep_plugins. E.g. for a list record
+        element, items coming from mods not in keep_plugins will be removed
+        from the list."""
 
     def getDecompressed(self, *, __unpacker=int_unpacker):
         """Return (decompressed if necessary) record data wrapped in BytesIO.
@@ -439,14 +411,9 @@ class MreRecord(object):
                 if not mel_sigs or subrec.mel_sig in mel_sigs:
                     yield subrec
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        self.fid = mapper(self.fid)
-
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        raise exception.AbstractError(
+        raise NotImplementedError(
             f'updateMasters called on skipped type {self.rec_str}')
 
     def setChanged(self,value=True):
@@ -454,31 +421,35 @@ class MreRecord(object):
         self.changed = value
 
     def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
-        if self.longFids: raise exception.StateError(
-            f'Packing Error: {self.rec_str} {self.fid}: Fids in long format.')
+        """Return size of self.data, (after, if necessary, packing it) PLUS the
+        size of the record header."""
+        if not self.changed:
+            return self.header.blob_size + RecordHeader.rec_header_size
         #--Pack data and return size.
         out = io.BytesIO()
+        self._sort_subrecords()
         self.dumpData(out)
         self.data = out.getvalue()
         if self.flags1.compressed:
             dataLen = len(self.data)
             comp = zlib.compress(self.data,6)
             self.data = struct_pack('=I', dataLen) + comp
-        self.size = len(self.data)
+        self.header.blob_size = len(self.data)
         self.setChanged(False)
-        return self.size
+        return self.header.blob_size + RecordHeader.rec_header_size
 
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
         if self.data is None:
-            raise exception.StateError(
-                f'Dumping empty record. [{self.inName}: {self.rec_str} '
-                f'{self.fid:08X}]')
+            raise exception.StateError(f'Dumping empty record. [{self.inName}:'
+                                       f' {self.rec_str} {self.fid}]')
         for subrecord in self.iterate_subrecords():
             subrecord.packSub(out, subrecord.mel_data)
+
+    def _sort_subrecords(self):
+        """Sorts all subrecords of this record that need sorting. Default
+        implementation does nothing."""
 
     @property
     def rec_str(self):
@@ -489,16 +460,15 @@ class MreRecord(object):
         """Dumps all data to output stream."""
         if self.changed:
             raise exception.StateError(f'Data changed: {self.rec_str}')
-        if not self.data and not self.flags1.deleted and self.size > 0:
+        if not self.data and not self.flags1.deleted and \
+                self.header.blob_size > 0:
             raise exception.StateError(
-                f'Data undefined: {self.rec_str} {hex(self.fid)}')
+                f'Data undefined: {self.rec_str} {self.fid}')
         #--Update the header so it 'packs' correctly
-        self.header.size = self.size
-        if self._rec_sig != b'GRUP':
-            self.header.flags1 = self.flags1
-            self.header.fid = self.fid
+        self.header.flags1 = self.flags1
+        self.header.fid = self.fid
         out.write(self.header.pack_head())
-        if self.size > 0: out.write(self.data)
+        if self.header.blob_size > 0: out.write(self.data)
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self, mel_sig_):
@@ -537,9 +507,11 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
-    __slots__ = []
+    # The record attribute and flag name needed to find out if a piece of armor
+    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
+    not_playable_flag = ('flags1', 'not_playable')
 
-    def __init__(self, header, ins=None, *, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=True):
         if self.__class__.rec_sig != header.recType:
             raise ValueError(f'Initialize {type(self)} with header.recType '
                              f'{header.recType}')
@@ -588,20 +560,23 @@ class MelRecord(MreRecord):
                         f'{sig_to_str(sub_type)}'
             file_offset += ins.tell()
             bolt.deprint(self.error_string('loading', file_offset, sub_size,
-                                           sub_type))
+                                           sub_type, self.flags1))
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error
+        # Sort once we're done - sorting during loading is obviously a bad idea
+        self._sort_subrecords()
 
-    def error_string(self, op, file_offset=None, sub_size=None, sub_type=None):
+    def error_string(self, op, file_offset=None, sub_size=None, sub_type=None, header_flags=None):
         """Return a human-readable description of this record to use in error
         messages."""
         msg = f'Error {op} {self.rec_str} record and/or subrecord: ' \
-              f'{strFid(self.fid)}\n  eid = {getattr(self, "eid", "<<NO EID>>")!r}'
+              f'{self.fid}\n  eid = {getattr(self, "eid", "<<NO EID>>")}'
         if file_offset is None:
             return msg
         li = [msg, f'subrecord = {sig_to_str(sub_type)}',
-              f'subrecord size = {sub_size}', f'file pos = {file_offset}']
+              f'subrecord size = {sub_size}', f'file pos = {file_offset}',
+              f'header flags = {header_flags}']
         return '\n  '.join(li)
 
     def dumpData(self,out):
@@ -609,18 +584,27 @@ class MelRecord(MreRecord):
         self.__class__.melSet.dumpData(self,out)
 
     def mapFids(self, mapper, save_fids):
-        """Applies mapper to fids of sub-elements. Will replace fid with mapped value if save == True."""
+        """Applies mapper to fids of sub-elements. Will replace fid with mapped
+        value if save == True."""
         self.__class__.melSet.mapFids(self, mapper, save_fids)
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        self.__class__.melSet.convertFids(self,mapper,toLong)
+    def _sort_subrecords(self):
+        """Sorts all subrecords of this record that need sorting."""
+        self.__class__.melSet.sort_subrecords(self)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        if not self.longFids:
-            raise exception.StateError('Fids not in long format')
         masterset_add(self.fid)
         for element in self.__class__.melSet.formElements:
             element.mapFids(self, masterset_add)
+
+    # Hacky patcher API - these should really be mixins in the record hierarchy
+    def is_not_playable(self):
+        """Return True if this record is marked as nonplayable."""
+        np_flag_attr, np_flag_name = self.not_playable_flag
+        return getattr(getattr(self, np_flag_attr), np_flag_name)
+
+    def set_playable(self):
+        """Set the _not playable flag_ to _False_ - there."""
+        np_flag_attr, np_flag_name = self.not_playable_flag
+        setattr(getattr(self, np_flag_attr), np_flag_name, False)

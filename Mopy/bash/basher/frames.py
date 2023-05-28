@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,20 +25,21 @@ import re
 import string
 from collections import OrderedDict
 
-from .. import bass, balt, bosh, bolt, load_order
+from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath, FName
-from ..bosh import mods_metadata, empty_path, omods
+from ..bolt import FName, GPath
+from ..bosh import empty_path, mods_metadata, omods
 from ..exception import StateError
-from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
-    LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
-    web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar
+from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
+    FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
+    SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
+    VerticalLine, VLayout, WindowFrame, bell, copy_text_to_clipboard, \
+    web_viewer_available, showWarning
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
     _frame_settings_key = u'bash.modDocs'
-    _def_size = (300, 400)
+    _def_size = (900, 500)
 
     def __init__(self):
         # Data
@@ -52,9 +53,8 @@ class DocBrowser(WindowFrame):
         # Singleton
         Link.Frame.docBrowser = self
         # Window
-        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
-                                         icon_bundle=Resources.bashBlue,
-                                         sizes_dict=bass.settings)
+        super().__init__(Link.Frame, title=_('Doc Browser'),
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         # Base UI components
         root_window = Splitter(self)
         mod_list_window, main_window = root_window.make_panes(250,
@@ -75,29 +75,29 @@ class DocBrowser(WindowFrame):
              choices=sorted(self._db_doc_paths),
              isSort=True, onSelect=self._do_select_existing)
         # Buttons
-        self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               btn_tooltip=u'Associates this plugin file with '
-                                           u'a document.')
+        self._set_btn = Button(main_window, _('Set Doc...'),
+                               btn_tooltip=_('Associates this plugin file '
+                                             'with a document.'))
         self._set_btn.on_clicked.subscribe(self._do_set)
-        self._forget_btn = Button(main_window, _(u'Forget Doc'),
-                                  btn_tooltip=_(u'Removes the link between '
-                                                u'this plugin file and the '
-                                                u'matching document.'))
+        self._forget_btn = Button(main_window, _('Forget Doc'),
+                                  btn_tooltip=_('Removes the link between '
+                                                'this plugin file and the '
+                                                'matching document.'))
         self._forget_btn.on_clicked.subscribe(self._do_forget)
-        self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  btn_tooltip=_(u'Renames the document.'))
+        self._rename_btn = Button(main_window, _('Rename Doc...'),
+                                  btn_tooltip=_('Renames the document.'))
         self._rename_btn.on_clicked.subscribe(self._do_rename)
-        self._edit_box = CheckBox(main_window, _(u'Allow Editing'),
-                                  chkbx_tooltip=_(u'Enables or disables '
-                                                  u'editing in the text field '
-                                                  u'below.'))
+        self._edit_box = CheckBox(main_window, _('Allow Editing'),
+                                  chkbx_tooltip=_('Enables or disables '
+                                                  'editing in the text field '
+                                                  'below.'))
         self._edit_box.on_checked.subscribe(self._do_edit)
-        self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                btn_tooltip=_(u'Opens the document in your '
-                                              u'default viewer/editor.'))
+        self._open_btn = Button(main_window, _('Open Doc...'),
+                                btn_tooltip=_('Opens the document in your '
+                                              'default viewer/editor.'))
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
-        self._doc_ctrl = DocumentViewer(main_window)
+        self._doc_ctrl = DocumentViewer(main_window, balt.get_dv_bitmaps())
         self._prev_btn, self._next_btn, self._reload_btn = \
             self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
@@ -111,7 +111,14 @@ class DocBrowser(WindowFrame):
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
-            HLayout(item_expand=True, items=self._buttons),
+            HLayout(item_expand=True, items=[
+                self._edit_box,
+                Spacer(6), VerticalLine(main_window), Spacer(6),
+                self._set_btn, self._forget_btn, self._rename_btn,
+                self._open_btn,
+                Spacer(6), VerticalLine(main_window), Spacer(6),
+                self._prev_btn, self._next_btn, self._reload_btn,
+            ]),
             self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3)),
         ]).apply_to(main_window)
         VLayout(item_expand=1, item_border=4, item_weight=1, items=[
@@ -164,8 +171,8 @@ class DocBrowser(WindowFrame):
         if not doc_path:
             return bell()
         if not doc_path.is_file():
-            balt.showWarning(self, _('The assigned document is not '
-                                     'present:') + f'\n  {doc_path}')
+            showWarning(self, _('The assigned document is not present:') +
+                        f'\n  {doc_path}')
         else:
             doc_path.start()
 
@@ -211,8 +218,9 @@ class DocBrowser(WindowFrame):
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = ''
-        doc_path = FileOpen.display_dialog(self,
-            _('Select doc for %s:') % mod_name, docs_dir, file_name, '*.*',
+        doc_path = FileOpen.display_dialog(self, _('Select document for '
+                                                   '%(target_file_name)s:') % {
+            'target_file_name': mod_name}, docs_dir, file_name, '*.*',
             allow_create=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
@@ -341,7 +349,6 @@ class DocBrowser(WindowFrame):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
-        bass.settings[u'bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
         super(DocBrowser, self).on_closing(destroy)
 
@@ -350,10 +357,10 @@ _BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS, _COPY_TEXT, \
 _UPDATE = range(8)
 
 def _get_mod_checker_setting(key, default=None):
-    return bass.settings.get(u'bash.modChecker.show%s' % key, default)
+    return bass.settings.get(f'bash.modChecker.show{key}', default)
 
 def _set_mod_checker_setting(key, value):
-    bass.settings[u'bash.modChecker.show%s' % key] = value
+    bass.settings[f'bash.modChecker.show{key}'] = value
 
 class PluginChecker(WindowFrame):
     """Plugin Checker frame."""
@@ -373,7 +380,7 @@ class PluginChecker(WindowFrame):
         self.__imported = None
         #--Text
         self.check_mods_text = None
-        self._html_ctrl = DocumentViewer(self)
+        self._html_ctrl = DocumentViewer(self, balt.get_dv_bitmaps())
         back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
@@ -387,8 +394,8 @@ class PluginChecker(WindowFrame):
                 btn.on_clicked.subscribe(callback)
             btn.tooltip = setting_tip
             if make_checkbox and setting_key is not None:
-                new_value = bass.settings.get(
-                    u'bash.modChecker.show%s' % setting_key, setting_value)
+                new_value = _get_mod_checker_setting(setting_key,
+                    setting_value)
                 btn.is_checked = new_value
                 self._setting_names[key] = setting_key
             self._controls[key] = btn
@@ -406,6 +413,9 @@ class PluginChecker(WindowFrame):
                          u'clipboard.'))
         _f(_UPDATE,       False, _(u'Update'),
            setting_tip=_(u'Regenerate the report from scratch.'))
+        # If we can't load plugins, don't even show the option
+        if not bush.game.Esp.canBash:
+            self._controls[_LOAD_PLUGINS].visible = False
         #--Events
         self.on_activate.subscribe(self.on_activation)
         VLayout(border=4, spacing=4, item_expand=True, items=[
@@ -415,8 +425,9 @@ class PluginChecker(WindowFrame):
                 self._controls[_VERSION]
             ]),
             HLayout(spacing=4, items=[
-                self._controls[_LOAD_PLUGINS], Stretch(), self._controls[_UPDATE],
-                self._controls[_COPY_TEXT], back_btn, forward_btn, reload_btn
+                self._controls[_LOAD_PLUGINS], Stretch(),
+                self._controls[_UPDATE], self._controls[_COPY_TEXT],
+                back_btn, forward_btn, reload_btn
             ])
         ]).apply_to(self)
         self.CheckMods()

@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +30,7 @@ import logging
 import os
 import sys
 
-import utils
+from helpers import utils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -105,6 +105,6 @@ if __name__ == u'__main__':
     utils.setup_common_parser(argparser)
     setup_parser(argparser)
     parsed_args = argparser.parse_args()
-    open(parsed_args.logfile, u'w').close()
+    open(parsed_args.logfile, 'w', encoding='utf-8').close()
     main(parsed_args.verbosity, parsed_args.logfile,
          parsed_args.masterlist_version)

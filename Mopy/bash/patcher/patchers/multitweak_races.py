@@ -16,18 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the MultiTweakItem classes that tweak RACE records."""
+from __future__ import annotations
 
 from collections import defaultdict
-from typing import Union, Optional
 
-from .base import MultiTweakItem, MultiTweaker
-from ... import bush
-from ...bolt import attrgetter_cache, Path
+from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
+    MultiTweakItem
+from ... import bush, load_order
+from ...bolt import Path, attrgetter_cache
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
@@ -35,15 +36,14 @@ _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
 
 _FidList = list[tuple[Path, int]]
 _FacePartDict = defaultdict[str, _FidList]
-# PY3.10: Union -> |, can't do this here with __future__ annotations
-##: Also, we really need a less hacky solution than this 'mixed dict'
-_MixedDict = dict[Union[bytes, str], Union[_FidList, dict[str, _FidList]]]
+##: We really need a less hacky solution than this 'mixed dict'
+_MixedDict = dict[bytes | str, _FidList | dict[str, _FidList]]
 
 class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    tweak_races_data: Optional[_MixedDict] = None # sentinel, set by tweaker
+    tweak_races_data: _MixedDict | None = None # sentinel, set by tweaker
     _cached_changed_eyes: _FacePartDict
     _cached_changed_hairs: _FacePartDict
 
@@ -219,11 +219,68 @@ class _ARUnblockTweak(_ARaceTweak):
 class RaceTweak_AllHairs(_ARUnblockTweak):
     """Gives all races ALL hairs."""
     tweak_read_classes = b'HAIR', b'RACE',
-    tweak_name = _(u'Races Have All Hairs')
-    tweak_tip = _(u'Gives all races every available hair.')
-    tweak_key = u'hairyraces'
-    tweak_choices = [(u'get down tonight', 1)]
-    _sig_and_attr = (b'HAIR', u'hairs')
+    tweak_name = _('Races Have All Hairs')
+    tweak_tip = _('Gives all races every available hair.')
+    tweak_key = 'hairyraces'
+    tweak_choices = [('get down tonight', 1)]
+    _sig_and_attr = (b'HAIR', 'hairs')
+
+# -----------------------------------------------------------------------------
+class RaceTweak_AllHeadParts(IndexingTweak, CustomChoiceTweak):
+    ##: We *only* need FLST here for the create_record call down below
+    tweak_read_classes = b'FLST', b'HDPT',
+    tweak_name = _('Races Have All Head Parts')
+    tweak_tip = _('Gives all races every available head part.')
+    tweak_key = 'all_head_parts'
+    tweak_choices = [(_('Hair Only'), '3'),
+                     (_('Eyes Only'), '2'),
+                     (_('Eyes and Hair Only'), '23'),
+                     (_('All Parts'), '0123456')]
+    tweak_log_msg = _('Head Parts Tweaked: %(total_changed)d')
+    tweak_order = 11 # After playable tweaks
+    _index_sigs = [b'FLST', b'RACE']
+    _import_from_master = [bush.game.master_fid(f) for f in (
+        0x0A803F, # HeadPartsAllRacesMinusBeast
+        0x0A8039, # HeadPartsArgonianandVampire
+        0x0A8036, # HeadPartsKhajiitandVampire
+    )]
+
+    def validate_values(self, chosen_values: tuple) -> str | None:
+        for c in chosen_values[0]:
+            if c not in '0123456':
+                return _('Only numbers from 0-6 are allowed.')
+        if len(set(chosen_values[0])) != len(chosen_values[0]):
+            return _('Contains duplicate numbers.')
+
+    @property
+    def _chosen_parts(self):
+        return self.choiceValues[self.chosen][0]
+
+    def prepare_for_tweaking(self, patch_file):
+        super().prepare_for_tweaking(patch_file)
+        pr_flst = patch_file.create_record(b'FLST')
+        pr_flst.eid = 'BP_HeadPartsAllRaces'
+        self._playable_races_flst_fid = pr_flst.fid
+        all_race_fids = set()
+        # Start out with the ones from Skyrim.esm
+        for flst_fid in self._import_from_master:
+            flst_rec = self._indexed_records[b'FLST'][flst_fid]
+            all_race_fids |= set(flst_rec.formIDInList)
+        # Then merge in mod-added playable races
+        for race_fid, race_rec in self._indexed_records[b'RACE'].items():
+            if not race_rec.data_flags_1.playable: continue
+            all_race_fids.add(race_fid)
+        # Sort the result by final load order
+        pr_flst.formIDInList = sorted(all_race_fids,
+            key=lambda r: (load_order.cached_lo_index(r.mod_fn), r.object_dex))
+
+    def wants_record(self, record):
+        return (record._rec_sig == b'HDPT' and
+                record.flags.playable and
+                str(record.hdpt_type) in self._chosen_parts)
+
+    def tweak_record(self, record):
+        record.valid_races = self._playable_races_flst_fid
 
 # -----------------------------------------------------------------------------
 class RaceTweak_AllEyes(_ARUnblockTweak):
@@ -278,11 +335,11 @@ class _ARGenderlessTweak(_ARaceTweak):
     tweak_choices = [(u'Get it done', 1)]
 
     def wants_record(self, record):
-        return record.flags.notMale or record.flags.notFemale
+        return record.flags.not_male or record.flags.not_female
 
     def tweak_record(self, record):
-        record.flags.notMale = False
-        record.flags.notFemale = False
+        record.flags.not_male = False
+        record.flags.not_female = False
 
 class RaceTweak_GenderlessHairs(_ARGenderlessTweak):
     """Sets all hairs to be playable, regardless of gender."""
@@ -364,30 +421,29 @@ class TweakRacesPatcher(MultiTweaker):
     """Tweaks race things."""
     _tweak_classes = {globals()[t] for t in bush.game.race_tweaks}
 
-    def initData(self, progress):
-        super(TweakRacesPatcher, self).initData(progress)
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super().__init__(p_name, p_file, enabled_tweaks)
         if bush.game.race_tweaks_need_collection:
             self.collected_tweak_data: _MixedDict = {b'EYES': [], b'HAIR': []}
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress, scan_sigs=None):
         if bush.game.race_tweaks_need_collection:
             # Need to gather EYES/HAIR data for the tweaks
             tweak_data = self.collected_tweak_data
-            for tweak_type in (b'EYES', b'HAIR'):
-                if tweak_type not in modFile.tops: continue
+            for tweak_type, block in modFile.iter_tops({b'EYES', b'HAIR'}):
                 type_data = tweak_data[tweak_type]
                 type_data_set = set(type_data)
-                for record in modFile.tops[tweak_type].getActiveRecords():
-                    if record.fid not in type_data_set:
-                        type_data.append(record.fid)
-        super(TweakRacesPatcher, self).scanModFile(modFile, progress)
+                for rid, _r in block.iter_present_records():
+                    if rid not in type_data_set:
+                        type_data.append(rid)
+        super().scanModFile(modFile, progress, scan_sigs)
 
     def buildPatch(self, log, progress):
         if (bush.game.race_tweaks_need_collection
                 and b'RACE' in self.patchFile.tops):
             # Need to gather RACE data for the tweaks
             tweak_data = self.collected_tweak_data
-            for record in self.patchFile.tops[b'RACE'].getActiveRecords():
+            for record in self.patchFile.tops[b'RACE'].id_records.values():
                 ##: Are these checks needed for the tweak data collection?
                 # if not record.eyes:
                 #     continue  # Sheogorath. Assume is handled correctly.

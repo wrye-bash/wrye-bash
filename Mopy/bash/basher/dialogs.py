@@ -16,22 +16,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import bEnableWizard
-from .constants import installercons
-from .. import bass, balt, bosh, bolt, bush, env, load_order
-from ..balt import colors
-from ..bolt import FName, top_level_dirs, text_wrap
-from ..bosh import faces, ModInfo, InstallerProject
+import webbrowser
+from dataclasses import dataclass
+
+from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
+from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
+from ..bolt import CIstr, FName, text_wrap, top_level_dirs
+from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
-from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
-    HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
-    VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
-    HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar, bell, EventResult, Spacer
+from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
+    CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
+    GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
+    OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
+    TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
+    MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
+    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode
+from ..update_checker import LatestVersion
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -40,10 +44,12 @@ class ImportFaceDialog(DialogWindow):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(next(iter(faces)), int):
-            self.fdata = {f'{int_key:08X} {face.pcName}': face for
-                          int_key, face in faces.items()}
+        if faces and not isinstance(next(iter(faces)), str):
+            # Keys are FormIDs, convert them to human-readable strings
+            self.fdata = {f'{key_fid} {val_face.pcName}': val_face for
+                          key_fid, val_face in faces.items()}
         else:
+            # Keys are EditorIDs, good to go
             self.fdata = faces
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
@@ -94,7 +100,7 @@ class ImportFaceDialog(DialogWindow):
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
-        self.statsText.label_text = _(u'Health ') + str(face.health)
+        self.statsText.label_text = _('Health') + f' {face.health}'
         itemImagePath = bass.dirs['mods'].join('Docs', 'Images', f'{item}.jpg')
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
@@ -120,7 +126,7 @@ class ImportFaceDialog(DialogWindow):
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
                                         pc_flags)
-        balt.showOk(self, _(u'Face imported.'), self.fileInfo.fn_key)
+        showOk(self, _('Face imported.'), self.fileInfo.fn_key)
         self.accept_modal()
 
 #------------------------------------------------------------------------------
@@ -138,7 +144,7 @@ class CreateNewProject(DialogWindow):
         self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
         self._check_esp = CheckBox(self, _('Blank.esp'), checked=True,
-            chkbx_tooltip=_('Include a blank plugin file with only the '
+            chkbx_tooltip=_('Include a blank plugin file with only '
                             '%(game_master)s as a master in the project.') % {
                 'game_master': bush.game.master_file})
         self._check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
@@ -156,10 +162,6 @@ class CreateNewProject(DialogWindow):
         for checkbox in (self._check_esp, self._check_esp_masterless,
                          self._check_wizard):
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
-        if not bEnableWizard:
-            # pywin32 not installed
-            self._check_wizard.enabled = False
-            self._check_wizard_images.enabled = False
         # Panel Layout
         self.ok_button = OkButton(self)
         self.ok_button.on_clicked.subscribe(self.OnClose)
@@ -181,7 +183,8 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_icon('off.red.dir'))
+        self.set_icon(ImageWrapper(bass.dirs['images'].join(
+            'diamond_red_off.png')).GetIcon())
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self._project_name.text_content)
 
@@ -196,15 +199,16 @@ class CreateNewProject(DialogWindow):
             self._project_name.tooltip = None
         self.ok_button.enabled = not existing
 
-    def OnCheckBoxChange(self, is_checked=None):
+    def OnCheckBoxChange(self, _is_checked=None):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
         if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
-            img_key = f'off.red.dir' \
-                      f'{self._check_wizard.is_checked and ".wiz" or ""}'
+            img_fname = ('diamond_red_off' +
+                         ('_wiz' if self._check_wizard.is_checked else ''))
         else:
-            img_key = 'off.grey.dir'
-        self.set_icon(installercons.get_icon(img_key))
+            img_fname = 'diamond_grey_off'
+        self.set_icon(ImageWrapper(bass.dirs['images'].join(
+            img_fname + '.png')).GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
@@ -212,7 +216,7 @@ class CreateNewProject(DialogWindow):
         # Destination project directory in installers dir
         projectDir = bass.dirs[u'installers'].join(projectName)
         if projectDir.exists():
-            balt.showError(self, _(
+            showError(self, _(
                 u'There is already a project with that name!') + u'\n' + _(
                 u'Pick a different name for the project and try again.'))
             return
@@ -220,6 +224,9 @@ class CreateNewProject(DialogWindow):
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
+        # Create the directory first, otherwise some of the file creation calls
+        # below may race and cause undebuggable issues
+        tempProject.makedirs()
         blank_esp_name = f'Blank, {bush.game.displayName}.esp'
         if self._check_esp.is_checked:
             bosh.modInfos.create_new_mod(blank_esp_name, dir_path=tempProject)
@@ -255,14 +262,15 @@ class CreateNewProject(DialogWindow):
             tempProject.join(u'Docs').makedirs()
         # HACK: shellMove fails unless it has at least one file - means
         # creating an empty project fails silently unless we make one
+        # TODO: See if this is still necessary with IFileOperation
         has_files = bool([*tempProject.ilist()])
-        if not has_files: tempProject.join(u'temp_hack').makedirs()
+        if not has_files: tempProject.join('temp_hack').makedirs()
         # Move into the target location
         # TODO(inf) de-wx! Investigate further
-        env.shellMove(tempProject, projectDir, parent=self._native_widget)
+        env.shellMove({tempProject: projectDir}, parent=self)
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
-            projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
+            projectDir.join('temp_hack').rmtree(safety='temp_hack')
         fn_result_proj = FName(projectDir.stail)
         new_installer_order = 0
         sel_installers = self._parent.GetSelectedInfos()
@@ -285,15 +293,21 @@ class CreateNewPlugin(DialogWindow):
     _def_size = (400, 500)
 
     def __init__(self, parent):
-        super(CreateNewPlugin, self).__init__(parent, sizes_dict=balt.sizes)
+        super(CreateNewPlugin, self).__init__(parent,
+            icon_bundle=balt.Resources.bashBlue, sizes_dict=balt.sizes)
         self._parent_window = parent
         self._plugin_ext = DropDown(self, value='.esp',
-            choices=sorted(bush.game.espm_extensions), auto_tooltip=False)
-        self._plugin_ext.tooltip = _(u'Select which extension the plugin will '
-                                     u'have.')
+            choices=sorted(bush.game.espm_extensions), dd_tooltip=_(
+                'Select which extension the plugin will have.'))
         self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
         self._plugin_name = TextField(self, _(u'New Plugin'),
             alignment=TextAlignment.RIGHT)
+        # Start with the plugin field focused (so that a simple Enter press
+        # will complete the process immediately) and all text selected (so that
+        # the user can immediately start typing the plugin name they actually
+        # want)
+        self._plugin_name.set_focus()
+        self._plugin_name.select_all_text()
         self._esm_flag = CheckBox(self, _(u'ESM Flag'),
             chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
                             u'a master, i.e. have the ESM flag.'))
@@ -372,8 +386,9 @@ class CreateNewPlugin(DialogWindow):
         if limit_exceeded:
             # Only update if limit exceeded to avoid the wx update/redraw cost
             self._too_many_masters.label_text = _(
-                'Too many masters: %u checked, but only %u are allowed by the '
-                'game.') % (count_checked, count_limit)
+                'Too many masters: %(count_checked)d checked, but only '
+                '%(count_limit)d are allowed by the game.') % {
+                'count_checked': count_checked, 'count_limit': count_limit}
         self.update_layout()
 
     def _handle_plugin_ext(self, new_p_ext):
@@ -421,7 +436,7 @@ class CreateNewPlugin(DialogWindow):
         pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
         newName, root = ModInfo.validate_filename_str(pl_name)
         if root is None:
-            balt.showError(self, newName)
+            showError(self, newName)
             self._plugin_name.set_focus()
             self._plugin_name.select_all_text()
             return EventResult.FINISH # leave the dialog open
@@ -483,3 +498,426 @@ class ExportScriptsDialog(DialogWindow):
         bass.settings['bash.mods.export.deprefix'] = pfx_remove
         cmt_skip = self._skip_comments.is_checked
         bass.settings['bash.mods.export.skipcomments'] = cmt_skip
+
+#------------------------------------------------------------------------------
+class _AWBMLE(AMultiListEditor):
+    """Base class for multi-list editors, passing required parameters that
+    depend on balt automatically."""
+    def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
+            **kwargs):
+        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
+            'square_check.16', 'square_empty.16'))
+        super().__init__(parent, data_desc=data_desc, list_data=list_data,
+            check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue, **kwargs)
+
+class _ABainMLE(_AWBMLE):
+    """Base class for BAIN-related multi-list editors. Automatically converts
+    results back to CIstrs."""
+    def show_modal(self):
+        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
+        result = super().show_modal()
+        final_lists = [list(map(CIstr, l)) for l in result[1:]]
+        return result[0], *final_lists
+
+#------------------------------------------------------------------------------
+class SyncFromDataEditor(_ABainMLE):
+    """Template for a multi-list editor for Sync From Data."""
+    title = _('Sync From Data - Preview')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, pkg_missing: list[CIstr],
+            pkg_mismatched: list[CIstr], pkg_name: str):
+        # Note the map(str) usages to get rid of CIstr for gui/wx, which we
+        # later have to recreate in show_modal
+        del_data = MLEList(
+            mlel_title=_('Files To Delete (%(missing_count)d):') % {
+                'missing_count': len(pkg_missing)},
+            mlel_desc=_('Uncheck files to keep them in the package.'),
+            mlel_items=list(map(str, pkg_missing)))
+        upd_data = MLEList(
+            mlel_title=_('Files To Update (%(mismatched_count)d):') % {
+                'mismatched_count': len(pkg_mismatched)},
+            mlel_desc=_('Uncheck files to keep them unchanged in the '
+                        'package.'),
+            mlel_items=list(map(str, pkg_mismatched)))
+        sync_desc = _('Update %(target_package)s according to '
+                      '%(data_folder)s directory?') % {
+            'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
+        sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
+        super().__init__(parent, data_desc=sync_desc,
+            list_data=[del_data, upd_data], ok_label=_('Update'))
+
+#------------------------------------------------------------------------------
+class CleanDataEditor(_ABainMLE):
+    """Template for a multi-list editor for Clean Data."""
+    title = _('Clean Data - Preview')
+    _def_size = (450, 500)
+
+    def __init__(self, parent, *, unknown_files: list[CIstr]):
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        to_move_data = MLEList(
+            mlel_title=_('Files To Move (%(to_move_count)d):') % {
+                'to_move_count': len(unknown_files)},
+            mlel_desc=_('Uncheck any files you want to keep in the '
+                        '%(data_folder)s folder.') % mdir_fmt,
+            mlel_items=list(map(str, unknown_files)))
+        super().__init__(parent, list_data=[to_move_data],
+            data_desc=_('Move the following files out of the %(data_folder)s '
+                        'folder?') % mdir_fmt, ok_label=_('Move'))
+
+#------------------------------------------------------------------------------
+class MonitorExternalInstallationEditor(_ABainMLE):
+    """Template for a multi-list editor for Monitor External Installation."""
+    title = _('Monitor External Installation - Result')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, new_files: list[CIstr],
+            changed_files: list[CIstr], touched_files: list[CIstr],
+            deleted_files: list[CIstr]):
+        mdir_fmt = {'data_folder': bush.game.mods_dir}
+        newf_data = MLEList(
+            mlel_title=_('New Files (%(new_file_cnt)d):') % {
+                'new_file_cnt': len(new_files)},
+            mlel_desc=_('These files are newly added to the %(data_folder)s '
+                        'folder. Uncheck any that you want to '
+                        'skip.') % mdir_fmt,
+            mlel_items=list(map(str, new_files)))
+        changedf_data = MLEList(
+            mlel_title=_('Changed Files (%(chg_file_cnt)d):') % {
+                'chg_file_cnt': len(changed_files)},
+            mlel_desc=_('These files were modified. Uncheck any that you want '
+                        'to skip.'),
+            mlel_items=list(map(str, changed_files)))
+        touchedf_data = MLEList(
+            mlel_title=_('Touched Files (%(tch_file_cnt)d):') % {
+                'tch_file_cnt': len(touched_files)},
+            mlel_desc=_('These files were not changed, but had their '
+                        'modification time altered. These files were most '
+                        'likely included in the external installation, but '
+                        'were identical to the ones that already existed in '
+                        'the %(data_folder)s folder.') % mdir_fmt,
+            mlel_items=list(map(str, touched_files)))
+        deletedf_data = MLEList(
+            mlel_title=_('Deleted Files (%(del_file_cnt)d):') % {
+                'del_file_cnt': len(deleted_files)},
+            mlel_desc=_("These files were deleted. BAIN does not have the "
+                        "capability to remove files when installing, so these "
+                        "deletions cannot be packaged into a BAIN project. "
+                        "You may want to use 'Sync From Data...' to remove "
+                        "them from their origin packages."),
+            mlel_items=list(map(str, deleted_files)))
+        mei_desc = _('The following changes were detected in the '
+                     '%(data_folder)s folder. Do you want to create a project '
+                     'from them?') % mdir_fmt
+        # Only show an OK button if we only have deleted files
+        any_non_deleted = bool(new_files or changed_files or touched_files)
+        ok_btn_label = _('Create Project') if any_non_deleted else _('OK')
+        cancel_btn_label = _('Cancel') if any_non_deleted else None
+        super().__init__(parent, data_desc=mei_desc,
+            list_data=[newf_data, changedf_data, touchedf_data, deletedf_data],
+            ok_label=ok_btn_label, cancel_label=cancel_btn_label)
+
+#------------------------------------------------------------------------------
+class DeactivateBeforePatchEditor(_AWBMLE):
+    """Template for a multi-list editor for pre-BP deactivation of plugins."""
+    title = _('Deactivate Prior to Patching')
+    _def_size = (450, 600)
+
+    def __init__(self, parent, *, plugins_mergeable: list[FName],
+            plugins_nomerge: list[FName], plugins_deactivate: list[FName]):
+        pm_data = MLEList(
+            mlel_title=_('Mergeable (%(plgn_cnt)d):') % {
+                'plgn_cnt': len(plugins_mergeable)},
+            mlel_desc=_('These plugins are mergeable. It is suggested that '
+                        'they be deactivated and merged into the patch. This '
+                        'helps avoid the maximum plugin limit.'),
+            mlel_items=list(map(str, plugins_mergeable)))
+        pn_data = MLEList(
+            mlel_title=_("Mergeable, but Tagged 'NoMerge' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_nomerge)},
+            mlel_desc=_("These plugins are mergeable, but have been tagged "
+                        "with 'NoMerge'. They should be deactivated before "
+                        "building the patch, imported into it and reactivated "
+                        "afterwards."),
+            mlel_items=list(map(str, plugins_nomerge)))
+        pd_data = MLEList(
+            mlel_title=_("Tagged 'Deactivate' (%(plgn_cnt)d):") % {
+                'plgn_cnt': len(plugins_deactivate)},
+            mlel_desc=_("These mods have been tagged with 'Deactivate'. They "
+                        "should be deactivated and merged or imported into "
+                        "the Bashed Patch."),
+            mlel_items=list(map(str, plugins_deactivate)))
+        dbp_desc = _('The following plugins should be deactivated prior to '
+                     'building the Bashed Patch.')
+        super().__init__(parent, data_desc=dbp_desc,
+            list_data=[pm_data, pn_data, pd_data], cancel_label=_('Skip'))
+
+    def show_modal(self):
+        # Add the FNames we removed in __init__ (see map(str)'s above) back in
+        result = super().show_modal()
+        final_lists = [list(map(FName, l)) for l in result[1:]]
+        return result[0], *final_lists
+
+#------------------------------------------------------------------------------
+_uc_css = """body {
+    max-width: 650px;
+    line-height: 1.5;
+    font-size: 16px;
+    color: #444;
+}
+h1, h2, h3 { line-height: 1.2 }
+a:link { text-decoration: none; }
+a:hover { text-decoration: underline; }
+"""
+
+class UpdateNotification(DialogWindow):
+    """A notification dialog showing the user information about a new version
+    of Wrye Bash."""
+    title = _('New Version Available!')
+    _min_size = (400, 400)
+    _def_size = (500, 500)
+
+    def __init__(self, parent, new_version: LatestVersion):
+        super().__init__(parent, icon_bundle=balt.Resources.bashBlue,
+            sizes_dict=balt.sizes)
+        self._do_quit = False
+        new_ver_msg = _('A new version of Wrye Bash, version %(new_wb_ver)s, '
+                        'is available! You are currently using version '
+                        '%(curr_wb_ver)s.') % {
+            'new_wb_ver': new_version.wb_version,
+            'curr_wb_ver': bass.AppVersion,
+        }
+        # Ensure the temp dir is empty, then write the changelog into it
+        bass.rmTempDir()
+        temp_dir = bass.getTempDir()
+        wb_changes = temp_dir.join('wb_changes.html')
+        with open(wb_changes, 'w', encoding='utf-8') as out:
+            out.write(bolt.html_start % (self.title, _uc_css))
+            out.write(new_version.wb_changes)
+            out.write(bolt.html_end)
+        self._changes_viewer = DocumentViewer(self, balt.get_dv_bitmaps())
+        self._changes_viewer.try_load_html(wb_changes)
+        back_btn, forward_btn, reload_btn = self._changes_viewer.get_buttons()
+        # Generate the download location radio buttons
+        self._download_url = ''
+        self._dl_btn_to_url = {}
+        self._url_buttons = []
+        for i, download_info in enumerate(new_version.wb_downloads):
+            if not download_info.should_show_download():
+                # The download isn't compatible with this system, skip it
+                continue
+            dl_name = download_info.download_name
+            dl_url = download_info.download_url
+            if i == 0:
+                # The first one is the default
+                self._download_url = dl_url
+                rbtn = RadioButton(self, dl_name, is_group=True)
+                rbtn.is_checked = True
+            else:
+                rbtn = RadioButton(self, dl_name)
+            rbtn.tooltip = _('Download from %(dl_name)s (%(dl_url)s).') % {
+                'dl_name': dl_name, 'dl_url': dl_url}
+            rbtn.on_checked.subscribe(self._on_download_opt_changed)
+            self._url_buttons.append(rbtn)
+            self._dl_btn_to_url[rbtn] = dl_url
+        # Ensure the downloads list is never empty, which would break the
+        # entire update notification popup
+        if not self._url_buttons:
+            raise RuntimeError('No download is available on this system. '
+                               'latest.json has been misconfigured, please '
+                               'report this to the Wrye Bash maintainers.')
+        quit_btn = OkButton(self, _('Quit and Download'),
+            btn_tooltip=_('Close Wrye Bash and open the selected download '
+                          'option in your default web browser.'))
+        quit_btn.on_clicked.subscribe(self._on_quit_and_download)
+        VLayout(border=4, spacing=6, item_expand=True, items=[
+            ##: Make this a WrappingLabel, depends on inf-190-bye-listboxes
+            (Label(self, new_ver_msg), LayoutOptions(h_align=CENTER)),
+            (HBoxedLayout(self, title=_('Release Notes'), item_expand=True,
+                items=[(self._changes_viewer, LayoutOptions(weight=1))]),
+             LayoutOptions(weight=1)),
+            HBoxedLayout(self, title=_('Download Options'), spacing=6,
+                items=self._url_buttons),
+            HLayout(spacing=6, item_expand=True, items=[
+                back_btn, forward_btn, reload_btn, Stretch(), quit_btn,
+                CancelButton(self, _('Ignore')),
+            ]),
+        ]).apply_to(self)
+
+    def _on_download_opt_changed(self, _checked):
+        """Internal callback, called when one of the radio buttons for the
+        download locations is changed."""
+        for url_btn in self._url_buttons:
+            if url_btn.is_checked:
+                self._download_url = self._dl_btn_to_url[url_btn]
+                break
+
+    def _on_quit_and_download(self):
+        """Internal callback, called when the Quit and Download button is
+        pressed."""
+        webbrowser.open(self._download_url)
+        self._do_quit = True
+
+    def show_modal(self):
+        super().show_modal()
+        # Clean up the temp dir we created up above and quit WB if the Quit
+        # button was pressed
+        bass.rmTempDir()
+        if self._do_quit:
+            balt.Link.Frame.exit_wb()
+
+#------------------------------------------------------------------------------
+@dataclass(slots=True, kw_only=True)
+class _ChangeData:
+    """Records a change to some items in a UIList."""
+    # An optional description for this change
+    change_desc: str | None
+    # The ImageList used by the parent UIList that hosts the items that this
+    # change happened to
+    uil_image_list: ImageList
+    # A decorated tree dict storing the items that the change happened to
+    changed_items: DecoratedTreeDict
+    # The internal key for the parent tab in tabInfo. E.g. 'Mods'
+    parent_tab_key: str
+
+def _mk_node_class(node_tab_key: str):
+    """Helper for creating a dynamic node class that jumps to an item on the
+    tab with the specified key."""
+    class _TabTreeNode(TreeNode):
+        """A node depicting an item on a certain tab."""
+        def on_activated(self):
+            try:
+                balt.Link.Frame.notebook.SelectPage(node_tab_key,
+                    self._node_text)
+            except KeyError:
+                balt.showError(self._parent_tree,
+                    _('%(target_item)s could not be found.') % {
+                        'target_item': self._node_text},
+                    title=_('Cannot Jump to Item'))
+            except exception.BoltError:
+                pass ##: BSAs tab, ignore for now
+            return EventResult.FINISH # Don't collapse/expand nodes
+    return _TabTreeNode
+
+class _AChangeHighlightDialog(MaybeModalDialogWindow):
+    """Base class for dialogs that highlights certain changes having been
+    made to UIList items."""
+    _def_size = (350, 400)
+    _min_size = (250, 300)
+
+    def __init__(self, parent, *, highlight_changes: list[_ChangeData],
+            add_cancel_btn=False):
+        super().__init__(parent, stay_over_parent=True, sizes_dict=balt.sizes,
+            icon_bundle=balt.Resources.bashBlue)
+        ch_layout = VLayout(border=4, spacing=6, item_expand=True)
+        labels_to_wrap = []
+        for change_data in highlight_changes:
+            # First add the description for the change, if any
+            if change_data.change_desc:
+                desc_label = WrappingLabel(self, change_data.change_desc)
+                ch_layout.add(desc_label)
+                labels_to_wrap.append(desc_label)
+            node_type = _mk_node_class(change_data.parent_tab_key)
+            # Then create the actual tree listing the changes, which will take
+            # up most of the space
+            new_tree = Tree(self, change_data.uil_image_list)
+            temp_root = new_tree.root_node
+            affected_items = change_data.changed_items
+            for hp, (hp_tf, hp_children) in affected_items.items():
+                hp_node = temp_root.append_child(hp,
+                    child_node_type=node_type)
+                hp_node.decorate_node(hp_tf)
+                if hp_children:
+                    for hpc, hpc_tf in hp_children:
+                        hpc_node = hp_node.append_child(hpc,
+                            child_node_type=node_type)
+                        hpc_node.decorate_node(hpc_tf)
+            new_tree.expand_everything()
+            ch_layout.add((new_tree, LayoutOptions(weight=1)))
+            # Separator between trees and also between the last tree and the OK
+            # button
+            ch_layout.add(HorizontalLine(self))
+        ch_layout.add(HLayout(spacing=6, item_expand=True, items=[
+            Stretch(),
+            OkButton(self),
+            CancelButton(self) if add_cancel_btn else None,
+        ]))
+        ch_layout.apply_to(self)
+        for wl in labels_to_wrap:
+            wl.auto_wrap()
+        self.update_layout()
+
+class _AModsChangeHighlightDialog(_AChangeHighlightDialog):
+    """Version of _AChangeHighlightDialog for the Mods tab."""
+    @staticmethod
+    def make_change_entry(*, mods_list_images: ImageList,
+            mods_change_desc: str, decorated_plugins: DecoratedTreeDict):
+        """Helper for creating a _ChangeData object for load order
+        sanitizations."""
+        return _ChangeData(uil_image_list=mods_list_images,
+            change_desc=mods_change_desc, changed_items=decorated_plugins,
+            parent_tab_key='Mods')
+
+# Note: we sometimes use 'unnecessary' subclasses here for the separate
+# balt.sizes key provided by the unique class name
+#------------------------------------------------------------------------------
+class _ALORippleHighlightDialog(_AChangeHighlightDialog):
+    """Base class for dialogs highlighting when a load order change had a
+    'ripple' effect, e.g. deactivating a certain master caused its dependents
+    to be deactivated too."""
+    _change_title: str
+    _change_desc: str
+
+    def __init__(self, parent, *, mods_list_images: ImageList,
+            decorated_plugins: DecoratedTreeDict):
+        # Only count the additional masters/dependents
+        total_affected = sum(len(v[1]) for v in decorated_plugins.values())
+        super().__init__(parent, highlight_changes=[_ChangeData(
+            uil_image_list=mods_list_images,
+            change_desc=self._change_desc % {'num_affected': total_affected},
+            changed_items=decorated_plugins, parent_tab_key='Mods')])
+
+class MastersAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was activated and thus its masters got
+    activated too."""
+    title = _('Masters Affected')
+    _change_desc = _('Wrye Bash automatically activates the masters of '
+                     'activated plugins. Activating the following plugins '
+                     'thus caused %(num_affected)d master(s) to be activated '
+                     'as well.')
+
+class DependentsAffectedDialog(_ALORippleHighlightDialog):
+    """Dialog shown when a plugin was deactivated and thus its dependent
+    plugins got deactivated too."""
+    title = _('Dependents Affected')
+    _change_desc = _('Wrye Bash automatically deactivates the dependent '
+                     'plugins of deactivated plugins. Deactivating the '
+                     'following plugins thus caused %(num_affected)d '
+                     'dependent(s) to be deactivated as well.')
+
+#------------------------------------------------------------------------------
+class LoadOrderSanitizedDialog(_AModsChangeHighlightDialog):
+    """Dialog shown when certain load order problems have been fixed."""
+    title = _('Warning: Load Order Sanitized')
+
+#------------------------------------------------------------------------------
+class MultiWarningDialog(_AChangeHighlightDialog):
+    """Dialog shown when Wrye Bash detected certain problems with a user's
+    setup."""
+    title = _('Warnings')
+
+    @staticmethod
+    def make_change_entry(*, uil_images: ImageList, warn_change_desc: str,
+            decorated_items: DecoratedTreeDict, origin_tab_key: str):
+        """Helper for creating a _ChangeData object for multi-warning
+        dialogs."""
+        return _ChangeData(uil_image_list=uil_images,
+            change_desc=warn_change_desc, changed_items=decorated_items,
+            parent_tab_key=origin_tab_key)
+
+#------------------------------------------------------------------------------
+class MasterErrorsDialog(_AModsChangeHighlightDialog):
+    """Dialog shown when Wrye Bash detected master errors before building a
+    BP."""
+    title = _('Master Errors')

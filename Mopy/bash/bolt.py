@@ -16,19 +16,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 from __future__ import annotations
 
-# Imports ---------------------------------------------------------------------
-#--Standard
 import collections
 import copy
 import datetime
-import functools
+import html
 import io
 import os
 import pickle
@@ -42,21 +39,23 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import traceback
 import traceback as _traceback
 import webbrowser
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import Iterable
+from typing import ClassVar, Self, TypeVar, get_type_hints, overload
 from urllib.parse import quote
 from zlib import crc32
 
-import chardet
+try:
+    import chardet
+except ImportError:
+    chardet = None # We will raise an error on boot in bash._import_deps
 
-# Internal
 from . import exception
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
@@ -71,6 +70,10 @@ os_name = os.name ##: usages probably belong to env
 if os_name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+
+# Typing ----------------------------------------------------------------------
+K = TypeVar('K')
+V = TypeVar('V')
 
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
@@ -119,7 +122,7 @@ def getbestencoding(bitstream):
     #print('%s: %s (%s)' % (repr(bitstream),encoding,confidence))
     return encoding_,confidence
 
-def decoder(byte_str, encoding=None, avoidEncodings=()):
+def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, str) or byte_str is None: return byte_str
     # Try the user specified encoding first
@@ -178,47 +181,34 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     if goodEncoding:
         if returnEncoding: return goodEncoding
         else: return goodEncoding[0]
-    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+    raise UnicodeEncodeError(f'Text could not be encoded using any of the '
+                             f'following encodings: {encodings}')
 
-def encode_complex_string(string_val, max_size=None, min_size=None,
-                          preferred_encoding=None):
+def encode_complex_string(string_val: str, max_size: int | None = None,
+        min_size: int | None = None,
+        preferred_encoding: str | None = None) -> bytes:
     """Handles encoding of a string that must satisfy certain conditions. Any
     of the keyword arguments may be omitted, in which case they will simply not
     apply.
 
     :param string_val: The unicode string to encode.
-    :param max_size: The maximum size of the unicode string. If string_val is
-        longer than this, it will be truncated.
-    :param min_size: The minimum size of the encoded string. If the result of
-        encoding string_val is shorter than this, it will be right-padded with
-        null bytes.
+    :param max_size: The maximum size (in bytes) of the encoded string. If the
+        result of encoding string_val is longer than this, it will be
+        truncated.
+    :param min_size: The minimum size (in bytes) of the encoded string. If the
+        result of encoding string_val is shorter than this, it will be
+        right-padded with null bytes.
     :param preferred_encoding: The encoding to try first. Defaults to
         bolt.pluginEncoding.
     :return: The encoded string."""
     preferred_encoding = preferred_encoding or pluginEncoding
-    if max_size:
-        string_val = winNewLines(string_val.rstrip())
-        truncated_size = min(max_size, len(string_val))
-        test, tested_encoding = encode(string_val,
-                                       firstEncoding=preferred_encoding,
-                                       returnEncoding=True)
-        extra_encoded = len(test) - max_size
-        if extra_encoded > 0:
-            total = 0
-            i = -1
-            while total < extra_encoded:
-                total += len(string_val[i].encode(tested_encoding))
-                i -= 1
-            truncated_size += i + 1
-            string_val = string_val[:truncated_size]
-            string_val = encode(string_val, firstEncoding=tested_encoding)
-        else:
-            string_val = test
-    else:
-        string_val = encode(string_val, firstEncoding=preferred_encoding)
-    if min_size and len(string_val) < min_size:
-        string_val += b'\x00' * (min_size - len(string_val))
-    return string_val
+    bytes_val = encode(to_win_newlines(string_val.rstrip()),
+        firstEncoding=preferred_encoding)
+    if max_size is not None:
+        bytes_val = bytes_val[:max_size]
+    if min_size is not None and (num_nulls := min_size - len(bytes_val)) > 0:
+        bytes_val += b'\x00' * num_nulls
+    return bytes_val
 
 class Tee:
     """Similar to the Unix utility tee, this class redirects writes etc. to two
@@ -239,15 +229,22 @@ class Tee:
         self._stream_a.write(s)
         return self._stream_b.write(s)
 
-def to_unix_newlines(s): # type: (str) -> str
-    """Replaces non-UNIX newlines in the specified string with Unix newlines.
+def to_unix_newlines(s: str) -> str:
+    """Replaces non-Unix newlines in the specified string with Unix newlines.
     Handles both CR-LF (Windows) and pure CR (macOS)."""
-    return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+    return s.replace('\r\n', '\n').replace('\r', '\n')
 
-def remove_newlines(s): # type: (str) -> str
+def to_win_newlines(s):
+    """Converts LF (Unix) newlines to CR-LF (Windows) newlines."""
+    return reUnixNewLine.sub('\r\n', s)
+
+def remove_newlines(s: str) -> str:
     """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
     specified string."""
-    return to_unix_newlines(s).replace(u'\n', u'')
+    return to_unix_newlines(s).replace('\n', '')
+
+# The current OS's path seperator, escaped for use in regexes
+os_sep_re = re.escape(os.path.sep)
 
 def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
     """Converts an object containing bytestrings to an equivalent object that
@@ -333,6 +330,96 @@ def float_or_none(uni_str):
     except ValueError:
         return None
 
+def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
+        f: Callable[[V, V], V]) -> dict[K, V]:
+    """Merge two dictionaries, but combine their values (as opposed to the
+    last-added value overwriting all earlier values with the same key).
+
+    :param dict_a: The first dict to merge.
+    :param dict_b: The second dict to merge.
+    :param f: A function taking one value from dict_a and one from dict_b and
+        returning the combined result."""
+    return {**dict_a, **dict_b,
+            **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
+
+_not_cached = object()
+
+# PY3.12: Benchmark to see if we can now replace this with cached_property
+class fast_cached_property:
+    """Similar to functools.cached_property, but ~2x faster because it does not
+    feature locking and lacks that decorator's runtime error checking."""
+    def __init__(self, wrapped_func):
+        self._wrapped_func = wrapped_func
+        self._wrapped_attr = None # set later
+
+    def __set_name__(self, owner, name):
+        self._wrapped_attr = name
+
+    def __get__(self, instance, owner=None):
+        # Do *not* change this to EAFP without benchmarking. Even on 3.11, with
+        # zero-cost-try, a try here will make the BP slower.
+        wrapped_val = instance.__dict__.get(self._wrapped_attr, _not_cached)
+        if wrapped_val is _not_cached:
+            # This whole branch is only done once, so can afford to be slower
+            wrapped_val = self._wrapped_func(instance)
+            instance.__dict__[self._wrapped_attr] = wrapped_val
+        return wrapped_val
+
+class classproperty:
+    """Defines a property on the class rather than an instance. Does not
+    support writing to the property though."""
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, obj, owner):
+        return self.fget(owner)
+
+# JSON parsing ----------------------------------------------------------------
+class JsonParsable:
+    """Base class for classes that will be parsed from JSON based on their type
+    annotations and a special '_parsers' class var (see below). Call
+    parse_single or parse_many to create instances.
+
+    Note: this *MUST* be used together with @dataclass!"""
+    # Specifies special handling for any number of attributes in the parsed
+    # JSON dict. Each 'parser' is a function taking the JSON dict and the
+    # attribute being parsed and returning the parsed object
+    _parsers: dict[str, callable] = {}
+    __slots__ = ()
+
+    def __init__(self, **_kwargs): # To make PyCharm shut up
+        super().__init__()
+
+    @classmethod
+    def parse_single(cls, json_dict: dict) -> Self:
+        """Parses an instance of this JSON parsable from the specified
+        JSON-sourced dict."""
+        if json_dict is None:
+            return None # Handle optional parsables
+        inst_args = {}
+        for cls_attr, cls_type_str in cls.__annotations__.items():
+            attr_parser = cls._parsers.get(cls_attr)
+            if attr_parser is None:
+                # No special parser, access JSON dict directly
+                parsed_obj = json_dict[cls_attr]
+            else:
+                parsed_obj = attr_parser(json_dict, cls_attr)
+            inst_args[cls_attr] = parsed_obj
+        return cls(**inst_args)
+
+    @classmethod
+    def parse_many(cls, json_list: list[dict]) -> list[Self]:
+        """Parses multiple instances of this JSON parsable from the specified
+        JSON-sourced list of dicts."""
+        return [cls.parse_single(d) for d in json_list]
+
+def json_remap(remap_attr: str):
+    """Simple JSON parser that uses a different attribute for accessing the
+    JSON dict. Used to avoid bad names (e.g. name) and builtins (e.g. id)."""
+    def _remap_func(json_dict, _cls_attr):
+        return json_dict[remap_attr]
+    return _remap_func
+
 # LowStrings ------------------------------------------------------------------
 class CIstr(str):
     """See: http://stackoverflow.com/q/43122096/281545"""
@@ -389,29 +476,31 @@ class FName(str):
       keep an eye for that.
     """
     _filenames_cache: dict[str, FName] = {}
+    _hash: int # Lazily cached since it's needed so often
 
     def __new__(cls, unicode_str: None | FName | str, *args,
                 __cache=_filenames_cache, **kwargs):
-        if (typ := type(unicode_str)) is FName or unicode_str is None:
+        if type(unicode_str) is FName or unicode_str is None:
             return unicode_str
-        if unicode_str in __cache: return __cache[unicode_str]
-        if typ is not str:
-            raise ValueError(f'{unicode_str!r} type is {typ} - a str is '
-                             f'required')
-        res = __cache[unicode_str] = super(FName, cls).__new__(
-            cls, unicode_str, *args, **kwargs)
-        return res
+        try:
+            return __cache[unicode_str]
+        except KeyError:
+            if type(unicode_str) is not str:
+                raise ValueError(f'{unicode_str!r} type is '
+                                 f'{type(unicode_str)} - a str is required')
+            return __cache.setdefault(unicode_str, super().__new__(
+                cls, unicode_str, *args, **kwargs))
 
-    @functools.cached_property
+    @fast_cached_property
     def _lower(self): return super().lower()
 
     def lower(self): return self._lower
 
-    @functools.cached_property
+    @fast_cached_property
     def fn_ext(self):
         return FName('' if (dot := self.rfind('.')) == -1 else self[dot:])
 
-    @functools.cached_property
+    @fast_cached_property
     def fn_body(self):
         return FName(self[:-len(self.fn_ext)]) if self.fn_ext else self
 
@@ -426,7 +515,11 @@ class FName(str):
 
     #--Hash/Compare
     def __hash__(self):
-        return hash(self._lower)
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash(self._lower)
+            return self._hash
     def __eq__(self, other):
         try:
             return self._lower == other._lower # (self is other) or self...
@@ -576,9 +669,9 @@ class FNDict(dict):
 # Forward compat functions - as we only want to pickle std types those stay
 def forward_compat_path_to_fn(di, value_type=lambda x: x):
     try:
-        return FNDict(('%s' % k, value_type(v)) for k, v in di.items())
+        return FNDict((f'{k}', value_type(v)) for k, v in di.items())
     except ValueError:
-        return FNDict((str('%s' % k), value_type(v)) for k, v in di.items())
+        return FNDict((str(f'{k}'), value_type(v)) for k, v in di.items())
 
 def forward_compat_path_to_fn_list(li, ret_type=list):
     try:
@@ -633,17 +726,17 @@ class _AttrGettersCache(dict):
 attrgetter_cache = _AttrGettersCache()
 
 # noinspection PyDefaultArgument
-def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
+def setattr_deep(obj, attr, value, *, __attrgetters=attrgetter_cache,
         __split_cache={}):
     try:
         parent_attr, leaf_attr = __split_cache[attr]
     except KeyError:
-        dot_dex = attr.rfind(u'.')
+        dot_dex = attr.rfind('.')
         if dot_dex > 0:
             parent_attr = attr[:dot_dex]
             leaf_attr = attr[dot_dex + 1:]
         else:
-            parent_attr = u''
+            parent_attr = ''
             leaf_attr = attr
         __split_cache[attr] = parent_attr, leaf_attr
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
@@ -664,14 +757,16 @@ def top_level_items(directory):
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-_gpaths = {}
+_gpaths: dict[str | os.PathLike[str], Path] = {}
 
-def GPath(str_or_uni):
-    """Path factory and cache.
-
-    :rtype: Path"""
+@overload
+def GPath(str_or_uni: None) -> None: ...
+@overload
+def GPath(str_or_uni: str | os.PathLike[str]) -> Path: ...
+def GPath(str_or_uni: str | os.PathLike[str] | None) -> Path | None:
+    """Path factory and cache."""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    if not str_or_uni: return Path('') # needed, os.path.normpath('') = '.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
@@ -719,8 +814,7 @@ class Path(os.PathLike):
     invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I) # \\ needed
 
     @staticmethod
-    def getNorm(str_or_path):
-        # type: (str|bytes|Path) -> str
+    def getNorm(str_or_path: str | bytes | Path) -> str:
         """Return the normpath for specified basename/Path object."""
         if isinstance(str_or_path, Path): return str_or_path._s
         elif not str_or_path: return u'' # and not maybe b''
@@ -744,11 +838,21 @@ class Path(os.PathLike):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
-                 u'_cext', u'_sbody')
+    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
+                 '_cext', '_sbody', '_hash')
+    # Since these are made on-the-fly, most type-checkers / IDEs will not
+    # be able to infer the correct return type from .s, .cs, etc without these
+    # hints.
+    _cs: str
+    _sroot: str
+    _shead: str
+    _stail: str
+    _ext: str
+    _cext: str
+    _sbody: str
+    _hash: int
 
-    def __init__(self, norm_str):
-        # type: (str) -> None
+    def __init__(self, norm_str: str):
         """Initialize with unicode - call only in GPath."""
         self._s = norm_str # path must be normalized
         self._cs = norm_str.lower()
@@ -868,12 +972,12 @@ class Path(os.PathLike):
     @property
     def temp(self):
         """Temp file path."""
-        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+        baseDir = GPath(tempfile.gettempdir()).join('WryeBash_temp')
         baseDir.makedirs()
         return baseDir.join(self.tail + u'.tmp')
 
     @staticmethod
-    def tempDir(prefix=u'WryeBash_'):
+    def tempDir(prefix='WryeBash_'):
         return GPath(tempfile.mkdtemp(prefix=prefix))
 
     @staticmethod
@@ -913,7 +1017,7 @@ class Path(os.PathLike):
         return os.path.getmtime(self._s)
     def _setmtime(self, mtime):
         os.utime(self._s, (self.atime, mtime))
-    mtime = property(_getmtime, _setmtime, doc=u'Time file was last modified.')
+    mtime = property(_getmtime, _setmtime, doc='Time file was last modified.')
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
@@ -959,7 +1063,7 @@ class Path(os.PathLike):
     def __add__(self,other):
         # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
-    def join(*args):
+    def join(*args: str | os.PathLike[str]):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
@@ -1147,7 +1251,11 @@ class Path(os.PathLike):
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
     # directly compare to str|Path|None and will blow for anything else
     def __hash__(self):
-        return hash(self._cs)
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash(self._cs)
+            return self._hash
     def __eq__(self, other):
         try:
             return self._cs == other._cs
@@ -1300,31 +1408,57 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Flags(object):
-    """Represents a flag field."""
-    __slots__ = [u'_field']
-    _names = {}
+_not_a_flag = object()  # sentinel for Flags typehints
+
+def flag(index: int | None) -> bool:
+    """Type erasing method for assigning Field index values."""
+    return index    # type: ignore
+
+class Flags:
+    """Represents a flag field.  New Flags classes are defined by subclassing.
+
+    When subclassing, simply typehint attribute names with `bool` to
+    have these as aliases for bits in the Flags instance. Bit 0 refers to the
+    least significant bit, and successive names increment from there. To
+    override which bit an attribute maps to, set it using `= flag(bit)`.
+
+    To support Flags types whose fields are determined at runtime, you can
+    specify `= flag(None)` to indicate that the index should be incremented,
+    but no name associated with that bit of the field. This is intended for
+    usage with static deciders like `fnv_only` and `sse_only`."""
+    __slots__ = ('_field',)
+    _names: ClassVar[dict[str, int]] = {}
 
     @classmethod
-    def from_names(cls, *names):
-        """Return Flag subtype with specified names to index dictionary.
-        Indices range may not be contiguous.
-        Names are either strings or (index,name) tuples.
-        E.g., Flags.from_names('isQuest', 'isHidden', None, (4, 'isDark'),
-        (7, 'hasWater'))."""
-        namesDict = {}
-        for index,flg_name in enumerate(names):
-            if isinstance(flg_name,tuple):
-                namesDict[flg_name[1]] = flg_name[0]
-            elif flg_name: #--skip if "name" is 0 or None
-                namesDict[flg_name] = index
-        class __Flags(cls):
-            __slots__ = []
-            _names = namesDict
-        return __Flags
+    def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
+        names_dict = {}
+        current_index = 0
+        hints = get_type_hints(cls)
+        hints = ((att, hint) for att, hint in hints.items() if hint is bool)
+        for attr, hint in hints: # we're only considering the 'bool' hints
+            override = getattr(cls, attr, _not_a_flag)
+            if override is not _not_a_flag:
+                if override is None:
+                    # None indicates just increment the index
+                    current_index += 1
+                    continue
+                # Error checks
+                if isinstance(override, int):
+                    if override < 0:
+                        raise ValueError(
+                            f'{cls.__name__} flag field index must be a '
+                            f'positive integer or None, got {override}')
+                    current_index = override
+                else:
+                    raise TypeError(f'{cls.__name__} flag field index must '
+                                    f'be an integer or None, got {override!r}')
+            names_dict[attr] = current_index
+            current_index += 1
+        cls._names = names_dict
 
     #--Generation
-    def __init__(self, value=0):
+    def __init__(self, value: int | Self = 0):
         """Set the internal int value."""
         object.__setattr__(self, u'_field', int(value))
 
@@ -1371,13 +1505,17 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self, attr_key):
-        """Get value by flag name. E.g. flags.isQuestItem"""
+    def __getattribute__(self, attr_key: str):
+        """Get value by flag name. E.g. flags.isQuestItem.
+        Since some flag names may have values set on the class itself via
+        `flagname = flag(bit)`, we can't use __getattr__ as accessing these
+        won't raise AttributeError (which leads to __getattr__ being called).
+        """
         try:
-            index = self.__class__._names[attr_key]
-            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
+            index = type(self)._names[attr_key]
+            return (super().__getattribute__('_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(attr_key)
+            return super().__getattribute__(attr_key)
 
     def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
@@ -1432,9 +1570,8 @@ class Flags(object):
         return f'0x{self.hex()} ({all_flags})'
 
 class TrimmedFlags(Flags):
-    """Flag subtype that will discard unnamed flags on __init__ and dump
-    (or perform other kind of trimming)."""
-    __slots__ = []
+    """Flags subtype that will discard unnamed flags on __init__ and dump."""
+    __slots__ = ()
 
     def __init__(self, value=0):
         super().__init__(value)
@@ -1450,7 +1587,20 @@ class TrimmedFlags(Flags):
 
     def dump(self):
         self._clean_flags()
-        return super(TrimmedFlags, self).dump()
+        return super().dump()
+
+#------------------------------------------------------------------------------
+class MasterSet(set):
+    """Set of master names."""
+    __slots__ = ()
+
+    def add(self, element):
+        """Add a long fid's mod name."""
+        try:
+            super().add(element.mod_fn)
+        except AttributeError:
+            if element is not None:
+                raise
 
 #------------------------------------------------------------------------------
 class DataDict(object):
@@ -1486,7 +1636,6 @@ class DataDict(object):
 class AFile(object):
     """Abstract file, supports caching - beta."""
     _null_stat = (-1, None)
-    __slots__ = (u'_file_key', u'fsize', u'_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
@@ -1511,9 +1660,11 @@ class AFile(object):
         consider the file deleted and return True except if raise_on_error is
         True, whereupon raise the OSError we got in stat(). If raise_on_error
         is False user must check if file exists.
-        :param itsa_ghost: in ModInfos if we have the ghosting info available
-                           skip recalculating it.
-        """
+
+        :param raise_on_error: If True, rase on errors instead of just
+            resetting the cache and returning.
+        :param itsa_ghost: In ModInfos, if we have the ghosting info available,
+            skip recalculating it."""
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?
@@ -1543,6 +1694,133 @@ class AFile(object):
 
     def __repr__(self): return f'{self.__class__.__name__}<' \
                                f'{self.abs_path.stail}>'
+
+#------------------------------------------------------------------------------
+class ListInfo:
+    """Info object displayed in Wrye Bash list."""
+    __slots__ = ('fn_key', )
+    _valid_exts_re = ''
+    _is_filename = True
+    _has_digits = False
+
+    def __init__(self, fn_key):
+        self.fn_key = FName(fn_key)
+
+    @classmethod
+    def validate_filename_str(cls, name_str: str, allowed_exts=frozenset()):
+        """Basic validation of list item name - those are usually filenames, so
+        they should contain valid chars. We also optionally check for match
+        with an extension group (apart from projects and markers). Returns
+        a tuple - if the second element is None validation failed and the first
+        element is the message to show - if not the meaning varies per override
+        """
+        if not name_str:
+            return _('Name may not be empty.'), None
+        char = cls._is_filename and Path.has_invalid_chars(name_str)
+        if char:
+            inv = _('%(new_name)s contains invalid character (%(bad_char)s).')
+            return inv % {'new_name': name_str, 'bad_char': char}, None
+        rePattern = cls._name_re(allowed_exts)
+        maPattern = rePattern.match(name_str)
+        if maPattern:
+            ma_groups = maPattern.groups(default=u'')
+            root = ma_groups[0]
+            num_str = ma_groups[1] if cls._has_digits else None
+            if not (root or num_str):
+                pass # will return the error message at the end
+            elif cls._has_digits: return FName(root), num_str
+            else: return FName(name_str), root
+        return (_('Bad extension or file root (%(ext_or_root)s).') % {
+            'ext_or_root': name_str}), None
+
+    @classmethod
+    def _name_re(cls, allowed_exts):
+        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
+            if allowed_exts else cls._valid_exts_re
+        # The reason we do the regex like this is to support names like
+        # foo.ess.ess.ess etc.
+        exts_prefix = r'(?=.+\.)' if exts_re else ''
+        final_regex = f'^{exts_prefix}(.*?)'
+        if cls._has_digits: final_regex += r'(\d*)'
+        final_regex += f'{exts_re}$'
+        return re.compile(final_regex, re.I)
+
+    # Generate unique filenames when duplicating files etc
+    @staticmethod
+    def _new_name(base_name, count):
+        r, e = os.path.splitext(base_name)
+        return f'{r} ({count}){e}'
+
+    @classmethod
+    def unique_name(cls, name_str, check_exists=False):
+        base_name = name_str
+        unique_counter = 0
+        store = cls.get_store()
+        while (store.store_dir.join(name_str).exists() if check_exists else
+                name_str in store): # must wrap a FNDict
+            unique_counter += 1
+            name_str = cls._new_name(base_name, unique_counter)
+        return FName(name_str)
+
+    # Gui renaming stuff ------------------------------------------------------
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Return the selection span of item being renamed - usually to
+        exclude the extension."""
+        if cls._valid_exts_re and not start: # start == 0
+            return 0, len(GPath(text_str[:stop]).sbody)
+        return 0, len(text_str) # if selection not at start reset
+
+    @classmethod
+    def get_store(cls):
+        raise NotImplementedError(f'{type(cls)} does not provide a data store')
+
+    # Instance methods --------------------------------------------------------
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.fn_key.fn_ext
+        new_name = FName(
+            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        if new_name == self.fn_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
+
+    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
+        return self.get_store().table.getItem(self.fn_key, prop, default)
+
+    def set_table_prop(self, prop, val):
+        return self.get_store().table.setItem(self.fn_key, prop, val)
+
+    def validate_name(self, name_str, check_store=True):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            return _('%(bad_name_str)s: Incorrect file extension (must be '
+                     '%(expected_ext)s).') % {
+                'bad_name_str': name_str,
+                'expected_ext': self.fn_key.fn_ext}, None
+        #--Else file exists?
+        if check_store and self.info_dir.join(name_str).exists():
+            return _('File %(bad_name_str)s already exists.') % {
+                'bad_name_str': name_str}, None
+        return self.__class__.validate_filename_str(name_str)
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
+
+    def __str__(self):
+        """Alias for self.ci_key."""
+        return self.fn_key
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.fn_key}>'
 
 #------------------------------------------------------------------------------
 class MainFunctions(object):
@@ -1576,7 +1854,8 @@ class MainFunctions(object):
         func_key = attrs_.pop(0)
         func = self.funcs.get(func_key)
         if not func:
-            msg = _(u'Unknown function/object: %s') % func_key
+            msg = _('Unknown function/object: %(func_key)s') % {
+                'func_key': func_key}
             try: print(msg)
             except UnicodeError: print(msg.encode(u'mbcs'))
             return
@@ -1730,11 +2009,11 @@ class Settings(DataDict):
         else:
             self.vdata = {}
             super().__init__({})
-        self.defaults = {}
+        self._default_settings = {}
 
     def loadDefaults(self, default_settings):
         """Add default settings to dictionary."""
-        self.defaults = default_settings
+        self._default_settings = default_settings
         #--Clean colors dictionary
         if (color_dict := self.get(u'bash.colors', None)) is not None:
             currentColors = set(color_dict)
@@ -1747,8 +2026,8 @@ class Settings(DataDict):
                 self[u'bash.colors'][key] = default_settings[u'bash.colors'][key]
         # fill up missing settings from defaults, making sure we do not
         # modify the latter
-        self._data = collections.ChainMap(self._data,
-                                          copy.deepcopy(self.defaults))
+        self._data = collections.ChainMap(self._data, copy.deepcopy(
+            self._default_settings))
 
     def save(self):
         """Save to pickle file. Only key/values differing from defaults are
@@ -1756,10 +2035,10 @@ class Settings(DataDict):
         dictFile = self.dictFile
         dictFile.vdata = self.vdata.copy()
         to_save = {}
+        dflts = self._default_settings
         for sett_key, sett_val in self.items():
-            if sett_key in self.defaults and self.defaults[
-                sett_key] == sett_val: # not all settings are in defaults
-                continue
+            if sett_key in dflts and dflts[sett_key] == sett_val:
+                continue # not all settings are in defaults
             to_save[sett_key] = sett_val
         self.dictFile.pickled_data = to_save
         dictFile.save()
@@ -1825,11 +2104,6 @@ def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def unpack_string(ins, string_len) -> bytes:
-    return struct_unpack(f'{string_len}s', ins.read(string_len))[0]
-def pack_string(out, val: bytes):
-    out.write(val)
-
 def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
     out.write(__pack(value))
 
@@ -1850,8 +2124,8 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self, table, column):
-        self._table = table # type: DataTable
+    def __init__(self, table: DataTable, column: str):
+        self._table = table
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
@@ -1902,9 +2176,9 @@ class DataTable(DataDict):
     Rows are the first index ('fileName') and columns are the second index
     ('propName')."""
 
-    def __init__(self,dictFile):
+    def __init__(self, dictFile: PickleDict):
         """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile # type: PickleDict
+        self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
         self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
@@ -2066,15 +2340,15 @@ def deprint(*args, traceback=False, trace=True, frame=1):
     else:
         msg = u''
     try:
-        msg += ' '.join(['%s' % x for x in args]) # OK, even with unicode args
+        msg += ' '.join([f'{x}' for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
         for x in args:
             try:
-                msg += u' %s' % x
+                msg += f' {x}'
             except UnicodeError:
-                msg += u' %r' % x
+                msg += f' {x!r}'
     # Print to stdout by default, but change to stderr if we have an error
     target_stream = sys.stdout
     if traceback:
@@ -2102,10 +2376,6 @@ def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
     if reMatch: return reMatch.group(group)
     else: return u''
-
-def winNewLines(inString):
-    """Converts unix newlines to windows newlines."""
-    return reUnixNewLine.sub(u'\r\n',inString)
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2257,11 +2527,9 @@ class StringTable(dict):
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
             with open(path, u'rb') as ins:
-                insSeek = ins.seek
-                insTell = ins.tell
-                insSeek(0,os.SEEK_END)
-                eof = insTell()
-                insSeek(0)
+                ins.seek(0, os.SEEK_END)
+                eof = ins.tell()
+                ins.seek(0)
                 if eof < 8:
                     deprint(f"Warning: Strings file '{path}' file size "
                             f"({eof}) is less than 8 bytes.  8 bytes are "
@@ -2282,8 +2550,8 @@ class StringTable(dict):
                     try:
                         progress(x)
                         id_,offset = unpack_many(ins, u'=2I')
-                        pos = insTell()
-                        insSeek(stringsStart+offset)
+                        pos = ins.tell()
+                        ins.seek(stringsStart + offset)
                         if formatted:
                             value = unpack_str32(ins) # TODO(ut): unpack_str32_null
                             # seems needed, strings are null terminated
@@ -2291,15 +2559,15 @@ class StringTable(dict):
                         else:
                             value = readCString(ins, path) #drops the null byte
                         try:
-                            value = str(value, u'utf-8')
+                            value = value.decode('utf-8')
                         except UnicodeDecodeError:
-                            value = str(value,backupEncoding)
-                        insSeek(pos)
+                            value = value.decode(backupEncoding)
+                        ins.seek(pos)
                         self[id_] = value
                     except:
                         deprint('\n'.join(
                             ['Error reading string file:', f'id: {id_}',
-                             f'offset: {offset}', f'filePos: {insTell()}']))
+                             f'offset: {offset}', f'filePos: {ins.tell()}']))
                         raise
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)
@@ -2367,15 +2635,14 @@ def build_esub(esub_str):
     return final_impl
 
 #------------------------------------------------------------------------------
-# no re.U, we want our record attrs to be ASCII
+# We want record attributes to be ASCII
 _valid_rpath_attr = re.compile(r'^[^\d\W]\w*\Z', re.ASCII)
 
 class _ARP_Subpath(object):
     """Abstract base class for all subpaths of a larger record path."""
-    __slots__ = (u'_subpath_attr', u'_next_subpath',)
+    __slots__ = ('_subpath_attr', '_next_subpath',)
 
-    def __init__(self, sub_rpath, rest_rpath):
-        # type: (str, str) -> None
+    def __init__(self, sub_rpath: str, rest_rpath: str):
         if not _valid_rpath_attr.match(sub_rpath):
             raise SyntaxError(f"'{sub_rpath}' is not a valid subpath. "
                               f"Your record path likely contains a typo.")
@@ -2387,10 +2654,10 @@ class _ARP_Subpath(object):
 
     # See RecPath for documentation of these methods
     def rp_eval(self, record) -> list:
-        raise exception.AbstractError(u'rp_eval not implemented')
+        raise NotImplementedError
 
     def rp_map(self, record, func, *args) -> None:
-        raise exception.AbstractError(u'rp_map not implemented')
+        raise NotImplementedError
 
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
@@ -2431,9 +2698,9 @@ class _RP_IteratedSubpath(_ARP_Subpath):
     that holds a list of (Mel) objects. A record path can't resolve to more
     than one value unless it involves at least one of these."""
     def __init__(self, sub_rpath, rest_rpath):
-        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
-                                             u'iterated subpath.')
-        super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
+        if not rest_rpath: raise SyntaxError('A RecPath may not end with an '
+                                             'iterated subpath.')
+        super().__init__(sub_rpath, rest_rpath)
 
     def rp_eval(self, record) -> Iterable:
         eval_next = self._next_subpath.rp_eval
@@ -2445,25 +2712,25 @@ class _RP_IteratedSubpath(_ARP_Subpath):
             map_next(rec_element, func, *args)
 
     def __repr__(self):
-        return f'{self._subpath_attr}[i].{self._next_subpath!r}'
+        return f'{self._subpath_attr}[*].{self._next_subpath!r}'
 
 class _RP_OptionalSubpath(_RP_Subpath):
     """An optional part of a record path. If it doesn't exist, mapping and
     evaluating will simply not continue past this part."""
     def __init__(self, sub_rpath, rest_rpath):
-        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
-                                             u'optional subpath.')
-        super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
+        if not rest_rpath: raise SyntaxError('A RecPath may not end with an '
+                                             'optional subpath.')
+        super().__init__(sub_rpath, rest_rpath)
 
     def rp_eval(self, record) -> Iterable:
         try:
-            return super(_RP_OptionalSubpath, self).rp_eval(record)
+            return super().rp_eval(record)
         except AttributeError:
             return [] # Attribute did not exist, rest of the path evals to []
 
     def rp_map(self, record, func, *args) -> None:
         try:
-            super(_RP_OptionalSubpath, self).rp_map(record, func, *args)
+            super().rp_map(record, func, *args)
         except AttributeError:
             pass # Attribute did not exist, can't map any further
 
@@ -2476,12 +2743,12 @@ class RecPath(object):
     complex (e.g. contains repeated or optional attributes). Does quite a bit
     of validation and preprocessing, making it much faster and safer than a
     'naive' solution. See the wiki page '[dev] Record Paths' for a full
-    overview of syntax and usage. Curent implementation supports paths to
+    overview of syntax and usage. Current implementation supports paths to
     record attributes of type str, using None to signal the absence of the
     attribute."""
-    __slots__ = (u'_root_subpath',)
+    __slots__ = ('_root_subpath',)
 
-    def __init__(self, rpath_str): # type: (str) -> None
+    def __init__(self, rpath_str: str):
         self._root_subpath = _parse_rpath(rpath_str)
 
     def rp_eval(self, record) -> Iterable:
@@ -2500,16 +2767,16 @@ class RecPath(object):
     def __repr__(self):
         return repr(self._root_subpath)
 
-def _parse_rpath(rpath_str): # type: (str) -> _ARP_Subpath
+def _parse_rpath(rpath_str: str) -> _ARP_Subpath | None:
     """Parses the given unicode string as an RPath subpath."""
     if not rpath_str: return None
-    sub_rpath, rest_rpath = (rpath_str.split(u'.', 1) if u'.' in rpath_str
+    sub_rpath, rest_rpath = (rpath_str.split('.', 1) if '.' in rpath_str
                              else (rpath_str, None))
     # Iterated subpath
-    if sub_rpath.endswith(u'[i]'):
+    if sub_rpath.endswith('[*]'):
         return _RP_IteratedSubpath(sub_rpath[:-3], rest_rpath)
     # Optional subpath
-    elif sub_rpath.endswith(u'?'):
+    elif sub_rpath.endswith('?'):
         return _RP_OptionalSubpath(sub_rpath[:-1], rest_rpath)
     else:
         return (_RP_Subpath if rest_rpath else
@@ -2542,19 +2809,57 @@ def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
 
 #------------------------------------------------------------------------------
 def readme_url(mopy, advanced=False, skip_local=False):
+    """Return the URL of the WB readme based on the specified Mopy folder. Note
+    that skip_local is ignored on non-Windows systems, as the bug it works
+    around only exists on Windows."""
     readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
                    u'Wrye Bash General Readme.html')
     readme = mopy.join(u'Docs', readme_name)
+    skip_local = skip_local and os_name == 'nt' # Windows-only bug
     if not skip_local and readme.is_file():
         readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
-        # Fallback to Git repository
-        readme = u'http://wrye-bash.github.io/docs/' + readme_name
+        # Fallback to hosted version
+        readme = f'http://wrye-bash.github.io/docs/{readme_name}'
     return readme.replace(u' ', u'%20')
 
 # WryeText --------------------------------------------------------------------
+html_start = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <title>%s</title>
+        <style type="text/css">%s</style>
+    </head>
+    <body>
+"""
+html_end = """    </body>
+</html>
+"""
+default_css = """
+h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+a:link { text-decoration:none; }
+a:hover { text-decoration:underline; }
+p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+p.empty {}
+p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+.code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
+pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
+body { background-color: #ffffcc; }
+"""
+
 codebox = None
-class WryeText(object):
+class WryeText:
     """This class provides a function for converting wtxt text files to html
     files.
 
@@ -2594,39 +2899,6 @@ class WryeText(object):
     Contents
     {{CONTENTS=NN}} Where NN is the desired depth of contents (1 for single level,
     2 for two levels, etc.).
-    """
-
-    # Data ------------------------------------------------------------------------
-    htmlHead = u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <title>%s</title>
-    <style type="text/css">%s</style>
-    </head>
-    <body>
-    """
-    defaultCss = u"""
-    h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
-    h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
-    h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
-    a:link { text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-    p.empty {}
-    p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
-    p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
-    p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
-    p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
-    p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
-    p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
-    pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
-    code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
-    td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
-    body { background-color: #ffffcc; }
     """
 
     # Conversion ---------------------------------------------------------------
@@ -2687,7 +2959,7 @@ class WryeText(object):
                 else:
                     anchor = anchor[:-1] + str(count)
             anchorlist.append(anchor)
-            return u"<a id='%s'>%s</a>" % (anchor,text)
+            return f"<a id='{anchor}'>{text}</a>"
         #--Bold, Italic, BoldItalic
         reBold = re.compile(u'__',re.U)
         reItalic = re.compile(u'~~',re.U)
@@ -2713,9 +2985,11 @@ class WryeText(object):
         reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
         reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
         def subColor(match):
-            return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return (f'<span style="color:{match.group(1)};">'
+                    f'{match.group(2)}</span>')
         def subBGColor(match):
-            return u'<span style="background-color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return (f'<span style="background-color:{match.group(1)};">'
+                    f'{match.group(2)}</span>')
         def subLink(match):
             address = text = match.group(1).strip()
             if u'|' in text:
@@ -2731,7 +3005,7 @@ class WryeText(object):
                 newWindow = u''
             if not reFullLink.search(address):
                 address += u'.html'
-            return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
+            return f'<a href="{address}"{newWindow}>{text}</a>'
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
         reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
@@ -2751,7 +3025,7 @@ class WryeText(object):
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = line.replace(u'\r\n',u'\n')
+            line = html.escape(to_unix_newlines(line))
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
@@ -2870,7 +3144,7 @@ class WryeText(object):
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
                 level_ = len(spaces)//2 + 1
-                line = spaces+u'<p class="list-%i">'%level_+bullet+u'&nbsp; '
+                line = f'{spaces}<p class="list-{level_}">{bullet}&nbsp;'
                 line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:
@@ -2893,7 +3167,7 @@ class WryeText(object):
             outLines.append(line)
         #--Get Css -----------------------------------------------------------
         if not cssName:
-            css = WryeText.defaultCss
+            css = default_css
         else:
             if cssName.ext != u'.css':
                 raise exception.BoltError(f'Invalid Css file: {cssName}')
@@ -2905,9 +3179,9 @@ class WryeText(object):
             with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise exception.BoltError(u'Non css tag in %s' % cssPath)
+                raise exception.BoltError(f'Non css tag in {cssPath}')
         #--Write Output ------------------------------------------------------
-        outWrite(WryeText.htmlHead % (title,css))
+        outWrite(html_start % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -2916,11 +3190,12 @@ class WryeText(object):
                     for (level_,name_,text) in contents:
                         level_ = level_ - baseLevel + 1
                         if level_ <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level_,name_,text))
+                            outWrite(f'<p class="list-{level_}">&bull;&nbsp; '
+                                     f'<a href="#{name_}">{text}</a></p>\n')
                     didContents = True
             else:
                 outWrite(line)
-        outWrite(u'</body>\n</html>\n')
+        outWrite(html_end)
         #--Close files?
         if srcPath:
             ins.close()

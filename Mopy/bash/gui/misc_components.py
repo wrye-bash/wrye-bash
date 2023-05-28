@@ -16,31 +16,35 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module houses GUI classes that did not fit anywhere else. Once similar
 classes accumulate in here, feel free to break them out into a module."""
+from __future__ import annotations
 
 __author__ = u'nycz, Infernio, Utumno'
 
+import datetime
 import re
-import wx as _wx
-from wx.grid import Grid
 from collections import defaultdict
 from itertools import chain
 
-from .base_components import _AComponent, Color, WithMouseEvents, \
-    ImageWrapper, WithCharEvents
+import wx as _wx
+import wx.adv as _adv
+from wx.grid import Grid
+
+from .base_components import Color, ImageWrapper, WithCharEvents, \
+    WithMouseEvents, _AComponent
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
-    def Style(font_: _wx.Font, bold=False, slant=False, underline=False):
-        if bold: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
+    def Style(font_: _wx.Font, strong=False, slant=False, underline=False):
+        if strong: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
         else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
         if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
         else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
@@ -206,9 +210,9 @@ class Table(WithCharEvents):
                 parsed_clipboard = self._parse_clipboard_contents(
                     read_from_clipboard())
                 if not parsed_clipboard:
-                    from .. import balt # TODO(inf) de-wx! move this to gui
-                    balt.showWarning(self, _(u'Could not parse the pasted '
-                                             u'contents as a valid table.'))
+                    from .popups import showWarning ##: circular import
+                    showWarning(self, _('Could not parse the pasted contents '
+                                        'as a valid table.'))
                     return
                 self.edit_cells(parsed_clipboard)
                 self._native_widget.AutoSize()
@@ -342,6 +346,73 @@ class Table(WithCharEvents):
                 if int(row_label) - 1 < self._native_widget.GetNumberRows():
                     self.set_cell_value(col_label, row_label, target_val)
 
+# Date and Time ---------------------------------------------------------------
+class DatePicker(_AComponent):
+    """Component that lets users pick a date.
+
+    Events:
+     - on_picker_changed(): Posted when the date in this picker is changed."""
+    _native_widget: _adv.CalendarCtrl
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.on_picker_changed = self._evt_handler(
+            _adv.EVT_CALENDAR_SEL_CHANGED)
+
+    def get_date(self) -> datetime.date:
+        """Returns the chosen date as a datetime.date object."""
+        as_datetime = datetime.datetime.strptime(
+            self._native_widget.GetDate().Format('%c'), '%c')
+        return as_datetime.date()
+
+    def set_date(self, new_date: datetime.date):
+        """Sets the currently selected date in this date picker to the
+        specified datetime.date object."""
+        self._native_widget.SetDate(self._py_date_to_wx(new_date))
+
+    def set_date_range(self, *, lower_limit: datetime.date | None = None,
+            upper_limit: datetime.date | None = None):
+        """Sets the range of dates from which dates may be selected in this
+        date picker. If one of the limits is None, indicates that no limit in
+        that direction should exist."""
+        self._native_widget.SetDateRange(self._py_date_to_wx(lower_limit),
+            self._py_date_to_wx(upper_limit))
+
+    def set_posix_range(self):
+        """Sets a lower limit on valid dates of 1/1/1970. That way a POSIX
+        timestamp can always be calculated for dates selected from this date
+        picker."""
+        self.set_date_range(lower_limit=datetime.date(1970, 1, 1))
+
+    def _py_date_to_wx(self, py_date):
+        """Helper for converting a Python datetime.date to a wx.DateTime."""
+        if py_date is None:
+            return _wx.DefaultDateTime
+        # https://github.com/wxWidgets/Phoenix/issues/2300
+        return _wx.DateTime.FromDMY(
+            py_date.day, py_date.month - 1, py_date.year)
+
+class TimePicker(_AComponent):
+    """Component that lets users pick a time.
+
+    Events:
+     - on_picker_changed(): Posted when the time in this picker is changed."""
+    _native_widget: _adv.TimePickerCtrl
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.on_picker_changed = self._evt_handler(_adv.EVT_TIME_CHANGED)
+
+    def get_time(self) -> datetime.time:
+        """Returns the chosen time as a datetime.time object."""
+        return datetime.time(*self._native_widget.GetTime())
+
+    def set_time(self, new_time: datetime.time):
+        """Sets the currently selected time in this time picker to the
+        specified datetime.time object."""
+        self._native_widget.SetTime(new_time.hour, new_time.minute,
+            new_time.second)
+
 # Other -----------------------------------------------------------------------
 class GlobalMenu(_AComponent):
     """A global menu bar that populates JIT by repopulating its contents right
@@ -362,7 +433,8 @@ class GlobalMenu(_AComponent):
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*
         # to be on Link.Frame, even if that looks weird.
-        from ..balt import Link ##: de-wx! move links to gui
+        ##: de-wx! move links to gui
+        from ..balt import Link
         menu_processor = lambda event: [event.GetMenu()]
         self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
@@ -371,12 +443,13 @@ class GlobalMenu(_AComponent):
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
 
-    def categories_equal(self, new_categories):
+    def categories_equal(self, new_categories: list[str]):
         """Checks if the categories currently shown in the GUI match the
         specified ones."""
-        return new_categories == [x[1] for x in self._native_widget.GetMenus()]
+        return new_categories == [self._unescape(x[1])
+                                  for x in self._native_widget.GetMenus()]
 
-    def register_category_handler(self, cat_label, cat_handler):
+    def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
         handler should be a callback that will be given a _GMCategory instance,
         which it should populate with links."""
@@ -388,18 +461,19 @@ class GlobalMenu(_AComponent):
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
 
-    def set_categories(self, all_categories):
+    def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
         ones in the process. It has to be done like this to avoid changing the
         GUI's layout while categories are added to/removed from it."""
-        self._native_widget.SetMenus([(self._GMCategory(c), c)
+        self._native_widget.SetMenus([(self._GMCategory(c), self._escape(c))
                                       for c in all_categories])
 
     def _handle_menu_opened(self, wx_menu):
         """Internal callback, does the heavy lifting. Also handles status bar
         text resetting, because wxPython does not permit more than one event
         handler."""
-        from ..balt import Link ##: de-wx! move links to gui
+        ##: de-wx! move links to gui
+        from ..balt import Link
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
@@ -415,11 +489,12 @@ class GlobalMenu(_AComponent):
             try:
                 self._category_handlers[wx_menu.category_label](wx_menu)
             except KeyError:
-                raise RuntimeError(u"A GlobalMenu handler is missing for "
-                                   u"category '%s'." % wx_menu.category_label)
+                raise RuntimeError(f"A GlobalMenu handler is missing for "
+                                   f"category '{wx_menu.category_label}'.")
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
-            from ..balt import Link ##: de-wx! move links to gui
+            ##: de-wx! move links to gui
+            from ..balt import Link
             Link.Popup = None

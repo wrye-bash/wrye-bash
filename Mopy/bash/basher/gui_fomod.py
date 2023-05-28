@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,16 +25,16 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bolt, bush, env
+from .. import balt, bass, bolt, bush
 from ..balt import EnabledLink, Links, colors
-from ..exception import AbstractError
-from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
-    InstallerOption, InstallerPage, GroupType, OptionType
-from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
-    LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
-    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage, \
-    DialogWindow, HorizontalLine, OkButton, CancelButton, Button, \
-    copy_text_to_clipboard, TOP
+from ..env import get_file_version, get_game_version_fallback, to_os_path
+from ..fomod import FailedCondition, FomodInstaller, GroupType, \
+    InstallerGroup, InstallerOption, InstallerPage, OptionType
+from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
+    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
+    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
+    TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
+    copy_text_to_clipboard, showWarning
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -63,7 +63,8 @@ class ValidatorPopup(DialogWindow):
 
     def __init__(self, parent, fm_name, error_lines):
         super().__init__(parent,
-            title=_('FOMOD Validation Failed - %s') % fm_name,
+            title=_('FOMOD Validation Failed - %(fomod_title)s') % {
+                'fomod_title': fm_name},
             sizes_dict=balt.sizes)
         copy_log_btn = Button(self, _('Copy Log'))
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
@@ -116,19 +117,20 @@ class InstallerFomod(WizardDialog):
         # Get the game version, be careful about Windows Store games
         test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
         try:
-            gver = env.get_file_version(test_path.s)
+            gver = get_file_version(test_path.s)
             if gver == (0, 0, 0, 0) and bush.ws_info.installed:
-                gver = env.get_game_version_fallback(test_path, bush.ws_info)
+                gver = get_game_version_fallback(test_path, bush.ws_info)
         except OSError:
-            gver = env.get_game_version_fallback(test_path, bush.ws_info)
+            gver = get_game_version_fallback(test_path, bush.ws_info)
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
-            title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
-            size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
+            title=_('FOMOD Installer - %(fomod_title)s') % {
+                'fomod_title': self.fomod_parser.fomod_name},
+            size_key='bash.fomod.size', pos_key='bash.fomod.pos')
         self.is_arch = target_installer.is_archive
         if self.is_arch:
             self.archive_path = bass.getTempDir()
@@ -179,8 +181,8 @@ class InstallerFomod(WizardDialog):
             fm_warning = _('This installer cannot start due to the following '
                            'unmet conditions:') + '\n' + '\n'.join(
                 f' - {l}' for l in str(e).splitlines())
-            balt.showWarning(self, fm_warning,
-                             title=_(u'Cannot Run Installer'), do_center=True)
+            showWarning(self, fm_warning, title=_('Cannot Run Installer'),
+                        do_center=True)
             self._cancel_wizard()
         else:
             self._run_wizard()
@@ -283,11 +285,11 @@ class PageSelect(PageInstaller):
                 if gtype in (GroupType.SELECT_EXACTLY_ONE,
                              GroupType.SELECT_AT_MOST_ONE):
                     checkable = RadioButton(panel_groups,
-                                            label=option.option_name,
+                                            rb_label=option.option_name,
                                             is_group=option is grp[0])
                 else:
                     checkable = CheckBox(panel_groups,
-                                         label=option.option_name)
+                                         cb_label=option.option_name)
                     # Mass selection makes no sense on radio buttons
                     checkable.on_context.subscribe(self._handle_context_menu)
                     if gtype is GroupType.SELECT_ALL:
@@ -334,7 +336,7 @@ class PageSelect(PageInstaller):
             initial_state = {c: c.is_checked for c in
                              self.group_option_map[grp]}
             if gtype is GroupType.SELECT_AT_MOST_ONE:
-                none_button = RadioButton(panel_groups, label=_(u'None'))
+                none_button = RadioButton(panel_groups, rb_label=_('None'))
                 if not any_selected:
                     none_button.is_checked = True
                 elif block_all_in_group:
@@ -375,7 +377,8 @@ class PageSelect(PageInstaller):
         self.update_layout()
 
     def _open_image(self, _dclick_ignored=0):
-        if self._current_image: # sanity check
+        # May be None if we're on Linux and a path didn't end up existing
+        if self._current_image:
             self._current_image.start()
 
     def _handle_block_user(self, block_checkable):
@@ -390,14 +393,13 @@ class PageSelect(PageInstaller):
         # Adjust the warning based on whether the problem is due to this option
         # or another one in the same group
         if block_option.option_type is OptionType.NOT_USABLE:
-            balt.showWarning(self, _(u'This option cannot be enabled.'))
+            showWarning(self, _('This option cannot be enabled.'))
         elif isinstance(block_checkable, CheckBox):
-            balt.showWarning(self, _(u'This option is required and cannot be '
-                                     u'disabled.'))
+            showWarning(self,
+                        _('This option is required and cannot be disabled.'))
         else: # RadioButton
-            balt.showWarning(self, _(u'One of the options in this group is '
-                                     u'required and cannot be unselected by '
-                                     u'choosing a different option.'))
+            showWarning(self, _('One of the options in this group is required '
+                'and cannot be unselected by choosing a different option.'))
 
     def _handle_context_menu(self, checkable):
         """Shows the right click menu with mass (de)select options."""
@@ -407,13 +409,16 @@ class PageSelect(PageInstaller):
         """Sets the image and description on the right side based on the
         specified checkable."""
         option = self.checkable_to_option[checkable]
-        opt_img = self._page_parent.archive_path.join(
-            self._page_parent.installer_root, option.option_image)
-        self._current_image = opt_img # To allow opening it via double click
+        opt_img = option.option_image
+        # Note that these are almost always Windows paths, so we have to
+        # convert them if we're on Linux
+        opt_img_path = to_os_path(self._page_parent.archive_path.join(
+            self._page_parent.installer_root, opt_img))
+        self._current_image = opt_img_path # To allow opening via double click
         try:
             final_image = self._img_cache[opt_img]
         except KeyError:
-            final_image = opt_img
+            final_image = opt_img_path
         self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
         # Check if we need to display a special string above the description
         type_desc, type_warn = self._option_type_info[option.option_type]
@@ -434,7 +439,7 @@ class PageSelect(PageInstaller):
     def show_fomod_error(self, fm_error):
         fm_error += u'\n' + _(u'Please ensure the FOMOD files are correct and '
                               u'contact the Wrye Bash Dev Team.')
-        balt.showWarning(self, fm_error, do_center=True)
+        showWarning(self, fm_error, do_center=True)
 
     def on_next(self):
         sel_options = []
@@ -543,8 +548,6 @@ class PageFinish(PageInstaller):
 #  can't update the type hints in balt.py due to cyclic imports :(
 class _GroupLink(EnabledLink):
     """Select, deselect or toggle all options in a group."""
-    def __init__(self):
-        super(_GroupLink, self).__init__()
 
     def _enable(self):
         # Disable for required options, user can't change those
@@ -552,15 +555,14 @@ class _GroupLink(EnabledLink):
 
     @property
     def link_help(self):
-        return self._help % self.selected_group.group_name
+        return self._help % {
+            'curr_fomod_group': self.selected_group.group_name}
 
     @property
     def selected_group(self): # type: () -> InstallerGroup
         """Returns the group that the clicked on option belongs to."""
         return self.window.checkable_to_group[self.selected]
 
-class _Group_MassSelect(_GroupLink):
-    """Base class for all three types of 'mass select' group links."""
     def Execute(self):
         for checkable in self.window.group_option_map[self.selected_group]:
             # NotUsable options can't ever be enabled, so skip those
@@ -570,26 +572,26 @@ class _Group_MassSelect(_GroupLink):
 
     def _should_enable(self, checkable):
         """Returns True if the specified checkable should be enabled."""
-        raise AbstractError(u'_enable_checkable not implemented')
+        raise NotImplementedError
 
-class _Group_SelectAll(_Group_MassSelect):
+class _Group_SelectAll(_GroupLink):
     """Select all options in the selected group."""
-    _text = _(u'Select All')
-    _help = _(u"Selects all options in the '%s' group.")
+    _text = _('Select All')
+    _help = _("Selects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return True
 
-class _Group_DeselectAll(_Group_MassSelect):
+class _Group_DeselectAll(_GroupLink):
     """Deselect all options in the selected group."""
-    _text = _(u'Deselect All')
-    _help = _(u"Deselects all options in the '%s' group.")
+    _text = _('Deselect All')
+    _help = _("Deselects all options in the '%(curr_fomod_group)s' group.")
 
     def _should_enable(self, checkable): return False
 
-class _Group_ToggleAll(_Group_MassSelect):
+class _Group_ToggleAll(_GroupLink):
     """Toggle all options in the selected group."""
-    _text = _(u'Toggle Selection')
-    _help = _(u"Deselects all selected options in the '%s' group and vice "
-              u'versa.')
+    _text = _('Toggle Selection')
+    _help = _("Deselects all selected options in the '%(curr_fomod_group)s' "
+              "group and vice versa.")
 
     def _should_enable(self, checkable): return not checkable.is_checked

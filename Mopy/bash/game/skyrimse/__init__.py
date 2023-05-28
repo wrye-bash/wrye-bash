@@ -16,18 +16,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES V: Skyrim Special Edition."""
+import importlib
 
+from .. import WS_COMMON_FILES
+from ..gog_game import GOGMixin
 from ..skyrim import SkyrimGameInfo
-from .. import WS_COMMON
-from ... import brec
-from ...brec import MreFlst, MreGlob
+from ..windows_store_game import WindowsStoreMixin
+from ...bolt import classproperty
+
+_GOG_IDS = [
+    1801825368, # Game
+    1162721350, # Anniversary Upgrade DLC/patch
+    1711230643, # Package
+]
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
+    """GameInfo override for TES V: Skyrim Special Edition."""
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
     game_icon = u'skyrimse_%u.png'
@@ -37,16 +45,23 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     appdata_name = u'Skyrim Special Edition'
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE
-    game_detect_includes = [u'SkyrimSELauncher.exe']
-    # Steam/GOG SkyrimSE has SkyrimSELauncher.exe, but no appxmanifest.xml
-    # Windows Store SkryimSE has SkyrimSELauncher.exe and appxmanifest.xml
-    game_detect_excludes = WS_COMMON
+    game_detect_includes = {'SkyrimSELauncher.exe'}
+    # Files carefully chosen such that no platform has any of them in common
+    # with another platform. SkyrimVR.exe is here because some older guides
+    # recommend creating a copy of SkyrimVR.exe called SkyrimSE.exe to "trick"
+    # WB into launching. That's from back when WB had no VR support, but those
+    # guides haven't been updated since...
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES |
+                            {'EOSSDK-Win64-Shipping.dll'} | # Epic Store
+                            {'SkyrimVR.exe'})
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'
+    loot_game_name = 'Skyrim Special Edition'
     boss_game_name = u'' # BOSS does not support SSE
-    regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
-                      u'Installed Path')
+    registry_keys = [(r'Bethesda Softworks\Skyrim Special Edition',
+                       'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
@@ -80,6 +95,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
     class Esp(SkyrimGameInfo.Esp):
+        extension_forces_flags = True
         warn_older_form_versions = True
 
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
@@ -108,7 +124,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         'skyrim - textures6.bsa',
         'skyrim - textures7.bsa',
         'skyrim - textures8.bsa',
-        'skyrim - voices_en0.bsa',
         'skyrim - voices_de0.bsa',
         'skyrim - voices_en0.bsa',
         'skyrim - voices_es0.bsa',
@@ -268,98 +283,74 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         'ccvsvsse004-beafarmer.esl',
     }
 
-    _patcher_package = u'bash.game.skyrimse' # We need to override tweaks
-    @classmethod
-    def init(cls):
-        cls._dynamic_import_modules(__name__)
-        # First import from skyrimse.records file
-        from .records import MreVoli, MreLens
-        # then import rest of records from skyrim.records
-        from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
-            MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
-            MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
-            MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
-            MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
-            MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
-            MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
-            MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
-            MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
-            MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
-            MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, \
-            MreMust, MreNpc, MreOtft, MrePerk, MreProj, MreQust, MreRegn, \
-            MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
-            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
-            MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MreRace
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            # MreAchr, MreDial, MreInfo,
-            MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
-            MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
-            MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
-            MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj,
-            MreDoor, MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl,
-            MreEyes, MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGlob,
-            MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad,
-            MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
-            MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln,
-            MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt,
-            MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MrePerk, MreProj,
-            MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
-            MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
-            MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-            MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack, MreFact, MreRace,
-        )}
-        # Setting RecordHeader class variables --------------------------------
-        header_type = brec.RecordHeader
-        header_type.top_grup_sigs = [
-            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
-            b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
-            b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
-            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
-            b'MISC', b'APPA', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
-            b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_',
-            b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ', b'HAZD',
-            b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
-            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK',
-            b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL',
-            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
-            b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT', b'IPDS',
-            b'ARMA', b'ECZN', b'LCTN', b'MESG', b'RGDL', b'DOBJ', b'LGTM',
-            b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR',
-            b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
-            b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
-            b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
-        header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
-                                         b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
-                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
-        header_type.plugin_form_version = 44
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
-            MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,
-            MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm,
-            MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, MreDebr,
-            MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts, MreFurn, MreGlob, MreGmst, MreGras, MreHazd,
-            MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct,
-            MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
-            MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt,
-            MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, MreMust,
-            MreNpc, MreOtft, MrePerk, MreProj, MreRegn, MreRela, MreRevb,
-            MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
-            MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
-            MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreTes4,
-            MrePack, MreRace,
-            # MreNavm, MreNavi
-        )}
-        brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
-                                              b'DIAL', b'INFO', b'WRLD'})
-        cls._validate_records()
+    assorted_tweaks = SkyrimGameInfo.assorted_tweaks | {
+        'AssortedTweak_ArrowWeight'}
 
-GAME_TYPE = SkyrimSEGameInfo
+    #--------------------------------------------------------------------------
+    # Import Stats
+    #--------------------------------------------------------------------------
+    # The contents of these tuples have to stay fixed because of CSV parsers
+    stats_csv_attrs = SkyrimGameInfo.stats_csv_attrs | {
+        b'AMMO': ('eid', 'value', 'damage', 'weight'),
+    }
+    stats_attrs = SkyrimGameInfo.stats_attrs | {
+        b'AMMO': ('value', 'damage', 'weight'),
+    }
+
+    #--------------------------------------------------------------------------
+    # Tweak Names
+    #--------------------------------------------------------------------------
+    names_tweaks = SkyrimGameInfo.names_tweaks | {'NamesTweak_AmmoWeight'}
+
+    # Record information ------------------------------------------------------
+    top_groups = [*SkyrimGameInfo.top_groups, b'LENS', b'VOLI']
+
+    @classmethod
+    def init(cls, _package_name=None):
+        super().init(_package_name or __name__)
+
+    @classmethod
+    def _import_records(cls, package_name, plugin_form_vers=44):
+        # first import our records from skyrimse.records
+        importlib.import_module('.records', package=__name__)
+        # package name is skyrim here
+        super()._import_records(package_name, plugin_form_vers)
+
+class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
+    """GameInfo override for the Epic Games Store version of Skyrim SE."""
+    displayName = 'Skyrim Special Edition (EGS)'
+    my_games_name = 'Skyrim Special Edition EPIC'
+    appdata_name = 'Skyrim Special Edition EPIC'
+
+    @classproperty
+    def game_detect_includes(cls):
+        return super().game_detect_includes | {'EOSSDK-Win64-Shipping.dll'}
+
+    @classproperty
+    def game_detect_excludes(cls):
+        return super().game_detect_excludes - {'EOSSDK-Win64-Shipping.dll'}
+
+    class Eg(SkyrimSEGameInfo.Eg):
+        egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
+                         'ac82db5035584c7f8a2c548d98c86b2c'] # SE
+
+class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
+    """GameInfo override for the GOG version of Skyrim SE."""
+    displayName = 'Skyrim Special Edition (GOG)'
+    my_games_name = 'Skyrim Special Edition GOG'
+    appdata_name = 'Skyrim Special Edition GOG'
+    _gog_game_ids = _GOG_IDS
+
+class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
+    """GameInfo override for the Windows Store version of Skyrim SE."""
+    displayName = 'Skyrim Special Edition (WS)'
+    my_games_name = 'Skyrim Special Edition MS'
+    appdata_name = 'Skyrim Special Edition MS'
+
+    class Ws(SkyrimSEGameInfo.Ws):
+        legacy_publisher_name = 'Bethesda'
+        win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
+
+GAME_TYPE = {g.displayName: g for g in (
+    SkyrimSEGameInfo, EGSSkyrimSEGameInfo, GOGSkyrimSEGameInfo,
+    WSSkyrimSEGameInfo)}

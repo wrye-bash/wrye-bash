@@ -16,61 +16,57 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
-
 from ..skyrim.default_tweaks import default_tweaks
 
 # Remove tweaks that don't apply to SSE
-remove_tweaks = {u'Shadows, Res512 Dist 1 [SkyrimPrefs].ini',
-                 u'SunShadow, Update 0.0000 [Skyrim].ini',
-                 u'SunShadow, Update 0.0500 [Skyrim].ini',
-                 u'SunShadow, Update 0.1000 [Skyrim].ini',
-                 u'SunShadow, Update 0.2000 [Skyrim].ini',
-                 u'WaterReflect, Res1024 [SkyrimPrefs].ini',
-                 u'WaterReflect, Res256 [SkyrimPrefs].ini',
-                 u'WaterReflect, Res512 ~Default[SkyrimPrefs].ini'}
+remove_tweaks = {'Shadows, Res512 Dist 1 [SkyrimPrefs].ini',
+                 'SunShadow, Update 0.0000 [Skyrim].ini',
+                 'SunShadow, Update 0.0500 [Skyrim].ini',
+                 'SunShadow, Update 0.1000 [Skyrim].ini',
+                 'SunShadow, Update 0.2000 [Skyrim].ini',
+                 'WaterReflect, Res1024 [SkyrimPrefs].ini',
+                 'WaterReflect, Res256 [SkyrimPrefs].ini',
+                 'WaterReflect, Res512 ~Default[SkyrimPrefs].ini'}
 default_tweaks = {k: v for k, v in default_tweaks.items()
                   if k not in remove_tweaks}
 
 # Add new SSE-specific tweaks
 add_tweaks = {
-    u'Invalidate, Allow loose files [Skyrim].ini': OrderedDict(
-        [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'1')]))]),
-    u'Invalidate, Disallow loose files ~Default [Skyrim].ini': OrderedDict(
-        [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'0')]))]),
-    u'Save Game Compression, LZ4 ~Default [Skyrim].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'2')]))]),
-    u'Save Game Compression, zlib [Skyrim].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'1')]))]),
-    u'Save Game Compression, Off [Skyrim].ini': OrderedDict(
-        [(u'SaveGame', OrderedDict([(u'uiCompression', u'0')]))]),
-    u'Depth Of Field, Off [SkyrimPrefs].ini': OrderedDict(
-        [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'0')]))]),
-    u'Depth Of Field, On ~Default [SkyrimPrefs].ini': OrderedDict(
-        [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'1')]))]),
-    u'In Game Compass, Off [SkyrimPrefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict([(u'bShowCompass', u'0')]))]),
-    u'In Game Compass, On ~Default [SkyrimPrefs].ini': OrderedDict(
-        [(u'Interface', OrderedDict([(u'bShowCompass', u'1')]))]),
-    u'In Game Crosshair, Off [SkyrimPrefs].ini': OrderedDict(
-        [(u'Main', OrderedDict([(u'bCrosshairEnabled', u'0')]))]),
-    u'In Game Crosshair, On ~Default [SkyrimPrefs].ini': OrderedDict(
-        [(u'Main', OrderedDict([(u'bCrosshairEnabled', u'1')]))]),
-    u'In Game Quest Markers, Off [SkyrimPrefs].ini': OrderedDict(
-        [(u'GamePlay', OrderedDict([(u'bShowFloatingQuestMarkers', u'0')]))]),
-    u'In Game Quest Markers, On ~Default [SkyrimPrefs].ini': OrderedDict(
-        [(u'GamePlay', OrderedDict([(u'bShowFloatingQuestMarkers', u'1')]))]),
-    u'Map Quest Markers, Off [SkyrimPrefs].ini': OrderedDict(
-        [(u'GamePlay', OrderedDict([(u'bShowQuestMarkers', u'0')]))]),
-    u'Map Quest Markers, On ~Default [SkyrimPrefs].ini': OrderedDict(
-        [(u'GamePlay', OrderedDict([(u'bShowQuestMarkers', u'1')]))]),
-    u'Tutorials, Off [Skyrim].ini': OrderedDict(
-        [(u'Interface', OrderedDict([(u'bShowTutorials', u'0')]))]),
-    u'Tutorials, On [Skyrim].ini': OrderedDict(
-        [(u'Interface', OrderedDict([(u'bShowTutorials', u'1')]))]),
+    'Invalidate, Allow loose files [Skyrim].ini': {
+        'Archive': {'bInvalidateOlderFiles': '1'}},
+    'Invalidate, Disallow loose files ~Default [Skyrim].ini': {
+        'Archive': {'bInvalidateOlderFiles': '0'}},
+    'Save Game Compression, LZ4 ~Default [Skyrim].ini': {
+        'SaveGame': {'uiCompression': '2'}},
+    'Save Game Compression, zlib [Skyrim].ini': {
+        'SaveGame': {'uiCompression': '1'}},
+    'Save Game Compression, Off [Skyrim].ini': {
+        'SaveGame': {'uiCompression': '0'}},
+    'Depth Of Field, Off [SkyrimPrefs].ini': {
+        'Imagespace': {'bDoDepthOfField': '0'}},
+    'Depth Of Field, On ~Default [SkyrimPrefs].ini': {
+        'Imagespace': {'bDoDepthOfField': '1'}},
+    'In Game Compass, Off [SkyrimPrefs].ini': {
+        'Interface': {'bShowCompass': '0'}},
+    'In Game Compass, On ~Default [SkyrimPrefs].ini': {
+        'Interface': {'bShowCompass': '1'}},
+    'In Game Crosshair, Off [SkyrimPrefs].ini': {
+        'Main': {'bCrosshairEnabled': '0'}},
+    'In Game Crosshair, On ~Default [SkyrimPrefs].ini': {
+        'Main': {'bCrosshairEnabled': '1'}},
+    'In Game Quest Markers, Off [SkyrimPrefs].ini': {
+        'GamePlay': {'bShowFloatingQuestMarkers': '0'}},
+    'In Game Quest Markers, On ~Default [SkyrimPrefs].ini': {
+        'GamePlay': {'bShowFloatingQuestMarkers': '1'}},
+    'Map Quest Markers, Off [SkyrimPrefs].ini': {
+        'GamePlay': {'bShowQuestMarkers': '0'}},
+    'Map Quest Markers, On ~Default [SkyrimPrefs].ini': {
+        'GamePlay': {'bShowQuestMarkers': '1'}},
+    'Tutorials, Off [Skyrim].ini': {'Interface': {'bShowTutorials': '0'}},
+    'Tutorials, On [Skyrim].ini': {'Interface': {'bShowTutorials': '1'}},
 }
 default_tweaks.update(add_tweaks)

@@ -42,7 +42,8 @@ a:visited {
   color: rgba(85, 26, 139, 1);
 }
 a[href^="http"]:after {
-  content: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=");
+  /* Relative to the CSS path (Mopy/Docs/assets), so ../../ */
+  content: url("../../bash/images/external_link.svg");
   padding-left: 0.125rem;			/* 2px */
 }
 h1, h2, h3 {
@@ -131,7 +132,7 @@ h2 .back2top, h3 .back2top {
 }
 #header {
   background-color: rgba(154, 205, 50, 1);
-  background-image: url("../../bash/images/bash_head.png");
+  background-image: url("../../bash/images/bash.svg");
   background-position: 0.75rem 0.75rem;	/* 12px 12px */
   background-repeat: no-repeat;
   background-size: 1.875rem 2.0625rem;	/* 30px 33px */
@@ -209,8 +210,9 @@ code.box {
 table code.box {
   display: block;
 }
-td.thf {
+td.td_center {
   text-align: center;
+  vertical-align: middle;
 }
 td > code.box {
   margin: 0;
@@ -233,7 +235,9 @@ td > code.box {
   max-width: 35%;
   min-width: 12.5rem;				/* 200px */
 }
-.prlflex img {						/* Ensuring <img> scales to fit other content */
+/* TODO(inf): Introduced normal_flex_img to fix my wizard icon usage - what is
+     this rule even used for? */
+.prlflex img :not(.normal_flex_img) {						/* Ensuring <img> scales to fit other content */
   max-width: 35%;
   min-width: 12.5rem;				/* 200px */
   position: absolute;
@@ -340,6 +344,12 @@ td, th {
   font-size: 1rem;				/* 16px */
   font-style: italic;
   font-weight: bold;
+}
+.bolded {
+  font-weight: bold;
+}
+.italicized {
+  font-style: italic;
 }
 
 /* Consistency Formatting */

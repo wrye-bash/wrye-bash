@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,19 +25,23 @@ import os
 import subprocess
 import webbrowser
 from collections import defaultdict
+
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
+from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import colors, Link, Resources, showOk
-from ..bolt import deprint, readme_url, os_name, dict_sort
-from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
-    ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
-    LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
-    WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
-    TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
-    VBoxedLayout, FileOpen, FileSave, DirOpen
+from ..balt import Link, Resources, colors
+from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion
+from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
+    CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
+    DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
+    HLayout, HorizontalLine, Label, LayoutOptions, ListBox, OkButton, \
+    OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
+    ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
+    VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
+    showOk, askYes, askText, showError, askWarning, showInfo
 from ..localize import dump_translator
+from ..update_checker import UpdateChecker, can_check_updates
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -92,6 +96,11 @@ class SettingsDialog(DialogWindow):
                 self._apply_btn,
             ]),
         ]).apply_to(self)
+        # We have to wait until now and pass this size along because we can't
+        # get a size from the panels (they're all sized '20x20' internally and
+        # querying their best size breaks because that depends on the size of
+        # the text - which is exactly what we're trying to adjust...)
+        self._tab_tree.wrap_page_descriptions(self.component_size[0])
 
     def _exec_mark_changed(self, requesting_page, is_changed):
         """Marks or unmarks the requesting page as changed, and enables or
@@ -118,20 +127,18 @@ class SettingsDialog(DialogWindow):
             leaf_page.on_apply()
         if self._requesting_restart:
             # A restart has been requested, ask the user whether to do it now
-            if balt.askYes(self,
-                    _(u'The following settings require Wrye Bash to be '
-                      u'restarted before they take effect:')
-                    + u'\n\n' + u'\n'.join(
-                        u' - %s' % r for r in sorted(self._requesting_restart))
-                    + u'\n\n' + _(u'Do you want to restart now?'),
-                    title=_(u'Restart Wrye Bash')):
+            m = [_('The following settings require Wrye Bash to be restarted '
+                   'before they take effect:'), '\n'.join(f' - {r}' for r in
+                        sorted(self._requesting_restart)),
+                 _('Do you want to restart now?')]
+            if askYes(self, '\n\n'.join(m), title=_('Restart Wrye Bash')):
                 Link.Frame.Restart(*self._restart_params)
             else:
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
                 del self._restart_params[:]
 
-class _ASettingsPage(WrappingTextMixin, ATreeMixin):
+class _ASettingsPage(ATreeMixin):
     """Abstract class for all settings pages."""
     # A set of all setting IDs in this page. This is optional, see
     # _mark_setting_changed below
@@ -139,7 +146,8 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     _setting_ids = set()
 
     def __init__(self, parent, page_desc):
-        super(_ASettingsPage, self).__init__(page_desc, parent)
+        super().__init__(parent)
+        self._page_desc_label = WrappingLabel(self, page_desc)
         # Callback to a method that takes the settings page and a boolean,
         # marking the settings in the specified page as changed or not. Used
         # to automatically enable or disable the Apply button.
@@ -159,8 +167,8 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         """Checks if the setting with the specified ID has been changed. See
         _mark_setting_changed below."""
         if setting_id not in self._setting_ids:
-            raise SyntaxError(u'Setting ID (%s) missing from _setting_ids for '
-                              u"page '%r'" % (setting_id, self))
+            raise SyntaxError(f"Setting ID ({setting_id}) missing from "
+                              f"_setting_ids for page '{self!r}'")
         return self._setting_states[setting_id]
 
     def _mark_setting_changed(self, setting_id, is_changed):
@@ -187,19 +195,18 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         self._mark_changed(self, False)
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
-        new_fstr = balt.askText(self, msg, title=msg_title,
-                                 default=chosen_file)
+        new_fstr = askText(self, msg, title=msg_title, default_txt=chosen_file)
         if not new_fstr or new_fstr == chosen_file:
             return False # user canceled or entered identical name
         new_fpath = parent_dir.join(new_fstr)
         old_fpath = parent_dir.join(chosen_file)
         if new_fpath.is_file():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                u'exists. Do you want to replace the file?') % new_fstr,
-                title=_(u'Name Conflict')):
+            fstr = _('The chosen filename (%s) already exists. Do you want '
+                     'to replace the file?') % new_fstr
+            if not askYes(self, fstr, title=_('Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
-            env.shellMove(old_fpath, new_fpath, parent=self._native_widget)
+            env.shellMove({old_fpath: new_fpath}, parent=self)
             return True
         except (exception.CancelError, exception.SkipError):
             return False # user canceled
@@ -225,7 +232,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--DropDown
         def _display_text(k):
             return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
-        self._txt_key = {_display_text(x): x for x in colors}
+        # Note the 'in colorInfo' to filter out colors that this game doesn't
+        # actually use
+        self._txt_key = {_display_text(x): x for x in colors if x in colorInfo}
         colored = sorted(self._txt_key, key=str.lower)
         combo_text = colored[0]
         choiceKey = self._txt_key[combo_text]
@@ -249,7 +258,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HLayout(items=[
                 (self.comboBox, LayoutOptions(expand=True, weight=1)),
@@ -323,11 +332,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.UpdateUIButtons()
 
     def on_apply(self):
-        for key,newColor in self.changes.items():
-            bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
-            colors[key] = newColor
-        self.UpdateUIButtons()
-        self.UpdateUIColors()
+        if self.changes:
+            for key,newColor in self.changes.items():
+                bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
+                colors[key] = newColor
+            self.UpdateUIButtons()
+            self.UpdateUIColors()
 
     def OnExport(self):
         outDir = bass.dirs[u'patches']
@@ -347,7 +357,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     out.write(f'{col_key}: {color.to_rgb_tuple()}\n')
         except Exception as e:
             msg = _('An error occurred writing to %s:') % outPath.stail
-            balt.showError(self, msg + f'\n\n{e}')
+            showError(self, msg + f'\n\n{e}')
 
     def OnImport(self):
         inDir = bass.dirs[u'patches']
@@ -386,7 +396,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                         self.changes[color_key] = color
         except Exception as e:
             msg = _('An error occurred reading from %s:') % inPath.stail
-            balt.showError(self, msg + f'\n\n{e}')
+            showError(self, msg + f'\n\n{e}')
         self.UpdateUIButtons()
 
     def OnComboBox(self):
@@ -463,11 +473,11 @@ class LanguagePage(_AScrollablePage):
         u'zh_CN': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'zh_TW': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de_DE': _(u'German') + u' (Deutsch)',
-        u'pt_PT': _(u'Portuguese') + u' (português)',
+        'pt_BR': _('Brazilian Portuguese') + ' (português brasileiro)',
         u'it_IT': _(u'Italian') + u' (italiano)',
         u'ja_JP': _(u'Japanese') + u' (日本語)',
         u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
-        u'en_US': _(u'English') + u' (English)',
+        u'en_US': _('American English') + ' (American English)',
     })
     _localized_to_internal = _LangDict(
         {v: k for k, v in _internal_to_localized.items()})
@@ -475,8 +485,9 @@ class LanguagePage(_AScrollablePage):
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
         # Gather all localizations in the l10n directory
-        all_langs = [b for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po'
-                     and (b := f.fn_body)[-3:].lower() != u'new']
+        all_langs = [f'{b}' for f in bass.dirs['l10n'].ilist()
+                     if f.fn_ext == '.po'
+                     and (b := f.fn_body)[-3:].lower() != 'new']
         # Insert English since there's no localization file for that
         if u'en_US' not in all_langs:
             all_langs.append(u'en_US')
@@ -493,9 +504,8 @@ class LanguagePage(_AScrollablePage):
         # comparisons
         self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
-            choices=localized_langs, auto_tooltip=False)
-        self._lang_dropdown.tooltip = _(u'Changes the language that Wrye Bash '
-                                        u'will be displayed in.')
+            choices=localized_langs, dd_tooltip=_(
+                'Changes the language that Wrye Bash will be displayed in.'))
         self._lang_dropdown.on_combo_select.subscribe(self._handle_lang_select)
         self._l10n_list = ListBox(self, isSort=True, isHScroll=True,
             onSelect=self._handle_select_l10n)
@@ -526,7 +536,7 @@ class LanguagePage(_AScrollablePage):
         self._populate_l10n_list()
         self._set_context_buttons(btns_enabled=False)
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
@@ -563,8 +573,8 @@ class LanguagePage(_AScrollablePage):
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
             outFile = dump_translator(outPath, bass.active_locale)
-        balt.showOk(self, _(u'Translation keys written to %s') % outFile,
-                     _(u'Dump Localization: %s') % outPath.stail)
+        showOk(self, _('Translation keys written to %s') % outFile,
+               _('Dump Localization: %s') % outPath.stail)
         # Make the new localization show up in the list
         self._populate_l10n_list()
         # wx unselects here, so disable the context buttons
@@ -575,14 +585,14 @@ class LanguagePage(_AScrollablePage):
         chosen_editor = bass.settings[u'bash.l10n.editor.path']
         # First, verify that the chosen editor is valid
         if not chosen_editor:
-            balt.showError(self, _(u'No localization editor has been chosen. '
-                                   u"Please click on 'Configure Editor' to "
-                                   u'set one up.'), title=_(u'Invalid Editor'))
+            msg = _("No localization editor has been chosen. Please click "
+                    "on 'Configure Editor' to set one up.")
+            showError(self, msg, title=_('Invalid Editor'))
             return
         elif not os.path.isfile(chosen_editor):
-            balt.showError(self, _(u'The chosen editor (%s) does not exist or '
-                                   u'is not a file.') % chosen_editor,
-                title=_(u'Invalid Editor'))
+            msg = _('The chosen editor (%(chosen_editor)s) does not exist or '
+                    'is not a file.') % {'chosen_editor': chosen_editor}
+            showError(self, msg, title=_('Invalid Editor'))
             return
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
@@ -595,7 +605,7 @@ class LanguagePage(_AScrollablePage):
     @staticmethod
     def _gather_l10n():
         """Returns a list of all localization files in the l10n directory."""
-        return [f for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po']
+        return [f'{f}' for f in bass.dirs['l10n'].ilist() if f.fn_ext == '.po']
 
     def _handle_editor_cfg_btn(self):
         """Internal callback, called when the 'Configure Editor...' button has
@@ -653,6 +663,53 @@ class LanguagePage(_AScrollablePage):
         for ctx_btn in (self._edit_l10n_btn, self._rename_l10n_btn):
             ctx_btn.enabled = btns_enabled
 
+# Misc Appearance -------------------------------------------------------------
+class MiscAppearancePage(_AFixedPage):
+    """Appearance settings that don't fix anywhere else yet."""
+    _setting_ids = {'alt_name_on', 'rev_icons_on'}
+
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        self._alt_name_checkbox = CheckBox(self,
+            _('Use Alternate Wrye Bash Name'),
+            chkbx_tooltip=_('Use an alternate display name for Wrye Bash '
+                            'based on the game it is managing.'),
+            checked=bass.settings['bash.useAltName'])
+        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        self._reverse_icons_checkbox = CheckBox(self, _('Reverse Icon Colors'),
+            chkbx_tooltip=_('Replace black icons used by Wrye Bash with white '
+                            'ones. Useful if you are using an OS theme that '
+                            'makes those icons hard to see.'),
+            checked=bass.settings['bash.use_reverse_icons'])
+        self._reverse_icons_checkbox.on_checked.subscribe(self._on_rev_icons)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._page_desc_label,
+            HorizontalLine(self),
+            self._alt_name_checkbox,
+            self._reverse_icons_checkbox,
+        ]).apply_to(self)
+
+    def _on_alt_name(self, checked):
+        self._mark_setting_changed('alt_name_on',
+            checked != bass.settings['bash.useAltName'])
+
+    def _on_rev_icons(self, checked):
+        self._mark_setting_changed('rev_icons_on',
+            checked != bass.settings['bash.use_reverse_icons'])
+
+    def on_apply(self):
+        # Use Alternate Wrye Bash Name
+        if self._is_changed('alt_name_on'):
+            new_alt_name = self._alt_name_checkbox.is_checked
+            bass.settings['bash.useAltName'] = new_alt_name
+            Link.Frame.set_bash_frame_title()
+        # Reverse Icon Colors
+        if self._is_changed('rev_icons_on'):
+            new_rev_icons = self._reverse_icons_checkbox.is_checked
+            bass.settings['bash.use_reverse_icons'] = new_rev_icons
+            self._request_restart(_('Reverse Icon Colors'))
+        super().on_apply()
+
 # Status Bar ------------------------------------------------------------------
 class StatusBarPage(_AScrollablePage):
     """Settings related to the status bar."""
@@ -670,14 +727,10 @@ class StatusBarPage(_AScrollablePage):
         self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
             value=str(bass.settings[u'bash.statusbar.iconSize']),
-            choices=(u'16', u'24', u'32'), auto_tooltip=False)
-        self._icon_size_dropdown.tooltip = _(u'Sets the status bar icons to '
-                                             u'the selected size in pixels.')
+            choices=('16', '24', '32'), dd_tooltip=_(
+                'Sets the status bar icons to the selected size in pixels.'))
         self._icon_size_dropdown.on_combo_select.subscribe(
             self._handle_icon_size)
-        # FIXME(inf) Disabled for now because it doesn't work correctly.
-        #  Supposedly crashes too, but for me it just glitches the status bar
-        self._icon_size_dropdown.enabled = False
         ##: Create a variant of DoubleListBox that can actually show the icons
         self._icon_lists = DoubleListBox(self,
             left_label=_(u'Visible Buttons'), right_label=_(u'Hidden Buttons'),
@@ -686,7 +739,7 @@ class StatusBarPage(_AScrollablePage):
         self._icon_lists.move_btn_callback = self._on_move_btn
         self._populate_icon_lists()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
                 items=[
@@ -694,8 +747,6 @@ class StatusBarPage(_AScrollablePage):
                     HLayout(spacing=6, items=[
                         Label(self, _(u'Icon Size:')),
                         self._icon_size_dropdown,
-                        Label(self, _(u'(currently disabled due to unsolved '
-                                      u'glitches and crashes)'))
                     ]),
             ]),
             (HBoxedLayout(self, item_expand=True,
@@ -732,7 +783,7 @@ class StatusBarPage(_AScrollablePage):
         # Show App Version
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
-            for button in BashStatusBar.buttons:
+            for button in BashStatusBar.all_sb_links.values():
                 button.set_sb_button_tooltip()
             if BashStatusBar.obseButton.button_state:
                 BashStatusBar.obseButton.UpdateToolTips()
@@ -779,7 +830,7 @@ class StatusBarPage(_AScrollablePage):
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
         visible = []
-        for link in BashStatusBar.buttons:
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             if not link.IsPresent() or not link.canHide: continue
             button = link.gButton
             # Get a title for the hidden button
@@ -793,8 +844,8 @@ class StatusBarPage(_AScrollablePage):
                 tip_ = getattr(link, u'sb_button_tip', None) # YAK YAK YAK
             if tip_ is None:
                 # No good, use its uid as a last resort
-                tip_ = link.uid
-            target_link_list = hidden if link.uid in hide else visible
+                tip_ = link_uid
+            target_link_list = hidden if link_uid in hide else visible
             target_link_list.append(tip_)
             self._tip_to_links[tip_] = link
         self._icon_lists.left_items = visible
@@ -814,9 +865,9 @@ class BackupsPage(_AFixedPage):
             btn_tooltip=_(u"Backup all of Wrye Bash's settings/data to an "
                           u'archive file.'))
         new_backup_btn.on_clicked.subscribe(self._new_backup)
-        add_backup_btn = Button(self, _('Set Backups Directory...'),
+        set_backups_dir_btn = Button(self, _('Set Backups Directory...'),
             btn_tooltip=_('Select the directory containing your backups.'))
-        add_backup_btn.on_clicked.subscribe(self._set_backup_dir)
+        set_backups_dir_btn.on_clicked.subscribe(self._set_backup_dir)
         self.restore_backup_btn = Button(self, _(u'Restore...'),
             btn_tooltip=_(u"Restore all of Wrye Bash's settings/data from the "
                           u'selected backup.'))
@@ -831,12 +882,12 @@ class BackupsPage(_AFixedPage):
         self._set_context_buttons(btns_enabled=False)
         self._populate_backup_list()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
                 VLayout(item_expand=True, spacing=4, items=[save_settings_btn,
-                    new_backup_btn, add_backup_btn, HorizontalLine(self),
+                    new_backup_btn, set_backups_dir_btn, HorizontalLine(self),
                     self.restore_backup_btn, self.rename_backup_btn,
                     self.delete_backup_btn,
                 ]),
@@ -859,8 +910,8 @@ class BackupsPage(_AFixedPage):
         """Deletes the currently selected backup."""
         settings_file = self._backup_dir.join(self._chosen_backup)
         try:
-            env.shellDelete(settings_file, parent=self._native_widget,
-                confirm=True, recycle=True)
+            env.shellDelete([settings_file], parent=self, ask_confirm=True,
+                recycle=True)
         except (exception.CancelError, exception.SkipError): pass
         finally:
             self._populate_backup_list()
@@ -926,9 +977,9 @@ class BackupsPage(_AFixedPage):
     @balt.conversation
     def _restore_backup(self):
         """Restores the currently selected backup."""
-        if not balt.askYes(self, u'\n\n'.join([
-            _(u"Are you sure you want to restore your Bash settings from "
-              u"'%s'?") % self._chosen_backup,
+        if not askYes(self, '\n\n'.join([
+            _("Are you sure you want to restore your Bash settings from '%s'?"
+              ) % self._chosen_backup,
             _(u'This will force a restart of Wrye Bash once your settings are '
               u'restored.')]), _(u'Restore Bash Settings?')):
             return
@@ -944,23 +995,23 @@ class BackupsPage(_AFixedPage):
             error_msg, error_title = restore_.incompatible_backup_error(
                 bush.game.bak_game_name)
             if error_msg:
-                balt.showError(self, error_msg, error_title)
+                showError(self, error_msg, error_title)
                 return
             error_msg, error_title = restore_.incompatible_backup_warn()
-            if error_msg and not balt.askWarning(self, error_msg, error_title):
+            if error_msg and not askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            balt.showInfo(self, u'\n'.join([
-                _(u'Your Bash settings have been successfully extracted.'),
-                _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
-                  u'settings can take effect, Wrye Bash must restart.'), _(
-                u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
+            m = [_('Your Bash settings have been successfully extracted.'), _(
+                'Backup Path: ') + settings_file.s, '', _('Before the '
+                'settings can take effect, Wrye Bash must restart.'),
+                _('Click OK to restart now.')]
+            showInfo(self, '\n'.join(m), _('Bash Settings Extracted'))
             try: # we currently disallow backup and restore on the same boot
                 bass.sys_argv.remove(u'--backup')
             except ValueError:
                 pass
             Link.Frame.Restart([u'--restore'], [u'--filename', backup_dir.s])
-        except exception.BoltError as e:
+        except (exception.BoltError, NotImplementedError) as e:
             deprint(u'Restore settings failed:', traceback=True)
             restore_.warn_message(balt, e.message)
         finally:
@@ -995,16 +1046,27 @@ class ConfirmationsPage(_AFixedPage):
     ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
     # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
     # sense for non-SSE/FO4 games
+    ##: We should also enforce that a key is in here before allowing
+    # askContinue to proceed, so that we won't ever forget to add one here (or
+    # come up with a better way to store these)
     _confirmations = {
         _(u'[INI Edits] Applying an INI tweak'):
             u'bash.iniTweaks.continue',
         _(u'[Installers, Screenshots] Opening a lot of items'):
             u'bash.maxItemsOpen.continue',
-        _(u"[Installers] Opening a mod's page at the "
-          u'%s') % bush.game.nexusName:
+        _('[Installers] Exporting package order'):
+            'bash.installers.export_order.continue',
+        _('[Installers] Installing unconfigured complex packages'):
+            'bash.installers.nothing_installed.continue',
+        _("[Installers] Opening a mod's page at the %(target_nexus_name)s") % {
+            'target_nexus_name': bush.game.nexusName}:
             bush.game.nexusKey,
         _(u"[Installers] Opening a mod's page at TES Alliance"):
             u'bash.installers.openTESA.continue',
+        _('[Installers] Overwriting a package via drag and drop'):
+            'bash.installers.onDropFiles.overwrite_pkg.continue',
+        _('[Installers] Overwriting a BCF via drag and drop'):
+            'bash.installers.onDropFiles.overwrite_conv.continue',
         _(u'[Installers] Searching for a mod on Google'):
             u'bash.installers.opensearch.continue',
         _(u'[Installers] Trying to reorder installers, but Install Order '
@@ -1030,9 +1092,13 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
-        _(u"[Mods] Renaming a plugin to something that %s can't "
-          u'load') % bush.game.displayName:
-            u'bash.rename.isBadFileName.continue',
+        # Strip off the '(GOG)' etc. suffixes for display names
+        ##: Game handling! These different display names shouldn't exist and
+        # such games should instead just show up as 'variants' of the main game
+        # in the GUI
+        _("[Mods] Renaming a plugin to something that %(game_name)s can't "
+          'load') % {'game_name': bush.game.displayName.split('(')[0].strip()}:
+            'bash.rename.isBadFileName.continue',
         _(u'[Mods] Reordering plugins by name'):
             u'bash.sortMods.continue',
         _(u"[Mods] Replacing a plugin's FormIDs based on a text file"):
@@ -1064,7 +1130,6 @@ class ConfirmationsPage(_AFixedPage):
     # The Import links are highly formulaic, so we just generate these here
     for k, v in {_(u'Editor IDs'):   u'editorIds',
                  _(u'Ingredients'):  u'Ingredient',
-                 _(u'Map Markers'):  u'MapMarkers',
                  _(u'Names'):        u'fullNames',
                  _(u'NPC Levels'):   u'actorLevels',
                  _(u'Prices'):       u'prices',
@@ -1075,6 +1140,12 @@ class ConfirmationsPage(_AFixedPage):
                  _(u'Stats'):        u'stats'}.items():
         _confirmations[_(u'[Mods] Importing %s from a text '
                          u'file') % k] = u'bash.%s.import.continue' % v
+    # Detect parentheses in the confirmation names, which will cause problems
+    # when we go to strip out the internal keys
+    for conf_key in _confirmations:
+        if '(' in conf_key or ')' in conf_key:
+            raise SyntaxError(f'_confirmations keys may not contain '
+                              f'parentheses (offending key: {conf_key!r}')
     _setting_ids = {u'confirmed_prompts', u'drop_action', u'internal_keys'}
 
     def __init__(self, parent, page_desc):
@@ -1088,14 +1159,13 @@ class ConfirmationsPage(_AFixedPage):
             isHScroll=True)
         self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
-            choices=sorted(self._label_to_action), auto_tooltip=False)
-        self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '
-                                             u'that are dropped onto the '
-                                             u'Installers tab.')
+            choices=sorted(self._label_to_action), dd_tooltip=_(
+                'Choose what to do with files that are dropped onto the '
+                'Installers tab.'))
         self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
         self._populate_confirmations()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             HLayout(spacing=6, items=[
                 Label(self, _(u'Drop Action:')), self._file_drop_dropdown,
@@ -1121,10 +1191,10 @@ class ConfirmationsPage(_AFixedPage):
             self._mark_setting_changed(u'internal_keys',
                 ik_checked != bass.settings[u'bash.show_internal_keys'])
         # Make sure we don't throw away changes the user made
-        if self._is_changed(u'confirmed_prompts') and not balt.askYes(self,
-                _(u'Activating this setting will discard all changes you have '
-                  u'made below. Are you sure you want to proceed?'),
-                title=_(u'Warning: Unapplied Changes')):
+        msg = _('Activating this setting will discard all changes you have '
+                'made below. Are you sure you want to proceed?')
+        if self._is_changed('confirmed_prompts') and not askYes(
+                self, msg, title=_('Warning: Unapplied Changes')):
             # User chose to cancel, reset the checkbox for visual consistency
             self._show_keys_checkbox.is_checked = not checked
             mark_internal_keys(not checked)
@@ -1141,7 +1211,7 @@ class ConfirmationsPage(_AFixedPage):
         sorted_confs = sorted(self._confirmations.items(),
                               key=lambda x: x[0])
         if self._show_keys_checkbox.is_checked:
-            conf_names = [u'%s (%s)' % c for c in sorted_confs]
+            conf_names = [f'{m} ({k})' for m, k in sorted_confs]
         else:
             conf_names = [c[0] for c in sorted_confs]
         self._confirmation_list.lb_set_items(conf_names)
@@ -1202,43 +1272,74 @@ class GeneralPage(_AScrollablePage):
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.items()}
-    _setting_ids = {'alt_name_on', 'global_menu_on', 'res_scroll_on',
-                    'managed_game', 'plugin_encoding', 'uac_restart'}
+    _global_menu_options = {
+        _('Both'): 0,
+        _('Global Menu Only'): 1,
+        _('Column Menu Only'): 2,
+    }
+    _gm_reverse = {v: k for k, v in _global_menu_options.items()}
+    _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
+                    'plugin_encoding', 'update_check_enabled',
+                    'update_check_cooldown', 'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
         self._managed_game = DropDown(self, value=bush.game.displayName,
-            choices=sorted(bush.foundGames), auto_tooltip=False)
-        self._managed_game.tooltip = _(u'Changes which game Wrye Bash is '
-                                       u'managing.')
+            choices=sorted(bush.foundGames), dd_tooltip=_(
+                'Changes which game Wrye Bash is managing.'))
         self._managed_game.on_combo_select.subscribe(self._on_managed_game)
         self._plugin_encoding = DropDown(self, value=self._current_encoding,
-            choices=sorted(self._all_encodings), auto_tooltip=False)
-        self._plugin_encoding.tooltip = _(u'Changes the encoding Wrye Bash '
-                                          u'will use to read and write '
-                                          u'plugins.')
+            choices=sorted(self._all_encodings), dd_tooltip=_(
+                'Changes the encoding Wrye Bash will use to read and write '
+                'plugins.'))
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
-        ##: The next two should belong to a subpage of Appearance
-        self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
-            chkbx_tooltip=_(u'If checked, a global menu will be shown above '
-                            u'the tabs. If disabled, its options will still '
-                            u'be accessible by right-clicking the columns.'),
-            checked=bass.settings[u'bash.show_global_menu'])
-        self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        # Update checking-related things begin here
+        ##: Change to WrappingLabel after inf-190-bye-listboxes?
+        uc_error_label = Label(self, _("'requests' not installed, update "
+                                       "checking disabled."))
+        uc_error_label.set_foreground_color(balt.colors['default.warn'])
+        uc_error_label.visible = not can_check_updates
+        update_check_on = bass.settings['bash.update_check.enabled']
+        self._update_check_enable = CheckBox(self, _('Check on Startup'),
+            chkbx_tooltip=_('Whether or not Wrye Bash should check to see if '
+                            'a newer version is available when it is '
+                            'launched.'), checked=update_check_on)
+        self._update_check_enable.on_checked.subscribe(self._on_update_checked)
+        self._update_check_enable.enabled = can_check_updates
+        self._update_check_cooldown = Spinner(self,
+            spin_tip=_('Do not check for updates again until this many hours '
+                       'have elapsed since the last check. Set to 0 to '
+                       'check on every startup.'),
+            max_num=24 * 7 * 4, # Four weeks as maximum, high values break wx
+            initial_num=bass.settings['bash.update_check.cooldown'])
+        self._update_check_cooldown.on_spun.subscribe(self._on_update_cooldown)
+        self._uc_cooldown_label = Label(self, _('Cooldown (hours):'))
+        # Disable both of these immediately if update checking is disabled
+        uc_cooldown_enable = can_check_updates and update_check_on
+        self._update_check_cooldown.enabled = uc_cooldown_enable
+        self._uc_cooldown_label.enabled = uc_cooldown_enable
+        check_now_btn = Button(self, _('Check for Updates'),
+            btn_tooltip=_('Check for Wrye Bash updates right now.'))
+        check_now_btn.on_clicked.subscribe(self._on_check_now)
+        check_now_btn.enabled = can_check_updates
+        ##: Replace with a dropdown that lets you disable the global menu, the
+        # column menus, or neither
+        self._global_menu_dropdown = DropDown(self,
+            value=self._gm_reverse[bass.settings['bash.global_menu']],
+            choices=sorted(self._global_menu_options),
+            dd_tooltip=_('Choose whether only the global menu, only the '
+                         'column header menus, or both should be enabled.'))
+        self._global_menu_dropdown.on_combo_select.subscribe(
+            self._on_global_menu)
         # Hide the option on Linux - see refresh_global_menu_visibility
-        self._global_menu_checkbox.visible = os_name == u'nt'
-        self._alt_name_checkbox = CheckBox(self,
-            _(u'Use Alternate Wrye Bash Name'),
-            chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
-                            u'based on the game it is managing.'),
-            checked=bass.settings[u'bash.useAltName'])
-        self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        self._global_menu_dropdown.visible = os_name == 'nt'
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
-            chkbx_tooltip=_(u'Remember where you left off last time and '
-                            u'scroll back down to that plugin/save/etc. on '
-                            u'startup. Can significantly slow down '
-                            u"Wrye Bash's boot process."),
+            chkbx_tooltip=_("Remember where you left off last time and "
+                            "scroll back down to that plugin/save/etc. on "
+                            "startup. May cause a moderate slowdown in "
+                            "Wrye Bash's boot process if you have a very "
+                            "large number of plugins/saves/etc."),
             checked=bass.settings[u'bash.restore_scroll_positions'])
         self._restore_scroll_checkbox.on_checked.subscribe(self._on_res_scroll)
         ##: Doesn't really belong here, but couldn't think of a better place
@@ -1248,7 +1349,7 @@ class GeneralPage(_AScrollablePage):
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
         self._uac_restart_checkbox.visible = env.is_uac()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
                 HLayout(spacing=6, items=[
@@ -1258,9 +1359,22 @@ class GeneralPage(_AScrollablePage):
                     Label(self, _(u'Plugin Encoding:')), self._plugin_encoding,
                 ]),
             ]),
+            VBoxedLayout(self, title=_('Updates'), spacing=6, items=[
+                uc_error_label,
+                HLayout(spacing=6, item_v_align=CENTER, items=[
+                    self._update_check_enable,
+                    (VerticalLine(self), LayoutOptions(expand=True)),
+                    self._uc_cooldown_label, self._update_check_cooldown,
+                ]),
+                check_now_btn,
+            ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
-                self._global_menu_checkbox, self._alt_name_checkbox,
-                self._restore_scroll_checkbox, self._uac_restart_checkbox,
+                HLayout(spacing=6, items=[
+                    Label(self, _('Global or Column Menu:')),
+                    self._global_menu_dropdown,
+                ]),
+                self._restore_scroll_checkbox,
+                self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1268,27 +1382,51 @@ class GeneralPage(_AScrollablePage):
     def _current_encoding(self):
         return self._encodings_reverse[bass.settings[u'bash.pluginEncoding']]
 
-    def _on_alt_name(self, checked):
-        self._mark_setting_changed(u'alt_name_on',
-            checked != bass.settings[u'bash.useAltName'])
+    def _on_global_menu(self, menu_label: str):
+        new_gm_state = self._global_menu_options[menu_label]
+        self._mark_setting_changed('global_menu_state',
+            new_gm_state != bass.settings['bash.global_menu'])
 
-    def _on_global_menu(self, checked):
-        self._mark_setting_changed(u'global_menu_on',
-            checked != bass.settings[u'bash.show_global_menu'])
+    def _on_res_scroll(self, checked: bool):
+        self._mark_setting_changed('res_scroll_on',
+            checked != bass.settings['bash.restore_scroll_positions'])
 
-    def _on_res_scroll(self, checked):
-        self._mark_setting_changed(u'res_scroll_on', checked != bass.settings[
-            u'bash.restore_scroll_positions'])
-
-    def _on_managed_game(self, new_game):
+    def _on_managed_game(self, new_game: str):
         self._mark_setting_changed(u'managed_game',
             new_game != bush.game.displayName)
 
-    def _on_plugin_enc(self, new_enc):
+    def _on_plugin_enc(self, new_enc: str):
         self._mark_setting_changed(u'plugin_encoding',
             new_enc != self._current_encoding)
 
-    def _on_uac_restart(self, checked):
+    def _on_update_checked(self, checked: bool):
+        self._mark_setting_changed('update_check_enabled',
+            checked != bass.settings['bash.update_check.enabled'])
+        # Also disable the cooldown info if the update check is disabled
+        self._update_check_cooldown.enabled = checked
+        self._uc_cooldown_label.enabled = checked
+
+    def _on_update_cooldown(self, new_cooldown: int):
+        self._mark_setting_changed('update_check_cooldown',
+            new_cooldown != bass.settings['bash.update_check.cooldown'])
+
+    def _on_check_now(self):
+        with BusyCursor():
+            newer_version = UpdateChecker().check_for_updates(force_check=True)
+        if newer_version is not None:
+            if newer_version.wb_version > LooseVersion(bass.AppVersion):
+                UpdateNotification.display_dialog(self, newer_version)
+            else:
+                showInfo(self, _('You are already using the newest version of '
+                                 'Wrye Bash, version %(wb_version)s.') % {
+                    'wb_version': bass.AppVersion},
+                    title=_('No Newer Version Available'))
+        else:
+            showError(self, _('Failed to contact GitHub for update checking. '
+                              'Check your Internet connection.'),
+                title=_('Failed To Check for Updates'))
+
+    def _on_uac_restart(self, checked: bool):
         self._mark_setting_changed(u'uac_restart', checked)
 
     def on_apply(self):
@@ -1313,16 +1451,20 @@ class GeneralPage(_AScrollablePage):
             bolt.pluginEncoding = internal_encoding
             # Request a restart so that alrady loaded plugins can be reparsed
             self._request_restart(_(u'Plugin Encoding: %s') % chosen_encoding)
+        # Check on Startup
+        if self._is_changed('update_check_enabled'):
+            new_uc_on = self._update_check_enable.is_checked
+            bass.settings['bash.update_check.enabled'] = new_uc_on
+        # Cooldown (hours)
+        if self._is_changed('update_check_cooldown'):
+            new_cooldown = self._update_check_cooldown.spinner_value
+            bass.settings['bash.update_check.cooldown'] = new_cooldown
         # Show Global Menu
-        if self._is_changed(u'global_menu_on'):
-            new_gm_on = self._global_menu_checkbox.is_checked
-            bass.settings[u'bash.show_global_menu'] = new_gm_on
+        if self._is_changed('global_menu_state'):
+            new_gm_state = self._global_menu_options[
+                self._global_menu_dropdown.get_value()]
+            bass.settings['bash.global_menu'] = new_gm_state
             Link.Frame.refresh_global_menu_visibility()
-        # Use Alternate Wrye Bash Name
-        if self._is_changed(u'alt_name_on'):
-            new_alt_name = self._alt_name_checkbox.is_checked
-            bass.settings[u'bash.useAltName'] = new_alt_name
-            Link.Frame.set_bash_frame_title()
         # Restore Scroll Positions on Start
         if self._is_changed(u'res_scroll_on'):
             new_res_scroll = self._restore_scroll_checkbox.is_checked
@@ -1355,7 +1497,7 @@ class TrustedBinariesPage(_AFixedPage):
         export_btn.on_clicked.subscribe(self._export_lists)
         self._populate_binaries()
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            self._panel_text,
+            self._page_desc_label,
             HorizontalLine(self),
             (self._binaries_list, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[Stretch(), import_btn, export_btn]),
@@ -1392,7 +1534,8 @@ class TrustedBinariesPage(_AFixedPage):
                                             u'have forbidden'))
             self._dump_dlls(bass.settings['bash.installers.badDlls'], out)
 
-    def _dump_dlls(self, dll_dict, out):
+    @staticmethod
+    def _dump_dlls(dll_dict, out):
         if not dll_dict:
             out.write(f'# {_("None")}\n') # Treated as a comment
             return
@@ -1414,7 +1557,7 @@ class TrustedBinariesPage(_AFixedPage):
         if not textPath: return
         msg = _('Merge permissions from file with current dll permissions?')
         msg += '\n' + _("('No' Replaces current permissions instead.)")
-        replace = not balt.askYes(Link.Frame, msg, _('Merge permissions?'))
+        replace = not askYes(Link.Frame, msg, _('Merge permissions?'))
         def parse_path(s):
             """s was generated by a repr - so get rid of the u-prefix if it's
             there, drop the quotes and deal with path separators."""
@@ -1476,15 +1619,15 @@ class TrustedBinariesPage(_AFixedPage):
                 self._binaries_list.left_items = sorted(Dlls[u'goodDlls'])
                 self._binaries_list.right_items = sorted(Dlls[u'badDlls'])
         except UnicodeError:
-            balt.showError(self,
-                _(u'Wrye Bash could not load %s, because it is not saved in '
-                  u'UTF-8 format.  Please resave it in UTF-8 format and try '
-                  u'again.') % textPath)
+            msg = _('Wrye Bash could not load %s, because it is not saved in '
+                    'UTF-8 format.  Please resave it in UTF-8 format and try '
+                    'again.') % textPath
+            showError(self, msg)
         except SyntaxError:
             deprint(f'Error reading {textPath}', traceback=True)
-            balt.showError(self,
-                _(u'Wrye Bash could not load %s, because there was an error '
-                  u'in the format of the file.') % textPath)
+            msg = _('Wrye Bash could not load %s, because there was an error '
+                    'in the format of the file.') % textPath
+            showError(self, msg)
         finally:
             self._check_changed()
 
@@ -1534,6 +1677,7 @@ _settings_pages = {
     _(u'Appearance'): {
         _(u'Colors'): ColorsPage,
         _(u'Language'): LanguagePage,
+        _('Miscellaneous'): MiscAppearancePage,
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
@@ -1551,6 +1695,8 @@ _page_descriptions = {
     _(u'Appearance') + u'/' + _(u'Language'):
         _(u'Change the language that Wrye Bash is displayed in and manage '
           u'localizations.'),
+    _('Appearance') + '/' + _('Miscellaneous'):
+        _('Change various miscellaneous appearance settings.'),
     _(u'Appearance') + u'/' + _(u'Status Bar'):
         _(u'Change settings related to the status bar at the bottom and '
           u'manage hidden buttons.'),
@@ -1571,6 +1717,7 @@ _page_descriptions = {
 _page_anchors = defaultdict(lambda: u'settings', {
     _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
     _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _('Appearance') + '/' + _('Miscellaneous'): 'settings-appearance-misc',
     _(u'Appearance') + u'/' + _(u'Status Bar'):
         u'settings-appearance-status-bar',
     _(u'Backups'): u'settings-backups',

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,7 +32,8 @@ import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 from . import EventHandler
-from .base_components import WithMouseEvents, WithCharEvents
+from .base_components import Color, WithCharEvents, WithMouseEvents, \
+    _auto_size_to_wx
 from .. import bolt
 
 class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
@@ -51,7 +52,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
     class DropFileOrList(_wx.DropTarget):
 
         def __init__(self, window, dndFiles, dndList):
-            _wx.DropTarget.__init__(self)
+            super().__init__()
             self.window = window
             self.data_object = _wx.DataObjectComposite()
             self.dataFile = _wx.FileDataObject()                 # Accept files
@@ -66,14 +67,14 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 if dtype == _wx.DF_FILENAME:
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
-                    return _wx.DragResult.DragCopy
+                    return _wx.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
                     _data = pickle.loads(self.dataList.GetData().tobytes(),
                                          encoding='bytes')
                     self.window._OnDropList(x, y, _data)
-                    return _wx.DragResult.DragCopy
-            return _wx.DragResult.DragNone
+                    return _wx.DragCopy
+            return _wx.DragNone
 
         def OnDragOver(self, x, y, dragResult):
             self.window.OnDragging(x,y,dragResult)
@@ -100,10 +101,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Mouse is above the first item
-                    self.ScrollLines(-1)
+                    self.LineUp()
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Mouse is after the last item
-                    self.ScrollLines(1)
+                    self.LineDown()
         else:
             # Screen position if item hovering over
             pos = index - self.GetScrollPos(_wx.VERTICAL)
@@ -111,10 +112,10 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                 # Over the first item, see if it's over the top half
                 rect = self.GetItemRect(index)
                 if y < rect.y + rect.height/2:
-                    self.ScrollLines(-1)
+                    self.LineUp()
             elif pos == self.GetCountPerPage():
                 # On last item/one that's not fully visible
-                self.ScrollLines(1)
+                self.LineDown()
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
@@ -255,7 +256,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         gItem.SetData(i)
         ##: de-wx! This is a wx object escaping - should be internal-only,
         # need to absorb __setUI in gui and export a public API like
-        # _ListItemFormat for that
+        # ListItemFormat for that
         decorate_cb(gItem)
         # This commits the actual changed data in the ListCtrl
         self._native_widget.SetItem(gItem)
@@ -311,27 +312,77 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return self.__ec() is not None
 
     ##: column wrappers - belong to a superclass that wraps ListCtrl
-    def lc_get_columns_count(self):
+    def lc_get_columns_count(self) -> int:
         return self._native_widget.GetColumnCount()
 
-    def lc_get_column_width(self, evt_col):
+    def lc_get_column_width(self, evt_col: int) -> int:
         return self._native_widget.GetColumnWidth(evt_col)
 
-    def lc_set_column_width(self, evt_col, column_width):
+    def lc_set_column_width(self, evt_col: int, column_width: int):
         self._native_widget.SetColumnWidth(evt_col, column_width)
 
-    def lc_item_count(self):
+    def lc_set_auto_column_width(self, evt_col: int, auto_col: int):
+        self._native_widget.SetColumnWidth(evt_col, _auto_size_to_wx[auto_col])
+
+    def lc_item_count(self) -> int:
         return self._native_widget.GetItemCount()
 
-    def lc_get_column(self, colDex):
+    def lc_get_column(self, colDex: int):
         return self._native_widget.GetColumn(colDex)
 
-    def lc_insert_column(self, colDex, colName):
+    def lc_insert_column(self, colDex: int, colName: str):
         self._native_widget.InsertColumn(colDex, colName)
 
-    def lc_delete_column(self, colDex):
+    def lc_delete_column(self, colDex: int):
         self._native_widget.DeleteColumn(colDex)
 
-    def lc_select_item_at_index(self, index, select=True,
-                          __select=_wx.LIST_STATE_SELECTED):
+    def lc_select_item_at_index(self, index: int, select=True,
+                                __select=_wx.LIST_STATE_SELECTED):
         self._native_widget.SetItemState(index, select * __select, __select)
+
+    # wrappers for UIList used methods ----------------------------------------
+    def get_selected_index(self, after=-1, *, __next_all=_wx.LIST_NEXT_ALL,
+                           __state_selected=_wx.LIST_STATE_SELECTED):
+        """Get selected indexes after the specified index - if not specified
+        get first selected index."""
+        return self._native_widget.GetNextItem(after, __next_all,
+                                               __state_selected)
+
+    def set_item_data(self, *args):
+        self._native_widget.SetItem(*args)
+
+    def get_item_data(self, dex):
+        return self._native_widget.GetItem(dex)
+
+    def get_text_color(self):
+        return Color.from_wx(self._native_widget.GetTextColour())
+
+    def resize_last_col(self):
+        self._native_widget.resizeLastColumn(0)
+
+    def focus_index(self, dex):
+        self._native_widget.Focus(dex)
+
+    def ensure_visible_index(self, dex):
+        self._native_widget.EnsureVisible(dex)
+
+    def edit_label(self, dex):
+        self._native_widget.EditLabel(dex)
+
+    # Images
+    def set_image_list(self, image_list, *, __which=_wx.IMAGE_LIST_SMALL):
+        self._native_widget.SetImageList(image_list, __which)
+
+    def clear_col_image(self, col_dex):
+        self._native_widget.ClearColumnImage(col_dex)
+
+    def set_col_image(self, col_dex, image):
+        self._native_widget.SetColumnImage(col_dex, image)
+
+    # Scroll
+    def get_scroll_pos(self, is_vertical):
+        return self._native_widget.GetScrollPos(
+            _wx.VERTICAL if is_vertical else _wx.HORIZONTAL)
+
+    def set_scroll_pos(self, pos):
+        return self._native_widget.ScrollLines(pos)

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,20 +24,23 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
+from typing import TYPE_CHECKING, NewType
+
+if TYPE_CHECKING:
+    from .bolt import Path
+else:
+    Path = NewType('Path', str)
 
 # no imports
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = '310'  # must represent a valid float
+AppVersion = '311'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
-
-# wx bitmaps cached to workaround locale issues
-wx_bitmap = {}
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
-dirs = {}
+dirs: dict[str, Path] = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
 # dirs where various apps may be located - populated in initTooldirs()
@@ -64,7 +67,7 @@ def update_sys_argv(arg):
 
 #--Temp Files/Dirs - originally in Installer, probably belong to a new module
 ################################## DO NOT USE #################################
-_tempDir = None # type: bolt.Path | None
+_tempDir: Path | None = None
 
 def getTempDir():
     """Return current Temp Dir, generating one if needed."""
@@ -92,8 +95,9 @@ def newTempDir():
     return _tempDir
 
 def get_ini_option(ini_parser, option_key, section_key=u'General'):
-    # logic for getting the path from the ini - get(section, key, default)
-    # section is case sensitive - key is not - return type is str in py3
-    if not ini_parser or not ini_parser.has_option(section_key, option_key):
+    if not ini_parser:
         return None
-    return ini_parser.get(section_key, option_key)
+    # logic for getting the path from the ini - get(section, key,
+    # fallback=default). section is case sensitive - key is not - return type
+    # is str in py3
+    return ini_parser.get(section_key, option_key, fallback=None)

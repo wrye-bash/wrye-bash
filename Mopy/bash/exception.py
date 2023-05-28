@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2023 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains all custom exceptions for Wrye Bash."""
 
 import platform
+
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
 
 class BoltError(Exception):
@@ -33,11 +34,6 @@ class BoltError(Exception):
         return self.message
 
 # Code errors -----------------------------------------------------------------
-class AbstractError(BoltError):
-    """Coding Error: Abstract code section called."""
-    def __init__(self, message=u'Abstract section called.'):
-        super(AbstractError, self).__init__(message)
-
 class ArgumentError(BoltError):
     """Coding Error: Argument out of allowed range of values."""
     def __init__(self, message=u'Argument is out of allowed ranged of values.'):
@@ -58,9 +54,8 @@ class SkipError(CancelError):
 class FileError(BoltError):
     """An error that occurred while handling a file."""
     def __init__(self, in_name, message):
-        ## type: (Union[Path, str], str) -> None
         super(FileError, self).__init__(message)
-        self._in_name = (in_name and '%s' % in_name) or 'Unknown File'
+        self._in_name = (in_name and f'{in_name}') or 'Unknown File'
 
     def __str__(self):
         return f'{self._in_name}: {self.message}'
@@ -77,6 +72,11 @@ class FileEditError(BoltError): ##: never raised?
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 
+class FailedIniInferError(FileError):
+    """Failed to infer INI type."""
+    def __init__(self, in_name):
+        super().__init__(in_name, 'Failed to infer INI type')
+
 # Mod I/O Errors --------------------------------------------------------------
 class ModError(FileError):
     """Mod Error: File is corrupted."""
@@ -87,7 +87,7 @@ def _join_sigs(debug_str):
         debug_str = [debug_str]
     if isinstance(debug_str, (tuple, list)):
         from .bolt import sig_to_str # don't mind this we are in exception code
-        debug_str = u'.'.join(map(sig_to_str, debug_str))
+        debug_str = '.'.join(map(sig_to_str, debug_str))
     return debug_str
 
 class ModReadError(ModError):
@@ -105,17 +105,16 @@ class ModReadError(ModError):
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, debug_str, expected_sizes, actual_size):
+    def __init__(self, in_name,
+            debug_str: str | bytes | tuple[str | bytes, ...],
+            expected_sizes: tuple[int, ...], actual_size: int):
         """Indicates that a record or subrecord has the wrong size.
 
-        :type in_name: bolt.FName
-        :type debug_str: str|bytes|tuple[str|bytes]
-        :type expected_sizes: tuple[int]
-        :type actual_size: int"""
+        :type in_name: bolt.FName"""
         debug_str = _join_sigs(debug_str)
-        message_form = f'{debug_str}: Expected one of sizes ' \
-                       f'{expected_sizes}, but got {actual_size}'
-        super(ModSizeError, self).__init__(in_name, message_form)
+        message_form = (f'{debug_str}: Expected one of sizes '
+                        f'{sorted(expected_sizes)}, but got {actual_size}')
+        super().__init__(in_name, message_form)
 
 class ModFidMismatchError(ModError):
     """Mod Error: Two FormIDs that should be equal are not."""
@@ -135,32 +134,6 @@ class ModSigMismatchError(ModError):
                        f'could lead to crashes.'
         super(ModSigMismatchError, self).__init__(in_name, message_form)
 
-# Shell (OS) File Operation exceptions ----------------------------------------
-class FileOperationError(OSError):  ##: revisit uses - use builtin exceptions
-    def __init__(self, error_code, message=None):
-        # type: (int, str) -> None
-        self._error_code = error_code ##: unused
-        Exception.__init__(self,
-                           f'FileOperationError: {message or error_code}')
-
-class AccessDeniedError(FileOperationError):
-    def __init__(self):
-        super(AccessDeniedError, self).__init__(5, u'Access Denied')
-
-class InvalidPathsError(FileOperationError):
-    def __init__(self, source, target): # type: (str, str) -> None
-        super(InvalidPathsError, self).__init__(
-            124, f'Invalid paths:\nsource: {source}\ntarget: {target}')
-
-class DirectoryFileCollisionError(FileOperationError):
-    def __init__(self, source, dest):  ## type: (Path, Path) -> None
-        super(DirectoryFileCollisionError, self).__init__(
-            -1, f'collision: moving {source} to {dest}')
-
-class NonExistentDriveError(FileOperationError):
-    def __init__(self, failed_paths):  ## type: (List[Path]) -> None
-        self.failed_paths = failed_paths
-        super(NonExistentDriveError, self).__init__(-1, u'non existent drive')
 
 # BSA exceptions --------------------------------------------------------------
 class BSAError(FileError): pass
@@ -173,9 +146,8 @@ class BSACompressionError(BSAError):
             f'{orig_error!r}')
 
 class BSADecodingError(BSAError):
-    def __init__(self, in_name, message): # type: (str, str) -> None
-        super(BSADecodingError, self).__init__(
-            in_name, f'Undecodable string {message!r}')
+    def __init__(self, in_name: str, message: bytes | list[bytes]):
+        super().__init__(in_name, f'Undecodable string(s) {message}')
 
 class BSADecompressionError(BSAError):
     def __init__(self, in_name, compression_type, orig_error):
@@ -191,10 +163,10 @@ class BSADecompressionSizeError(BSAError):
             f'expected {expected_size}, but got {actual_size}')
 
 class BSAFlagError(BSAError):
-    def __init__(self, in_name, message, flag):
+    def __init__(self, in_name, message, bsa_flag):
         # type: (str, str, int) -> None
         super(BSAFlagError, self).__init__(in_name,
-            f'{message} (flag {flag}) unset')
+            f'{message} (flag {bsa_flag}) unset')
 
 # Cosave exceptions -----------------------------------------------------------
 class CosaveError(FileError):
@@ -218,9 +190,8 @@ class DDSError(Exception): pass
 # Lexing/Parsing exceptions ---------------------------------------------------
 class _ALPError(Exception):
     """Abstract base class for lexer and parser errors."""
-    def __init__(self, err_msg, target_str=None, start_pos=-1, end_pos=-1,
-                 line_num=-1):
-        # type: (str, str, int, int) -> None
+    def __init__(self, err_msg: str, target_str: str | None = None,
+            start_pos: int = -1, end_pos: int = -1, line_num: int = -1):
         """Creates a new error with the specified properties. All but err_msg
         are optional, and will simply add more details about where the error
         occurred.
@@ -277,6 +248,10 @@ class PluginsFullError(BoltError):
     def __init__(self, message=u'Load list is full.'):
         super(PluginsFullError, self).__init__(message)
 
+class SkippedMergeablePluginsError(Exception):
+    """Indicates that one or more mergeable plugins had to be skipped during a
+    full load order activation."""
+
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
     def __init__(self, modIndex):  # type: (int) -> None
@@ -307,3 +282,35 @@ class UnknownListener(GuiError):
 class ListenerBound(GuiError):
     """Trying to bind a listener that is already subscribed to this event
     handler."""
+
+# Web API errors --------------------------------------------------------------
+class LimitReachedError(Exception):
+    """Exception raised when the request rate limit has been reached."""
+    def __init__(self):
+        super().__init__('You have reached your request limit. Please wait '
+                         'one hour before trying again.')
+
+class RequestError(Exception):
+    """Exception raised when a request returns an error code."""
+    def __init__(self, status_code, msg):
+        self.status_code = status_code
+        self.orig_msg = msg
+        super().__init__(f'Status Code {status_code} - {msg}')
+
+class UnknownWebError(Exception):
+    """Exception raised when some kind of error occurs in the underlying APIs
+    used to establish connections etc."""
+    def __init__(self):
+        super().__init__('Failed to send request')
+
+# Nexus API errrors -----------------------------------------------------------
+class EndorsementError(Exception):
+    """Base class for endorsement/disendorsement errors."""
+
+class EndorsedWithoutDownloadError(EndorsementError):
+    """Exception raised when a mod is endorsed or disendorsed without having
+    been downloaded first."""
+
+class EndorsedTooSoonError(EndorsementError):
+    """Exception raised when a mod is endorsed or disendorsed without enough
+    time having elapsed since it was downloaded."""

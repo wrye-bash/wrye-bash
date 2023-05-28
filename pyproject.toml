@@ -1,0 +1,24 @@
+[tool.coverage.run]
+branch = true
+omit = ['Mopy/bash/tests']
+
+[tool.coverage.report]
+exclude_lines = [
+    # Re-enable the standard pragma since we're overriding exclude_lines
+    'pragma: no cover',
+    # __repr__s are often debug-only, so ignore those
+    'def __repr__',
+    # Ignore defensive exceptions that will likely never be raised during tests
+    'raise NotImplementedError',
+    # Ignore lines only run by type-checkers
+    'if (typing\.)?TYPE_CHECKING:',
+]
+
+[tool.coverage.html]
+directory = '.cov_html'
+
+[tool.isort]
+comment_prefix = " #"
+lines_after_imports = 1
+multi_line_output = 2
+reverse_relative = true
