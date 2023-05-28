@@ -104,6 +104,7 @@ class Fallout4GameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
+            'dtf', # 3P: Damage Threshold Framework
             'f4se', # 3P: F4SE
             'interface',
             'lodsettings',

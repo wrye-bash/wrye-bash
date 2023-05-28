@@ -146,7 +146,7 @@ class SkyrimGameInfo(PatchGame):
             'tools', # 3P: FNIS
         }
         keep_data_dirs = {'lsdata'}
-        no_skip = {*(_j('interface', x) for x in (
+        no_skip = GameInfo.Bain.no_skip | {*(_j('interface', x) for x in (
             'controlmap.txt',
             'credits.txt',
             'credits_french.txt',

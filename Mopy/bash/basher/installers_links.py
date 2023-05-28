@@ -337,9 +337,9 @@ class Installers_ImportOrder(_AInstallers_Order):
 
     def Execute(self):
         if not self._askWarning(
-            _('This will reorder and change the installation status of all'
+            _('This will reorder and change the installation status of all '
               'packages from the chosen CSV file. It will not change the '
-              'contents of the Data folder, you will have to manuall install '
+              'contents of the Data folder, you will have to manually install '
               'or uninstall affected packages for that. Packages that are '
               'not listed in the CSV file will not be touched.') + '\n\n' +
             _('Are you sure you want to proceed?'),

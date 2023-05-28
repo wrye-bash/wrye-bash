@@ -133,7 +133,15 @@ class Fallout3GameInfo(PatchGame):
         keep_data_files = {'fallout - ai!.bsa'}
         lod_meshes_dir = _j('meshes', 'landscape', 'lod')
         lod_textures_dir = _j('textures', 'landscape', 'lod')
-        skip_bain_refresh = {u'fo3edit backups', u'fo3edit cache'}
+        no_skip = GameInfo.Bain.no_skip | {
+            # 3P: UIO - User Interface Organizer
+            _j('uio', 'private', 'menus_list.txt'),
+            _j('uio', 'private', 'supported.txt'),
+        }
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
+            _j('uio', 'public'): {'.txt'}, # 3P: UIO - User Interface Organizer
+        }
+        skip_bain_refresh = {'fo3edit backups', 'fo3edit cache'}
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):

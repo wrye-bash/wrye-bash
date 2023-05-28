@@ -86,12 +86,13 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
         no_skip = Fallout3GameInfo.Bain.no_skip | {
             'aaid.txt', # 3P: Auto Activate Invisible Doors
+            _j('uio', 'supported.txt'), # 3P: UIO - User Interface Organizer
         }
         no_skip_dirs = Fallout3GameInfo.Bain.no_skip_dirs | {
             # 3P: JIP LN's Script Runner
             _j('nvse', 'plugins', 'scripts'): {'.txt'},
         }
-        skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
+        skip_bain_refresh = {'fnvedit backups', 'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
