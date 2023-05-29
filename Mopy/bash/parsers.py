@@ -524,6 +524,57 @@ class ActorFactions(_AParser):
             fa, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
 
 #------------------------------------------------------------------------------
+class FactionRelations(_AParser):
+    """Parses the relations between factions. Can read and write both plugins
+    and CSV, and uses two passes to do so."""
+    array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
+    _target_array = 'relations'
+    _is_merger = True # the results of _read_record_sp will be merged
+    csv_suffix = '_Relations.csv'
+
+    def __init__(self, aliases_=None, called_from_patcher=False):
+        super().__init__(aliases_, called_from_patcher)
+        self._fp_types = () if self._called_from_patcher else (b'FACT',)
+        self._sp_types = (b'FACT',)
+        self._needs_fp_master_sort = True
+        self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
+            _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
+            attr_csv_struct[a][1] for a in self.__class__.array_item_attrs)
+
+    def _read_record_fp(self, record):
+        # Gather the latest value for the EID matching the FID
+        return record.eid
+
+    def _is_record_useful(self, _record):
+        # We want all records - even ones that have no relations, since those
+        # may have still deleted original relations.
+        return True
+
+    def _read_record_sp(self, record, *, __attrgetters=tuple(
+            attrgetter_cache[a] for a in ('faction', *array_item_attrs))):
+        relations = {}
+        # Merge added relations, preserve changed relations
+        for relation in record.relations:
+            other_fac, *rel_attrs = (a(relation) for a in __attrgetters)
+            relations[other_fac] = rel_attrs
+        return relations
+
+    def _parse_line(self, csv_fields):
+        _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
+        mid = self._coerce_fid(mmod, mobj)
+        oid = self._coerce_fid(omod, oobj)
+        self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
+
+    def _row_out(self, lfid, stored_data, top_grup):
+        """Exports faction relations to specified text file."""
+        rel, main_eid = stored_data
+        return '\n'.join(['"%s",%s,"%s",%s,%s' % (
+            main_eid, _fid_str(lfid), oth_eid, _fid_str(oth_fid), ','.join(
+                attr_csv_struct[a][2](x) for a, x in
+                zip(self.__class__.array_item_attrs, relation_obj)))
+        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel)]) + '\n'
+
+#------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
     """id_stored_data differs here - _key1 is a mod:
     id_stored_data[fn_mod][longid] = levels_dict"""
@@ -733,57 +784,6 @@ class EditorIds(_HandleAliases):
 
     def _row_out(self, lfid, stored_data, top_grup):
         return f'"{top_grup}",{_fid_str(lfid)},"{stored_data}"\n'
-
-#------------------------------------------------------------------------------
-class FactionRelations(_AParser):
-    """Parses the relations between factions. Can read and write both plugins
-    and CSV, and uses two passes to do so."""
-    array_item_attrs = bush.game.relations_attrs[1:] # chop off 'faction'
-    _target_array = 'relations'
-    _is_merger = True # the results of _read_record_sp will be merged
-    csv_suffix = '_Relations.csv'
-
-    def __init__(self, aliases_=None, called_from_patcher=False):
-        super().__init__(aliases_, called_from_patcher)
-        self._fp_types = () if self._called_from_patcher else (b'FACT',)
-        self._sp_types = (b'FACT',)
-        self._needs_fp_master_sort = True
-        self._csv_header = (_('Main Eid'), _('Main Mod'), _('Main Object'),
-            _('Other Eid'), _('Other Mod'), _('Other Object')) + tuple(
-            attr_csv_struct[a][1] for a in self.__class__.array_item_attrs)
-
-    def _read_record_fp(self, record):
-        # Gather the latest value for the EID matching the FID
-        return record.eid
-
-    def _is_record_useful(self, _record):
-        # We want all records - even ones that have no relations, since those
-        # may have still deleted original relations.
-        return True
-
-    def _read_record_sp(self, record, *, __attrgetters=tuple(
-            attrgetter_cache[a] for a in ('faction', *array_item_attrs))):
-        relations = {}
-        # Merge added relations, preserve changed relations
-        for relation in record.relations:
-            other_fac, *rel_attrs = (a(relation) for a in __attrgetters)
-            relations[other_fac] = rel_attrs
-        return relations
-
-    def _parse_line(self, csv_fields):
-        _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
-        mid = self._coerce_fid(mmod, mobj)
-        oid = self._coerce_fid(omod, oobj)
-        self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
-
-    def _row_out(self, lfid, stored_data, top_grup):
-        """Exports faction relations to specified text file."""
-        rel, main_eid = stored_data
-        return '\n'.join(['"%s",%s,"%s",%s,%s' % (
-            main_eid, _fid_str(lfid), oth_eid, _fid_str(oth_fid), ','.join(
-                attr_csv_struct[a][2](x) for a, x in
-                zip(self.__class__.array_item_attrs, relation_obj)))
-        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel)]) + '\n'
 
 #------------------------------------------------------------------------------
 class FidReplacer(_HandleAliases):
