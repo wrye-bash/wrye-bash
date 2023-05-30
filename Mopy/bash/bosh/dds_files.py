@@ -634,8 +634,8 @@ class DDSFile(AFile):
         self.write_file(out_path.temp)
         out_path.untemp()
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(DDSFile, self)._reset_cache(stat_tuple, load_cache)
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
         self.dds_header = _DDSHeader()
         self.dds_dxt10 = _DDSHeaderDXT10()
         self.dds_contents = b''

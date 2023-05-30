@@ -197,9 +197,9 @@ class FileInfo(AFile, ListInfo):
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.file_mod_time, self.ctime) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         self.fsize, self.file_mod_time, self.ctime = stat_tuple
-        if load_cache: self.readHeader()
+        if kwargs['load_cache']: self.readHeader()
 
     def _mark_unchanged(self):
         self._reset_cache(self._stat_tuple(), load_cache=False)
@@ -389,10 +389,10 @@ class ModInfo(FileInfo):
                 return groupDir
         return dest_dir
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
         # check if we have a cached crc for this file, use fresh mtime and size
-        if load_cache:
+        if kwargs['load_cache']:
             self.calculate_crc() # for added and hopefully updated
             if bush.game.has_esl: self._recalc_esl()
             self._recalc_esm()
@@ -529,7 +529,7 @@ class ModInfo(FileInfo):
         self.isGhost = not regular_path.is_file() and os.path.isfile(
             f'{regular_path}.ghost')
 
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
         old_ghost = self.isGhost
         self._refresh_ghost_state(itsa_ghost=itsa_ghost)
         # mark updated if ghost state changed but only reread header if needed
@@ -1271,7 +1271,7 @@ class SaveInfo(FileInfo):
             raise SaveFileError(self.fn_key, e.args[0]) from e
         self._reset_masters()
 
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, **kwargs):
         # Check for new and deleted cosaves and do_update old, surviving ones
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
@@ -1412,9 +1412,9 @@ class ScreenInfo(FileInfo):
         self.cached_bitmap = None
         super(ScreenInfo, self).__init__(fullpath, load_cache)
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         self.cached_bitmap = None # Lazily reloaded
-        super(ScreenInfo, self)._reset_cache(stat_tuple, load_cache)
+        super()._reset_cache(stat_tuple, **kwargs)
 
     @classmethod
     def get_store(cls): return screen_infos
@@ -1735,9 +1735,9 @@ class INIInfo(IniFile, AINIInfo):
     _valid_exts_re = r'(\.(?:' + '|'.join(
         x[1:] for x in supported_ini_exts) + '))'
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
-        if load_cache: self._status = None ##: is the if check needed here?
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
+        if kwargs['load_cache']: self._status = None ##: is the if check needed here?
 
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
@@ -3400,7 +3400,7 @@ class BSAInfos(FileInfos):
             @classmethod
             def get_store(cls): return bsaInfos
 
-            def do_update(self, raise_on_error=False, itsa_ghost=None):
+            def do_update(self, raise_on_error=False, **kwargs):
                 did_change = super(BSAInfo, self).do_update(raise_on_error)
                 self._reset_bsa_mtime()
                 return did_change

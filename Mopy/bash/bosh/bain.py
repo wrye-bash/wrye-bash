@@ -1411,7 +1411,7 @@ class InstallerArchive(_InstallerPackage):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self._reset_cache(self._stat_tuple(), recalculate_project_crc)
+        self._reset_cache(self._stat_tuple())
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False

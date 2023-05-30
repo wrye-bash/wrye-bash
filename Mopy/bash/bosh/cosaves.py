@@ -1338,11 +1338,11 @@ class ACosave(_Dumpable, _Remappable, AFile):
                 raise CosaveError(self.abs_path.tail,
                                   f'Failed to read cosave: {e!r}')
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         # Reset our loading state to 'unloaded', which will discard everything
         # when the next request is made to the cosave (see read_cosave above)
         self.loading_state = 0
-        super(ACosave, self)._reset_cache(stat_tuple, load_cache)
+        super()._reset_cache(stat_tuple, **kwargs)
 
     def _read_cosave_header(self, ins):
         """Reads and assigns the header of this cosave. You probably don't need

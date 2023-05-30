@@ -1628,7 +1628,7 @@ class AFile(object):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache)
+            self._reset_cache(self._stat_tuple(), load_cache=load_cache)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
@@ -1639,7 +1639,7 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
@@ -1648,17 +1648,20 @@ class AFile(object):
 
         :param raise_on_error: If True, rase on errors instead of just
             resetting the cache and returning.
-        :param itsa_ghost: In ModInfos, if we have the ghosting info available,
-            skip recalculating it."""
+        :param **kwargs: various:
+            - itsa_ghost: In ModInfos, if we have the ghosting info available,
+              skip recalculating it.
+            - progress: will be useful for installers
+        """
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
-            self._reset_cache(self._null_stat, load_cache=False)
+            self._reset_cache(self._null_stat, load_cache=False, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
         if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
+            self._reset_cache(stat_tuple, load_cache=True, **kwargs)
             return True
         return False
 
@@ -1670,10 +1673,11 @@ class AFile(object):
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.file_mod_time) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
-        :param load_cache: if True either load the cache (header in Mod and
-        SaveInfo) or reset it so it gets reloaded later
+        :param **kwargs: various
+            - load_cache: if True either load the cache (header in Mod and
+            SaveInfo) or reset it, so it gets reloaded later
         """
         self.fsize, self.file_mod_time = stat_tuple
 
