@@ -1005,66 +1005,8 @@ class Installer(ListInfo):
         return dest
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
-        return self._refreshBasic(progress, recalculate_project_crc)
-
-    def _refreshBasic(self, progress, recalculate_project_crc=True,
-                      _os_sep=os_sep, skips_start=tuple(
-                s.replace(os_sep, u'') for s in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
-        try:
-            self._refreshSource(progress, recalculate_project_crc)
-        except InstallerArchiveError:
-            self.type = -1 # size, modified and some of fileSizeCrcs may be set
-            return bolt.LowerDict()
-        self._find_root_index()
-        # fileRootIdex now points to the start in the file strings to ignore
-        #--Type, subNames
-        bain_type = 0
-        subNameSet = {u''}
-        valid_top_ext = self.__class__._re_top_extensions.search
-        valid_sub_top_ext = self.__class__._re_top_plus_docs.search
-        dataDirsPlus = self.dataDirsPlus
-        # hasExtraData is NOT taken into account when calculating package
-        # structure or the root_path
-        root_path = self.extras_dict.get(u'root_path', u'')
-        for full, _cached_size, crc in self.fileSizeCrcs:#break if type=1 else churn on
-            if root_path: # exclude all files that are not under root_dir
-                if not full.startswith(root_path): continue
-                full = full[self.fileRootIdex:]
-            if full.lower().startswith(skips_start): continue
-            frags = full.split(_os_sep)
-            nfrags = len(frags)
-            f0_lower = frags[0].lower()
-            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
-            if (nfrags == 1 and valid_top_ext(f0_lower) or
-                nfrags > 1 and f0_lower in dataDirsPlus):
-                bain_type = 1
-                break
-            #--Else churn on to see if we have a Type 2 package
-            elif not frags[0] in subNameSet and not \
-                    f0_lower.startswith(skips_start) and (
-                    (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
-                    (nfrags == 2 and valid_sub_top_ext(frags[1]))):
-                subNameSet.add(frags[0])
-                bain_type = 2
-                # keep looking for a type one package - having a loose file or
-                # a top directory with name in dataDirsPlus will turn this into
-                # a type one package
-        self.type = bain_type
-        #--SubNames, SubActives
-        if bain_type == 2:
-            self.subNames = sorted(subNameSet,key=str.lower)
-            actives = {x for x, y in zip(self.subNames, self.subActives)
-                       if (y or x == u'')}
-            if len(self.subNames) == 2: #--If only one subinstall, then make it active.
-                self.subActives = [True,True] # that's a complex/simple package
-            else:
-                self.subActives = [(x in actives) for x in self.subNames]
-        else:
-            self.subNames = []
-            self.subActives = []
-        #--Data Size Crc
-        return self.refreshDataSizeCrc()
+        raise NotImplementedError
 
     def refreshStatus(self, installersData):
         """Updates missingFiles, mismatchedFiles and status.
@@ -1179,16 +1121,6 @@ class Installer(ListInfo):
     def fomod_file(self): raise NotImplementedError
 
     #--ABSTRACT ---------------------------------------------------------------
-    def _refreshSource(self, progress, recalculate_project_crc):
-        """Refresh fileSizeCrcs, size, and modified from source
-        archive/directory. fileSizeCrcs is a list of tuples, one for _each_
-        file in the archive or project directory. _refreshSource is called
-        in refreshBasic only. In projects the src_sizeCrcDate cache is used to
-        avoid recalculating crc's.
-        :param recalculate_project_crc: only used in InstallerProject override
-        """
-        raise NotImplementedError
-
     def install(self, destFiles, progress=None):
         """Install specified files to Data directory."""
         destFiles = set(destFiles)
@@ -1297,6 +1229,77 @@ class Installer(ListInfo):
             idata.refresh_ns()
         return installer
 
+class _InstallerPackage(Installer, AFile):
+
+    def refreshBasic(self, progress, recalculate_project_crc=True, *,
+            _os_sep=os_sep, skips_start=tuple(
+                s.replace(os_sep, '') for s in Installer._silentSkipsStart)):
+        """Extract file/size/crc and BAIN structure info from installer."""
+        try:
+            self._refreshSource(progress, recalculate_project_crc)
+        except InstallerArchiveError:
+            self.type = -1 # size, modified and some of fileSizeCrcs may be set
+            return bolt.LowerDict()
+        self._find_root_index()
+        # fileRootIdex now points to the start in the file strings to ignore
+        #--Type, subNames
+        bain_type = 0
+        subNameSet = {''}
+        valid_top_ext = self.__class__._re_top_extensions.search
+        valid_sub_top_ext = self.__class__._re_top_plus_docs.search
+        dataDirsPlus = self.dataDirsPlus
+        # hasExtraData is NOT taken into account when calculating package
+        # structure or the root_path
+        root_path = self.extras_dict.get('root_path', '')
+        for full, _cached_size, crc in self.fileSizeCrcs:#break if type=1 else churn on
+            if root_path: # exclude all files that are not under root_dir
+                if not full.startswith(root_path): continue
+                full = full[self.fileRootIdex:]
+            if full.lower().startswith(skips_start): continue
+            frags = full.split(_os_sep)
+            nfrags = len(frags)
+            f0_lower = frags[0].lower()
+            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
+            if (nfrags == 1 and valid_top_ext(f0_lower) or
+                nfrags > 1 and f0_lower in dataDirsPlus):
+                bain_type = 1
+                break
+            #--Else churn on to see if we have a Type 2 package
+            elif not frags[0] in subNameSet and not \
+                    f0_lower.startswith(skips_start) and (
+                    (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
+                    (nfrags == 2 and valid_sub_top_ext(frags[1]))):
+                subNameSet.add(frags[0])
+                bain_type = 2
+                # keep looking for a type one package - having a loose file or
+                # a top directory with name in dataDirsPlus will turn this into
+                # a type one package
+        self.type = bain_type
+        #--SubNames, SubActives
+        if bain_type == 2:
+            self.subNames = sorted(subNameSet,key=str.lower)
+            actives = {x for x, y in zip(self.subNames, self.subActives)
+                       if (y or x == u'')}
+            if len(self.subNames) == 2: #--If only one subinstall, then make it active.
+                self.subActives = [True,True] # that's a complex/simple package
+            else:
+                self.subActives = [(x in actives) for x in self.subNames]
+        else:
+            self.subNames = []
+            self.subActives = []
+        #--Data Size Crc
+        return self.refreshDataSizeCrc()
+
+    def _refreshSource(self, progress, recalculate_project_crc):
+        """Refresh fileSizeCrcs, size, and modified from source
+        archive/directory. fileSizeCrcs is a list of tuples, one for _each_
+        file in the archive or project directory. _refreshSource is called
+        in refreshBasic only. In projects the src_sizeCrcDate cache is used to
+        avoid recalculating crc's.
+        :param recalculate_project_crc: only used in InstallerProject override
+        """
+        raise NotImplementedError
+
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
     """Represents a marker installer entry."""
@@ -1346,9 +1349,6 @@ class InstallerMarker(Installer):
     def log_package(self, log, showInactive):
         log(f'{f"{self.order:03d}"} - {self.fn_key}')
 
-    def _refreshSource(self, progress, recalculate_project_crc):
-        """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
-
     def install(self, destFiles, progress=None):
         """Install specified files to Data directory."""
         pass
@@ -1360,10 +1360,11 @@ class InstallerMarker(Installer):
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
+        """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         return bolt.LowerDict()
 
 #------------------------------------------------------------------------------
-class InstallerArchive(Installer, AFile):
+class InstallerArchive(_InstallerPackage):
     """Represents an archive installer entry."""
     type_string = _('Archive')
     _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in archives.readExts)}))'
@@ -1410,7 +1411,7 @@ class InstallerArchive(Installer, AFile):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.fsize, self.file_mod_time = self._stat_tuple()
+        self._reset_cache(self._stat_tuple(), recalculate_project_crc)
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1579,7 +1580,7 @@ class InstallerArchive(Installer, AFile):
         return FName(self.fn_key.fn_body + archives.defaultExt)
 
 #------------------------------------------------------------------------------
-class InstallerProject(Installer, AFile):
+class InstallerProject(_InstallerPackage):
     """Represents a directory/build installer entry."""
     type_string = _('Project')
     is_project = True
