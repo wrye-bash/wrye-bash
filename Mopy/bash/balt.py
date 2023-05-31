@@ -1661,10 +1661,14 @@ class Link(object):
         self._initData(window, selection)
 
     def iselected_infos(self):
-        return (self.window.data_store[x] for x in self.selected)
+        return (self._data_store[x] for x in self.selected)
+
+    @property
+    def _data_store(self):
+        return self.window.data_store
 
     def iselected_pairs(self):
-        return ((x, self.window.data_store[x]) for x in self.selected)
+        return ((x, self._data_store[x]) for x in self.selected)
 
     def _first_selected(self):
         """Return the first selected info."""
@@ -1678,8 +1682,7 @@ class Link(object):
 
     def _askYes(self, message, title='', default_is_yes=True,
                 questionIcon=False):
-        if not title: title = self._text
-        return askYes(self.window, message, title=title,
+        return askYes(self.window, message, title=title or self._text,
             default_is_yes=default_is_yes, question_icon=questionIcon)
 
     def _askContinue(self, message, continueKey, title=_('Warning'),
@@ -1691,16 +1694,14 @@ class Link(object):
         return askContinue(self.window, message, continueKey=None, title=title)
 
     def _showOk(self, message, title=u''):
-        if not title: title = self._text
-        return showOk(self.window, message, title)
+        return showOk(self.window, message, title or self._text)
 
     def _askWarning(self, message, title=_(u'Warning')):
         return askWarning(self.window, message, title)
 
     def _askText(self, message, title=u'', default=u'', strip=True):
-        if not title: title = self._text
-        return askText(self.window, message, title=title, default_txt=default,
-                       strip=strip)
+        return askText(self.window, message, title=title or self._text,
+                       default_txt=default, strip=strip)
 
     def _showError(self, message, title=_(u'Error')):
         return showError(self.window, message, title)
@@ -1718,8 +1719,8 @@ class Link(object):
     def _showWryeLog(self, logText, title='', asDialog=True,
                      lg_icons=_default_icons):
         if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
-        if not title: title = self._text
-        WryeLog(self.window, logText, title, asDialog, log_icons=lg_icons)
+        WryeLog(self.window, logText, title or self._text, asDialog,
+                log_icons=lg_icons)
 
     def _askNumber(self, message, prompt='', title='', initial_num=0,
             min_num=0, max_num=10000):
@@ -2015,7 +2016,7 @@ class UIList_Delete(EnabledLink):
 
     def _filter_undeletable(self, to_delete_items):
         """Filters out undeletable items from the specified iterable."""
-        return self.window.data_store.filter_essential(to_delete_items)
+        return self._data_store.filter_essential(to_delete_items)
 
     def _enable(self):
         # Only enable if at least one deletable file is selected
@@ -2048,8 +2049,7 @@ class UIList_Rename(EnabledLink):
     @property
     def link_help(self):
         if self.window.could_rename():
-            sel_filtered = list(self.window.data_store.filter_essential(
-                self.selected))
+            sel_filtered = [*self._data_store.filter_essential(self.selected)]
             if len(sel_filtered) == 1:
                 return _('Renames the selected item.')
             elif sel_filtered == self.selected:
@@ -2108,7 +2108,7 @@ class UIList_OpenStore(ItemLink):
     @property
     def link_help(self):
         return _("Open '%(data_store_path)s'.") % {
-            'data_store_path': self.window.data_store.store_dir}
+            'data_store_path': self._data_store.store_dir}
 
     def Execute(self): self.window.open_data_store()
 
@@ -2118,7 +2118,7 @@ class UIList_Hide(EnabledLink):
 
     def _filter_unhideable(self, to_hide_items):
         """Filters out unhideable items from the specified iterable."""
-        return self.window.data_store.filter_essential(to_hide_items)
+        return self._data_store.filter_essential(to_hide_items)
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
@@ -2145,7 +2145,7 @@ class UIList_Hide(EnabledLink):
         if not bass.inisettings[u'SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
-                          {u'hdir': self.window.data_store.hidden_dir})
+                          {'hdir': self._data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
         self.window.RefreshUI(refreshSaves=True)

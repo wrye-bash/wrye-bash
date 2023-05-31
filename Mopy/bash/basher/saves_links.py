@@ -341,14 +341,14 @@ class Save_DiffMasters(EnabledLink):
         oldNew = self.selected
         oldNew.sort(key=lambda x: bosh.saveInfos[x].mtime)
         oldName = oldNew[0]
-        oldInfo = self.window.data_store[oldName]
+        oldInfo = self._data_store[oldName]
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
             newMasters = set(load_order.cached_active_tuple())
         else:
             newName = oldNew[1]
-            newInfo = self.window.data_store[newName]
+            newInfo = self._data_store[newName]
             newMasters = set(newInfo.masterNames)
         missing = oldMasters - newMasters
         added = newMasters - oldMasters

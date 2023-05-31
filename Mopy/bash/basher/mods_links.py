@@ -180,8 +180,7 @@ class _Mods_ActivateApList(_AMods_ActivePluginsContext):
 
     def Execute(self):
         wanted_aps = set(self._ap_parent_link.load_lists[self._text])
-        self._select_exact([p for p in self.window.data_store
-                            if p in wanted_aps])
+        self._select_exact([p for p in self._data_store if p in wanted_aps])
 
     @property
     def link_help(self):

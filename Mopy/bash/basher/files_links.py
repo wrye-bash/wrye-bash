@@ -58,7 +58,7 @@ class Files_Unhide(ItemLink):
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not self.window.data_store.rightFileType(srcFileName.s):
+            if not self._data_store.rightFileType(srcFileName.s):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
@@ -73,7 +73,7 @@ class Files_Unhide(ItemLink):
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self.window.data_store.move_infos(srcFiles, destFiles,
+        moved = self._data_store.move_infos(srcFiles, destFiles,
             self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
@@ -109,7 +109,7 @@ class File_Duplicate(ItemLink):
     @balt.conversation
     def Execute(self):
         dests = []
-        fileInfos = self.window.data_store
+        fileInfos = self._data_store
         pairs = [*self.iselected_pairs()]
         last = len(pairs) - 1
         for dex, (to_duplicate, fileInfo) in enumerate(pairs):
@@ -202,7 +202,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self.window.data_store.copy_info(fileName, destDir, destName)
+            self._data_store.copy_info(fileName, destDir, destName)
 
 #------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
@@ -241,7 +241,7 @@ class File_RevertToSnapshot(OneItemLink):
             # keep load order but recalculate the crc
             self._selected_info.setmtime(current_mtime, crc_changed=True)
             try:
-                self.window.data_store.new_info(fileName, notify_bain=True)
+                self._data_store.new_info(fileName, notify_bain=True)
             except exception.FileError:
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
@@ -256,7 +256,7 @@ class File_RevertToSnapshot(OneItemLink):
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.untemp()
-                    self.window.data_store.new_info(fileName, notify_bain=True)
+                    self._data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
 
@@ -319,7 +319,7 @@ class _RevertBackup(OneItemLink):
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.untemp()
-                    self.window.data_store.new_info(sel_file, notify_bain=True)
+                    self._data_store.new_info(sel_file, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
 
@@ -356,7 +356,7 @@ class File_Redate(ItemLink):
 
     def _perform_refresh(self):
         """Refreshes the data store - """
-        self.window.data_store.refresh(refresh_infos=False)
+        self._data_store.refresh(refresh_infos=False)
 
 #------------------------------------------------------------------------------
 class File_JumpToSource(AppendableLink, OneItemLink):

@@ -87,7 +87,7 @@ class INI_ListErrors(EnabledLink):
 class INI_Open(UIList_OpenItems):
     """Version of UIList_OpenItems that skips default tweaks."""
     def _filter_unopenable(self, to_open_items):
-        return self.window.data_store.filter_essential(to_open_items)
+        return self._data_store.filter_essential(to_open_items)
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):

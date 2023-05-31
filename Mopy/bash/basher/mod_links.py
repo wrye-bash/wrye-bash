@@ -293,7 +293,7 @@ class Mod_Move(EnabledLink):
 class Mod_Redate(File_Redate):
     """Mods tab version of the Redate command."""
     def _infos_to_redate(self):
-        return [self.window.data_store[to_redate] for to_redate
+        return [self._data_store[to_redate] for to_redate
                 in load_order.get_ordered(self.selected)]
 
     def _perform_refresh(self):
@@ -763,7 +763,7 @@ class Mod_ListDependent(OneItemLink):
         sel_target = self._selected_item
         legend = _(u'Mods dependent on %(filename)s') % (
             {u'filename': sel_target})
-        modInfos = self.window.data_store
+        modInfos = self._data_store
         merged_, imported_ = modInfos.merged, modInfos.imported
         head, bul = u'=== ', u'* '
         log = bolt.LogFile(io.StringIO())
@@ -831,7 +831,7 @@ class _DirectGhostLink(_GhostLink, EnabledLink):
 
     def _enable(self):
         # Enable only if at least one plugin's ghost status would be changed
-        ghost_minfs = self.window.data_store
+        ghost_minfs = self._data_store
         return any(self.__class__.toGhost(p) != ghost_minfs[p].isGhost
                    for p in self.selected)
 

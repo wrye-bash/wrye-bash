@@ -513,7 +513,7 @@ class LoGame(object):
         loadorder_set = set(lord)
         mods_set = set(cached_minfs)
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
-        if fix_lo.lo_removed and not quiet:
+        if not quiet and fix_lo.lo_removed:
             cached_minfs.selectedBad |= fix_lo.lo_removed
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set

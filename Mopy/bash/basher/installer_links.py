@@ -771,11 +771,10 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
-class Installer_Open(balt.UIList_OpenItems):
+class Installer_Open(Installers_Link, balt.UIList_OpenItems):
     """Open selected installer(s). Selected markers are skipped."""
     def _filter_unopenable(self, to_open_items):
-        return (p for p in to_open_items
-                if not self.window.data_store[p].is_marker)
+        return (p for p in to_open_items if not self.idata[p].is_marker)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -1502,7 +1501,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        idata = self.window.data_store # InstallersData singleton
+        idata = self._data_store # InstallersData singleton
         selectedCRCs = set(inst.crc for inst in self.iselected_infos())
         srcCRCs = set( # crcs of all installers referenced by some converter
             inst_crc_converters := idata.converters_data.srcCRC_converters)

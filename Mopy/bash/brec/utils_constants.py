@@ -257,7 +257,6 @@ class _NoneFid:
     def dump(self) -> int:
         return 0xFFFFFFFF
 
-
 class _Tes4Fid(FormId):
     """The special formid of the plugin header record - aka 0. Also used
     as a MelStruct default and when we set the form id to "zero" in some

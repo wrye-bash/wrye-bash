@@ -107,7 +107,7 @@ class Installers_Link(ItemLink):
     @property
     def idata(self):
         """:rtype: bosh.InstallersData"""
-        return self.window.data_store
+        return self._data_store
     @property
     def iPanel(self):
         """:rtype: InstallersPanel"""
@@ -192,7 +192,7 @@ class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel. Overrides
     ShowPanel to do some first show initialization."""
     defaultSashPos = minimumSize = 256
-    _ui_settings = {u'.sashPos' : _UIsetting(lambda self: self.defaultSashPos,
+    _ui_settings = {'.sashPos': _UIsetting(lambda self: self.defaultSashPos,
         lambda self: self.splitter.get_sash_pos(),
         lambda self, sashPos: self.splitter.set_sash_pos(sashPos))}
 
@@ -1533,10 +1533,10 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
-    _ui_settings = {**SashPanel._ui_settings, **{
-        u'.subSplitterSashPos': _UIsetting(lambda self: 0,
+    _ui_settings = {**SashPanel._ui_settings,
+        '.subSplitterSashPos': _UIsetting(lambda self: 0,
         lambda self: self.subSplitter.get_sash_pos(),
-        lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))}
+        lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))
     }
 
     def __init__(self, parent):
@@ -3009,11 +3009,11 @@ class InstallersList(UIList):
 class InstallersDetails(_SashDetailsPanel):
     keyPrefix = u'bash.installers.details'
     defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
-    minimumSize = 32 # so comments dont take too much space
-    _ui_settings = {**_SashDetailsPanel._ui_settings, **{
-        u'.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
+    minimumSize = 32 # so comments don't take too much space
+    _ui_settings = {**_SashDetailsPanel._ui_settings,
+        '.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
         lambda self: self.checkListSplitter.get_sash_pos(),
-        lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))}
+        lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))
     }
 
     @property
