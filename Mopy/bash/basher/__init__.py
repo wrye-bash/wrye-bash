@@ -3441,58 +3441,54 @@ class InstallersPanel(BashTab):
             return
         try:
             self.refreshing = True
-            self._refresh_installers_if_needed(canCancel, fullRefresh,
-                                               scan_data_dir, focus_list)
+            if settings.get('bash.installers.updatedCRCs', True): # only checked here
+                settings['bash.installers.updatedCRCs'] = False
+                self._data_dir_scanned = False
+            do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
+            refresh_info = None
+            if self.frameActivated:
+                folders, files = map(list,
+                                     top_level_items(bass.dirs['installers']))
+                omds = [fninst for fninst in files if
+                        fninst.fn_ext in archives.omod_exts]
+                if any(inst_path not in omods.failedOmods for inst_path in
+                       omds):
+                    omod_projects = self.__extractOmods(omds) ##: change above to filter?
+                    if omod_projects:
+                        deprint(f'Extending projects: {omod_projects}')
+                        folders.extend(omod_projects)
+                if not do_refresh:
+                    #with balt.Progress(_('Scanning Packages...')) as progress:
+                    refresh_info = self.listData.update_installers(folders,
+                        files, fullRefresh, progress=bolt.Progress())
+                    do_refresh = refresh_info.refresh_needed()
+            refreshui = False
+            if do_refresh:
+                with balt.Progress(_('Refreshing Installers...'),
+                                   abort=canCancel) as progress:
+                    try:
+                        what = 'DISC' if scan_data_dir else 'IC'
+                        refreshui |= self.listData.irefresh(progress, what,
+                                                            fullRefresh,
+                                                            refresh_info)
+                        self.frameActivated = False
+                    except CancelError:
+                        self._user_cancelled = True # User canceled the refresh
+                    finally:
+                        self._data_dir_scanned = True
+            elif self.frameActivated:
+                try:
+                    refreshui |= self.listData.irefresh(what='C',
+                        fullRefresh=fullRefresh)
+                    self.frameActivated = False
+                except CancelError:
+                    pass # User canceled the refresh
+            do_refresh = self.listData.refreshTracked()
+            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
+            if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
-
-    @balt.conversation
-    def _refresh_installers_if_needed(self, canCancel, fullRefresh,
-                                      scan_data_dir, focus_list):
-        if settings.get('bash.installers.updatedCRCs',True): #only checked here
-            settings[u'bash.installers.updatedCRCs'] = False
-            self._data_dir_scanned = False
-        do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
-        refresh_info = None
-        if self.frameActivated:
-            folders, files = map(list, top_level_items(bass.dirs[u'installers']))
-            omds = [fninst for fninst in files if
-                    fninst.fn_ext in archives.omod_exts]
-            if any(inst_path not in omods.failedOmods for inst_path in omds):
-                omod_projects = self.__extractOmods(omds) ##: change above to filter?
-                if omod_projects:
-                    deprint(f'Extending projects: {omod_projects}')
-                    folders.extend(omod_projects)
-            if not do_refresh:
-                #with balt.Progress(_('Scanning Packages...')) as progress:
-                refresh_info = self.listData.scan_installers_dir(folders,
-                    files, fullRefresh, progress=bolt.Progress())
-                do_refresh = refresh_info.refresh_needed()
-        refreshui = False
-        if do_refresh:
-            with balt.Progress(_('Refreshing Installers...'),
-                               abort=canCancel) as progress:
-                try:
-                    what = u'DISC' if scan_data_dir else u'IC'
-                    refreshui |= self.listData.irefresh(progress, what,
-                                                        fullRefresh,
-                                                        refresh_info)
-                    self.frameActivated = False
-                except CancelError:
-                    self._user_cancelled = True # User canceled the refresh
-                finally:
-                    self._data_dir_scanned = True
-        elif self.frameActivated:
-            try:
-                refreshui |= self.listData.irefresh(what='C',
-                                                    fullRefresh=fullRefresh)
-                self.frameActivated = False
-            except CancelError:
-                pass  # User canceled the refresh
-        do_refresh = self.listData.refreshTracked()
-        refreshui |= do_refresh and self.listData.refreshInstallersStatus()
-        if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
 
     def __extractOmods(self, omds):
         omod_projects = []
