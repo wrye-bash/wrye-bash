@@ -1639,7 +1639,7 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, **kwargs):
+    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
@@ -1660,14 +1660,14 @@ class AFile(object):
             self._reset_cache(self._null_stat, load_cache=False, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
-        if self._file_changed(stat_tuple):
+        if force_update or self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True, **kwargs)
             return True
         return False
 
     def needs_update(self):
         """Returns True if this file changed. Throws an OSError if it is
-        deleted."""
+        deleted. Avoid all but simple uses - use do_update instead."""
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
@@ -2785,9 +2785,9 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(f'{curr_str}')]
 
-def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
+def dict_sort(di, *, key_f=None, values_dex=(), by_value=False, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
-    precedence."""
+    precedence, then values_dex then by_value. Copies the keys."""
     if key_f is None:
         if values_dex:
             key_f = lambda k: tuple(di[k][x] for x in values_dex)

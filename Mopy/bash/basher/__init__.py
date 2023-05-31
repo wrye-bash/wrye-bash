@@ -2991,9 +2991,9 @@ class InstallersList(UIList):
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:
-                        op = partial(installer.refreshBasic,
-                                     SubProgress(progress, index, index + 1),
-                                     calculate_projects_crc)
+                        op = partial(installer.refreshBasic, SubProgress(
+                            progress, index, index + 1),
+                            recalculate_project_crc=calculate_projects_crc)
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
@@ -3448,7 +3448,6 @@ class InstallersPanel(BashTab):
             self.refreshing = False
 
     @balt.conversation
-    @bosh.bain.projects_walk_cache
     def _refresh_installers_if_needed(self, canCancel, fullRefresh,
                                       scan_data_dir, focus_list):
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
@@ -3466,8 +3465,9 @@ class InstallersPanel(BashTab):
                     deprint(f'Extending projects: {omod_projects}')
                     folders.extend(omod_projects)
             if not do_refresh:
+                #with balt.Progress(_('Scanning Packages...')) as progress:
                 refresh_info = self.listData.scan_installers_dir(folders,
-                    files, fullRefresh)
+                    files, fullRefresh, progress=bolt.Progress())
                 do_refresh = refresh_info.refresh_needed()
         refreshui = False
         if do_refresh:
