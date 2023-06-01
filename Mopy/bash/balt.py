@@ -468,8 +468,11 @@ class Progress(bolt.Progress):
         elif (state == 0 or state == 1 or (state - self.prevState) > 0.05 or (
                 time.time() - self.prevTime) > 0.5):
             if message != self.prevMessage:
-                ret = self.dialog.Update(int(state * 100), u'\n'.join(
-                    [self._ellipsize(msg) for msg in message.split(u'\n')]))
+                try:
+                    ret = self.dialog.Update(int(state * 100), u'\n'.join(
+                        [self._ellipsize(msg) for msg in message.split(u'\n')]))
+                except Exception as e:
+                    print(e)
             else:
                 ret = self.dialog.Update(int(state*100))
             if not ret[0]:

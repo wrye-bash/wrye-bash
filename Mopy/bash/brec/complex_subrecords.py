@@ -40,7 +40,7 @@ from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
 from .common_subrecords import MelFull
 from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker, \
     SlottedType
-from .. import bolt, bush
+from .. import bolt, bush # bush used to hide in local imports, decouple?
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16, \
     unpack_byte, unpack_float, unpack_int, unpack_short, unpack_int_signed

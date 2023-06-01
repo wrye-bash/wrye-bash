@@ -3769,7 +3769,7 @@ class BashFrame(WindowFrame):
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
         ui_refresh = {store.unique_store_key: rdata for store in (
-            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (
+            bosh.bsaInfos, bosh.modInfos, bosh.saveInfos) if (# , bosh.iniInfos
              rdata := not booting and store.refresh())}
         #--Repopulate, focus will be set in ShowPanel
         self.all_uilists[Store.MODS].propagate_refresh(ui_refresh.get(
