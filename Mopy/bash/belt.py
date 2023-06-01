@@ -507,7 +507,7 @@ class WryeParser(ScriptParser.Parser):
             u'<:':u'CaseInsensitiveLessThanlt',
             u'.':u'DotOperator',
             u'SubPackages':u'ForContinueBreakEndFor',
-            },
+        },
         u'Text': {
             # These are symbols that need to be replaced to be xhtml compliant
             u'&':u'&amp;',
@@ -519,7 +519,7 @@ class WryeParser(ScriptParser.Parser):
             u'>:':u'&gt;:',
             u'>=':u'&gt;=',
             u'>=:':u'&gt;=:',
-            },
+        },
         u'Color': {
             # These are items that we want colored differently
             u'in':u'blue',
@@ -527,8 +527,8 @@ class WryeParser(ScriptParser.Parser):
             u'and':u'blue',
             u'or':u'blue',
             u'not':u'blue',
-            },
-        }
+        },
+    }
 
     @staticmethod
     def codebox(lines,pre=True,br=True):
@@ -1216,6 +1216,9 @@ class WryeParser(ScriptParser.Parser):
         if flow.active:
             self.cLine = flow.cLine
 
+    __for_syntax = '\n For var_name from value_start to value_end [by ' \
+             'value_increment]\n For var_name in SubPackages\n For var_name ' \
+             'in subpackage_name'
     def kwdFor(self, *args):
         if self.LenFlow() > 0 and self.PeekFlow().type == u'For' and not self.PeekFlow().active:
             #Within an ending For statement, but we hit a new For, so we need to ignore the
@@ -1224,9 +1227,8 @@ class WryeParser(ScriptParser.Parser):
             return
         varname = args[0]
         if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
-            error(_(u"Invalid syntax for 'For' statement.  Expected format:")
-                    +u'\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name'
-                  )
+            error(_("Invalid syntax for 'For' statement.  Expected format:") +
+                  self.__for_syntax)
         if args[1].text == u'from':
             #For varname from value_start to value_end [by value_increment]
             if (len(args) not in [5,7]) or (args[3].text != u'to') or (len(args)==7 and args[5].text != u'by'):
@@ -1258,17 +1260,17 @@ class WryeParser(ScriptParser.Parser):
                     error(_("Sub-package '%(sp_name)s' does not exist.") % {
                         'sp_name': sub_name})
                 List = []
-                if self.installer.is_project:
-                    sub = bass.dirs[u'installers'].join(self._path, subpackage)
-                    for root_dir, dirs, files in sub.walk(relative=True):
-                        for file_ in files:
-                            rel = root_dir[1:].join(file_) # chop off path sep
-                            List.append(rel.s)
-                else:
+                if self.bArchive:
                     # Archive
                     for file_, _size, _crc in self.installer.fileSizeCrcs:
                         rel = bolt.GPath(file_).relpath(subpackage)
                         if not rel.s.startswith(u'..'):
+                            List.append(rel.s)
+                else:
+                    sub = bass.dirs['installers'].join(self._path, subpackage)
+                    for root_dir, dirs, files in sub.walk(relative=True):
+                        for file_ in files:
+                            rel = root_dir[1:].join(file_) # chop off path sep
                             List.append(rel.s)
                 List.sort()
             if not List:
@@ -1280,10 +1282,8 @@ class WryeParser(ScriptParser.Parser):
                               cLine=self.cLine, varname=varname.text,
                               List=List, index=0)
         else:
-            error(_(u"Invalid syntax for 'For' statement.  Expected format:")
-                + u'\n For var_name from value_start to value_end [by '
-                  u'value_increment]\n For var_name in SubPackages\n For '
-                  u'var_name in subpackage_name')
+            error(_("Invalid syntax for 'For' statement.  Expected format:") +
+                  self.__for_syntax)
 
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'For':

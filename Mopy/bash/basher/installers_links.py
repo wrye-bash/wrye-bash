@@ -88,8 +88,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Refresh Data
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
-        data_sizeCrcDate = self.idata.data_sizeCrcDate.copy()
-        oldFiles = set(data_sizeCrcDate)
+        scd_before_install = self.idata.data_sizeCrcDate.copy()
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
@@ -102,14 +101,13 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
-        curFiles = set(curData)
-        newFiles = curFiles - oldFiles
-        delFiles = oldFiles - curFiles
-        sameFiles = curFiles & oldFiles
+        newFiles = curData.keys() - scd_before_install.keys()
+        delFiles = scd_before_install.keys() - curData.keys()
+        sameFiles = curData.keys() & scd_before_install.keys()
         changedFiles = {file_ for file_ in sameFiles if
-                        data_sizeCrcDate[file_][1] != curData[file_][1]}
+                        scd_before_install[file_][1] != curData[file_][1]}
         touchedFiles = {file_ for file_ in sameFiles if
-                        data_sizeCrcDate[file_][2] != curData[file_][2]}
+                        scd_before_install[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
         if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
@@ -149,8 +147,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
 class Installers_ListPackages(Installers_Link):
     """Copies list of packages to clipboard."""
     _text = _(u'List Packages...')
-    _help = _(u'Displays a list of all packages.  Also copies that list to '
-        u'the clipboard.  Useful for posting your package order on forums.')
+    _help = _('Displays a list of all packages.  Also copies that list to the '
+              'clipboard.  Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):

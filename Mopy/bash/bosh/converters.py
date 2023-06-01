@@ -92,8 +92,9 @@ class ConvertersData(DataDict):
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
                      if self.validConverterName(bcf_arch)] # few files
+        bcf_scd = self.bcfPath_sizeCrcDate
         if change := fullRefresh: # clear all data structures
-            self.bcfPath_sizeCrcDate.clear()
+            bcf_scd.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
             pending = {*map(converters_dir.join, bcfs_list)}
@@ -103,13 +104,12 @@ class ConvertersData(DataDict):
             present_bcfs = [*map(converters_dir.join, bcfs_list)]
             for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
                 # on first run it needs to repopulate the bcfPath_sizeCrcDate
-                cached_size, crc, mod_time = self.bcfPath_sizeCrcDate.get(
+                cached_size, crc, mod_time = bcf_scd.get(
                     bcfPath, (None, None, None))
                 size_mtime = bcfPath.size_mtime()
                 if crc is None or (cached_size, mod_time) != size_mtime:
                     crc_changed = crc != (crc := bcfPath.crc)
-                    self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
-                                                         size_mtime[1])
+                    bcf_scd[bcfPath] = (size_mtime[0], crc, size_mtime[1])
                     if crc_changed:
                         change = True  # added or changed - we must re-add it
                         pending.add(bcfPath)
@@ -117,7 +117,7 @@ class ConvertersData(DataDict):
                 newData[crc] = self.bcfCRC_converter[crc] # should be unique
                 newData[crc].fullPath = bcfPath ##: why???
             # Remove any converters that no longer exist
-            for bcfPath in list(self.bcfPath_sizeCrcDate):
+            for bcfPath in list(bcf_scd):
                 if bcfPath not in present_bcfs:
                     change = True
                     self.removeConverter(bcfPath)
@@ -134,16 +134,20 @@ class ConvertersData(DataDict):
                 for index, bcfPath in enumerate(sorted(pending)):
                     progress(index,
                              _('Scanning Converter...') + f'\n{bcfPath}')
+                    path_crc = not fullRefresh and bcf_scd[bcfPath][1]
                     try:
-                        path_crc = self.bcfPath_sizeCrcDate[bcfPath][1]
                         converter = InstallerConverter.from_path(bcfPath,
                             cached_crc=path_crc)
-                    except:
+                    except StateError: ##: we might get other errors here?
                         cor_dir = self.corrupt_bcfs_dir
-                        bolt.deprint(f'{bcfPath} is corrupt, moving to '
-                                     f'{cor_dir}', traceback=True)
-                        bcfPath.moveTo(cor_dir.join(bcfPath.tail))
-                        del self.bcfPath_sizeCrcDate[bcfPath]
+                        try:
+                            bcfPath.moveTo(cor_dir.join(bcfPath.tail))
+                            if not fullRefresh: del bcf_scd[bcfPath]
+                            bolt.deprint(f'{bcfPath} is corrupt, moved to '
+                                         f'{cor_dir}', traceback=True)
+                        except StateError:
+                            bolt.deprint(f'{bcfPath} does not exist',
+                                         traceback=True)
                         continue
                     change |= self.addConverter(converter, update_cache=False)
         return change

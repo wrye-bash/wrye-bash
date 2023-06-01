@@ -68,11 +68,11 @@ class Installer(ListInfo):
         u'_dir_dirs_files', u'has_fomod_conf')
 
     #--Package analysis/porting.
-    type_string = _(u'Unrecognized')
+    type_string = _('Unrecognized')
     screenshot_dirs = {'screenshots', 'screens', 'ss'}
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
-    dataDirsMinus = {u'bash', u'--'}
+    dataDirsMinus = {'bash', '--'}
     docExts = {'.txt', '.rtf', '.htm', '.html', '.doc', '.docx', '.odt',
                '.mht', '.pdf', '.css', '.xls', '.xlsx', '.ods', '.odp',
                '.ppt', '.pptx', '.md', '.rst', '.url'}
@@ -86,8 +86,8 @@ class Installer(ListInfo):
     # regexes too (which will be run on the filename root).
     _common_doc_roots = {'change[ _]?log', 'changes', 'credits', 'licen[cs]e',
                          'version[ _]?history'}
-    re_common_docs = re.compile(
-        '^(.*)(?:' + '|'.join(_common_doc_roots) + ')(.*)$', re.I)
+    re_common_docs = re.compile(f'^(.*)(?:{"|".join(_common_doc_roots)})(.*)$',
+                                re.I)
     skipExts = {'.exe', '.py', '.pyc', '.7z', '.zip', '.rar', '.db', '.ace',
                 '.tgz', '.tar', '.gz', '.bz2', '.omod', '.fomod', '.tb2',
                 '.lzma', '.manifest', '.ckm', '.vortex_backup'}
@@ -95,23 +95,22 @@ class Installer(ListInfo):
     commonlyEditedExts = {'.cfg', '.ini', '.modgroups', '.toml', '.txt',
                           '.xml'}
     #--Regular game directories - needs update after bush.game has been set
-    dataDirsPlus = screenshot_dirs | bush.game.Bain.wrye_bash_data_dirs | {
-        'docs'}
+    dataDirsPlus = {*screenshot_dirs, *bush.game.Bain.wrye_bash_data_dirs,
+                    'docs'}
     # Files that may be installed in top Data/ directory - note that all
     # top-level file extensions commonly found in the wild need to go here,
     # even ones we'll end up skipping, since this is for the detection of
     # archive 'types' - not actually deciding which get installed
-    _top_files_extensions = bush.game.espm_extensions | {
-        bush.game.Bsa.bsa_extension, '.bsl', '.ckm', '.csv', '.ini',
-        '.modgroups'}
+    _top_files_extensions = {'.bsl', '.ckm', '.csv', '.ini', '.modgroups',
+        bush.game.Bsa.bsa_extension, *bush.game.espm_extensions}
     # Same as _top_files_extensions, plus doc extensions. Needed since we want
     # to allow top-level docs files in sub-packages, but we don't want them to
     # invalidate a type 2 package
     _top_files_plus_docs = _top_files_extensions | docExts
-    _re_top_extensions = re.compile(u'(?:' + u'|'.join(
-        re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
-    _re_top_plus_docs = re.compile('(?:' + '|'.join(
-        re.escape(ext) for ext in _top_files_plus_docs) + ')$', re.I)
+    _re_top_extensions = re.compile(
+        f'(?:{"|".join(map(re.escape, _top_files_extensions))})$', re.I)
+    _re_top_plus_docs = re.compile(
+        f'(?:{"|".join(map(re.escape, _top_files_plus_docs))})$', re.I)
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1])[1].lower()
                            for x in bush.game.Esp.stringsFiles}
@@ -138,7 +137,7 @@ class Installer(ListInfo):
         Installer.dataDirsPlus |= bush.game.Bain.data_dirs
         InstallersData.installers_dir_skips.update(
             {bass.dirs[u'converters'].stail.lower(), u'bash'})
-        user_skipped = bass.inisettings[u'SkippedBashInstallersDirs'].split(u'|')
+        user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split('|')
         InstallersData.installers_dir_skips.update(
             skipped.lower() for skipped in user_skipped if skipped)
 
@@ -178,7 +177,7 @@ class Installer(ListInfo):
     def calc_crcs(pending, pending_size, rootName, new_sizeCrcDate, progress):
         if not pending: return
         done = 0
-        progress_msg= rootName + u'\n' + _(u'Calculating CRCs...') + u'\n'
+        progress_msg = f'{rootName}\n' + _('Calculating CRCs...') + '\n'
         progress(0, progress_msg)
         # each mod increments the progress bar by at least one, even if it
         # is size 0 - add len(pending) to the progress bar max to ensure we
@@ -270,7 +269,7 @@ class Installer(ListInfo):
 
     def size_string(self): return round_size(self.fsize)
 
-    def size_info_str(self): return  _(u'Size:') + u' %s' % self.size_string()
+    def size_info_str(self): return _('Size:') + f' {self.size_string()}'
 
     def structure_string(self):
         if self.type == 1:
@@ -396,7 +395,7 @@ class Installer(ListInfo):
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
-        u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
+        '--', f'omod conversion data{os_sep}', f'wizard images{os_sep}')
     _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini',
                        u'__folder_managed_by_vortex')
 
@@ -405,7 +404,7 @@ class Installer(ListInfo):
     _global_start_skips = []
     _global_skip_extensions = set()
     # executables - global but if not skipped need additional processing
-    _executables_ext = {u'.dll', u'.dlx'} | {u'.asi'} | {u'.jar'}
+    _executables_ext = {'.dll', '.dlx', '.asi', '.jar'}
     _executables_process = {}
     _goodDlls = _badDlls = None
     @staticmethod
@@ -1305,8 +1304,7 @@ class Installer(ListInfo):
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
     """Represents a marker installer entry."""
-    __slots__ = tuple() #--No new slots
-    type_string = _(u'Marker')
+    type_string = _('Marker')
     _is_filename = False
     is_marker = True
 
@@ -1372,8 +1370,7 @@ class InstallerMarker(Installer):
 #------------------------------------------------------------------------------
 class InstallerArchive(Installer):
     """Represents an archive installer entry."""
-    __slots__ = tuple() #--No new slots
-    type_string = _(u'Archive')
+    type_string = _('Archive')
     _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in archives.readExts)}))'
     is_archive = True
 
@@ -1589,8 +1586,7 @@ class InstallerArchive(Installer):
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
-    __slots__ = tuple() #--No new slots
-    type_string = _(u'Project')
+    type_string = _('Project')
     is_project = True
 
     @staticmethod
@@ -1844,7 +1840,7 @@ class InstallersData(DataStore):
         pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
-        # fixup: all markers had their archive attribute set to u'===='
+        # fixup: all markers had their fn_key attribute set to '===='
         for key, value in self.items():
             if value.is_marker:
                 value.fn_key = key
@@ -2195,7 +2191,7 @@ class InstallersData(DataStore):
             change |= installer.refreshStatus(self)
         return change
 
-    def _refresh_from_data_dir(self, progress=None, recalculate_all_crcs=False):
+    def _refresh_from_data_dir(self, progress, recalculate_all_crcs):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
         cache.
 

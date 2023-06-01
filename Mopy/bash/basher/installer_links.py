@@ -115,14 +115,13 @@ class _InstallerLink(Installers_Link, EnabledLink):
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
     def _enable(self):
-        return super(_SingleInstallable, self)._enable() and bool(
-            self.idata.filterInstallables(self.selected))
+        return super()._enable() and not self._selected_info.is_marker
 
 class _SingleProject(OneItemLink, _InstallerLink):
+    _selected_item: InstallerProject
 
     def _enable(self):
-        return super(_SingleProject, self)._enable() and \
-               self._selected_info.is_project
+        return super()._enable() and self._selected_info.is_project
 
 class _ArchiveOnly(_InstallerLink):
     """_InstallerLink that is only enabled for archives."""
@@ -145,7 +144,7 @@ class _NoMarkerLink(_InstallerLink):
     """Installer link that does not accept any markers."""
     def _enable(self):
         self._installables = self.idata.filterInstallables(self.selected)
-        return bool(self._installables) and super(_NoMarkerLink, self)._enable()
+        return bool(self._installables) and super()._enable()
 
 #------------------------------------------------------------------------------
 class _Installer_AWizardLink(_InstallerLink):
@@ -441,14 +440,13 @@ class Installer_Wizard(_Installer_AWizardLink):
                                    for x in manuallyApply])
             self._showInfo(message)
 
-class Installer_OpenReadme(OneItemLink, _InstallerLink):
+class Installer_OpenReadme(_SingleInstallable):
     """Opens the installer's readme if BAIN can find one."""
     _text = _(u'Open Readme')
     _help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
-        single_item = super(Installer_OpenReadme, self)._enable()
-        return single_item and bool(self._selected_info.hasReadme)
+        return super()._enable() and bool(self._selected_info.hasReadme)
 
     def Execute(self): self._selected_info.open_readme()
 
@@ -472,7 +470,7 @@ class Installer_Anneal(_NoMarkerLink):
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
-class Installer_Duplicate(OneItemLink, _InstallerLink):
+class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
     _text = _dialog_title = _(u'Duplicate...')
 
@@ -480,10 +478,6 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     def link_help(self):
         return _(u'Duplicate selected %(installername)s.') % (
             {u'installername': self._selected_item})
-
-    def _enable(self):
-        single_item = super(Installer_Duplicate, self)._enable()
-        return single_item and not self._selected_info.is_marker
 
     @balt.conversation
     def Execute(self):
@@ -516,9 +510,6 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
     _text = _(u'Has Extra Directories')
     _help = _(u'Allow installation of files in non-standard directories.')
-
-    def _enable(self):
-        return len(self.selected) == 1 and not self._selected_info.is_marker
 
     def _check(self):
         return self._enable() and self._selected_info.hasExtraData
@@ -698,15 +689,11 @@ class Installer_InstallSmart(_NoMarkerLink):
             # Finally, fall back to the regular 'Install Configured' method
             self._try_installer(sel_package, inst_regular)
 
-class Installer_ListStructure(OneItemLink, _InstallerLink):
+class Installer_ListStructure(_SingleInstallable):
     """Copies folder structure of installer to clipboard."""
     _text = _(u'List Structure...')
     _help = _(u'Displays the folder structure of the selected installer (and '
               u'copies it to the system clipboard).')
-
-    def _enable(self):
-        single_item = super(Installer_ListStructure, self)._enable()
-        return single_item and not self._selected_info.is_marker
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
@@ -716,17 +703,13 @@ class Installer_ListStructure(OneItemLink, _InstallerLink):
         self._showLog(source_list_txt, title=_(u'Package Structure'),
                       fixedFont=False)
 
-class Installer_ExportAchlist(OneItemLink, _InstallerLink):
+class Installer_ExportAchlist(_SingleInstallable):
     """Write an achlist file with all the destinations files for this
     installer in this configuration."""
     _text = _(u'Export Achlist')
     _mode_info_dir = u'Mod Info Exports'
     _help = (_(u'Create achlist file for use by the %s.') %
              bush.game.Ck.long_name)
-
-    def _enable(self):
-        single_item = super(Installer_ExportAchlist, self)._enable()
-        return single_item and not self._selected_info.is_marker
 
     def Execute(self):
         out_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
@@ -1218,21 +1201,18 @@ class Installer_SyncFromData(_SingleInstallable):
               u'directory.') % bush.game.mods_dir
 
     def _enable(self):
-        if not super(Installer_SyncFromData, self)._enable(): return False
-        return bool(self._selected_info.missingFiles or
-                    self._selected_info.mismatchedFiles)
+        return super()._enable() and bool(self._selected_info.missingFiles or
+            self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        was_rar = self._selected_item.fn_ext == u'.rar'
-        if was_rar:
-            if not self._askYes('\n\n'.join([
-                    _('.rar files cannot be modified. Wrye Bash can however '
-                      'repack them to .7z files, which can then be modified.'),
-                    _('Note that doing this will leave the old .rar file '
-                      'behind, so you may want to manually delete it '
-                      'afterwards.'),
-                    _("Click 'Yes' to repack, or 'No' to abort the sync.")])):
-                return # user clicked 'No'
+        was_rar = self._selected_item.fn_ext == '.rar'
+        if was_rar and not self._askYes('\n\n'.join([
+                _('.rar files cannot be modified. Wrye Bash can however '
+                  'repack them to .7z files, which can then be modified.'),
+                _('Note that doing this will leave the old .rar file behind, '
+                  'so you may want to manually delete it afterwards.'),
+                _("Click 'Yes' to repack, or 'No' to abort the sync.")])):
+            return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
         ed_ok, ed_missing, ed_mismatched = SyncFromDataEditor.display_dialog(

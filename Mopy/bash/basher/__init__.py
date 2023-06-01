@@ -2970,7 +2970,7 @@ class InstallersList(UIList):
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
                          calculate_projects_crc=False, shallow=False):
-        """Refresh installers, ignoring skip refresh flag.
+        """Refresh installers, ignoring skipRefresh flag.
 
         Will also update InstallersData for the paths this installer would
         install, in case a refresh is requested because those files were
