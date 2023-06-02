@@ -21,6 +21,7 @@
 #
 # =============================================================================
 
+import os
 import re
 import string
 from collections import OrderedDict
@@ -29,6 +30,7 @@ from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import Link, Resources
 from ..bolt import FName, GPath
 from ..bosh import empty_path, mods_metadata, omods
+from ..env import normalize_ci_path
 from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
@@ -312,38 +314,69 @@ class DocBrowser(WindowFrame):
         # Set empty and uneditable if there's no doc path:
         if not doc_path:
             self._load_data(uni_str=u'')
-        # Create new file if none exists
-        elif not doc_path.exists():
-            for template_file in (bosh.modInfos.store_dir.join(
-                    'Docs', f'{s} Readme Template') for s in (u'My', u'Bash')):
-                if template_file.exists():
-                    with template_file.open(u'rb') as ins:
-                        template = bolt.decoder(ins.read())
-                    break
+            return
+        # Handle case where the file doesn't exist - this is tricky
+        elif not doc_path.is_file():
+            if not doc_path.is_absolute():
+                # This path probably came from another operating system. If it
+                # came from the Data folder, we may be able to find it
+                doc_parents = doc_path.head
+                wip_doc = doc_path.stail
+                data_lower = bush.game.mods_dir.lower()
+                while doc_parents:
+                    wip_doc = os.path.join(doc_parents.sbody, wip_doc)
+                    dp_head = doc_parents.head
+                    if dp_head.stail.lower() == data_lower:
+                        break
+                    doc_parents = dp_head
+                else:
+                    # Could not find a parent Data folder, this may have been
+                    # some random doc path outside the Data folder. Best we can
+                    # do is ignore it
+                    self._load_data(uni_str='')
+                    return
+                ported_path = normalize_ci_path(
+                    bass.dirs['mods'].join(wip_doc))
+                if ported_path and ported_path.is_file():
+                    doc_path = ported_path
+                    self._db_doc_paths[self._mod_name] = ported_path
+                else:
+                    # We reconstructed, but the path doesn't seem to exist.
+                    # Again, best we can do is ignore it
+                    self._load_data(uni_str='')
+                    return
             else:
-                template = f'= $modName {u"=" * (74 - len(mod_name))}#\n' \
-                           f'{doc_path}'
-            self._load_data(uni_str=string.Template(template).substitute(
-                modName=mod_name))
-            # Start edit mode
-            self._edit_box.is_checked = True
-            self._doc_ctrl.set_text_editable(True)
-            self._doc_ctrl.set_text_modified(True)
-            # Save the new file
-            self.DoSave()
-        else:  # Otherwise it exists
-            editing = self._db_is_editing.get(mod_name, False)
-            if editing:
+                for template_file in (bosh.modInfos.store_dir.join('Docs',
+                        f'{s} Readme Template') for s in ('My', 'Bash')):
+                    if template_file.exists():
+                        with template_file.open(u'rb') as ins:
+                            template = bolt.decoder(ins.read())
+                        break
+                else:
+                    template = (f'= $modName {u"=" * (74 - len(mod_name))}#\n'
+                                f'{doc_path}')
+                self._load_data(uni_str=string.Template(template).substitute(
+                    modName=mod_name))
+                # Start edit mode
                 self._edit_box.is_checked = True
                 self._doc_ctrl.set_text_editable(True)
-            else:
-                is_wtxt = self._get_is_wtxt(doc_path)
-                if is_wtxt:  # Update generated html
-                    html_path = doc_path.root + u'.html'
-                    if not html_path.exists() or (doc_path.mtime > html_path.mtime):
-                        bolt.WryeText.genHtml(doc_path, None,
-                                              bosh.modInfos.store_dir.join(u'Docs'))
-            self._load_data(doc_path=doc_path, editing=editing)
+                self._doc_ctrl.set_text_modified(True)
+                # Save the new file
+                self.DoSave()
+                return
+        # Either the path existed from the start or we ported it over
+        editing = self._db_is_editing.get(mod_name, False)
+        if editing:
+            self._edit_box.is_checked = True
+            self._doc_ctrl.set_text_editable(True)
+        else:
+            is_wtxt = self._get_is_wtxt(doc_path)
+            if is_wtxt:  # Update generated html
+                html_path = doc_path.root + '.html'
+                if not html_path.is_file() or doc_path.mtime > html_path.mtime:
+                    bolt.WryeText.genHtml(doc_path, None,
+                                          bosh.modInfos.store_dir.join('Docs'))
+        self._load_data(doc_path=doc_path, editing=editing)
 
     def on_closing(self, destroy=True):
         """Handle window close event.

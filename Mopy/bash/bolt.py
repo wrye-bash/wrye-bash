@@ -865,14 +865,14 @@ class Path(os.PathLike):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in bytes, not unicode
         norm = decoder(norm)  # decoder will check for unicode
-        self._s = norm
-        # Reconstruct _cs, lower() should suffice
         global _conv_seps
         try:
+            self._s = _conv_seps(norm)
             self._cs = _conv_seps(norm.lower())
         except TypeError:
             from .env import convert_separators
             _conv_seps = convert_separators
+            self._s = _conv_seps(norm)
             self._cs = _conv_seps(norm.lower())
 
     def __len__(self):
