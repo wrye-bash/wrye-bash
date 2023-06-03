@@ -92,7 +92,7 @@ class Button(_AComponent):
 
         :param new_btn_label: The new label to use."""
         if self.button_label != new_btn_label:
-            self._native_widget.SetLabel(new_btn_label)
+            self._native_widget.SetLabel(self._escape(new_btn_label))
 
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the

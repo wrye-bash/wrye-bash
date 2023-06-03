@@ -49,7 +49,7 @@ from ..exception import ArgumentError, BSAError, CancelError, FileError, \
 from ..gui import askYes ##: YAK
 from ..ini_files import OBSEIniFile, supported_ini_exts
 
-os_sep = os.path.sep
+os_sep = os.path.sep ##: track
 
 class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and

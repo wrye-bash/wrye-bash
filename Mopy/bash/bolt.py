@@ -1116,24 +1116,12 @@ class Path(os.PathLike):
         else:
             raise
 
-    def clearRO(self):
+    def clearRO(self): ##: we need an (env) decorator for this one
         """Clears RO flag on self"""
         if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
-            try:
-                clearReadOnly(self)
-            except UnicodeError:
-                stat_flags = stat.S_IWUSR|stat.S_IWOTH
-                chmod = os.chmod
-                for root_dir,dirs,files in os.walk(self._s):
-                    rootJoin = root_dir.join
-                    for directory in dirs:
-                        try: chmod(rootJoin(directory),stat_flags)
-                        except: pass
-                    for filename in files:
-                        try: chmod(rootJoin(filename),stat_flags)
-                        except: pass
+            clearReadOnly(self)
 
     def open(self,*args,**kwdargs):
         try:

@@ -1903,7 +1903,7 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
 
     def Execute(self): # overrides _Mod_Export_Link
         fileInfo = next(self.iselected_infos()) # first selected info
-        defaultPath = bass.dirs[u'patches'].join(f'{fileInfo} Exported Scripts')
+        defaultPath = bass.dirs['patches'].join(f'{fileInfo} Exported Scripts')
         if not ExportScriptsDialog.display_dialog(Link.Frame):
             return
         def_exists = defaultPath.exists()
@@ -1913,7 +1913,8 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
             message=_(u'Choose directory to export scripts to'),
             defaultPath=defaultPath)
         if not def_exists and textDir != defaultPath and not [
-            *defaultPath.ilist()]:
+            # user might have created a file through the dialog (unlikely but)
+                *defaultPath.ilist()]:
             defaultPath.removedirs()
         if not textDir: return
         #--Export
