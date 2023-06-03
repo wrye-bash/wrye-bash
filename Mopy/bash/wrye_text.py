@@ -161,6 +161,10 @@ def genHtml(ins, out=None, *css_dirs):
                 anchor += str(count)
             else:
                 anchor = anchor[:-1] + str(count)
+        # Clean out double underscores from the final anchor,
+        # otherwise we'd turn those into <b> tags down below
+        while '__' in anchor:
+            anchor = anchor.replace('__', '_')
         anchorlist.append(anchor)
         return f"<a id='{anchor}'>{text}</a>"
     #--Bold, Italic, BoldItalic

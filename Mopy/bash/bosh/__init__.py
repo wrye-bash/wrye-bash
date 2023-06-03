@@ -61,6 +61,7 @@ from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
 empty_path = GPath(u'') # evaluates to False in boolean expressions
+_ListInf = AFile | ListInfo | None| FName
 
 #--Singletons
 gameInis: tuple[GameIni | IniFile] | None = None
@@ -74,8 +75,8 @@ screen_infos: ScreenInfos | None = None
 def data_tracking_stores() -> Iterable[FileInfos]:
     """Return an iterable containing all data stores that keep track of the
     Data folder and which files in it are owned by which BAIN package."""
-    return (s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
-            s is not None)
+    return tuple(s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
+                 s is not None)
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -573,7 +574,8 @@ class ModInfo(FileInfo):
     @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
-        return (self._file_key + u'.ghost') if self.isGhost else self._file_key
+        return (self._file_key + '.ghost' # Path.__add__
+                ) if self.isGhost else self._file_key
 
     def setGhost(self, isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
@@ -1591,13 +1593,15 @@ class TableFileInfos(DataStore):
         :rtype: _sre.SRE_Match | None"""
         return cls.file_pattern.search(fileName)
 
-    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
-        """Return an FName representing the key of the specified Data
-        folder-relative file path inside this data store iff it belongs to this
-        data store. If it does not, return None."""
-        # FName needed for ScreenInfos.rightFileType override
-        ret_candidate = FName(os.path.basename(data_path))
-        return ret_candidate if self.rightFileType(ret_candidate) else None
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+        """Return the info corresponding to the specified (str, Fname or CIStr)
+        path relative to the  Data folder - iff it belongs to this data store.
+        If it does not, return None, except if would_be is True whereupon
+        return the fname, if it is a valid one for self."""
+        if (inf := self.get(fnkey := FName(str(data_path)))) or not would_be:
+            return inf
+        return fnkey if os.path.basename(data_path) == data_path and \
+            self.rightFileType(fnkey) else None
 
     #--Delete
     def files_to_delete(self, fileNames, **kwargs):
@@ -1871,15 +1875,13 @@ class INIInfos(TableFileInfos):
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings[u'bash.ini.choice']]
 
-    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
-        ci_parts = os.path.split(os.fspath(data_path).lower())
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
+        parts = os.path.split(os.fspath(data_path))
         # 1. Must have a single parent folder
         # 2. That folder must be named 'ini tweaks' (case-insensitively)
-        # 3. The extension must be a valid INI-like extension
-        if (len(ci_parts) == 2 and
-                ci_parts[0] == 'ini tweaks' and
-                ci_parts[1].rsplit('.', 1)[1] in supported_ini_exts):
-            return super().data_path_to_key(data_path)
+        # 3. The extension must be a valid INI-like extension - super checks it
+        if len(parts) == 2 and parts[0].lower() == 'ini tweaks':
+            return super().data_path_to_info(parts[1], would_be)
         return None
 
     @property
@@ -3444,7 +3446,7 @@ class SaveInfos(FileInfos):
     def rightFileType(cls, fileName: bolt.FName | str):
         return all(cls._parse_save_path(fileName))
 
-    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         return None # Never relative to Data folder
 
     @classmethod
@@ -3690,19 +3692,17 @@ class ScreenInfos(FileInfos):
             return False
         return super().rightFileType(fileName)
 
-    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+    def data_path_to_info(self, data_path: str, would_be=False) -> _ListInf:
         if not self._rel_to_data:
             # Current store_dir is not relative to Data folder, so we do not
             # need to pay attention to BAIN
             return None
-        ci_parts = os.path.split(os.fspath(data_path).lower())
-        prefix_len = len(self._ci_curr_data_prefix)
-        # The parent directories must match and the length must be +1 (for the
-        # filename itself)
-        if (len(ci_parts) != prefix_len + 1 or
-                ci_parts[:prefix_len] != self._ci_curr_data_prefix):
+        *parts, filename = os.path.split(os.fspath(data_path))
+        # The parent directories must match
+        if (len(parts) != len(self._ci_curr_data_prefix) or
+                [*map(str.lower, parts)] != self._ci_curr_data_prefix):
             return None
-        return super().data_path_to_key(data_path)
+        return super().data_path_to_info(filename, would_be)
 
     def refresh(self, refresh_infos=True, booting=False):
         self._set_store_dir()

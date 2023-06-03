@@ -38,7 +38,7 @@ from operator import attrgetter, itemgetter
 from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
-    best_ini_files
+    best_ini_files, data_tracking_stores
 from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
@@ -1281,26 +1281,31 @@ class _InstallerPackage(Installer, AFile):
                     unpackDir):
         """Filesystem install, if unpackDir is not None we are installing
          an archive."""
-        norm_ghostGet = Installer.getGhosted().get
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
-        from . import data_tracking_stores
-        affected_stores = [(s, set()) for s in data_tracking_stores()]
+        stores = data_tracking_stores()
+        store_to_paths = defaultdict(set)
         sources_dests = defaultdict(set)
         join_data_dir = bass.dirs[u'mods'].join
         for dest, src in dest_src.items():
             dest_size, crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
-            for store, file_tracker in affected_stores:
-                ##: Is the str() needed here? need to type some tough APIs like refreshDataSizeCrc
-                if fname_key := store.data_path_to_key(str(dest)):
-                    file_tracker.add(fname_key)
-            data_sizeCrcDate_update[dest] = (dest_size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
+            for store in stores:
+                if fname_key := store.data_path_to_info(dest, would_be=True):
+                    try: # FName
+                        dest_path = join_data_dir(dest)
+                    except TypeError: # info is present, possibly ghosted
+                        dest_path = fname_key.abs_path
+                        fname_key = fname_key.fn_key
+                    store_to_paths[store].add((fname_key, dest))
+                    break
+            else:
+                dest_path = join_data_dir(dest)
+            data_sizeCrcDate_update[dest] = [dest_size, crc, -1]
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
-            sources_dests[srcDirJoin(src)].add(join_data_dir(
-                norm_ghostGet(dest, dest)))
+            sources_dests[srcDirJoin(src)].add(dest_path)
             subprogressPlus()
         #--Now Move
         try:
@@ -1311,8 +1316,26 @@ class _InstallerPackage(Installer, AFile):
             #--Clean up unpack dir if we're an archive
             if unpackDir:
                 cleanup_temp_dir(unpackDir)
+        # Update relevant data stores, adding new/modified files
+        refresh_ui = defaultdict(bool)
+        for store, owned_files in store_to_paths.items():
+            mtimes = []
+            for (owned_file, dest) in owned_files:
+                try:
+                    inf = store.new_info(owned_file, owner=self.fn_key,
+                        _in_refresh=True) # we don't want to refresh info sets
+                    data_sizeCrcDate_update[dest][2] = inf.mtime
+                    mtimes.append(owned_file)
+                except FileError as error: # repeated from refresh
+                    store.corrupted[owned_file] = error.message
+                    store.pop(owned_file, None)
+            if mtimes:
+                if store.unique_store_key is Store.MODS:
+                    store.cached_lo_append_if_missing(mtimes)
+                    store.refreshLoadOrder(unlock_lo=True)
+                refresh_ui[store.unique_store_key] = True
         #--Update Installers data
-        return data_sizeCrcDate_update, affected_stores
+        return data_sizeCrcDate_update, refresh_ui
 
     def listSource(self):
         """Return package structure as text."""
@@ -1950,7 +1973,6 @@ class InstallersData(DataStore):
         old_key = super().rename_operation(member_info, name_new)
         member_info.abs_path = self.store_dir.join(name_new)
         # Update the ownership information for relevant data stores
-        from . import data_tracking_stores
         owned_per_store = []
         for store in data_tracking_stores():
             storet = store.table
@@ -2597,33 +2619,16 @@ class InstallersData(DataStore):
             iniInfos.new_info(tweakPath.stail, notify_bain=True)
         tweaksCreated -= removed
 
-    def __installer_install(self, installer, destFiles, index, progress,
-                            refresh_ui):
+    def _installer_install(self, installer, destFiles, index, progress):
+        """Wrap installer.install to update data_sizeCrcDate."""
         sub_progress = SubProgress(progress, index, index + 1)
-        data_sizeCrcDate_update, affected_stores = installer.install(
+        data_sizeCrcDate_update, refresh_ui_ = installer.install(
             destFiles, sub_progress)
-        # Update relevant data stores, adding new/modified files
-        from . import modInfos
-        mods = []
-        for store, owned_files in affected_stores:
-            for owned_file in owned_files.copy(): # size may change
-                try:
-                    store.new_info(owned_file, owner=installer.fn_key)
-                except FileError:
-                    owned_files.discard(owned_file)
-            refresh_ui[store.unique_store_key] |= bool(owned_files)
-            if store is modInfos:
-                mods = owned_files
-        modInfos.cached_lo_append_if_missing(mods)
-        modInfos.refreshLoadOrder(unlock_lo=True)
-        # now that we saved load order update missing mtimes for mods:
-        for mod in mods:
-            s, c, _d = data_sizeCrcDate_update[mod]
-            data_sizeCrcDate_update[mod] = (s, c, modInfos[mod].mtime)
-        # and for rest of the files - we do mods separately for ghosts
-        self.data_sizeCrcDate.update((dest, (
-            s, c, (d != -1 and d) or bass.dirs[u'mods'].join(dest).mtime)) for
-            dest, (s, c, d) in data_sizeCrcDate_update.items())
+        # update mtime for the rest of the files
+        for dest, (s, c, d) in data_sizeCrcDate_update.items():
+            self.data_sizeCrcDate[dest] = (
+                s, c, bass.dirs['mods'].join(dest).mtime if d == -1 else d)
+        return refresh_ui_
 
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
@@ -2649,9 +2654,9 @@ class InstallersData(DataStore):
                         destFiles &= inst.missingFiles
                     if destFiles:
                         self._createTweaks(destFiles, inst, tweaksCreated)
-                        self.__installer_install(inst, destFiles, index,
-                                                 progress, refresh_ui)
-                    index += 1 # increment after it's used in __installer_install
+                        refresh_ui.update(self._installer_install(
+                            inst, destFiles, index, progress))
+                    index += 1 # increment after it's used in _installer_install
                     inst.is_active = True
                     if inst.order == min_order:
                         break  # we are done
@@ -2696,20 +2701,22 @@ class InstallersData(DataStore):
         if not ci_removes: return
         mods_dir_join = bass.dirs[u'mods'].join
         empty_dir_candidates = set()
-        from . import data_tracking_stores
         removed_tracked = [(s, set()) for s in data_tracking_stores()]
         removed_untracked = set()
+        remove_paths = {}
         #--Construct list of files to delete
-        norm_ghost_get = Installer.getGhosted().get
         for ci_rel_path in ci_removes:
-            path = mods_dir_join(norm_ghost_get(ci_rel_path, ci_rel_path))
-            if path.exists():
-                for store, removed_files in removed_tracked:
-                    if fname_key := store.data_path_to_key(path):
-                        removed_files.add(fname_key)
-                else:
+            for store, removed_files in removed_tracked:
+                if store_info := store.data_path_to_info(ci_rel_path):
+                    removed_files.add(store_info.fn_key)
+                    path = store_info.abs_path # it exists as the info exists
+                    break
+            else:
+                path = mods_dir_join(ci_rel_path)
+                if path.exists():
                     removed_untracked.add(path)
                     empty_dir_candidates.add(path.head)
+            remove_paths[ci_rel_path] = path
         #--Now determine which directories will be empty, replacing subsets of
         # removedFiles by their parent dir if the latter will be emptied
         removed_untracked = self._determineEmptyDirs(
@@ -2723,7 +2730,7 @@ class InstallersData(DataStore):
             # Delegate deletion of files that data stores care about to those
             # data stores
             for store, removed_files in removed_tracked:
-                refresh_ui[store.unique_store_key] = True
+                refresh_ui[store.unique_store_key] = bool(removed_files)
                 store.delete(removed_files, recycle=False)
         except (CancelError, SkipError): ex = sys.exc_info()
         except:
@@ -2731,10 +2738,8 @@ class InstallersData(DataStore):
             raise
         finally:
             if ex:
-                ci_removes = [
-                    f for f in ci_removes
-                    if not mods_dir_join(norm_ghost_get(f, f)).exists()
-                ]
+                ci_removes = [k for k, v in remove_paths.items() if
+                              not v.exists()]
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
             for ci_relPath in ci_removes:
@@ -2813,16 +2818,14 @@ class InstallersData(DataStore):
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
             # Set the 'installer' column for files that track their owner
-            from . import data_tracking_stores
+            stores = data_tracking_stores()
             for ikey, owned_files in cede_ownership.items():
                 for owned_path in owned_files:
-                    for store in data_tracking_stores():
-                        if fname_key := store.data_path_to_key(owned_path):
-                            store[fname_key].set_table_prop(
-                                'installer', '%s' % ikey)
+                    for store in stores:
+                        if store_info := store.data_path_to_info(owned_path):
+                            store_info.set_table_prop('installer', f'{ikey}')
                             refresh_ui[store.unique_store_key] = True
-                            # Each file can only belong to one data store (at
-                            # least at the moment), so exit early
+                            # Each file may only belong to one data store
                             break
         finally:
             self.refresh_ns()
@@ -2840,8 +2843,8 @@ class InstallersData(DataStore):
             progress(index, fn_inst)
             if destFiles:
                 installer = self[fn_inst]
-                self.__installer_install(installer, destFiles, index, progress,
-                                         refresh_ui)
+                refresh_ui.update(self._installer_install(
+                    installer, destFiles, index, progress))
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
@@ -2849,7 +2852,8 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[package] for package in (anPackages or self))
+        anPackages = (self[package] for package in
+                      (anPackages or self.filterInstallables(self)))
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:
@@ -3167,16 +3171,20 @@ class InstallersData(DataStore):
         """Remove markers from installerKeys."""
         return (x for x in installerKeys if not self[x].is_marker)
 
-    def createFromData(self, projectPath, ci_files, progress):
+    def createFromData(self, projectPath, ci_files: list[CIstr], progress,
+                       mod_infos):
         if not ci_files: return
-        norm_ghost_get = Installer.getGhosted().get
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
         srcJoin = bass.dirs[u'mods'].join
         dstJoin = self.store_dir.join(projectPath).join
-        for i,filename in enumerate(ci_files):
-            subprogress(i, filename)
-            srcJoin(norm_ghost_get(filename, filename)).copyTo(
-                dstJoin(filename))
+        for i, ci_rel_path in enumerate(ci_files):
+            subprogress(i, ci_rel_path)
+            try:
+                srcJoin(ci_rel_path).copyTo(dstJoin(ci_rel_path))
+            except FileNotFoundError: # modInfos MUST BE UPDATED
+                if minf := mod_infos.get(str(ci_rel_path)): # try the ghost
+                    minf.abs_path.copyTo(dstJoin(ci_rel_path))
+                else: raise
         # Refresh, so we can manipulate the InstallerProject item
         self.new_info(projectPath, progress,
                       install_order=len(self)) # install last

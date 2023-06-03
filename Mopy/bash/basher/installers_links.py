@@ -140,8 +140,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
-        with balt.Progress(_('Creating Project...')) as prog:
-            self.idata.createFromData(pr_path, include, prog) # will order last
+        with balt.Progress(_('Creating Project...')) as prog: # will order last
+            self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
