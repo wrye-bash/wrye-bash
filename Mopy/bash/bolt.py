@@ -295,7 +295,7 @@ _sig_to_str = SigToStr()
 sig_to_str = _sig_to_str.__getitem__
 
 class StrToSig(dict):
-    """Dict of encoded record strings - will encode unknown keys."""
+    """Dict of encoded record strings - will encode unknown keys in *ascii*."""
     __slots__ = ()
 
     def __missing__(self, key):
@@ -989,7 +989,7 @@ class Path(os.PathLike):
         """Backup file path."""
         return self+u'.bak'
 
-    #--size, atime, ctime
+    #--size, atime
     @property
     def psize(self):
         """Size of file or directory."""
@@ -1007,9 +1007,6 @@ class Path(os.PathLike):
     @property
     def atime(self):
         return os.path.getatime(self._s)
-    @property
-    def ctime(self):
-        return os.path.getctime(self._s)
 
     #--Mtime
     def _getmtime(self):
@@ -1184,7 +1181,7 @@ class Path(os.PathLike):
             os.makedirs(dest_par)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
-    def moveTo(self, destName, check_exist=True):
+    def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
             raise exception.StateError(f'{self._s} cannot be moved because it '
                                        f'does not exist.')
@@ -1666,7 +1663,7 @@ class AFile(object):
         return False
 
     def needs_update(self):
-        """Returns True if this file changed. Throws an OSErorr if it is
+        """Returns True if this file changed. Throws an OSError if it is
         deleted."""
         return self._file_changed(self._stat_tuple())
 
@@ -2889,7 +2886,7 @@ class WryeText:
     2 for two levels, etc.).
     """
 
-    # Conversion ---------------------------------------------------------------
+    # Conversion --------------------------------------------------------------
     @staticmethod
     def genHtml(ins, out=None, *css_dirs):
         """Reads a wtxt input stream and writes an html output stream."""
@@ -3194,7 +3191,7 @@ def convert_wtext_to_html(logPath, logText, *css_dirs):
     with logPath.open(u'w', encoding=u'utf-8-sig') as out:
         WryeText.genHtml(ins, out, *css_dirs)
 
-# Main -------------------------------------------------------------------------
+# Main ------------------------------------------------------------------------
 if __name__ == u'__main__' and len(sys.argv) > 1:
     #--Commands----------------------------------------------------------------
     @mainfunc

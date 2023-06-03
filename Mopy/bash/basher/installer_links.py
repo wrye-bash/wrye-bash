@@ -118,7 +118,6 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
         return super()._enable() and not self._selected_info.is_marker
 
 class _SingleProject(OneItemLink, _InstallerLink):
-    _selected_item: InstallerProject
 
     def _enable(self):
         return super()._enable() and self._selected_info.is_project
@@ -137,7 +136,7 @@ class _RefreshingLink(_SingleInstallable):
         with balt.Progress(title=_(u'Override Skips')) as progress:
             if self._overrides_skips:
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
-            self.idata.irefresh(what=u'NS', progress=progress)
+            self.idata.refresh_ns(progress=progress)
         self.window.RefreshUI()
 
 class _NoMarkerLink(_InstallerLink):
@@ -292,7 +291,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
                 progress=prog, install_order=sel_package.order + 1,
                 do_refresh=False)
             ##: Copied from InstallerArchive_Unpack - needed?
-            self.idata.irefresh(what='NS')
+            self.idata.refresh_ns()
 
 class Installer_EditWizard(_Installer_AViewOrEditFile):
     """View or edit the wizard.txt associated with this package."""
@@ -496,7 +495,7 @@ class Installer_Duplicate(_SingleInstallable):
         #--Duplicate
         with BusyCursor():
             self.idata.copy_installer(fn_inst, result)
-            self.idata.irefresh(what=u'N')
+            self.idata.refresh_n()
         self.window.RefreshUI(detail_item=result)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
@@ -552,7 +551,7 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
             installer.refreshBasic(progress=None,
                                    recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
-            self.idata.irefresh(what=u'N')
+            self.idata.refresh_n()
             self.window.RefreshUI()
 
 class Installer_Install(_NoMarkerLink):
@@ -750,7 +749,7 @@ class Installer_Move(_InstallerLink):
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata)
         self.idata.moveArchives(self.selected,newPos)
-        self.idata.irefresh(what=u'N')
+        self.idata.refresh_n()
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
 
@@ -1177,7 +1176,7 @@ class InstallerArchive_Unpack(_ArchiveOnly):
                     install_order=installer.order + 1, do_refresh=False)
                 projects.append(project)
             if not projects: return
-            self.idata.irefresh(what=u'NS')
+            self.idata.refresh_ns()
             self.window.RefreshUI(detail_item=projects[-1]) # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
 
@@ -1251,8 +1250,7 @@ class Installer_SyncFromData(_SingleInstallable):
                     install_order=self._selected_info.order + 1)
                 created_package = self.idata[final_package]
                 created_package.is_active = self._selected_info.is_active
-            self.idata.irefresh(progress=SubProgress(progress, 0.9, 0.99),
-                                what=u'NS')
+            self.idata.refresh_ns(progress=SubProgress(progress, 0.9, 0.99))
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

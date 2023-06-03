@@ -217,8 +217,8 @@ class CreateNewProject(DialogWindow):
         projectDir = bass.dirs[u'installers'].join(projectName)
         if projectDir.exists():
             showError(self, _(
-                u'There is already a project with that name!') + u'\n' + _(
-                u'Pick a different name for the project and try again.'))
+                'There is already a project with that name!') + '\n' + _(
+                'Pick a different name for the project and try again.'))
             return
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
@@ -281,7 +281,7 @@ class CreateNewProject(DialogWindow):
             InstallerProject.refresh_installer(
                 fn_result_proj, self._parent.data_store, progress=prog,
                 install_order=new_installer_order, do_refresh=False)
-        self._parent.data_store.irefresh(what='NS')
+        self._parent.data_store.refresh_ns()
         self._parent.RefreshUI(detail_item=fn_result_proj)
         self._parent.SelectItemsNoCallback([fn_result_proj])
 

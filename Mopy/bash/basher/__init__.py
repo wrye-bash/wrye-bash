@@ -2734,7 +2734,7 @@ class InstallersList(UIList):
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data_store.moveArchives(self.GetSelected(), newPos)
-        self.data_store.irefresh(what=u'N')
+        self.data_store.refresh_n()
         self.RefreshUI()
 
     def _extractOmods(self, omodnames, progress):
@@ -2898,7 +2898,7 @@ class InstallersList(UIList):
                 newPos = self.data_store[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data_store.moveArchives([thisFile], newPos)
-            self.data_store.irefresh(what=u'N')
+            self.data_store.refresh_n()
             self.RefreshUI()
             visibleIndex = sorted((visibleIndex, 0, maxPos))[1]
             self.EnsureVisibleIndex(visibleIndex)
@@ -3002,7 +3002,7 @@ class InstallersList(UIList):
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
-        self.data_store.irefresh(what=u'NS')
+        self.data_store.refresh_ns()
         self.RefreshUI()
 
 #------------------------------------------------------------------------------

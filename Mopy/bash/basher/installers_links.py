@@ -356,7 +356,7 @@ class Installers_ImportOrder(_AInstallers_Order):
                 title=_('Import Order - Invalid CSV'))
             return
         reorder_err = self.idata.reorder_packages(self.partial_package_order)
-        self.idata.irefresh(what='NS')
+        self.idata.refresh_ns()
         self.window.RefreshUI()
         if reorder_err:
             self._showError(reorder_err, title=_('Import Order - Error'))
