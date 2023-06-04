@@ -280,8 +280,7 @@ class CreateNewProject(DialogWindow):
         with balt.Progress(_('Creating Project...')) as prog:
             InstallerProject.refresh_installer(
                 fn_result_proj, self._parent.data_store, progress=prog,
-                install_order=new_installer_order, do_refresh=False)
-        self._parent.data_store.refresh_ns()
+                install_order=new_installer_order, do_refresh=True) ##: why do refresh=False todo
         self._parent.RefreshUI(detail_item=fn_result_proj)
         self._parent.SelectItemsNoCallback([fn_result_proj])
 
