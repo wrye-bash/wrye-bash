@@ -36,6 +36,7 @@ from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
 from .ScriptParser import error
+from .wbtemp import cleanup_temp_dir
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -79,7 +80,8 @@ class InstallerWizard(WizardDialog):
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
         #parser that will spit out the pages
-        self.wizard_file = installer.wizard_file()
+        self._wizard_dir = installer.get_wizard_file_dir()
+        self._wizard_file = self._wizard_dir.join(installer.hasWizard)
         self.parser = WryeParser(self, installer, bAuto)
         self.ret = WizInstallInfo()
 
@@ -117,14 +119,13 @@ class InstallerWizard(WizardDialog):
         self.ret.canceled = msg or True
 
     def Run(self):
-        err_msg = self.parser.Begin(self.wizard_file)
+        err_msg = self.parser.Begin(self._wizard_file, self._wizard_dir)
         if err_msg:
             self._cancel_wizard(err_msg) # Wizard could not be read
         else:
             self._run_wizard()
-        # Clean up temp files
         if self.parser.bArchive:
-            bass.rmTempDir()
+            cleanup_temp_dir(self._wizard_dir)
         return self.ret
 
 class PageInstaller(WizardPage):
@@ -761,13 +762,14 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword(u'Cancel', self.kwdCancel, 0, 1)
         self.SetKeyword(u'RequireVersions', self.kwdRequireVersions, 1, 4)
 
-    def Begin(self, file_path):
+    def Begin(self, wizard_file, wizard_dir):
         self._reset_vars()
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
+        self._wizard_dir = wizard_dir
         try:
-            with file_path.open(u'r', encoding=u'utf-8-sig') as wiz_script:
+            with wizard_file.open('r', encoding='utf-8-sig') as wiz_script:
                 # Ensure \n line endings for the script parser
                 self.lines = [bolt.to_unix_newlines(x)
                               for x in wiz_script.readlines()]
@@ -1356,11 +1358,7 @@ class WryeParser(ScriptParser.Parser):
             self.reversing -= 1
             self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
             return
-        # If not an auto-wizard, or an auto-wizard with no default option
-        if self.bArchive:
-            imageJoin = bass.getTempDir().join
-        else:
-            imageJoin = bass.dirs[u'installers'].join(self._path).join
+        imageJoin = self._wizard_dir.join
         for i in images_:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from

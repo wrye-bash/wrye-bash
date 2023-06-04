@@ -31,21 +31,18 @@ from collections.abc import Iterable
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, Path
+from ..bolt import os_name, GPath_no_norm, Path
+from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
 
 # Then check which OS we are running on and import *only* from there
-op_system = platform.system()
-if op_system == u'Windows':
-    from .windows import *
-elif op_system == u'Linux':
-    from .linux import *
-elif op_system == u'Darwin':
-    # let's not have a separate file yet
-    from .linux import *
-else:
-    raise ImportError(f'Wrye Bash does not support {op_system} yet')
+match platform.system():
+    case 'Windows': from .windows import *
+    case 'Linux': from .linux import *
+    case 'Darwin': from .linux import * # let's not have a separate file yet
+    case _: raise ImportError(f'Wrye Bash does not support '
+                              f'{platform.system()} yet')
 
 def _resolve(parent: _TShellWindow):
     """Resolve a parent window to a wx.Window for ifileoperation"""
@@ -117,9 +114,9 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
             # to shellMove if UAC or something else stopped it
             try:
                 folder.makedirs()
-            except:
+            except: ##: tighten
                 # Failed, try the UAC workaround
-                tmpDir = Path.tempDir()
+                tmpDir = GPath_no_norm(new_temp_dir())
                 tempDirs.append(tmpDir)
                 toMake = []
                 while not folder.exists() and folder != folder.head:
@@ -137,4 +134,4 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
             shellMove(move_dirs, parent=parent)
     finally:
         for tmpDir in tempDirs:
-            tmpDir.rmtree(safety=tmpDir.stail)
+            cleanup_temp_dir(tmpDir)

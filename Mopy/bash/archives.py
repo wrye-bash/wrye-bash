@@ -26,6 +26,7 @@ import re
 from . import bass
 from .bolt import FName, deprint, os_name, popen_common
 from .exception import StateError
+from .wbtemp import TempFile
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'
 defaultExt = u'.7z'
@@ -40,8 +41,9 @@ regExtractMatch = re.compile('- (.+)').match
 reListArchive = re.compile(
     r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
-def compress7z(full_dest, rel_dest, srcDir, progress=None, *,
-               is_solid=None, temp_list=None, blockSize=None):
+def compress7z(full_dest, srcDir, progress=None, *, is_solid=None,
+               temp_list=None, blockSize=None):
+    rel_dest = FName(full_dest.stail)
     if is_solid is None:
         solid, archiveType = '-ms=on', '7z'
     else:
@@ -54,35 +56,43 @@ def compress7z(full_dest, rel_dest, srcDir, progress=None, *,
     join_star = srcDir.join(u'*').s # add a wildcard at the end of the path
     out_args = [join_star] if temp_list is None else [f'-i!{join_star}',
                                                       f'-x@{temp_list}']
-    command = [exe7z, u'a', full_dest.temp.s, f'-t{archiveType}',
-        *solid.split(), u'-y', u'-r', # quiet, recursive
-        *out_args, u'-scsUTF-8', u'-sccUTF-8']  # encode output in UTF-8
-    if progress is not None: #--Used solely for the progress bar
-        length = sum(map(len, (files for x, y, files in os.walk(srcDir))))
-        progress(0, f'{rel_dest}\n' + _(u'Compressing files...'))
-        progress.setFull(1 + length)
-    #--Pack the files
-    proc = popen_common(command, bufsize=1, encoding='utf-8')
-    #--Error checking and progress feedback
-    index, lines = 0, []
-    with proc.stdout as out:
-        for line in out.readlines():
-            lines.append(line)
-            if progress is None: continue
-            maCompressing = regCompressMatch(line)
-            if maCompressing:
-                progress(index, '\n'.join(
-                    [f'{rel_dest}', _(u'Compressing files...'),
-                     maCompressing.group(1).strip()]))
-                index += 1
-    returncode = proc.wait()
-    if returncode:
-        full_dest.temp.remove()
-        raise StateError(
-            f'{rel_dest}: Compression failed:\n7z.exe return value: '
-            f'{returncode:d}\n{"".join(lines)}')
-    #--Finalize the file, and cleanup
-    full_dest.untemp()
+    with TempFile() as temp_dest:
+        # Running up against 7zip's CLI limitations (see #562): 7z has no way
+        # to tell it that the destination should just be overwritten. The "a"
+        # command seems to use "does the target exist" to decide whether it
+        # works as a "create new archive" or "add files to existing archive"
+        # command. As we want "create new archive" here, delete the destination
+        # (and break wbtemp's guarantee that the file will be unique by doing
+        # so, but oh well)
+        os.remove(temp_dest)
+        command = [exe7z, 'a', temp_dest, f'-t{archiveType}',
+            *solid.split(), '-y', '-r', # quiet, recursive
+            *out_args, '-scsUTF-8', '-sccUTF-8']  # encode output in UTF-8
+        if progress is not None: #--Used solely for the progress bar
+            length = sum(map(len, (files for x, y, files in os.walk(srcDir))))
+            progress(0, f'{rel_dest}\n' + _('Compressing files...'))
+            progress.setFull(1 + length)
+        #--Pack the files
+        proc = popen_common(command, bufsize=1, encoding='utf-8')
+        #--Error checking and progress feedback
+        index, lines = 0, []
+        with proc.stdout as out:
+            for line in out.readlines():
+                lines.append(line)
+                if progress is None: continue
+                maCompressing = regCompressMatch(line)
+                if maCompressing:
+                    progress(index, '\n'.join(
+                        [f'{rel_dest}', _('Compressing files...'),
+                         maCompressing.group(1).strip()]))
+                    index += 1
+        returncode = proc.wait()
+        if returncode:
+            raise StateError(
+                f'{rel_dest}: Compression failed:\n7z.exe return value: '
+                f'{returncode:d}\n{"".join(lines)}')
+        #--Finalize the file, and cleanup
+        full_dest.replace_with_temp(temp_dest)
 
 def extract7z(src_archive, extract_dir, progress=None, read_exts=None,
               recursive=False, filelist_to_extract=None):

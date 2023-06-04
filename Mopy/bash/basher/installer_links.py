@@ -49,6 +49,7 @@ from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, InstallerProject, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
+from ..wbtemp import cleanup_temp_dir
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
            'Installer_OpenSearch', 'Installer_CaptureFomodOutput',
@@ -283,7 +284,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
         if working_on_archive:
             # We no longer need the temp directory since we copied everything
             # to the final project, so clean it up
-            bass.rmTempDir()
+            cleanup_temp_dir(src_folder)
         with balt.Progress(_('Creating Project...')) as prog:
             self.idata.new_info(pr_path, prog,
                                 install_order=sel_package.order + 1)
@@ -950,6 +951,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
                 unpack_dir.moveTo(ijoin(fn_conflicts_dir, g_path))
+                cleanup_temp_dir(unpack_dir) # Mark as cleaned up internally
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_('Copying Conflicts...')) as progress:

@@ -37,7 +37,6 @@ import string
 import struct
 import subprocess
 import sys
-import tempfile
 import textwrap
 import traceback as _traceback
 import webbrowser
@@ -57,6 +56,7 @@ except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
 from . import exception
+from .wbtemp import TempFile
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -969,20 +969,21 @@ class Path(os.PathLike):
         except AttributeError:
             self._cext = self.ext.lower()
             return self._cext
-    @property
-    def temp(self):
-        """Temp file path."""
-        baseDir = GPath(tempfile.gettempdir()).join('WryeBash_temp')
-        baseDir.makedirs()
-        return baseDir.join(self.tail + u'.tmp')
 
-    @staticmethod
-    def tempDir(prefix='WryeBash_'):
-        return GPath(tempfile.mkdtemp(prefix=prefix))
+    def replace_with_temp(self, temp_path: str | os.PathLike):
+        """Replace this file with a temporary version created via TempFile or
+        new_temp_file, optionally making a backup of this file first. Note that
+        this *does not work for directories!* It is only intended for files.
 
-    @staticmethod
-    def baseTempDir():
-        return GPath(tempfile.gettempdir())
+        This also does not remove the temporary file from the internal caches
+        so as to work with TempFile."""
+        try:
+            shutil.move(temp_path, self._s)
+        except PermissionError:
+            self.clearRO()
+            shutil.move(temp_path, self._s)
+        # Do *not* call cleanup_temp_file here! This method needs to work with
+        # TempFile, which will already call cleanup_temp_file for us
 
     @property
     def backup(self):
@@ -1120,6 +1121,8 @@ class Path(os.PathLike):
         else:
             clearReadOnly(self)
 
+    ##: Deprecated, replace with regular open() where possible to help erode
+    # Path dependencies all over WB
     def open(self,*args,**kwdargs):
         try:
             return open(self._s, *args, **kwdargs)
@@ -1159,7 +1162,7 @@ class Path(os.PathLike):
         if self.is_dir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
 
-    #--start, move, copy, touch, untemp
+    #--start, move, copy
     def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
@@ -1207,23 +1210,6 @@ class Path(os.PathLike):
         except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
-
-    def untemp(self,doBackup=False):
-        """Replaces file with temp version, optionally making backup of file first."""
-        if self.temp.exists():
-            if self.exists():
-                if doBackup:
-                    self.backup.remove()
-                    shutil.move(self._s, self.backup._s)
-                else:
-                    # this will fail with Access Denied (!) if self._s is
-                    # (unexpectedly) a directory
-                    try:
-                        os.remove(self._s)
-                    except PermissionError:
-                        self.clearRO()
-                        os.remove(self._s)
-            shutil.move(self.temp._s, self._s)
 
     def editable(self):
         """Safely check whether a file is editable."""
@@ -1983,10 +1969,15 @@ class PickleDict(object):
         VDATA3."""
         if self.readOnly: return False
         #--Pickle it
-        with self._pkl_path.temp.open(u'wb') as out:
-            for pkl in (u'VDATA3', self.vdata, self.pickled_data):
-                pickle.dump(pkl, out, -1)
-        self._pkl_path.untemp(doBackup=True)
+        with TempFile() as temp_pkl:
+            with open(temp_pkl, 'wb') as out:
+                for pkl in ('VDATA3', self.vdata, self.pickled_data):
+                    pickle.dump(pkl, out, -1)
+            try:
+                self._pkl_path.copyTo(self._pkl_path.backup)
+            except FileNotFoundError:
+                pass # No settings file to back up yet, this is fine
+            self._pkl_path.replace_with_temp(temp_pkl)
         return True
 
 #------------------------------------------------------------------------------

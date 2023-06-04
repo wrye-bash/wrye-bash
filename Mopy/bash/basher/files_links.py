@@ -26,6 +26,7 @@ from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
+from ..wbtemp import TempFile
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
            u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
@@ -232,11 +233,11 @@ class File_RevertToSnapshot(OneItemLink):
             'target_file_name': fileName, 'snapsnot_file_name': snapName,
             'snapshot_date': format_date(snapPath.mtime)})
         if not self._askYes(message, _(u'Revert to Snapshot')): return
-        with BusyCursor():
+        with BusyCursor(), TempFile() as known_good_copy:
             destPath = self._selected_info.abs_path
             current_mtime = destPath.mtime
-            # Make a temp backup first in case reverting to snapshot fails
-            destPath.copyTo(destPath.temp)
+            # Make a temp copy first in case reverting to snapshot fails
+            destPath.copyTo(known_good_copy)
             snapPath.copyTo(destPath)
             # keep load order but recalculate the crc
             self._selected_info.setmtime(current_mtime, crc_changed=True)
@@ -255,7 +256,7 @@ class File_RevertToSnapshot(OneItemLink):
                                               'snapshot_file_name': snapName},
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
-                    destPath.untemp()
+                    destPath.replace_with_temp(known_good_copy)
                     self._data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
@@ -268,7 +269,7 @@ class File_Backup(ItemLink):
 
     def Execute(self):
         for fileInfo in self.iselected_infos():
-            fileInfo.makeBackup(True)
+            fileInfo.makeBackup(forceBackup=True)
 
 #------------------------------------------------------------------------------
 class _RevertBackup(OneItemLink):
@@ -299,10 +300,10 @@ class _RevertBackup(OneItemLink):
                     '%(backup_date)s?') % {'target_file_name': sel_file,
                                            'backup_date': backup_date_fmt}
         if not self._askYes(message): return
-        with BusyCursor():
-            # Make a temp backup first in case reverting to backup fails
+        with BusyCursor(), TempFile() as known_good_copy:
+            # Make a temp copy first in case reverting to backup fails
             info_path = self._selected_info.abs_path
-            info_path.copyTo(info_path.temp)
+            info_path.copyTo(known_good_copy)
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
@@ -318,7 +319,7 @@ class _RevertBackup(OneItemLink):
                                               'backup_date': backup_date_fmt},
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
-                    info_path.untemp()
+                    info_path.replace_with_temp(known_good_copy)
                     self._data_store.new_info(sel_file, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)

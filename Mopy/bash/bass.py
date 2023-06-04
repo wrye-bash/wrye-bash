@@ -65,35 +65,6 @@ def update_sys_argv(arg):
         if not arg[0] in sys_argv:
             sys_argv.append(arg[0])
 
-#--Temp Files/Dirs - originally in Installer, probably belong to a new module
-################################## DO NOT USE #################################
-_tempDir: Path | None = None
-
-def getTempDir():
-    """Return current Temp Dir, generating one if needed."""
-    return _tempDir if _tempDir is not None else newTempDir()
-
-def rmTempDir():
-    """Remove the current temporary directory, and set the current Temp Dir to
-       None - meaning a new one will be generated on getTempDir()"""
-    global _tempDir
-    if _tempDir is None:
-        return
-    try:
-        _tempDir.rmtree(safety=_tempDir.stail)
-    except OSError:
-        from .bolt import deprint
-        deprint(f'Failed to remove {_tempDir}', traceback=True)
-    _tempDir = None
-
-def newTempDir():
-    """Generate a new temporary directory name, set it as the current Temp
-    Dir."""
-    global _tempDir
-    from .bolt import Path
-    _tempDir = Path.tempDir()
-    return _tempDir
-
 def get_ini_option(ini_parser, option_key, section_key=u'General'):
     if not ini_parser:
         return None

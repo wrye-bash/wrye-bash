@@ -25,7 +25,7 @@ import os
 import tempfile
 
 from ..archives import compress7z, extract7z
-from ..bolt import FName, GPath
+from ..bolt import GPath
 
 _utils_dir = GPath(os.path.join(os.path.dirname(__file__), 'utils'))
 
@@ -35,17 +35,16 @@ def test_compress_extract_with_spaces(capsys):
         with tempfile.TemporaryDirectory(prefix='dir with spaces') as dirname:
             print('created temporary directory', dirname)
             # Compress
-            out_fname = FName('output archive.7z')
-            full_out = GPath(os.path.join(dirname, out_fname))
+            full_out = GPath(os.path.join(dirname, 'output archive.7z'))
             # check "temp_list" arg, for excluding files from compression
             templist = os.path.join(dirname, 'temp list.txt')
-            with open(templist, 'w', encoding=u'utf-8-sig') as out:
+            with open(templist, 'w', encoding='utf-8') as out:
                 out.write(u'*thumbs.db\n')
             try:
                 with open(thumbs := os.path.join(_utils_dir, 'thumbs.db'),
                           'w'):
                     print(f'creating {thumbs}')
-                compress7z(full_out, out_fname, _utils_dir, temp_list=templist)
+                compress7z(full_out, _utils_dir, temp_list=templist)
             finally:
                 try:
                     os.remove(thumbs) ##: needed?

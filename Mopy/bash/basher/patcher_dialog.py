@@ -29,7 +29,7 @@ from datetime import timedelta
 
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath_no_norm, Path, SubProgress
+from ..bolt import GPath_no_norm, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
     PluginsFullError, SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
@@ -38,6 +38,7 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning
 from ..patcher import exportConfig
+from ..wbtemp import TempDir
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
@@ -199,27 +200,29 @@ class PatchDialog(DialogWindow):
             data_docs_dir = bosh.modInfos.store_dir.join('Docs')
             readme = data_docs_dir.join(patch_name.fn_body + '.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
-            tempReadmeDir = Path.tempDir().join(u'Docs')
-            tempReadme = tempReadmeDir.join(patch_name.fn_body + u'.txt')
-            #--Write log/readme to temp dir first
-            with tempReadme.open(u'w', encoding=u'utf-8-sig') as file:
-                file.write(logValue)
-            #--Convert log/readmeto wtxt
-            bolt.WryeText.genHtml(tempReadme,None,docsDir)
-            #--Try moving temp log/readme to Docs dir
-            try:
-                env.shellMove({tempReadmeDir: data_docs_dir}, parent=self)
-            except (CancelError,SkipError):
-                # User didn't allow UAC, move to My Games directory instead
-                tempReadmeHtml = tempReadme.root + '.html'
-                readme_moves = {
-                    tempReadme: bass.dirs['saveBase'].join(tempReadme.tail),
-                    tempReadmeHtml: bass.dirs['saveBase'].join(tempReadmeHtml.tail)
-                }
-                env.shellMove(readme_moves, parent=self)
-                readme = bass.dirs[u'saveBase'].join(readme.tail)
-            #finally:
-            #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
+            with TempDir(temp_prefix='Docs') as trd:
+                temp_readme_dir = GPath_no_norm(trd)
+                temp_readme = temp_readme_dir.join(patch_name.fn_body + '.txt')
+                #--Write log/readme to temp dir first
+                with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
+                    file.write(logValue)
+                #--Convert log/readme to wtxt
+                bolt.WryeText.genHtml(temp_readme, None, docsDir)
+                #--Try moving temp log/readme to Docs dir
+                try:
+                    env.shellMove({temp_readme_dir: data_docs_dir},
+                        parent=self)
+                except (CancelError, SkipError):
+                    # User didn't allow UAC, move to My Games directory instead
+                    temp_readme_html = temp_readme.root + '.html'
+                    readme_moves = {
+                        temp_readme: bass.dirs['saveBase'].join(
+                            temp_readme.stail),
+                        temp_readme_html: bass.dirs['saveBase'].join(
+                            temp_readme_html.stail)
+                    }
+                    env.shellMove(readme_moves, parent=self)
+                    readme = bass.dirs['saveBase'].join(readme.stail)
             readme = readme.root + u'.html'
             self.patchInfo.set_table_prop(u'doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])

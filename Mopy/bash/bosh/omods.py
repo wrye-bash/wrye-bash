@@ -29,8 +29,9 @@ import subprocess
 from .. import archives, bass, bolt, env
 from ..bolt import Path, decoder, encode, pack_byte, pack_byte_signed, \
     pack_int_signed, popen_common, startupinfo, unpack_byte, \
-    unpack_int64_signed, unpack_int_signed, unpack_short
+    unpack_int64_signed, unpack_int_signed, unpack_short, GPath_no_norm
 from ..exception import StateError
+from ..wbtemp import TempDir, TempFile
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -129,29 +130,27 @@ class OmodFile(object):
         return filesizes, sum(filesizes.values())
 
     def extractToProject(self, outDir: Path, progress=None):
-        """Extract the contents of the omod to a project, with omod conversion data"""
+        """Extract the contents of the OMOD to a project, with OMOD conversion
+        data."""
         progress = progress if progress else bolt.Progress()
-        extractDir = stageBaseDir = Path.tempDir()
-        stageDir = stageBaseDir.join(outDir.tail)
-        try:
-            stail_ = f'{self.omod_path.stail}\n'
-            progress(0, stail_ + _('Extracting...'))
-            if self._is_fomod:
-                self._extract_fomod(extractDir, stageDir)
-            else:
-                self._extract_omod(progress, extractDir, stageDir)
-            progress(1, stail_ + _('Extracted'))
-            # Move files to final directory
-            env.shellMove({stageDir: outDir}, ask_confirm=True, allow_undo=True,
-                auto_rename=True)
-        except Exception:
-            # Error occurred, see if final output dir needs deleting
-            env.shellDeletePass(outDir, parent=progress.getParent())
-            raise
-        finally:
-            # Clean up temp directories
-            extractDir.rmtree(safety=extractDir.stail)
-            stageBaseDir.rmtree(safety=stageBaseDir.stail)
+        with TempDir() as ed_temp, TempDir() as stage_base_dir:
+            extract_dir = GPath_no_norm(ed_temp)
+            stage_dir = GPath_no_norm(stage_base_dir).join(outDir.stail)
+            try:
+                stail_fmt = f'{self.omod_path.stail}\n'
+                progress(0, f"{stail_fmt}{_('Extracting...')}")
+                if self._is_fomod:
+                    self._extract_fomod(extract_dir, stage_dir)
+                else:
+                    self._extract_omod(progress, extract_dir, stage_dir)
+                progress(1, f"{stail_fmt}{_('Extracted')}")
+                # Move files to final directory
+                env.shellMove({stage_dir: outDir}, ask_confirm=True,
+                    allow_undo=True, auto_rename=True)
+            except Exception:
+                # Error occurred, see if final output dir needs deleting
+                env.shellDeletePass(outDir, parent=progress.getParent())
+                raise
 
     def _extract_omod(self, progress, extractDir, stageDir):
         """Extracts a .omod file into stageDir. They have configs that we need
@@ -221,11 +220,8 @@ class OmodFile(object):
         pretty much just renamed .7z files. They don't pack files into binary
         blobs, they just contain a folder-and-files structure like any other
         archive."""
-        # Needed since stageDir is a subdir of extractDir. We can't move a
-        # parent dir into its subdir (duh), so just make a small temp subdir
-        temp_extract = extractDir.join(u'out')
-        archives.extract7z(self.omod_path, temp_extract)
-        env.shellMove({temp_extract: stageDir})
+        archives.extract7z(self.omod_path, extractDir)
+        env.shellMove({extractDir: stageDir})
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
@@ -337,15 +333,17 @@ class OmodConfig(object):
         configPath = bass.dirs[u'installers'].join(self.omod_proj,
             u'omod conversion data', u'config')
         configPath.head.makedirs()
-        with open(configPath.temp,u'wb') as out:
-            pack_byte(out, 4)
-            _writeNetString(out, self.omod_proj.encode(u'utf8'))
-            pack_int_signed(out, self.vMajor)
-            pack_int_signed(out, self.vMinor)
-            for attr in (u'omod_author', u'email', u'website', u'abstract'):
-                # OBMM reads it fine if in UTF-8, so we'll do that.
-                _writeNetString(out, getattr(self, attr).encode(u'utf-8'))
-            out.write(b'\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            pack_byte_signed(out, 0) #--zip compression (will be ignored)
-            out.write(b'\xFF\xFF\xFF\xFF')
-        configPath.untemp()
+        with TempFile() as tmp_config:
+            with open(tmp_config, 'wb') as out:
+                pack_byte(out, 4)
+                _writeNetString(out, self.omod_proj.encode('utf-8'))
+                pack_int_signed(out, self.vMajor)
+                pack_int_signed(out, self.vMinor)
+                for attr in ('omod_author', 'email', 'website', 'abstract'):
+                    # OBMM reads it fine if in UTF-8, so we'll do that.
+                    _writeNetString(out, getattr(self, attr).encode('utf-8'))
+                # Some random date and time
+                out.write(b'\x74\x1a\x74\x67\xf2\x7a\xca\x88')
+                pack_byte_signed(out, 0) #--zip compression (will be ignored)
+                out.write(b'\xFF\xFF\xFF\xFF')
+            configPath.replace_with_temp(tmp_config)

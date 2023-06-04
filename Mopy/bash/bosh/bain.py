@@ -48,6 +48,7 @@ from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..gui import askYes ##: YAK
 from ..ini_files import OBSEIniFile, supported_ini_exts
+from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
 os_sep = os.path.sep ##: track
 
@@ -137,8 +138,6 @@ class Installer(ListInfo):
         user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split('|')
         InstallersData.installers_dir_skips.update(
             skipped.lower() for skipped in user_skipped if skipped)
-
-    tempList = Path.baseTempDir().join(u'WryeBash_InstallerTempList.txt')
 
     #--Class Methods ----------------------------------------------------------
     @staticmethod
@@ -1023,22 +1022,16 @@ class Installer(ListInfo):
         when syncing from Data."""
         if not self.num_of_files: return
         outDir = bass.dirs[u'installers']
-        realOutFile = outDir.join(fn_archive)
-        project = outDir.join(project)
         #--Dump file list
-        ##: We don't use a BOM for tempList in unpackToTemp...
-        with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
-            if release:
-                out.write(u'*thumbs.db\n')
-                out.write(u'*desktop.ini\n')
-                out.write(u'*meta.ini\n')
-                out.write(u'--*\\')
-        #--Compress
-        try:
-            compress7z(realOutFile, fn_archive, project, progress,
-                is_solid=isSolid, temp_list=self.tempList, blockSize=blockSize)
-        finally:
-            self.tempList.remove()
+        with TempFile(temp_prefix='temp_list', temp_suffix='.txt') as tl:
+            with open(tl, 'w', encoding='utf-8') as out:
+                if release:
+                    out.write('*thumbs.db\n')
+                    out.write('*desktop.ini\n')
+                    out.write('*meta.ini\n')
+                    out.write('--*\\')
+            compress7z(outDir.join(fn_archive), outDir.join(project), progress,
+                       is_solid=isSolid, temp_list=tl, blockSize=blockSize)
 
     def _do_sync_data(self, proj_dir, delta_files: set[CIstr], progress):
         """Performs a Sync From Data on the specified project directory with
@@ -1070,8 +1063,21 @@ class Installer(ListInfo):
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
     def _open_txt_file(self, rel_path): raise NotImplementedError
-    def wizard_file(self): raise NotImplementedError
-    def fomod_file(self): raise NotImplementedError
+
+    def _make_wizard_file_dir(self, wizard_file_name):
+        """Abstract method that should return a directory containing the
+        specified wizard file and all files needed to run it."""
+        raise NotImplementedError
+
+    def get_wizard_file_dir(self):
+        """Return a path to a directory containing all files needed for a
+        BAIN wizard to run."""
+        return self._make_wizard_file_dir(self.hasWizard)
+
+    def get_fomod_file_dir(self):
+        """Return a path to a directory containing all files needed for an
+        FOMOD to run."""
+        return self._make_wizard_file_dir(self.has_fomod_conf)
 
     #--ABSTRACT ---------------------------------------------------------------
     def install(self, destFiles, progress=None):
@@ -1122,7 +1128,8 @@ class Installer(ListInfo):
                 fs_operation(sources_dests, progress.getParent())
         finally:
             #--Clean up unpack dir if we're an archive
-            if unpackDir: bass.rmTempDir()
+            if unpackDir:
+                cleanup_temp_dir(unpackDir)
         #--Update Installers data
         return data_sizeCrcDate_update, mods, inis, bsas
 
@@ -1370,31 +1377,29 @@ class InstallerArchive(_InstallerPackage):
             raise InstallerArchiveError(archive_msg)
 
     def unpackToTemp(self, fileNames, progress=None, recurse=False):
-        """Erases all files from self.tempDir and then extracts specified files
-        from archive to self.tempDir. progress will be zeroed so pass a
-        SubProgress in.
-        fileNames: File names (not paths)."""
+        """Extract specified files from archive to a temporary directory.
+        progress will be zeroed so pass a SubProgress in. Returns the path of
+        the temporary directory the files were extracted to, the caller is
+        responsible for cleaning it up.
+
+        :param fileNames: File names (not paths)."""
         if not fileNames:
             raise ArgumentError(f'No files to extract for {self}.')
-        # expand wildcards in fileNames to get actual count of files to extract
-        #--Dump file list
-        with self.tempList.open(u'w', encoding=u'utf8') as out:
-            out.write(u'\n'.join(fileNames))
-        #--Ensure temp dir empty
-        bass.rmTempDir()
         if progress:
             progress.state = 0
             progress.setFull(len(fileNames))
-        #--Extract files
-        unpack_dir = bass.getTempDir()
-        try:
-            extract7z(self.abs_path, unpack_dir, progress, recursive=recurse,
-                      filelist_to_extract=self.tempList)
-        finally:
-            self.tempList.remove()
-            bolt.clearReadOnly(unpack_dir)
-        #--Done -> don't clean out temp dir, it's going to be used soon
-        return unpack_dir
+        with TempFile(temp_prefix='temp_list', temp_suffix='.txt') as tl:
+            with open(tl, 'w', encoding='utf8') as out:
+                out.write('\n'.join(fileNames))
+            unpack_dir = new_temp_dir()
+            try:
+                extract7z(self.abs_path, unpack_dir, progress,
+                    recursive=recurse, filelist_to_extract=tl)
+            finally:
+                ##: Why are we doing this at all? We have a ton of extract7z
+                # calls, but only two do clearReadOnly afterwards
+                bolt.clearReadOnly(unpack_dir)
+        return GPath_no_norm(unpack_dir)
 
     def _install(self, dest_src, progress):
         #--Extract
@@ -1434,7 +1439,7 @@ class InstallerArchive(_InstallerPackage):
                 count += 1
             except StateError: # Path does not exist
                 pass
-        bass.rmTempDir()
+        cleanup_temp_dir(unpack_dir)
         return count
 
     @staticmethod
@@ -1459,19 +1464,17 @@ class InstallerArchive(_InstallerPackage):
 
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
-            # This is going to leave junk temp files behind...
+            # Let the atexit handler clean up these temp files. Some editors do
+            # not appreciate us pulling the file out from under them and we
+            # can't exactly make WB wait for the editor to close
             try:
                 unpack_dir = self.unpackToTemp([rel_path])
                 unpack_dir.join(rel_path).start()
             except OSError:
-                # Don't clean up temp dir here.  Sometimes the editor
-                # That starts to open the wizard.txt file is slower than
-                # Bash, and the file will be deleted before it opens.
-                # Just allow Bash's atexit function to clean it when quitting.
                 pass
 
-    def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
-        with balt.Progress(wizard_prog_title, abort=True) as progress:
+    def _make_wizard_file_dir(self, wizard_file_name):
+        with balt.Progress(_('Extracting images...'), abort=True) as progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
             image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
@@ -1480,15 +1483,8 @@ class InstallerArchive(_InstallerPackage):
                                     x.lower().endswith(image_exts))
             unpack_dir = self.unpackToTemp(files_to_extract, progress,
                                            recurse=True)
-        return unpack_dir.join(wizard_file_name)
-
-    def wizard_file(self):
-        return self._extract_wizard_files(self.hasWizard,
-                                          _(u'Extracting wizard files...'))
-
-    def fomod_file(self):
-        return self._extract_wizard_files(self.has_fomod_conf,
-                                          _(u'Extracting FOMOD files...'))
+        # Cleaned up by the wizard GUI clients
+        return unpack_dir
 
     def sync_from_data(self, delta_files: set[CIstr], progress):
         # Extract to a temp project, then perform the sync as if it were a
@@ -1500,7 +1496,7 @@ class InstallerArchive(_InstallerPackage):
         self.packToArchive(unpack_dir, self.writable_archive_name(),
                            isSolid=True, blockSize=None,
                            progress=SubProgress(progress, 0.5, 1.0))
-        bass.rmTempDir()
+        cleanup_temp_dir(unpack_dir)
         return upt_numb, del_numb
 
     def writable_archive_name(self):
@@ -1647,9 +1643,8 @@ class InstallerProject(_InstallerPackage):
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def wizard_file(self): return self.abs_path.join(self.hasWizard)
-
-    def fomod_file(self): return self.abs_path.join(self.has_fomod_conf)
+    def _make_wizard_file_dir(self, _wizard_file_name):
+        return self.abs_path # Wizard file already exists here
 
 #------------------------------------------------------------------------------
 class InstallersData(DataStore):
@@ -2010,7 +2005,7 @@ class InstallersData(DataStore):
             srcBcfFile = unpack_dir.join(installer.hasBCF)
             bcfFile = bass.dirs['converters'].join('temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
-            bass.rmTempDir()
+            cleanup_temp_dir(unpack_dir)
             #--Create the converter, apply it
             converter = InstallerConverter.from_path(bcfFile)
             try:

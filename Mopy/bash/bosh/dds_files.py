@@ -41,6 +41,7 @@ from struct import Struct
 
 from ..bolt import AFile, Flags, flag, unpack_4s, unpack_int
 from ..exception import DDSError
+from ..wbtemp import TempFile
 
 # Constants
 _HEADER_MAGIC = b'DDS '
@@ -623,7 +624,7 @@ class DDSFile(AFile):
         """Writes this DDS file to the specified path. If out_path is None,
         this file's own path will be used."""
         out_path = out_path or self.abs_path
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(self.dump_file())
 
     def write_file_safe(self, out_path=None):
@@ -631,8 +632,9 @@ class DDSFile(AFile):
         file in-between in case something goes wrong while dumping. If out_path
         is None, this file's own path will be used."""
         out_path = out_path or self.abs_path
-        self.write_file(out_path.temp)
-        out_path.untemp()
+        with TempFile() as tmp_path:
+            self.write_file(tmp_path)
+            out_path.replace_with_temp(tmp_path)
 
     def _reset_cache(self, stat_tuple, **kwargs):
         super()._reset_cache(stat_tuple, **kwargs)

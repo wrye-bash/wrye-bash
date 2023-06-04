@@ -35,6 +35,7 @@ from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
     TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
     copy_text_to_clipboard, showWarning
+from ..wbtemp import cleanup_temp_dir
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -107,12 +108,13 @@ class InstallerFomod(WizardDialog):
     def __init__(self, parent_window, target_installer, show_install_chkbox):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
-        self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
+        files_list = [a[0] for a in target_installer.fileSizeCrcs]
         # All extracted files need to be specified relative to this root path
         self.installer_root = (
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
-        fm_file = target_installer.fomod_file().s
+        self._fomod_dir = target_installer.get_fomod_file_dir()
+        fm_file = self._fomod_dir.join(target_installer.has_fomod_conf).s
         self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
         test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
@@ -124,20 +126,15 @@ class InstallerFomod(WizardDialog):
             gver = get_game_version_fallback(test_path, bush.ws_info)
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
-            fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
+            fm_file, files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
             title=_('FOMOD Installer - %(fomod_title)s') % {
                 'fomod_title': self.fomod_parser.fomod_name},
             size_key='bash.fomod.size', pos_key='bash.fomod.pos')
-        self.is_arch = target_installer.is_archive
-        if self.is_arch:
-            self.archive_path = bass.getTempDir()
-        else:
-            self.archive_path = target_installer.abs_path
+        self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
-        self.first_page = True
 
     def save_size(self): ##: needed?
         # Otherwise, regular resize, save the size if we're not maximized
@@ -191,9 +188,8 @@ class InstallerFomod(WizardDialog):
             self.fm_ret.install_files = bolt.LowerDict({
                 v: k for k, v
                 in self.fomod_parser.get_fomod_files().items()})
-        # Clean up temp files
-        if self.is_arch:
-            bass.rmTempDir()
+        if self._is_arch:
+            cleanup_temp_dir(self._fomod_dir)
         return self.fm_ret
 
     def validate_fomod(self):
@@ -217,9 +213,9 @@ class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
-    def __init__(self, page_parent):
+    def __init__(self, page_parent: InstallerFomod):
         super(PageInstaller, self).__init__(page_parent)
-        self._page_parent = page_parent # type: InstallerFomod
+        self._page_parent = page_parent
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
@@ -230,18 +226,16 @@ class PageSelect(PageInstaller):
     description for each option, shown when that item is selected."""
     # Syntax: tuple containing text to show for an option of this type and a
     # boolean indicating whether to mark the text as a warning or not
-    _option_type_info = defaultdict(lambda: ('', False))
-    _option_type_info[OptionType.REQUIRED] = (
-        _('This option is required.'), False)
-    _option_type_info[OptionType.RECOMMENDED] = (
-        _('This option is recommended.'), False)
-    _option_type_info[OptionType.COULD_BE_USABLE] = (
-        _('This option could result in instability.'), True)
-    _option_type_info[OptionType.NOT_USABLE] = (
-        _('This option cannot be selected.'), True)
+    _option_type_info = defaultdict(lambda: ('', False), {
+        OptionType.REQUIRED: (_('This option is required.'), False),
+        OptionType.RECOMMENDED: (_('This option is recommended.'), False),
+        OptionType.COULD_BE_USABLE: (_('This option could result in '
+                                       'instability.'), True),
+        OptionType.NOT_USABLE: (_('This option cannot be selected.'), True),
+    })
+    group_option_map: defaultdict[InstallerGroup, list[RadioButton | CheckBox]]
 
-    def __init__(self, page_parent, inst_page):
-        """:type inst_page: InstallerPage"""
+    def __init__(self, page_parent, inst_page: InstallerPage):
         super(PageSelect, self).__init__(page_parent)
         # For runtime retrieval of option/checkable info
         self.checkable_to_option = {}
@@ -412,7 +406,7 @@ class PageSelect(PageInstaller):
         opt_img = option.option_image
         # Note that these are almost always Windows paths, so we have to
         # convert them if we're on Linux
-        opt_img_path = to_os_path(self._page_parent.archive_path.join(
+        opt_img_path = to_os_path(self._page_parent._fomod_dir.join(
             self._page_parent.installer_root, opt_img))
         self._current_image = opt_img_path # To allow opening via double click
         try:
@@ -559,7 +553,7 @@ class _GroupLink(EnabledLink):
             'curr_fomod_group': self.selected_group.group_name}
 
     @property
-    def selected_group(self): # type: () -> InstallerGroup
+    def selected_group(self) -> InstallerGroup:
         """Returns the group that the clicked on option belongs to."""
         return self.window.checkable_to_group[self.selected]
 

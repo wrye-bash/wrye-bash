@@ -30,6 +30,7 @@ from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
+from ..wbtemp import TempFile
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
@@ -824,38 +825,38 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader.from_info(self.modInfo) as ins:
-            with ShortFidWriteContext(minfo_path.temp) as out:
-                while not ins.atEnd():
-                    progress(ins.tell())
-                    header = unpack_header(ins)
-                    _rsig = header.recType
-                    out.write(header.pack_head()) # copy the GRUP/record header
-                    if (header.is_top_group_header and header.label != b'CELL'
-                        # treat CELL block subgroups record by record - analyze
+        with TempFile() as out_path:
+            with ModReader.from_info(self.modInfo) as ins:
+                with ShortFidWriteContext(out_path) as out:
+                    while not ins.atEnd():
+                        progress(ins.tell())
+                        header = unpack_header(ins)
+                        _rsig = header.recType
+                        # Copy the GRUP/record header
+                        out.write(header.pack_head())
+                        # Treat CELL block subgroups record by record - analyze
                         # CELLs but just copy cell-children records over. If
                         # _rsig == GRUP no need to do anything (copied above)
-                            ) or (_rsig != b'GRUP' and _rsig != b'CELL'):
-                        buff = ins.read(header.blob_size)
-                        out.write(buff)
-                    #--Handle cells
-                    elif _rsig == b'CELL':
-                        next_header = ins.tell() + header.blob_size
-                        while ins.tell() < next_header:
-                            subrec = SubrecordBlob(ins, _rsig)
-                            if subrec.mel_sig == b'XCLL':
-                                color, near, far, rotXY, rotZ, fade, clip = \
-                                    __unpacker(subrec.mel_data)
-                                if not (near or far or clip):
-                                    near = 0.0001
-                                    subrec.mel_data = __packer(color, near,
-                                        far, rotXY, rotZ, fade, clip)
-                                    fixedCells.add(header.fid)
-                            subrec.packSub(out, subrec.mel_data)
-        #--Done
-        if fixedCells:
-            self.modInfo.makeBackup()
-            minfo_path.untemp()
-            self.modInfo.setmtime(crc_changed=True) # fog fixes
-        else:
-            minfo_path.temp.remove()
+                        if ((header.is_top_group_header and
+                             header.label != b'CELL') or
+                                _rsig != b'GRUP' and _rsig != b'CELL'):
+                            buff = ins.read(header.blob_size)
+                            out.write(buff)
+                        #--Handle cells
+                        elif _rsig == b'CELL':
+                            next_header = ins.tell() + header.blob_size
+                            while ins.tell() < next_header:
+                                subrec = SubrecordBlob(ins, _rsig)
+                                if subrec.mel_sig == b'XCLL':
+                                    color, near, far, rotXY, rotZ, fade, \
+                                        clip = __unpacker(subrec.mel_data)
+                                    if not (near or far or clip):
+                                        near = 0.0001
+                                        subrec.mel_data = __packer(color, near,
+                                            far, rotXY, rotZ, fade, clip)
+                                        fixedCells.add(header.fid)
+                                subrec.packSub(out, subrec.mel_data)
+            if fixedCells:
+                self.modInfo.makeBackup()
+                minfo_path.replace_with_temp(out_path)
+                self.modInfo.setmtime(crc_changed=True) # fog fixes

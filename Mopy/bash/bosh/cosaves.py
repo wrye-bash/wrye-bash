@@ -38,9 +38,11 @@ from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
     pack_byte, pack_double, pack_float, pack_int, pack_int_signed, \
     pack_short, struct_error, struct_pack, struct_unpack, unpack_4s, \
     unpack_byte, unpack_double, unpack_float, unpack_int, unpack_int_signed, \
-    unpack_short, unpack_spaced_string, unpack_str16, unpack_str32
+    unpack_short, unpack_spaced_string, unpack_str16, unpack_str32, \
+    GPath_no_norm
 from ..exception import BoltError, CosaveError, InvalidCosaveError, \
     UnsupportedCosaveError
+from ..wbtemp import TempFile
 
 # TODO(inf) All the chunk_length stuff needs to be reworked: first encode all
 #  unicode strings, then measure the length of the byte sequence, then dump.
@@ -1394,8 +1396,9 @@ class ACosave(_Dumpable, _Remappable, AFile):
         :param out_path: The path to write to. If empty or None, this cosave's
             own path is used instead."""
         out_path = out_path or self.abs_path
-        self.write_cosave(out_path.temp)
-        out_path.untemp()
+        with TempFile() as tmp_path:
+            self.write_cosave(GPath_no_norm(tmp_path))
+            out_path.replace_with_temp(tmp_path)
 
     def get_master_list(self) -> list[str]:
         """Retrieves a list of masters from this cosave. This will read an
@@ -1474,7 +1477,7 @@ class xSECosave(ACosave):
         self.cosave_header.write_header(buff)
         for plugin_ch in self.cosave_chunks:
             plugin_ch.write_chunk(buff)
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(buff.getvalue())
         out_path.mtime = prev_mtime
 
@@ -1655,7 +1658,7 @@ class PluggyCosave(ACosave):
         pack_int(out, out.tell())
         final_data = out.getvalue()
         prev_mtime = self.abs_path.mtime
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(final_data)
             pack_int_signed(out, crc32(final_data))
         out_path.mtime = prev_mtime

@@ -39,9 +39,10 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
-    showOk, askYes, askText, showError, askWarning, showInfo
+    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton
 from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
+from ..wbtemp import default_global_temp_dir
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -421,9 +422,10 @@ class ConfigureEditorDialog(DialogWindow):
             sizes_dict=balt.sizes)
         self._editor_location = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.path'])
-        browse_editor_btn = OpenButton(self, _(u'Browse...'),
-            btn_tooltip=_(u'Launch a file dialog to interactively choose the '
-                          u'editor binary.'))
+        browse_editor_btn = ImageButton(self,
+            balt.images['folder.16'].get_bitmap(),
+            btn_tooltip=_('Open a file dialog to interactively choose the '
+                          'editor binary.'))
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
         self._params_field = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
@@ -727,7 +729,7 @@ class StatusBarPage(_AScrollablePage):
         self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
             value=str(bass.settings[u'bash.statusbar.iconSize']),
-            choices=('16', '24', '32'), dd_tooltip=_(
+            choices=['16', '24', '32'], dd_tooltip=_(
                 'Sets the status bar icons to the selected size in pixels.'))
         self._icon_size_dropdown.on_combo_select.subscribe(
             self._handle_icon_size)
@@ -1280,7 +1282,7 @@ class GeneralPage(_AScrollablePage):
     _gm_reverse = {v: k for k, v in _global_menu_options.items()}
     _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
                     'plugin_encoding', 'update_check_enabled',
-                    'update_check_cooldown', 'uac_restart'}
+                    'update_check_cooldown', 'uac_restart', 'wb_temp_dir'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1322,8 +1324,6 @@ class GeneralPage(_AScrollablePage):
             btn_tooltip=_('Check for Wrye Bash updates right now.'))
         check_now_btn.on_clicked.subscribe(self._on_check_now)
         check_now_btn.enabled = can_check_updates
-        ##: Replace with a dropdown that lets you disable the global menu, the
-        # column menus, or neither
         self._global_menu_dropdown = DropDown(self,
             value=self._gm_reverse[bass.settings['bash.global_menu']],
             choices=sorted(self._global_menu_options),
@@ -1331,8 +1331,11 @@ class GeneralPage(_AScrollablePage):
                          'column header menus, or both should be enabled.'))
         self._global_menu_dropdown.on_combo_select.subscribe(
             self._on_global_menu)
-        # Hide the option on Linux - see refresh_global_menu_visibility
-        self._global_menu_dropdown.visible = os_name == 'nt'
+        global_menu_label = Label(self, _('Global or Column Menu:'))
+        # Hide the whole section on Linux - see refresh_global_menu_visibility
+        if os_name != 'nt':
+            global_menu_label.visible = False
+            self._global_menu_dropdown.visible = False
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
@@ -1348,6 +1351,24 @@ class GeneralPage(_AScrollablePage):
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
         self._uac_restart_checkbox.visible = env.is_uac()
+        ##: This should be on its own page for configuring all kinds of paths,
+        # see #572
+        self._temp_folder_path = TextField(self,
+            init_text=bass.settings['bash.temp_dir'])
+        self._temp_folder_path.on_text_changed.subscribe(
+            self._on_temp_folder_change)
+        browse_temp_folder_btn = ImageButton(self,
+            balt.images['folder.16'].get_bitmap(),
+            btn_tooltip=_('Open a file dialog to interactively choose the '
+                          'path at which Wrye Bash will store temporary '
+                          'files.'))
+        browse_temp_folder_btn.on_clicked.subscribe(
+            self._on_temp_folder_browse)
+        reset_temp_folder_btn = ImageButton(self,
+            balt.images['reset.16'].get_bitmap(),
+            btn_tooltip=_('Reset the path at which Wrye Bash will store '
+                          'temporary files back to its default value.'))
+        reset_temp_folder_btn.on_clicked.subscribe(self._on_temp_folder_reset)
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
@@ -1368,9 +1389,15 @@ class GeneralPage(_AScrollablePage):
                 ]),
                 check_now_btn,
             ]),
+            HBoxedLayout(self, _('Temporary Folder'), spacing=4,
+                item_expand=True, items=[
+                    (self._temp_folder_path, LayoutOptions(weight=1)),
+                    browse_temp_folder_btn,
+                    reset_temp_folder_btn,
+            ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
                 HLayout(spacing=6, items=[
-                    Label(self, _('Global or Column Menu:')),
+                    global_menu_label,
                     self._global_menu_dropdown,
                 ]),
                 self._restore_scroll_checkbox,
@@ -1426,6 +1453,21 @@ class GeneralPage(_AScrollablePage):
                               'Check your Internet connection.'),
                 title=_('Failed To Check for Updates'))
 
+    def _on_temp_folder_change(self, new_temp_dir: str):
+        self._mark_setting_changed('wb_temp_dir',
+            new_temp_dir != bass.settings['bash.temp_dir'])
+
+    def _on_temp_folder_browse(self):
+        chosen_temp_dir = DirOpen.display_dialog(self,
+            title=_('Choose Temporary Folder'),
+            defaultPath=bass.settings['bash.temp_dir'],
+            create_dir=True)
+        if chosen_temp_dir:
+            self._temp_folder_path.text_content = chosen_temp_dir.s
+
+    def _on_temp_folder_reset(self):
+        self._temp_folder_path.text_content = default_global_temp_dir()
+
     def _on_uac_restart(self, checked: bool):
         self._mark_setting_changed(u'uac_restart', checked)
 
@@ -1459,6 +1501,11 @@ class GeneralPage(_AScrollablePage):
         if self._is_changed('update_check_cooldown'):
             new_cooldown = self._update_check_cooldown.spinner_value
             bass.settings['bash.update_check.cooldown'] = new_cooldown
+        # Temporary Folder
+        if self._is_changed('wb_temp_dir'):
+            new_temp_dir = self._temp_folder_path.text_content
+            bass.settings['bash.temp_dir'] = new_temp_dir
+            self._request_restart(_('Temporary Folder'))
         # Show Global Menu
         if self._is_changed('global_menu_state'):
             new_gm_state = self._global_menu_options[

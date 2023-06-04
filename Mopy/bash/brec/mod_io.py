@@ -425,7 +425,7 @@ class FormIdWriteContext:
         utils_constants.short_mapper = self._get_short_mapper()
         utils_constants.short_mapper_no_engine = self._get_short_mapper(
             skip_engine=True)
-        self.__out = self._out_path and self._out_path.open('wb')
+        self.__out = self._out_path and open(self._out_path, 'wb')
         return self.__out
 
     def __exit__(self, exc_type, exc_value, exc_traceback):

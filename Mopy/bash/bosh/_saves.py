@@ -38,6 +38,7 @@ from ..brec import FormId, ModReader, MreRecord, RecordType, \
     ShortFidWriteContext, int_unpacker, unpack_header
 from ..exception import ModError, StateError
 from ..mod_files import LoadFactory, ModFile
+from ..wbtemp import TempFile
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -341,7 +342,7 @@ class SaveFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.canSave:
             raise StateError('Insufficient data to write file.')
-        outPath = outPath or self.fileInfo.getPath()
+        outPath = outPath or self.fileInfo.abs_path
         with ShortFidWriteContext(outPath) as out:
             def _pack(fmt, *args):
                 out.write(structs_cache[fmt].pack(*args))
@@ -396,8 +397,9 @@ class SaveFile(object):
         """Save data to file safely."""
         self.fileInfo.makeBackup()
         filePath = self.fileInfo.getPath()
-        self.save(filePath.temp,progress)
-        filePath.untemp()
+        with TempFile() as tmp_path:
+            self.save(tmp_path, progress)
+            filePath.replace_with_temp(tmp_path)
         self.fileInfo.setmtime()
 
     def addMaster(self, master):

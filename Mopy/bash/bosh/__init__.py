@@ -59,6 +59,7 @@ from ..gui import askYes ##: YAK!
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
+from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
@@ -251,28 +252,18 @@ class FileInfo(AFile, ListInfo):
     def get_hide_dir(self):
         return self.get_store().hidden_dir
 
-    def _doBackup(self,backupDir,forceBackup=False):
-        """Creates backup(s) of file, places in backupDir."""
+    def makeBackup(self, forceBackup=False):
+        """Creates backup(s) of file."""
         #--Skip backup?
         if self not in self.get_store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.get_store().copy_info(self.fn_key, backupDir)
+        self.get_store().copy_info(self.fn_key, self.backup_dir)
         #--First backup
-        firstBackup = backupDir.join(self.fn_key) + u'f'
+        firstBackup = self.backup_dir.join(self.fn_key) + 'f'
         if not firstBackup.exists():
-            self.get_store().copy_info(self.fn_key, backupDir,
-                                       firstBackup.tail)
-
-    def tempBackup(self, forceBackup=True):
-        """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
-        self._doBackup(Path.baseTempDir().join(u'WryeBash_temp_backup'),forceBackup)
-
-    def makeBackup(self, forceBackup=False):
-        """Creates backup(s) of file."""
-        backupDir = self.backup_dir
-        self._doBackup(backupDir,forceBackup)
-        #--Done
+            self.get_store().copy_info(self.fn_key, self.backup_dir,
+                firstBackup.tail)
         self.madeBackup = True
 
     def backup_restore_paths(self, first=False, fname=None):
@@ -657,26 +648,28 @@ class ModInfo(FileInfo):
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
-        with FormIdReadContext.from_info(self) as ins:
-            # If we need to remap masters, construct a remapping write context.
-            # Otherwise we need a regular write context due to ONAM fids
-            aug_masters = [*self.header.masters, self.fn_key]
-            ctx_args = [self.abs_path.temp, aug_masters, self.header.version]
-            if old_masters is not None:
-                write_ctx = RemapWriteContext(old_masters, *ctx_args)
-            else:
-                write_ctx = FormIdWriteContext(*ctx_args)
-            with write_ctx as out:
-                try:
-                    # We already read the file header (in FormIdReadContext),
-                    # so just write out the new one and copy the rest over
-                    self.header.getSize()
-                    self.header.dump(out)
-                    out.write(ins.read(ins.size - ins.tell()))
-                except struct_error as rex:
-                    raise ModError(self.fn_key, f'Struct.error: {rex}')
-        #--Remove original and replace with temp
-        self.abs_path.untemp()
+        with TempFile() as tmp_plugin:
+            with FormIdReadContext.from_info(self) as ins:
+                # If we need to remap masters, construct a remapping write
+                # context. Otherwise we need a regular write context due to
+                # ONAM fids
+                aug_masters = [*self.header.masters, self.fn_key]
+                ctx_args = [tmp_plugin, aug_masters, self.header.version]
+                if old_masters is not None:
+                    write_ctx = RemapWriteContext(old_masters, *ctx_args)
+                else:
+                    write_ctx = FormIdWriteContext(*ctx_args)
+                with write_ctx as out:
+                    try:
+                        # We already read the file header (in
+                        # FormIdReadContext), so just write out the new one and
+                        # copy the rest over
+                        self.header.getSize()
+                        self.header.dump(out)
+                        out.write(ins.read(ins.size - ins.tell()))
+                    except struct_error as rex:
+                        raise ModError(self.fn_key, f'Struct.error: {rex}')
+            self.abs_path.replace_with_temp(tmp_plugin)
         self.setmtime(crc_changed=True)
         #--Merge info
         merge_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
@@ -1302,10 +1295,11 @@ class SaveInfo(FileInfo):
         if not self.abs_path.exists():
             raise SaveFileError(self.abs_path.head, u'File does not exist.')
         self.header.remap_masters(master_map)
-        with self.abs_path.open(u'rb') as ins:
-            with self.abs_path.temp.open(u'wb') as out:
-                self.header.write_header(ins, out)
-        self.abs_path.untemp()
+        with TempFile() as tmp_plugin:
+            with self.abs_path.open('rb') as ins:
+                with open(tmp_plugin, 'wb') as out:
+                    self.header.write_header(ins, out)
+            self.abs_path.replace_with_temp(tmp_plugin)
         if master_map:
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)

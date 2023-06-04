@@ -263,6 +263,17 @@ def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
                 return None
     return _GPath_no_norm(constructed_path)
 
+def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
+    # Let this fail noisily for now
+    fth_head, fth_tail = os.path.split(file_to_hide)
+    if is_hidden:
+        if not fth_tail.startswith('.'):
+            os.rename(file_to_hide, os.path.join(fth_head, f'.{fth_tail}'))
+    else:
+        if fth_tail.startswith('.'):
+            os.rename(file_to_hide, os.path.join(fth_head,
+                fth_tail.lstrip('.')))
+
 # API - Classes ===============================================================
 class TaskDialog(object):
     def __init__(self, title, heading, content, tsk_buttons=(),

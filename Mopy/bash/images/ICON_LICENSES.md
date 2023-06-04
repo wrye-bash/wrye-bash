@@ -19,6 +19,7 @@ All files listed below have been modified to optimize the SVGs.
 
 - `back.svg` is from https://fontawesome.com/icons/arrow-left?s=solid&f=classic.
 - `forward.svg` is from https://fontawesome.com/icons/arrow-right?s=solid&f=classic.
+- `folder.svg` is from https://fontawesome.com/icons/folder?f=classic&s=regular.
 - `calendar.svg` is from https://fontawesome.com/icons/calendar-days?s=solid&f=classic.
 - `checkmark.svg` is from https://fontawesome.com/icons/check?style=solid&s=solid&f=classic.
 - `external_link.svg` is from https://fontawesome.com/icons/arrow-up-right-from-square?s=solid&f=classic.
@@ -49,6 +50,8 @@ They are all licensed under the CC-BY 4.0 license: https://fontawesome.com/licen
 
 - `checklist.svg` is from https://www.svgrepo.com/svg/11307/task-list,
   licensed under the CC0 license: https://creativecommons.org/publicdomain/zero/1.0/
+- `reset.svg` is from https://www.svgrepo.com/svg/370565/reset,
+  licensed under a public domain license: https://www.svgrepo.com/page/licensing#PD
 
 ## Mono Icons
 

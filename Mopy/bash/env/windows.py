@@ -45,6 +45,7 @@ except ImportError:
 import win32api
 import win32com.client as win32client
 import win32gui
+from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
     _LegacyWinAppInfo, _LegacyWinAppVersionInfo
@@ -55,6 +56,7 @@ from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
 from ..exception import BoltError, CancelError, SkipError
+from ..wbtemp import TempFile
 
 # File operations -------------------------------------------------------------
 try:
@@ -1146,20 +1148,16 @@ def get_file_version(filename):
 
 def testUAC(gameDataPath):
     _deprint(u'Testing if game folder is UAC-protected')
-    tmpDir = _Path.tempDir()
-    tempFile = tmpDir.join(u'_tempfile.tmp')
-    dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open(u'wb'): pass # create the file
-    ##: ugh
-    from . import shellDeletePass, shellMove
-    try: # to move it into the Data directory
-        shellMove({tempFile: dest}, silent=True)
-    except PermissionError:
-        global _isUAC
-        _isUAC = True
-    finally:
-        shellDeletePass(tmpDir)
-        shellDeletePass(dest)
+    with TempFile() as tempFile:
+        dest = gameDataPath.join('_tempfile.tmp')
+        from . import shellDeletePass, shellMove ##: ugh
+        try: # to move it into the Data directory
+            shellMove({tempFile: dest}, silent=True)
+        except PermissionError:
+            global _isUAC
+            _isUAC = True
+        finally:
+            shellDeletePass(dest)
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
@@ -1242,6 +1240,17 @@ def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     guarantee that the path exists, so check using exists()/is_file()/etc."""
     # Windows is case-insensitive, nothing to do here
     return _Path(os.fspath(ci_path))
+
+def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
+    """Mark the file with the specified path as hidden or unhidden, based on
+    the value of is_hidden (True == hidden, False == unhidden)."""
+    path_to_hide = os.fspath(file_to_hide)
+    curr_attr_flags = win32api.GetFileAttributes(path_to_hide)
+    if is_hidden:
+        new_attr_flags = curr_attr_flags | FILE_ATTRIBUTE_HIDDEN
+    else:
+        new_attr_flags = curr_attr_flags & ~FILE_ATTRIBUTE_HIDDEN
+    win32api.SetFileAttributes(path_to_hide, new_attr_flags)
 
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section

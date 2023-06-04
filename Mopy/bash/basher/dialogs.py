@@ -25,7 +25,7 @@ from dataclasses import dataclass
 
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
 from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
-from ..bolt import CIstr, FName, text_wrap, top_level_dirs
+from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs
 from ..bosh import InstallerProject, ModInfo, faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
@@ -36,6 +36,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
     MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode
 from ..update_checker import LatestVersion
+from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -222,53 +223,50 @@ class CreateNewProject(DialogWindow):
             return
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
-        tmpDir = bolt.Path.tempDir()
-        tempProject = tmpDir.join(projectName)
-        # Create the directory first, otherwise some of the file creation calls
-        # below may race and cause undebuggable issues
-        tempProject.makedirs()
-        blank_esp_name = f'Blank, {bush.game.displayName}.esp'
-        if self._check_esp.is_checked:
-            bosh.modInfos.create_new_mod(blank_esp_name, dir_path=tempProject)
-        blank_ml_name = f'Blank, {bush.game.displayName} (masterless).esp'
-        if self._check_esp_masterless.is_checked:
-            bosh.modInfos.create_new_mod(blank_ml_name, dir_path=tempProject,
-                                         wanted_masters=[])
-        if self._check_wizard.is_checked:
-            # Create (mostly) empty wizard.txt
-            wizardPath = tempProject.join(u'wizard.txt')
-            with wizardPath.open(u'w', encoding=u'utf-8') as out:
-                out.write(f'; {projectName} BAIN Wizard Installation Script\n')
-                out.write(f'; Created by Wrye Bash v{bass.AppVersion}\n')
-                # Put an example SelectPlugin statement in if possible
-                if self._check_esp.is_checked:
-                    out.write(f'SelectPlugin "{blank_esp_name}"\n')
-                if self._check_esp_masterless.is_checked:
-                    out.write(f'SelectPlugin "{blank_ml_name}"\n')
-        if self._check_fomod.is_checked:
-            # Create (mostly) empty ModuleConfig.xml
-            fomod_path = tempProject.join('fomod')
-            fomod_path.makedirs()
-            module_config_path = fomod_path.join('ModuleConfig.xml')
-            with module_config_path.open('w', encoding='utf-8') as out:
-                out.write(default_moduleconfig % {
-                    'fomod_proj': projectName, 'wb_ver': bass.AppVersion,
-                })
-        if self._check_wizard_images.is_checked:
-            # Create 'Wizard Images' directory
-            tempProject.join(u'Wizard Images').makedirs()
-        if self._check_docs.is_checked:
-            #Create the 'Docs' Directory
-            tempProject.join(u'Docs').makedirs()
-        # HACK: shellMove fails unless it has at least one file - means
-        # creating an empty project fails silently unless we make one
-        # TODO: See if this is still necessary with IFileOperation
-        has_files = bool([*tempProject.ilist()])
-        if not has_files: tempProject.join('temp_hack').makedirs()
-        # Move into the target location
-        # TODO(inf) de-wx! Investigate further
-        env.shellMove({tempProject: projectDir}, parent=self)
-        tmpDir.rmtree(tmpDir.s)
+        with TempDir() as tmp_dir:
+            tmp_project = GPath_no_norm(tmp_dir).join(projectName)
+            # Create the directory first, otherwise some of the file creation
+            # calls below may race and cause undebuggable issues otherwise
+            tmp_project.makedirs()
+            blank_esp_name = f'Blank, {bush.game.displayName}.esp'
+            if self._check_esp.is_checked:
+                bosh.modInfos.create_new_mod(blank_esp_name,
+                    dir_path=tmp_project)
+            blank_ml_name = f'Blank, {bush.game.displayName} (masterless).esp'
+            if self._check_esp_masterless.is_checked:
+                bosh.modInfos.create_new_mod(blank_ml_name,
+                    dir_path=tmp_project, wanted_masters=[])
+            if self._check_wizard.is_checked:
+                wizardPath = tmp_project.join('wizard.txt')
+                with wizardPath.open('w', encoding='utf-8') as out:
+                    out.write(f'; {projectName} BAIN Wizard Installation '
+                              f'Script\n')
+                    out.write(f'; Created by Wrye Bash v{bass.AppVersion}\n')
+                    # Put an example SelectPlugin statement in if possible
+                    if self._check_esp.is_checked:
+                        out.write(f'SelectPlugin "{blank_esp_name}"\n')
+                    if self._check_esp_masterless.is_checked:
+                        out.write(f'SelectPlugin "{blank_ml_name}"\n')
+            if self._check_fomod.is_checked:
+                fomod_path = tmp_project.join('fomod')
+                fomod_path.makedirs()
+                module_config_path = fomod_path.join('ModuleConfig.xml')
+                with module_config_path.open('w', encoding='utf-8') as out:
+                    out.write(default_moduleconfig % {
+                        'fomod_proj': projectName, 'wb_ver': bass.AppVersion,
+                    })
+            if self._check_wizard_images.is_checked:
+                tmp_project.join('Wizard Images').makedirs()
+            if self._check_docs.is_checked:
+                tmp_project.join('Docs').makedirs()
+            # HACK: shellMove fails unless it has at least one file - means
+            # creating an empty project fails silently unless we make one
+            # TODO(lo): See if this is still necessary with IFileOperation
+            has_files = bool([*tmp_project.ilist()])
+            if not has_files:
+                tmp_project.join('temp_hack').makedirs()
+            # Move into the target location
+            env.shellMove({tmp_project: projectDir}, parent=self)
         if not has_files:
             projectDir.join('temp_hack').rmtree(safety='temp_hack')
         fn_result_proj = FName(projectDir.stail)
@@ -686,16 +684,16 @@ class UpdateNotification(DialogWindow):
             'new_wb_ver': new_version.wb_version,
             'curr_wb_ver': bass.AppVersion,
         }
-        # Ensure the temp dir is empty, then write the changelog into it
-        bass.rmTempDir()
-        temp_dir = bass.getTempDir()
-        wb_changes = temp_dir.join('wb_changes.html')
-        with open(wb_changes, 'w', encoding='utf-8') as out:
+        # Write the changelog into a temp file, we'll clean it up when we close
+        # the notification
+        self._temp_html = new_temp_file(temp_prefix='wb_changes',
+            temp_suffix='.html')
+        with open(self._temp_html, 'w', encoding='utf-8') as out:
             out.write(bolt.html_start % (self.title, _uc_css))
             out.write(new_version.wb_changes)
             out.write(bolt.html_end)
         self._changes_viewer = DocumentViewer(self, balt.get_dv_bitmaps())
-        self._changes_viewer.try_load_html(wb_changes)
+        self._changes_viewer.try_load_html(self._temp_html)
         back_btn, forward_btn, reload_btn = self._changes_viewer.get_buttons()
         # Generate the download location radio buttons
         self._download_url = ''
@@ -759,9 +757,9 @@ class UpdateNotification(DialogWindow):
 
     def show_modal(self):
         super().show_modal()
-        # Clean up the temp dir we created up above and quit WB if the Quit
-        # button was pressed
-        bass.rmTempDir()
+        # Clean up the temp file we used to store the HTML and quit WB if the
+        # Quit and Download button was pressed
+        cleanup_temp_file(self._temp_html)
         if self._do_quit:
             balt.Link.Frame.exit_wb()
 

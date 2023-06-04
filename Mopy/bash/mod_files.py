@@ -30,7 +30,7 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error
+    struct_error, GPath_no_norm
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
@@ -38,6 +38,7 @@ from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     unpack_header, FormId, SubrecordBlob
 from .exception import MasterMapError, ModError, ModReadError, StateError
 from .load_order import get_ordered
+from .wbtemp import TempFile
 
 class MasterMap(object):
     """Serves as a map between two sets of masters."""
@@ -236,14 +237,16 @@ class ModFile(object):
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
-        self.fileInfo.tempBackup()
+        self.fileInfo.makeBackup()
         filePath = self.fileInfo.getPath()
-        self.save(filePath.temp)
-        if self.fileInfo.mtime is not None: # fileInfo created before the file
-            filePath.temp.mtime = self.fileInfo.mtime
-        # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
-        #  permissions dialog is displayed (should display file in use)
-        env.shellMove({filePath.temp: filePath})
+        with TempFile() as tmp_plugin:
+            self.save(tmp_plugin)
+            # fileInfo created before the file
+            if self.fileInfo.mtime is not None:
+                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.mtime ##: ugh
+            # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
+            #  permissions dialog is displayed (should display file in use)
+            env.shellMove({tmp_plugin: filePath})
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -257,7 +260,7 @@ class ModFile(object):
             raise ModError(self.fileInfo.fn_key,
                            f'Attempting to write a file with too many '
                            f'masters (>{bush.game.Esp.master_limit}).')
-        outPath = outPath or self.fileInfo.getPath()
+        outPath = outPath or self.fileInfo.abs_path
         with FormIdWriteContext(outPath, self.augmented_masters(),
                                 self.tes4.version) as out:
             #--Mod Record

@@ -505,8 +505,7 @@ class ImageWrapper:
         '.tga': _wx.BITMAP_TYPE_TGA,
     }
 
-    def __init__(self, filename, imageType=None, iconSize=-1,
-            invertible_svg=False):
+    def __init__(self, filename, imageType=None, iconSize=-1):
         self._img_path = filename.s # must be a bolt.Path
         try:
             self._img_type = imageType or self.img_types[filename.cext]
@@ -517,7 +516,6 @@ class ImageWrapper:
         if self._is_svg and iconSize == -1:
             raise ArgumentError('You must specify iconSize to '
                                 'rasterize an SVG to a bitmap!')
-        self._invertible_svg = invertible_svg
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -558,9 +556,10 @@ class ImageWrapper:
                 self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
 
-    def _should_invert_svg(self):
+    @staticmethod
+    def _should_invert_svg():
         from .. import bass
-        return self._invertible_svg and bass.settings['bash.use_reverse_icons']
+        return bass.settings['bash.use_reverse_icons']
 
     def GetIcon(self):
         if not self.icon:

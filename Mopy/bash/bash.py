@@ -33,7 +33,7 @@ import sys
 import traceback
 from configparser import ConfigParser
 
-from . import bass, bolt, exception
+from . import bass, bolt, exception, wbtemp
 
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
@@ -204,20 +204,7 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
-    # Cleanup temp installers directory
-    import tempfile
-    tmpDir = bolt.GPath(tempfile.tempdir)
-    for file_ in tmpDir.ilist():
-        file_ = bolt.GPath_no_norm(f'{file_}')
-        if file_.cs.startswith(u'wryebash_'):
-            file_ = tmpDir.join(file_)
-            try:
-                if file_.is_dir():
-                    file_.rmtree(safety=u'wryebash_')
-                else:
-                    file_.remove()
-            except: ##: tighten this except
-                pass
+    wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:

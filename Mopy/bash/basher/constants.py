@@ -183,8 +183,9 @@ settingDefaults = { # keep current naming format till refactored
     'bash.page': 1,
     'bash.global_menu': 0,
     'bash.pluginEncoding': 'cp1252',    # Western European
-    'bash.show_internal_keys': False,
     'bash.restore_scroll_positions': True,
+    'bash.show_internal_keys': False,
+    'bash.temp_dir': '',
     #--Update Check on Boot
     'bash.update_check.enabled': True,
     'bash.update_check.cooldown': 1,

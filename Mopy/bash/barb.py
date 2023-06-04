@@ -38,13 +38,15 @@ the backup
 
 import os
 import pickle
+import tempfile
 from os.path import join as jo
 
-from . import bass # for settings (duh!)
 from . import archives, bolt, initialization
+from . import bass  # for settings (duh!)
 from .bass import AppVersion, dirs
-from .bolt import FName, GPath, deprint, top_level_files
+from .bolt import GPath, GPath_no_norm, deprint, top_level_files
 from .exception import BoltError, StateError
+from .wbtemp import TempDir
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
     """Construct a dict mapping directory paths to setting files. Keys are
@@ -149,13 +151,9 @@ class BackupSettings(object):
     def backup_settings(self, balt_):
         deprint(u'')
         deprint(f'BACKUP BASH SETTINGS: {self._backup_dest_file}')
-        temp_settings_backup_dir = bolt.Path.tempDir()
-        try:
-            self._backup_settings(temp_settings_backup_dir)
+        with TempDir() as temp_settings_backup_dir:
+            self._backup_settings(GPath_no_norm(temp_settings_backup_dir))
             self._backup_success(balt_)
-        finally:
-            if temp_settings_backup_dir:
-                temp_settings_backup_dir.rmtree(safety=u'WryeBash_')
 
     def _backup_settings(self, temp_dir):
         # copy all files to ~tmp backup dir
@@ -172,8 +170,7 @@ class BackupSettings(object):
             pickle.dump(AppVersion, out, -1)
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
-        dest7z = FName(self._backup_dest_file.stail)
-        archives.compress7z(self._backup_dest_file, dest7z, temp_dir)
+        archives.compress7z(self._backup_dest_file, temp_dir)
         bass.settings[u'bash.backupPath'] = self._backup_dest_file.head
 
     def _backup_success(self, balt_):
@@ -222,9 +219,11 @@ class RestoreSettings(object):
         the backup file is a dir we assume it was created by us before
         restarting."""
         if self._settings_file.is_file():
-            temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
-            archives.extract7z(self._settings_file, temp_dir)
-            self._extract_dir = temp_dir
+            # Can't use wbtemp for this because this folder has to survive a
+            # restart of WB, which wbtemp by design cannot do
+            self._extract_dir = GPath_no_norm(tempfile.mkdtemp(
+                prefix=RestoreSettings.__tmpdir_prefix))
+            archives.extract7z(self._settings_file, self._extract_dir)
         elif self._settings_file.is_dir():
             self._extract_dir = self._settings_file
         else:
