@@ -2959,8 +2959,9 @@ class InstallersList(UIList):
         new_marker = FName('====')
         try:
             index = self._get_uil_index(new_marker)
-        except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.add_marker(new_marker, max_order)
+        except KeyError: # '====' not found in the internal dictionary
+            self.data_store.new_info(new_marker, install_order=max_order,
+                                     is_mark=True)
             self.RefreshUI() # need to redraw all items cause order changed
             index = self._get_uil_index(new_marker)
         if index != -1:

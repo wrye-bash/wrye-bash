@@ -1619,16 +1619,18 @@ class DataDict(object):
 
 #------------------------------------------------------------------------------
 class AFile(object):
-    """Abstract file, supports caching - beta."""
+    """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
+    def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
+                 **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache=load_cache)
+            self._reset_cache(self._stat_tuple(), load_cache=load_cache,
+                              **kwargs)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
