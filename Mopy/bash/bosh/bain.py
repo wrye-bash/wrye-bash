@@ -1506,6 +1506,23 @@ class InstallerArchive(_InstallerPackage):
         return FName(self.fn_key.fn_body + archives.defaultExt)
 
 #------------------------------------------------------------------------------
+def _scandir_walk(apath, *, __root_len=None, __folders_times=None):
+    size_apath_date = bolt.LowerDict()
+    if __root_len is None:
+        __root_len = len(apath) + 1
+    __folders_times = [apath.mtime] if __folders_times is None else \
+        __folders_times
+    for dirent in os.scandir(apath):
+        if dirent.is_dir():
+            __folders_times.append(dirent.stat().st_mtime)
+            dir_walk, _ = _scandir_walk(dirent.path, __root_len=__root_len,
+                                        __folders_times=__folders_times)
+            size_apath_date.update(dir_walk)
+        else:
+            size_apath_date[dirent.path[__root_len:]] = (
+                (st := dirent.stat()).st_size, dirent.path, st.st_mtime)
+    return size_apath_date, __folders_times
+
 class InstallerProject(_InstallerPackage):
     """Represents a directory/build installer entry."""
     type_string = _('Project')
@@ -1531,12 +1548,10 @@ class InstallerProject(_InstallerPackage):
                                  force_update=force_update, **kwargs)
 
     def _file_changed(self, stat_tuple):
-        """Check if the total size and max mod time first - previously these
-        were the only checks for cache invalidation, now we check the cached
-        mod times/sizes of all files. That's more than enough - would be
-        faster if we dropped the total size/time checks?"""
-        cached = self.src_sizeCrcDate
+        """Check if the total size and/or max mod time changed, then check
+        the cached mod times/sizes of all files."""
         size_apath_date, proj_size, max_mtime = stat_tuple
+        cached = self.src_sizeCrcDate
         return self.file_mod_time != max_mtime or self.fsize != proj_size or \
             cached.keys() != size_apath_date.keys() or any( # keep := below!
                 (sap := size_apath_date[k])[0] != s or sap[2] != d for
@@ -1545,29 +1560,15 @@ class InstallerProject(_InstallerPackage):
     @property
     def _null_stat(self): return bolt.LowerDict(), -1, 0.0
 
-    def _stat_tuple(self, *, __lstat=os.lstat):
+    def _stat_tuple(self):
         """Return the total project size, the max modification time of the
         files/folders and a dict that maps relative (to the project root) paths
-        to size/apath/mtime. This should suffice to detect changes but max_time
-        and total size are easier to check. However this is worth optimizing,
-        so we would like to drop maybe the extra processing here - see
-        InstallerProject._file_changed."""
-        getM, join = os.path.getmtime, os.path.join
-        size_apath_date = bolt.LowerDict()
-        c = []
-        cAppend = c.append
-        root_len = len(self.abs_path) + 1
-        for root, _d, files in os.walk(self.abs_path):
-            # progress(0.05, f'{progress_msg}{asDir[relPos:]}')
-            cAppend(getM(root))
-            lstats = {(asPath := join(root, f)): __lstat(asPath) for f in
-                      files}
-            size_apath_date.update(
-                (k[root_len:], (ls.st_size, k, ls.st_mtime)) for k, ls in
-                lstats.items())
+        to size/apath/mtime. The latter should suffice to detect changes but
+        max_time and total size are easier to check."""
+        size_apath_date, folders_times = _scandir_walk(self.abs_path)
         try:
             max_node_mtime = max(
-                chain(c, (v[2] for v in size_apath_date.values())))
+                chain(folders_times, (v[2] for v in size_apath_date.values())))
         except ValueError: # int(max([]))
             max_node_mtime = 0.0
         return size_apath_date, sum(
