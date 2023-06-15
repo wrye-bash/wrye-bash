@@ -1136,13 +1136,17 @@ class Path(os.PathLike):
 
     def remove(self):
         try:
-            if self.exists(): os.remove(self._s)
+            os.remove(self._s)
+        except FileNotFoundError:
+            pass # does not exist
         except OSError:
             self.clearRO()
             os.remove(self._s)
     def removedirs(self):
         try:
-            if self.exists(): os.removedirs(self._s)
+            os.removedirs(self._s)
+        except FileNotFoundError:
+            pass # does not exist
         except OSError:
             self.clearRO()
             os.removedirs(self._s)
