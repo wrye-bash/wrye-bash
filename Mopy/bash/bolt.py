@@ -1142,14 +1142,18 @@ class Path(os.PathLike):
         except OSError:
             self.clearRO()
             os.remove(self._s)
-    def removedirs(self):
+    def removedirs(self, raise_error=True):
         try:
             os.removedirs(self._s)
         except FileNotFoundError:
             pass # does not exist
         except OSError:
-            self.clearRO()
-            os.removedirs(self._s)
+            try:
+                self.clearRO()
+                os.removedirs(self._s)
+            except OSError:
+                if raise_error: raise
+
     def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.is_dir() and safety and safety.lower() in self._cs:

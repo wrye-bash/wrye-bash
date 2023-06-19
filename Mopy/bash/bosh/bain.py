@@ -41,8 +41,8 @@ from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
 from .. import archives, balt, bass, bolt, bush, env, gui # YAK!
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
-from ..bolt import AFile, CIstr, FName, GPath, ListInfo, Path, SubProgress, \
-    deprint, dict_sort, forward_compat_path_to_fn, \
+from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
+    SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
@@ -1072,11 +1072,7 @@ class Installer(ListInfo):
                 upt_numb += 1
         if upt_numb or del_numb:
             # Remove empty directories from project directory
-            empties = set()
-            for asDir, sDirs, sFiles in os.walk(proj_dir):
-                if not (sDirs or sFiles): empties.add(GPath(asDir))
-            for empty in empties: empty.removedirs()
-            proj_dir.makedirs()  #--In case it just got wiped out.
+            _remove_empty_dirs(proj_dir)
         return upt_numb, del_numb
 
     def open_readme(self): self._open_txt_file(self.hasReadme)
@@ -1158,6 +1154,25 @@ class Installer(ListInfo):
         :param delta_files: The missing or mismatched files to sync.
         :param progress: A progress dialog to use when syncing."""
         raise NotImplementedError
+
+def _remove_empty_dirs(root_dir):
+    """Remove subdirs of root_dir that contain no files in any subfolder."""
+    root_dir, folders, files = next(os.walk(root_dir))
+    if not files and not folders:
+        return True # empty
+    possible_empty = []
+    if folders:
+        # root_dir should be an absolute path
+        root_gpath = GPath_no_norm(root_dir)
+        for fol in folders:
+            if _remove_empty_dirs(fol_abs := root_gpath.join(fol)):
+                possible_empty.append(fol_abs)
+            else: files = True
+    if files:
+        for empty in possible_empty:
+            empty.removedirs()
+        return False
+    return True
 
 class _InstallerPackage(Installer, AFile):
     """Installer that corresponds to a file system node (archive or folder)."""
@@ -2151,29 +2166,30 @@ class InstallersData(DataStore):
 
     @staticmethod
     def _walk_data_dirs(apath, siz_apath_mtime, new_sizeCrcDate, root_len,
-                        oldGet, empty_dirs):
-        """See _scandir_walk for a similar pattern - we don't want to
-        extract a common function from those for performance, and ideally we
-        want to remove empty dirs handling."""
+                        oldGet, remove_empty):
+        """Recursively walk the top directories of the Data/ dir. See
+        _scandir_walk for a similar pattern - we don't want to extract a
+        common function from those for performance, note complications like
+        empty dirs handling."""
         ##: add Subprogress for super accurate and slow progress bars
         nodes = [*os.scandir(apath)]
         if not nodes:
             return 0, 0
         pending_size = has_files = 0
-        possible_empty = set()
+        possible_empty = []
         for dirent in nodes:
             if dirent.is_dir():
                 subpending_size, subdir_files = InstallersData._walk_data_dirs(
                     dirent.path, siz_apath_mtime, new_sizeCrcDate, root_len,
-                    oldGet, empty_dirs)
+                    oldGet, remove_empty)
                 if subdir_files:
                     has_files = True
                     pending_size += subpending_size
-                else:
-                    possible_empty.add(dirent.path)
+                elif remove_empty:
+                    possible_empty.append(dirent.path)
             else:
-                # hack so we don't delete folders that contain a file
-                has_files = True  # even a null bytes file
+                # we don't delete folders that contain files (even 0-size ones)
+                has_files = True
                 rpFile = dirent.path[root_len:]
                 oSize, oCrc, oDate = oldGet(rpFile) or (0, 0, 0.0)
                 lstat_size, date = (st := dirent.stat()).st_size, st.st_mtime
@@ -2182,8 +2198,10 @@ class InstallersData(DataStore):
                     pending_size += lstat_size
                 else:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate)
-        if has_files: # else let calling scope decide if we need to be removed
-            empty_dirs |= possible_empty
+        if possible_empty and has_files:
+            for empty in possible_empty:
+                GPath_no_norm(empty).removedirs(raise_error=False)
+        # else let calling scope decide if we need to be removed
         return pending_size, has_files
 
     def _refresh_from_data_dir(self, progress, recalculate_all_crcs):
@@ -2237,20 +2255,16 @@ class InstallersData(DataStore):
         root_len = len(mods_dir) + 1 # compute relative paths to the Data dir
         progress_msg = f'{dirname}: ' + '%s\n' % _('Scanning...')
         progress.setFull(1 + len(dirs_paths))
-        empty_dirs = set()
+        #--Remove empty dirs?
+        remove_empty = bass.settings['bash.installers.removeEmptyDirs']
         for dex, (top_dir, dir_path) in enumerate(dict_sort(dirs_paths)):
             progress(dex, f'{progress_msg}{top_dir}')
-            pending_siz, dir_siz = InstallersData._walk_data_dirs(
+            pending_siz, has_files = InstallersData._walk_data_dirs(
                 dir_path, siz_apath_mtime, new_sizeCrcDate, root_len, oldGet,
-                empty_dirs)
+                remove_empty)
             pending_size += pending_siz
-            if not dir_siz:
-                empty_dirs.add(dir_path)
-        #--Remove empty dirs?
-        if bass.settings[u'bash.installers.removeEmptyDirs']:
-            for empty in empty_dirs:
-                try: GPath_no_norm(empty).removedirs() # comes from an os path
-                except OSError: pass
+            if remove_empty and not has_files:
+                GPath_no_norm(dir_path).removedirs(raise_error=False)
         #--Force update?
         # don't add this logic to _walk_data_dirs it would slow usual case down
         if recalculate_all_crcs:
