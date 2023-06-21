@@ -1848,8 +1848,8 @@ class MreMusc(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString(b'FNAM','filename'),
-        fnv_only(MelFloat(b'ANAM', 'dB')),
+        MelString(b'FNAM', 'mt_file_name'),
+        fnv_only(MelFloat(b'ANAM', 'mt_decibels')),
     )
 
 #------------------------------------------------------------------------------

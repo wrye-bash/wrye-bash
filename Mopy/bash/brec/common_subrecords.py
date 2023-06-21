@@ -32,7 +32,7 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1, NONE_FID, gen_coed_key
+    gen_color3, int_unpacker, null1, gen_coed_key
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -1287,6 +1287,47 @@ class MelMovtThresholds(MelStruct):
     def __init__(self):
         super().__init__(b'INAM', ['3f'], 'threshold_directional',
             'threshold_movement_speed', 'threshold_rotation_speed')
+
+#------------------------------------------------------------------------------
+class MelMuscShared(MelSequential):
+    """Handles the MUSC subrecords FNAM, PNAM, WNAM and TNAM."""
+    class _MusicTypeFlags(Flags):
+        plays_one_selection: bool = flag(0)
+        abrupt_transition: bool = flag(1)
+        cycle_tracks: bool = flag(2)
+        maintain_track_order: bool = flag(3)
+        ducks_current_track: bool = flag(5)
+        does_not_queue: bool = flag(6) # since SSE & FO4
+
+    def __init__(self):
+        super().__init__(
+            MelUInt32Flags(b'FNAM', 'musc_flags', self._MusicTypeFlags),
+            MelStruct(b'PNAM', ['2H'], 'musc_priority', 'musc_ducking'),
+            MelFloat(b'WNAM', 'musc_fade_duration'),
+            MelSimpleArray('musc_music_tracks', MelFid(b'TNAM')),
+        )
+
+#------------------------------------------------------------------------------
+##: MUST is identical, but moving it to common_records is problematic due to
+# every record in common_records.py getting instantiated for every game, so we
+# end up with MelConditions() for games like Morrowind that don't have
+# condition_function_data, which blows up on boot
+class MelMustShared(MelSequential):
+    """Handles the MUST subrecords shared between Skyrim and FO4."""
+    def __init__(self, conditions_element: MelBase):
+        super().__init__(
+            MelEdid(),
+            MelUInt32(b'CNAM', 'music_track_type'),
+            MelFloat(b'FLTV', 'music_track_duration'),
+            MelUInt32(b'DNAM', 'music_track_fade_out'),
+            MelString(b'ANAM', 'music_track_file_name'),
+            MelString(b'BNAM', 'music_track_finale_file_name'),
+            MelStruct(b'LNAM', ['3f'], 'music_track_loop_begins',
+                'music_track_loop_ends', 'music_track_loop_count'),
+            MelSimpleArray('music_track_cue_points', MelFloat(b'FNAM')),
+            conditions_element,
+            MelSimpleArray('music_track_tracks', MelFid(b'SNAM')),
+        )
 
 #------------------------------------------------------------------------------
 class MelNextPerk(MelFid):

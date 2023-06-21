@@ -50,7 +50,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
-    MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, \
+    MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
@@ -59,7 +59,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
     MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
-    MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
+    MelMuscShared
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2292,6 +2293,51 @@ class MreMstt(MelRecord):
         MelProperties(),
         MelUInt8(b'DATA', 'on_local_map'), # really a bool
         MelSound(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMswp(MelRecord):
+    """Material Swap."""
+    rec_sig = b'MSWP'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        custom_swap: bool = flag(16)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'FNAM', 'tree_folder'),
+        MelSorted(MelGroups('material_substitutions',
+            MelString(b'BNAM', 'original_material'),
+            MelString(b'SNAM', 'replacement_material'),
+            ##: xEdit sources say "will be moved up to First FNAM", is that
+            # something we have to implement?
+            MelString(b'FNAM', 'tree_folder_obsolete'),
+            MelFloat(b'CNAM', 'color_remapping_index'),
+        ), sort_by_attrs='original_material'),
+    ).with_distributor({
+        b'FNAM': 'tree_folder',
+        b'BNAM': {
+            b'FNAM': 'material_substitutions',
+        },
+    })
+
+#------------------------------------------------------------------------------
+class MreMusc(MelRecord):
+    """Music Type."""
+    rec_sig = b'MUSC'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelMuscShared(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMust(MelRecord):
+    """Music Track."""
+    rec_sig = b'MUST'
+
+    melSet = MelSet(
+        MelMustShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------

@@ -66,7 +66,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, \
     null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
     MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
-    MelMgefSounds, AMreMgefTes5, MelMgefDnam
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, MelMuscShared, MelMustShared
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -2061,21 +2061,9 @@ class MreMusc(MelRecord):
     """Music Type."""
     rec_sig = b'MUSC'
 
-    class MuscTypeFlags(Flags):
-        playsOneSelection: bool = flag(0)
-        abruptTransition: bool = flag(1)
-        cycleTracks: bool = flag(2)
-        maintainTrackOrder: bool = flag(3)
-        unknown5: bool = flag(4)
-        ducksCurrentTrack: bool = flag(5)
-
     melSet = MelSet(
         MelEdid(),
-        MelUInt32Flags(b'FNAM', u'flags', MuscTypeFlags),
-        # Divided by 100 in TES5Edit, probably for editing only
-        MelStruct(b'PNAM', [u'2H'],'priority','duckingDB'),
-        MelFloat(b'WNAM', 'fadeDuration'),
-        MelSimpleArray('musicTracks', MelFid(b'TNAM')),
+        MelMuscShared(),
     )
 
 #------------------------------------------------------------------------------
@@ -2084,18 +2072,7 @@ class MreMust(MelRecord):
     rec_sig = b'MUST'
 
     melSet = MelSet(
-        MelEdid(),
-        MelUInt32(b'CNAM', 'trackType'),
-        MelFloat(b'FLTV', 'track_duration'),
-        MelUInt32(b'DNAM', 'fadeOut'),
-        MelString(b'ANAM','trackFilename'),
-        MelString(b'BNAM','finaleFilename'),
-        MelArray('points',
-            MelFloat(b'FNAM', u'cuePoints'),
-        ),
-        MelStruct(b'LNAM', ['2f', 'I'], 'loopBegins', 'loopEnds', 'loopCount'),
-        MelConditions(),
-        MelSimpleArray('tracks', MelFid(b'SNAM')),
+        MelMustShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------
