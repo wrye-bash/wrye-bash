@@ -23,7 +23,7 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
-from ..gui import DEFAULT_POSITION, ImageWrapper
+from ..gui import DEFAULT_POSITION, ImageWrapper, DynamicSvg
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -452,7 +452,7 @@ if bush.game.has_esl: # Enable Index columns by default for ESL games
 imDirJn = bass.dirs['images'].join
 def _png(fname): return ImageWrapper(imDirJn(fname))
 def _svg(fname, bm_px_size):
-    return ImageWrapper(imDirJn(fname), iconSize=bm_px_size)
+    return DynamicSvg(imDirJn(fname), iconSize=bm_px_size)
 
 #--Buttons
 def _png_list(template):

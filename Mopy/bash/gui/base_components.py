@@ -541,12 +541,7 @@ class ImageWrapper:
                             self.iconSize, self.iconSize,
                             _wx.IMAGE_QUALITY_HIGH))
             elif self._is_svg:
-                with open(self._img_path, 'rb') as ins:
-                    svg_data = ins.read()
-                if b'var(--invert)' in svg_data:
-                    svg_data = svg_data.replace(b'var(--invert)',
-                        b'#FFF' if self._should_invert_svg() else b'#000')
-                svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
+                svg_img = _svg.SVGimage.CreateFromBytes(self.read_svg_data())
                 svg_size = scaled(self.iconSize)
                 self.bitmap = svg_img.ConvertToScaledBitmap(
                     (svg_size, svg_size))
@@ -560,10 +555,9 @@ class ImageWrapper:
                 self.bitmap = _wx.Bitmap(bm_img)
         return self.bitmap
 
-    @staticmethod
-    def _should_invert_svg():
-        from .. import bass
-        return bass.settings['bash.use_reverse_icons']
+    def read_svg_data(self):
+        with open(self._img_path, 'rb') as ins:
+            return ins.read()
 
     def GetIcon(self):
         if not self.icon:
@@ -596,6 +590,31 @@ class ImageWrapper:
         # This only has an effect on jpegs, so it's ok to do it on every kind
         bitmap.SetOption(_wx.IMAGE_OPTION_QUALITY, quality)
         return bitmap
+
+class DynamicSvg(ImageWrapper):
+    """Extends ImageWrapper to handle SVGs that may contain var(--*) usages
+    that need to be replaced with concrete values upon loading."""
+    def __init__(self, filename, *, iconSize,
+            extra_vars: dict[bytes, bytes] | None = None):
+        super().__init__(filename, iconSize=iconSize)
+        self._extra_vars = extra_vars or {}
+
+    def read_svg_data(self):
+        svg_data = super().read_svg_data()
+        # Allow SVGs to switch between black and white colors based on global
+        # settings
+        svg_data = svg_data.replace(b'var(--invert)',
+            b'#FFF' if self._should_invert_svg() else b'#000')
+        # Allow more complicated, custom var(--*) replacements as well
+        for extra_key, extra_val in self._extra_vars.items():
+            svg_data = svg_data.replace(b'var(--' + extra_key + b')',
+                extra_val)
+        return svg_data
+
+    @staticmethod
+    def _should_invert_svg():
+        from .. import bass ##: Figure out a way to drop this coupling
+        return bass.settings['bash.use_reverse_icons']
 
 # Automatic column sizing -----------------------------------------------------
 class AutoSize:

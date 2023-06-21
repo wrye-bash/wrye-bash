@@ -86,7 +86,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
     TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
     get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
-    showWarning, askWarning, showOk
+    showWarning, askWarning, showOk, DynamicSvg
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
@@ -4676,13 +4676,14 @@ def InitImages():
     #--Images
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))
-    def _svg(fname, bm_px_size):
+    def _svg(fname, bm_px_size, extra_vars: dict[bytes, bytes] | None = None):
         """Creates an SVG wrapper.
 
         :param fname: The SVG's filename, relative to bash/images.
         :param bm_px_size: The size of the resulting bitmap, in
             device-independent pixels (DIP)."""
-        return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size)
+        return DynamicSvg(imgDirJn(fname), iconSize=bm_px_size,
+            extra_vars=extra_vars)
     # PNGs --------------------------------------------------------------------
     # Checkboxes
     images['checkbox.red.on.16'] = _png('checkbox_red_on.png')
@@ -4748,6 +4749,20 @@ def InitImages():
     images['square_check.16'] = _svg('square_checked.svg', 16)
     # Deletion dialog button
     images['trash_can.32'] = _svg('trash_can.svg', 32)
+    # Nexus Status
+    nexus_dict = { # FIXME Move to bash.colors and allow users to change them
+        'grey':   (b'#4d4d4d', b'#737373'),
+        'green':  (b'#009933', b'#00e54c'),
+        'yellow': (b'#9a9a00', b'#e6e600'),
+        'orange': (b'#9a4d00', b'#e67300'),
+        'red':    (b'#9a0000', b'#e60000'),
+    }
+    for nx_status in ('grey', 'green', 'yellow', 'orange', 'red'):
+        for nx_size in (16, 24, 32):
+            nx_colors = nexus_dict[nx_status]
+            images[f'nexus.{nx_status}.{nx_size}'] = _svg('nexus_status.svg',
+                nx_size, extra_vars={b'status-outer': nx_colors[0],
+                                     b'status-inner': nx_colors[1]})
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

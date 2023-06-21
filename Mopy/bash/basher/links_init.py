@@ -82,6 +82,7 @@ def InitStatusBar():
             _png_list(f'games/{bush.game.game_icon}'),
             _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
             _('Launch %(game_name)s %(app_version)s')),
+        Nexus_Button(uid='NexusStatus'),
     ]
     if bush.game.Ck.ck_abbrev:
         all_links.append(TESCS_Button( # Construction Set / Creation Kit

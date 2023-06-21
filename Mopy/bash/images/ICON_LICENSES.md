@@ -2,6 +2,7 @@ Some of the icons packaged with Wrye Bash are released / used under other licens
 All files listed below have been modified to optimize the SVGs.
 
 ## Flags
+
 - `flags/brazil.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_Brazil.svg.
   Governo do Brasil, Public domain, via Wikimedia Common.
 - `flags/china.svg` is from https://commons.wikimedia.org/wiki/File:Flag_of_the_People%27s_Republic_of_China.svg
@@ -76,10 +77,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Others
 
-- `tools/loot.svg` is from https://github.com/loot/loot,
+- `nexus_status.svg` is based on https://github.com/Nexus-Mods/Vortex/blob/master/icons/custom/nexus.svg,
+  licensed under the GPLv3 (see below).
+  It has been edited to include a dynamically colored 'status' indicator.
+
+- `tools/loot.svg` is from https://github.com/loot/loot/blob/master/resources/icons/loot.svg,
   licensed under the GPLv3 (see below).
 
-A copy of the original license follows:
+A copy of the GPLv3 follows:
 
 ```
                     GNU GENERAL PUBLIC LICENSE

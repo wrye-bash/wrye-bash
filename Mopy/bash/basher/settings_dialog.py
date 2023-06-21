@@ -786,9 +786,7 @@ class StatusBarPage(_AScrollablePage):
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
             for button in BashStatusBar.all_sb_links.values():
-                button.set_sb_button_tooltip()
-            if BashStatusBar.obseButton.button_state:
-                BashStatusBar.obseButton.UpdateToolTips()
+                button.update_sb_tooltip()
             # Will change tooltips, so need to repopulate these
             self._populate_icon_lists()
         # Icon Size

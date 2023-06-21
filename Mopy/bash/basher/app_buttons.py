@@ -37,7 +37,7 @@ from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
 __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
            'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
-           'App_Restart', 'app_button_factory']
+           'App_Restart', 'app_button_factory', 'Nexus_Button']
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -60,6 +60,8 @@ class _StatusBar_Hide(ItemLink):
 class StatusBar_Button(ItemLink):
     """Launch an application."""
     _tip = u''
+    imageKey: str
+
     @property
     def sb_button_tip(self): return self._tip
 
@@ -114,7 +116,8 @@ class StatusBar_Button(ItemLink):
         else:
             return u''
 
-    def set_sb_button_tooltip(self): pass
+    def update_sb_tooltip(self):
+        """Update this status bar button's tooltip. Does nothing by default."""
 
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
@@ -133,8 +136,9 @@ class _App_Button(StatusBar_Button):
                 return version
         return u''
 
-    def set_sb_button_tooltip(self):
-        if self.gButton: self.gButton.tooltip = self.sb_button_tip
+    def update_sb_tooltip(self):
+        if self.gButton:
+            self.gButton.tooltip = self.sb_button_tip
 
     @property
     def sb_button_tip(self):
@@ -611,90 +615,140 @@ class TESCS_Button(_ExeButton):
             super(TESCS_Button, self)._app_button_execute()
 
 #------------------------------------------------------------------------------
-class _StatefulButton(StatusBar_Button):
-    _state_key = u'OVERRIDE' # bass settings key for button state (un/checked)
-    _state_img_key = u'OVERRIDE' # image key with state and size placeholders
-    _default_state = True
+class _AStatefulButton(StatusBar_Button):
+    _state_key: str # bass settings key that stores the button state
+    # imageKey-like field, but with two formatting specifiers. The first one is
+    # for the state (after passing through _state_to_key), the second one is
+    # for the size in pixels
+    _state_img_key: str
+    _default_state = 0
 
-    @property
-    def sb_button_tip(self): raise NotImplementedError
-
-    def SetState(self, state=None):
-        """Set state related info. If newState != None, sets to new state
-        first. For convenience, returns state when done."""
-        if state is None: #--Default
-            self.button_state = self.button_state
-        elif state == -1: #--Invert
-            self.button_state = True ^ self.button_state
+    def update_sb_tooltip(self):
+        super().update_sb_tooltip()
         if self.gButton:
-            self.gButton.image = balt.images[self.imageKey % bass.settings[
-                u'bash.statusbar.iconSize']].get_bitmap()
+            self.gButton.image = balt.images[self.imageKey % (
+                bass.settings['bash.statusbar.iconSize'])].get_bitmap()
             self.gButton.tooltip = self.sb_button_tip
 
     @property
-    def button_state(self): return self._present and bass.settings.get(
-        self._state_key, self._default_state)
+    def button_state(self):
+        return (bass.settings.get(self._state_key, self._default_state)
+                if self._present else self._default_state)
+
     @button_state.setter
     def button_state(self, val):
         bass.settings[self._state_key] = val
 
     @property
-    def imageKey(self): return self.__class__._state_img_key % (
-        [u'off', u'on'][self.button_state], u'%d')
+    def imageKey(self):
+        return self._state_img_key % (self._state_to_key(self.button_state),
+                                      '%d')
 
     @property
     def _present(self): return True
 
     def SetBitmapButton(self, window, image=None, onRClick=None):
         if not self._present: return
-        self.SetState()
+        self.update_sb_tooltip()
         super().SetBitmapButton(window, image, onRClick)
 
     def IsPresent(self):
         return self._present
 
-    def Execute(self):
-        """Invert state."""
-        self.SetState(-1)
+    # Abstract APIs -----------------------------------------------------------
+    @property
+    def sb_button_tip(self): raise NotImplementedError
 
-class Obse_Button(_StatefulButton):
+    def _state_to_key(self, btn_state) -> str:
+        """Convert the button's state to a string that will be used in the
+        image key."""
+        raise NotImplementedError
+
+class _ABinaryStatefulButton(_AStatefulButton):
+    """Variant of _AStatefulButton that only has two states, on/off."""
+    _default_state = True
+    _tooltip_on: str
+    _tooltip_off: str
+
+    def Execute(self):
+        self.button_state = not self.button_state
+        self.update_sb_tooltip()
+
+    def _state_to_key(self, btn_state):
+        return 'on' if btn_state else 'off'
+
+    @property
+    def sb_button_tip(self):
+        return (self._tooltip_on if self.button_state else
+                self._tooltip_off)
+
+#------------------------------------------------------------------------------
+class Obse_Button(_ABinaryStatefulButton):
     """Obse on/off state button."""
-    _state_key = u'bash.obse.on'
-    _state_img_key = u'checkbox.green.%s.%s'
+    _state_key = 'bash.obse.on'
+    _state_img_key = 'checkbox.green.%s.%s'
+    _tooltip_on = _('%(se_name)s%(se_ver)s Enabled')
+    _tooltip_off =  _('%(se_name)s%(se_ver)s Disabled')
 
     @property
     def _present(self):
         return (bool(bush.game.Se.se_abbrev)
-                and bass.dirs[u'app'].join(bush.game.Se.exe).exists())
+                and bass.dirs['app'].join(bush.game.Se.exe).exists())
 
-    def SetState(self,state=None):
-        super().SetState(state)
-        self.UpdateToolTips()
-        return state
+    def update_sb_tooltip(self):
+        super().update_sb_tooltip()
+        # Update the tooltips of every toolbar button that will change its
+        # tooltip depending on whether or not xSE is enabled
+        tipAttr = 'obseTip' if self.button_state else 'sb_button_tip'
+        for button in _App_Button.obseButtons:
+            button.gButton.tooltip = getattr(button, tipAttr, '')
 
     @property
     def sb_button_tip(self):
-        tip_to_fmt = (
-            _('%(se_name)s%(se_ver)s Enabled') if self.button_state else
-            _('%(se_name)s%(se_ver)s Disabled'))
-        return tip_to_fmt % {'se_name': bush.game.Se.se_abbrev,
-                             'se_ver': self.obseVersion}
-
-    def UpdateToolTips(self):
-        tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
-        for button in _App_Button.obseButtons:
-            button.gButton.tooltip = getattr(button, tipAttr, u'')
+        return super().sb_button_tip % {'se_name': bush.game.Se.se_abbrev,
+                                        'se_ver': self.obseVersion}
 
 #------------------------------------------------------------------------------
-class AutoQuit_Button(_StatefulButton):
+class AutoQuit_Button(_ABinaryStatefulButton):
     """Button toggling application closure when launching Oblivion."""
-    _state_key = u'bash.autoQuit.on'
-    _state_img_key = u'checkbox.red.%s.%s'
+    _state_key = 'bash.autoQuit.on'
+    _state_img_key = 'checkbox.red.%s.%s'
     _default_state = False
+    _tooltip_on = _('Auto-Quit Enabled')
+    _tooltip_off = _('Auto-Quit Disabled')
+
+#------------------------------------------------------------------------------
+class Nexus_Button(_AStatefulButton):
+    _state_img_key = 'nexus.%s.%s'
+    _default_state = 0
+    __temp_state__ = 0 # FIXME temp testing
 
     @property
-    def sb_button_tip(self): return (_(u'Auto-Quit Disabled'), _(u'Auto-Quit Enabled'))[
-        self.button_state]
+    def button_state(self):
+        return self.__temp_state__
+
+    @button_state.setter
+    def button_state(self, val):
+        self.__temp_state__ = val
+
+    def _state_to_key(self, btn_state):
+        # FIXME temp testing
+        return {
+            0: 'grey',
+            1: 'green',
+            2: 'yellow',
+            3: 'orange',
+            4: 'red',
+        }[btn_state]
+
+    @property
+    def sb_button_tip(self):
+        return 'The Nexus icon should be %s right now.' % self._state_to_key(
+            self.button_state)
+
+    def Execute(self):
+        self.button_state = (self.button_state + 1) % 5
+        self.update_sb_tooltip()
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
