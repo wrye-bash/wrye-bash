@@ -1147,17 +1147,10 @@ def get_file_version(filename):
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    _deprint(u'Testing if game folder is UAC-protected')
-    with TempFile() as tempFile:
-        dest = gameDataPath.join('_tempfile.tmp')
-        from . import shellDeletePass, shellMove ##: ugh
-        try: # to move it into the Data directory
-            shellMove({tempFile: dest}, silent=True)
-        except PermissionError:
-            global _isUAC
-            _isUAC = True
-        finally:
-            shellDeletePass(dest)
+    _deprint('Testing if game folder is UAC-protected')
+    if not os.access(gameDataPath, os.R_OK | os.W_OK):
+        global _isUAC
+        _isUAC = True
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
