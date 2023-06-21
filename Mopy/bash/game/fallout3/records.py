@@ -1853,6 +1853,8 @@ class MreMusc(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+# Not mergeable due to the weird special handling the game and CK do with it
+# (plus we only have like half the record implemented)
 class MreNavi(MelRecord):
     """Navigation Mesh Info Map."""
     rec_sig = b'NAVI'

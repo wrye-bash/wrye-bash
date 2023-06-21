@@ -27,7 +27,7 @@ from ...bolt import Flags, flag
 from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreWithItems, \
     AMreWithKeywords, ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, \
-    FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, \
+    FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, MelExtra, \
     MelArmaShared, MelArray, MelArtType, MelAspcBnam, MelAspcRdat, MelAttx, \
     MelBamt, MelBase, MelBaseR, MelBids, MelBookDescription, MelBookText, \
     MelBounds, MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, \
@@ -2338,6 +2338,45 @@ class MreMust(MelRecord):
 
     melSet = MelSet(
         MelMustShared(MelConditions()),
+    )
+
+#------------------------------------------------------------------------------
+# Not mergeable due to the weird special handling the game and CK do with it
+# (plus we only have like half the record implemented)
+class MreNavi(MelRecord):
+    """Navigation Mesh Info Map."""
+    rec_sig = b'NAVI'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUInt32(b'NVER', 'navi_version'),
+        MelGroups('navigation_map_infos',
+            ##: Rest of this subrecord would need custom code to handle
+            ##: The 20 bytes probably have the same meaning as in Skyrim
+            MelExtra(MelStruct(b'NVMI', ['I', '20s'],
+                'nvmi_navmesh', 'nvmi_unknown1'), extra_attr='nvmi_todo'),
+        ),
+        ##: Would need custom code to handle
+        MelBase(b'NVPP', 'nvpp_todo'),
+        MelBase(b'NVSI', 'unknown_nvsi'), # Not decoded yet
+    )
+
+#------------------------------------------------------------------------------
+# Not mergeable because it's related to navmeshes (and barely decoded at that)
+class MreNocm(MelRecord):
+    """Navigation Mesh Obstacle Manager."""
+    rec_sig = b'NOCM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('nocm_unknown1',
+            MelUInt32(b'INDX', 'nocm_index'),
+            MelGroups('unknown_data',
+                MelBase(b'DATA', 'unknown_data_entry'),
+            ),
+            MelBase(b'INTV', 'unknown_intv'),
+            MelString(b'NAM1', 'nocm_model'),
+        ),
     )
 
 #------------------------------------------------------------------------------

@@ -2076,19 +2076,24 @@ class MreMust(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-# Not Mergable - FormIDs unaccounted for
+# Not mergeable due to the weird special handling the game and CK do with it
+# (plus we only have like half the record implemented)
 class MreNavi(MelRecord):
     """Navigation Mesh Info Map."""
     rec_sig = b'NAVI'
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32(b'NVER', 'version'),
-        # NVMI and NVPP would need special routines to handle them
-        # If no mitigation is needed, then leave it as MelBase
-        MelBase(b'NVMI','navigationMapInfos',),
-        MelBase(b'NVPP','preferredPathing',),
-        MelSimpleArray('navigationMesh', MelFid(b'NVSI')),
+        MelUInt32(b'NVER', 'navi_version'),
+        MelGroups('navigation_map_infos',
+            ##: Rest of this subrecord would need custom code to handle
+            MelExtra(MelStruct(b'NVMI', ['I', '4s', '3f', 'I'],
+                'nvmi_navmesh', 'nvmi_unknown1', 'nvmi_x', 'nvmi_y', 'nvmi_z',
+                'nvmi_preferred_merges'), extra_attr='nvmi_todo'),
+        ),
+        ##: Would need custom code to handle
+        MelBase(b'NVPP', 'nvpp_todo'),
+        MelSimpleArray('navi_unknown_navmeshes', MelFid(b'NVSI')),
     )
 
 #------------------------------------------------------------------------------
