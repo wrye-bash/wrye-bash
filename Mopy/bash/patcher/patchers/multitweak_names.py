@@ -645,7 +645,7 @@ class NamesTweak_AmmoWeight(_ANamesTweak):
             return old_full + fmt_weight
 
     def _get_record_weight(self, record):
-        return record.weight
+        return record.weight or 0.0
 
 class NamesTweak_AmmoWeight_Fnv(NamesTweak_AmmoWeight):
     _example_item = _(u'BB')

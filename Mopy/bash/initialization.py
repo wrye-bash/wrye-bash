@@ -82,7 +82,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
         sErrorInfo = _('Folder path specified on command line '
-                       '(%(cli_switch)s)') % {'cli_cli_switch': '-l'}
+                       '(%(cli_switch)s)') % {'cli_switch': '-l'}
     else:
         app_data_local_path = get_path_from_ini(bash_ini_,
                                                 u'sLocalAppDataPath')
