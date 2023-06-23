@@ -1448,9 +1448,9 @@ class Flags:
         else:
             return self.__class__(self._field)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memodict={}):
         newFlags = self.__class__(self._field)
-        memo[id(self)] = newFlags ##: huh?
+        memodict[id(self)] = newFlags ##: huh?
         return newFlags
 
     def __copy__(self):

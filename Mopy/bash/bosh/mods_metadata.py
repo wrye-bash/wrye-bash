@@ -703,7 +703,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               'cannot be loaded by %(game_name)s and the %(ck_name)s cannot '
               'automatically fix them by resaving. They have to be manually '
               'fixed in the %(ck_name)s by changing the critical data (CRDT) '
-              'subrecord to restore the correct data, which should usally be '
+              'subrecord to restore the correct data, which should usually be '
               'done by the mod author. Failing that, the safest course of '
               'action is to uninstall the plugins.') % {
             u'game_name': bush.game.displayName,

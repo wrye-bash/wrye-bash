@@ -463,8 +463,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Tweak Names
     #--------------------------------------------------------------------------
-    names_tweaks = Fallout3GameInfo.names_tweaks | {
-        'NamesTweak_AmmoWeight_Fnv'} - {'NamesTweak_AmmoWeight_Fo3'}
+    names_tweaks = ((Fallout3GameInfo.names_tweaks |
+                    {'NamesTweak_AmmoWeight_Fnv'}) -
+                    {'NamesTweak_AmmoWeight_Fo3'})
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):

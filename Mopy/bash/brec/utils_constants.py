@@ -298,7 +298,7 @@ int_unpacker = structs_cache['I'].unpack
 class FixedString(str):
     """An action for MelStructs that will decode and encode a fixed-length
     string. Note that you do not need to specify defaults when using this."""
-    __slots__ = ('str_length',)
+    __slots__ = ('_str_length',)
     _str_encoding = bolt.pluginEncoding
 
     def __new__(cls, str_length, target_str: str | bytes = ''):
@@ -309,16 +309,22 @@ class FixedString(str):
                 decoder(x, cls._str_encoding, avoidEncodings=('utf8', 'utf-8'))
                 for x in cstrip(target_str).split(b'\n'))
         new_str = super(FixedString, cls).__new__(cls, decoded_str)
-        new_str.str_length = str_length
+        new_str._str_length = str_length
         return new_str
 
     def __call__(self, new_str):
         # 0 is the default, so replace it with whatever we currently have
-        return self.__class__(self.str_length, new_str or str(self))
+        return self.__class__(self._str_length, new_str or str(self))
+
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
 
     def dump(self):
-        return bolt.encode_complex_string(self, max_size=self.str_length,
-                                          min_size=self.str_length)
+        return bolt.encode_complex_string(self, max_size=self._str_length,
+                                          min_size=self._str_length)
 
 class AutoFixedString(FixedString):
     """Variant of FixedString that uses chardet to detect encodings."""
