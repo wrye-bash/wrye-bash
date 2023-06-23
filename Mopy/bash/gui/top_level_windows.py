@@ -149,10 +149,6 @@ class WindowFrame(_TopLevelWin):
 
     def raise_frame(self): self._native_widget.Raise()
 
-    # TODO(inf) de-wx! Menu should become a wrapped component as well
-    def show_popup_menu(self, menu):
-        self._native_widget.PopupMenu(menu)
-
     def _bkg_color(self):
         """Returns the background color to use for this window."""
         return Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU))

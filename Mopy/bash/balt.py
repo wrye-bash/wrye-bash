@@ -1561,7 +1561,7 @@ class UIList(PanelWin):
         return FName(pkg_column.get(uil_item))
 
     # Global Menu -------------------------------------------------------------
-    def populate_category(self, cat_label, target_category):
+    def _populate_category(self, cat_label, target_category):
         for cat_link in self.global_links[cat_label]:
             cat_link.AppendToMenu(target_category, self, 0)
 
@@ -1583,7 +1583,7 @@ class UIList(PanelWin):
             Link.Frame.set_global_menu(glb_menu)
         for curr_cat in tab_categories:
             Link.Frame.global_menu.register_category_handler(curr_cat, partial(
-                self.populate_category, curr_cat))
+                self._populate_category, curr_cat))
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1596,7 +1596,11 @@ class Links(list):
         for link in self:
             link.AppendToMenu(to_popup, parent, selection)
         Link.Popup = to_popup
-        Link.Frame.show_popup_menu(to_popup)
+        if isinstance(parent, _AComponent):
+            parent.show_popup_menu(to_popup)
+        else:
+            # TODO(inf) de-wx! Hunt down
+            parent.PopupMenu(to_popup)
         to_popup.Destroy()
         Link.Popup = None # do not leak the menu reference
 
@@ -1782,7 +1786,12 @@ class ItemLink(Link):
         # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
         menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
-        Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
+        # If the menu comes with a parent window (i.e. from the global menu),
+        # then use that for binding. Otherwise, use the parent window we got
+        # passed in (i.e. for column links, context menus, etc.)
+        if not (bind_parent := menu.GetWindow()):
+            bind_parent = _AComponent._resolve(window)
+        bind_parent.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
         Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.Append(menuItem)
         return menuItem

@@ -78,7 +78,7 @@ from bash import bass
 # distributable right now
 NOT_WINDOWS = os.name != 'nt'
 
-NSIS_VERSION = '3.08'
+NSIS_VERSION = '3.09'
 if NOT_WINDOWS:
     EXE_7z = '7z'
 else:

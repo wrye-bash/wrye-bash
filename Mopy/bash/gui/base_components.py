@@ -384,6 +384,10 @@ class _AComponent:
         """The inverse of to_absolute_position."""
         return tuple(self._native_widget.ScreenToClient(absolute_pos))
 
+    # TODO(inf) de-wx! Menu should become a wrapped component as well
+    def show_popup_menu(self, menu):
+        self._native_widget.PopupMenu(menu)
+
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.
