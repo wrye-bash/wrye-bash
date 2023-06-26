@@ -37,7 +37,7 @@ import webbrowser
 from collections import defaultdict
 from itertools import chain
 
-from . import BashFrame, INIList, Installers_Link
+from . import BashFrame, INIList, Installers_Link, InstallersDetails
 from .dialogs import SyncFromDataEditor
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
@@ -46,7 +46,7 @@ from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
-from ..bosh import InstallerConverter, InstallerProject, converters
+from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..wbtemp import cleanup_temp_dir
@@ -78,38 +78,13 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _InstallerLink(Installers_Link, EnabledLink):
-    """Common functions for installer links..."""
+    """Common methods for installer links."""
 
-    ##: Methods below should be in archives.py
     def _promptSolidBlockSize(self, title, default_size=0):
         return self._askNumber(
-            _(u'Use what maximum size for each solid block?') + u'\n' + _(
-                u"Enter '0' to use 7z's default size."), prompt=u'MB',
+            _('Use what maximum size for each solid block?') + '\n' + _(
+                "Enter '0' to use 7z's default size."), prompt='MB',
             title=title, initial_num=default_size, min_num=0, max_num=102400)
-
-    def _pack(self, archive_path, installer, project, release=False):
-        #--Archive configuration options
-        blockSize = None
-        if archive_path.fn_ext in archives.noSolidExts:
-            isSolid = False
-        else:
-            if not u'-ms=' in bass.inisettings[u'7zExtraCompressionArguments']:
-                isSolid = self._askYes(_(u'Use solid compression for %s?')
-                                       % archive_path, default_is_yes=False)
-                if isSolid:
-                    blockSize = self._promptSolidBlockSize(title=self._text)
-            else:
-                isSolid = True
-        with balt.Progress(_('Packing to Archive...')) as progress:
-            #--Pack
-            installer.packToArchive(project, archive_path, isSolid, blockSize,
-                                    SubProgress(progress, 0, 0.8),
-                                    release=release)
-            #--Add the new archive to Bash
-            iArchive = self.idata.new_info(archive_path, progress,
-                is_proj=False, install_order=installer.order + 1)
-            iArchive.blockSize = blockSize
-        self.window.RefreshUI(detail_item=archive_path)
 
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
@@ -971,6 +946,7 @@ class Installer_CopyConflicts(_SingleInstallable):
 # InstallerDetails Plugin Filter Links ----------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Details_Link(EnabledLink):
+    window: InstallersDetails
 
     def _enable(self): return len(self.window.espm_checklist_fns) != 0
 
@@ -1261,8 +1237,29 @@ class InstallerProject_Pack(_SingleProject):
         archive_name = self._askFilename(
             _(u'Pack %s to Archive:') % self._selected_item, archive_name)
         if not archive_name: return
-        self._pack(archive_name, self._selected_info, self._selected_item,
-                   release=self.__class__.release)
+        installer = self._selected_info
+        #--Archive configuration options
+        blockSize = None
+        if archive_name.fn_ext in archives.noSolidExts:
+            isSolid = False
+        else:
+            if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
+                isSolid = self._askYes(_('Use solid compression for %s?')
+                                       % archive_name, default_is_yes=False)
+                if isSolid:
+                    blockSize = self._promptSolidBlockSize(title=self._text)
+            else:
+                isSolid = True
+        with balt.Progress(_('Packing to Archive...')) as progress:
+            #--Pack
+            installer.packToArchive(self._selected_item, archive_name, isSolid,
+                                    blockSize, SubProgress(progress, 0, 0.8),
+                                    release=self.__class__.release)
+            #--Add the new archive to Bash
+            iArchive = self.idata.new_info(archive_name, progress,
+                is_proj=False, install_order=installer.order + 1)
+            iArchive.blockSize = blockSize
+        self.window.RefreshUI(detail_item=archive_name)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):

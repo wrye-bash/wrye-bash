@@ -103,6 +103,7 @@ settings: bolt.Settings | None = None
 class Installers_Link(ItemLink):
     """InstallersData mixin"""
     _dialog_title: str
+    window: 'InstallersList'
 
     @property
     def idata(self):

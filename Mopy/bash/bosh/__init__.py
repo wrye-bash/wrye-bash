@@ -3321,15 +3321,14 @@ class SaveInfos(FileInfos):
     def move_infos(self, sources, destinations, window, bash_frame):
         # operations should be atomic - we should construct a list of filenames
         # to unhide and pass that in
-        moved = super(SaveInfos, self).move_infos(sources, destinations,
-                                                  window, bash_frame)
+        moved = super().move_infos(sources, destinations, window, bash_frame)
         for s, d in zip(sources, destinations):
             if FName(d.stail) in moved:
                 self._co_copy_or_move(s, d, move_cosave=True)
                 break
         for m in moved:
             try:
-                self.new_info(m, notify_bain=True)
+                self.new_info(m, notify_bain=True) ##: why True??
             except FileError:
                 pass # will warn below
         bash_frame.warn_corrupted(warn_saves=True)
