@@ -38,7 +38,7 @@ from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
     best_ini_files
-from .. import archives, balt, bass, bolt, bush, env, gui # YAK!
+from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
@@ -46,7 +46,6 @@ from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     forward_compat_path_to_fn_list, round_size, top_level_items
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
-from ..gui import askYes ##: YAK
 from ..ini_files import OBSEIniFile, supported_ini_exts
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
@@ -461,7 +460,7 @@ class Installer(ListInfo):
     _extensions_to_process = set()
 
     @staticmethod
-    def init_global_skips():
+    def init_global_skips(ask_yes):
         """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
         and on flipping skip settings - and nowhere else, hopefully."""
@@ -521,7 +520,7 @@ class Installer(ListInfo):
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= bain_image_exts
-        Installer._init_executables_skips()
+        Installer._init_executables_skips(ask_yes)
 
     @staticmethod
     def init_attributes_process():
@@ -656,7 +655,7 @@ class Installer(ListInfo):
         return skips, skip_ext
 
     @staticmethod
-    def _init_executables_skips():
+    def _init_executables_skips(ask_yes):
         if force_recalc := (Installer._goodDlls is Installer._badDlls is None):
             Installer._goodDlls = collections.defaultdict(list)
             Installer._badDlls = collections.defaultdict(list)
@@ -671,7 +670,7 @@ class Installer(ListInfo):
                 dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
-            if not askYes(balt.Link.Frame, message, dialogTitle):
+            if not ask_yes(None, message, dialogTitle): ##: was balt.Link.Frame <=> None?
                 badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
@@ -1290,20 +1289,21 @@ class _InstallerPackage(Installer, AFile):
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
     def _open_txt_file(self, rel_path): raise NotImplementedError
 
-    def _make_wizard_file_dir(self, wizard_file_name):
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
         """Abstract method that should return a directory containing the
-        specified wizard file and all files needed to run it."""
+        specified wizard file and all files needed to run it.
+        :param progress: only used for archives where we unpack to dir."""
         raise NotImplementedError
 
-    def get_wizard_file_dir(self):
+    def get_wizard_file_dir(self, progress):
         """Return a path to a directory containing all files needed for a
         BAIN wizard to run."""
-        return self._make_wizard_file_dir(self.hasWizard)
+        return self._make_wizard_file_dir(self.hasWizard, progress)
 
-    def get_fomod_file_dir(self):
+    def get_fomod_file_dir(self, progress):
         """Return a path to a directory containing all files needed for an
         FOMOD to run."""
-        return self._make_wizard_file_dir(self.has_fomod_conf)
+        return self._make_wizard_file_dir(self.has_fomod_conf, progress)
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -1516,18 +1516,17 @@ class InstallerArchive(_InstallerPackage):
                 os_sep if isdir_ else u''))
 
     def _open_txt_file(self, rel_path):
-        with gui.BusyCursor():
-            # Let the atexit handler clean up these temp files. Some editors do
-            # not appreciate us pulling the file out from under them and we
-            # can't exactly make WB wait for the editor to close
-            try:
-                unpack_dir = self.unpackToTemp([rel_path])
-                unpack_dir.join(rel_path).start()
-            except OSError:
-                pass
+        # Let the atexit handler clean up these temp files. Some editors do
+        # not appreciate us pulling the file out from under them and we
+        # can't exactly make WB wait for the editor to close
+        try:
+            unpack_dir = self.unpackToTemp([rel_path])
+            unpack_dir.join(rel_path).start()
+        except OSError:
+            pass
 
-    def _make_wizard_file_dir(self, wizard_file_name):
-        with balt.Progress(_('Extracting images...'), abort=True) as progress:
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
+        with progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
             image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
@@ -1679,7 +1678,7 @@ class InstallerProject(_InstallerPackage):
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def _make_wizard_file_dir(self, _wizard_file_name):
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
         return self.abs_path # Wizard file already exists here
 
 #------------------------------------------------------------------------------
@@ -1785,7 +1784,8 @@ class InstallersData(DataStore):
         if self.lastKey not in self:
             self[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
-            with gui.BusyCursor(): modInfos.refresh_crcs()
+            sub = SubProgress(progress, 0.0, 0.05) if progress else progress
+            modInfos.refresh_crcs(progress=sub)
         #--Refresh Other - FIXME(ut): docs
         if u'D' in what:
             changes |= self._refresh_from_data_dir(progress, fullRefresh)

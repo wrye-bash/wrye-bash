@@ -186,6 +186,7 @@ settingDefaults = { # keep current naming format till refactored
     'bash.restore_scroll_positions': True,
     'bash.show_internal_keys': False,
     'bash.temp_dir': '',
+    'bash.window.sizes': {},
     #--Update Check on Boot
     'bash.update_check.enabled': True,
     'bash.update_check.cooldown': 1,

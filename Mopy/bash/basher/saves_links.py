@@ -184,7 +184,7 @@ class Saves_Profiles(ChoiceLink):
             newSaves = self.relativePath
             with BusyCursor():
                 Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
-                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
+                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
                 Link.Frame.modList.RefreshUI(refreshSaves=False,
                                              focus_list=False)
                 bosh.saveInfos.refresh()
@@ -331,9 +331,9 @@ class Save_ExportScreenshot(OneItemLink):
 # that needs two or more plugins and diffs those against each other
 class Save_DiffMasters(EnabledLink):
     """Shows how saves masters differ from active mod list."""
-    _text = _(u'Diff Masters...')
-    _help = _(u'Show how the masters of a save differ from active mod list or'
-             u' another save')
+    _text = _('Diff Masters...')
+    _help = _('Show how the masters of a save differ from active mod list or '
+              'another save')
 
     def _enable(self): return len(self.selected) in (1,2)
 
@@ -783,7 +783,7 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             statslog = log.out.getvalue()
-            self._showLog(statslog, title=self._selected_item, fixedFont=False)
+            self._showLog(statslog, title=self._selected_item)
 
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
@@ -801,8 +801,7 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
             log = bolt.LogFile(io.StringIO())
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             logtxt = log.out.getvalue()
-        self._showLog(logtxt, title=self._cosave.abs_path.tail,
-                      fixedFont=False)
+        self._showLog(logtxt, title=self._cosave.abs_path.tail)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(_Save_StatCosave):

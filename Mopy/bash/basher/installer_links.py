@@ -35,6 +35,7 @@ import os
 import re
 import webbrowser
 from collections import defaultdict
+from functools import wraps
 from itertools import chain
 
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
@@ -86,6 +87,13 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 "Enter '0' to use 7z's default size."), prompt='MB',
             title=title, initial_num=default_size, min_num=0, max_num=102400)
 
+def _with_busy_cursor(func):
+    @wraps(func)
+    def _busy(*args, **kwargs):
+        with BusyCursor():
+            func(*args, **kwargs)
+    return _busy
+
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
     def _enable(self):
@@ -120,7 +128,7 @@ class _NoMarkerLink(_InstallerLink):
         return bool(self._installables) and super()._enable()
 
 #------------------------------------------------------------------------------
-class _Installer_AWizardLink(_InstallerLink):
+class _Installer_AWizardLink(_NoMarkerLink):
     """Base class for wizard links."""
     def _perform_install(self, sel_package, ui_refresh):
         if sel_package.is_active: # If it's currently installed, anneal
@@ -158,8 +166,8 @@ class Installer_EditFomod(_Installer_AFomod, _Installer_AViewOrEditFile):
                 if self._run_on_archive() else
                 _('Edit the ModuleConfig.xml associated with this project.'))
 
-    def Execute(self):
-        self._selected_info.open_fomod_conf()
+    @_with_busy_cursor
+    def Execute(self): self._selected_info.open_fomod_conf()
 
 class _Installer_ARunFomod(_Installer_AFomod):
     """Base class for FOMOD links that need to run the FOMOD wizard."""
@@ -176,10 +184,15 @@ class _Installer_ARunFomod(_Installer_AFomod):
                         # Select the package we want to install - posts events
                         # to set details and update GUI
                         self.window.SelectItem(sel_package.fn_key)
+                        if sel_package.is_archive: ##: yak identical code in Installer_Wizard
+                            progress = balt.Progress(_('Extracting images...'),
+                                                     abort=True)
+                        else:
+                            progress = None
                         try:
-                            fm_wizard = InstallerFomod(
-                                self.window, sel_package,
-                                self._wants_install_checkbox)
+                            fm_wizard = InstallerFomod(self.window,
+                                sel_package, self._wants_install_checkbox,
+                                progress)
                         except CancelError:
                             continue
                         if not fm_wizard.validate_fomod():
@@ -280,8 +293,8 @@ class Installer_EditWizard(_Installer_AViewOrEditFile):
     def _enable(self):
         return super()._enable() and bool(self._selected_info.hasWizard)
 
-    def Execute(self):
-        self._selected_info.open_wizard()
+    @_with_busy_cursor
+    def Execute(self): self._selected_info.open_wizard()
 
 class Installer_Wizard(_Installer_AWizardLink):
     """Runs the install wizard to select sub-packages and filter plugins."""
@@ -316,8 +329,13 @@ class Installer_Wizard(_Installer_AWizardLink):
                     idetails.set_fomod_mode(fomod_enabled=False)
                     idetails.refreshCurrent(sel_package)
                     try:
+                        if sel_package.is_archive: ##: yak identical code in Installer_RunFomod
+                            progress = balt.Progress(_('Extracting images...'),
+                                                     abort=True)
+                        else:
+                            progress = None
                         wizard = InstallerWizard(self.window, sel_package,
-                                                 self.bAuto)
+                                                 self.bAuto, progress)
                     except CancelError:
                         return
                     wizard.ensureDisplayed()
@@ -418,6 +436,7 @@ class Installer_OpenReadme(_SingleInstallable):
     def _enable(self):
         return super()._enable() and bool(self._selected_info.hasReadme)
 
+    @_with_busy_cursor
     def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------
@@ -667,8 +686,7 @@ class Installer_ListStructure(_SingleInstallable):
         source_list_txt = self._selected_info.listSource()
         #--Get masters list
         copy_text_to_clipboard(source_list_txt)
-        self._showLog(source_list_txt, title=_(u'Package Structure'),
-                      fixedFont=False)
+        self._showLog(source_list_txt, title=_('Package Structure'))
 
 class Installer_ExportAchlist(_SingleInstallable):
     """Write an achlist file with all the destinations files for this
@@ -1033,7 +1051,7 @@ class Installer_Espm_List(_Installer_Details_Link):
             subs += f'{sub_prefix}{self.window.get_espm(i)}\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
-        self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
+        self._showLog(subs, title=_('Plugin List'))
 
 class Installer_Espm_JumpToMod(_Installer_Details_Link):
     """Jumps to a plugin in the Mods tab, if it is installed."""
@@ -1103,7 +1121,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
             subs += sp_list.lb_get_str_item_at_index(i) + '\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
-        self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
+        self._showLog(subs, title=_('Sub-Package Lists'))
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------

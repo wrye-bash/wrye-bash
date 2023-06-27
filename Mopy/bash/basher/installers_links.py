@@ -31,7 +31,7 @@ from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
 from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
-from ..gui import copy_text_to_clipboard
+from ..gui import copy_text_to_clipboard, askYes
 from ..parsers import CsvParser
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
@@ -159,7 +159,7 @@ class Installers_ListPackages(Installers_Link):
         package_list = self.idata.getPackageList(
             showInactive=not installed_only)
         copy_text_to_clipboard(package_list)
-        self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
+        self._showLog(package_list, title=_('BAIN Packages'))
 
 #------------------------------------------------------------------------------
 class Installers_AnnealAll(Installers_Link):
@@ -582,7 +582,7 @@ class _Installers_RescanningLink(Installers_Link, BoolLink):
 class _Installers_Skip(_Installers_RescanningLink):
     """Toggle global skip settings and update."""
     def _pre_rescan_action(self):
-        bosh.bain.Installer.init_global_skips()
+        bosh.bain.Installer.init_global_skips(askYes)
 
 #------------------------------------------------------------------------------
 class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):

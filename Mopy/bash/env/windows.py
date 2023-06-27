@@ -68,10 +68,10 @@ except ImportError:
     pass # We'll raise an error in bash.py
 from .common import FileOperationType, _StrPath
 
-def file_operation(operation: str | FileOperationType,
-        sources_dests: dict[_StrPath, _StrPath], allow_undo: bool = True,
-        ask_confirm: bool = True, rename_on_collision: bool = False,
-        silent: bool = False, parent=None) -> dict[str, str]:
+def file_operation(operation: FileOperationType,
+        sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
+        ask_confirm=None, rename_on_collision=False, silent=False,
+        parent=None) -> dict[str, str]:
     """file_operation API. Performs a filesystem operation on the specified
     files using the Windows API.
 
@@ -90,8 +90,9 @@ def file_operation(operation: str | FileOperationType,
         bolt.Path, pathlib.Path, etc).
     :param allow_undo: If possible, preserve undo information so the operation
         can be undone. For deletions, this will attempt to use the recylce bin.
-    :param ask_confirm: If True, responds to any OS dialog boxes with "Yes to
-        All".
+    :param ask_confirm: If False, responds to any OS dialog boxes with "Yes to
+        All". Was always True (or askYes) so made it dumb till we decide what
+        to do - note `silent` is unused in common.file_operation
     :param rename_on_collision: If True, automatically renames files on a move
         or copy when collisions occcur.
     :param silent: If True, do not display progress dialogs.
@@ -102,9 +103,9 @@ def file_operation(operation: str | FileOperationType,
     # Options for the file operation
     op_flgs = FileOperationFlags.NO_CONFIRM_MKDIR
     if allow_undo: op_flgs |= FileOperator.UNDO_FLAGS
-    if not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
+    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS # sets NO_CONFIMATION
+    elif not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
     if rename_on_collision: op_flgs |= FileOperationFlags.RENAMEONCOLLISION
-    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS
     try:
         with FileOperator(parent, op_flgs) as fo:
             # Queue the operations
@@ -134,9 +135,9 @@ def file_operation(operation: str | FileOperationType,
     except ifileoperation.errors.InterfaceNotImplementedError as e:
         # Most likely due to running on WINE
         import warnings
-        warnings.warn(f'Exception in ifileoperation: {e}. If you are running on'
-            ' WINE this is expected, otherwise please report this issue. '
-            'Falling back to standard library implementation.')
+        warnings.warn(f'Exception in ifileoperation: {e}. If you are running '
+            f'on WINE this is expected, otherwise please report this issue. '
+            f'Falling back to standard library implementation.')
         return _default_file_operation(operation, sources_dests, allow_undo,
             ask_confirm, rename_on_collision, silent,)
     # Filter out deletions:

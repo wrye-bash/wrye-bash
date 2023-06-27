@@ -35,7 +35,7 @@ import stat
 import subprocess
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Any
 
 from .. import bolt
 from ..bolt import GPath, Path, deprint
@@ -205,8 +205,8 @@ def _retry(operation: Callable[[], T], folder_to_make: Path) -> T:
         return operation()
 
 def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
-        ask_confirm: bool, parent, move: bool) -> dict[str, str]:
-    """Copy files using shutil"""
+                   ask_confirm, parent, move: bool) -> dict[str, str]:
+    """Copy files using shutil."""
     # NOTE 1: Using stdlib methods we can't support `allow_undo`
     # NOTE 2: progress dialogs: NOT IMPLEMENTED (so `silent` is ignored)
     # TODO(241): rename_on_collision NOT IMPLEMENTED
@@ -242,12 +242,11 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
         elif from_path.is_file():
             # Copying a file: check for collisions if the user wants prompts
             if ask_confirm:
-                from ..gui import askYes ##: YAK!
                 if to_path.is_file():
                     msg = _('Overwrite %(destination)s with %(source)s?') % {
                         'destination': os.fspath(to_path),
                         'source': os.fspath(from_path)}
-                    if not askYes(parent, msg, _('Overwrite file?')):
+                    if not ask_confirm(parent, msg, _('Overwrite file?')):
                         continue
             # Perform the copy/move
             if move:
@@ -264,8 +263,9 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
 
 def file_operation(operation: FileOperationType,
         sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
-        ask_confirm=False, rename_on_collision=False,
-        silent = False, parent=None) -> dict[str, str]:
+        ask_confirm: Callable[[Any, str, str], bool] | None = None,
+        rename_on_collision=False, silent=False, parent=None
+    ) -> dict[str, str]:
     """file_operation API. Performs a filesystem operation on the specified
     files.
 
@@ -287,8 +287,9 @@ def file_operation(operation: FileOperationType,
         will be created for you, without prompting.
     :param allow_undo: If possible, preserve undo information so the operation
         can be undone. For deletions, this will attempt to use the recylce bin.
-    :param ask_confirm: If False, responds to any OS dialog boxes with
-        "Yes to All".
+    :param ask_confirm: show custom prompts if a callback (askYes) is passed.
+        The callback takes a parent window, a message, and a title, and returns
+        True if the user confirms the action, False otherwise.
     :param rename_on_collision: If True, automatically renames files on a move
         or copy when collisions occur.
     :param silent: If True, do not display progress dialogs.
@@ -304,18 +305,15 @@ def file_operation(operation: FileOperationType,
     if operation is FileOperationType.DELETE:
         # allow_undo: use send2trash if present, otherwise we can't do anything
         #             about this with only stdlib
-        # confirm: show custom prompts if True
         # rename_on_collision: NOT IMPLEMENTED
         # silent: no real effect (no progress dialog in the implementation)
         source_paths = [GPath(abspath(x)) for x in sources_dests]
         if ask_confirm:
-            # TODO(ut): local import, env should be above balt...
-            from ..gui import askYes  ##: YAK!
             message = _('Are you sure you want to permanently delete '
                         'these %(item_cnt)d items?') % {
                 'item_cnt': len(source_paths)}
             message += u'\n\n' + u'\n'.join([f' * {x}' for x in source_paths])
-            if not askYes(parent, message, _('Delete Multiple Items')):
+            if not ask_confirm(parent, message, _('Delete Multiple Items')):
                 return {}
         for to_delete in source_paths:
             if not to_delete.exists(): continue
@@ -329,7 +327,7 @@ def file_operation(operation: FileOperationType,
                     # but do not have permission to create a trash directory
                     # for it on the device it's on - fall back to regular
                     # deletion there
-                    deprint(f'Permission to delete trash directory denied, '
+                    deprint(f'Permission to create trash directory denied, '
                             f'permanently deleting the file ({to_delete}) '
                             f'instead', traceback=True)
             if to_delete.is_dir():

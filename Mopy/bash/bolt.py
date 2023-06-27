@@ -2459,18 +2459,18 @@ class LogFile(Log):
 #------------------------------------------------------------------------------
 class Progress(object):
     """Progress Callable: Shows progress when called."""
-    def __init__(self,full=1.0):
-        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
-        self.message = u''
+    def __init__(self, full=1.0):
+        if not full: raise exception.ArgumentError('Full must be non-zero!')
+        self.message = ''
         self.full = 1.0 * full
         self.state = 0
 
     def getParent(self):
         return None
 
-    def setFull(self,full):
-        """Set's full and for convenience, returns self."""
-        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
+    def setFull(self, full):
+        """Sets full and for convenience, returns self."""
+        if not full: raise exception.ArgumentError('Full must be non-zero!')
         self.full = 1.0 * full
         return self
 

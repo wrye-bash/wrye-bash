@@ -38,11 +38,10 @@ from . import bolt
 from .bolt import FName, Path, deprint, readme_url
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
-from .gui import RIGHT, BusyCursor, Button, CheckListBox, \
-    Color, DialogWindow, DirOpen, DocumentViewer, EventResult, FileOpen, \
-    FileOpenMultiple, FileSave, Font, GlobalMenu, HLayout, \
-    ImageWrapper, LayoutOptions, ListBox, OkButton, PanelWin, Stretch, \
-    TextArea, UIListCtrl, VLayout, WindowFrame, bell, \
+from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
+    DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
+    GlobalMenu, HLayout, ImageWrapper, LayoutOptions, ListBox, LogDialog, \
+    LogFrame, PanelWin, TextArea, UIListCtrl, VLayout, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
     askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
@@ -70,7 +69,6 @@ def load_app_icons():
 
 # Settings --------------------------------------------------------------------
 _settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
-sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
 colors: dict[str, Color] = {}
@@ -246,98 +244,32 @@ def askContinue(parent, message, continueKey=None, title=_('Warning'),
     checkBoxTxt = _("Don't show this in the future.") if continueKey else _(
         "Don't show this for the rest of operation.")
     result, check = ContinueDialog.display_dialog(parent, message, title,
-        checkBoxTxt, show_cancel=show_cancel, sizes_dict=sizes)
+        checkBoxTxt, show_cancel=show_cancel, sizes_dict=_settings)
     if continueKey and result and check: # Don't store setting if user canceled
         _settings[continueKey] = 1
     return result if continueKey else ( # 2: checked 1: OK
         (result + bool(check)) if result else False)
 
 #------------------------------------------------------------------------------
-class _Log(object):
-    _settings_key = u'balt.LogMessage'
-    def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
-        self.asDialog = asDialog
-        #--Sizing
-        key__pos_ = f'{self._settings_key}.pos'
-        key__size_ = f'{self._settings_key}.size'
-        if isinstance(title, Path): title = title.s
-        #--DialogWindow or WindowFrame
-        if self.asDialog:
-            window = DialogWindow(parent, title, sizes_dict=_settings,
-                                  icon_bundle=log_icons, size_key=key__size_,
-                                  pos_key=key__pos_)
-        else:
-            style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
-                     wx.CLOSE_BOX | wx.CLIP_CHILDREN
-            window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
-                                 _base_key=self._settings_key,
-                                 sizes_dict=_settings, style=style_)
-        window.set_min_size(200, 200)
-        self.window = window
-
-    def ShowLog(self):
-        #--Show
-        if self.asDialog: self.window.show_modal()
-        else: self.window.show_frame()
-
-class Log(_Log):
-    def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
-        """Display text in a log window"""
-        super(Log, self).__init__(parent, title, asDialog, log_icons)
-        #--Bug workaround to ensure that default colour is being used - if not
-        # called we get white borders instead of grey todo PY3: test if needed
-        self.window.reset_background_color()
-        #--Text
-        txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
-                          # special=True) SUNKEN_BORDER and TE_RICH2
-        # TODO(nycz): GUI fixed width font
-        if fixedFont:
-            fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
-            fixedFont.SetPointSize(8)
-            fixedStyle = wx.TextAttr()
-            #fixedStyle.SetFlags(0x4|0x80)
-            fixedStyle.SetFont(fixedFont)
-            # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-        #--Layout
-        ok_button = OkButton(self.window)
-        ok_button.on_clicked.subscribe(self.window.close_win)
-        VLayout(border=2, items=[
-            (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
-            (ok_button, LayoutOptions(h_align=RIGHT, border=2))
-        ]).apply_to(self.window)
-        self.ShowLog()
-
-#------------------------------------------------------------------------------
-class WryeLog(_Log):
-    _settings_key = u'balt.WryeLog'
-    def __init__(self, parent, logText, title=u'', asDialog=True,
-                 log_icons=None):
-        """Convert logText from wtxt to html and display. Optionally,
-        logText can be path to an html file."""
-        if isinstance(logText, Path):
-            logPath = logText
-        else:
-            logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
-            css_dir = bass.dirs[u'mopy'].join(u'Docs')
+def show_log(parent, logText: str | Path, title: str | Path, wrye_log=False,
+             asDialog=False):
+    """Display text in a log window."""
+    kw = {}
+    if wrye_log:
+        kw['dv_bitmaps'] = get_dv_bitmaps() #tell _LogWin we want a wryelog
+        if not isinstance(logText, Path): # we only pass a Path in the BP log
+            # convert logText from wtxt to html, pass the path to the html file
+            ##: shouldn't we create a tmp file below?
+            logPath = bass.dirs['saveBase'].join('WryeLogTemp.html')
+            css_dir = bass.dirs['mopy'].join('Docs')
             bolt.convert_wtext_to_html(logPath, logText, css_dir)
-        super().__init__(parent, title, asDialog, log_icons)
-        #--Text
-        self._html_ctrl = DocumentViewer(self.window, get_dv_bitmaps())
-        self._html_ctrl.try_load_html(file_path=logPath)
-        #--Buttons
-        gOkButton = OkButton(self.window)
-        gOkButton.on_clicked.subscribe(self.window.close_win)
-        if not asDialog:
-            self.window.set_background_color(gOkButton.get_background_color())
-        #--Layout
-        VLayout(border=2, item_expand=True, items=[
-            (self._html_ctrl, LayoutOptions(weight=1)),
-            (HLayout(items=(self._html_ctrl.get_buttons()
-                            + (Stretch(), gOkButton))),
-             LayoutOptions(border=2))
-        ]).apply_to(self.window)
-        self.ShowLog()
+            logText = logPath
+    if asDialog:
+        LogDialog.display_dialog(parent, f'{title}', Resources.bashBlue,
+                                 _settings, logText=logText, **kw)
+    else:
+        LogFrame(parent, f'{title}', Resources.bashBlue, _settings,
+                 logText=logText, **kw).show_frame()
 
 def playSound(parent,sound):
     if not sound: return
@@ -410,7 +342,7 @@ class ListEditor(DialogWindow):
         self._list_items = lid_data.getItemList()
         #--GUI
         self._size_key = self._listEditorData.__class__.__name__
-        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
+        super().__init__(parent, title, sizes_dict=_settings)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items,
                                onSelect=self.OnSelect)
@@ -451,9 +383,10 @@ class ListEditor(DialogWindow):
                 le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
         #--Done
-        if self._size_key in sizes:
+        if self._size_key in _settings['bash.window.sizes']:
             layout.apply_to(self)
-            self.component_position = sizes[self._size_key]
+            self.component_position = _settings['bash.window.sizes'][
+                self._size_key]
         else:
             layout.apply_to(self, fit=True)
 
@@ -519,12 +452,12 @@ class ListEditor(DialogWindow):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self._size_key] = self.component_size
+        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self._size_key] = self.component_size
+        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
@@ -1495,7 +1428,7 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=sizes, icon_bundle=Resources.bashBlue,
+            sizes_dict=_settings, icon_bundle=Resources.bashBlue,
             trash_icon=images['trash_can.32'].get_bitmap())
         if not dd_ok or not dd_items: return
         try:
@@ -1716,21 +1649,15 @@ class Link(object):
     def _showError(self, message, title=_(u'Error')):
         return showError(self.window, message, title)
 
-    _default_icons = object()
-    def _showLog(self, logText, title='', asDialog=False, fixedFont=False,
-                 lg_icons=_default_icons):
-        if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
-        Log(self.window, logText, title, asDialog, fixedFont,
-            log_icons=lg_icons)
+    def _showLog(self, logText, title='', *, asDialog=False):
+        show_log(self.window, logText, title, asDialog=asDialog)
 
     def _showInfo(self, message, title=_(u'Information')):
         return showInfo(self.window, message, title)
 
-    def _showWryeLog(self, logText, title='', asDialog=True,
-                     lg_icons=_default_icons):
-        if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
-        WryeLog(self.window, logText, title or self._text, asDialog,
-                log_icons=lg_icons)
+    def _showWryeLog(self, logText, title='', *, asDialog=True):
+        show_log(self.window, logText, title or self._text, wrye_log=True,
+                 asDialog=asDialog)
 
     def _askNumber(self, message, prompt='', title='', initial_num=0,
             min_num=0, max_num=10000):
