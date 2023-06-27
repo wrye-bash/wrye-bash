@@ -35,6 +35,7 @@ import os
 import re
 import webbrowser
 from collections import defaultdict
+from functools import wraps
 from itertools import chain
 
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
@@ -85,6 +86,13 @@ class _InstallerLink(Installers_Link, EnabledLink):
             _('Use what maximum size for each solid block?') + '\n' + _(
                 "Enter '0' to use 7z's default size."), prompt='MB',
             title=title, initial_num=default_size, min_num=0, max_num=102400)
+
+def _with_busy_cursor(func):
+    @wraps(func)
+    def _busy(*args, **kwargs):
+        with BusyCursor():
+            func(*args, **kwargs)
+    return _busy
 
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
@@ -158,8 +166,8 @@ class Installer_EditFomod(_Installer_AFomod, _Installer_AViewOrEditFile):
                 if self._run_on_archive() else
                 _('Edit the ModuleConfig.xml associated with this project.'))
 
-    def Execute(self):
-        self._selected_info.open_fomod_conf()
+    @_with_busy_cursor
+    def Execute(self): self._selected_info.open_fomod_conf()
 
 class _Installer_ARunFomod(_Installer_AFomod):
     """Base class for FOMOD links that need to run the FOMOD wizard."""
@@ -280,8 +288,8 @@ class Installer_EditWizard(_Installer_AViewOrEditFile):
     def _enable(self):
         return super()._enable() and bool(self._selected_info.hasWizard)
 
-    def Execute(self):
-        self._selected_info.open_wizard()
+    @_with_busy_cursor
+    def Execute(self): self._selected_info.open_wizard()
 
 class Installer_Wizard(_Installer_AWizardLink):
     """Runs the install wizard to select sub-packages and filter plugins."""
@@ -418,6 +426,7 @@ class Installer_OpenReadme(_SingleInstallable):
     def _enable(self):
         return super()._enable() and bool(self._selected_info.hasReadme)
 
+    @_with_busy_cursor
     def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------

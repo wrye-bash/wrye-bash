@@ -38,7 +38,7 @@ from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
     best_ini_files
-from .. import archives, balt, bass, bolt, bush, env, gui # YAK!
+from .. import archives, balt, bass, bolt, bush, env # YAK!
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
@@ -46,7 +46,6 @@ from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     forward_compat_path_to_fn_list, round_size, top_level_items
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
-from ..gui import askYes ##: YAK
 from ..ini_files import OBSEIniFile, supported_ini_exts
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
@@ -461,7 +460,7 @@ class Installer(ListInfo):
     _extensions_to_process = set()
 
     @staticmethod
-    def init_global_skips():
+    def init_global_skips(askYes):
         """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
         and on flipping skip settings - and nowhere else, hopefully."""
@@ -521,7 +520,7 @@ class Installer(ListInfo):
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= bain_image_exts
-        Installer._init_executables_skips()
+        Installer._init_executables_skips(askYes)
 
     @staticmethod
     def init_attributes_process():
@@ -656,7 +655,7 @@ class Installer(ListInfo):
         return skips, skip_ext
 
     @staticmethod
-    def _init_executables_skips():
+    def _init_executables_skips(askYes):
         if force_recalc := (Installer._goodDlls is Installer._badDlls is None):
             Installer._goodDlls = collections.defaultdict(list)
             Installer._badDlls = collections.defaultdict(list)
@@ -1516,15 +1515,14 @@ class InstallerArchive(_InstallerPackage):
                 os_sep if isdir_ else u''))
 
     def _open_txt_file(self, rel_path):
-        with gui.BusyCursor():
-            # Let the atexit handler clean up these temp files. Some editors do
-            # not appreciate us pulling the file out from under them and we
-            # can't exactly make WB wait for the editor to close
-            try:
-                unpack_dir = self.unpackToTemp([rel_path])
-                unpack_dir.join(rel_path).start()
-            except OSError:
-                pass
+        # Let the atexit handler clean up these temp files. Some editors do
+        # not appreciate us pulling the file out from under them and we
+        # can't exactly make WB wait for the editor to close
+        try:
+            unpack_dir = self.unpackToTemp([rel_path])
+            unpack_dir.join(rel_path).start()
+        except OSError:
+            pass
 
     def _make_wizard_file_dir(self, wizard_file_name):
         with balt.Progress(_('Extracting images...'), abort=True) as progress:
@@ -1785,7 +1783,8 @@ class InstallersData(DataStore):
         if self.lastKey not in self:
             self[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
-            with gui.BusyCursor(): modInfos.refresh_crcs()
+            sub = SubProgress(progress, 0.0, 0.05) if progress else progress
+            modInfos.refresh_crcs(progress=sub)
         #--Refresh Other - FIXME(ut): docs
         if u'D' in what:
             changes |= self._refresh_from_data_dir(progress, fullRefresh)

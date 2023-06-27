@@ -4648,7 +4648,7 @@ def InitSettings(): # this must run first !
         bass.settings[dict_key] = {k: v for k, v
                                    in bass.settings[dict_key].items()
                                    if not k.endswith(u':')}
-    bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
+    bosh.bain.Installer.init_global_skips(askYes) # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']

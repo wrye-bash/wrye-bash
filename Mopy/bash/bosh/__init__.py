@@ -2462,11 +2462,15 @@ class ModInfos(FileInfos):
             if autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
-    def refresh_crcs(self, mods=None): #TODO(ut) progress !
+    def refresh_crcs(self, mods=None, progress=None):
         pairs = {}
-        for mod_key in (self if mods is None else mods):
-            inf = self[mod_key]
-            pairs[mod_key] = inf.calculate_crc(recalculate=True)
+        with (progress := progress or bolt.Progress()):
+            mods = (self if mods is None else mods)
+            if mods: progress.setFull(len(mods))
+            for dex, mod_key in enumerate(mods):
+                progress(dex, _('Calculating crc:') + f'\n{mod_key}')
+                inf = self[mod_key]
+                pairs[mod_key] = inf.calculate_crc(recalculate=True)
         return pairs
 
     #--Refresh File
