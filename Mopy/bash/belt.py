@@ -75,13 +75,14 @@ class InstallerWizard(WizardDialog):
     pages based on a script."""
     _def_size = (600, 500)
 
-    def __init__(self, parent, installer, bAuto):
-        super(InstallerWizard, self).__init__(parent,
-            title=_(u'Installer Wizard'), sizes_dict=bass.settings,
-            size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
-        #parser that will spit out the pages
-        self._wizard_dir = installer.get_wizard_file_dir()
+    def __init__(self, parent, installer, bAuto, progress):
+        super().__init__(parent, title=_('Installer Wizard'),
+            sizes_dict=bass.settings, size_key='bash.wizard.size',
+            pos_key='bash.wizard.pos')
+        # get the wizard file - if we are an archive pass a progress to unpack
+        self._wizard_dir = installer.get_wizard_file_dir(progress)
         self._wizard_file = self._wizard_dir.join(installer.hasWizard)
+        # parser that will spit out the pages
         self.parser = WryeParser(self, installer, bAuto)
         self.ret = WizInstallInfo()
 

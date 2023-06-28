@@ -38,7 +38,7 @@ from zlib import crc32
 
 from . import DataStore, InstallerConverter, ModInfos, bain_image_exts, \
     best_ini_files
-from .. import archives, balt, bass, bolt, bush, env # YAK!
+from .. import archives, bass, bolt, bush, env
 from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
@@ -670,7 +670,7 @@ class Installer(ListInfo):
                 dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
-            if not askYes(balt.Link.Frame, message, dialogTitle):
+            if not askYes(None, message, dialogTitle): ##: was balt.Link.Frame <=> None?
                 badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
@@ -1289,20 +1289,21 @@ class _InstallerPackage(Installer, AFile):
     def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
     def _open_txt_file(self, rel_path): raise NotImplementedError
 
-    def _make_wizard_file_dir(self, wizard_file_name):
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
         """Abstract method that should return a directory containing the
-        specified wizard file and all files needed to run it."""
+        specified wizard file and all files needed to run it.
+        :param progress: only used for archives where we unpack to dir."""
         raise NotImplementedError
 
-    def get_wizard_file_dir(self):
+    def get_wizard_file_dir(self, progress):
         """Return a path to a directory containing all files needed for a
         BAIN wizard to run."""
-        return self._make_wizard_file_dir(self.hasWizard)
+        return self._make_wizard_file_dir(self.hasWizard, progress)
 
-    def get_fomod_file_dir(self):
+    def get_fomod_file_dir(self, progress):
         """Return a path to a directory containing all files needed for an
         FOMOD to run."""
-        return self._make_wizard_file_dir(self.has_fomod_conf)
+        return self._make_wizard_file_dir(self.has_fomod_conf, progress)
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -1524,8 +1525,8 @@ class InstallerArchive(_InstallerPackage):
         except OSError:
             pass
 
-    def _make_wizard_file_dir(self, wizard_file_name):
-        with balt.Progress(_('Extracting images...'), abort=True) as progress:
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
+        with progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
             image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
@@ -1677,7 +1678,7 @@ class InstallerProject(_InstallerPackage):
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def _make_wizard_file_dir(self, _wizard_file_name):
+    def _make_wizard_file_dir(self, wizard_file_name, progress):
         return self.abs_path # Wizard file already exists here
 
 #------------------------------------------------------------------------------

@@ -128,7 +128,7 @@ class _NoMarkerLink(_InstallerLink):
         return bool(self._installables) and super()._enable()
 
 #------------------------------------------------------------------------------
-class _Installer_AWizardLink(_InstallerLink):
+class _Installer_AWizardLink(_NoMarkerLink):
     """Base class for wizard links."""
     def _perform_install(self, sel_package, ui_refresh):
         if sel_package.is_active: # If it's currently installed, anneal
@@ -184,10 +184,15 @@ class _Installer_ARunFomod(_Installer_AFomod):
                         # Select the package we want to install - posts events
                         # to set details and update GUI
                         self.window.SelectItem(sel_package.fn_key)
+                        if sel_package.is_archive: ##: yak identical code in Installer_Wizard
+                            progress = balt.Progress(_('Extracting images...'),
+                                                     abort=True)
+                        else:
+                            progress = None
                         try:
-                            fm_wizard = InstallerFomod(
-                                self.window, sel_package,
-                                self._wants_install_checkbox)
+                            fm_wizard = InstallerFomod(self.window,
+                                sel_package, self._wants_install_checkbox,
+                                progress)
                         except CancelError:
                             continue
                         if not fm_wizard.validate_fomod():
@@ -324,8 +329,13 @@ class Installer_Wizard(_Installer_AWizardLink):
                     idetails.set_fomod_mode(fomod_enabled=False)
                     idetails.refreshCurrent(sel_package)
                     try:
+                        if sel_package.is_archive: ##: yak identical code in Installer_RunFomod
+                            progress = balt.Progress(_('Extracting images...'),
+                                                     abort=True)
+                        else:
+                            progress = None
                         wizard = InstallerWizard(self.window, sel_package,
-                                                 self.bAuto)
+                                                 self.bAuto, progress)
                     except CancelError:
                         return
                     wizard.ensureDisplayed()
