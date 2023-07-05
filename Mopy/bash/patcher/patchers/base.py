@@ -287,7 +287,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
 ##            for rid, record in self.patchFile.tops[type].iter_present_records():
 ##                if rid in self.old_new:
 ##                    record.fid = old_new.get(record.fid, record.fid)
-##                    count.increment(record.fid[0])
+##                    count.increment(record.fid.mod_fn)
 ####                    record.mapFids(swapper,True)
 ##                    keep(record.fid, record)
         for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_records.items():

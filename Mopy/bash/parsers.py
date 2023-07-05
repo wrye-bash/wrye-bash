@@ -916,7 +916,7 @@ class ItemStats(_HandleAliases):
                 setattr(record, stat_key, n_stat)
         if change:
             record.setChanged()
-            changed_stats[record.fid[0]] += 1
+            changed_stats[record.fid.mod_fn] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -1008,7 +1008,7 @@ class ScriptText(_TextParser):
     def _header_row(self, out):
         # __win_line_sep: scripts line separator - or so we trust
         _scpt_lines, longid, eid = self._writing_state
-        comment = '\n;'.join((f'{longid[0]}', f'0x{longid[1]:06X}', eid))
+        comment = f'{longid.mod_fn}\n;0x{longid.object_dex:06X}\n;{eid}'
         out.write(f';{comment}\n')
 
     def _write_rows(self, out):
@@ -1110,7 +1110,7 @@ class ItemPrices(_HandleAliases):
         value = stats[u'value']
         if record.value != value:
             record.value = value
-            changed_stats[record.fid[0]] += 1
+            changed_stats[record.fid.mod_fn] += 1
             record.setChanged()
 
     def _row_out(self, lfid, stored_data, top_grup,
@@ -1148,6 +1148,9 @@ class _UsesEffectsMixin(_HandleAliases):
         return attr_val
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+        ##: Skip OBME records, do not have actorValue for one
+        if record.obme_record_version is not None:
+            return
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
                                self._attr_serializer}
 

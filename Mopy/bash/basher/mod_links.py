@@ -2080,11 +2080,11 @@ class _SpellRecords_Link(ItemLink):
         return SpellRecords(detailed=self.do_detailed)
 
     def Execute(self):
-        message = self._do_what + u'\n' + _(u'(If not, they will just be '
-                                            u'skipped).')
+        message = f'{self._do_what}\n' + _(
+            '(If not, they will just be skipped).')
         self.do_detailed = self._askYes(message, self.progressTitle,
                                         questionIcon=True)
-        super(_SpellRecords_Link, self).Execute()
+        super().Execute()
 
 class Mod_SpellRecords_Export(_SpellRecords_Link, _Mod_Export_Link):
     """Export Spell details from mod to text file."""

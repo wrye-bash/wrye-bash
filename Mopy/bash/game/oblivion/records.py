@@ -295,8 +295,8 @@ class MreHasEffects(MelRecord):
     attr_csv_struct['effects'] = [None, _effect_headers, lambda val:
         MreHasEffects._write_effects(val)[1:]] # chop off the first comma...
     attr_csv_struct['script_fid'] = [None, (_('Script Mod Name'),
-        _('Script ObjectIndex')), lambda val:(
-    '"None","None"' if val is None else '"%s","0x%06X"' % val)]
+        _('Script ObjectIndex')), lambda val: '"None","None"' if val is None
+            else f'"{val.mod_fn}","0x{val.object_dex:06X}"']
     # typing to silence IDE's warnings - move to pyi stubs!
     effects: list
 
@@ -367,8 +367,8 @@ class MreHasEffects(MelRecord):
         effects_list = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
-            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
-            seschool,sevisual,se_hostile,sename = _effect
+            eff_name, magnitude, area, duration, range_, actorvalue, semod, \
+                seobj, seschool, sevisual, se_hostile, sename = _effect
             eff_name = str_or_none(eff_name) #OBME not supported
             # (support requires adding a mod/objectid format to the
             # csv, this assumes all MGEFCodes are raw)
@@ -430,7 +430,6 @@ class MreHasEffects(MelRecord):
         schoolTypeNumber_Name = cls._school_number_name
         recipientTypeNumber_Name = cls._recipient_number_name
         actorValueNumber_Name = cls._actor_val_number_name
-        scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
         output = []
         for effect in effects:
             efname, magnitude, area, duration, range_, actorvalue = \
@@ -447,8 +446,10 @@ class MreHasEffects(MelRecord):
                 sevisual = 'NONE' if sevisual == null4 else sig_to_str(
                     sevisual)
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                output.append(scriptEffectFormat % (*longid,
-                    seschool, sevisual, bool(int(seflags)), sename))
+                output.append(
+                    f',"{longid.mod_fn}","0x{longid.object_dex:06X}",'
+                    f'"{seschool}","{sevisual}","{bool(int(seflags))}",'
+                    f'"{sename}"')
             else:
                 output.append(',"None","None","None","None","None","None"')
         return ''.join(output)

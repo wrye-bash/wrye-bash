@@ -29,7 +29,7 @@ from ._saves import SaveFile, SreNPC
 from .. import bush
 from ..bolt import Flags, Path, encode, pack_byte, pack_int, struct_pack, \
     struct_unpack, structs_cache
-from ..brec import FormId, int_unpacker, null2
+from ..brec import FormId, int_unpacker, null2, RecordType
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
@@ -443,6 +443,7 @@ class PCFaces(object):
         npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
         npc = modFile.create_record(b'NPC_', npcid, head_flags=0x40000)
         npc.eid = eid
+        npc.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags() ##: setDefault - drop this!
         npc.flags.female = face.gender
         npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
         PCFaces._set_npc_attrs(npc, face, masterMap)
