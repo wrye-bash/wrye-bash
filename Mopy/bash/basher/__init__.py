@@ -2593,7 +2593,7 @@ class InstallersList(UIList):
     _sort_keys = {
         u'Package' : None,
         u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].modified,
+        u'Modified': lambda self, x: self.data_store[x].file_mod_time,
         u'Size'    : lambda self, x: self.data_store[x].fsize,
         u'Files'   : lambda self, x: self.data_store[x].num_of_files,
     }
@@ -2612,7 +2612,7 @@ class InstallersList(UIList):
     labels = {
         'Package':  lambda self, p: p,
         'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].modified),
+        'Modified': lambda self, p: format_date(self.data_store[p].file_mod_time),
         'Size':     lambda self, p: self.data_store[p].size_string(),
         'Files':    lambda self, p: self.data_store[p].number_string(
             self.data_store[p].num_of_files),
@@ -2959,8 +2959,9 @@ class InstallersList(UIList):
         new_marker = FName('====')
         try:
             index = self._get_uil_index(new_marker)
-        except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.add_marker(new_marker, max_order)
+        except KeyError: # '====' not found in the internal dictionary
+            self.data_store.new_info(new_marker, install_order=max_order,
+                                     is_mark=True)
             self.RefreshUI() # need to redraw all items cause order changed
             index = self._get_uil_index(new_marker)
         if index != -1:
@@ -2976,24 +2977,24 @@ class InstallersList(UIList):
         install, in case a refresh is requested because those files were
         modified/deleted (BAIN only scans Data/ once or boot). If 'shallow' is
         True (only the configurations of the installers changed) it will run
-        refreshDataSizeCrc of the installers, otherwise a full refreshBasic."""
-        toRefresh = list(self.data_store.ipackages(toRefresh))
+        refreshDataSizeCrc of the installers, otherwise a full _reset_cache."""
+        toRefresh = self.data_store.sorted_values(
+            self.data_store.ipackages(toRefresh))
         if not toRefresh: return
         try:
             with balt.Progress(_('Refreshing Packages...'),
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
-                for index, installer in enumerate(
-                        self.data_store.sorted_values(toRefresh)):
+                for index, installer in enumerate(toRefresh):
                     progress(index,
                              _('Refreshing Packages...') + f'\n{installer}')
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:
-                        op = partial(installer.refreshBasic,
-                                     SubProgress(progress, index, index + 1),
-                                     calculate_projects_crc)
+                        op = partial(installer._reset_cache,
+                            progress=SubProgress(progress, index, index + 1),
+                            recalculate_project_crc=calculate_projects_crc)
                     dest.update(op())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
@@ -3222,7 +3223,7 @@ class InstallersDetails(_SashDetailsPanel):
             inf_.extend([
                 _('Modified: %(modified_date)s') % {
                     'modified_date': 'N/A' if is_mark else
-                    format_date(installer.modified)},
+                    format_date(installer.file_mod_time)},
                 _('Data CRC: %(data_crc)s') % {
                     'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
                 _('Files: %(num_files)s') % {
@@ -3441,58 +3442,54 @@ class InstallersPanel(BashTab):
             return
         try:
             self.refreshing = True
-            self._refresh_installers_if_needed(canCancel, fullRefresh,
-                                               scan_data_dir, focus_list)
+            if settings.get('bash.installers.updatedCRCs', True): # only checked here
+                settings['bash.installers.updatedCRCs'] = False
+                self._data_dir_scanned = False
+            do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
+            refresh_info = None
+            if self.frameActivated: # otherwise we are called directly
+                folders, files = map(list,
+                                     top_level_items(bass.dirs['installers']))
+                omds = [fninst for fninst in files if
+                        fninst.fn_ext in archives.omod_exts]
+                if any(inst_path not in omods.failedOmods for inst_path in
+                       omds):
+                    omod_projects = self.__extractOmods(omds) ##: change above to filter?
+                    if omod_projects:
+                        deprint(f'Extending projects: {omod_projects}')
+                        folders.extend(omod_projects)
+                if not do_refresh:
+                    #with balt.Progress(_('Scanning Packages...')) as progress:
+                    refresh_info = self.listData.update_installers(folders,
+                        files, fullRefresh, progress=bolt.Progress())
+                    do_refresh = refresh_info.refresh_needed()
+            refreshui = False
+            if do_refresh:
+                with balt.Progress(_('Refreshing Installers...'),
+                                   abort=canCancel) as progress:
+                    try:
+                        what = 'DISC' if scan_data_dir else 'IC'
+                        refreshui |= self.listData.irefresh(progress, what,
+                                                            fullRefresh,
+                                                            refresh_info)
+                        self.frameActivated = False
+                    except CancelError:
+                        self._user_cancelled = True # User canceled the refresh
+                    finally:
+                        self._data_dir_scanned = True
+            elif self.frameActivated:
+                try:
+                    refreshui |= self.listData.irefresh(what='C',
+                        fullRefresh=fullRefresh)
+                    self.frameActivated = False
+                except CancelError:
+                    pass # User canceled the refresh
+            do_refresh = self.listData.refreshTracked()
+            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
+            if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
-
-    @balt.conversation
-    @bosh.bain.projects_walk_cache
-    def _refresh_installers_if_needed(self, canCancel, fullRefresh,
-                                      scan_data_dir, focus_list):
-        if settings.get('bash.installers.updatedCRCs',True): #only checked here
-            settings[u'bash.installers.updatedCRCs'] = False
-            self._data_dir_scanned = False
-        do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
-        refresh_info = None
-        if self.frameActivated:
-            folders, files = map(list, top_level_items(bass.dirs[u'installers']))
-            omds = [fninst for fninst in files if
-                    fninst.fn_ext in archives.omod_exts]
-            if any(inst_path not in omods.failedOmods for inst_path in omds):
-                omod_projects = self.__extractOmods(omds) ##: change above to filter?
-                if omod_projects:
-                    deprint(f'Extending projects: {omod_projects}')
-                    folders.extend(omod_projects)
-            if not do_refresh:
-                refresh_info = self.listData.scan_installers_dir(folders,
-                    files, fullRefresh)
-                do_refresh = refresh_info.refresh_needed()
-        refreshui = False
-        if do_refresh:
-            with balt.Progress(_('Refreshing Installers...'),
-                               abort=canCancel) as progress:
-                try:
-                    what = u'DISC' if scan_data_dir else u'IC'
-                    refreshui |= self.listData.irefresh(progress, what,
-                                                        fullRefresh,
-                                                        refresh_info)
-                    self.frameActivated = False
-                except CancelError:
-                    self._user_cancelled = True # User canceled the refresh
-                finally:
-                    self._data_dir_scanned = True
-        elif self.frameActivated:
-            try:
-                refreshui |= self.listData.irefresh(what='C',
-                                                    fullRefresh=fullRefresh)
-                self.frameActivated = False
-            except CancelError:
-                pass  # User canceled the refresh
-        do_refresh = self.listData.refreshTracked()
-        refreshui |= do_refresh and self.listData.refreshInstallersStatus()
-        if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
 
     def __extractOmods(self, omds):
         omod_projects = []

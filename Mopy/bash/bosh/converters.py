@@ -97,9 +97,9 @@ class ConvertersData(DataDict):
             bcf_scd.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
-            pending = {*map(converters_dir.join, bcfs_list)}
+            pending_ = {*map(converters_dir.join, bcfs_list)}
         else:
-            pending = set()
+            pending_ = set()
             newData = {}
             present_bcfs = [*map(converters_dir.join, bcfs_list)]
             for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
@@ -112,7 +112,7 @@ class ConvertersData(DataDict):
                     bcf_scd[bcfPath] = (size_mtime[0], crc, size_mtime[1])
                     if crc_changed:
                         change = True  # added or changed - we must re-add it
-                        pending.add(bcfPath)
+                        pending_.add(bcfPath)
                         continue
                 newData[crc] = self.bcfCRC_converter[crc] # should be unique
                 newData[crc].fullPath = bcfPath ##: why???
@@ -126,12 +126,12 @@ class ConvertersData(DataDict):
                 lambda c: c.fullPath not in present_bcfs or c not in old_new)
             #--New/update crcs?
             self.bcfCRC_converter = newData  # empty on first run
-        if pending:
+        if pending_:
             progress = progress or balt.Progress(_('Refreshing Converters...'))
             with progress:
                 progress(0, _('Scanning Converters...'))
-                progress.setFull(len(pending))
-                for index, bcfPath in enumerate(sorted(pending)):
+                progress.setFull(len(pending_))
+                for index, bcfPath in enumerate(sorted(pending_)):
                     progress(index,
                              _('Scanning Converter...') + f'\n{bcfPath}')
                     path_crc = not fullRefresh and bcf_scd[bcfPath][1]

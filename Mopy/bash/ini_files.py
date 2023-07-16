@@ -244,7 +244,7 @@ class IniFile(AIniFile, AFile):
         self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, **kwargs):
         try:
             # do_update will return True if the file was deleted then restored
             self.updated |= super().do_update(raise_on_error=True)
@@ -260,8 +260,8 @@ class IniFile(AIniFile, AFile):
             if raise_on_error: raise
             return update
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super()._reset_cache(stat_tuple, load_cache)
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
         self._ci_settings_cache_linenum = self.__empty_settings
 
     # AIniFile overrides ------------------------------------------------------

@@ -1136,16 +1136,24 @@ class Path(os.PathLike):
 
     def remove(self):
         try:
-            if self.exists(): os.remove(self._s)
+            os.remove(self._s)
+        except FileNotFoundError:
+            pass # does not exist
         except OSError:
             self.clearRO()
             os.remove(self._s)
-    def removedirs(self):
+    def removedirs(self, raise_error=True):
         try:
-            if self.exists(): os.removedirs(self._s)
-        except OSError:
-            self.clearRO()
             os.removedirs(self._s)
+        except FileNotFoundError:
+            pass # does not exist
+        except OSError:
+            try:
+                self.clearRO()
+                os.removedirs(self._s)
+            except OSError:
+                if raise_error: raise
+
     def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.is_dir() and safety and safety.lower() in self._cs:
@@ -1619,16 +1627,18 @@ class DataDict(object):
 
 #------------------------------------------------------------------------------
 class AFile(object):
-    """Abstract file, supports caching - beta."""
+    """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
+    def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
+                 **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache)
+            self._reset_cache(self._stat_tuple(), load_cache=load_cache,
+                              **kwargs)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
@@ -1639,7 +1649,7 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
@@ -1648,34 +1658,38 @@ class AFile(object):
 
         :param raise_on_error: If True, rase on errors instead of just
             resetting the cache and returning.
-        :param itsa_ghost: In ModInfos, if we have the ghosting info available,
-            skip recalculating it."""
+        :param **kwargs: various:
+            - itsa_ghost: In ModInfos, if we have the ghosting info available,
+              skip recalculating it.
+            - progress: will be useful for installers
+        """
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
-            self._reset_cache(self._null_stat, load_cache=False)
+            self._reset_cache(self._null_stat, load_cache=False, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
-        if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
+        if force_update or self._file_changed(stat_tuple):
+            self._reset_cache(stat_tuple, load_cache=True, **kwargs)
             return True
         return False
 
     def needs_update(self):
         """Returns True if this file changed. Throws an OSError if it is
-        deleted."""
+        deleted. Avoid all but simple uses - use do_update instead."""
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self._file_mod_time) != stat_tuple
+        return (self.fsize, self.file_mod_time) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
-        :param load_cache: if True either load the cache (header in Mod and
-        SaveInfo) or reset it so it gets reloaded later
+        :param **kwargs: various
+            - load_cache: if True either load the cache (header in Mod and
+            SaveInfo) or reset it, so it gets reloaded later
         """
-        self.fsize, self._file_mod_time = stat_tuple
+        self.fsize, self.file_mod_time = stat_tuple
 
     def __repr__(self): return f'{self.__class__.__name__}<' \
                                f'{self.abs_path.stail}>'
@@ -2781,9 +2795,9 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(f'{curr_str}')]
 
-def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
+def dict_sort(di, *, key_f=None, values_dex=(), by_value=False, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
-    precedence."""
+    precedence, then values_dex then by_value. Copies the keys."""
     if key_f is None:
         if values_dex:
             key_f = lambda k: tuple(di[k][x] for x in values_dex)
