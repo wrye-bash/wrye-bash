@@ -256,7 +256,7 @@ class MelBaseR(MelBase):
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
     """A simple static subrecord representing a number. Note attr defaults to
-    _unused for usage in MelSimpleArray and similar tools where the attribute
+    '_unused' for usage in MelSimpleArray and similar tools where the attribute
     name does not matter. For everything else, you absolutely have to specify
     an attribute name."""
     _unpacker, packer, static_size = get_structs(u'I')

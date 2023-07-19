@@ -38,7 +38,7 @@ from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId, NotPlayableFlag, gen_coed_key
+from .utils_constants import FID, FormId, gen_coed_key
 from .. import bolt, exception
 from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
@@ -159,6 +159,20 @@ class AMreFlst(MelRecord):
         else:
             self.mergeSources = [otherMod]
         self.setChanged()
+
+#------------------------------------------------------------------------------
+class AMreGlob(MelRecord):
+    """Base class for globals."""
+    rec_sig = b'GLOB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFixedString(b'FNAM', 'global_format', 1),
+        # Rather stupidly all values, despite their designation (short, long,
+        # float, bool (FO4)), are stored as floats - which means that very
+        # large integers lose precision
+        MelFloat(b'FLTV', 'global_value'),
+    )
 
 #------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
@@ -522,6 +536,14 @@ class AMreLeveledList(MelRecord):
         self.setChanged(self.mergeOverLast)
 
 #------------------------------------------------------------------------------
+class AMreMgefTes5(MelRecord):
+    """Base class for MGEF records since Skyrim."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.mgef_sounds = [s for s in self.mgef_sounds
+                            if s.ms_sound.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
 class AMreRace(MelRecord):
     """Base class for RACE records."""
     def keep_fids(self, keep_plugins):
@@ -663,8 +685,8 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass # not_playable exists since FO3
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2) # since FO3
 
     class _eyes_flags(Flags):
         playable: bool
@@ -699,23 +721,6 @@ class MreFsts(MelRecord):
         MelStruct(b'XCNT', ['5I'], 'count_walking', 'count_running',
             'count_sprinting', 'count_sneaking', 'count_swimming'),
         MelSimpleArray('footstep_sets', MelFid(b'DATA')),
-    )
-
-#------------------------------------------------------------------------------
-class MreGlob(MelRecord):
-    """Global."""
-    rec_sig = b'GLOB'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        constant: bool = flag(6)    # since FO3? definitely FO4
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFixedString(b'FNAM', 'global_format', 1),
-        # Rather stupidly all values, despite their designation (short, long,
-        # float, bool (FO4)), are stored as floats - which means that very
-        # large integers lose precision
-        MelFloat(b'FLTV', 'global_value'),
     )
 
 #------------------------------------------------------------------------------

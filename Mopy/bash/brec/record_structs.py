@@ -297,11 +297,8 @@ class MreRecord(metaclass=RecordType):
         """Common flags to all (most) record types, based on Oblivion flags.
         NOTE: Use explicit indices here and in subclasses, otherwise the order
         can be messed up (due to type hints being saved in dicts which are
-        ordered by insertion order, not update order).
-        """
+        ordered by insertion order, not update order)."""
         deleted: bool = flag(5)
-        quest_item: bool = flag(10)             # types??
-        initially_disabled: bool = flag(11)     # REFR/??
         ignored: bool = flag(12)
         compressed: bool = flag(18)
 

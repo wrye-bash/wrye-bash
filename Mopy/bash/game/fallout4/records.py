@@ -27,7 +27,7 @@ from ...bolt import Flags, flag
 from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     AMreCell, AMreFlst, AMreHeader, AMreImad, AMreLeveledList, AMreWithItems, \
     AMreWithKeywords, ANvnmContext, AttrValDecider, AVmadContext, BipedFlags, \
-    FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, \
+    FormVersionDecider, MelActiFlags, MelAddnDnam, MelAlchEnit, MelExtra, \
     MelArmaShared, MelArray, MelArtType, MelAspcBnam, MelAspcRdat, MelAttx, \
     MelBamt, MelBase, MelBaseR, MelBids, MelBookDescription, MelBookText, \
     MelBounds, MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, \
@@ -47,17 +47,20 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelLLFlags, MelLLGlobal, MelLscrCameraPath, MelLscrNif, MelLscrRotation, \
     MelLString, MelLtexGrasses, MelLtexSnam, MelMatoPropertyData, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
-    MelObjectTemplate, MelPartialCounter, MelPerkData, \
+    MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
-    MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, \
+    MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
-    MelWeight, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
-    PerkEpdfDecider, VWDFlag, gen_color, gen_color3, lens_distributor, \
-    perk_distributor, perk_effect_key, AMreWrld
+    MelWeight, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
+    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
+    perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
+    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
+    MelMuscShared
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -284,6 +287,57 @@ class MelSoundCrafting(MelFid):
         super().__init__(b'CUSD', 'sound_crafting')
 
 #------------------------------------------------------------------------------
+class MelSped(MelUnion):
+    """Handles the common SPED (Movement Data) subrecord."""
+    def __init__(self):
+        super().__init__({
+            0: MelStruct(b'SPED', ['10f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run'),
+            1: MelStruct(b'SPED', ['11f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run', 'unknown1'),
+            2: MelStruct(b'SPED', ['17f'], 'speed_left_walk', 'speed_left_run',
+                'speed_right_walk', 'speed_right_run', 'speed_forward_walk',
+                'speed_forward_run', 'speed_back_walk', 'speed_back_run',
+                'pitch_walk', 'pitch_run', 'roll_walk', 'roll_run', 'yaw_walk',
+                'yaw_run', 'unknown1', 'unknown2', 'unknown3'),
+            3: MelStruct(b'SPED', ['28f'], 'speed_left_stand',
+                'speed_left_walk', 'speed_left_run', 'speed_left_sprint',
+                'speed_right_stand', 'speed_right_walk', 'speed_right_run',
+                'speed_right_sprint', 'speed_forward_stand',
+                'speed_forward_walk', 'speed_forward_run',
+                'speed_forward_sprint', 'speed_back_stand',
+                'speed_back_walk', 'speed_back_run', 'speed_back_sprint',
+                'pitch_stand', 'pitch_walk', 'pitch_run', 'pitch_sprint',
+                'roll_stand', 'roll_walk', 'roll_run', 'roll_sprint',
+                'yaw_stand', 'yaw_walk', 'yaw_run', 'yaw_sprint'),
+        }, decider=FormVersionDecider(self._decide_record_level))
+
+    @staticmethod
+    def _decide_record_level(rec_form_ver: int):
+        """Places the record into one of four categories based on its form
+        version v: 0 iff 0 <= v < 28, 1 iff 28 <= v < 60, 2 iff 60 <= v < 104
+        and 3 iff 104 <= v."""
+        if rec_form_ver < 28: return 0
+        elif rec_form_ver < 60: return 1
+        elif rec_form_ver < 104: return 2
+        else: return 3
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.header.form_version < 60:
+            # Before form version 60, pitch/roll/yaw used two shared floats
+            pry_walk = record.pitch_walk
+            pry_run = record.pitch_run
+            record.roll_walk = pry_walk
+            record.roll_run = pry_run
+            record.yaw_walk = pry_walk
+            record.yaw_run = pry_run
+
+#------------------------------------------------------------------------------
 class MelVmad(AMelVmad):
     class _VmadContextFo4(AVmadContext):
         """Provides VMAD context for Fallout 4."""
@@ -300,6 +354,7 @@ class MreTes4(AMreHeader):
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
 
     class HeaderFlags(AMreHeader.HeaderFlags):
+        optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(9)
 
@@ -341,20 +396,25 @@ class MreActi(AMreWithKeywords):
     """Activator."""
     rec_sig = b'ACTI'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         never_fades: bool = flag(2)
         non_occluder: bool = flag(4)
+        heading_marker: bool = flag(7)
         must_update_anims: bool = flag(8)
         hidden_from_local_map: bool = flag(9)
-        headtracking_marker: bool = flag(10)
-        use_as_platform: bool = flag(11)
+        headtrack_marker: bool = flag(10)
+        used_as_platform: bool = flag(11)
         pack_in_use_only: bool = flag(13)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         dangerous: bool = flag(17)
         ignore_object_interaction: bool = flag(20)
         is_marker: bool = flag(23)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         child_can_use: bool = flag(29)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -427,6 +487,9 @@ class MreAlch(AMreWithKeywords):
     """Ingestible."""
     rec_sig = b'ALCH'
 
+    class HeaderFlags(MelRecord.HeaderFlags):
+        medicine: bool = flag(29)
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -467,8 +530,8 @@ class MreAmmo(AMreWithKeywords):
     """Ammunition."""
     rec_sig = b'AMMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _ammo_flags(Flags):
         notNormalWeapon: bool
@@ -525,7 +588,7 @@ class MreArma(MelRecord):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         no_underarmor_scaling: bool = flag(6)
-        hires_first_person_only: bool = flag(30)
+        hi_res_1st_person_only: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -547,7 +610,8 @@ class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
         shield: bool = flag(6)
 
     melSet = MelSet(
@@ -797,15 +861,15 @@ class MreCell(AMreCell): ##: Implement once regular records are done
     interior_temp_extra = [b'NAVM']
 
     class HeaderFlags(AMreCell.HeaderFlags):
-        no_pre_vis: bool = flag(7)
+        no_previs: bool = flag(7)
 
 #------------------------------------------------------------------------------
 class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -820,6 +884,9 @@ class MreClas(MelRecord):
 class MreClfm(MelRecord):
     """Color."""
     rec_sig = b'CLFM'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _clfm_flags(Flags):
         playable: bool
@@ -897,9 +964,13 @@ class MreCont(AMreWithItems, AMreWithKeywords):
     """Container."""
     rec_sig = b'CONT'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, AMreWithItems.HeaderFlags):
-        random_animation_start: bool = flag(16)
+    class HeaderFlags(AMreWithItems.HeaderFlags):
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -1024,7 +1095,7 @@ class MreDmgt(MelRecord):
                     (FID, 'dt_spell')),
             ),
             False: MelSimpleArray('damage_types', MelUInt32(b'DNAM')),
-        }, decider=FormVersionDecider(operator.ge, 78)),
+        }, decider=SinceFormVersionDecider(operator.ge, 78)),
     )
 
 #------------------------------------------------------------------------------
@@ -1045,9 +1116,10 @@ class MreDoor(AMreWithKeywords):
     """Door."""
     rec_sig = b'DOOR'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         non_occluder: bool = flag(4)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
 
     melSet = MelSet(
@@ -1194,7 +1266,7 @@ class MreEfsh(MelRecord):
                 'psa_loop_start_variation', 'psa_frame_count',
                 'psa_frame_count_variation', (_efsh_flags, 'efsh_flags'),
                 'fill_texture_scale_u', 'fill_texture_scale_v', 'unused9'),
-        }, decider=FormVersionDecider(operator.ge, 106)),
+        }, decider=SinceFormVersionDecider(operator.ge, 106)),
         MelModel(),
     )
 
@@ -1388,10 +1460,11 @@ class MreFurn(AMreWithItems, AMreWithKeywords):
     """Furniture."""
     rec_sig = b'FURN'
 
-    class HeaderFlags(VWDFlag, AMreWithItems.HeaderFlags):
+    class HeaderFlags(AMreWithItems.HeaderFlags):
         has_container: bool = flag(2)
         is_perch: bool = flag(7)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
         power_armor: bool = flag(25)
         must_exit_to_talk: bool = flag(28)
@@ -1473,6 +1546,12 @@ class MreGdry(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
+    class HeaderFlags(AMreGlob.HeaderFlags):
+        constant: bool = flag(6)
+
+#------------------------------------------------------------------------------
 class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
@@ -1516,8 +1595,8 @@ class MreHdpt(MelRecord):
     """Head Part."""
     rec_sig = b'HDPT'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -1768,7 +1847,7 @@ class MreKeym(AMreWithKeywords):
     rec_sig = b'KEYM'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        auto_calc_value: bool = flag(11)
+        calc_value_from_components: bool = flag(11)
         pack_in_use_only: bool = flag(13)
 
     melSet = MelSet(
@@ -1808,6 +1887,9 @@ class MreKywd(MelRecord):
     """Keyword."""
     rec_sig = b'KYWD'
     _has_duplicate_attrs = True # NNAM is an older version of FULL
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        restricted: bool = flag(15)
 
     melSet = MelSet(
         MelEdid(),
@@ -1857,6 +1939,7 @@ class MreLctn(AMreWithKeywords):
     class HeaderFlags(MelRecord.HeaderFlags):
         # mouthful - better name?
         interior_cells_use_ref_for_world_map_player_location: bool = flag(11)
+        partial_form: bool = flag(14)
 
     melSet = MelSet(
         MelLctnShared(),
@@ -1911,7 +1994,7 @@ class MreLigh(AMreWithKeywords):
     rec_sig = b'LIGH'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        random_animation_start: bool = flag(16)
+        random_anim_start: bool = flag(16)
         obstacle: bool = flag(25)
         portal_strict: bool = flag(28)
 
@@ -2086,12 +2169,223 @@ class MreMatt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreMesg(MelRecord):
+    """Message."""
+    rec_sig = b'MESG'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelDescription(),
+        MelFull(),
+        MelMesgShared(),
+        MelString(b'SNAM', 'message_swf'),
+        MelLString(b'NNAM', 'short_title'),
+        MelMesgButtons(MelConditionList()),
+    )
+
+#------------------------------------------------------------------------------
+class MreMgef(AMreMgefTes5):
+    """Magic Effect."""
+    rec_sig = b'MGEF'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelFull(),
+        MelMdob(),
+        MelKeywords(),
+        # Names match Skyrim because MGEF access is all over the codebase
+        MelMgefData(MelStruct(b'DATA',
+            ['I', 'f', 'I', '4s', 'I', 'H', '2s', 'I', 'f', '4I', '4f', '10I',
+             'f', 'I', 'f', '7I', '2f'],
+            (MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            'unused_magic_skill', (FID, 'resist_value'),
+            'counter_effect_count', 'unused1', (FID, 'light'), 'taper_weight',
+            (FID, 'hit_shader'), (FID, 'enchant_shader'),
+            'minimum_skill_level', 'spellmaking_area',
+            'spellmaking_casting_time', 'taper_curve', 'taper_duration',
+            'second_av_weight', 'effect_archetype', (FID, 'actorValue'),
+            (FID, 'projectile'), (FID, 'explosion'), 'casting_type',
+            'delivery', (FID, 'second_av'), (FID, 'casting_art'),
+            (FID, 'hit_effect_art'), (FID, 'effect_impact_data'),
+            'skill_usage_multiplier', (FID, 'dual_casting_art'),
+            'dual_casting_scale', (FID, 'enchant_art'), (FID, 'hit_visuals'),
+            (FID, 'enchant_visuals'), (FID, 'equip_ability'),
+            (FID, 'effect_imad'), (FID, 'perk_to_apply'),
+            'casting_sound_level', 'script_effect_ai_score',
+            'script_effect_ai_delay_time')),
+        MelMgefEsce(),
+        MelMgefSounds(),
+        MelMgefDnam(),
+        MelConditionList(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMisc(MelRecord):
+    """Misc. Item."""
+    rec_sig = b'MISC'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        calc_from_components: bool = flag(11)
+        pack_in_use_only: bool = flag(13)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelFid(b'FIMD', 'featured_item_message'),
+        MelValueWeight(),
+        MelArray('misc_components',
+            MelStruct(b'CVPA', ['2I'], (FID, 'component_fid'),
+                'component_count'),
+        ),
+        MelSimpleArray('component_display_indices', MelUInt8(b'CDIX')),
+    )
+
+#------------------------------------------------------------------------------
+class MreMovt(MelRecord):
+    """Movement Type."""
+    rec_sig = b'MOVT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelMovtName(),
+        MelSped(),
+        MelMovtThresholds(), # unused, leftover
+        MelFloat(b'JNAM', 'float_height'),
+        MelFloat(b'LNAM', 'flight_angle_gain'),
+    )
+
+#------------------------------------------------------------------------------
+class MreMstt(MelRecord):
+    """Moveable Static."""
+    rec_sig = b'MSTT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        must_update_anims: bool = flag(8)
+        hidden_from_local_map: bool = flag(9)
+        used_as_platform: bool = flag(11)
+        pack_in_use_only: bool = flag(13)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
+        has_currents: bool = flag(19)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelProperties(),
+        MelUInt8(b'DATA', 'on_local_map'), # really a bool
+        MelSound(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMswp(MelRecord):
+    """Material Swap."""
+    rec_sig = b'MSWP'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        custom_swap: bool = flag(16)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'FNAM', 'tree_folder'),
+        MelSorted(MelGroups('material_substitutions',
+            MelString(b'BNAM', 'original_material'),
+            MelString(b'SNAM', 'replacement_material'),
+            ##: xEdit sources say "will be moved up to First FNAM", is that
+            # something we have to implement?
+            MelString(b'FNAM', 'tree_folder_obsolete'),
+            MelFloat(b'CNAM', 'color_remapping_index'),
+        ), sort_by_attrs='original_material'),
+    ).with_distributor({
+        b'FNAM': 'tree_folder',
+        b'BNAM': {
+            b'FNAM': 'material_substitutions',
+        },
+    })
+
+#------------------------------------------------------------------------------
+class MreMusc(MelRecord):
+    """Music Type."""
+    rec_sig = b'MUSC'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelMuscShared(),
+    )
+
+#------------------------------------------------------------------------------
+class MreMust(MelRecord):
+    """Music Track."""
+    rec_sig = b'MUST'
+
+    melSet = MelSet(
+        MelMustShared(MelConditions()),
+    )
+
+#------------------------------------------------------------------------------
+# Not mergeable due to the weird special handling the game and CK do with it
+# (plus we only have like half the record implemented)
+class MreNavi(MelRecord):
+    """Navigation Mesh Info Map."""
+    rec_sig = b'NAVI'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUInt32(b'NVER', 'navi_version'),
+        MelGroups('navigation_map_infos',
+            ##: Rest of this subrecord would need custom code to handle
+            ##: The 20 bytes probably have the same meaning as in Skyrim
+            MelExtra(MelStruct(b'NVMI', ['I', '20s'],
+                'nvmi_navmesh', 'nvmi_unknown1'), extra_attr='nvmi_todo'),
+        ),
+        ##: Would need custom code to handle
+        MelBase(b'NVPP', 'nvpp_todo'),
+        MelBase(b'NVSI', 'unknown_nvsi'), # Not decoded yet
+    )
+
+#------------------------------------------------------------------------------
+# Not mergeable because it's related to navmeshes (and barely decoded at that)
+class MreNocm(MelRecord):
+    """Navigation Mesh Obstacle Manager."""
+    rec_sig = b'NOCM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('nocm_unknown1',
+            MelUInt32(b'INDX', 'nocm_index'),
+            MelGroups('unknown_data',
+                MelBase(b'DATA', 'unknown_data_entry'),
+            ),
+            MelBase(b'INTV', 'unknown_intv'),
+            MelString(b'NAM1', 'nocm_model'),
+        ),
+    )
+
+#------------------------------------------------------------------------------
 class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _script_flags(Flags):
         run_immediately: bool

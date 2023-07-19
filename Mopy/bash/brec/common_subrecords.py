@@ -32,7 +32,7 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1, NONE_FID, gen_coed_key
+    gen_color3, int_unpacker, null1, gen_coed_key
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -1153,6 +1153,85 @@ class MelMdob(MelFid):
         super().__init__(b'MDOB', 'menu_display_object')
 
 #------------------------------------------------------------------------------
+class MelMesgButtons(MelGroups):
+    """Implements the MESG subrecord ITXT and its conditions."""
+    def __init__(self, conditions_element: MelBase):
+        super().__init__('menu_buttons',
+            MelLString(b'ITXT', 'button_text'),
+            conditions_element,
+        )
+
+#------------------------------------------------------------------------------
+class MelMesgSharedFo3(MelSequential):
+    """Implements the MESG subrecords DNAM and TNAM."""
+    class _MesgFlags(Flags):
+        message_box: bool
+        auto_display: bool # called 'Delay Initial Display' in FO4
+
+    def __init__(self, *, prefix_elements: tuple[MelBase, ...] = ()):
+        super().__init__(
+            *prefix_elements,
+            MelUInt32Flags(b'DNAM', 'mesg_flags', self._MesgFlags),
+            MelUInt32(b'TNAM', 'display_time'),
+        )
+
+class MelMesgShared(MelMesgSharedFo3):
+    """Implements the MESG subrecords INAM, QNAM, DNAM and TNAM."""
+    def __init__(self):
+        super().__init__(prefix_elements=(
+            MelFid(b'INAM', 'unused_icon'), # leftover
+            MelFid(b'QNAM', 'owner_quest'),
+        ))
+
+#------------------------------------------------------------------------------
+class MelMgefData(MelPartialCounter):
+    """Handles some common code for the MGEF subrecord DATA (Data)."""
+    def __init__(self, struct_element: MelStruct):
+        super().__init__(struct_element,
+            counters={'counter_effect_count': 'counter_effects'})
+
+#------------------------------------------------------------------------------
+class MelMgefDnam(MelLString):
+    """Handles the MGEF subrecord DNAM (Magic Item Description)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'magic_item_description')
+
+#------------------------------------------------------------------------------
+class _AMelMgefEsce(MelSorted):
+    """Base class for the MGEF subrecord ESCE (Counter Effects)."""
+    def __init__(self, *, array_type: type[MelArray | MelGroups],
+            esce_element: MelBase, esce_attr: str):
+        super().__init__(array_type('counter_effects',
+            esce_element,
+        ), sort_by_attrs=esce_attr)
+
+class MelMgefEsceTes4(_AMelMgefEsce):
+    """Handles the Oblivion version of ESCE, which stores FourCCs."""
+    def __init__(self):
+        super().__init__(
+            array_type=MelArray,
+            esce_element=MelStruct(b'ESCE', ['4s'], 'counter_effect_code'),
+            esce_attr='counter_effect_code',
+        )
+
+class MelMgefEsce(_AMelMgefEsce):
+    """Handles the post-Oblivion version of ESCE, which stores FormIDs."""
+    def __init__(self):
+        super().__init__(
+            array_type=MelGroups,
+            esce_element=MelFid(b'ESCE', 'counter_effect_fid'),
+            esce_attr='counter_effect_fid',
+        )
+
+#------------------------------------------------------------------------------
+class MelMgefSounds(MelArray):
+    """Handles the MGEF subrecord SNDD (Sounds)."""
+    def __init__(self):
+        super().__init__('mgef_sounds',
+            MelStruct(b'SNDD', ['2I'], 'ms_sound_type', (FID, 'ms_sound')),
+        )
+
+#------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
     _fid_element = MelFid(null1) # dummy MelFid instance to use its loader
@@ -1195,6 +1274,60 @@ class MelMODS(MelBase):
             mods_data = [(string,function(fid),index) for (string,fid,index)
                          in mods_data]
             if save_fids: setattr(record, attr, mods_data)
+
+#------------------------------------------------------------------------------
+class MelMovtName(MelString):
+    """Handles the MOVT subrecord MNAM (Name)."""
+    def __init__(self):
+        super().__init__(b'MNAM', 'movt_name'),
+
+#------------------------------------------------------------------------------
+class MelMovtThresholds(MelStruct):
+    """Handles the MOVT subrecord INAM (Anim Change Thresholds)."""
+    def __init__(self):
+        super().__init__(b'INAM', ['3f'], 'threshold_directional',
+            'threshold_movement_speed', 'threshold_rotation_speed')
+
+#------------------------------------------------------------------------------
+class MelMuscShared(MelSequential):
+    """Handles the MUSC subrecords FNAM, PNAM, WNAM and TNAM."""
+    class _MusicTypeFlags(Flags):
+        plays_one_selection: bool = flag(0)
+        abrupt_transition: bool = flag(1)
+        cycle_tracks: bool = flag(2)
+        maintain_track_order: bool = flag(3)
+        ducks_current_track: bool = flag(5)
+        does_not_queue: bool = flag(6) # since SSE & FO4
+
+    def __init__(self):
+        super().__init__(
+            MelUInt32Flags(b'FNAM', 'musc_flags', self._MusicTypeFlags),
+            MelStruct(b'PNAM', ['2H'], 'musc_priority', 'musc_ducking'),
+            MelFloat(b'WNAM', 'musc_fade_duration'),
+            MelSimpleArray('musc_music_tracks', MelFid(b'TNAM')),
+        )
+
+#------------------------------------------------------------------------------
+##: MUST is identical, but moving it to common_records is problematic due to
+# every record in common_records.py getting instantiated for every game, so we
+# end up with MelConditions() for games like Morrowind that don't have
+# condition_function_data, which blows up on boot
+class MelMustShared(MelSequential):
+    """Handles the MUST subrecords shared between Skyrim and FO4."""
+    def __init__(self, conditions_element: MelBase):
+        super().__init__(
+            MelEdid(),
+            MelUInt32(b'CNAM', 'music_track_type'),
+            MelFloat(b'FLTV', 'music_track_duration'),
+            MelUInt32(b'DNAM', 'music_track_fade_out'),
+            MelString(b'ANAM', 'music_track_file_name'),
+            MelString(b'BNAM', 'music_track_finale_file_name'),
+            MelStruct(b'LNAM', ['3f'], 'music_track_loop_begins',
+                'music_track_loop_ends', 'music_track_loop_count'),
+            MelSimpleArray('music_track_cue_points', MelFloat(b'FNAM')),
+            conditions_element,
+            MelSimpleArray('music_track_tracks', MelFid(b'SNAM')),
+        )
 
 #------------------------------------------------------------------------------
 class MelNextPerk(MelFid):

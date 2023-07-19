@@ -774,8 +774,8 @@ class SkyrimGameInfo(PatchGame):
     sounds_attrs = {
         b'EXPL': ('expl_sound_level',),
         b'IPCT': ('ipct_sound_level',),
-        ##: 'sounds' needs to be filtered
-        b'MGEF': ('casting_sound_level', 'sounds'),
+        # mgef_sounds has FormIDs, but will be filtered in MreMgef.keep_fids
+        b'MGEF': ('casting_sound_level', 'mgef_sounds'),
         b'PROJ': ('soundLevel',),
         b'SNCT': ('staticVolumeMultiplier',),
         # sound_files does not need to loop here

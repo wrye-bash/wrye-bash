@@ -53,7 +53,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelMatoPropertyData, MelMattShared, MelMdob, MelMODS, MelNextPerk, \
     MelNodeIndex, MelNull, MelOwnership, MelPartialCounter, \
     MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, \
-    MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, \
+    MelRandomTeleports, MelReadOnly, MelRecord, MelRef3D, AMreGlob, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
     MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
     MelSimpleArray, MelSInt8, MelSInt16, MelSInt32, MelSkipInterior, \
@@ -62,9 +62,11 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
     MelUInt32, MelUInt32Flags, MelUnion, MelUnloadEvent, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
-    MelXlod, NavMeshFlags, NotPlayableFlag, PartialLoadDecider, \
-    PerkEpdfDecider, VWDFlag, gen_ambient_lighting, gen_color, gen_color3, \
-    null3, null4, perk_distributor, perk_effect_key, MelLinkColors
+    MelXlod, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
+    PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, \
+    null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
+    MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, MelMuscShared, MelMustShared
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -536,16 +538,20 @@ class MreActi(AMreWithKeywords):
     """Activator."""
     rec_sig = b'ACTI'
 
-    class HeaderFlags(NavMeshFlags, VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         has_tree_lod: bool = flag(6)
         must_update_anims: bool = flag(8)
         hide_from_local_map: bool = flag(9)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         dangerous: bool = flag(17)
         ignore_object_interaction: bool = flag(20)
         is_marker: bool = flag(23)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         child_can_use: bool = flag(29)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -604,8 +610,8 @@ class MreAmmo(AMreWithKeywords):
     """Ammunition."""
     rec_sig = b'AMMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class AmmoTypeFlags(Flags):
         notNormalWeapon: bool
@@ -684,7 +690,8 @@ class MreArmo(AMreWithKeywords):
     """Armor."""
     rec_sig = b'ARMO'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
         shield: bool = flag(6)
 
     melSet = MelSet(
@@ -1009,8 +1016,8 @@ class MreClfm(MelRecord):
     """Color."""
     rec_sig = b'CLFM'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -1051,9 +1058,13 @@ class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
-    class HeaderFlags(VWDFlag, NavMeshFlags, AMreWithItems.HeaderFlags):
-        random_animation_start: bool = flag(16)
-        obstacle: bool = flag(26)
+    class HeaderFlags(AMreWithItems.HeaderFlags):
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -1165,8 +1176,9 @@ class MreDoor(MelRecord):
     """Door."""
     rec_sig = b'DOOR'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
-        random_animation_start: bool = flag(16)
+    class HeaderFlags(MelRecord.HeaderFlags):
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
 
     melSet = MelSet(
@@ -1405,9 +1417,10 @@ class MreFurn(AMreWithKeywords):
     """Furniture."""
     rec_sig = b'FURN'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         is_perch: bool = flag(7)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         is_marker: bool = flag(23)
         must_exit_to_talk: bool = flag(28)
         child_can_use: bool = flag(29)
@@ -1471,6 +1484,12 @@ class MreGras(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
+    class HeaderFlags(AMreGlob.HeaderFlags):
+        constant: bool = flag(6)
+
+#------------------------------------------------------------------------------
 class MreHazd(MelRecord):
     """Hazard."""
     rec_sig = b'HAZD'
@@ -1500,8 +1519,8 @@ class MreHdpt(MelRecord):
     """Head Part."""
     rec_sig = b'HDPT'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -1678,8 +1697,8 @@ class MreKeym(AMreWithKeywords):
     """Key."""
     rec_sig = b'KEYM'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -1763,7 +1782,7 @@ class MreLigh(MelRecord):
     rec_sig = b'LIGH'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        random_animation_start: bool = flag(16)
+        random_anim_start: bool = flag(16)
         portal_strict: bool = flag(17)
         obstacle: bool = flag(25)
 
@@ -1931,48 +1950,18 @@ class MreMesg(MelRecord):
     """Message."""
     rec_sig = b'MESG'
 
-    class MesgTypeFlags(Flags):
-        messageBox: bool
-        autoDisplay: bool
-
     melSet = MelSet(
         MelEdid(),
         MelDescription(),
         MelFull(),
-        MelFid(b'INAM','iconUnused'), # leftover
-        MelFid(b'QNAM','materialParent'),
-        MelUInt32Flags(b'DNAM', u'flags', MesgTypeFlags),
-        MelUInt32(b'TNAM', 'displayTime'),
-        MelGroups('menu_buttons',
-            MelLString(b'ITXT', 'button_text'),
-            MelConditionList(),
-        ),
+        MelMesgShared(),
+        MelMesgButtons(MelConditionList()),
     )
 
 #------------------------------------------------------------------------------
-class MreMgef(AMreWithKeywords):
+class MreMgef(AMreMgefTes5, AMreWithKeywords):
     """Magic Effect."""
     rec_sig = b'MGEF'
-
-    class MgefGeneralFlags(Flags):
-        hostile: bool = flag(0)
-        recover: bool = flag(1)
-        detrimental: bool = flag(2)
-        snaptoNavmesh: bool = flag(3)
-        noHitEvent: bool = flag(4)
-        dispellwithKeywords: bool = flag(8)
-        noDuration: bool = flag(9)
-        noMagnitude: bool = flag(10)
-        noArea: bool = flag(11)
-        fXPersist: bool = flag(12)
-        goryVisuals: bool = flag(14)
-        hideinUI: bool = flag(15)
-        noRecast: bool = flag(17)
-        powerAffectsMagnitude: bool = flag(21)
-        powerAffectsDuration: bool = flag(22)
-        painless: bool = flag(26)
-        noHitEffect: bool = flag(27)
-        noDeathDispel: bool = flag(28)
 
     melSet = MelSet(
         MelEdid(),
@@ -1980,10 +1969,10 @@ class MreMgef(AMreWithKeywords):
         MelFull(),
         MelMdob(),
         MelKeywords(),
-        MelPartialCounter(MelStruct(b'DATA',
+        MelMgefData(MelStruct(b'DATA',
             ['I', 'f', 'I', '2i', 'H', '2s', 'I', 'f', '4I', '4f', 'I', 'i',
              '4I', 'i', '3I', 'f', 'I', 'f', '7I', '2f'],
-            (MgefGeneralFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            (MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'magic_skill', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'taper_weight', (FID, 'hit_shader'),
             (FID, 'enchant_shader'), 'minimum_skill_level', 'spellmaking_area',
@@ -1997,15 +1986,10 @@ class MreMgef(AMreWithKeywords):
             (FID, 'enchant_visuals'), (FID, 'equip_ability'),
             (FID, 'effect_imad'), (FID, 'perk_to_apply'),
             'casting_sound_level', 'script_effect_ai_score',
-            'script_effect_ai_delay_time'),
-            counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelGroups(u'counter_effects',
-            MelFid(b'ESCE', u'counter_effect_code'),
-        ), sort_by_attrs='counter_effect_code'),
-        MelArray(u'sounds',
-            MelStruct(b'SNDD', [u'2I'], u'soundType', (FID, u'sound')),
-        ),
-        MelLString(b'DNAM', u'magic_item_description'),
+            'script_effect_ai_delay_time')),
+        MelMgefEsce(),
+        MelMgefSounds(),
+        MelMgefDnam(),
         MelConditionList(),
     )
 
@@ -2014,8 +1998,8 @@ class MreMisc(AMreWithKeywords):
     """Misc. Item."""
     rec_sig = b'MISC'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     melSet = MelSet(
         MelEdid(),
@@ -2037,13 +2021,13 @@ class MreMovt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelString(b'MNAM','mnam_n'),
-        MelTruncatedStruct(b'SPED', [u'11f'], 'leftWalk', 'leftRun', 'rightWalk',
-                           'rightRun', 'forwardWalk', 'forwardRun', 'backWalk',
-                           'backRun', 'rotateInPlaceWalk', 'rotateInPlaceRun',
-                           'rotateWhileMovingRun', old_versions={'10f'}),
-        MelStruct(b'INAM', ['3f'], 'directional', 'movementSpeed',
-                  'rotationSpeed'),
+        MelMovtName(),
+        MelTruncatedStruct(b'SPED', ['11f'], 'speed_left_walk',
+            'speed_left_run', 'speed_right_walk', 'speed_right_run',
+            'speed_forward_walk', 'speed_forward_run', 'speed_back_walk',
+            'speed_back_run', 'rotate_in_place_walk', 'rotate_in_place_run',
+            'rotate_while_moving_run', old_versions={'10f'}),
+        MelMovtThresholds(),
     )
 
 #------------------------------------------------------------------------------
@@ -2051,17 +2035,16 @@ class MreMstt(MelRecord):
     """Moveable Static."""
     rec_sig = b'MSTT'
 
-    class HeaderFlags(NavMeshFlags, VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         must_update_anims: bool = flag(8)
         hidden_from_local_map: bool = flag(9)
-        random_animation_start: bool = flag(16)
+        has_distant_lod: bool = flag(15)
+        random_anim_start: bool = flag(16)
         has_currents: bool = flag(19)
-        obstacle: bool =  flag(25)
-
-
-    class MsttTypeFlags(Flags):
-        onLocalMap: bool
-        unknown2: bool
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -2069,7 +2052,7 @@ class MreMstt(MelRecord):
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelUInt8Flags(b'DATA', u'flags', MsttTypeFlags),
+        MelUInt8(b'DATA', 'on_local_map'), # really a bool
         MelSound(),
     )
 
@@ -2078,21 +2061,9 @@ class MreMusc(MelRecord):
     """Music Type."""
     rec_sig = b'MUSC'
 
-    class MuscTypeFlags(Flags):
-        playsOneSelection: bool = flag(0)
-        abruptTransition: bool = flag(1)
-        cycleTracks: bool = flag(2)
-        maintainTrackOrder: bool = flag(3)
-        unknown5: bool = flag(4)
-        ducksCurrentTrack: bool = flag(5)
-
     melSet = MelSet(
         MelEdid(),
-        MelUInt32Flags(b'FNAM', u'flags', MuscTypeFlags),
-        # Divided by 100 in TES5Edit, probably for editing only
-        MelStruct(b'PNAM', [u'2H'],'priority','duckingDB'),
-        MelFloat(b'WNAM', 'fadeDuration'),
-        MelSimpleArray('musicTracks', MelFid(b'TNAM')),
+        MelMuscShared(),
     )
 
 #------------------------------------------------------------------------------
@@ -2101,34 +2072,28 @@ class MreMust(MelRecord):
     rec_sig = b'MUST'
 
     melSet = MelSet(
-        MelEdid(),
-        MelUInt32(b'CNAM', 'trackType'),
-        MelFloat(b'FLTV', 'track_duration'),
-        MelUInt32(b'DNAM', 'fadeOut'),
-        MelString(b'ANAM','trackFilename'),
-        MelString(b'BNAM','finaleFilename'),
-        MelArray('points',
-            MelFloat(b'FNAM', u'cuePoints'),
-        ),
-        MelStruct(b'LNAM', ['2f', 'I'], 'loopBegins', 'loopEnds', 'loopCount'),
-        MelConditions(),
-        MelSimpleArray('tracks', MelFid(b'SNAM')),
+        MelMustShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------
-# Not Mergable - FormIDs unaccounted for
+# Not mergeable due to the weird special handling the game and CK do with it
+# (plus we only have like half the record implemented)
 class MreNavi(MelRecord):
     """Navigation Mesh Info Map."""
     rec_sig = b'NAVI'
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32(b'NVER', 'version'),
-        # NVMI and NVPP would need special routines to handle them
-        # If no mitigation is needed, then leave it as MelBase
-        MelBase(b'NVMI','navigationMapInfos',),
-        MelBase(b'NVPP','preferredPathing',),
-        MelSimpleArray('navigationMesh', MelFid(b'NVSI')),
+        MelUInt32(b'NVER', 'navi_version'),
+        MelGroups('navigation_map_infos',
+            ##: Rest of this subrecord would need custom code to handle
+            MelExtra(MelStruct(b'NVMI', ['I', '4s', '3f', 'I'],
+                'nvmi_navmesh', 'nvmi_unknown1', 'nvmi_x', 'nvmi_y', 'nvmi_z',
+                'nvmi_preferred_merges'), extra_attr='nvmi_todo'),
+        ),
+        ##: Would need custom code to handle
+        MelBase(b'NVPP', 'nvpp_todo'),
+        MelSimpleArray('navi_unknown_navmeshes', MelFid(b'NVSI')),
     )
 
 #------------------------------------------------------------------------------
@@ -2472,8 +2437,8 @@ class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class _script_flags(Flags):
         run_immediately: bool
@@ -3086,8 +3051,8 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    class HeaderFlags(NavMeshFlags, VWDFlag, MelRecord.HeaderFlags):
-        hidden_from_local_map: bool = flag(6)       # DOOR
+    class HeaderFlags(MelRecord.HeaderFlags):
+        door_hidden_from_local_map: bool = flag(6)  # DOOR
         inaccessible: bool = flag(8)                # DOOR
         doesnt_light_water: bool = flag(8)          # LIGH
         hidden_from_local_map: bool = flag(9)       # ACTI, STAT, TREE, FLOR
@@ -3095,13 +3060,16 @@ class MreRefr(MelRecord):
         motion_blur: bool = flag(9)                 # MSTT
         initially_disabled: bool = flag(11)
         sky_marker: bool = flag(13)                 # ACTI, STAT, TREE, FLOR
+        has_distant_lod: bool = flag(15)
         full_lod: bool = flag(16)
         never_fades: bool = flag(16)                # LIGH
         doesnt_light_landscape: bool = flag(17)     # LIGH
         # 25: LIGH, ALCH, SCRL, AMMO, ARMO, INGR, KEYM, MISC, SLGM, WEAP
         no_ai_acquire: bool = flag(25)
-        # NavMeshFlags 25, 27:
+        # Navmesh flags 26, 27:
         # LIGH, ADDN, ALCH, SCRL, AMMO, ARMO, INGR, KEYM, MISC, SLGM, WEAP
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         reflected_by_auto_water: bool = flag(28)
         # 29: ACTI, STAT, TREE, FLOR, CONT, DOOR, LIGH, MSTT, ADDN, ALCH, SCRL,
         #     AMMO, ARMO, INGR, KEYM, MISC, SLGM, WEAP
@@ -3111,6 +3079,7 @@ class MreRefr(MelRecord):
         #              SCRL, AMMO, ARMO, INGR, KEYM, MISC, SLGM, WEAP
         #  navmesh_ground: otherwise
         no_respawn: bool = flag(30)
+        navmesh_ground: bool = flag(30)
         multi_bound: bool = flag(31)
 
     class _lockFlags(Flags):
@@ -3663,18 +3632,22 @@ class MreStat(MelRecord):
     """Static."""
     rec_sig = b'STAT'
 
-    class HeaderFlags(NavMeshFlags, VWDFlag, MelRecord.HeaderFlags):
+    class HeaderFlags(MelRecord.HeaderFlags):
         never_fades: bool = flag(2)
         has_tree_lod: bool = flag(6)
         addon_lod_object: bool = flag(7)
         hidden_from_local_map: bool = flag(9)
         unknown_11: bool = flag(11) # Present in Skyrim.esm, but can't be set
+        has_distant_lod: bool = flag(15)
         unknown_16: bool = flag(16) # Present in Skyrim.esm, but can't be set
         use_hd_lod_texture: bool = flag(17)
         has_currents: bool = flag(19)
         is_marker: bool = flag(23)
         obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
         show_in_world_map: bool = flag(28)
+        navmesh_ground: bool = flag(30)
 
     melSet = MelSet(
         MelEdid(),
@@ -3701,7 +3674,7 @@ class MreTact(AMreWithKeywords):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         hidden_from_local_map: bool = flag(9)
-        random_animation_start: bool = flag(16)
+        random_anim_start: bool = flag(16)
         radio_station: bool = flag(17)
 
     melSet = MelSet(
@@ -3723,8 +3696,8 @@ class MreTree(MelRecord):
     """Tree."""
     rec_sig = b'TREE'
 
-    class HeaderFlags(VWDFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        has_distant_lod: bool = flag(15)
 
     melSet = MelSet(
         MelEdid(),
@@ -3865,8 +3838,8 @@ class MreWeap(AMreWithKeywords):
     """Weapon"""
     rec_sig = b'WEAP'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2)
 
     class WeapFlags3(Flags):
         onDeath: bool

@@ -325,30 +325,62 @@ class AutoFixedString(FixedString):
     _str_encoding = None
 
 # Common flags ----------------------------------------------------------------
-class NotPlayableFlag:
-    """Mixin to add the not_playable flag to a HeaderFlags class."""
-    not_playable: bool = flag(2)
+class AMgefFlags(Flags):
+    """Base class for MGEF data flags shared by all games."""
+    hostile: bool = flag(0)
+    recover: bool = flag(1)
+    detrimental: bool = flag(2)
+    no_hit_effect: bool = flag(27)
 
-class VWDFlag:
-    """Mixin to add the Visible When Distant (has_distant_lod) flag to a
-    HeaderFlags class.
-    """
-    has_distant_lod: bool = flag(15)    # aka Visible when distant
+class AMgefFlagsTes4(AMgefFlags):
+    """Base class for MGEF data flags from Oblivion to FO3."""
+    mgef_self: bool = flag(4)
+    mgef_touch: bool = flag(5)
+    mgef_target: bool = flag(6)
+    no_duration: bool = flag(7)
+    no_magnitude: bool = flag(8)
+    no_area: bool = flag(9)
+    fx_persist: bool = flag(10)
+    use_skill: bool = flag(19)
+    use_attribute: bool = flag(20)
+    spray_projectile_type: bool = flag(25)
+    bolt_projectile_type: bool = flag(26)
 
-class NavMeshFlags:
-    """Mixin to add the NavMesh related flags to a HeaderFlags class."""
-    # These show up in FO3+
-    navmesh_filter: bool = flag(26)
-    navmesh_bounding_box: bool = flag(27)
-    navmesh_ground: bool = flag(30)
+    @property
+    def fog_projectile_type(self) -> bool:
+        """If flags 25 and 26 are set, specifies fog_projectile_type."""
+        mask = 0b00000110000000000000000000000000
+        return (self._field & mask) == mask
+
+    @fog_projectile_type.setter
+    def fog_projectile_type(self, new_fpt: bool) -> None:
+        mask = 0b00000110000000000000000000000000
+        new_bits = mask if new_fpt else 0
+        self._field = (self._field & ~mask) | new_bits
+
+class MgefFlags(AMgefFlags):
+    """Implements the MGEF data flags used since Skyrim."""
+    snap_to_navmesh: bool = flag(3)
+    no_hit_event: bool = flag(4)
+    dispel_with_keywords: bool = flag(8)
+    no_duration: bool = flag(9)
+    no_magnitude: bool = flag(10)
+    no_area: bool = flag(11)
+    fx_persist: bool = flag(12)
+    gory_visuals: bool = flag(14)
+    hide_in_ui: bool = flag(15)
+    no_recast: bool = flag(17)
+    power_affects_magnitude: bool = flag(21)
+    power_affects_duration: bool = flag(22)
+    painless: bool = flag(26)
+    no_death_dispel: bool = flag(28)
 
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
     """Base Biped flags element. Includes logic for checking if armor/clothing
-    can be marked as playable.  Should be subclassed to add the appropriate
-    flags and, if needed, the non-playable flags.
-    """
+    can be marked as playable. Should be subclassed to add the appropriate
+    flags and, if needed, the non-playable flags."""
     _not_playable_flags: set[str] = set()
 
     @property
