@@ -1083,19 +1083,21 @@ class SkyrimGameInfo(PatchGame):
         b'NPC_': {
             'Actors.ACBS': (
                 'bleedoutOverride', 'calcMax', 'calcMin', 'dispositionBase',
-                'flags.autoCalc', 'flags.bleedoutOverride',
-                'flags.doesNotAffectStealth', 'flags.doesNotBleed',
-                'flags.essential', 'flags.female', 'flags.invulnerable',
-                'flags.isCharGenFacePreset', 'flags.isGhost',
-                'flags.loopedAudio', 'flags.loopedScript',
-                'flags.oppositeGenderAnims', 'flags.protected',
-                'flags.respawn', 'flags.simpleActor', 'flags.summonable',
-                'flags.unique', 'healthOffset', 'magickaOffset',
-                'speedMultiplier', 'staminaOffset',
+                'npc_flags.npc_auto_calc', 'npc_flags.bleedout_override',
+                'npc_flags.does_not_affect_stealth',
+                'npc_flags.does_not_bleed', 'npc_flags.npc_essential',
+                'npc_flags.npc_female', 'npc_flags.npc_invulnerable',
+                'npc_flags.is_chargen_face_preset', 'npc_flags.npc_is_ghost',
+                'npc_flags.looped_audio', 'npc_flags.looped_script',
+                'npc_flags.opposite_gender_anims', 'npc_flags.npc_protected',
+                'npc_flags.npc_respawn', 'npc_flags.simple_actor',
+                'npc_flags.npc_summonable', 'npc_flags.npc_unique',
+                'healthOffset', 'magickaOffset', 'speedMultiplier',
+                'staminaOffset',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('flags.pcLevelOffset', 'level_offset')),
+                ('npc_flags.pc_level_offset', 'level_offset')),
             'Actors.AIData': ('aggression', 'aggroRadiusBehavior',
                               'assistance', 'attack', 'confidence',
                               'energyLevel', 'mood', 'responsibility', 'warn',

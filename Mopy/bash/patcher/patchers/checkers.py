@@ -241,7 +241,7 @@ class NpcCheckerPatcher(_Checker):
                 mod_npcsFixed[npc_src_plugin] += 1
                 keep(npc_fid, npc)
             raceHair = (
-                (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
+                (defaultMaleHair, defaultFemaleHair)[npc.npc_flags.npc_female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)

@@ -131,7 +131,7 @@ class PCFaces(object):
                       'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
                       'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 setattr(face, a, getattr(npc, a))
-            face.gender = (0,1)[npc.flags.female]
+            face.gender = (0,1)[npc.npc_flags.npc_female]
             face.pcName = npc.full
             #--Changed NPC Record
             PCFaces.save_getChangedNpc(saveFile, rfid, face)
@@ -146,7 +146,7 @@ class PCFaces(object):
             return face
         npc, _version = changeRecord
         if npc.acbs:
-            face.gender = npc.acbs.flags.female
+            face.gender = npc.acbs.npc_flags.npc_female
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
@@ -228,7 +228,7 @@ class PCFaces(object):
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
-        npc.flags.female = (face.gender & 0x1)
+        npc.npc_flags.npc_female = (face.gender & 0x1)
         PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats: Skip Level, baseSpell, fatigue and factions since they're discarded by game engine.
         if face.skills: npc.skills = face.skills
@@ -244,7 +244,7 @@ class PCFaces(object):
         if changeRecord is None: return
         npc, version = changeRecord
         if not npc.acbs: npc.acbs = SreNPC.ACBS()
-        npc.acbs.flags.female = face.gender
+        npc.acbs.npc_flags.npc_female = face.gender
         npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell
         npc.acbs.fatigue = face.fatigue
@@ -328,7 +328,7 @@ class PCFaces(object):
         npc, version = saveFile.get_npc()
         #--Gender
         if pcf_flags.gender and npc.acbs:
-            npc.acbs.flags.female = face.gender
+            npc.acbs.npc_flags.npc_female = face.gender
         #--Stats
         if pcf_flags.stats and npc.acbs:
             npc.acbs.level_offset = face.level_offset
@@ -398,7 +398,7 @@ class PCFaces(object):
                 if isinstance(npc_val, FormId):
                     npc_val = npc_val.short_fid # saves code uses the ints...
                 setattr(face, att, npc_val)
-            face.gender = npc.flags.female
+            face.gender = npc.npc_flags.npc_female
             face.pcName = npc.full
             faces[face.eid] = face
         return faces
@@ -442,8 +442,8 @@ class PCFaces(object):
         #--NPC
         npc = modFile.create_record(b'NPC_', head_flags=0x40000)
         npc.eid = eid
-        npc.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags() ##: setDefault - drop this!
-        npc.flags.female = face.gender
+        npc.npc_flags = RecordType.sig_to_class[b'NPC_'].NpcFlags() ##: setDefault - drop this!
+        npc.npc_flags.npc_female = face.gender
         npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
         PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats

@@ -567,7 +567,7 @@ class MreAlch(MreHasEffects, _ObIcon):
     _default_icons = 'Clutter\\Potions\\IconPotion01.dds'
 
     class _AlchFlags(Flags):
-        autoCalc: bool
+        alch_auto_calc: bool
         alch_is_food: bool
 
     melSet = MelSet(
@@ -894,23 +894,23 @@ class MreCrea(AMreActor):
     rec_sig = b'CREA'
 
     class _CreaFlags(Flags):
-        biped: bool = flag(0)
-        essential: bool = flag(1)
-        weaponAndShield: bool = flag(2)
-        respawn: bool = flag(3)
-        swims: bool = flag(4)
-        flies: bool = flag(5)
-        walks: bool = flag(6)
-        pcLevelOffset: bool = flag(7)
-        noLowLevel: bool = flag(9)
-        noBloodSpray: bool = flag(11)
-        noBloodDecal: bool = flag(12)
-        noHead: bool = flag(15)
-        noRightArm: bool = flag(16)
-        noLeftArm: bool = flag(17)
-        noCombatInWater: bool = flag(18)
-        noShadow: bool = flag(19)
-        noCorpseCheck: bool = flag(20)
+        crea_biped: bool = flag(0)
+        crea_essential: bool = flag(1)
+        weapon_and_shield: bool = flag(2)
+        crea_respawn: bool = flag(3)
+        crea_swims: bool = flag(4)
+        crea_flies: bool = flag(5)
+        crea_walks: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        no_low_level: bool = flag(9)
+        crea_no_blood_spray: bool = flag(11)
+        crea_no_blood_decal: bool = flag(12)
+        no_head: bool = flag(15)
+        no_right_arm: bool = flag(16)
+        no_left_arm: bool = flag(17)
+        crea_no_combat_in_water: bool = flag(18)
+        crea_no_shadow: bool = flag(19)
+        no_corpse_check: bool = flag(20)
 
     melSet = MelSet(
         MelEdid(),
@@ -921,7 +921,7 @@ class MreCrea(AMreActor):
         MelBodyParts(),
         MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
-                  (_CreaFlags, 'flags'), 'baseSpell', 'fatigue', 'barterGold',
+                  (_CreaFlags, 'crea_flags'), 'baseSpell', 'fatigue', 'barterGold',
                   'level_offset', 'calcMin', 'calcMax'),
         MelFactions(),
         MelDeathItem(),
@@ -1685,16 +1685,16 @@ class MreNpc_(AMreActor):
     model: object
 
     class NpcFlags(Flags):
-        female: bool = flag(0)
-        essential: bool = flag(1)
-        respawn: bool = flag(3)
-        autoCalc: bool = flag(4)
-        pcLevelOffset: bool = flag(7)
-        noLowLevel: bool = flag(9)
-        noRumors: bool = flag(13)
-        summonable: bool = flag(14)
-        noPersuasion: bool = flag(15)
-        canCorpseCheck: bool = flag(20)
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        pc_level_offset: bool = flag(7)
+        no_low_level: bool = flag(9)
+        no_rumors: bool = flag(13)
+        npc_summonable: bool = flag(14)
+        no_persuasion: bool = flag(15)
+        can_corpse_check: bool = flag(20)
 
     class MelNpcData(MelLists):
         """Convert npc stats into skills, health, attributes."""
@@ -1706,7 +1706,7 @@ class MreNpc_(AMreActor):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'flags'),
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'npc_flags'),
                   'baseSpell', 'fatigue', 'barterGold', 'level_offset',
                   'calcMin', 'calcMax'),
         MelFactions(),

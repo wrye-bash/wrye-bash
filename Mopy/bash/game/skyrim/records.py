@@ -1959,7 +1959,7 @@ class MreMesg(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMgef(AMreMgefTes5, AMreWithKeywords):
+class MreMgef(AMreMgefTes5):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
@@ -2137,46 +2137,33 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         useAttackData: bool = flag(11)
         useKeywords: bool = flag(12)
 
-    class NpcFlags1(Flags):
-        female: bool = flag(0)
-        essential: bool = flag(1)
-        isCharGenFacePreset: bool = flag(2)
-        respawn: bool = flag(3)
-        autoCalc: bool = flag(4)
-        unique: bool = flag(5)
-        doesNotAffectStealth: bool = flag(6)
-        pcLevelOffset: bool = flag(7)
-        useTemplate: bool = flag(8)
-        unknown9: bool = flag(9)
-        unknown10: bool = flag(10)
-        protected: bool = flag(11)
-        unknown12: bool = flag(12)
-        unknown13: bool = flag(13)
-        summonable: bool = flag(14)
-        unknown15: bool = flag(15)
-        doesNotBleed: bool = flag(16)
-        unknown17: bool = flag(17)
-        bleedoutOverride: bool = flag(18)
-        oppositeGenderAnims: bool = flag(19)
-        simpleActor: bool = flag(20)
-        loopedScript: bool = flag(21)
-        unknown22: bool = flag(22)
-        unknown23: bool = flag(23)
-        unknown24: bool = flag(24)
-        unknown25: bool = flag(25)
-        unknown26: bool = flag(26)
-        unknown27: bool = flag(27)
-        loopedAudio: bool = flag(28)
-        isGhost: bool = flag(29)
-        unknown30: bool = flag(30)
-        invulnerable: bool = flag(31)
+    class NpcFlags(Flags):
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        is_chargen_face_preset: bool = flag(2)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        npc_unique: bool = flag(5)
+        does_not_affect_stealth: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        use_template: bool = flag(8)
+        npc_protected: bool = flag(11)
+        npc_summonable: bool = flag(14)
+        does_not_bleed: bool = flag(16)
+        bleedout_override: bool = flag(18)
+        opposite_gender_anims: bool = flag(19)
+        simple_actor: bool = flag(20)
+        looped_script: bool = flag(21)
+        looped_audio: bool = flag(28)
+        npc_is_ghost: bool = flag(29)
+        npc_invulnerable: bool = flag(31)
 
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
         MelBounds(),
-        MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'h', u'3H'],
-                  (NpcFlags1, u'flags'),'magickaOffset',
+        MelStruct(b'ACBS', ['I', '3h', '3H', 'h', 'H', 'h', 'H'],
+            (NpcFlags, 'npc_flags'),'magickaOffset',
                   'staminaOffset','level_offset','calcMin',
                   'calcMax','speedMultiplier','dispositionBase',
                   (_TemplateFlags, u'templateFlags'), 'healthOffset',
@@ -2593,11 +2580,11 @@ class MreQust(MelRecord):
         allowReuseInQuest: bool = flag(3)
         allowDead: bool = flag(4)
         inLoadedArea: bool = flag(5)
-        essential: bool = flag(6)
+        alias_essential: bool = flag(6)
         allowDisabled: bool = flag(7)
         storesText: bool = flag(8)
         allowReserved: bool = flag(9)
-        protected: bool = flag(10)
+        alias_protected: bool = flag(10)
         noFillType: bool = flag(11)
         allowDestroyed: bool = flag(12)
         closest: bool = flag(13)
@@ -2734,13 +2721,6 @@ class _MelTintMasks(MelGroups):
         )
         self._init_sigs = {b'TINI'}
 
-class _RaceDataFlags1(TrimmedFlags):
-    """The Overlay/Override Head Part List flags are mutually exclusive."""
-    __slots__ = ()
-    def _clean_flags(self):
-        if self.overlay_head_part_list and self.override_head_part_list:
-            self.overlay_head_part_list = False
-
 class MreRace(AMreRace, AMreWithKeywords):
     """Race."""
     rec_sig = b'RACE'
@@ -2748,31 +2728,34 @@ class MreRace(AMreRace, AMreWithKeywords):
     class HeaderFlags(MelRecord.HeaderFlags):
         critter: bool = flag(19)    # maybe
 
-    class _data_flags_1(_RaceDataFlags1):
+    # Flags that have a 'race_' prefix generally correspond to ones with a
+    # 'crea_' prefix in earlier games (they were in CREA's ACBS subrecord back
+    # then)
+    class _RaceDataFlags1(TrimmedFlags):
         playable: bool
         facegen_head: bool
         child: bool
-        tilt_front_back: bool
-        tilt_left_right: bool
-        no_shadow: bool
-        swims: bool
-        flies: bool
-        walks: bool
-        immobile: bool
-        not_pushable: bool
-        no_combat_in_water: bool
-        no_rotating_to_head_track: bool
-        dont_show_blood_spray: bool
-        dont_show_blood_decal: bool
+        race_tilt_front_back: bool
+        race_tilt_left_right: bool
+        race_no_shadow: bool
+        race_swims: bool
+        race_flies: bool
+        race_walks: bool
+        race_immobile: bool
+        race_not_pushable: bool
+        race_no_combat_in_water: bool
+        race_no_rotating_head_track: bool
+        race_no_blood_spray: bool
+        race_no_blood_decal: bool
         uses_head_track_anim: bool
         spells_align_with_magic_mode: bool
         use_world_raycasts_for_footik: bool
         allow_ragdoll_collisions: bool
         regen_hp_in_combat: bool
-        cant_open_doors: bool
-        allow_pc_dialogue: bool
-        no_knockdowns: bool
-        allow_pickpocket: bool
+        race_cant_open_doors: bool
+        race_allow_pc_dialogue: bool
+        race_no_knockdowns: bool
+        race_allow_pickpocket: bool
         always_use_proxy_controller: bool
         dont_show_weapon_blood: bool
         overlay_head_part_list: bool
@@ -2782,12 +2765,17 @@ class MreRace(AMreRace, AMreWithKeywords):
         can_dual_wield: bool
         avoids_roads: bool
 
-    class _data_flags_2(Flags):
+        def _clean_flags(self):
+            # The Overlay/Override Head Part List flags are mutually exclusive
+            if self.overlay_head_part_list and self.override_head_part_list:
+                self.overlay_head_part_list = False
+
+    class _RaceDataFlags2(Flags):
         use_advanced_avoidance: bool = flag(0)
         non_hostile: bool = flag(1)
         allow_mounted_combat: bool = flag(4)
 
-    class _equip_type_flags(TrimmedFlags):
+    class _EquipTypeFlags(TrimmedFlags):
         et_hand_to_hand_melee: bool
         et_one_hand_sword: bool
         et_one_hand_dagger: bool
@@ -2815,7 +2803,7 @@ class MreRace(AMreRace, AMreWithKeywords):
             ['14b', '2s', '4f', 'I', '7f', 'I', '2i', 'f', 'i', '5f', 'i',
              '4f', 'I', '9f'], ('skills', [0] * 14), 'unknown1',
             u'maleHeight', u'femaleHeight', u'maleWeight', u'femaleWeight',
-            (_data_flags_1, u'data_flags_1'), u'starting_health',
+            (_RaceDataFlags1, u'data_flags_1'), u'starting_health',
             u'starting_magicka', u'starting_stamina', u'base_carry_weight',
             u'base_mass', u'acceleration_rate', u'deceleration_rate',
             u'race_size', u'head_biped_object', u'hair_biped_object',
@@ -2824,7 +2812,7 @@ class MreRace(AMreRace, AMreWithKeywords):
             u'unarmed_damage', u'unarmed_reach', u'body_biped_object',
             u'aim_angle_tolerance', u'flight_radius',
             u'angular_acceleration_tolerance', u'angular_tolerance',
-            (_data_flags_2, u'data_flags_2'), (u'mount_offset_x', -63.479000),
+            (_RaceDataFlags2, u'data_flags_2'), (u'mount_offset_x', -63.479000),
             u'mount_offset_y', u'mount_offset_z',
             (u'dismount_offset_x', -50.0), u'dismount_offset_y',
             (u'dismount_offset_z', 65.0), u'mount_camera_offset_x',
@@ -2895,7 +2883,7 @@ class MreRace(AMreRace, AMreWithKeywords):
                       'override_back_run', 'override_rotate_walk',
                       'override_rotate_run', 'unknown1'),
         ), sort_by_attrs='movement_type'),
-        MelUInt32Flags(b'VNAM', u'equip_type_flags', _equip_type_flags),
+        MelUInt32Flags(b'VNAM', u'equip_type_flags', _EquipTypeFlags),
         MelSorted(MelGroups(u'equip_slots',
             MelFid(b'QNAM', u'equip_slot'),
         ), sort_by_attrs='equip_slot'),
@@ -3741,8 +3729,8 @@ class MreVtyp(MelRecord):
     rec_sig = b'VTYP'
 
     class VtypTypeFlags(Flags):
-        allowDefaultDialog: bool
-        female: bool
+        allow_default_dialog: bool
+        voice_female: bool
 
     melSet = MelSet(
         MelEdid(),

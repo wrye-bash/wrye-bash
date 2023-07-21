@@ -63,7 +63,7 @@ class SreNPC(object):
         modifiers: bool = flag(28)
 
     class ACBS(object):
-        __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
+        __slots__ = ('npc_flags', 'baseSpell', 'fatigue', 'barterGold',
                      'level_offset', 'calcMin', 'calcMax')
 
         def __init__(self, ins=None, *, __deflts=(0, 0, 0, 0, 1, 0, 0)):
@@ -71,7 +71,8 @@ class SreNPC(object):
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(self.flags)
+            self.npc_flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(
+                self.npc_flags)
 
         def __str__(self):
             return '\n'.join(
@@ -134,7 +135,7 @@ class SreNPC(object):
         #--Acbs
         if self.acbs is not None:
             acbs = self.acbs
-            _pack(u'=I3Hh2H', acbs.flags.dump(), acbs.baseSpell, acbs.fatigue,
+            _pack(u'=I3Hh2H', acbs.npc_flags.dump(), acbs.baseSpell, acbs.fatigue,
                   acbs.barterGold, acbs.level_offset, acbs.calcMin,
                   acbs.calcMax)
         #--Factions

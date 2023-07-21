@@ -58,7 +58,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelWeight, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
     PerkEpdfDecider, gen_color, gen_color3, lens_distributor, MelNoteType, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
-    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, AMreActor, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
     MelMuscShared
 
@@ -2221,7 +2221,7 @@ class MreMgef(AMreMgefTes5):
     )
 
 #------------------------------------------------------------------------------
-class MreMisc(MelRecord):
+class MreMisc(AMreWithKeywords):
     """Misc. Item."""
     rec_sig = b'MISC'
 
@@ -2264,7 +2264,7 @@ class MreMovt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMstt(MelRecord):
+class MreMstt(AMreWithKeywords):
     """Moveable Static."""
     rec_sig = b'MSTT'
 

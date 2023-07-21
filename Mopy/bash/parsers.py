@@ -552,10 +552,11 @@ class ActorLevels(_HandleAliases):
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
-                items = zip(('eid', 'flags.pcLevelOffset', 'level_offset',
-                             'calcMin', 'calcMax'), (record.eid,
-                         bool(record.flags.pcLevelOffset), record.level_offset,
-                         record.calcMin, record.calcMax))
+                items = zip(
+                    ('eid', 'npc_flags.pc_level_offset', 'level_offset',
+                     'calcMin', 'calcMax'),
+                    (record.eid, bool(record.npc_flags.pc_level_offset),
+                     record.level_offset, record.calcMin, record.calcMax))
                 mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
@@ -588,7 +589,7 @@ class ActorLevels(_HandleAliases):
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         attr_dex = super()._update_from_csv(b'NPC_', csv_fields)
-        attr_dex[u'flags.pcLevelOffset'] = True
+        attr_dex['npc_flags.pc_level_offset'] = True
         return attr_dex
 
     def _key1(self, csv_fields: list[str]) -> str:
@@ -607,7 +608,7 @@ class ActorLevels(_HandleAliases):
             self.id_stored_data[bg_mf]])
 
     def _row_out(self, longfid, di, fn_mod, obId_levels, *,
-                 __getter=itemgetter('eid', 'flags.pcLevelOffset',
+                 __getter=itemgetter('eid', 'npc_flags.pc_level_offset',
                                      'level_offset', 'calcMin', 'calcMax')):
         """Export NPC level data to specified text file."""
         eid, isOffset, offset, calcMin, calcMax = __getter(di)

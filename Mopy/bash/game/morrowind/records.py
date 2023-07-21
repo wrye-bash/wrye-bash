@@ -482,17 +482,16 @@ class MreCrea(MelRecord):
     """Creature."""
     rec_sig = b'CREA'
 
-    # Names match those of MreCrea._flags in later games
-    # Default is 0x48 (walks | crea_none)
-    class _crea_flags(Flags):
-        biped: bool
-        respawn: bool
-        weaponAndShield: bool
+    # Default is 0x48 (crea_walks | crea_none)
+    class _CreaFlags(Flags):
+        crea_biped: bool
+        crea_respawn: bool
+        weapon_and_shield: bool
         crea_none: bool
-        swims: bool
-        flies: bool
-        walks: bool
-        essential: bool
+        crea_swims: bool
+        crea_flies: bool
+        crea_walks: bool
+        crea_essential: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -509,7 +508,7 @@ class MreCrea(MelRecord):
             u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
             u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
             u'crea_gold'),
-        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _crea_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _CreaFlags),
             'blood_type'),
         MelRefScale(),
         MelItems(),
@@ -841,13 +840,12 @@ class MreNpc_(MelRecord):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    # Names match those of MreNpc_._flags in later games
-    class _npc_flags(Flags):
-        female: bool
-        essential: bool
-        respawn: bool
+    class NpcFlags(Flags):
+        npc_female: bool
+        npc_essential: bool
+        npc_respawn: bool
         default_unknown: bool # always set
-        autoCalc: bool
+        npc_auto_calc: bool
 
     class MelNpcData(MelLists):
         """Converts attributes and skills into lists."""
@@ -863,7 +861,7 @@ class MreNpc_(MelRecord):
         can_decide_at_dump = True
 
         def decide_dump(self, record):
-            return 12 if record.npc_flags.autoCalc else 52
+            return 12 if record.npc_flags.npc_auto_calc else 52
 
     melSet = MelSet(
         MelMWId(),
@@ -885,7 +883,7 @@ class MreNpc_(MelRecord):
                 u'npc_fatigue', u'npc_disposition', u'npc_reputation',
                 u'npc_rank', u'unknown3', u'npc_gold'),
         }, decider=NpcDataDecider()),
-        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', _npc_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', NpcFlags),
             'blood_type'),
         MelItems(),
         MelSpellsTes3(),
@@ -1045,7 +1043,7 @@ class MreSpel(MelRecord):
     rec_sig = b'SPEL'
 
     class _spell_flags(Flags):
-        auto_calc: bool
+        spell_auto_calc: bool
         pc_start: bool
         always_suceeds: bool
 

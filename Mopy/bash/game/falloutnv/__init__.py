@@ -446,7 +446,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     # Import Actors
     #--------------------------------------------------------------------------
     actor_importer_attrs = deepcopy(Fallout3GameInfo.actor_importer_attrs)
-    actor_importer_attrs[b'NPC_']['Actors.ACBS'] += ('flags.autocalcService',)
+    actor_importer_attrs[b'NPC_']['Actors.ACBS'] += (
+        'npc_flags.auto_calc_service',)
 
     #--------------------------------------------------------------------------
     # Tweak Assorted

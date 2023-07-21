@@ -503,7 +503,7 @@ class MreAlch(MelRecord):
         medicine: bool = flag(29)
 
     class _flags(Flags):
-        autoCalc: bool
+        alch_auto_calc: bool
         alch_is_food: bool
         medicine: bool
 
@@ -952,38 +952,35 @@ class MreCrea(_AMreActorFo3):
     """Creature."""
     rec_sig = b'CREA'
 
-    class _flags(Flags):
-        biped: bool = flag(0)
-        essential: bool = flag(1)
-        weaponAndShield: bool = flag(2)
-        respawn: bool = flag(3)
-        swims: bool = flag(4)
-        flies: bool = flag(5)
-        walks: bool = flag(6)
-        pcLevelOffset: bool = flag(7)
-        noLowLevel: bool = flag(9)
-        noBloodSpray: bool = flag(11)
-        noBloodDecal: bool = flag(12)
-        noHead: bool = flag(15)
-        noRightArm: bool = flag(16)
-        noLeftArm: bool = flag(17)
-        noCombatInWater: bool = flag(18)
-        noShadow: bool = flag(19)
-        noVATSMelee: bool = flag(20)
-        allowPCDialogue: bool = flag(21)
-        cantOpenDoors: bool = flag(22)
-        immobile: bool = flag(23)
-        tiltFrontBack: bool = flag(24)
-        tiltLeftRight: bool = flag(25)
-        noKnockDown: bool = flag(26)
-        notPushable: bool = flag(27)
-        allowPickpocket: bool = flag(28)
-        isGhost: bool = flag(29)
-        noRotatingHeadTrack: bool = flag(30)
-        invulnerable: bool = flag(31)
-
-    class aggroflags(Flags):
-        aggroRadiusBehavior: bool
+    class _CreaFlags(Flags):
+        crea_biped: bool = flag(0)
+        crea_essential: bool = flag(1)
+        weapon_and_shield: bool = flag(2)
+        crea_respawn: bool = flag(3)
+        crea_swims: bool = flag(4)
+        crea_flies: bool = flag(5)
+        crea_walks: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        no_low_level: bool = flag(9)
+        crea_no_blood_spray: bool = flag(11)
+        crea_no_blood_decal: bool = flag(12)
+        no_head: bool = flag(15)
+        no_right_arm: bool = flag(16)
+        no_left_arm: bool = flag(17)
+        crea_no_combat_in_water: bool = flag(18)
+        crea_no_shadow: bool = flag(19)
+        no_vats_melee: bool = flag(20)
+        crea_allow_pc_dialogue: bool = flag(21)
+        crea_cant_open_doors: bool = flag(22)
+        crea_immobile: bool = flag(23)
+        crea_tilt_front_back: bool = flag(24)
+        crea_tilt_left_right: bool = flag(25)
+        crea_no_knockdowns: bool = flag(26)
+        crea_not_pushable: bool = flag(27)
+        crea_allow_pickpocket: bool = flag(28)
+        crea_is_ghost: bool = flag(29)
+        crea_no_rotating_head_track: bool = flag(30)
+        crea_invulnerable: bool = flag(31)
 
     melSet = MelSet(
         MelEdid(),
@@ -995,10 +992,10 @@ class MreCrea(_AMreActorFo3):
         MelUInt16(b'EAMT', 'eamt'),
         MelBodyParts(),
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
-        MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'h', u'H'],(_flags, u'flags'),'fatigue',
-            'barterGold',('level_offset',1),'calcMin','calcMax','speedMultiplier',
-            'karma', 'dispositionBase',
-            (_AMreActorFo3.TemplateFlags, 'templateFlags')),
+        MelStruct(b'ACBS', ['I', '2H', 'h', '3H', 'f', 'h', 'H'],
+            (_CreaFlags, 'crea_flags'), 'fatigue', 'barterGold', 'level_offset',
+            'calcMin', 'calcMax', 'speedMultiplier', 'karma',
+            'dispositionBase', (_AMreActorFo3.TemplateFlags, 'templateFlags')),
         MelFactions(),
         MelDeathItem(),
         MelFid(b'VTCK','voice'),
@@ -1010,7 +1007,7 @@ class MreCrea(_AMreActorFo3):
                   ('energyLevel', 50), ('responsibility', 50), 'mood',
                   'unused_aidt', (aiService, u'services'),
                   ('trainSkill', -1), 'trainLevel', 'assistance',
-                  (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
+                  'aggroRadiusBehavior', 'aggroRadius'),
         MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelStruct(b'DATA', [u'4B', u'h', u'2s', u'h', u'7B'],'creatureType','combatSkill','magicSkill',
@@ -1943,23 +1940,23 @@ class MreNpc_(_AMreActorFo3):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    class _flags(Flags):
-        female: bool = flag(0)
-        essential: bool = flag(1)
-        isChargenFacePreset: bool = flag(2)
-        respawn: bool = flag(3)
-        autoCalc: bool = flag(4)
-        pcLevelOffset: bool = flag(7)
-        useTemplate: bool = flag(8)
-        noLowLevel: bool = flag(9)
-        noBloodSpray: bool = flag(11)
-        noBloodDecal: bool = flag(12)
-        noVATSMelee: bool = flag(20)
-        canBeAllRaces: bool = flag(22)
-        autocalcService: bool = flag(fnv_only(23))
-        noKnockDown: bool = flag(26)
-        notPushable: bool = flag(27)
-        noRotatingHeadTrack: bool = flag(30)
+    class NpcFlags(Flags):
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        is_chargen_face_preset: bool = flag(2)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        pc_level_offset: bool = flag(7)
+        use_template: bool = flag(8)
+        no_low_level: bool = flag(9)
+        crea_no_blood_spray: bool = flag(11)
+        crea_no_blood_decal: bool = flag(12)
+        no_vats_melee: bool = flag(20)
+        can_be_all_races: bool = flag(22)
+        auto_calc_service: bool = flag(fnv_only(23))
+        crea_no_knockdowns: bool = flag(26)
+        crea_not_pushable: bool = flag(27)
+        crea_no_rotating_head_track: bool = flag(30)
 
     class aggroflags(Flags):
         aggroRadiusBehavior: bool
@@ -1974,10 +1971,10 @@ class MreNpc_(_AMreActorFo3):
         MelBounds(),
         MelFull(),
         MelModel(),
-        MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'2H'],
-            (_flags, u'flags'),'fatigue','barterGold',
-            ('level_offset',1),'calcMin','calcMax','speedMultiplier','karma',
-            'dispositionBase', (_AMreActorFo3.TemplateFlags, u'templateFlags')),
+        MelStruct(b'ACBS', ['I', '2H', 'h', '3H', 'f', '2H'],
+            (NpcFlags, 'npc_flags'), 'fatigue', 'barterGold', 'level_offset',
+            'calcMin', 'calcMax', 'speedMultiplier', 'karma',
+            'dispositionBase', (_AMreActorFo3.TemplateFlags, 'templateFlags')),
         MelFactions(),
         MelDeathItem(),
         MelFid(b'VTCK','voice'),
@@ -3034,8 +3031,8 @@ class MreVtyp(MelRecord):
     rec_sig = b'VTYP'
 
     class _flags(Flags):
-        allowDefaultDialog: bool
-        female: bool
+        allow_default_dialog: bool
+        voice_female: bool
 
     melSet = MelSet(
         MelEdid(),

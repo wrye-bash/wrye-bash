@@ -55,7 +55,7 @@ class _AFemaleOnlyTweak(_ANpcTweak):
     """Provides an implementation of wants_record for female-only tweaks.
     Shared by Sexy and Real Walk tweaks."""
     def wants_record(self, record):
-        return record.fid != self._player_fid and record.flags.female
+        return record.fid != self._player_fid and record.npc_flags.npc_female
 
 #------------------------------------------------------------------------------
 class _ASkeletonTweak(_ANpcTweak):
@@ -71,8 +71,8 @@ class _ASkeletonTweak(_ANpcTweak):
 
     def wants_record(self, record):
         chosen_gender = self.choiceValues[self.chosen][0]
-        if chosen_gender == 1 and not record.flags.female: return False
-        elif chosen_gender == 2 and record.flags.female: return False
+        if chosen_gender == 1 and not record.npc_flags.npc_female: return False
+        elif chosen_gender == 2 and record.npc_flags.npc_female: return False
         return (record.fid != self._player_fid and
                 self._get_skeleton_path(record) !=
                 self._get_target_skeleton(record))
@@ -209,8 +209,8 @@ class NoBloodCreaturesPatcher(_ACreatureTweak):
     def tweak_record(self, record):
         record.bloodDecalPath = None
         record.bloodSprayPath = None
-        record.flags.noBloodSpray = True
-        record.flags.noBloodDecal = True
+        record.crea_flags.crea_no_blood_spray = True
+        record.crea_flags.crea_no_blood_decal = True
 
 #------------------------------------------------------------------------------
 class AsIntendedImpsPatcher(_ACreatureTweak):
@@ -363,7 +363,7 @@ class _AOppositeGenderAnimsPatcher(_ANpcTweak):
                      (_(u'Always Enable'), u'enable_all'),]
     tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
     # Whether this patcher wants female or male NPCs
-    _targets_female_npcs = False
+    _targets_female_npcs: bool
 
     @property
     def oga_target(self):
@@ -371,11 +371,11 @@ class _AOppositeGenderAnimsPatcher(_ANpcTweak):
 
     def wants_record(self, record):
         # Skip any NPCs that don't match this patcher's target gender
-        return (record.flags.female == self._targets_female_npcs
-                and record.flags.oppositeGenderAnims != self.oga_target)
+        return (record.npc_flags.npc_female == self._targets_female_npcs
+                and record.npc_flags.opposite_gender_anims != self.oga_target)
 
     def tweak_record(self, record):
-        record.flags.oppositeGenderAnims = self.oga_target
+        record.npc_flags.opposite_gender_anims = self.oga_target
 
 class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
     tweak_name = _(u'Opposite Gender Anims: Female')
@@ -389,6 +389,7 @@ class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
     tweak_tip = _(u"Enables or disables the 'Opposite Gender Anims' for all "
                   u"male NPCs. Similar to the 'Feminine Females' mod.")
     tweak_key = u'opposite_gender_anims_male'
+    _targets_female_npcs = False
 
 #------------------------------------------------------------------------------
 class TweakActorsPatcher(MultiTweaker):

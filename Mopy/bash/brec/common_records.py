@@ -536,7 +536,7 @@ class AMreLeveledList(MelRecord):
         self.setChanged(self.mergeOverLast)
 
 #------------------------------------------------------------------------------
-class AMreMgefTes5(MelRecord):
+class AMreMgefTes5(AMreWithKeywords):
     """Base class for MGEF records since Skyrim."""
     def keep_fids(self, keep_plugins):
         super().keep_fids(keep_plugins)

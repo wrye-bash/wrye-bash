@@ -904,7 +904,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                     fid = mapToOrdered(rid, None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
-                                     npc.calcMax, npc.flags.pcLevelOffset)
+                                     npc.calcMax, npc.npc_flags.pc_level_offset)
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             msg = [_(u'NPCs Releveled:')]
@@ -922,15 +922,15 @@ class Save_UpdateNPCLevels(EnabledLink):
                     if (rec_kind != 35 or recId == 7 or
                             orderedRecId not in npc_info):
                         continue
-                    eid, level_offset, calcMin, calcMax, pcLevelOffset = \
+                    eid, level_offset, calcMin, calcMax, pc_level_offset = \
                         npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
                     if acbs and (acbs.level_offset != level_offset or
                                  acbs.calcMin != calcMin or
                                  acbs.calcMax != calcMax or
-                                 acbs.flags.pcLevelOffset != pcLevelOffset):
-                        acbs.flags.pcLevelOffset = pcLevelOffset
+                                 acbs.npc_flags.pc_level_offset != pc_level_offset):
+                        acbs.npc_flags.pc_level_offset = pc_level_offset
                         acbs.level_offset = level_offset
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
