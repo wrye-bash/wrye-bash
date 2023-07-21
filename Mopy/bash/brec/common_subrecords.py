@@ -1342,6 +1342,12 @@ class MelNodeIndex(MelSInt32):
         super().__init__(b'DATA', 'node_index')
 
 #------------------------------------------------------------------------------
+class MelNoteType(MelUInt8):
+    """Handles the NOTE subrecord DNAM (Type)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'note_type')
+
+#------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK for cells and cell children."""
 

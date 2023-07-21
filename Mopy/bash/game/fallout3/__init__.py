@@ -758,7 +758,7 @@ class Fallout3GameInfo(PatchGame):
         b'MICN': ('iconPath', 'smallIconPath'),
         b'MISC': ('iconPath', 'smallIconPath', 'model'),
         b'MSTT': ('model',),
-        b'NOTE': ('iconPath', 'smallIconPath', 'model', 'texture'),
+        b'NOTE': ('iconPath', 'smallIconPath', 'model', 'note_texture'),
         b'PERK': ('iconPath', 'smallIconPath'),
         b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
                   'muzzleFlashPath'),
@@ -814,7 +814,7 @@ class Fallout3GameInfo(PatchGame):
         b'MESG': ('description',),
         b'MGEF': ('description',),
         ##: This one *might* be a FormID. How on earth do we handle this?
-        b'NOTE': ('textTopic',),
+        b'NOTE': ('note_contents',),
         b'PERK': ('description',),
         # omit RACE - covered by R.Description
         b'TERM': ('description',),

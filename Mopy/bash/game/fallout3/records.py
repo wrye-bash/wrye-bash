@@ -40,7 +40,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
     MelIdlmFlags, MelImageSpaceMod, MelImpactDataset, MelInfoResponsesFo3, \
     MelIpctSounds, MelIpctTextureSets, MelLandShared, MelLighFade, MelLists, \
-    MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, \
+    MelLLChanceNone, MelLLFlags, MelLLGlobal, MelLscrLocations, MelNoteType, \
     MelLtexGrasses, MelLtexSnam, MelMapMarker, MelMODS, MelNodeIndex, \
     MelNull, MelObject, MelOwnership, MelPartialCounter, MelMesgSharedFo3, \
     MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, MelRaceParts, \
@@ -1915,13 +1915,13 @@ class MreNote(MelRecord):
         MelModel(),
         MelIcons(),
         MelSoundPickupDrop(),
-        MelUInt8(b'DATA', 'dataType'),
-        MelSorted(MelSimpleArray('quests', MelFid(b'ONAM'))),
-        MelString(b'XNAM','texture'),
+        MelNoteType(),
+        MelSorted(MelSimpleArray('note_quests', MelFid(b'ONAM'))),
+        MelString(b'XNAM', 'note_texture'),
         MelUnion({
-            3: MelFid(b'TNAM', u'textTopic'),
-        }, decider=AttrValDecider(u'dataType'),
-            fallback=MelString(b'TNAM', u'textTopic')),
+            (0, 1, 2): MelString(b'TNAM', 'note_contents'),
+            3: MelFid(b'TNAM', 'note_contents'),
+        }, decider=AttrValDecider('note_type')),
         MelSound(),
     )
 

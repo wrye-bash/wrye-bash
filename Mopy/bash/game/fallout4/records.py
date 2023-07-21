@@ -56,7 +56,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
     MelWeight, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
-    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
+    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, MelNoteType, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
     MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
@@ -2377,6 +2377,29 @@ class MreNocm(MelRecord):
             MelBase(b'INTV', 'unknown_intv'),
             MelString(b'NAM1', 'nocm_model'),
         ),
+    )
+
+#------------------------------------------------------------------------------
+class MreNote(MelRecord):
+    """Note."""
+    rec_sig = b'NOTE'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelSoundPickupDrop(),
+        MelNoteType(),
+        MelValueWeight(),
+        MelUnion({
+            0: MelStruct(b'SNAM', ['4s'], 'note_contents'), # Unused
+            (1, 2, 3): MelFid(b'SNAM', 'note_contents'),
+        }, decider=AttrValDecider('note_type')),
+        MelString(b'PNAM', 'program_file'),
     )
 
 #------------------------------------------------------------------------------
