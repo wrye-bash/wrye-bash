@@ -39,48 +39,49 @@ class PCFaces(object):
     """Package: Objects and functions for working with face data."""
     class pcf_flags(Flags):
         pcf_name: bool
-        race: bool
-        gender: bool
-        hair: bool
-        eye: bool
-        iclass: bool
-        stats: bool
-        factions: bool
-        modifiers: bool
-        spells: bool
+        pcf_race: bool
+        pcf_gender: bool
+        pcf_hair: bool
+        pcf_eye: bool
+        pcf_class: bool
+        pcf_stats: bool
+        pcf_factions: bool
+        pcf_modifiers: bool
+        pcf_spells: bool
 
     class PCFace(object):
         """Represents a face."""
         __slots__ = (
-            'face_masters', 'eid', 'pcName', 'race', 'gender', 'eye', 'hair',
-            'hairLength', 'hairRed', 'hairBlue', 'hairGreen', 'unused3',
-            'fggs_p', 'fgga_p', 'fgts_p', 'level_offset', 'attributes',
-            'skills', 'health', 'unused2', 'baseSpell', 'fatigue', 'iclass',
-            'factions', 'modifiers', 'spells')
+            'face_masters', 'eid', 'pcName', 'race', 'gender', 'eye',
+            'hair', 'hairLength', 'hairRed', 'hairBlue', 'hairGreen',
+            'unused3', 'fggs_p', 'fgga_p', 'fgts_p', 'level_offset',
+            'attributes', 'skills', 'health', 'unused2', 'base_spell',
+            'fatigue', 'npc_class', 'factions', 'modifiers', 'spells')
 
         def __init__(self):
             self.face_masters = []
-            self.eid = self.pcName = u'generic'
+            self.eid = self.pcName = 'generic'
             self.fggs_p = self.fgts_p = b'\x00'*4*50
             self.fgga_p = b'\x00'*4*30
             self.unused2 = null2
-            self.health = self.unused3 = self.baseSpell = self.fatigue = 0
+            self.health = self.unused3 = self.base_spell = self.fatigue = 0
             self.level_offset = 0
-            self.skills = self.attributes = self.iclass = None
+            self.skills = self.attributes = self.npc_class = None
             self.factions = []
             self.modifiers = []
             self.spells = []
 
         def getGenderName(self):
-            return self.gender and u'Female' or u'Male'
+            return _('Female') if self.gender else _('Male')
 
         def getRaceName(self):
-            return bush.game.raceNames.get(self.race,_(u'Unknown'))
+            return bush.game.raceNames.get(self.race, _('Unknown'))
 
         def convertRace(self,fromRace,toRace):
-            """Converts face from one race to another while preserving structure, etc."""
-            for a, f in ((u'fggs_p', u'50f'), (u'fgga_p', u'30f'),
-                         (u'fgts_p', u'50f')):
+            """Converts face from one race to another while preserving
+            structure, etc."""
+            for a, f in (('fggs_p', '50f'), ('fgga_p', '30f'),
+                         ('fgts_p', '50f')):
                 sValues = list(struct_unpack(f, getattr(self, a)))
                 fValues = list(struct_unpack(f, getattr(fromRace, a)))
                 tValues = list(struct_unpack(f, getattr(toRace, a)))
@@ -129,7 +130,7 @@ class PCFaces(object):
             for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
                       'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
                       'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
-                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
+                      'base_spell', 'fatigue', 'attributes', 'npc_class'):
                 setattr(face, a, getattr(npc, a))
             face.gender = (0,1)[npc.npc_flags.npc_female]
             face.pcName = npc.full
@@ -148,7 +149,7 @@ class PCFaces(object):
         if npc.acbs:
             face.gender = npc.acbs.npc_flags.npc_female
             face.level_offset = npc.acbs.level_offset
-            face.baseSpell = npc.acbs.baseSpell
+            face.base_spell = npc.acbs.base_spell
             face.fatigue = npc.acbs.fatigue
         for att in ('attributes', 'skills', 'health', 'unused2'):
             npc_val = getattr(npc, att)
@@ -177,18 +178,18 @@ class PCFaces(object):
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.fn_key, data,
                                           encode(saveFile.header.pcName))
-        (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
-         face.hairLength, face.hairRed, face.hairBlue, face.hairGreen,
-         face.unused3, face.gender) = __faceunpack(
+        (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair,
+         face.eye, face.hairLength, face.hairRed, face.hairBlue,
+         face.hairGreen, face.unused3, face.gender) = __faceunpack(
             data[namePos - 542:namePos - 1])
         classPos = namePos + len(saveFile.header.pcName) + 1
-        face.iclass, = __unpacker(data[classPos:classPos+4])
+        face.npc_class, = __unpacker(data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)
         face.hair = getFid(face.hair)
         face.eye = getFid(face.eye)
-        face.iclass = getFid(face.iclass)
+        face.npc_class = getFid(face.npc_class)
         #--Changed NPC Record
         PCFaces.save_getChangedNpc(saveFile, _player_fid, face)
         #--Done
@@ -230,13 +231,13 @@ class PCFaces(object):
         #--Set face
         npc.npc_flags.npc_female = (face.gender & 0x1)
         PCFaces._set_npc_attrs(npc, face, masterMap)
-        #--Stats: Skip Level, baseSpell, fatigue and factions since they're discarded by game engine.
+        #--Stats: Skip Level, base_spell, fatigue and factions since they're discarded by game engine.
         if face.skills: npc.skills = face.skills
         if face.health:
             npc.health = face.health
             npc.unused2 = face.unused2
         if face.attributes: npc.attributes = face.attributes
-        if face.iclass: npc.iclass = face.iclass
+        if face.npc_class: npc.npc_class = face.npc_class
         npc.setChanged()
         npc.getSize()
         #--Change record?
@@ -246,7 +247,7 @@ class PCFaces(object):
         if not npc.acbs: npc.acbs = SreNPC.ACBS()
         npc.acbs.npc_flags.npc_female = face.gender
         npc.acbs.level_offset = face.level_offset
-        npc.acbs.baseSpell = face.baseSpell
+        npc.acbs.base_spell = face.base_spell
         npc.acbs.fatigue = face.fatigue
         npc.modifiers = face.modifiers[:]
         #--Fid conversion
@@ -262,7 +263,7 @@ class PCFaces(object):
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
         maxMaster = len(face.face_masters) - 1
-        for fid in (face.race, face.eye, face.hair, face.iclass):
+        for fid in (face.race, face.eye, face.hair, face.npc_class):
             if not fid: continue
             master = face.face_masters[min(fid >> 24, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
@@ -288,16 +289,16 @@ class PCFaces(object):
         buff.seek(namePos-542)
         buffPack(u'=200s120s200s',face.fggs_p, face.fgga_p, face.fgts_p)
         #--Race?
-        buffPackRef(face.race, pcf_flags.race)
+        buffPackRef(face.race, pcf_flags.pcf_race)
         #--Hair, Eyes?
-        buffPackRef(face.hair, pcf_flags.hair)
-        buffPackRef(face.eye, pcf_flags.eye)
-        if pcf_flags.hair:
+        buffPackRef(face.hair, pcf_flags.pcf_hair)
+        buffPackRef(face.eye, pcf_flags.pcf_eye)
+        if pcf_flags.pcf_hair:
             buffPack(u'=f3Bs',face.hairLength,face.hairRed,face.hairBlue,face.hairGreen,face.unused3)
         else:
             buff.seek(8,1)
         #--Gender?
-        if pcf_flags.gender:
+        if pcf_flags.pcf_gender:
             pack_byte(buff, face.gender)
         else:
             buff.seek(1,1)
@@ -314,9 +315,9 @@ class PCFaces(object):
         else:
             buff.seek(len(saveFile.header.pcName) + 2, 1)
         #--Class?
-        if pcf_flags.iclass and face.iclass:
+        if pcf_flags.pcf_class and face.npc_class:
             pos = buff.tell()
-            newClass = masterMap(face.iclass)
+            newClass = masterMap(face.npc_class)
             oldClass = saveFile.fids[struct_unpack(u'I', buff.read(4))[0]]
             customClass = saveFile.getIref(0x22843)
             if customClass not in (newClass.short_fid, oldClass):
@@ -327,12 +328,12 @@ class PCFaces(object):
         #--Player NPC
         npc, version = saveFile.get_npc()
         #--Gender
-        if pcf_flags.gender and npc.acbs:
+        if pcf_flags.pcf_gender and npc.acbs:
             npc.acbs.npc_flags.npc_female = face.gender
         #--Stats
-        if pcf_flags.stats and npc.acbs:
+        if pcf_flags.pcf_stats and npc.acbs:
             npc.acbs.level_offset = face.level_offset
-            npc.acbs.baseSpell = face.baseSpell
+            npc.acbs.base_spell = face.base_spell
             npc.acbs.fatigue = face.fatigue
             npc.attributes = face.attributes
             npc.skills = face.skills
@@ -340,8 +341,9 @@ class PCFaces(object):
             npc.unused2 = face.unused2
         #--Factions: Faction assignment doesn't work. (Probably stored in achr.)
         #--Modifiers, Spells, Name
-        if pcf_flags.modifiers: npc.modifiers = face.modifiers[:]
-        if pcf_flags.spells:
+        if pcf_flags.pcf_modifiers:
+            npc.modifiers = face.modifiers[:]
+        if pcf_flags.pcf_spells:
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
         #--Save
@@ -392,8 +394,9 @@ class PCFaces(object):
             face.face_masters = modFile.augmented_masters()
             for att in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
                         'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
-                        'fgts_p', 'level_offset', 'skills', 'health', 'iclass',
-                        'unused2', 'baseSpell', 'fatigue', 'attributes'):
+                        'fgts_p', 'level_offset', 'skills', 'health',
+                        'npc_class', 'unused2', 'base_spell', 'fatigue',
+                        'attributes'):
                 npc_val = getattr(npc, att)
                 if isinstance(npc_val, FormId):
                     npc_val = npc_val.short_fid # saves code uses the ints...
@@ -444,11 +447,11 @@ class PCFaces(object):
         npc.eid = eid
         npc.npc_flags = RecordType.sig_to_class[b'NPC_'].NpcFlags() ##: setDefault - drop this!
         npc.npc_flags.npc_female = face.gender
-        npc.iclass = masterMap(face.iclass,0x237a8) #--Default to Acrobat
+        npc.npc_class = masterMap(face.npc_class,0x237a8) #--Default to Acrobat
         PCFaces._set_npc_attrs(npc, face, masterMap)
         #--Stats
         npc.level_offset = face.level_offset
-        npc.baseSpell = face.baseSpell
+        npc.base_spell = face.base_spell
         npc.fatigue = face.fatigue
         if face.skills: npc.skills = face.skills
         if face.health:

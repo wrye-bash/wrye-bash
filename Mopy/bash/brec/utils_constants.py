@@ -381,6 +381,22 @@ class MgefFlags(AMgefFlags):
     painless: bool = flag(26)
     no_death_dispel: bool = flag(28)
 
+class TemplateFlags(Flags):
+    """NPC_ (and CREA, in FO3) template flags, present since FO3."""
+    use_traits: bool
+    use_stats: bool
+    use_factions: bool
+    use_spell_list: bool
+    use_ai_data: bool
+    use_ai_packages: bool
+    use_model_animation: bool
+    use_base_data: bool
+    use_inventory: bool
+    use_script: bool
+    use_def_pack_list: bool # since Skyrim
+    use_attack_data: bool # since Skyrim
+    use_keywords: bool # since Skyrim
+
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
@@ -452,10 +468,13 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
-def gen_color(color_attr_pfx: str) -> list[str]:
-    """Helper method for generating red/green/blue/unused color attributes."""
-    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue',
-                                              'unused')]
+def gen_color(color_attr_pfx: str, *, rename_alpha: bool = False) -> list[str]:
+    """Helper method for generating red/green/blue/alpha color attributes. Note
+    that alpha is commonly unused when Bethesda uses this 4-float style of
+    colors and you may have to pass rename_alpha=True to name that attribute
+    '*_unused' instead of '*_alpha' if a separate alpha attribute exists."""
+    return [f'{color_attr_pfx}_{c}' for c in (
+        'red', 'green', 'blue', ('unused' if rename_alpha else 'alpha'))]
 
 def gen_color3(color_attr_pfx: str) -> list[str]:
     """Helper method for generating red/green/blue color attributes."""

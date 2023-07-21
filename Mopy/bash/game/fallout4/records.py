@@ -49,7 +49,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
     MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
-    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
+    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, MelVoice, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
@@ -60,7 +60,12 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
     MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, AMreActor, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
-    MelMuscShared
+    MelMuscShared, TemplateFlags, MelFactions, MelDeathItem, MelTemplate, \
+    MelSpellCounter, MelSpells, MelSkin, MelNpcAnam, MelAttackRace, \
+    MelOverridePackageLists, MelNpcPerks, MelAIPackages, MelNpcClass, \
+    MelNpcHeadParts, MelNpcHairColor, MelCombatStyle, MelNpcGiftFilter, \
+    MelSoundLevel, MelInheritsSoundsFrom, MelNpcShared, SizeDecider, \
+    MelActorSounds2
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -125,6 +130,32 @@ class MelAppr(MelSimpleArray):
     """Handles the common APPR (Attach Parent Slots) subrecord."""
     def __init__(self):
         super().__init__('attach_parent_slots', MelFid(b'APPR'))
+
+#------------------------------------------------------------------------------
+class MelAttacks(MelSorted):
+    """Handles the ATKD/ATKE/ATKW/ATKS/ATKT subrecords shared between NPC_ and
+    RACE."""
+    class _AttackFlags(Flags):
+        ignore_weapon: bool
+        bash_attack: bool
+        power_attack: bool
+        charge_attack: bool
+        rotating_attack: bool
+        continuous_attack: bool
+        override_data: bool = flag(31)
+
+    def __init__(self):
+        super().__init__(MelGroups('attacks',
+            MelStruct(b'ATKD', ['2f', '2I', '6f', 'i'], 'damage_mult',
+                'attack_chance', (FID, 'attack_spell'),
+                (self._AttackFlags, 'attack_flags'), 'attack_angle',
+                'strike_angle', 'attack_stagger', 'attack_knockdown',
+                'recovery_time', 'action_points_mult', 'stagger_offset'),
+            MelString(b'ATKE', 'attack_event'),
+            MelFid(b'ATKW', 'weapon_slot'),
+            MelFid(b'ATKS', 'required_slot'),
+            MelString(b'ATKT', 'attack_description'),
+        ), sort_by_attrs='attack_event')
 
 #------------------------------------------------------------------------------
 class MelBod2(MelUInt32Flags):
@@ -1243,8 +1274,10 @@ class MreEfsh(MelRecord):
                 'ps_initial_velocity2', 'ps_initial_velocity3',
                 'ps_acceleration1', 'ps_acceleration2', 'ps_acceleration3',
                 'ps_scale_key1', 'ps_scale_key2', 'ps_scale_key1_time',
-                'ps_scale_key2_time', *gen_color('color_key1'),
-                *gen_color('color_key2'), *gen_color('color_key3'),
+                'ps_scale_key2_time',
+                *gen_color('color_key1', rename_alpha=True),
+                *gen_color('color_key2', rename_alpha=True),
+                *gen_color('color_key3', rename_alpha=True),
                 'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
                 'color_key1_time', 'color_key2_time', 'color_key3_time',
                 'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
@@ -2400,6 +2433,162 @@ class MreNote(MelRecord):
             (1, 2, 3): MelFid(b'SNAM', 'note_contents'),
         }, decider=AttrValDecider('note_type')),
         MelString(b'PNAM', 'program_file'),
+    )
+
+#------------------------------------------------------------------------------
+class _NpcTendDecider(SizeDecider):
+    """The NPC_ subrecord TEND specifies properties for one tint layer. It can
+    either be a single byte in size, in which case it only specifies a value
+    (e.g. setting '1182 Damage - Scar - Lip Gouges' to 0.33) or it can be 7
+    bytes in length, in which case it specifies a value, a color and a template
+    color index for the layer.
+
+    This is easy to handle at load time, but in order to allow runtime
+    modification we need to check if WB set or removed the non-value fields.
+    Since this is all or nothing (either you add all the extra fields or you
+    remove all of them, anything else would blow up on dump), we only check the
+    template color index."""
+    can_decide_at_dump = True
+
+    def decide_dump(self, record):
+        return 1 if record.tint_template_color_index is None else 7
+
+class MreNpc_(AMreActor, AMreWithKeywords):
+    """Non-Player Character."""
+    rec_sig = b'NPC_'
+
+    class HeaderFlags(AMreActor.HeaderFlags):
+        bleedout_override: bool = flag(29)
+
+    class NpcFlags(Flags):
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        is_chargen_face_preset: bool = flag(2)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        npc_unique: bool = flag(5)
+        does_not_affect_stealth: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        calc_for_each_template: bool = flag(9)
+        npc_protected: bool = flag(11)
+        npc_summonable: bool = flag(14)
+        does_not_bleed: bool = flag(16)
+        bleedout_override: bool = flag(18)
+        opposite_gender_anims: bool = flag(19)
+        simple_actor: bool = flag(20)
+        no_activation_or_hellos: bool = flag(23)
+        diffuse_alpha_test: bool = flag(24)
+        npc_is_ghost: bool = flag(29)
+        npc_invulnerable: bool = flag(31)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(is_required=True),
+        MelPreviewTransform(),
+        MelAnimationSound(),
+        MelStruct(b'ACBS', ['I', '2h', '2H', 'h', '2H', '2s'],
+            (NpcFlags, 'npc_flags'), 'xp_value_offset', 'level_offset',
+            'calc_min_level', 'calc_max_level', 'disposition_base',
+            (TemplateFlags, 'template_flags'), 'bleedout_override',
+            'unknown1', is_required=True),
+        MelFactions(),
+        MelDeathItem(),
+        MelVoice(),
+        MelTemplate('default_template'),
+        MelFid(b'LTPT', 'legendary_template'),
+        MelFid(b'LTPC', 'legendary_chance'),
+        MelStruct(b'TPTA', ['13I'], (FID, 'template_actor_traits'),
+            (FID, 'template_actor_stats'), (FID, 'template_actor_factions'),
+            (FID, 'template_actor_spell_list'),
+            (FID, 'template_actor_ai_data'),
+            (FID, 'template_actor_ai_packages'),
+            (FID, 'template_actor_model_animation'),
+            (FID, 'template_actor_base_data'),
+            (FID, 'template_actor_inventory'), (FID, 'template_actor_script'),
+            (FID, 'template_actor_def_pack_list'),
+            (FID, 'template_actor_attack_data'),
+            (FID, 'template_actor_keywords')),
+        MelRace(),
+        MelSpellCounter(),
+        MelSpells(),
+        MelDestructible(),
+        MelSkin(),
+        MelNpcAnam(),
+        MelAttackRace(),
+        MelAttacks(),
+        MelOverridePackageLists(),
+        MelFid(b'FCPL', 'follower_command_package_list'),
+        MelFid(b'RCLR', 'follower_elevator_package_list'),
+        MelNpcPerks(),
+        MelProperties(),
+        MelFtyp(),
+        MelNativeTerminal(),
+        MelItems(),
+        MelTruncatedStruct(b'AIDT', ['8B', '3I', 'B', '3s'], 'ai_aggression',
+            'ai_confidence', 'ai_energy_level', 'ai_responsibility', 'ai_mood',
+            'ai_assistance', 'ai_aggro_radius_behavior', 'ai_unknown1',
+            'ai_warn', 'ai_warn_attack', 'ai_attack', 'ai_no_slow_approach',
+            'ai_unknown2', old_versions={'8B3I'}),
+        MelAIPackages(),
+        MelKeywords(),
+        MelAppr(),
+        MelObjectTemplate(),
+        MelNpcClass(),
+        MelFull(),
+        MelShortName(b'SHRT'),
+        MelBaseR(b'DATA', 'npc_marker'),
+        MelStruct(b'DNAM', ['3H', 'B', 's'], 'calculated_health',
+            'calculated_action_points', 'far_away_model_distance',
+            'geared_up_weapons', 'dnam_unused'),
+        MelNpcHeadParts(),
+        MelNpcHairColor(),
+        MelFid(b'BCLF', 'facial_hair_color'),
+        MelCombatStyle(),
+        MelNpcGiftFilter(),
+        ##: Marker? xEdit just has it as unknown. Seems to always be two bytes
+        # and set to 0x00FF
+        MelBaseR(b'NAM5', 'unknown_required'),
+        MelFloat(b'NAM6', 'npc_height_min'),
+        MelFloat(b'NAM7', 'unused_nam7'),
+        MelFloat(b'NAM4', 'npc_height_max'),
+        MelStruct(b'MWGT', ['3f'], 'npc_weight_thin', 'npc_weight_muscular',
+            'npc_weight_fat'),
+        MelSoundLevel(b'NAM8'),
+        MelActorSounds2(),
+        MelInheritsSoundsFrom(),
+        MelFid(b'PFRN', 'power_armor_stand'),
+        MelNpcShared(),
+        MelStruct(b'QNAM', ['4f'], *gen_color('texture_lighting')),
+        # These two are linked and will need special handling if we wanted to
+        # patch them for some reason
+        MelSimpleArray('morph_keys', MelUInt32(b'MSDK')),
+        MelSimpleArray('morph_values', MelFloat(b'MSDV')),
+        MelSorted(MelGroups('face_tint_layers',
+            MelStruct(b'TETI', ['2H'], 'tint_data_type', 'tint_index'),
+            # These can (and do) occur freely mixed within the same record, see
+            # _NpcTendDecider
+            MelUnion({
+                1: MelUInt8(b'TEND', 'tint_value'),
+                7: MelStruct(b'TEND', ['5B', 'h'], 'tint_value',
+                    *gen_color('tint_color'), 'tint_template_color_index'),
+            }, decider=_NpcTendDecider()),
+        ), sort_by_attrs='tint_index'),
+        # bmrv = 'body morph region values'
+        MelStruct(b'MRSV', ['5f'], 'bmrv_head', 'bmrv_upper_torso',
+            'bmrv_arms', 'bmrv_lower_torso', 'bmrv_legs'),
+        ##: xEdit says 'reported to cause issues when sorted', but then it
+        # *does* sort it. Outdated comment or wrong code?
+        MelSorted(MelGroups('face_morphs',
+            # fm = 'face morph'
+            MelUInt32(b'FMRI', 'fm_index'),
+            MelExtra(MelStruct(b'FMRS', ['7f'], 'fm_position_x',
+                'fm_position_y', 'fm_position_z', 'fm_rotation_x',
+                'fm_rotation_y', 'fm_rotation_z', 'fm_scale'),
+                extra_attr='fm_unknown'),
+        ), sort_by_attrs='fm_index'),
+        MelFloat(b'FMIN', 'facial_morph_intensity'),
+        MelAttx(),
     )
 
 #------------------------------------------------------------------------------

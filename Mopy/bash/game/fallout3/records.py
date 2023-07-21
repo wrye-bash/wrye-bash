@@ -46,7 +46,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelPerkData, MelPerkParamsGroups, MelRace, MelRaceData, MelRaceParts, \
     MelRaceVoices, MelReadOnly, MelRef3D, MelReferences, MelMgefEsce, \
     MelReflectedRefractedBy, MelRefScale, MelRegions, MelRegnEntrySubrecord, \
-    MelRelations, MelScript, MelScriptVars, MelSequential, MelSet, \
+    MelRelations, MelScript, MelScriptVars, MelSequential, MelSet, MelVoice, \
     MelShortName, MelSimpleArray, MelSInt8, MelSInt16, MelSInt32, \
     MelSkipInterior, MelSorted, MelSound, MelSoundActivation, MelSoundClose, \
     MelSoundLooping, MelSoundPickupDrop, MelSpells, MelString, MelStruct, \
@@ -55,7 +55,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, PartialLoadDecider, PerkEpdfDecider, SizeDecider, AMreGlob, \
     SpellFlags, gen_color, gen_color3, null2, perk_distributor, MelMgefData, \
-    perk_effect_key, MelLinkColors
+    perk_effect_key, MelLinkColors, MelNpcClass, TemplateFlags, MelTemplate, \
+    MelAIPackages, MelNpcHeadParts, MelInheritsSoundsFrom, MelSoundLevel
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -82,8 +83,9 @@ class MelRecord(_AMelRecord):
     class HeaderFlags(_AMelRecord.HeaderFlags):
         quest_item: bool = flag(10)
 
+#------------------------------------------------------------------------------
 # Common Flags
-class aiService(Flags):
+class ServiceFlags(Flags):
     weapons: bool = flag(0)
     armor: bool = flag(1)
     clothing: bool = flag(2)
@@ -103,17 +105,6 @@ class aiService(Flags):
 #------------------------------------------------------------------------------
 class _AMreActorFo3(MelRecord, AMreActor):
     """Creatures and NPCs."""
-    class TemplateFlags(Flags):
-        useTraits: bool
-        useStats: bool
-        useFactions: bool
-        useActorEffectList: bool
-        useAIData: bool
-        useAIPackages: bool
-        useModelAnimation: bool
-        useBaseData: bool
-        useInventory: bool
-        useScript: bool
 
 class _AMreReferenceFo3(MelRecord):
     """Reference records (ACHR, REFR, etc.)"""
@@ -174,6 +165,23 @@ class MelActivationPrompt(MelString):
     """Handles the common XATO subrecord, introduced in FNV."""
     def __init__(self):
         super().__init__(b'XATO', 'activation_prompt')
+
+#------------------------------------------------------------------------------
+class MelActorEamt(MelUInt16):
+    """Handles the CREA/NPC_ subrecord EAMT (Unarmed Attack Animation)."""
+    def __init__(self):
+        super().__init__(b'EAMT', 'unarmed_attack_animation')
+
+#------------------------------------------------------------------------------
+class MelAidt(MelStruct):
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
+    def __init__(self):
+        super().__init__(b'AIDT', ['5B', '3s', 'I', 'b', 'B', 'b', 'B', 'i'],
+            'ai_aggression', 'ai_confidence', 'ai_energy_level',
+            'ai_responsibility', 'ai_mood', 'ai_unused',
+            (ServiceFlags, 'ai_service_flags'), 'ai_train_skill',
+            'ai_train_level', 'ai_assistance', 'ai_aggro_radius_behavior',
+            'ai_aggro_radius'),
 
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
@@ -474,8 +482,8 @@ class MreActi(MelRecord):
         MelDestructible(),
         MelSound(),
         MelSoundActivation(),
-        fnv_only(MelFid(b'INAM', 'radioTemplate')),
-        MelFid(b'RNAM', u'radioStation'),
+        fnv_only(MelFid(b'INAM', 'radio_template')),
+        MelFid(b'RNAM', 'radio_station'),
         MelWaterType(),
         fnv_only(MelActivationPrompt()),
     )
@@ -871,9 +879,10 @@ class MreClas(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcon(),
-        MelStruct(b'DATA', [u'4i', u'2I', u'b', u'B', u'2s'],'tagSkill1','tagSkill2','tagSkill3',
-            'tagSkill4',(_flags, u'flags'),(aiService, u'services'),
-            ('trainSkill',-1),'trainLevel','clasData1'),
+        MelStruct(b'DATA', ['4i', '2I', 'b', 'B', '2s'],
+            'tagSkill1', 'tagSkill2', 'tagSkill3', 'tagSkill4',
+            (_flags, 'flags'), (ServiceFlags, 'class_service_flags'),
+            'class_train_skill', 'class_train_level', 'unknown1'),
         MelStruct(b'ATTR', [u'7B'], 'strength', 'perception', 'endurance',
                   'charisma', 'intelligence', 'agility', 'luck'),
     )
@@ -989,43 +998,40 @@ class MreCrea(_AMreActorFo3):
         MelModel(),
         MelSpells(),
         MelEnchantment(),
-        MelUInt16(b'EAMT', 'eamt'),
+        MelActorEamt(),
         MelBodyParts(),
-        MelBase(b'NIFT','nift_p'), # Texture File Hashes
+        MelBase(b'NIFT', 'model_list_textures'), # Texture File Hashes
         MelStruct(b'ACBS', ['I', '2H', 'h', '3H', 'f', 'h', 'H'],
-            (_CreaFlags, 'crea_flags'), 'fatigue', 'barterGold', 'level_offset',
-            'calcMin', 'calcMax', 'speedMultiplier', 'karma',
-            'dispositionBase', (_AMreActorFo3.TemplateFlags, 'templateFlags')),
-        MelFactions(),
+            (_CreaFlags, 'crea_flags'), 'fatigue', 'barter_gold',
+            'level_offset', 'calc_min_level', 'calc_max_level',
+            'speed_multiplier', 'karma', 'disposition_base',
+            (TemplateFlags, 'template_flags')),
+        MelFactions(with_unused=True),
         MelDeathItem(),
-        MelFid(b'VTCK','voice'),
-        MelFid(b'TPLT','template'),
+        MelVoice(),
+        MelTemplate(),
         MelDestructible(),
         MelScript(),
         MelItems(),
-        MelStruct(b'AIDT', [u'5B', u'3s', u'I', u'b', u'B', u'b', u'B', u'i'], 'aggression', ('confidence', 2),
-                  ('energyLevel', 50), ('responsibility', 50), 'mood',
-                  'unused_aidt', (aiService, u'services'),
-                  ('trainSkill', -1), 'trainLevel', 'assistance',
-                  'aggroRadiusBehavior', 'aggroRadius'),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAidt(),
+        MelAIPackages(),
         MelAnimations(),
-        MelStruct(b'DATA', [u'4B', u'h', u'2s', u'h', u'7B'],'creatureType','combatSkill','magicSkill',
-            'stealthSkill','health','unused2','damage','strength',
-            'perception','endurance','charisma','intelligence','agility',
-            'luck'),
-        MelUInt8(b'RNAM', 'attackReach'),
+        MelStruct(b'DATA', ['4B', 'h', '2s', 'h', '7B'], 'creature_type',
+            'combat_skill', 'magic_skill', 'stealth_skill', 'health',
+            'unused2', 'damage', 'strength', 'perception', 'endurance',
+            'charisma', 'intelligence', 'agility', 'luck'),
+        MelUInt8(b'RNAM', 'attack_reach'),
         MelCombatStyle(),
-        MelFid(b'PNAM','bodyPartData'),
-        MelFloat(b'TNAM', 'turningSpeed'),
-        MelFloat(b'BNAM', 'baseScale'),
-        MelFloat(b'WNAM', 'footWeight'),
-        MelUInt32(b'NAM4', u'impactMaterialType'),
-        MelUInt32(b'NAM5', u'soundLevel'),
-        MelFid(b'CSCR','inheritsSoundsFrom'),
+        MelFid(b'PNAM', 'body_part_data'),
+        MelFloat(b'TNAM', 'turning_speed'),
+        MelFloat(b'BNAM', 'base_scale'),
+        MelFloat(b'WNAM', 'foot_weight'),
+        MelUInt32(b'NAM4', 'impact_material_type'),
+        MelSoundLevel(b'NAM5'),
+        MelInheritsSoundsFrom(),
         MelActorSounds(),
         MelImpactDataset(b'CNAM'),
-        MelFid(b'LNAM','meleeWeaponList'),
+        MelFid(b'LNAM', 'melee_weapon_list'),
     )
 
 #------------------------------------------------------------------------------
@@ -1204,25 +1210,25 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
             'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
             'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color ('color_key1'), *gen_color ('color_key2'),
-            *gen_color ('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
-            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-            'color_key3_time', 'ps_initial_speed_along_normal_delta',
-            'ps_initial_rotation', 'ps_initial_rotation_delta',
-            'ps_rotation_speed', 'ps_rotation_speed_delta',
-            (FID, 'addon_models'), 'holes_start_time', 'holes_end_time',
-            'holes_start_value', 'holes_end_value', 'ee_width',
-            *gen_color('edge_color'), 'explosion_wind_speed',
-            'texture_count_u', 'texture_count_v', 'addon_models_fade_in_time',
-            'addon_models_fade_out_time', 'addon_models_scale_start',
-            'addon_models_scale_end', 'addon_models_scale_in_time',
-            'addon_models_scale_out_time', old_versions={
-                'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I4f',
-                'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I',
-                'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI',
-                'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11f',
-                'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs6f',
-            }),
+            *gen_color('color_key1', rename_alpha=True),
+            *gen_color('color_key2', rename_alpha=True),
+            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
+            'color_key2_time', 'color_key3_time',
+            'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
+            'ps_initial_rotation_delta', 'ps_rotation_speed',
+            'ps_rotation_speed_delta', (FID, 'addon_models'),
+            'holes_start_time', 'holes_end_time', 'holes_start_value',
+            'holes_end_value', 'ee_width', *gen_color('edge_color'),
+            'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
+            'addon_models_fade_in_time', 'addon_models_fade_out_time',
+            'addon_models_scale_start', 'addon_models_scale_end',
+            'addon_models_scale_in_time', 'addon_models_scale_out_time',
+            old_versions={'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I4f',
+                          'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I',
+                          'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI',
+                          'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11f',
+                          'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs6f'}),
     )
 
 #------------------------------------------------------------------------------
@@ -1933,6 +1939,7 @@ class _MelNpcData(MelLists):
 
 class _MelNpcDecider(SizeDecider):
     can_decide_at_dump = True
+
     def decide_dump(self, record):
         return len(record.attributes) + 4
 
@@ -1958,9 +1965,6 @@ class MreNpc_(_AMreActorFo3):
         crea_not_pushable: bool = flag(27)
         crea_no_rotating_head_track: bool = flag(30)
 
-    class aggroflags(Flags):
-        aggroRadiusBehavior: bool
-
     class MelNpcDnam(MelLists):
         """Convert npc stats into skills."""
         _attr_indexes = {'skillValues': slice(14),
@@ -1972,33 +1976,29 @@ class MreNpc_(_AMreActorFo3):
         MelFull(),
         MelModel(),
         MelStruct(b'ACBS', ['I', '2H', 'h', '3H', 'f', '2H'],
-            (NpcFlags, 'npc_flags'), 'fatigue', 'barterGold', 'level_offset',
-            'calcMin', 'calcMax', 'speedMultiplier', 'karma',
-            'dispositionBase', (_AMreActorFo3.TemplateFlags, 'templateFlags')),
-        MelFactions(),
+            (NpcFlags, 'npc_flags'), 'fatigue', 'barter_gold', 'level_offset',
+            'calc_min_level', 'calc_max_level', 'speed_multiplier', 'karma',
+            'disposition_base', (TemplateFlags, 'template_flags')),
+        MelFactions(with_unused=True),
         MelDeathItem(),
-        MelFid(b'VTCK','voice'),
-        MelFid(b'TPLT','template'),
+        MelVoice(),
+        MelTemplate(),
         MelRace(),
         MelEnchantment(),
-        MelUInt16(b'EAMT', 'unarmedAttackAnimation'),
+        MelActorEamt(),
         MelDestructible(),
         MelSpells(),
         MelScript(),
         MelItems(),
-        MelStruct(b'AIDT', [u'5B', u'3s', u'I', u'b', u'B', u'b', u'B', u'i'], 'aggression', ('confidence',2),
-                  ('energyLevel', 50),('responsibility', 50), 'mood',
-                  'unused_aidt',(aiService, u'services'),
-                  ('trainSkill', -1), 'trainLevel', 'assistance',
-                  (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAidt(),
+        MelAIPackages(),
         MelAnimations(),
-        MelFid(b'CNAM','iclass'),
+        MelNpcClass(),
         MelUnion({
             11: _MelNpcData([u'I', u'7B']),
             25: _MelNpcData([u'I', u'21B'])
         }, decider=_MelNpcDecider()),
-        MelSorted(MelFids('headParts', MelFid(b'PNAM'))),
+        MelNpcHeadParts(),
         MelNpcDnam(b'DNAM', [u'14B', u'14B'], (u'skillValues', [0] * 14),
                    (u'skillOffsets', [0] * 14)),
         MelFid(b'HNAM', 'hair'),
@@ -2006,13 +2006,13 @@ class MreNpc_(_AMreActorFo3):
         MelFid(b'ENAM', 'eye'),
         MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen','unused3'),
         MelCombatStyle(),
-        MelUInt32(b'NAM4', u'impactMaterialType'),
-        MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
+        MelUInt32(b'NAM4', 'impact_material_type'),
+        MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+        MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
         MelUInt16(b'NAM5', u'unknown'),
-        MelFloat(b'NAM6', u'height'),
-        MelFloat(b'NAM7', u'weight'),
+        MelFloat(b'NAM6', 'npc_height'),
+        MelFloat(b'NAM7', 'npc_weight'),
     )
 
 #------------------------------------------------------------------------------
@@ -2359,7 +2359,7 @@ class MreProj(MelRecord):
         ),
         MelString(b'NAM1','muzzleFlashPath'),
         MelBase(b'NAM2','_nam2'),
-        MelUInt32(b'VNAM', 'soundLevel'),
+        MelSoundLevel(),
     )
 
 #------------------------------------------------------------------------------
@@ -2459,9 +2459,9 @@ class MelRaceFaceGen(MelGroup):
     """Defines facegen subrecords for RACE."""
     def __init__(self, facegen_attr):
         super(MelRaceFaceGen, self).__init__(facegen_attr,
-            MelBase(b'FGGS', u'fggs_p'), # FaceGen Geometry - Symmetric
-            MelBase(b'FGGA', u'fgga_p'), # FaceGen Geometry - Asymmetric
-            MelBase(b'FGTS', u'fgts_p'), # FaceGen Texture  - Symmetric
+            MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+            MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+            MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
             MelStruct(b'SNAM', [u'2s'], u'snam_p'))
 
 class MreRace(MelRecord, AMreRace):
@@ -2782,7 +2782,7 @@ class MreRgdl(MelRecord):
         MelStruct(b'DATA', [u'I', u'4s', u'5B', u's'],'boneCount','unused1','feedback',
             'footIK','lookIK','grabIK','poseMatching','unused2'),
         MelFid(b'XNAM','actorBase'),
-        MelFid(b'TNAM','bodyPartData'),
+        MelFid(b'TNAM','body_part_data'),
         MelStruct(b'RAFD', [u'13f', u'2i'],'keyBlendAmount','hierarchyGain','positionGain',
             'velocityGain','accelerationGain','snapGain','velocityDamping',
             'snapMaxLinearVelocity','snapMaxAngularVelocity','snapMaxLinearDistance',
@@ -2936,8 +2936,8 @@ class MreTact(MelRecord):
         MelScript(),
         MelDestructible(),
         MelSound(),
-        MelFid(b'VNAM','voiceType'),
-        fnv_only(MelFid(b'INAM', 'radioTemplate')),
+        MelFid(b'VNAM', 'activator_voice_type'),
+        fnv_only(MelFid(b'INAM', 'radio_template')),
     )
 
 #------------------------------------------------------------------------------
@@ -3266,7 +3266,7 @@ class MreWeap(MelRecord):
             b'VATS', ['I', '3f', '2B', '2s'], (FID, 'vatsEffect'),
             'vatsSkill', 'vatsDamMult', 'vatsAp', 'vatsSilent',
             'vats_mod_required', 'weapVats1', old_versions={'I3f'})),
-        MelBase(b'VNAM','soundLevel'),
+        MelSoundLevel(),
     ).with_distributor(fnv_only({
         b'SNAM': [
             (b'SNAM', 'sound_gun_shoot_3d'),

@@ -31,10 +31,11 @@ from itertools import chain
 
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
-    MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider
+    MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider, \
+    MelSorted
 from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
     MelObject, MelReadOnly, MelSequential, MelString, MelStruct, MelUInt32, \
-    MelUnorderedGroups
+    MelUnorderedGroups, MelUInt8
 from .common_subrecords import MelFull
 from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
 from .. import bolt
@@ -73,6 +74,97 @@ def _mk_packer(struct_fmt):
     return _packer
 
 _pack_2shorts_signed = _mk_packer('2h')
+
+#------------------------------------------------------------------------------
+# CS* - Actor Sounds
+#------------------------------------------------------------------------------
+class MelActorSounds(MelSorted):
+    """Handles the CSDT/CSDI/CSDC subrecord complex used by CREA records in
+    TES4/FO3/FNV and NPC_ records in TES5."""
+    def __init__(self):
+        super().__init__(MelGroups('actor_sounds',
+            MelUInt32(b'CSDT', 'actor_sound_type'),
+            MelSorted(MelGroups('actor_sound_list',
+                MelFid(b'CSDI', 'actor_sound_fid'),
+                MelUInt8(b'CSDC', 'actor_sound_chance'),
+            ), sort_by_attrs='actor_sound_fid'),
+        ), sort_by_attrs='actor_sound_type')
+
+class _MelCs2kCs2d(MelGroups):
+    """Handles CS2K and CS2D. The complication here is that CS2K begins a new
+    actor sound, while CS2D can either finish off an actor sound started by
+    CS2K or begin and immediately finish an actor sound if it occurred on its
+    own or after another CS2D. Furthermore, actor sounds without keywords must
+    be sorted before actor sounds with keywords."""
+    def __init__(self):
+        super().__init__('actor_sounds',
+            MelFid(b'CS2K', 'actor_sound_keyword'),
+            MelFid(b'CS2D', 'actor_sound_fid'),
+        )
+
+    def getSlotsUsed(self):
+        return '_had_cs2k', *super().getSlotsUsed()
+
+    def setDefault(self, record):
+        super().setDefault(record)
+        record._had_cs2k = False
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        if sub_type == b'CS2D':
+            if record._had_cs2k:
+                # This actor sound was started via CS2K, finish it off
+                target = record.actor_sounds[-1]
+                record._had_cs2k = False
+            else:
+                # We got a CS2D without a previous CS2K, start and finish a new
+                # actor sound
+                target = self._new_object(record)
+        else:
+            # We hit a CS2K, start a new actor sound
+            target = self._new_object(record)
+            record._had_cs2k = True
+        self.loaders[sub_type].load_mel(target, ins, sub_type, size_,
+            *debug_strs)
+
+    def needs_sorting(self):
+        return True
+
+    def sort_subrecord(self, record):
+        super().sort_subrecord(record)
+        sounds_none = []
+        sounds_kw = []
+        # Sort the actor sounds that have no keyword associated with them
+        # first. We do it like this to avoid comparing FormId instances with
+        # None
+        for s in record.actor_sounds:
+            if s.actor_sound_keyword is None:
+                sounds_none.append(s)
+            else:
+                sounds_kw.append(s)
+        ##: Does the game/CK sort by actor_sound_fid too?
+        record.actor_sounds = sounds_none + sorted(sounds_kw,
+            key=attrgetter_cache['actor_sound_keyword'])
+
+class MelActorSounds2(MelSequential):
+    """Bethesda redesigned actor sounds for FO4. This handles the new
+    CS2H/CS2K/CS2D/CS2E/CS2F subrecord complex used by NPC_ records."""
+    def __init__(self):
+        self._cond_required = [
+            MelBaseR(b'CS2E', 'actor_sound_end_marker'), # empty marker
+            MelBaseR(b'CS2F', 'actor_sound_finalize', set_default=b'\x00'),
+        ]
+        super().__init__(
+            MelCounter(MelUInt32(b'CS2H', 'actor_sounds_count'),
+                counts='actor_sounds'),
+            _MelCs2kCs2d(),
+            *self._cond_required,
+        )
+
+    def dumpData(self, record, out):
+        for element in self.elements:
+            # CS2E and CS2F are required iff there are any actor sounds present
+            if record.actor_sounds or element not in self._cond_required:
+                element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # CTDA - Conditions
@@ -1131,8 +1223,8 @@ class _MelObts(MelPartialCounter):
     """Handles the OBTS subrecord. Very complex, contains three arrays (two
     with substructure) and data-sensitive loading that can contain FormIDs."""
     def __init__(self):
-        super().__init__(MelStruct(b'OBTS', ['2I', 'B', 's', 'B', 's', 'h',
-                                             '2B'], 'obts_include_count',
+        super().__init__(MelStruct(b'OBTS',
+            ['2I', 'B', 's', 'B', 's', 'h', '2B'], 'obts_include_count',
             'obts_property_count', 'obts_level_min', 'obts_unused1',
             'obts_level_max', 'obts_unused2', 'obts_addon_index',
             'obts_default', 'obts_keyword_count'),

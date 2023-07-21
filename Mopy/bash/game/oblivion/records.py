@@ -48,7 +48,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
     SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4, \
-    AMgefFlagsTes4
+    AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -72,7 +72,7 @@ class MelModel(MelGroup):
 
 #------------------------------------------------------------------------------
 # Common Flags
-class AiService(Flags):
+class ServiceFlags(Flags):
     weapons: bool = flag(0)
     armor: bool = flag(1)
     clothing: bool = flag(2)
@@ -103,12 +103,12 @@ _effects_distributor = {
 
 #------------------------------------------------------------------------------
 class MelAidt(MelStruct):
-    """Handles the AIDT subrecords defining AI Data."""
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
     def __init__(self):
-        super().__init__(b'AIDT', ['4B', 'I', 'b', 'B', '2s'], 'aggression',
-                         'confidence', 'energyLevel', 'responsibility',
-                         (AiService, 'services'), 'trainSkill', 'trainLevel',
-                         'unused1')
+        super().__init__(b'AIDT', ['4B', 'I', 'b', 'B', '2s'], 'ai_aggression',
+            'ai_confidence', 'ai_energy_level', 'ai_responsibility',
+            (ServiceFlags, 'ai_service_flags'), 'ai_train_skill',
+            'ai_train_level', 'ai_unused')
 
 #------------------------------------------------------------------------------
 class MelEmbeddedScript(MelSequential):
@@ -172,7 +172,8 @@ class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
     sorting to SPLOs that we don't fully understand yet. All we know for sure
     so far is that it always seems to put SPLOs that link to LVSPs after ones
     that link to SPELs, and we can't handle that without loading the plugin's
-    masters (see #282 and #577 for two issues that need this as well)."""
+    masters (see #282 and #577 for two issues that need this as well). So we
+    don't sort yet, that way it can't really be *our* fault when it hangs."""
     def __init__(self):
         super().__init__('spells', MelFid(b'SPLO'))
 
@@ -812,8 +813,9 @@ class MreClas(_RandIco):
         MelTruncatedStruct(b'DATA', ['2i', 'I', '7i', '2I', 'b', 'B', '2s'],
             'primary1', 'primary2', 'specialization', 'major1', 'major2',
             'major3', 'major4', 'major5', 'major6', 'major7',
-            (_ClasFlags, 'flags'), (AiService, 'services'), 'trainSkill',
-            'trainLevel', 'unused1', old_versions={'2iI7i2I'}),
+            (_ClasFlags, 'flags'), (ServiceFlags, 'class_service_flags'),
+            'class_train_skill', 'class_train_level', 'unused1',
+            old_versions={'2iI7i2I'}),
     )
 
 #------------------------------------------------------------------------------
@@ -921,27 +923,27 @@ class MreCrea(AMreActor):
         MelBodyParts(),
         MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
-                  (_CreaFlags, 'crea_flags'), 'baseSpell', 'fatigue', 'barterGold',
-                  'level_offset', 'calcMin', 'calcMax'),
-        MelFactions(),
+            (_CreaFlags, 'crea_flags'), 'base_spell', 'fatigue', 'barter_gold',
+            'level_offset', 'calc_min_level', 'calc_max_level'),
+        MelFactions(with_unused=True),
         MelDeathItem(),
         MelScript(),
         MelAidt(),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAIPackages(),
         MelAnimations(),
-        MelStruct(b'DATA', ['5B', 's', 'H', '2s', 'H', '8B'],'creatureType',
-                  'combatSkill', 'magic', 'stealth', 'soul', 'unused2',
+        MelStruct(b'DATA', ['5B', 's', 'H', '2s', 'H', '8B'], 'creature_type',
+                  'combat_skill', 'magic', 'stealth', 'soul', 'unused2',
                   'health', 'unused3', 'attackDamage', 'strength',
                   'intelligence', 'willpower', 'agility', 'speed', 'endurance',
                   'personality', 'luck'),
-        MelUInt8(b'RNAM', 'attackReach'),
+        MelUInt8(b'RNAM', 'attack_reach'),
         MelCombatStyle(),
-        MelFloat(b'TNAM', 'turningSpeed'),
-        MelFloat(b'BNAM', 'baseScale'),
-        MelFloat(b'WNAM', 'footWeight'),
-        MelString(b'NAM0', 'bloodSprayPath'),
-        MelString(b'NAM1', 'bloodDecalPath'),
-        MelFid(b'CSCR', 'inheritsSoundsFrom'),
+        MelFloat(b'TNAM', 'turning_speed'),
+        MelFloat(b'BNAM', 'base_scale'),
+        MelFloat(b'WNAM', 'foot_weight'),
+        MelString(b'NAM0', 'blood_spray_path'),
+        MelString(b'NAM1', 'blood_decal_path'),
+        MelInheritsSoundsFrom(),
         MelActorSounds(),
     )
 
@@ -1068,10 +1070,12 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
             'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
             'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1'), *gen_color('color_key2'),
-            *gen_color('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
-            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-            'color_key3_time', old_versions={'B3s3I3Bs9f3Bs8fI'}),
+            *gen_color('color_key1', rename_alpha=True),
+            *gen_color('color_key2', rename_alpha=True),
+            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
+            'color_key2_time', 'color_key3_time',
+            old_versions={'B3s3I3Bs9f3Bs8fI'}),
     )
 
 #------------------------------------------------------------------------------
@@ -1707,18 +1711,18 @@ class MreNpc_(AMreActor):
         MelFull(),
         MelModel(),
         MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'npc_flags'),
-                  'baseSpell', 'fatigue', 'barterGold', 'level_offset',
-                  'calcMin', 'calcMax'),
-        MelFactions(),
+            'base_spell', 'fatigue', 'barter_gold', 'level_offset',
+            'calc_min_level', 'calc_max_level'),
+        MelFactions(with_unused=True),
         MelDeathItem(),
         MelRace(),
         MelSpellsTes4(),
         MelScript(),
         MelItems(),
         MelAidt(),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAIPackages(),
         MelAnimations(),
-        MelFid(b'CNAM','iclass'),
+        MelNpcClass(),
         MelNpcData(b'DATA', ['21B', 'H', '2s', '8B'], 'skills', 'health',
                    'unused2', 'attributes'),
         MelFid(b'HNAM', 'hair'),
@@ -1729,9 +1733,9 @@ class MreNpc_(AMreActor):
         MelStruct(b'HCLR', ['3B', 's'], 'hairRed', 'hairBlue', 'hairGreen',
                   'unused3'),
         MelCombatStyle(),
-        MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
+        MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+        MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
         MelBase(b'FNAM', 'fnam'),
     )
 
@@ -1967,9 +1971,9 @@ class MreRace(AMreRace):
         # them as sorted here, because that's what the Race Checker is for!
         MelSimpleArray('hairs', MelFid(b'HNAM')),
         MelSimpleArray('eyes', MelFid(b'ENAM')),
-        MelBase(b'FGGS', 'fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA', 'fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS', 'fgts_p'), ####FaceGen Texture-Symmetric
+        MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+        MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
         MelStruct(b'SNAM', ['2s'], 'snam_p'),
     ).with_distributor({
         b'NAM0': {

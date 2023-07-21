@@ -475,7 +475,7 @@ class MelGroups(MelGroup):
 
 #------------------------------------------------------------------------------
 class MelUnorderedGroups(MelGroups):
-    """A verion of MelGroups that does not use the usual 'initial sigs'
+    """A version of MelGroups that does not use the usual 'initial sigs'
     mechanism. Instead any element in the group can start a new object if it's
     already been encountered while loading the current object. As an example,
     consider these two subrecord definitions:

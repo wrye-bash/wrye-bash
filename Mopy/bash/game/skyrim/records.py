@@ -62,11 +62,15 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelTruncatedStruct, MelTxstFlags, MelUInt8, MelUInt8Flags, MelUInt16, \
     MelUInt32, MelUInt32Flags, MelUnion, MelUnloadEvent, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
-    MelXlod, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
-    PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, \
+    MelXlod, PartialLoadDecider, MelMovtThresholds, MelMovtName, MelVoice, \
+    PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, MelSkin, \
     null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
     MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
-    MelMgefSounds, AMreMgefTes5, MelMgefDnam, MelMuscShared, MelMustShared
+    MelMgefSounds, AMreMgefTes5, MelMgefDnam, MelMuscShared, MelMustShared, \
+    MelNpcClass, TemplateFlags, MelTemplate, MelSpellCounter, MelNpcAnam, \
+    MelAttackRace, MelOverridePackageLists, MelNpcPerks, MelAIPackages, \
+    MelNpcHeadParts, MelNpcHairColor, MelNpcGiftFilter, MelSoundLevel, \
+    MelInheritsSoundsFrom, MelNpcShared
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -175,23 +179,23 @@ class MelBodtBod2(MelSequential):
 #------------------------------------------------------------------------------
 class MelAttacks(MelSorted):
     """Handles the ATKD/ATKE subrecords shared between NPC_ and RACE."""
-    class _atk_flags(Flags):
-        ignoreWeapon: bool
-        bashAttack: bool
-        powerAttack: bool
-        leftAttack: bool
-        rotatingAttack: bool
+    class _AttackFlags(Flags):
+        ignore_weapon: bool
+        bash_attack: bool
+        power_attack: bool
+        left_attack: bool
+        rotating_attack: bool
+        override_data: bool = flag(31)
 
     def __init__(self):
-        super(MelAttacks, self).__init__(MelGroups(u'attacks',
-             MelStruct(b'ATKD', [u'2f', u'2I', u'3f', u'I', u'3f'], u'attack_mult', u'attack_chance',
-                       (FID, u'attack_spell'),
-                       (self._atk_flags, u'attack_data_flags'),
-                       u'attack_angle', u'strike_angle', u'attack_stagger',
-                       (FID, u'attack_type'), u'attack_knockdown',
-                       u'recovery_time', u'stamina_mult'),
-             MelString(b'ATKE', u'attack_event'),
-        ), sort_by_attrs='attack_chance')
+        super().__init__(MelGroups('attacks',
+            MelStruct(b'ATKD', ['2f', '2I', '3f', 'I', '3f'], 'damage_mult',
+                'attack_chance', (FID, 'attack_spell'),
+                (self._AttackFlags, 'attack_flags'), 'attack_angle',
+                'strike_angle', 'attack_stagger', (FID, 'attack_type'),
+                'attack_knockdown', 'recovery_time', 'stamina_mult'),
+            MelString(b'ATKE', 'attack_event'),
+        ), sort_by_attrs='attack_event')
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -380,13 +384,6 @@ class MelSMFlags(MelStruct):
             sm_fmt = [u'2H']
             sm_elements.append((self._quest_flags, u'quest_flags'))
         super(MelSMFlags, self).__init__(b'DNAM', sm_fmt, *sm_elements)
-
-#------------------------------------------------------------------------------
-class MelSpellCounter(MelCounter):
-    """Handles the SPCT (Spell Counter) subrecord. To be used in combination
-    with MelSpells."""
-    def __init__(self):
-        super().__init__(MelUInt32(b'SPCT', 'spell_count'), counts='spells')
 
 #------------------------------------------------------------------------------
 class MelSpit(MelStruct):
@@ -1267,25 +1264,26 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
             'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
             'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1'), *gen_color('color_key2'),
-            *gen_color('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
-            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-            'color_key3_time', 'ps_initial_speed_along_normal_delta',
-            'ps_initial_rotation', 'ps_initial_rotation_delta',
-            'ps_rotation_speed', 'ps_rotation_speed_delta',
-            (FID, 'addon_models'), 'holes_start_time', 'holes_end_time',
-            'holes_start_value', 'holes_end_value', 'ee_width',
-            *gen_color('edge_color'), 'explosion_wind_speed',
-            'texture_count_u', 'texture_count_v', 'addon_models_fade_in_time',
-            'addon_models_fade_out_time', 'addon_models_scale_start',
-            'addon_models_scale_end', 'addon_models_scale_in_time',
-            'addon_models_scale_out_time', (FID, 'sound_ambient'),
-            *gen_color('fill_color2'), *gen_color('fill_color3'),
-            'fill_color1_scale', 'fill_color2_scale', 'fill_color3_scale',
-            'fill_color1_time', 'fill_color2_time', 'fill_color3_time',
-            'color_scale', 'birth_position_offset',
-            'birth_position_offset_range_delta', 'psa_start_frame',
-            'psa_start_frame_variation', 'psa_end_frame',
+            *gen_color('color_key1', rename_alpha=True),
+            *gen_color('color_key2', rename_alpha=True),
+            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
+            'color_key2_time', 'color_key3_time',
+            'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
+            'ps_initial_rotation_delta', 'ps_rotation_speed',
+            'ps_rotation_speed_delta', (FID, 'addon_models'),
+            'holes_start_time', 'holes_end_time', 'holes_start_value',
+            'holes_end_value', 'ee_width', *gen_color('edge_color'),
+            'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
+            'addon_models_fade_in_time', 'addon_models_fade_out_time',
+            'addon_models_scale_start', 'addon_models_scale_end',
+            'addon_models_scale_in_time', 'addon_models_scale_out_time',
+            (FID, 'sound_ambient'), *gen_color('fill_color2'),
+            *gen_color('fill_color3'), 'fill_color1_scale',
+            'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
+            'fill_color2_time', 'fill_color3_time', 'color_scale',
+            'birth_position_offset', 'birth_position_offset_range_delta',
+            'psa_start_frame', 'psa_start_frame_variation', 'psa_end_frame',
             'psa_loop_start_frame', 'psa_loop_start_variation',
             'psa_frame_count', 'psa_frame_count_variation',
             (_efsh_flags, 'efsh_flags'), 'fill_texture_scale_u',
@@ -2122,21 +2120,6 @@ class MreNpc_(AMreActor, AMreWithKeywords):
     class HeaderFlags(AMreActor.HeaderFlags):
         bleedout_override: bool = flag(29)
 
-    class _TemplateFlags(Flags):
-        useTraits: bool = flag(0)
-        useStats: bool = flag(1)
-        useFactions: bool = flag(2)
-        useSpellList: bool = flag(3)
-        useAIData: bool = flag(4)
-        useAIPackages: bool = flag(5)
-        useModelAnimation: bool = flag(6)
-        useBaseData: bool = flag(7)
-        useInventory: bool = flag(8)
-        useScript: bool = flag(9)
-        useDefPackList: bool = flag(10)
-        useAttackData: bool = flag(11)
-        useKeywords: bool = flag(12)
-
     class NpcFlags(Flags):
         npc_female: bool = flag(0)
         npc_essential: bool = flag(1)
@@ -2163,44 +2146,36 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         MelVmad(),
         MelBounds(),
         MelStruct(b'ACBS', ['I', '3h', '3H', 'h', 'H', 'h', 'H'],
-            (NpcFlags, 'npc_flags'),'magickaOffset',
-                  'staminaOffset','level_offset','calcMin',
-                  'calcMax','speedMultiplier','dispositionBase',
-                  (_TemplateFlags, u'templateFlags'), 'healthOffset',
-                  'bleedoutOverride',),
-        MelFactions(),
+            (NpcFlags, 'npc_flags'), 'magicka_offset', 'stamina_offset',
+            'level_offset', 'calc_min_level', 'calc_max_level',
+            'speed_multiplier', 'disposition_base',
+            (TemplateFlags, 'template_flags'), 'health_offset',
+            'bleedout_override'),
+        MelFactions(with_unused=True),
         MelDeathItem(),
-        MelFid(b'VTCK', 'voice'),
-        MelFid(b'TPLT', 'template'),
+        MelVoice(),
+        MelTemplate(),
         MelRace(),
         MelSpellCounter(),
         MelSpells(),
         MelDestructible(),
-        MelFid(b'WNAM', 'wornArmor'),
-        MelFid(b'ANAM', 'farawaymodel'),
-        MelFid(b'ATKR', 'attackRace'),
+        MelSkin(),
+        MelNpcAnam(),
+        MelAttackRace(),
         MelAttacks(),
-        MelFid(b'SPOR', 'spectator'),
-        MelFid(b'OCOR', 'observe'),
-        MelFid(b'GWOR', 'guardWarn'),
-        MelFid(b'ECOR', 'combat'),
-        MelCounter(MelUInt32(b'PRKZ', 'perk_count'), counts='perks'),
-        MelSorted(MelGroups('perks',
-            MelStruct(b'PRKR', ['I', 'B', '3s'], (FID, 'perk'), 'rank',
-                      'prkrUnused'),
-        ), sort_by_attrs='perk'),
+        MelOverridePackageLists(),
+        MelNpcPerks(with_unused=True),
         MelItems(),
-        MelStruct(b'AIDT',
-            ['B', 'B', 'B', 'B', 'B', 'B', 'B', 'B', 'I', 'I', 'I'],
-            'aggression', 'confidence', 'energyLevel', 'responsibility',
-            'mood', 'assistance', 'aggroRadiusBehavior', 'aidtUnknown', 'warn',
-            'warnAttack', 'attack'),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelStruct(b'AIDT', ['8B', '3I'], 'ai_aggression', 'ai_confidence',
+            'ai_energy_level', 'ai_responsibility', 'ai_mood', 'ai_assistance',
+            'ai_aggro_radius_behavior', 'ai_unknown', 'ai_warn',
+            'ai_warn_attack', 'ai_attack'),
+        MelAIPackages(),
         MelKeywords(),
-        MelFid(b'CNAM', 'iclass'),
+        MelNpcClass(),
         MelFull(),
         MelShortName(b'SHRT'),
-        MelBase(b'DATA', 'marker'),
+        MelBaseR(b'DATA', 'npc_marker'),
         MelStruct(b'DNAM', [u'36B', u'H', u'H', u'H', u'2s', u'f', u'B', u'3s'],
             'oneHandedSV','twoHandedSV','marksmanSV','blockSV','smithingSV',
             'heavyArmorSV','lightArmorSV','pickpocketSV','lockpickingSV',
@@ -2210,39 +2185,36 @@ class MreNpc_(AMreActor, AMreWithKeywords):
             'heavyArmorSO','lightArmorSO','pickpocketSO','lockpickingSO',
             'sneakSO','alchemySO','speechcraftSO','alterationSO','conjurationSO',
             'destructionSO','illusionSO','restorationSO','enchantingSO',
-            'health','magicka','stamina','dnamUnused1',
-            'farawaymodeldistance','gearedupweapons','dnamUnused2'),
-        MelSorted(MelFids('head_part_addons', MelFid(b'PNAM'))),
-        MelFid(b'HCLF', u'hair_color'),
+            'health', 'magicka', 'stamina', 'dnam_unused1',
+            'far_away_model_distance', 'geared_up_weapons', 'dnam_unused2'),
+        MelNpcHeadParts(),
+        MelNpcHairColor(),
         MelCombatStyle(),
-        MelFid(b'GNAM', u'gifts'),
-        MelBase(b'NAM5', u'nam5_p'),
-        MelFloat(b'NAM6', u'height'),
-        MelFloat(b'NAM7', u'weight'),
-        MelUInt32(b'NAM8', u'sound_level'),
+        MelNpcGiftFilter(),
+        ##: Marker? xEdit just has it as unknown. Seems to always be two bytes
+        # and set to 0x00FF
+        MelBaseR(b'NAM5', 'unknown_required'),
+        MelFloat(b'NAM6', 'npc_height'),
+        MelFloat(b'NAM7', 'npc_weight'),
+        MelSoundLevel(b'NAM8'),
         MelActorSounds(),
-        MelFid(b'CSCR', u'audio_template'),
-        MelFid(b'DOFT', u'default_outfit'),
-        MelFid(b'SOFT', u'sleep_outfit'),
-        MelFid(b'DPLT', u'default_package'),
-        MelFid(b'CRIF', u'crime_faction'),
-        MelFid(b'FTST', u'face_texture'),
-        MelStruct(b'QNAM', ['3f'], 'skin_tone_r', 'skin_tone_g',
-            'skin_tone_b'),
-        MelStruct(b'NAM9', ['19f'], 'nose_long', 'nose_up', 'jaw_up',
-            'jaw_wide', 'jaw_forward', 'cheeks_up', 'cheeks_back', 'eyes_up',
-            'eyes_out', 'brows_up', 'brows_out', 'brows_forward', 'lips_up',
-            'lips_out', 'chin_wide', 'chin_down', 'chin_underbite',
-            'eyes_back', 'nam9_unused'),
-        MelStruct(b'NAMA', ['I', 'i', '2I'], 'nose', 'unknown', 'eyes',
-                  'mouth'),
-        MelSorted(MelGroups(u'face_tint_layer',
-            MelUInt16(b'TINI', u'tint_item'),
-            MelStruct(b'TINC', [u'4B'], u'tintRed', u'tintGreen', u'tintBlue',
-                u'tintAlpha'),
-            MelSInt32(b'TINV', u'tint_value'),
-            MelSInt16(b'TIAS', u'preset'),
-        ), sort_by_attrs='tint_item'),
+        MelInheritsSoundsFrom(),
+        MelNpcShared(),
+        MelStruct(b'QNAM', ['3f'], *gen_color3('texture_lighting')),
+        # fm = 'face morph'
+        MelStruct(b'NAM9', ['19f'], 'fm_nose_long', 'fm_nose_up', 'fm_jaw_up',
+            'fm_jaw_wide', 'fm_jaw_forward', 'fm_cheeks_up', 'fm_cheeks_back',
+            'fm_eyes_up', 'fm_eyes_out', 'fm_brows_up', 'fm_brows_out',
+            'fm_brows_forward', 'fm_lips_up', 'fm_lips_out', 'fm_chin_wide',
+            'fm_chin_down', 'fm_chin_underbite', 'fm_eyes_back', 'fm_unknown'),
+        MelStruct(b'NAMA', ['I', 'i', '2I'], 'face_part_nose',
+            'face_part_unknown', 'face_part_eyes', 'face_part_mouth'),
+        MelSorted(MelGroups('face_tint_layers',
+            MelUInt16(b'TINI', 'tint_index'),
+            MelStruct(b'TINC', ['4B'], *gen_color('tint_color')),
+            MelSInt32(b'TINV', 'tint_interpolation_value'),
+            MelSInt16(b'TIAS', 'tint_preset'),
+        ), sort_by_attrs='tint_index'),
     )
 
 #------------------------------------------------------------------------------
@@ -2530,7 +2502,7 @@ class MreProj(MelRecord):
             # records in Skyrim.esm are missing them
             MelNull(b'NAM2'),
         ),
-        MelUInt32(b'VNAM', 'soundLevel',),
+        MelSoundLevel(),
     )
 
 #------------------------------------------------------------------------------
@@ -2662,15 +2634,12 @@ class MreQust(MelRecord):
             MelConditionList(),
             MelKeywords(),
             MelItems(),
-            MelFid(b'SPOR','spectatorOverridePackageList'),
-            MelFid(b'OCOR','observeDeadBodyOverridePackageList'),
-            MelFid(b'GWOR','guardWarnOverridePackageList'),
-            MelFid(b'ECOR','combatOverridePackageList'),
+            MelOverridePackageLists(),
             MelFid(b'ALDN','displayName'),
             MelFids('aliasSpells', MelFid(b'ALSP')),
             MelFids('aliasFactions', MelFid(b'ALFC')),
             MelFids('aliasPackageData', MelFid(b'ALPC')),
-            MelFid(b'VTCK','voiceType'),
+            MelVoice(),
             MelBase(b'ALED','aliasEnd'),
         ),
         MelLString(b'NNAM','description'),
@@ -2706,17 +2675,17 @@ class MreQust(MelRecord):
 class _MelTintMasks(MelGroups):
     """Hacky way to allow a MelGroups of two MelGroups."""
     def __init__(self, attr):
-        super(_MelTintMasks, self).__init__(attr,
-            MelGroups(u'tint_textures',
-                MelUInt16(b'TINI', u'tint_index'),
-                MelString(b'TINT', u'tint_file'),
-                MelUInt16(b'TINP', u'tint_mask_type'),
-                MelFid(b'TIND', u'tint_preset_default'),
+        super().__init__(attr,
+            MelGroups('tint_textures',
+                MelUInt16(b'TINI', 'tint_index'),
+                MelString(b'TINT', 'tint_file'),
+                MelUInt16(b'TINP', 'tint_mask_type'),
+                MelFid(b'TIND', 'tint_preset_default'),
             ),
-            MelGroups(u'tint_presets',
-                MelFid(b'TINC', u'preset_color'),
-                MelFloat(b'TINV', u'preset_default'),
-                MelUInt16(b'TIRS', u'preset_index'),
+            MelGroups('tint_presets',
+                MelFid(b'TINC', 'preset_color'),
+                MelFloat(b'TINV', 'preset_default'),
+                MelUInt16(b'TIRS', 'preset_index'),
             ),
         )
         self._init_sigs = {b'TINI'}
@@ -2796,7 +2765,7 @@ class MreRace(AMreRace, AMreWithKeywords):
         MelDescription(), # required
         MelSpellCounter(),
         MelSpells(),
-        MelFid(b'WNAM', u'race_skin'),
+        MelSkin(),
         MelBodtBod2(), # required
         MelKeywords(),
         MelRaceData(b'DATA', # required
@@ -2842,7 +2811,7 @@ class MreRace(AMreRace, AMreWithKeywords):
         MelUInt16(b'TINL', u'tint_count'),
         MelFloat(b'PNAM', u'facegen_main_clamp', set_default=0), # required
         MelFloat(b'UNAM', u'facegen_face_clamp', set_default=0), # required
-        MelFid(b'ATKR', u'attack_race'),
+        MelAttackRace(),
         MelAttacks(),
         MelBaseR(b'NAM1', 'body_data_marker'), # required
         MelBaseR(b'MNAM', 'male_data_marker'), # required
@@ -3676,7 +3645,7 @@ class MreTact(AMreWithKeywords):
         MelColor(b'PNAM'),
         MelSound(),
         MelActiFlags(),
-        MelFid(b'VNAM', 'voiceType'),
+        MelFid(b'VNAM', 'activator_voice_type'),
     )
 
 #------------------------------------------------------------------------------

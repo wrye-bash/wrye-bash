@@ -231,7 +231,7 @@ class NpcCheckerPatcher(_Checker):
             if npc_fid == player_fid: continue # skip player
             if (npc.full is not None and npc.race == skip_race_fid and
                     not reProcess.search(npc.full)): continue
-            if is_templated(npc, u'useModelAnimation'):
+            if is_templated(npc, 'use_model_animation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
             npc_src_plugin = npc_fid.mod_fn

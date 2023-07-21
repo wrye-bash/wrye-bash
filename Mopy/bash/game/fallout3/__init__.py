@@ -612,15 +612,15 @@ class Fallout3GameInfo(PatchGame):
     sounds_attrs = {
         b'ASPC': ('environment_type',),
         ##: see sounds_attrs note in oblivion/__init__.py
-        b'CREA': ('footWeight', 'sounds'),
+        b'CREA': ('foot_weight', 'actor_sounds'),
         b'EXPL': ('expl_sound_level',),
         b'IPCT': ('ipct_sound_level',),
-        b'PROJ': ('soundLevel',),
+        b'PROJ': ('sound_level',),
         b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
                   'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
                   'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
                   'yLoc'),
-        b'WEAP': ('soundLevel',),
+        b'WEAP': ('sound_level',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
     }
@@ -632,7 +632,7 @@ class Fallout3GameInfo(PatchGame):
         b'ASPC': ('sound', 'use_sound_from_region'),
         b'COBJ': ('sound_pickup', 'sound_drop'),
         b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('inheritsSoundsFrom',),
+        b'CREA': ('inherits_sounds_from',),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'EXPL': ('expl_sound1', 'expl_sound2'),
         b'IPCT': ('sound', 'ipct_sound2'),
@@ -781,7 +781,7 @@ class Fallout3GameInfo(PatchGame):
                   'reloadAnimation'),
     }
     graphicsFidTypes = {
-        b'CREA': ('bodyPartData',),
+        b'CREA': ('body_part_data',),
         b'EFSH': ('addon_models',),
         b'EXPL': ('image_space_modifier', 'expl_light', 'expl_impact_dataset',
                   'placed_impact_object'),
@@ -873,8 +873,9 @@ class Fallout3GameInfo(PatchGame):
     actor_importer_attrs = {
         b'CREA': {
             'Actors.ACBS': (
-                'barterGold', 'calcMax', 'calcMin', 'dispositionBase',
-                'fatigue', 'crea_flags.crea_allow_pc_dialogue',
+                'barter_gold', 'calc_max_level', 'calc_min_level',
+                'disposition_base', 'fatigue',
+                'crea_flags.crea_allow_pc_dialogue',
                 'crea_flags.crea_allow_pickpocket', 'crea_flags.crea_biped',
                 'crea_flags.crea_cant_open_doors', 'crea_flags.crea_essential',
                 'crea_flags.crea_flies', 'crea_flags.crea_immobile',
@@ -890,29 +891,29 @@ class Fallout3GameInfo(PatchGame):
                 'crea_flags.crea_respawn', 'crea_flags.crea_swims',
                 'crea_flags.crea_tilt_front_back',
                 'crea_flags.crea_tilt_left_right', 'crea_flags.crea_walks',
-                'crea_flags.weapon_and_shield', 'karma', 'speedMultiplier',
+                'crea_flags.weapon_and_shield', 'karma', 'speed_multiplier',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
                 ('crea_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('aggression', 'aggroRadius',
-                              'aggroRadiusBehavior', 'assistance',
-                              'confidence', 'energyLevel', 'mood',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
+                              'ai_aggro_radius_behavior', 'ai_assistance',
+                              'ai_confidence', 'ai_energy_level', 'ai_mood',
+                              'ai_responsibility', 'ai_service_flags',
+                              'ai_train_level', 'ai_train_skill'),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'charisma', 'combatSkill', 'damage',
+            'Actors.Stats': ('agility', 'charisma', 'combat_skill', 'damage',
                              'endurance', 'health', 'intelligence', 'luck',
-                             'magicSkill', 'perception', 'stealthSkill',
+                             'magic_skill', 'perception', 'stealth_skill',
                              'strength'),
-            'Creatures.Type': ('creatureType',),
+            'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
             'Actors.ACBS': (
-                'barterGold', 'calcMax', 'calcMin', 'dispositionBase',
-                'fatigue', 'npc_flags.npc_auto_calc',
+                'barter_gold', 'calc_max_level', 'calc_min_level',
+                'disposition_base', 'fatigue', 'npc_flags.npc_auto_calc',
                 'npc_flags.can_be_all_races', 'npc_flags.npc_essential',
                 'npc_flags.npc_female', 'npc_flags.is_chargen_face_preset',
                 'npc_flags.crea_no_blood_decal',
@@ -920,13 +921,13 @@ class Fallout3GameInfo(PatchGame):
                 'npc_flags.crea_no_knockdowns', 'npc_flags.no_low_level',
                 'npc_flags.crea_no_rotating_head_track',
                 'npc_flags.crea_not_pushable', 'npc_flags.no_vats_melee',
-                'npc_flags.npc_respawn', 'karma', 'speedMultiplier',
+                'npc_flags.npc_respawn', 'karma', 'speed_multiplier',
                 ('npc_flags.pc_level_offset', 'level_offset')), # See above
-            'Actors.AIData': ('aggression', 'aggroRadius',
-                              'aggroRadiusBehavior', 'assistance',
-                              'confidence', 'energyLevel', 'mood',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
+                              'ai_aggro_radius_behavior', 'ai_assistance',
+                              'ai_confidence', 'ai_energy_level', 'ai_mood',
+                              'ai_responsibility', 'ai_service_flags',
+                              'ai_train_level', 'ai_train_skill'),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -949,7 +950,7 @@ class Fallout3GameInfo(PatchGame):
             'Actors.DeathItem': ('death_item',),
             'Actors.Voice': ('voice',),
             'Creatures.Blood': (),
-            'NPC.Class': ('iclass',),
+            'NPC.Class': ('npc_class',),
             'NPC.Race': ('race',),
         },
     }

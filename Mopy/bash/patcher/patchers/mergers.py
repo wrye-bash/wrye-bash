@@ -256,12 +256,12 @@ class ImportActorsPerksPatcher(_AMerger):
     _add_tag = u'Actors.Perks.Add'
     _change_tag = u'Actors.Perks.Change'
     _remove_tag = u'Actors.Perks.Remove'
-    _wanted_subrecord = {x: u'perks' for x in bush.game.actor_types}
+    _wanted_subrecord = {x: 'npc_perks' for x in bush.game.actor_types}
     patcher_tags = {'Actors.Perks.Add', 'Actors.Perks.Change',
                     'Actors.Perks.Remove'}
 
     def _entry_key(self, subrecord_entry):
-        return subrecord_entry.perk
+        return subrecord_entry.npc_perk_fid
 
 #------------------------------------------------------------------------------
 class ImportInventoryPatcher(_AMerger):
@@ -363,14 +363,14 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             for rsig, block in srcFile.iter_tops(self._read_sigs):
                 mod_tops.add(rsig)
                 for rid, record in block.iter_present_records():
-                    tempData[rid] = record.aiPackages
+                    tempData[rid] = record.ai_packages
             for master in reversed(srcFile.fileInfo.masterNames):
                 if not (masterFile := self.patchFile.get_loaded_mod(master)):
                     continue # or break filter mods
                 for rsig, block in masterFile.iter_tops(mod_tops):
                     for rid, record in block.iter_present_records():
                         if rid not in tempData: continue
-                        if record.aiPackages == tempData[rid] and not force_add:
+                        if record.ai_packages == tempData[rid] and not force_add:
                             # if subrecord is identical to the last master
                             # then we don't care about older masters.
                             del tempData[rid]
@@ -379,7 +379,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                             if tempData[rid] == mer_del[rid][u'merged']:
                                 continue
                         recordData = {'deleted': [], 'merged': tempData[rid]}
-                        for pkg in record.aiPackages:
+                        for pkg in record.ai_packages:
                             if pkg not in tempData[rid]:
                                 recordData[u'deleted'].append(pkg)
                         if rid not in mer_del:
@@ -421,7 +421,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         return self.id_merged_deleted
 
     def _add_to_patch(self, rid, record, top_sig):
-        return record.aiPackages != self.id_merged_deleted[rid]['merged']
+        return record.ai_packages != self.id_merged_deleted[rid]['merged']
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
@@ -432,8 +432,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         for top_grup_sig, block in self.patchFile.iter_tops(self._read_sigs):
             for rid, record in block.id_records.items():
                 if rid not in merged_deleted: continue
-                if record.aiPackages != merged_deleted[rid][u'merged']:
-                    record.aiPackages = merged_deleted[rid][u'merged']
+                if record.ai_packages != merged_deleted[rid][u'merged']:
+                    record.ai_packages = merged_deleted[rid][u'merged']
                     mod_count[rid.mod_fn] += keep(rid, record)
         self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)

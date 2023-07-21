@@ -1016,7 +1016,7 @@ class MelCounter(_MelWrapper):
     Additionally, dumping is skipped if the counter is falsy after updating.
 
     See also MelPartialCounter, which targets mixed structs."""
-    def __init__(self, counter_mel, *, counts):
+    def __init__(self, counter_mel, /, *, counts):
         """Creates a new MelCounter.
 
         :param counter_mel: The element that stores the counter's value.

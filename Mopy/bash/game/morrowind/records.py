@@ -49,9 +49,9 @@ class MelMWId(MelString): # needed everywhere, so put it early
         super().__init__(b'NAME', 'mw_id')
 
 #------------------------------------------------------------------------------
-class MelAIData(MelStruct):
-    """Handles the AIDT subrecord shared between CREA and NPC_."""
-    class _ai_flags(Flags):
+class MelAidt(MelStruct):
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
+    class _ServiceFlags(Flags):
         ai_weapon: bool
         ai_armor: bool
         ai_clothing: bool
@@ -72,42 +72,39 @@ class MelAIData(MelStruct):
         ai_repair: bool
 
     def __init__(self):
-        super(MelAIData, self).__init__(b'AIDT',
-            [u'B', u's', u'3B', u'3s', u'I'], u'ai_hello',
-            u'aidt_unknown1', u'ai_fight', u'ai_flee', u'ai_alarm',
-            u'aidt_unknown2', (self._ai_flags, u'ai_flags'))
+        super().__init__(b'AIDT', ['B', 's', '3B', '3s', 'I'], 'ai_hello',
+            'ai_unknown1', 'ai_fight', 'ai_flee', 'ai_alarm', 'ai_unknown2',
+            (self._ServiceFlags, 'ai_service_flags'))
 
 #------------------------------------------------------------------------------
-class MelAIAccompanyPackage(MelStruct):
+class _MelAIAccompanyPackage(MelStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
     def __init__(self, ai_package_sig):
-        super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
+        super().__init__(ai_package_sig,
             ['3f', 'H', '32s', 'B', 's'], 'dest_x', 'dest_y', 'dest_z',
             'package_duration', (FixedString(32), 'package_id'),
             'unknown_marker', 'unused1')
 
-class MelAIPackages(MelGroups):
+class MelAIPackagesTes3(MelGroups):
     """Handles the AI_* and CNDT subrecords, which have the additional
     complication that they may occur in any order."""
     def __init__(self):
-        super(MelAIPackages, self).__init__(u'aiPackages',
+        super().__init__('ai_packages',
             MelUnion({
-                b'AI_A': MelStruct(b'AI_A', [u'32s', u'B'],
-                    (FixedString(32), u'package_name'),
-                    (u'unknown_marker', 1)),
-                b'AI_E': MelAIAccompanyPackage(b'AI_E'),
-                b'AI_F': MelAIAccompanyPackage(b'AI_F'),
-                b'AI_T': MelStruct(b'AI_T', [u'3f', u'B', u'3s'], u'dest_x', u'dest_y',
-                    u'dest_z', (u'unknown_marker', 1), u'unused1'),
-                b'AI_W': MelStruct(b'AI_W', [u'2H', u'10B'], u'wanter_distance',
-                    u'wanter_duration', u'time_of_day', u'idle_1', u'idle_2',
-                    u'idle_3', u'idle_4', u'idle_5', u'idle_6', u'idle_7',
-                    u'idle_8', (u'unknown_marker', 1)),
+                b'AI_A': MelStruct(b'AI_A', ['32s', 'B'],
+                    (FixedString(32), 'package_name'), 'unknown_marker'),
+                b'AI_E': _MelAIAccompanyPackage(b'AI_E'),
+                b'AI_F': _MelAIAccompanyPackage(b'AI_F'),
+                b'AI_T': MelStruct(b'AI_T', ['3f', 'B', '3s'], 'dest_x',
+                    'dest_y', 'dest_z', 'unknown_marker', 'unused1'),
+                b'AI_W': MelStruct(b'AI_W', ['2H', '10B'], 'wanter_distance',
+                    'wanter_duration', 'time_of_day', 'idle_1', 'idle_2',
+                    'idle_3', 'idle_4', 'idle_5', 'idle_6', 'idle_7',
+                    'idle_8', 'unknown_marker'),
             }),
-            # Only present for AI_E and AI_F, but should be fine since the
-            # default for MelString is None, so won't be dumped unless already
-            # present (i.e. the file is already broken)
-            MelString(b'CNDT', u'cell_name'),
+            # Only present for AI_E and AI_F, but won't be dumped unless
+            # already present, so that's fine
+            MelString(b'CNDT', 'cell_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -513,9 +510,9 @@ class MreCrea(MelRecord):
         MelRefScale(),
         MelItems(),
         MelSpellsTes3(),
-        MelAIData(),
+        MelAidt(),
         MelDestinations(),
-        MelAIPackages(),
+        MelAIPackagesTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -867,8 +864,8 @@ class MreNpc_(MelRecord):
         MelMWId(),
         MelModel(),
         MelFullTes3(),
-        MelString(b'RNAM', u'race_name'),
-        MelString(b'CNAM', u'class_name'),
+        MelString(b'RNAM', 'race'),
+        MelString(b'CNAM', 'npc_class'),
         MelString(b'ANAM', u'faction_name'),
         MelString(b'BNAM', u'head_model'),
         MelString(b'KNAM', u'hair_model'),
@@ -887,9 +884,9 @@ class MreNpc_(MelRecord):
             'blood_type'),
         MelItems(),
         MelSpellsTes3(),
-        MelAIData(),
+        MelAidt(),
         MelDestinations(),
-        MelAIPackages(),
+        MelAIPackagesTes3(),
     )
 
 #------------------------------------------------------------------------------
