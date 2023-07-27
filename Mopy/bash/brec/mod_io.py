@@ -385,7 +385,13 @@ class FormIdReadContext(ModReader):
         self.form_id_type = utils_constants.FORM_ID
         if self.form_id_type is not None:
             raise StateError(f'Already in a ModReader context')
-        self.load_tes4()
+        try:
+            # This may blow up, in which case we have to explicitly exit the
+            # handler
+            self.load_tes4()
+        except:
+            self.__exit__(None, None, None)
+            raise
         return self
 
 class FormIdWriteContext:

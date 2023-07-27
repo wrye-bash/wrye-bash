@@ -140,8 +140,10 @@ class INI_CreateNew(OneItemLink):
             title=self._text,
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
             wildcard=f"{_('INI Tweak File')} (*.ini)|*.ini")
-        fn_tweak, msg = ini_info.validate_filename_str(tweak_path.stail)
-        if msg is None:
+        if not tweak_path:
+            return # user canceled the save dialog, abort
+        fn_tweak, root = ini_info.validate_filename_str(tweak_path.stail)
+        if root is None:
             self._showError(fn_tweak) # it's an error message in this case
             return
         if bosh.iniInfos.copy_tweak_from_target(ini_key, fn_tweak):

@@ -115,12 +115,15 @@ _blocked_encodings = {u'EUC-TW'}
 def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
+    if not bitstream:
+        # Default to UTF-8 if the stream we're given is empty and hence no
+        # inference can be made (chardet returns None, which breaks when passed
+        # to decode())
+        return 'utf8', 1.0
     result = chardet.detect(bitstream)
     encoding_, confidence = result[u'encoding'], result[u'confidence']
     encoding_ = _encodingSwap.get(encoding_,encoding_)
-    ## Debug: uncomment the following to output stats on encoding detection
-    #print('%s: %s (%s)' % (repr(bitstream),encoding,confidence))
-    return encoding_,confidence
+    return encoding_, confidence
 
 def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     """Decode a byte string to unicode, using heuristics on encoding."""
