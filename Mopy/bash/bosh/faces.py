@@ -273,9 +273,9 @@ class PCFaces(object):
         def buffPack(*args):
             buff.write(struct_pack(*args))
         def buffPackRef(oldFid,doPack=True):
-            newFid = oldFid and masterMap(oldFid,None)
+            newFid = oldFid and masterMap(oldFid, None)
             if newFid and doPack:
-                newRef = saveFile.getIref(newFid)
+                newRef = saveFile.getIref(newFid.short_fid)
                 pack_int(buff, newRef)
             else:
                 buff.seek(4,1)
@@ -319,7 +319,7 @@ class PCFaces(object):
             newClass = masterMap(face.iclass)
             oldClass = saveFile.fids[struct_unpack(u'I', buff.read(4))[0]]
             customClass = saveFile.getIref(0x22843)
-            if customClass not in (newClass,oldClass):
+            if customClass not in (newClass.short_fid, oldClass):
                 buff.seek(pos)
                 buffPackRef(newClass)
         newData = buff.getvalue()
@@ -440,8 +440,7 @@ class PCFaces(object):
             count += 1
             eid = eidForm % count
         #--NPC
-        npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
-        npc = modFile.create_record(b'NPC_', npcid, head_flags=0x40000)
+        npc = modFile.create_record(b'NPC_', head_flags=0x40000)
         npc.eid = eid
         npc.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags() ##: setDefault - drop this!
         npc.flags.female = face.gender
@@ -455,6 +454,10 @@ class PCFaces(object):
         if face.health:
             npc.health = face.health
             npc.unused2 = face.unused2
+        else:
+            # Still have to set the defaults or we blow up in MelLists
+            npc.health = 0
+            npc.unused2 = b'\x00\x00'
         if face.attributes: npc.attributes = face.attributes
         #--Save
         modFile.safeSave()

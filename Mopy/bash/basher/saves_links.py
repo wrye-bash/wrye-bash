@@ -901,7 +901,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.augmented_masters(), ordered)
                 for rid, npc in npc_block.iter_present_records():
-                    fid = mapToOrdered(rid.short_fid, None)
+                    fid = mapToOrdered(rid, None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
                                      npc.calcMax, npc.flags.pcLevelOffset)
@@ -918,9 +918,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                 fid_rec = saveFile.fid_recNum
                 for recId, (rec_kind, recFlags, version, rdata) in \
                         fid_rec.items():
-                    orderedRecId = mapToOrdered(recId,None)
-                    if rec_kind != 35 or recId == 7 or orderedRecId not in \
-                            npc_info: continue
+                    orderedRecId = mapToOrdered(recId, None)
+                    if (rec_kind != 35 or recId == 7 or
+                            orderedRecId not in npc_info):
+                        continue
                     eid, level_offset, calcMin, calcMax, pcLevelOffset = \
                         npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)

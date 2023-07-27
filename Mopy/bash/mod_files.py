@@ -41,30 +41,37 @@ from .load_order import get_ordered
 from .wbtemp import TempFile
 
 class MasterMap(object):
-    """Serves as a map between two sets of masters."""
-    def __init__(self,inMasters,outMasters):
-        """Initiation."""
+    """Serves as a map between two sets of masters. Only returns FormId
+    classes, but accepts both FormIds and short FormIDs (ints) -
+    TODO refactor to drop those"""
+    def __init__(self, inMasters, outMasters):
         mast_map = {}
-        outMastersIndex = outMasters.index
-        for index,master in enumerate(inMasters):
+        for i, master in enumerate(inMasters):
             try:
-                mast_map[index] = outMastersIndex(master)
+                mast_map[i] = outMasters.index(master)
             except ValueError:
-                mast_map[index] = -1
+                mast_map[i] = -1
         self._mast_map = mast_map
+        self._out_masters = outMasters
 
-    def __call__(self, short_fid: int | None, dflt_fid=-1):
-        """Maps a fid from first set of masters to second. If no mapping
-        is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not short_fid: return short_fid
-        inIndex = int(short_fid >> 24)
-        outIndex = self._mast_map.get(inIndex, -2)
-        if outIndex >= 0:
-            return (int(outIndex) << 24 ) | (short_fid & 0xFFFFFF)
-        elif dflt_fid != -1:
+    def __call__(self, fid_to_map: FormId | int | None, dflt_fid=ZERO_FID):
+        """Maps a fid from first set of masters to second. If no mapping is
+        possible, then either returns default (if given) or raises
+        MasterMapError."""
+        if not fid_to_map: return fid_to_map
+        mod_dex_in = (int(fid_to_map >> 24) if isinstance(fid_to_map, int) else
+                      fid_to_map.mod_dex)
+        mod_dex_out = self._mast_map.get(mod_dex_in, -2)
+        if mod_dex_out >= 0:
+            mapped_object_dex = (
+                fid_to_map & 0xFFFFFF if isinstance(fid_to_map, int) else
+                fid_to_map.object_dex)
+            return FormId.from_tuple((self._out_masters[mod_dex_out],
+                                      mapped_object_dex))
+        elif dflt_fid != ZERO_FID:
             return dflt_fid
         else:
-            raise MasterMapError(inIndex)
+            raise MasterMapError(mod_dex_in)
 
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record

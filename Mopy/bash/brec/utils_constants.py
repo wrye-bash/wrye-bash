@@ -117,8 +117,8 @@ class FormId:
         """Return the mod id - will raise if long_fid is not a tuple."""
         try:
             return self.long_fid[0]
-        except TypeError:
-            raise StateError(f'{self!r} not in long format')
+        except TypeError as e:
+            raise StateError(f'{self!r} not in long format') from e
 
     def is_null(self):
         """Return True if we are a round 0."""
