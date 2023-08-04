@@ -335,19 +335,24 @@ class Installers_ImportOrder(_AInstallers_Order):
 
     def Execute(self):
         if not self._askWarning(
-            _('This will reorder and change the installation status of all '
-              'packages from the chosen CSV file. It will not change the '
-              'contents of the Data folder, you will have to manually install '
-              'or uninstall affected packages for that. Packages that are '
-              'not listed in the CSV file will not be touched.') + '\n\n' +
-            _('Are you sure you want to proceed?'),
+            _('This will reorder all packages from the chosen CSV file. It '
+              'will not change the contents of the Data folder, you will have '
+              'to manually install/anneal/uninstall affected packages for '
+              'that. Packages that are not listed in the CSV file will not be '
+              'touched.') + '\n\n' + _('Are you sure you want to proceed?'),
                 title=_('Import Order - Warning')): return
+        self._import_acti_status = self._askYes(
+            _("Do you want to import the enabled/disabled status from the CSV "
+              "file as well? Choosing 'No' will only reorder packages, "
+              "leaving enabled/disabled status unchanged."),
+            title=_('Import Order - Import Activation Status?'),
+            questionIcon=True)
         imp_path = self._askOpen(title=_('Import Order - Choose Source'),
             defaultDir=bass.dirs['patches'], defaultFile='PackageOrder.csv',
             wildcard='*.csv')
         if not imp_path: return
         self.first_line = True
-        self.partial_package_order = []
+        self._partial_package_order = []
         try:
             self.read_csv(imp_path)
         except (exception.BoltError, NotImplementedError):
@@ -355,7 +360,7 @@ class Installers_ImportOrder(_AInstallers_Order):
                               'package order CSV export.'),
                 title=_('Import Order - Invalid CSV'))
             return
-        reorder_err = self.idata.reorder_packages(self.partial_package_order)
+        reorder_err = self.idata.reorder_packages(self._partial_package_order)
         self.idata.refresh_ns()
         self.window.RefreshUI()
         if reorder_err:
@@ -363,7 +368,7 @@ class Installers_ImportOrder(_AInstallers_Order):
         else:
             self._showInfo(_('Imported order and installation status for '
                              '%(total_imported)d package(s).') % {
-                'total_imported': len(self.partial_package_order)},
+                'total_imported': len(self._partial_package_order)},
                 title=_('Import Order - Done'))
 
     def _parse_line(self, csv_fields):
@@ -374,8 +379,9 @@ class Installers_ImportOrder(_AInstallers_Order):
             return
         pkg_fstr, pkg_installed_yn = csv_fields
         if (pkg_fname := bolt.FName(pkg_fstr)) in self.idata:
-            self.idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
-            self.partial_package_order.append(pkg_fname)
+            if self._import_acti_status:
+                self.idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
+            self._partial_package_order.append(pkg_fname)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------
