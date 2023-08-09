@@ -65,7 +65,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelOverridePackageLists, MelNpcPerks, MelAIPackages, MelNpcClass, \
     MelNpcHeadParts, MelNpcHairColor, MelCombatStyle, MelNpcGiftFilter, \
     MelSoundLevel, MelInheritsSoundsFrom, MelNpcShared, SizeDecider, \
-    MelActorSounds2, MelUInt8Flags
+    MelActorSounds2, MelUInt8Flags, MelFilterString, MelOmodData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2587,6 +2587,7 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         MelSorted(MelGroups('face_morphs',
             # fm = 'face morph'
             MelUInt32(b'FMRI', 'fm_index'),
+            ##: fm_unknown seems to always be 8 bytes, figure out what it is
             MelExtra(MelStruct(b'FMRS', ['7f'], 'fm_position_x',
                 'fm_position_y', 'fm_position_z', 'fm_rotation_x',
                 'fm_rotation_y', 'fm_rotation_z', 'fm_scale'),
@@ -2594,6 +2595,28 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         ), sort_by_attrs='fm_index'),
         MelFloat(b'FMIN', 'facial_morph_intensity'),
         MelAttx(),
+    )
+
+#------------------------------------------------------------------------------
+class MreOmod(MelRecord):
+    """Object Modification."""
+    rec_sig = b'OMOD'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        legendary_omod: bool = flag(4)
+        omod_collection: bool = flag(7)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelModel(),
+        MelOmodData(),
+        MelSimpleArray('target_omod_keywords', MelFid(b'MNAM')),
+        MelSimpleArray('filter_keywords', MelFid(b'FNAM')),
+        MelFid(b'LNAM', 'loose_omod'),
+        MelUInt8(b'NAM1', 'omod_priority'),
+        MelFilterString(),
     )
 
 #------------------------------------------------------------------------------

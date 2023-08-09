@@ -70,7 +70,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelNpcClass, TemplateFlags, MelTemplate, MelSpellCounter, MelNpcAnam, \
     MelAttackRace, MelOverridePackageLists, MelNpcPerks, MelAIPackages, \
     MelNpcHeadParts, MelNpcHairColor, MelNpcGiftFilter, MelSoundLevel, \
-    MelInheritsSoundsFrom, MelNpcShared
+    MelInheritsSoundsFrom, MelNpcShared, MelFilterString
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -2573,7 +2573,7 @@ class MreQust(MelRecord):
                   'priority', 'formVersion', 'unknown', 'questType'),
         MelStruct(b'ENAM', ['4s'], 'event_name'),
         MelFids('textDisplayGlobals', MelFid(b'QTGL')),
-        MelString(b'FLTR','objectWindowFilter'),
+        MelFilterString(),
         MelConditionList('dialogueConditions'),
         MelBase(b'NEXT','marker'),
         MelConditionList('eventConditions'),

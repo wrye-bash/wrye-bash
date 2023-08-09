@@ -554,6 +554,12 @@ class MelFactions(MelSorted):
         ), sort_by_attrs='faction')
 
 #------------------------------------------------------------------------------
+class MelFilterString(MelString):
+    """Handles the common FLTR (Filter) subrecord."""
+    def __init__(self):
+        super().__init__(b'FLTR', 'filter_string')
+
+#------------------------------------------------------------------------------
 class MelFlstFids(MelFids):
     """Handles the FLST subrecord LNAM (FormIDs)."""
     def __init__(self):
