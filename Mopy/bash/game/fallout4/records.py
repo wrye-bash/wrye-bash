@@ -65,7 +65,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelOverridePackageLists, MelNpcPerks, MelAIPackages, MelNpcClass, \
     MelNpcHeadParts, MelNpcHairColor, MelCombatStyle, MelNpcGiftFilter, \
     MelSoundLevel, MelInheritsSoundsFrom, MelNpcShared, SizeDecider, \
-    MelActorSounds2
+    MelActorSounds2, MelUInt8Flags
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -84,15 +84,19 @@ class MelModel(MelGroup):
         b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
     }
 
+    class _ModelFlags(Flags):
+        has_facebones_model: bool
+        has_1stperson_model: bool
+
     def __init__(self, mel_sig=b'MODL', attr='model', *, swap_3_4=False,
-            always_use_modc=False, skip_5=False):
+            always_use_modc=False, no_flags=False):
         """Fallout 4 has a whole lot of model nonsense:
 
         :param swap_3_4: If True, swaps the third (*C) and fourth (*S)
             elements.
         :param always_use_modc: If True, use MODC for the third (*C) element,
             regardless of what mel_sig is.
-        :param skip_5: If True, skip the fifth (*F) element."""
+        :param no_flags: If True, skip the flags (*F) element."""
         types = self.__class__.typeSets[mel_sig]
         mdl_elements = [
             MelString(types[0], 'modPath'),
@@ -105,8 +109,9 @@ class MelModel(MelGroup):
         ]
         if swap_3_4:
             mdl_elements[2], mdl_elements[3] = mdl_elements[3], mdl_elements[2]
-        if len(types) == 5 and not skip_5:
-            mdl_elements.append(MelBase(types[4], 'unknown_modf'))
+        if len(types) == 5 and not no_flags:
+            mdl_elements.append(MelUInt8Flags(types[4], 'model_flags',
+                self._ModelFlags))
         super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
@@ -652,9 +657,9 @@ class MreArmo(AMreWithKeywords):
         MelPreviewTransform(),
         MelFull(),
         MelEnchantment(),
-        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, skip_5=True),
+        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, no_flags=True),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
-        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, skip_5=True),
+        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, no_flags=True),
         MelIcons2(),
         MelBod2(),
         MelDestructible(),
