@@ -23,9 +23,12 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
+from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
 from ... import bolt
+
+_GOG_IDS = [1998527297]
 
 class Fallout4GameInfo(PatchGame):
     """GameInfo override for Fallout 4."""
@@ -43,7 +46,8 @@ class Fallout4GameInfo(PatchGame):
     # copy of Fallout4VR.exe called Fallout4.exe to "trick" WB into launching.
     # That's from back when WB had no VR support, but those guides haven't been
     # updated since...
-    game_detect_excludes = WS_COMMON_FILES | {'Fallout4VR.exe'}
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES | {'Fallout4VR.exe'})
     version_detect_file = u'Fallout4.exe'
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
@@ -812,6 +816,12 @@ class Fallout4GameInfo(PatchGame):
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs
 
+class GOGFallout4GameInfo(GOGMixin, Fallout4GameInfo):
+    """GameInfo override for the GOG version of Fallout 4."""
+    displayName = 'Fallout 4 (GOG)'
+    _gog_game_ids = _GOG_IDS
+    # appdata_name and my_games_name use the original locations
+
 class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
     """GameInfo override for the Windows Store version of Fallout 4."""
     displayName = 'Fallout 4 (WS)'
@@ -822,4 +832,5 @@ class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout4-PC'
 
-GAME_TYPE = {g.displayName: g for g in (Fallout4GameInfo, WSFallout4GameInfo)}
+GAME_TYPE = {g.displayName: g for g in
+             (Fallout4GameInfo, GOGFallout4GameInfo, WSFallout4GameInfo)}

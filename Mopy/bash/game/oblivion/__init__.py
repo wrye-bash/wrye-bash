@@ -1212,14 +1212,14 @@ class OblivionGameInfo(PatchGame):
 class GOGOblivionGameInfo(GOGMixin, OblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
     displayName = 'Oblivion (GOG)'
-    check_legacy_paths = False
     _gog_game_ids = _GOG_IDS
+    # appdata_name and my_games_name use the original locations
+    check_legacy_paths = False
 
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""
     displayName = 'Oblivion (WS)'
-    # `appdata_name` and `my_games_name` use the original locations, unlike
-    # newer Windows Store games.
+    # appdata_name and my_games_name use the original locations
     check_legacy_paths = False
 
     class Ws(OblivionGameInfo.Ws):
