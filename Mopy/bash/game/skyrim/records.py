@@ -2218,20 +2218,6 @@ class MreNpc_(AMreActor, AMreWithKeywords):
     )
 
 #------------------------------------------------------------------------------
-class MreOtft(MelRecord):
-    """Outfit."""
-    rec_sig = b'OTFT'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
-    )
-
-    def keep_fids(self, keep_plugins):
-        super().keep_fids(keep_plugins)
-        self.items = [i for i in self.items if i.mod_fn in keep_plugins]
-
-#------------------------------------------------------------------------------
 class MrePack(MelRecord):
     """Package."""
     rec_sig = b'PACK'

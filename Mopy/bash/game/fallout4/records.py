@@ -2620,6 +2620,22 @@ class MreOmod(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreOvis(MelRecord):
+    """Object Visibility Manager."""
+    rec_sig = b'OVIS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('ovis_unknown',
+            MelFid(b'INDX', 'ovis_object_fid'),
+            MelStruct(b'DATA', ['6f'], 'ovis_object_bounds_x1',
+                'ovis_object_bounds_y1', 'ovis_object_bounds_z1',
+                'ovis_object_bounds_x2', 'ovis_object_bounds_y2',
+                'ovis_object_bounds_z2'),
+        ),
+    )
+
+#------------------------------------------------------------------------------
 class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
