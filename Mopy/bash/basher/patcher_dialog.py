@@ -49,6 +49,7 @@ class PatchDialog(DialogWindow):
 
     :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
     """
+    _def_size = (600, 600)
     _min_size = (400, 300)
 
     def __init__(self, parent, bashed_patch, mods_to_reselect, patchConfigs):
@@ -57,9 +58,8 @@ class PatchDialog(DialogWindow):
         self.bashed_patch = bashed_patch
         self.patchInfo = bashed_patch.fileInfo
         title = _('Update ') + f'{self.patchInfo}'
-        super(PatchDialog, self).__init__(parent, title=title,
-            icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
-            size=balt.sizes.get(self.__class__.__name__, (500, 600)))
+        super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
+            sizes_dict=bass.settings)
         #--Data
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
         for g in self._gui_patchers: g._bp = bashed_patch

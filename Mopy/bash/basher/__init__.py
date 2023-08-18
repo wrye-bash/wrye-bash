@@ -2803,7 +2803,7 @@ class InstallersList(UIList):
                 f.stail for f in sorted(chain(packages, converters))) + '\n'
             msg += '\n' + _('What would you like to do with them?')
             action, remember = CopyOrMovePopup.display_dialog(self, msg,
-                sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
+                sizes_dict=settings, icon_bundle=balt.Resources.bashBlue)
             if action and remember:
                 settings[u'bash.installers.onDropFiles.action'] = action
         return action
@@ -4095,7 +4095,7 @@ class BashFrame(WindowFrame):
     # Panels - use sparingly
     iPanel = None # BAIN panel
     # initial size/position
-    _frame_settings_key = u'bash.frame'
+    _key_prefix = 'bash.frame'
     _def_size = (1024, 512)
     _size_hints = (512, 512)
 
@@ -4628,7 +4628,6 @@ def InitSettings(): # this must run first !
     bosh.initSettings(askYes)
     global settings
     balt._settings = bass.settings
-    balt.sizes = bass.settings.get(u'bash.window.sizes', {})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
     bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(

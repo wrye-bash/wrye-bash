@@ -67,7 +67,7 @@ class ValidatorPopup(DialogWindow):
         super().__init__(parent,
             title=_('FOMOD Validation Failed - %(fomod_title)s') % {
                 'fomod_title': fm_name},
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         copy_log_btn = Button(self, _('Copy Log'))
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')

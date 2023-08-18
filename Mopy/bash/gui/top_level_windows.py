@@ -47,23 +47,23 @@ class _TopLevelWin(_AComponent):
     _native_widget: _wx.TopLevelWindow
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
-        # dict holding size/pos info ##: can be bass.settings or balt.sizes
-        self._sizes_dict = sizes_dict
+        # dict holding size/pos info stored in bass.settings
+        self._sizes_dict = sizes_dict.get('bash.window.sizes', {})
         super().__init__(parent, *args, **kwargs)
-        self._set_pos_size(kwargs, sizes_dict)
+        self._set_pos_size(kwargs)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
-        if self._min_size: self.set_min_size(*self._min_size)
+        if self._min_size: self.set_min_size(*self._min_size) ##: shouldn't we set this in _set_pos_size??
 
-    def _set_pos_size(self, kwargs, sizes_dict):
-        wanted_pos = kwargs.get('pos', None) or sizes_dict.get(
-            self._pos_key, self._def_pos)
+    def _set_pos_size(self, kwargs):
+        wanted_pos = kwargs.get('pos', None) or \
+            self._sizes_dict.get(self._pos_key, self._def_pos)
         # Resolve the special DEFAULT_POSITION constant to a real value
         self.component_position = (
             self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
-        wanted_width, wanted_height = kwargs.get(
-            'size', None) or sizes_dict.get(self._size_key, self._def_size)
+        wanted_width, wanted_height = kwargs.get('size', None) or \
+            self._sizes_dict.get(self._size_key, self._def_size)
         # Check if our wanted width or height is too small and bump it up
         if self._min_size:
             if wanted_width < self._min_size[0]:
@@ -122,17 +122,15 @@ class WindowFrame(_TopLevelWin):
     Events:
      - on_activate(): Posted when the frame is activated.
      """
-    _frame_settings_key = None
+    _key_prefix = None
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
 
-    def __init__(self, parent, title, icon_bundle=None, _base_key=None,
-                 sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
-                 **kwargs):
-        _key = _base_key or self.__class__._frame_settings_key
-        if _key:
-            self._pos_key = _key + u'.pos'
-            self._size_key = _key + u'.size'
+    def __init__(self, parent, title, icon_bundle=None, sizes_dict={},
+                 caption=False, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
+        if self.__class__._key_prefix:
+            self._pos_key = f'{self.__class__._key_prefix}.pos'
+            self._size_key = f'{self.__class__._key_prefix}.size'
         if caption: style |= _wx.CAPTION
         if sizes_dict: style |= _wx.RESIZE_BORDER
         if kwargs.pop(u'clip_children', False): style |= _wx.CLIP_CHILDREN

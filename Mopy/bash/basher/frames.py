@@ -40,7 +40,7 @@ from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
-    _frame_settings_key = u'bash.modDocs'
+    _key_prefix = 'bash.modDocs'
     _def_size = (900, 500)
 
     def __init__(self):
@@ -397,7 +397,7 @@ def _set_mod_checker_setting(key, value):
 
 class PluginChecker(WindowFrame):
     """Plugin Checker frame."""
-    _frame_settings_key = u'bash.modChecker'
+    _key_prefix = 'bash.modChecker'
     _def_size = (475, 500)
 
     def __init__(self):

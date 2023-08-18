@@ -110,22 +110,22 @@ def unpackSubHeader(ins, rsig, *, file_offset=0, __unpacker=int_unpacker,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
     # Extended storage - very rare, so don't optimize inlines etc. for it
     if mel_sig == b'XXXX':
-        sizes = []
+        mel_sizes = []
         ins_unpack = ins.unpack
         pos = (file_offset or ins.tell()) - __sr.sub_header_size
         while mel_sig == b'XXXX': #it does happen to have two of those in a row
             mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
             mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
                 rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
-            sizes.append(mel_size)
-        if len(sizes) > 1:
-            msg = f'{ins.inName}: {len(sizes)} consecutive XXXX subrecords ' \
+            mel_sizes.append(mel_size)
+        if len(mel_sizes) > 1:
+            msg = f'{ins.inName}: {len(mel_sizes)} consecutive XXXX subrecords ' \
                   f'reading {sig_to_str(rsig)} starting at file position {pos}'
-            if len(set(sizes)) > 1:
+            if len(set(mel_sizes)) > 1:
                 raise exception.ModError(ins.inName,
-                                         f'{msg} - differing sizes {sizes}!')
+                    f'{msg} - differing sizes {mel_sizes}!')
             bolt.deprint(msg)
-        mel_size = sizes[0]
+        mel_size = mel_sizes[0]
     return mel_sig, mel_size
 
 class SubrecordBlob(Subrecord):

@@ -70,7 +70,6 @@ def load_app_icons():
 
 # Settings --------------------------------------------------------------------
 _settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
-sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
 colors: dict[str, Color] = {}
@@ -246,7 +245,7 @@ def askContinue(parent, message, continueKey=None, title=_('Warning'),
     checkBoxTxt = _("Don't show this in the future.") if continueKey else _(
         "Don't show this for the rest of operation.")
     result, check = ContinueDialog.display_dialog(parent, message, title,
-        checkBoxTxt, show_cancel=show_cancel, sizes_dict=sizes)
+        checkBoxTxt, show_cancel=show_cancel, sizes_dict=_settings)
     if continueKey and result and check: # Don't store setting if user canceled
         _settings[continueKey] = 1
     return result if continueKey else ( # 2: checked 1: OK
@@ -254,15 +253,15 @@ def askContinue(parent, message, continueKey=None, title=_('Warning'),
 
 #------------------------------------------------------------------------------
 class _Log(object):
-    _settings_key = u'balt.LogMessage'
+    _key_prefix = 'balt.LogMessage'
+
     def __init__(self, parent, title=u'', asDialog=True, log_icons=None):
         self.asDialog = asDialog
-        #--Sizing
-        key__pos_ = f'{self._settings_key}.pos'
-        key__size_ = f'{self._settings_key}.size'
         if isinstance(title, Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
+            key__pos_ = f'{self._key_prefix}.pos'
+            key__size_ = f'{self._key_prefix}.size'
             window = DialogWindow(parent, title, sizes_dict=_settings,
                                   icon_bundle=log_icons, size_key=key__size_,
                                   pos_key=key__pos_)
@@ -270,7 +269,6 @@ class _Log(object):
             style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
                      wx.CLOSE_BOX | wx.CLIP_CHILDREN
             window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
-                                 _base_key=self._settings_key,
                                  sizes_dict=_settings, style=style_)
         window.set_min_size(200, 200)
         self.window = window
@@ -310,7 +308,7 @@ class Log(_Log):
 
 #------------------------------------------------------------------------------
 class WryeLog(_Log):
-    _settings_key = u'balt.WryeLog'
+    _key_prefix = 'balt.WryeLog'
     def __init__(self, parent, logText, title=u'', asDialog=True,
                  log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
@@ -410,7 +408,7 @@ class ListEditor(DialogWindow):
         self._list_items = lid_data.getItemList()
         #--GUI
         self._size_key = self._listEditorData.__class__.__name__
-        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
+        super().__init__(parent, title, sizes_dict=_settings)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items,
                                onSelect=self.OnSelect)
@@ -451,9 +449,10 @@ class ListEditor(DialogWindow):
                 le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
         #--Done
-        if self._size_key in sizes:
+        if self._size_key in _settings['bash.window.sizes']:
             layout.apply_to(self)
-            self.component_position = sizes[self._size_key]
+            self.component_position = _settings['bash.window.sizes'][
+                self._size_key]
         else:
             layout.apply_to(self, fit=True)
 
@@ -519,12 +518,12 @@ class ListEditor(DialogWindow):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self._size_key] = self.component_size
+        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self._size_key] = self.component_size
+        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
@@ -1495,7 +1494,7 @@ class UIList(PanelWin):
         # Let the user adjust deleted items and recycling state via GUI
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
-            sizes_dict=sizes, icon_bundle=Resources.bashBlue,
+            sizes_dict=_settings, icon_bundle=Resources.bashBlue,
             trash_icon=images['trash_can.32'].get_bitmap())
         if not dd_ok or not dd_items: return
         try:

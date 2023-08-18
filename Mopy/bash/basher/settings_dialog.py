@@ -57,7 +57,7 @@ class SettingsDialog(DialogWindow):
         :param initial_page: If set to a truthy string, will switch to that
                              page before showing the dialog to the user."""
         super(SettingsDialog, self).__init__(Link.Frame,
-            icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes)
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         # Used to keep track of the pages that have changed settings
         self._changed_state = {}
         # Used to keep track of a potential scheduled restart of Wrye Bash in
@@ -420,7 +420,7 @@ class ConfigureEditorDialog(DialogWindow):
     def __init__(self, parent):
         super(ConfigureEditorDialog, self).__init__(parent,
             title=_(u'Configure Editor'), icon_bundle=Resources.bashBlue,
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         self._editor_location = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.path'])
         browse_editor_btn = ImageButton(self,
