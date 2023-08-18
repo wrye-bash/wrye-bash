@@ -39,7 +39,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelFurnMarkerData, MelGrasData, MelGroup, MelGroups, MelHdptShared, \
     MelIco2, MelIcon, MelIcons, MelIcons2, MelIdleAnimationCount, \
     MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleTimerSetting, MelIdlmFlags, MelImageSpaceMod, MelImgsCinematic, \
+    MelIdleTimerSetting, MelImageSpaceMod, MelImgsCinematic, \
     MelImgsTint, MelIngredient, MelIngrEnit, MelInteractionKeyword, \
     MelInventoryArt, MelIpctHazard, MelIpctSounds, MelIpctTextureSets, \
     MelIpdsPnam, MelKeywords, MelLandMpcd, MelLandShared, MelLctnShared, \
@@ -65,7 +65,10 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelOverridePackageLists, MelNpcPerks, MelAIPackages, MelNpcClass, \
     MelNpcHeadParts, MelNpcHairColor, MelCombatStyle, MelNpcGiftFilter, \
     MelSoundLevel, MelInheritsSoundsFrom, MelNpcShared, SizeDecider, \
-    MelActorSounds2, MelUInt8Flags, MelFilterString, MelOmodData
+    MelActorSounds2, MelUInt8Flags, MelFilterString, MelOmodData, \
+    MelIdleAnimFlags, MelPackPkdt, MelPackSchedule, MelPackOwnerQuest, \
+    MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, \
+    MelPackProcedureTree, MelPackIdleHandler
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -246,21 +249,25 @@ class MelLocation(MelUnion):
     """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
     def __init__(self, sub_sig):
         super().__init__({
-            (0, 1, 4, 6): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
-                'location_type', (FID, 'location_value'), 'location_radius',
-                'location_collection_index'),
-            (2, 3, 7, 12, 13): MelStruct(sub_sig, ['i', '4s', 'i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
-            (5, 10, 11): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
-            (8, 9, 14): MelStruct(sub_sig, ['3i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
+            (0, 1, 4, 6): MelTruncatedStruct(
+                sub_sig, ['i', 'I', 'i', 'I'], 'package_location_type',
+                (FID, 'package_location_value'), 'package_location_radius',
+                'package_location_collection_index', old_versions={'iIi'}),
+            (2, 3, 7, 12, 13): MelTruncatedStruct(
+                sub_sig, ['i', '4s', 'i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'i4si'}),
+            (5, 10, 11): MelTruncatedStruct(
+                sub_sig, ['i', 'I', 'i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'iIi'}),
+            (8, 9, 14): MelTruncatedStruct(
+                sub_sig, ['3i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'3i'}),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(sub_sig, 'location_type'),
-                decider=AttrValDecider('location_type')),
+                loader=MelSInt32(sub_sig, 'package_location_type'),
+                decider=AttrValDecider('package_location_type')),
             fallback=MelNull(b'NULL') # ignore
         )
 
@@ -1671,7 +1678,7 @@ class MreIdlm(AMreWithKeywords):
         MelEdid(),
         MelBounds(),
         MelKeywords(),
-        MelIdlmFlags(),
+        MelIdleAnimFlags(),
         MelIdleAnimationCount(),
         MelIdleTimerSetting(),
         MelIdleAnimations(),
@@ -2634,6 +2641,83 @@ class MreOvis(MelRecord):
                 'ovis_object_bounds_z2'),
         ),
     )
+
+#------------------------------------------------------------------------------
+class MrePack(MelRecord):
+    """Package."""
+    rec_sig = b'PACK'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelPackPkdt(),
+        MelPackSchedule(),
+        MelConditionList(),
+        MelGroup('package_idles',
+            MelIdleAnimFlags(),
+            MelIdleAnimationCount(),
+            MelIdleTimerSetting(),
+            MelIdleAnimations(),
+            MelBase(b'IDLB', 'unknown_idlb'),
+        ),
+        MelCombatStyle(b'CNAM'),
+        MelPackOwnerQuest(),
+        MelPackPkcu(),
+        MelPackDataInputValues(
+            pldt_element=MelLocation(b'PLDT'),
+            ptda_element=MelUnion({
+                (0, 1, 3, 7): MelStruct(b'PTDA', ['i', 'I', 'i'],
+                    'package_target_type', (FID, 'package_target_value'),
+                    'package_target_count'),
+                (2, 5): MelStruct(b'PTDA', ['i', 'I', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                4: MelStruct(b'PTDA', ['3i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                (6, 8): MelStruct(b'PTDA', ['i', '4s', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+            }, decider=PartialLoadDecider(
+                loader=MelSInt32(b'PTDA', 'package_target_type'),
+                decider=AttrValDecider('package_target_type')),
+                fallback=MelNull(b'NULL')), # ignore
+        ),
+        MelPackDataInputs('data_inputs1'),
+        MelBaseR(b'XNAM', 'xnam_marker'),
+        MelPackProcedureTree(MelConditions()),
+        MelPackDataInputs('data_inputs2'),
+        MelPackIdleHandler('on_begin'),
+        MelPackIdleHandler('on_end'),
+        MelPackIdleHandler('on_change'),
+    ).with_distributor({
+        b'PKDT': {
+            b'CTDA|CIS1|CIS2': 'conditions',
+            b'CNAM': 'combat_style',
+            b'QNAM': 'owner_quest',
+            b'ANAM': ('data_input_values', {
+                b'BNAM|CNAM|PDTO': 'data_input_values',
+            }),
+            b'UNAM': ('data_inputs1', {
+                b'BNAM|PNAM': 'data_inputs1',
+            }),
+        },
+        b'XNAM': {
+            b'ANAM|CTDA|CIS1|CIS2|PNAM': 'procedure_tree_branches',
+            b'UNAM': ('data_inputs2', {
+                b'BNAM|PNAM': 'data_inputs2',
+            }),
+        },
+        b'POBA': {
+            b'INAM|TNAM|PDTO': 'on_begin',
+        },
+        b'POEA': {
+            b'INAM|TNAM|PDTO': 'on_end',
+        },
+        b'POCA': {
+            b'INAM|TNAM|PDTO': 'on_change',
+        },
+    })
 
 #------------------------------------------------------------------------------
 class MrePerk(MelRecord):

@@ -48,7 +48,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
     SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4, \
-    AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom
+    AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
+    PackGeneralOldFlags, MelPackScheduleOld
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1768,52 +1769,31 @@ class MrePack(MelRecord):
     """AI Package."""
     rec_sig = b'PACK'
 
-    class _PackFlags(Flags):
-        offersServices: bool
-        mustReachLocation: bool
-        mustComplete: bool
-        lockAtStart: bool
-        lockAtEnd: bool
-        lockAtLocation: bool
-        unlockAtStart: bool
-        unlockAtEnd: bool
-        unlockAtLocation: bool
-        continueIfPcNear: bool
-        oncePerDay: bool
-        skipFallout: bool = flag(12)
-        alwaysRun: bool
-        alwaysSneak: bool = flag(17)
-        allowSwimming: bool
-        allowFalls: bool
-        unequipArmor: bool
-        unequipWeapons: bool
-        defensiveCombat: bool
-        useHorse: bool
-        noIdleAnims: bool
-
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'], (_PackFlags, 'flags'),
-            'aiType', 'unused1', old_versions={'HBs'}),
+        MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'],
+            (PackGeneralOldFlags, 'package_flags'), 'package_ai_type',
+            'unused1', old_versions={'HBs'}),
         MelUnion({
-            (0, 1, 2, 3, 4): MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
-                (FID, 'locId'), 'locRadius'),
-            5: MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType', 'locId',
-                'locRadius'),
+            (0, 1, 2, 3, 4): MelStruct(b'PLDT', ['i', 'I', 'i'],
+                'package_location_type', (FID, 'package_location_value'),
+                'package_location_radius'),
+            5: MelStruct(b'PLDT', ['i', 'I', 'i'],
+                'package_location_type', 'package_location_value',
+                'package_location_radius'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PLDT', 'locType'),
-            decider=AttrValDecider('locType'),
+            loader=MelSInt32(b'PLDT', 'package_location_type'),
+            decider=AttrValDecider('package_location_type'),
         ), fallback=MelNull(b'NULL')), # ignore
-        MelStruct(b'PSDT', ['2b', 'B', 'b', 'i'], 'month', 'day', 'date',
-            'time', 'duration'),
+        MelPackScheduleOld(is_required=False), ##: might actually be required?
         MelUnion({
-            (0, 1): MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType',
-                (FID, 'targetId'), 'targetCount'),
-            2: MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType', 'targetId',
-                'targetCount'),
+            (0, 1): MelStruct(b'PTDT', ['i', 'I', 'i'], 'package_target_type',
+                (FID, 'package_target_value'), 'package_target_count'),
+            2: MelStruct(b'PTDT', ['i', 'I', 'i'], 'package_target_type',
+                'package_target_value', 'package_target_count'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PTDT', 'targetType'),
-            decider=AttrValDecider('targetType'),
+            loader=MelSInt32(b'PTDT', 'package_target_type'),
+            decider=AttrValDecider('package_target_type'),
         ), fallback=MelNull(b'NULL')), # ignore
         MelConditionsTes4(),
     )
@@ -1874,7 +1854,7 @@ class MreQust(_ObIcon):
             ),
         ), sort_by_attrs='stage'),
         MelGroups('targets',
-            MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'targetId'),
+            MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'package_target_value'),
                 (_TargetFlags, 'flags'), 'unused1'),
             MelConditionsTes4(),
         ),
@@ -2021,7 +2001,7 @@ class MreRefr(MelRecord):
             'unused3', old_versions={'B3sIB3s'}),
         MelOwnershipTes4(),
         MelEnableParent(),
-        MelFid(b'XTRG', 'targetId'),
+        MelFid(b'XTRG', 'package_target_value'),
         MelBase(b'XSED', 'seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into
         # the list of seed values in the TREE record

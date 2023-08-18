@@ -43,7 +43,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelGrasData, MelGroup, MelGroups, MelHdptShared, MelIco2, MelIcon, \
     MelIcons, MelIcons2, MelIdleAnimationCount, MelIdleAnimationCountOld, \
     MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleTimerSetting, MelIdlmFlags, MelImageSpaceMod, MelImgsCinematic, \
+    MelIdleTimerSetting, MelImageSpaceMod, MelImgsCinematic, \
     MelImgsTint, MelImpactDataset, MelInfoResponsesFo3, MelIngredient, \
     MelIngrEnit, MelInteractionKeyword, MelInventoryArt, MelIpctHazard, \
     MelIpctSounds, MelIpctTextureSets, MelIpdsPnam, MelKeywords, MelLandMpcd, \
@@ -70,7 +70,10 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelNpcClass, TemplateFlags, MelTemplate, MelSpellCounter, MelNpcAnam, \
     MelAttackRace, MelOverridePackageLists, MelNpcPerks, MelAIPackages, \
     MelNpcHeadParts, MelNpcHairColor, MelNpcGiftFilter, MelSoundLevel, \
-    MelInheritsSoundsFrom, MelNpcShared, MelFilterString
+    MelInheritsSoundsFrom, MelNpcShared, MelFilterString, MelIdleAnimFlags, \
+    MelPackPkdt, MelPackSchedule, MelTopicData, MelPackOwnerQuest, \
+    MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, \
+    MelPackProcedureTree, MelPackIdleHandler
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -287,31 +290,12 @@ class MreHasEffects(MelRecord):
         return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
-class MelIdleHandler(MelGroup):
-    """Occurs three times in PACK, so moved here to deduplicate the
-    definition a bit."""
-    # The subrecord type used for the marker
-    _attr_lookup = {
-        u'on_begin': b'POBA',
-        u'on_change': b'POCA',
-        u'on_end': b'POEA',
-    }
-
-    def __init__(self, attr):
-        super(MelIdleHandler, self).__init__(attr,
-            MelBase(self._attr_lookup[attr], attr + u'_marker'),
-            MelFid(b'INAM', u'idle_anim'),
-            *_leftovers,
-            MelTopicData(u'idle_topic_data'),
-        )
-
-#------------------------------------------------------------------------------
 class MelItems(AMelItems):
     """Handles the COCT/CNTO/COED subrecords defining items."""
 
 #------------------------------------------------------------------------------
-_leftovers = [MelBase(s, f'unused_{sig_to_str(s).lower()}') for s in
-              [b'SCHR', b'SCDA', b'SCTX', b'QNAM', b'SCRO']]
+_leftovers = tuple(MelBase(s, f'unused_{sig_to_str(s).lower()}') for s in
+                   (b'SCHR', b'SCDA', b'SCTX', b'QNAM', b'SCRO'))
 class _MelLeftovers(MelGroup):
     """Leftovers from earlier CK versions."""
     def __init__(self, att):
@@ -341,16 +325,20 @@ class MelLocation(MelUnion):
     def __init__(self, sub_sig):
         super().__init__({
             (0, 1, 4, 6): MelStruct(sub_sig, ['i', 'I', 'i'],
-                'location_type', (FID, 'location_value'), 'location_radius'),
+                'package_location_type', (FID, 'package_location_value'),
+                'package_location_radius'),
             (2, 3, 7, 10, 11, 12): MelStruct(sub_sig, ['i', '4s', 'i'],
-                'location_type', 'location_value', 'location_radius'),
-            5: MelStruct(sub_sig, ['i', 'I', 'i'], 'location_type',
-                'location_value', 'location_radius'),
-            (8, 9): MelStruct(sub_sig, ['3i'], 'location_type',
-                'location_value', 'location_radius'),
+                'package_location_type', 'package_location_value',
+                'package_location_radius'),
+            5: MelStruct(sub_sig, ['i', 'I', 'i'],
+                'package_location_type', 'package_location_value',
+                'package_location_radius'),
+            (8, 9): MelStruct(sub_sig, ['3i'],
+                'package_location_type', 'package_location_value',
+                'package_location_radius'),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(sub_sig, 'location_type'),
-                decider=AttrValDecider('location_type')),
+                loader=MelSInt32(sub_sig, 'package_location_type'),
+                decider=AttrValDecider('package_location_type')),
             fallback=MelNull(b'NULL'), # ignore
         )
 
@@ -401,23 +389,6 @@ class MelSpit(MelStruct):
             (self.spit_flags, 'dataFlags'), 'spellType', 'charge_time',
             'cast_type', 'spell_target_type', 'castDuration', 'range',
             (FID, 'halfCostPerk'))
-
-#------------------------------------------------------------------------------
-class MelTopicData(MelGroups):
-    """Occurs twice in PACK, so moved here to deduplicate the definition a
-    bit. Can't be placed inside MrePack, since one of its own subclasses
-    depends on this."""
-    def __init__(self, attr):
-        MelGroups.__init__(self, attr,
-            MelUnion({
-                0: MelStruct(b'PDTO', ['2I'], 'data_type', (FID, 'topic_ref')),
-                1: MelStruct(b'PDTO', ['I', '4s'], 'data_type',
-                             'topic_subtype'),
-            }, decider=PartialLoadDecider(
-                loader=MelUInt32(b'PDTO', 'data_type'),
-                decider=AttrValDecider('data_type')),
-            fallback=MelNull(b'NULL')), # ignore
-        )
 
 #------------------------------------------------------------------------------
 class MelVmad(AMelVmad):
@@ -1552,7 +1523,7 @@ class MreIdlm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelIdlmFlags(),
+        MelIdleAnimFlags(),
         MelIdleAnimationCount(),
         MelIdleTimerSetting(),
         MelIdleAnimations(),
@@ -2222,148 +2193,65 @@ class MrePack(MelRecord):
     """Package."""
     rec_sig = b'PACK'
 
-    class _GeneralFlags(Flags):
-        offers_services: bool = flag(0)
-        must_complete: bool = flag(2)
-        maintain_speed_at_goal: bool = flag(3)
-        unlock_doors_at_package_start: bool = flag(6)
-        unlock_doors_at_package_end: bool = flag(7)
-        continue_if_pc_near: bool = flag(9)
-        once_per_day: bool = flag(10)
-        preferred_speed: bool = flag(13)
-        always_sneak: bool = flag(17)
-        allow_swimming: bool = flag(18)
-        ignore_combat: bool = flag(20)
-        weapons_unequipped: bool = flag(21)
-        weapon_drawn: bool = flag(23)
-        no_combat_alert: bool = flag(27)
-        wear_sleep_outfit: bool = flag(29)
-
-    class _InterruptFlags(Flags):
-        hellos_to_player: bool = flag(0)
-        random_conversations: bool = flag(1)
-        observe_combat_behavior: bool = flag(2)
-        greet_corpse_behavior: bool = flag(3)
-        reaction_to_player_actions: bool = flag(4)
-        friendly_fire_comments: bool = flag(5)
-        aggro_radius_behavior: bool = flag(6)
-        allow_idle_chatter: bool = flag(7)
-        world_interactions: bool = flag(9)
-
-    class _SubBranchFlags(Flags):
-        repeat_when_complete: bool
-
-    class _BranchFlags(Flags):
-        success_completes_package: bool
-
-    class MelDataInputs(MelGroups):
-        """Occurs twice in PACK, so moved here to deduplicate the
-        definition a bit."""
-        class _DataInputFlags(Flags):
-            public: bool
-
-        def __init__(self, attr):
-            MelGroups.__init__(self, attr,
-                MelSInt8(b'UNAM', 'input_index'),
-                MelString(b'BNAM', 'input_name'),
-                MelUInt32Flags(b'PNAM', u'input_flags', self._DataInputFlags),
-            )
-
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelStruct(b'PKDT', ['I', '3B', 's', 'H', '2s'],
-            (_GeneralFlags, 'pack_flags'), 'package_type',
-            'interruptOverride', 'preferredSpeed', 'unknown1',
-            (_InterruptFlags, 'interruptFlags'), 'unknown2'),
-        MelStruct(b'PSDT', ['2b', 'B', '2b', '3s', 'i'], 'schedule_month',
-            'schedule_day', 'schedule_date', 'schedule_hour',
-            'schedule_minute', 'unused1', 'schedule_duration'),
+        MelPackPkdt(),
+        MelPackSchedule(),
         MelConditionList(),
-        MelGroup('idleAnimations',
-            MelUInt8(b'IDLF', u'animation_flags'),
+        MelGroup('package_idles',
+            MelIdleAnimFlags(),
             MelIdleAnimationCountOld(),
             MelIdleTimerSetting(),
             MelIdleAnimations(),
-            MelBase(b'IDLB', 'unknown1'),
+            MelBase(b'IDLB', 'unknown_idlb'),
         ),
         MelCombatStyle(b'CNAM'),
-        MelFid(b'QNAM', 'owner_quest'),
-        MelStruct(b'PKCU', [u'3I'], 'dataInputCount', (FID, 'packageTemplate'),
-                  'versionCount'),
-        MelGroups('data_input_values',
-            MelString(b'ANAM', 'value_type'),
-            MelUnion({
-                u'Bool': MelUInt8(b'CNAM', u'value_val'),
-                u'Int': MelUInt32(b'CNAM', u'value_val'),
-                u'Float': MelFloat(b'CNAM', u'value_val'),
-                # Mirrors what xEdit does, despite how weird it looks
-                u'ObjectList': MelFloat(b'CNAM', u'value_val'),
-            }, decider=AttrValDecider(u'value_type'),
-                # All other kinds of values, typically missing
-                fallback=MelBase(b'CNAM', u'value_val')),
-            MelBase(b'BNAM', 'unknown1'),
-            MelTopicData('value_topic_data'),
-            MelLocation(b'PLDT'),
-            MelUnion({
+        MelPackOwnerQuest(),
+        MelPackPkcu(),
+        MelPackDataInputValues(
+            pldt_element=MelLocation(b'PLDT'),
+            ptda_element=MelUnion({
                 (0, 1, 3): MelStruct(b'PTDA', ['i', 'I', 'i'],
-                    'target_type', (FID, 'target_value'), 'target_count'),
-                2: MelStruct(b'PTDA', ['i', 'I', 'i'], 'target_type',
-                    'target_value', 'target_count'),
-                4: MelStruct(b'PTDA', ['3i'], 'target_type',
-                    'target_value', 'target_count'),
-                (5, 6): MelStruct(b'PTDA', ['i', '4s', 'i'], 'target_type',
-                    'target_value', 'target_count'),
+                    'package_target_type', (FID, 'package_target_value'),
+                    'package_target_count'),
+                2: MelStruct(b'PTDA', ['i', 'I', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                4: MelStruct(b'PTDA', ['3i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                (5, 6): MelStruct(b'PTDA', ['i', '4s', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(b'PTDA', 'target_type'),
-                decider=AttrValDecider('target_type')),
+                loader=MelSInt32(b'PTDA', 'package_target_type'),
+                decider=AttrValDecider('package_target_type')),
                 fallback=MelNull(b'NULL')), # ignore
-            MelBase(b'TPIC', 'unknown2'),
         ),
-        MelDataInputs('data_inputs1'),
-        MelBase(b'XNAM', 'marker'),
-        MelGroups('procedure_tree_branches',
-            MelString(b'ANAM', 'branch_type'),
-            MelConditions(),
-            MelStruct(b'PRCB', ['2I'], 'sub_branch_count',
-                      (_SubBranchFlags, 'sub_branch_flags')),
-            MelString(b'PNAM', 'procedure_type'),
-            MelUInt32Flags(b'FNAM', u'branch_flags', _BranchFlags),
-            MelGroups('data_input_indices',
-                MelUInt8(b'PKC2', 'input_index'),
-            ),
-            MelGroups('flag_overrides',
-                MelStruct(b'PFO2', [u'2I', u'2H', u'B', u'3s'],
-                          (_GeneralFlags, u'set_general_flags'),
-                          (_GeneralFlags, u'clear_general_flags'),
-                          (_InterruptFlags, u'set_interrupt_flags'),
-                          (_InterruptFlags, u'clear_interrupt_flags'),
-                          'preferred_speed_override', 'unknown1'),
-            ),
-            MelGroups('unknown1',
-                MelBase(b'PFOR', 'unknown1'),
-            ),
-        ),
-        MelDataInputs('data_inputs2'),
-        MelIdleHandler(u'on_begin'),
-        MelIdleHandler(u'on_end'),
-        MelIdleHandler(u'on_change'),
+        MelPackDataInputs('data_inputs1'),
+        MelBaseR(b'XNAM', 'xnam_marker'),
+        MelPackProcedureTree(MelConditions()),
+        MelPackDataInputs('data_inputs2'),
+        MelPackIdleHandler('on_begin', ck_leftovers=_leftovers),
+        MelPackIdleHandler('on_end', ck_leftovers=_leftovers),
+        MelPackIdleHandler('on_change', ck_leftovers=_leftovers),
     ).with_distributor({
         b'PKDT': {
-            b'CTDA|CIS1|CIS2': u'conditions',
+            b'CTDA|CIS1|CIS2': 'conditions',
             b'CNAM': 'combat_style',
-            b'QNAM': u'owner_quest',
-            b'ANAM': (u'data_input_values', {
-                b'BNAM|CNAM|PDTO': u'data_input_values',
+            b'QNAM': 'owner_quest',
+            b'ANAM': ('data_input_values', {
+                b'BNAM|CNAM|PDTO': 'data_input_values',
             }),
-            b'UNAM': (u'data_inputs1', {
-                b'BNAM|PNAM': u'data_inputs1',
+            b'UNAM': ('data_inputs1', {
+                b'BNAM|PNAM': 'data_inputs1',
             }),
         },
         b'XNAM': {
-            b'ANAM|CTDA|CIS1|CIS2|PNAM': u'procedure_tree_branches',
-            b'UNAM': (u'data_inputs2', {
-                b'BNAM|PNAM': u'data_inputs2',
+            b'ANAM|CTDA|CIS1|CIS2|PNAM': 'procedure_tree_branches',
+            b'UNAM': ('data_inputs2', {
+                b'BNAM|PNAM': 'data_inputs2',
             }),
         },
         b'POBA': {

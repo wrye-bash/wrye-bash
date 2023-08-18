@@ -26,13 +26,14 @@ from itertools import chain
 
 from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
-    MelSorted, MelTruncatedStruct, MelUnion
+    MelSorted, MelTruncatedStruct, MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
-    MelUInt16Flags, MelUInt32, MelUInt32Flags
+    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1, gen_coed_key
+    gen_color3, int_unpacker, null1, gen_coed_key, PackGeneralFlags, \
+    PackInterruptFlags
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -727,6 +728,17 @@ class MelIdleData(MelStruct):
             'replay_delay')
 
 #------------------------------------------------------------------------------
+class MelIdleAnimFlags(MelUInt8Flags):
+    """Handles the common subrecord IDLF (Flags)."""
+    class _IdleAnimFlags(Flags):
+        run_in_sequence: bool = flag(0)
+        do_once: bool = flag(2)
+        ignored_by_sandbox: bool = flag(4) # since Skyrim
+
+    def __init__(self):
+        super().__init__(b'IDLF', 'idle_anim_flags', self._IdleAnimFlags)
+
+#------------------------------------------------------------------------------
 class MelIdleEnam(MelString):
     """Handles the IDLE subrecord ENAM (Animation Event)."""
     def __init__(self):
@@ -744,17 +756,6 @@ class MelIdleTimerSetting(MelFloat):
     """Handles the common IDLT subrecord (Idle Timer Setting)."""
     def __init__(self):
         super().__init__(b'IDLT', 'idle_timer_setting')
-
-#------------------------------------------------------------------------------
-class MelIdlmFlags(MelUInt8Flags):
-    """Handles the IDLM subrecord IDLF (Flags)."""
-    class _idlm_flags(Flags):
-        run_in_sequence: bool = flag(0)
-        do_once: bool = flag(2)
-        ignored_by_sandbox: bool = flag(4) # since Skyrim
-
-    def __init__(self):
-        super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
 
 #------------------------------------------------------------------------------
 class MelImageSpaceMod(MelFid):
@@ -1296,7 +1297,7 @@ class MelMODS(MelBase):
 class MelMovtName(MelString):
     """Handles the MOVT subrecord MNAM (Name)."""
     def __init__(self):
-        super().__init__(b'MNAM', 'movt_name'),
+        super().__init__(b'MNAM', 'movt_name')
 
 #------------------------------------------------------------------------------
 class MelMovtThresholds(MelStruct):
@@ -1448,6 +1449,130 @@ class MelOwnership(MelGroup):
     def pack_subrecord_data(self, record):
         if record.ownership and record.ownership.owner:
             return super().pack_subrecord_data(record) # else None - don't dump
+
+#------------------------------------------------------------------------------
+class MelPackDataInputs(MelGroups):
+    """Handles the PACK subrecords UNAM, BNAM and PNAM (Data Inputs)."""
+    def __init__(self, attr):
+        super().__init__(attr,
+            MelSInt8(b'UNAM', 'input_index'),
+            MelString(b'BNAM', 'input_name'),
+            MelUInt32(b'PNAM', 'input_public'), # actually a bool
+        )
+
+#------------------------------------------------------------------------------
+class MelPackDataInputValues(MelGroups):
+    """Handles the PACK subrecord complex for Data Input Values. Needs the
+    right PLDT (aka MelLocation) and PTDA implementations passed to it."""
+    def __init__(self, *, pldt_element: MelBase, ptda_element: MelBase):
+        super().__init__('data_input_values',
+            MelString(b'ANAM', 'data_input_value_type'),
+            MelUnion({
+                'Bool': MelUInt8(b'CNAM', 'data_input_value_val'),
+                'Int': MelUInt32(b'CNAM', 'data_input_value_val'),
+                'Float': MelFloat(b'CNAM', 'data_input_value_val'),
+                # Mirrors what xEdit does, despite how weird it looks
+                'ObjectList': MelFloat(b'CNAM', 'data_input_value_val'),
+            }, decider=AttrValDecider('data_input_value_type'),
+                # All other kinds of values, typically missing
+                fallback=MelBase(b'CNAM', 'data_input_value_val')),
+            MelBase(b'BNAM', 'unknown1'),
+            MelTopicData('value_topic_data'),
+            pldt_element,
+            ptda_element,
+            MelBase(b'TPIC', 'unknown2'),
+        )
+
+#------------------------------------------------------------------------------
+class MelPackOwnerQuest(MelFid):
+    """Handles the PACK subrecord QNAM (Owner Quest)."""
+    def __init__(self):
+        super().__init__(b'QNAM', 'owner_quest')
+
+#------------------------------------------------------------------------------
+class MelPackPkcu(MelStruct):
+    """Handles the PACK subrecord PKCU (Counter)."""
+    def __init__(self):
+        super().__init__(b'PKCU', ['3I'], 'data_input_count',
+            (FID, 'package_template'), 'version_counter')
+
+#------------------------------------------------------------------------------
+class MelPackPkdt(MelStruct):
+    """Handles the new (since Skyrim) version of the PACK subrecord PKDT
+    (Package Data)."""
+    def __init__(self):
+        super().__init__(b'PKDT', ['I', '3B', 's', 'H', '2s'],
+            (PackGeneralFlags, 'package_flags'), 'package_ai_type',
+            'interrupt_override', 'preferred_speed', 'unknown_pkdt1',
+            (PackInterruptFlags, 'interrupt_flags'), 'unknown_pkdt2')
+
+#------------------------------------------------------------------------------
+class MelPackIdleHandler(MelGroup):
+    """Handles the PACK subrecords POBA, POCA and POEA (On Begin, On Change and
+    On End, respectively). Used to have some CK leftovers in it (pre-FO4)."""
+    # The subrecord type used for the marker
+    _attr_lookup = {
+        'on_begin': b'POBA',
+        'on_change': b'POCA',
+        'on_end': b'POEA',
+    }
+
+    def __init__(self, attr, *, ck_leftovers: tuple[MelBase] = ()):
+        super().__init__(attr,
+            MelBase(self._attr_lookup[attr], f'{attr}_marker'),
+            MelFid(b'INAM', 'idle_anim'),
+            *ck_leftovers,
+            MelTopicData('idle_topic_data'),
+        )
+
+#------------------------------------------------------------------------------
+class MelPackProcedureTree(MelGroups):
+    """Handles the PACK Procedure Tree subrecord complex. Needs a MelConditions
+    implementation passed to it."""
+    class _SubBranchFlags(Flags): # One unknown flag, not just a bool
+        repeat_when_complete: bool
+
+    def __init__(self, conditions_element: MelBase):
+        super().__init__('procedure_tree_branches',
+            MelString(b'ANAM', 'branch_type'),
+            conditions_element,
+            MelStruct(b'PRCB', ['2I'], 'sub_branch_count',
+                (self._SubBranchFlags, 'sub_branch_flags')),
+            MelString(b'PNAM', 'procedure_type'),
+            MelUInt32(b'FNAM', 'success_completes_package'), # actually a bool
+            MelGroups('data_input_indices',
+                MelUInt8(b'PKC2', 'input_index'),
+            ),
+            MelGroups('flag_overrides',
+                MelStruct(b'PFO2', ['2I', '2H', 'B', '3s'],
+                    (PackGeneralFlags, 'set_general_flags'),
+                    (PackGeneralFlags, 'clear_general_flags'),
+                    (PackInterruptFlags, 'set_interrupt_flags'),
+                    (PackInterruptFlags, 'clear_interrupt_flags'),
+                    'preferred_speed_override', 'unknown_pfo2'),
+            ),
+            MelGroups('ptb_unknown1',
+                MelBase(b'PFOR', 'unknown_pfor'),
+            ),
+        ),
+
+#------------------------------------------------------------------------------
+class MelPackSchedule(MelStruct):
+    """Handles the new (since Skyrim) version of the PACK subrecord PSDT
+    (Schedule)."""
+    def __init__(self):
+        super().__init__(b'PSDT', ['2b', 'B', '2b', '3s', 'i'],
+            'schedule_month', 'schedule_day', 'schedule_date', 'schedule_hour',
+            'schedule_minute', 'unused1', 'schedule_duration')
+
+#------------------------------------------------------------------------------
+class MelPackScheduleOld(MelStruct):
+    """Handles the old (pre-Skyrim) version of the PACK subrecord PSDT
+    (Schedule)."""
+    def __init__(self, *, is_required: bool):
+        super().__init__(b'PSDT', ['2b', 'B', 'b', 'i'], 'schedule_month',
+            'schedule_day', 'schedule_date', 'schedule_time',
+            'schedule_duration', is_required=is_required)
 
 #------------------------------------------------------------------------------
 class MelPerkData(MelTruncatedStruct):
@@ -1775,6 +1900,22 @@ class MelTemplateArmor(MelFid):
     """Handles the ARMO subrecord TNAM (Template Armor)."""
     def __init__(self):
         super().__init__(b'TNAM', 'template_armor')
+
+
+#------------------------------------------------------------------------------
+class MelTopicData(MelGroups):
+    """Handles the common PDTO (Topic Data) subrecord."""
+    def __init__(self, attr: str):
+        super().__init__(attr,
+            MelUnion({
+                0: MelStruct(b'PDTO', ['2I'], 'data_type', (FID, 'topic_ref')),
+                1: MelStruct(b'PDTO', ['I', '4s'], 'data_type',
+                             'topic_subtype'),
+            }, decider=PartialLoadDecider(
+                loader=MelUInt32(b'PDTO', 'data_type'),
+                decider=AttrValDecider('data_type')),
+            fallback=MelNull(b'NULL')), # ignore
+        )
 
 #------------------------------------------------------------------------------
 class MelTxstFlags(MelUInt16Flags):
