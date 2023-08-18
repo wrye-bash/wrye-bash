@@ -528,9 +528,13 @@ class MelLists(MelStruct):
             setattr(record, attr, unpacked[_slice])
 
     def pack_subrecord_data(self, record):
+        attr_vals = [getattr(record, a) for a in self.__class__._attr_indexes]
+        if all(x is None for x in attr_vals):
+            # This is entirely None, skip the dump completely
+            return None
+        ##: What about when this is *partially* None? Skip? Use defaults?
         return self._packer(*chain(
-            *(j if isinstance(j, list) else [j] for j in
-              [getattr(record, a) for a in self.__class__._attr_indexes])))
+            *(j if isinstance(j, list) else [j] for j in attr_vals)))
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
