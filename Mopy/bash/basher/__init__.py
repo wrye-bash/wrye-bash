@@ -1794,7 +1794,7 @@ class ModDetails(_ModsSavesDetails):
         user_ok, user_datetime = DateAndTimeDialog.display_dialog(
             self, warning_color=balt.colors['default.warn'],
             icon_bundle=balt.Resources.bashBlue)
-        if user_ok:
+        if user_ok and user_datetime:
             self._apply_modified_timestamp(user_datetime.strftime('%c'))
 
     _bsa_and_blocking_msg = _(

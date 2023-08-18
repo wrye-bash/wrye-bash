@@ -329,6 +329,8 @@ class DeletionDialog(DialogWindow):
         return result, chosen_strings, chosen_recycle
 
 # Date and Time ---------------------------------------------------------------
+_COMMON_FORMAT = '%d/%m/%Y, %H:%M:%S'
+
 class DateAndTimeDialog(DialogWindow):
     """Dialog for choosing a date and time."""
     title = _('Choose a date and time')
@@ -373,14 +375,16 @@ class DateAndTimeDialog(DialogWindow):
                 self._handle_manual): # Avoid getting into a loop
             picker_datetime = datetime.datetime.combine(
                 self._date_picker.get_date(), self._time_picker.get_time())
-            self._manual_entry.text_content = picker_datetime.strftime('%c')
+            self._manual_entry.text_content = picker_datetime.strftime(
+                _COMMON_FORMAT)
 
     def _handle_manual(self, new_manual_dt_str):
         """Internal callback that updates the pickers whenever the manual entry
         field has been edited to contain a valid date and time."""
         try:
             # This will raise ValueError if the format does not match
-            new_datetime = datetime.datetime.strptime(new_manual_dt_str, '%c')
+            new_datetime = datetime.datetime.strptime(
+                new_manual_dt_str, _COMMON_FORMAT)
             # This will raise OSError if the datetime cannot be turned into a
             # POSIX timestamp
             new_datetime.timestamp()
@@ -401,13 +405,15 @@ class DateAndTimeDialog(DialogWindow):
         self._date_picker.set_date(new_datetime.date())
         self._time_picker.set_time(new_datetime.time())
 
-    def show_modal(self) -> tuple[bool, datetime.datetime]:
+    def show_modal(self) -> tuple[bool, datetime.datetime | None]:
         """Return whether the OK button or Cancel button was pressed and the
         final chosen date and time as a datetime.datetime object."""
         result = super().show_modal()
-        manual_datetime = datetime.datetime.strptime(
-            self._manual_entry.text_content, '%c')
-        return result, manual_datetime
+        if result:
+            manual_datetime = datetime.datetime.strptime(
+                self._manual_entry.text_content, _COMMON_FORMAT)
+            return result, manual_datetime
+        return result, None
 
 # Misc ------------------------------------------------------------------------
 @dataclass(slots=True, kw_only=True)
