@@ -2874,7 +2874,7 @@ class MreSoun(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreSpel(MelRecord):
-    """Actor Effect"""
+    """Actor Effect."""
     rec_sig = b'SPEL'
 
     melSet = MelSet(

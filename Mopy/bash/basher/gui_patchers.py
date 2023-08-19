@@ -1155,8 +1155,7 @@ class ImportRacesSpells(_ImporterPatcherPanel):
 class ImportSpellStats(_ImporterPatcherPanel):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
-    patcher_desc = _('Import stats from any spells / actor effects from '
-                     'source plugins/files.')
+    patcher_desc = _('Import stats from spells from source plugins/files.')
     _config_key = u'SpellsPatcher'
     patcher_type = preservers.ImportSpellStatsPatcher
 
@@ -1193,8 +1192,7 @@ class ImportObjectBounds(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportEnchantmentStats(_ImporterPatcherPanel):
     patcher_name = _(u'Import Enchantment Stats')
-    patcher_desc = _('Import stats from enchantments/object effects from '
-                     'source plugins.')
+    patcher_desc = _('Import stats from enchantments from source plugins.')
     _config_key = u'ImportEnchantmentStats'
     patcher_type = preservers.ImportEnchantmentStatsPatcher
 

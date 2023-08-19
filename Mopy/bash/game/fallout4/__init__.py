@@ -145,9 +145,9 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportActorsFactions', 'ImportActorsPerks',
-        'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
-        'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
-        'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportActorsSpells', 'ImportDestructible', 'ImportEffectStats',
+        'ImportEnchantments', 'ImportEnchantmentStats', 'ImportInventory',
+        'ImportKeywords', 'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
         'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
