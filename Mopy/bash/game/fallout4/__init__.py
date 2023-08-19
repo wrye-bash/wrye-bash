@@ -753,6 +753,8 @@ class Fallout4GameInfo(PatchGame):
                 'ai_attack', 'ai_no_slow_approach',
             ),
             'Actors.RecordFlags': ('flags1',),
+            # Has FormIDs, but will be filtered in
+            # _AMreWithProperties.keep_fids
             'Actors.Stats': ('properties',),
         }
     }
