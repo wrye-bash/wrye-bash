@@ -714,7 +714,7 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
+    leveled_list_types = {b'LVLI', b'LVLN', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Names
@@ -993,7 +993,7 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'NPC_', b'CONT',)
+    inventory_types = {b'COBJ', b'CONT', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Keywords
@@ -1061,9 +1061,9 @@ class SkyrimGameInfo(PatchGame):
         b'OTFT': {b'ARMO', b'LVLI'},
     }
     cc_passes = (
-        ((b'LVLN', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'COBJ', b'CONT', b'NPC_'), 'items', 'item'),
-        ((b'OTFT',), 'items'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
+        ({b'OTFT'},          'items'),
     )
 
     #--------------------------------------------------------------------------

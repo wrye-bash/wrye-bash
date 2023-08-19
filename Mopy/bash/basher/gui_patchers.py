@@ -1060,10 +1060,9 @@ class ImportRelations(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportInventory(_ImporterPatcherPanel):
     """Merge changes to actor inventories."""
-    patcher_name = _(u'Import Inventory')
-    patcher_desc = _(u'Merges changes to NPC, creature and container '
-                     u'inventories.')
-    _config_key = u'ImportInventory'
+    patcher_name = _('Import Inventory')
+    patcher_desc = _('Merges changes to items in various inventories.')
+    _config_key = 'ImportInventory'
     patcher_type = mergers.ImportInventoryPatcher
 
 # -----------------------------------------------------------------------------

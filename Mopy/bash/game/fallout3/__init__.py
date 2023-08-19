@@ -552,7 +552,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVLN')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVLN'}
 
     #--------------------------------------------------------------------------
     # Import Names
@@ -797,7 +797,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -846,8 +846,8 @@ class Fallout3GameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLN', b'LVLI'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------

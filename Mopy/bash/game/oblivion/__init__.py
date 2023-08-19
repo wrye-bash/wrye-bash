@@ -528,7 +528,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVSP')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -694,7 +694,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # NPC Checker
@@ -781,8 +781,8 @@ class OblivionGameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------
