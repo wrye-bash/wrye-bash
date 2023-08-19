@@ -506,7 +506,9 @@ class ActorFactions(_AParser):
         """We also need to set the (by default None) unused1 MelStruct
         element."""
         target_entry = super().get_empty_object(record, faction_fid)
-        target_entry.unused1 = b'ODB' ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
+        if hasattr(target_entry, 'unused1'): # Gone in FO4
+            ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
+            target_entry.unused1 = b'ODB'
         return target_entry
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
@@ -532,7 +534,8 @@ class ActorLevels(_HandleAliases):
         _('Offset'), _('CalcMin'), _('CalcMax'), _('Old IsPCLevelOffset'),
         _('Old Offset'), _('Old CalcMin'), _('Old CalcMax'))
     _parser_sigs = [b'NPC_']
-    _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
+    _attr_dex = {'eid': 1, 'level_offset': 4, 'calc_min_level': 5,
+                 'calc_max_level': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, fid_eid=True)
     _id_data_type: DefaultFNDict
@@ -552,10 +555,12 @@ class ActorLevels(_HandleAliases):
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
-                items = zip(('eid', 'flags.pcLevelOffset', 'level_offset',
-                             'calcMin', 'calcMax'), (record.eid,
-                         bool(record.flags.pcLevelOffset), record.level_offset,
-                         record.calcMin, record.calcMax))
+                items = zip(
+                    ('eid', 'npc_flags.pc_level_offset', 'level_offset',
+                     'calc_min_level', 'calc_max_level'),
+                    (record.eid, bool(record.npc_flags.pc_level_offset),
+                     record.level_offset, record.calc_min_level,
+                     record.calc_max_level))
                 mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
@@ -574,12 +579,13 @@ class ActorLevels(_HandleAliases):
 
     _changed_type = list
     def _write_record(self, record, levels, changed_stats, __getter=itemgetter(
-            u'level_offset', u'calcMin', u'calcMax')):
-        level_offset, calcMin, calcMax = __getter(levels)
-        if ((record.level_offset,record.calcMin,record.calcMax) != (
-                level_offset,calcMin,calcMax)):
-            (record.level_offset,record.calcMin,record.calcMax) = (
-                level_offset,calcMin,calcMax)
+        'level_offset', 'calc_min_level', 'calc_max_level')):
+        got_lo, got_min_lv, got_max_lv = __getter(levels)
+        if ((record.level_offset, record.calc_min_level,
+             record.calc_max_level) != (got_lo, got_min_lv, got_max_lv)):
+            record.level_offset = got_lo
+            record.calc_min_level = got_min_lv
+            record.calc_max_level = got_max_lv
             record.setChanged()
             changed_stats.append(record.fid)
 
@@ -588,7 +594,7 @@ class ActorLevels(_HandleAliases):
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         attr_dex = super()._update_from_csv(b'NPC_', csv_fields)
-        attr_dex[u'flags.pcLevelOffset'] = True
+        attr_dex['npc_flags.pc_level_offset'] = True
         return attr_dex
 
     def _key1(self, csv_fields: list[str]) -> str:
@@ -607,13 +613,14 @@ class ActorLevels(_HandleAliases):
             self.id_stored_data[bg_mf]])
 
     def _row_out(self, longfid, di, fn_mod, obId_levels, *,
-                 __getter=itemgetter('eid', 'flags.pcLevelOffset',
-                                     'level_offset', 'calcMin', 'calcMax')):
+            __getter=itemgetter(
+                'eid', 'npc_flags.pc_level_offset', 'level_offset',
+                'calc_min_level', 'calc_max_level')):
         """Export NPC level data to specified text file."""
-        eid, isOffset, offset, calcMin, calcMax = __getter(di)
+        eid, isOffset, offset, row_calc_min, row_calc_max = __getter(di)
         if isOffset:
             out = f'"{fn_mod}","{eid}",{_fid_str(longfid)},"{offset:d}",' \
-                  f'"{calcMin:d}","{calcMax:d}"'
+                  f'"{row_calc_min:d}","{row_calc_max:d}"'
             oldLevels = obId_levels.get(longfid, None)
             if oldLevels:
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \

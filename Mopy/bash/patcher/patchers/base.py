@@ -321,8 +321,12 @@ class ReplaceFormIDsPatcher(ListPatcher):
             log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------
+##: This is more complicated in FO4, where we have a 'default template' and
+# several 'template actors', one for each template flag. Probably the default
+# template is the fallback if no template actor is specified for a template
+# flag that has been set?
 def is_templated(record, flag_name):
     """Checks if the specified record has a template record and the
     appropriate template flag set."""
-    return (getattr(record, u'template', None) is not None and
-            getattr(record.templateFlags, flag_name))
+    return (getattr(record, 'template', None) is not None and
+            getattr(record.template_flags, flag_name))

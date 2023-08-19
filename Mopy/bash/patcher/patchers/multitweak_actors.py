@@ -55,7 +55,7 @@ class _AFemaleOnlyTweak(_ANpcTweak):
     """Provides an implementation of wants_record for female-only tweaks.
     Shared by Sexy and Real Walk tweaks."""
     def wants_record(self, record):
-        return record.fid != self._player_fid and record.flags.female
+        return record.fid != self._player_fid and record.npc_flags.npc_female
 
 #------------------------------------------------------------------------------
 class _ASkeletonTweak(_ANpcTweak):
@@ -71,8 +71,8 @@ class _ASkeletonTweak(_ANpcTweak):
 
     def wants_record(self, record):
         chosen_gender = self.choiceValues[self.chosen][0]
-        if chosen_gender == 1 and not record.flags.female: return False
-        elif chosen_gender == 2 and record.flags.female: return False
+        if chosen_gender == 1 and not record.npc_flags.npc_female: return False
+        elif chosen_gender == 2 and record.npc_flags.npc_female: return False
         return (record.fid != self._player_fid and
                 self._get_skeleton_path(record) !=
                 self._get_target_skeleton(record))
@@ -204,13 +204,13 @@ class NoBloodCreaturesPatcher(_ACreatureTweak):
     tweak_log_msg = _(u'Creatures Tweaked: %(total_changed)d')
 
     def wants_record(self, record):
-        return record.bloodDecalPath or record.bloodSprayPath
+        return record.blood_decal_path or record.blood_spray_path
 
     def tweak_record(self, record):
-        record.bloodDecalPath = None
-        record.bloodSprayPath = None
-        record.flags.noBloodSpray = True
-        record.flags.noBloodDecal = True
+        record.blood_decal_path = None
+        record.blood_spray_path = None
+        record.crea_flags.crea_no_blood_spray = True
+        record.crea_flags.crea_no_blood_decal = True
 
 #------------------------------------------------------------------------------
 class AsIntendedImpsPatcher(_ACreatureTweak):
@@ -234,7 +234,7 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
             return False
         if not any(self._imp_part.search(bp) for bp in record.bodyParts):
             return False
-        if record.baseScale < 0.4:
+        if record.base_scale < 0.4:
             if u'big' in self.choiceValues[self.chosen]: return False
         elif u'small' in self.choiceValues[self.chosen]: return False
         return self._imp_spell not in record.spells
@@ -318,12 +318,12 @@ class QuietFeetPatcher(_ACreatureTweak):
 
     def wants_record(self, record):
         # Check if we're templated first (only relevant on FO3/FNV)
-        if is_templated(record, u'useModelAnimation'): return False
+        if is_templated(record, 'use_model_animation'): return False
         chosen_target = self.choiceValues[self.chosen][0]
-        if chosen_target == u'partial' and not any(
+        if chosen_target == 'partial' and not any(
                 s.type in (2, 3) for s in record.sounds):
             return False
-        elif chosen_target == u'mounts' and record.creatureType != 4:
+        elif chosen_target == 'mounts' and record.creature_type != 4:
             return False
         return record.sounds != self._get_silenced_sounds(record)
 
@@ -346,13 +346,13 @@ class IrresponsibleCreaturesPatcher(_ACreatureTweak):
         # Must not be templated (FO3/FNV only), the creature must not be
         # irresponsible already, and if we're in 'only horses' mode, the
         # creature must be a horse
-        return (not is_templated(record, u'useAIData')
-                and record.responsibility != 0
-                and (self.choiceValues[self.chosen][0] == u'all'
-                     or record.creatureType == 4))
+        return (not is_templated(record, 'use_ai_data')
+                and record.ai_responsibility != 0
+                and (self.choiceValues[self.chosen][0] == 'all'
+                     or record.creature_type == 4))
 
     def tweak_record(self, record):
-        record.responsibility = 0
+        record.ai_responsibility = 0
 
 #------------------------------------------------------------------------------
 class _AOppositeGenderAnimsPatcher(_ANpcTweak):
@@ -363,7 +363,7 @@ class _AOppositeGenderAnimsPatcher(_ANpcTweak):
                      (_(u'Always Enable'), u'enable_all'),]
     tweak_log_msg = _(u'NPCs Tweaked: %(total_changed)d')
     # Whether this patcher wants female or male NPCs
-    _targets_female_npcs = False
+    _targets_female_npcs: bool
 
     @property
     def oga_target(self):
@@ -371,11 +371,11 @@ class _AOppositeGenderAnimsPatcher(_ANpcTweak):
 
     def wants_record(self, record):
         # Skip any NPCs that don't match this patcher's target gender
-        return (record.flags.female == self._targets_female_npcs
-                and record.flags.oppositeGenderAnims != self.oga_target)
+        return (record.npc_flags.npc_female == self._targets_female_npcs
+                and record.npc_flags.opposite_gender_anims != self.oga_target)
 
     def tweak_record(self, record):
-        record.flags.oppositeGenderAnims = self.oga_target
+        record.npc_flags.opposite_gender_anims = self.oga_target
 
 class OppositeGenderAnimsPatcher_Female(_AOppositeGenderAnimsPatcher):
     tweak_name = _(u'Opposite Gender Anims: Female')
@@ -389,6 +389,7 @@ class OppositeGenderAnimsPatcher_Male(_AOppositeGenderAnimsPatcher):
     tweak_tip = _(u"Enables or disables the 'Opposite Gender Anims' for all "
                   u"male NPCs. Similar to the 'Feminine Females' mod.")
     tweak_key = u'opposite_gender_anims_male'
+    _targets_female_npcs = False
 
 #------------------------------------------------------------------------------
 class TweakActorsPatcher(MultiTweaker):

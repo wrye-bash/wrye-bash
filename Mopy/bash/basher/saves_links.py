@@ -903,8 +903,9 @@ class Save_UpdateNPCLevels(EnabledLink):
                 for rid, npc in npc_block.iter_present_records():
                     fid = mapToOrdered(rid, None)
                     if not fid: continue
-                    npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
-                                     npc.calcMax, npc.flags.pcLevelOffset)
+                    npc_info[fid] = (npc.eid, npc.level_offset,
+                                     npc.calc_min_level, npc.calc_max_level,
+                                     npc.npc_flags.pc_level_offset)
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             msg = [_(u'NPCs Releveled:')]
@@ -922,18 +923,18 @@ class Save_UpdateNPCLevels(EnabledLink):
                     if (rec_kind != 35 or recId == 7 or
                             orderedRecId not in npc_info):
                         continue
-                    eid, level_offset, calcMin, calcMax, pcLevelOffset = \
+                    eid, info_lo, info_min_lv, info_max_lv, info_pc_lo = \
                         npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
-                    if acbs and (acbs.level_offset != level_offset or
-                                 acbs.calcMin != calcMin or
-                                 acbs.calcMax != calcMax or
-                                 acbs.flags.pcLevelOffset != pcLevelOffset):
-                        acbs.flags.pcLevelOffset = pcLevelOffset
-                        acbs.level_offset = level_offset
-                        acbs.calcMin = calcMin
-                        acbs.calcMax = calcMax
+                    if acbs and (acbs.level_offset != info_lo or
+                                 acbs.calc_min_level != info_min_lv or
+                                 acbs.calc_max_level != info_max_lv or
+                                 acbs.npc_flags.pc_level_offset != info_pc_lo):
+                        acbs.level_offset = info_lo
+                        acbs.calc_min_level = info_min_lv
+                        acbs.calc_max_level = info_max_lv
+                        acbs.npc_flags.pc_level_offset = info_pc_lo
                         releveledCount += 1
                         fid_rec[recId] = npc.getTuple(version)
                 #--Save changes?

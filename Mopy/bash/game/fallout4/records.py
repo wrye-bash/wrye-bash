@@ -39,7 +39,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelFurnMarkerData, MelGrasData, MelGroup, MelGroups, MelHdptShared, \
     MelIco2, MelIcon, MelIcons, MelIcons2, MelIdleAnimationCount, \
     MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleTimerSetting, MelIdlmFlags, MelImageSpaceMod, MelImgsCinematic, \
+    MelIdleTimerSetting, MelImageSpaceMod, MelImgsCinematic, \
     MelImgsTint, MelIngredient, MelIngrEnit, MelInteractionKeyword, \
     MelInventoryArt, MelIpctHazard, MelIpctSounds, MelIpctTextureSets, \
     MelIpdsPnam, MelKeywords, MelLandMpcd, MelLandShared, MelLctnShared, \
@@ -49,18 +49,26 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelMattShared, MelNextPerk, MelNodeIndex, MelNull, MelObject, \
     MelObjectTemplate, MelPartialCounter, MelPerkData, AMreGlob, \
     MelPerkParamsGroups, MelRace, MelRandomTeleports, MelReadOnly, MelRecord, \
-    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, \
+    MelRelations, MelSeasons, MelSequential, MelSet, MelShortName, MelVoice, \
     MelSimpleArray, MelSInt8, MelSInt32, MelSorted, MelSound, MelMustShared, \
     MelSoundActivation, MelSoundClose, MelSoundLooping, MelSoundPickupDrop, \
     MelString, MelStruct, MelTemplateArmor, MelTruncatedStruct, MelUInt8, \
     MelUInt16, MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, \
     MelUnloadEvent, MelUnorderedGroups, MelValueWeight, MelWaterType, \
     MelWeight, PartialLoadDecider, MelMovtThresholds, MelMovtName, \
-    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, \
+    PerkEpdfDecider, gen_color, gen_color3, lens_distributor, MelNoteType, \
     perk_distributor, perk_effect_key, AMreWrld, MelMesgButtons, \
-    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, \
+    MelMesgShared, MelMdob, MelMgefData, MelMgefEsce, MgefFlags, AMreActor, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam, SinceFormVersionDecider, \
-    MelMuscShared
+    MelMuscShared, TemplateFlags, MelFactions, MelDeathItem, MelTemplate, \
+    MelSpellCounter, MelSpells, MelSkin, MelNpcAnam, MelAttackRace, \
+    MelOverridePackageLists, MelNpcPerks, MelAIPackages, MelNpcClass, \
+    MelNpcHeadParts, MelNpcHairColor, MelCombatStyle, MelNpcGiftFilter, \
+    MelSoundLevel, MelInheritsSoundsFrom, MelNpcShared, SizeDecider, \
+    MelActorSounds2, MelUInt8Flags, MelFilterString, MelOmodData, \
+    MelIdleAnimFlags, MelPackPkdt, MelPackSchedule, MelPackOwnerQuest, \
+    MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, \
+    MelPackProcedureTree, MelPackIdleHandler
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -79,15 +87,19 @@ class MelModel(MelGroup):
         b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
     }
 
+    class _ModelFlags(Flags):
+        has_facebones_model: bool
+        has_1stperson_model: bool
+
     def __init__(self, mel_sig=b'MODL', attr='model', *, swap_3_4=False,
-            always_use_modc=False, skip_5=False):
+            always_use_modc=False, no_flags=False):
         """Fallout 4 has a whole lot of model nonsense:
 
         :param swap_3_4: If True, swaps the third (*C) and fourth (*S)
             elements.
         :param always_use_modc: If True, use MODC for the third (*C) element,
             regardless of what mel_sig is.
-        :param skip_5: If True, skip the fifth (*F) element."""
+        :param no_flags: If True, skip the flags (*F) element."""
         types = self.__class__.typeSets[mel_sig]
         mdl_elements = [
             MelString(types[0], 'modPath'),
@@ -100,8 +112,9 @@ class MelModel(MelGroup):
         ]
         if swap_3_4:
             mdl_elements[2], mdl_elements[3] = mdl_elements[3], mdl_elements[2]
-        if len(types) == 5 and not skip_5:
-            mdl_elements.append(MelBase(types[4], 'unknown_modf'))
+        if len(types) == 5 and not no_flags:
+            mdl_elements.append(MelUInt8Flags(types[4], 'model_flags',
+                self._ModelFlags))
         super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
@@ -125,6 +138,32 @@ class MelAppr(MelSimpleArray):
     """Handles the common APPR (Attach Parent Slots) subrecord."""
     def __init__(self):
         super().__init__('attach_parent_slots', MelFid(b'APPR'))
+
+#------------------------------------------------------------------------------
+class MelAttacks(MelSorted):
+    """Handles the ATKD/ATKE/ATKW/ATKS/ATKT subrecords shared between NPC_ and
+    RACE."""
+    class _AttackFlags(Flags):
+        ignore_weapon: bool
+        bash_attack: bool
+        power_attack: bool
+        charge_attack: bool
+        rotating_attack: bool
+        continuous_attack: bool
+        override_data: bool = flag(31)
+
+    def __init__(self):
+        super().__init__(MelGroups('attacks',
+            MelStruct(b'ATKD', ['2f', '2I', '6f', 'i'], 'damage_mult',
+                'attack_chance', (FID, 'attack_spell'),
+                (self._AttackFlags, 'attack_flags'), 'attack_angle',
+                'strike_angle', 'attack_stagger', 'attack_knockdown',
+                'recovery_time', 'action_points_mult', 'stagger_offset'),
+            MelString(b'ATKE', 'attack_event'),
+            MelFid(b'ATKW', 'weapon_slot'),
+            MelFid(b'ATKS', 'required_slot'),
+            MelString(b'ATKT', 'attack_description'),
+        ), sort_by_attrs='attack_event')
 
 #------------------------------------------------------------------------------
 class MelBod2(MelUInt32Flags):
@@ -210,21 +249,25 @@ class MelLocation(MelUnion):
     """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
     def __init__(self, sub_sig):
         super().__init__({
-            (0, 1, 4, 6): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
-                'location_type', (FID, 'location_value'), 'location_radius',
-                'location_collection_index'),
-            (2, 3, 7, 12, 13): MelStruct(sub_sig, ['i', '4s', 'i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
-            (5, 10, 11): MelStruct(sub_sig, ['i', 'I', 'i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
-            (8, 9, 14): MelStruct(sub_sig, ['3i', 'I'],
-                'location_type', 'location_value', 'location_radius',
-                'location_collection_index'),
+            (0, 1, 4, 6): MelTruncatedStruct(
+                sub_sig, ['i', 'I', 'i', 'I'], 'package_location_type',
+                (FID, 'package_location_value'), 'package_location_radius',
+                'package_location_collection_index', old_versions={'iIi'}),
+            (2, 3, 7, 12, 13): MelTruncatedStruct(
+                sub_sig, ['i', '4s', 'i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'i4si'}),
+            (5, 10, 11): MelTruncatedStruct(
+                sub_sig, ['i', 'I', 'i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'iIi'}),
+            (8, 9, 14): MelTruncatedStruct(
+                sub_sig, ['3i', 'I'], 'package_location_type',
+                'package_location_value', 'package_location_radius',
+                'package_location_collection_index', old_versions={'3i'}),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(sub_sig, 'location_type'),
-                decider=AttrValDecider('location_type')),
+                loader=MelSInt32(sub_sig, 'package_location_type'),
+                decider=AttrValDecider('package_location_type')),
             fallback=MelNull(b'NULL') # ignore
         )
 
@@ -621,9 +664,9 @@ class MreArmo(AMreWithKeywords):
         MelPreviewTransform(),
         MelFull(),
         MelEnchantment(),
-        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, skip_5=True),
+        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, no_flags=True),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
-        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, skip_5=True),
+        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, no_flags=True),
         MelIcons2(),
         MelBod2(),
         MelDestructible(),
@@ -1243,8 +1286,10 @@ class MreEfsh(MelRecord):
                 'ps_initial_velocity2', 'ps_initial_velocity3',
                 'ps_acceleration1', 'ps_acceleration2', 'ps_acceleration3',
                 'ps_scale_key1', 'ps_scale_key2', 'ps_scale_key1_time',
-                'ps_scale_key2_time', *gen_color('color_key1'),
-                *gen_color('color_key2'), *gen_color('color_key3'),
+                'ps_scale_key2_time',
+                *gen_color('color_key1', rename_alpha=True),
+                *gen_color('color_key2', rename_alpha=True),
+                *gen_color('color_key3', rename_alpha=True),
                 'color_key1_alpha', 'color_key2_alpha', 'color_key3_alpha',
                 'color_key1_time', 'color_key2_time', 'color_key3_time',
                 'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
@@ -1633,7 +1678,7 @@ class MreIdlm(AMreWithKeywords):
         MelEdid(),
         MelBounds(),
         MelKeywords(),
-        MelIdlmFlags(),
+        MelIdleAnimFlags(),
         MelIdleAnimationCount(),
         MelIdleTimerSetting(),
         MelIdleAnimations(),
@@ -2221,7 +2266,7 @@ class MreMgef(AMreMgefTes5):
     )
 
 #------------------------------------------------------------------------------
-class MreMisc(MelRecord):
+class MreMisc(AMreWithKeywords):
     """Misc. Item."""
     rec_sig = b'MISC'
 
@@ -2264,7 +2309,7 @@ class MreMovt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMstt(MelRecord):
+class MreMstt(AMreWithKeywords):
     """Moveable Static."""
     rec_sig = b'MSTT'
 
@@ -2380,6 +2425,301 @@ class MreNocm(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreNote(MelRecord):
+    """Note."""
+    rec_sig = b'NOTE'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelSoundPickupDrop(),
+        MelNoteType(),
+        MelValueWeight(),
+        MelUnion({
+            0: MelStruct(b'SNAM', ['4s'], 'note_contents'), # Unused
+            (1, 2, 3): MelFid(b'SNAM', 'note_contents'),
+        }, decider=AttrValDecider('note_type')),
+        MelString(b'PNAM', 'program_file'),
+    )
+
+#------------------------------------------------------------------------------
+class _NpcTendDecider(SizeDecider):
+    """The NPC_ subrecord TEND specifies properties for one tint layer. It can
+    either be a single byte in size, in which case it only specifies a value
+    (e.g. setting '1182 Damage - Scar - Lip Gouges' to 0.33) or it can be 7
+    bytes in length, in which case it specifies a value, a color and a template
+    color index for the layer.
+
+    This is easy to handle at load time, but in order to allow runtime
+    modification we need to check if WB set or removed the non-value fields.
+    Since this is all or nothing (either you add all the extra fields or you
+    remove all of them, anything else would blow up on dump), we only check the
+    template color index."""
+    can_decide_at_dump = True
+
+    def decide_dump(self, record):
+        return 1 if record.tint_template_color_index is None else 7
+
+class MreNpc_(AMreActor, AMreWithKeywords):
+    """Non-Player Character."""
+    rec_sig = b'NPC_'
+
+    class HeaderFlags(AMreActor.HeaderFlags):
+        bleedout_override: bool = flag(29)
+
+    class NpcFlags(Flags):
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        is_chargen_face_preset: bool = flag(2)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        npc_unique: bool = flag(5)
+        does_not_affect_stealth: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        calc_for_each_template: bool = flag(9)
+        npc_protected: bool = flag(11)
+        npc_summonable: bool = flag(14)
+        does_not_bleed: bool = flag(16)
+        bleedout_override: bool = flag(18)
+        opposite_gender_anims: bool = flag(19)
+        simple_actor: bool = flag(20)
+        no_activation_or_hellos: bool = flag(23)
+        diffuse_alpha_test: bool = flag(24)
+        npc_is_ghost: bool = flag(29)
+        npc_invulnerable: bool = flag(31)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(is_required=True),
+        MelPreviewTransform(),
+        MelAnimationSound(),
+        MelStruct(b'ACBS', ['I', '2h', '2H', 'h', '2H', '2s'],
+            (NpcFlags, 'npc_flags'), 'xp_value_offset', 'level_offset',
+            'calc_min_level', 'calc_max_level', 'disposition_base',
+            (TemplateFlags, 'template_flags'), 'bleedout_override',
+            'unknown1', is_required=True),
+        MelFactions(),
+        MelDeathItem(),
+        MelVoice(),
+        MelTemplate('default_template'),
+        MelFid(b'LTPT', 'legendary_template'),
+        MelFid(b'LTPC', 'legendary_chance'),
+        MelStruct(b'TPTA', ['13I'], (FID, 'template_actor_traits'),
+            (FID, 'template_actor_stats'), (FID, 'template_actor_factions'),
+            (FID, 'template_actor_spell_list'),
+            (FID, 'template_actor_ai_data'),
+            (FID, 'template_actor_ai_packages'),
+            (FID, 'template_actor_model_animation'),
+            (FID, 'template_actor_base_data'),
+            (FID, 'template_actor_inventory'), (FID, 'template_actor_script'),
+            (FID, 'template_actor_def_pack_list'),
+            (FID, 'template_actor_attack_data'),
+            (FID, 'template_actor_keywords')),
+        MelRace(),
+        MelSpellCounter(),
+        MelSpells(),
+        MelDestructible(),
+        MelSkin(),
+        MelNpcAnam(),
+        MelAttackRace(),
+        MelAttacks(),
+        MelOverridePackageLists(),
+        MelFid(b'FCPL', 'follower_command_package_list'),
+        MelFid(b'RCLR', 'follower_elevator_package_list'),
+        MelNpcPerks(),
+        MelProperties(),
+        MelFtyp(),
+        MelNativeTerminal(),
+        MelItems(),
+        MelTruncatedStruct(b'AIDT', ['8B', '3I', 'B', '3s'], 'ai_aggression',
+            'ai_confidence', 'ai_energy_level', 'ai_responsibility', 'ai_mood',
+            'ai_assistance', 'ai_aggro_radius_behavior', 'ai_unknown1',
+            'ai_warn', 'ai_warn_attack', 'ai_attack', 'ai_no_slow_approach',
+            'ai_unknown2', old_versions={'8B3I'}),
+        MelAIPackages(),
+        MelKeywords(),
+        MelAppr(),
+        MelObjectTemplate(),
+        MelNpcClass(),
+        MelFull(),
+        MelShortName(b'SHRT'),
+        MelBaseR(b'DATA', 'npc_marker'),
+        MelStruct(b'DNAM', ['3H', 'B', 's'], 'calculated_health',
+            'calculated_action_points', 'far_away_model_distance',
+            'geared_up_weapons', 'dnam_unused'),
+        MelNpcHeadParts(),
+        MelNpcHairColor(),
+        MelFid(b'BCLF', 'facial_hair_color'),
+        MelCombatStyle(),
+        MelNpcGiftFilter(),
+        ##: Marker? xEdit just has it as unknown. Seems to always be two bytes
+        # and set to 0x00FF
+        MelBaseR(b'NAM5', 'unknown_required'),
+        MelFloat(b'NAM6', 'npc_height_min'),
+        MelFloat(b'NAM7', 'unused_nam7'),
+        MelFloat(b'NAM4', 'npc_height_max'),
+        MelStruct(b'MWGT', ['3f'], 'npc_weight_thin', 'npc_weight_muscular',
+            'npc_weight_fat'),
+        MelSoundLevel(b'NAM8'),
+        MelActorSounds2(),
+        MelInheritsSoundsFrom(),
+        MelFid(b'PFRN', 'power_armor_stand'),
+        MelNpcShared(),
+        MelStruct(b'QNAM', ['4f'], *gen_color('texture_lighting')),
+        # These two are linked and will need special handling if we wanted to
+        # patch them for some reason
+        MelSimpleArray('morph_keys', MelUInt32(b'MSDK')),
+        MelSimpleArray('morph_values', MelFloat(b'MSDV')),
+        MelSorted(MelGroups('face_tint_layers',
+            MelStruct(b'TETI', ['2H'], 'tint_data_type', 'tint_index'),
+            # These can (and do) occur freely mixed within the same record, see
+            # _NpcTendDecider
+            MelUnion({
+                1: MelUInt8(b'TEND', 'tint_value'),
+                7: MelStruct(b'TEND', ['5B', 'h'], 'tint_value',
+                    *gen_color('tint_color'), 'tint_template_color_index'),
+            }, decider=_NpcTendDecider()),
+        ), sort_by_attrs='tint_index'),
+        # bmrv = 'body morph region values'
+        MelStruct(b'MRSV', ['5f'], 'bmrv_head', 'bmrv_upper_torso',
+            'bmrv_arms', 'bmrv_lower_torso', 'bmrv_legs'),
+        ##: xEdit says 'reported to cause issues when sorted', but then it
+        # *does* sort it. Outdated comment or wrong code?
+        MelSorted(MelGroups('face_morphs',
+            # fm = 'face morph'
+            MelUInt32(b'FMRI', 'fm_index'),
+            ##: fm_unknown seems to always be 8 bytes, figure out what it is
+            MelExtra(MelStruct(b'FMRS', ['7f'], 'fm_position_x',
+                'fm_position_y', 'fm_position_z', 'fm_rotation_x',
+                'fm_rotation_y', 'fm_rotation_z', 'fm_scale'),
+                extra_attr='fm_unknown'),
+        ), sort_by_attrs='fm_index'),
+        MelFloat(b'FMIN', 'facial_morph_intensity'),
+        MelAttx(),
+    )
+
+#------------------------------------------------------------------------------
+class MreOmod(MelRecord):
+    """Object Modification."""
+    rec_sig = b'OMOD'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        legendary_omod: bool = flag(4)
+        omod_collection: bool = flag(7)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelModel(),
+        MelOmodData(),
+        MelSimpleArray('target_omod_keywords', MelFid(b'MNAM')),
+        MelSimpleArray('filter_keywords', MelFid(b'FNAM')),
+        MelFid(b'LNAM', 'loose_omod'),
+        MelUInt8(b'NAM1', 'omod_priority'),
+        MelFilterString(),
+    )
+
+#------------------------------------------------------------------------------
+class MreOvis(MelRecord):
+    """Object Visibility Manager."""
+    rec_sig = b'OVIS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('ovis_unknown',
+            MelFid(b'INDX', 'ovis_object_fid'),
+            MelStruct(b'DATA', ['6f'], 'ovis_object_bounds_x1',
+                'ovis_object_bounds_y1', 'ovis_object_bounds_z1',
+                'ovis_object_bounds_x2', 'ovis_object_bounds_y2',
+                'ovis_object_bounds_z2'),
+        ),
+    )
+
+#------------------------------------------------------------------------------
+class MrePack(MelRecord):
+    """Package."""
+    rec_sig = b'PACK'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelPackPkdt(),
+        MelPackSchedule(),
+        MelConditionList(),
+        MelGroup('package_idles',
+            MelIdleAnimFlags(),
+            MelIdleAnimationCount(),
+            MelIdleTimerSetting(),
+            MelIdleAnimations(),
+            MelBase(b'IDLB', 'unknown_idlb'),
+        ),
+        MelCombatStyle(b'CNAM'),
+        MelPackOwnerQuest(),
+        MelPackPkcu(),
+        MelPackDataInputValues(
+            pldt_element=MelLocation(b'PLDT'),
+            ptda_element=MelUnion({
+                (0, 1, 3, 7): MelStruct(b'PTDA', ['i', 'I', 'i'],
+                    'package_target_type', (FID, 'package_target_value'),
+                    'package_target_count'),
+                (2, 5): MelStruct(b'PTDA', ['i', 'I', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                4: MelStruct(b'PTDA', ['3i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+                (6, 8): MelStruct(b'PTDA', ['i', '4s', 'i'],
+                    'package_target_type', 'package_target_value',
+                    'package_target_count'),
+            }, decider=PartialLoadDecider(
+                loader=MelSInt32(b'PTDA', 'package_target_type'),
+                decider=AttrValDecider('package_target_type')),
+                fallback=MelNull(b'NULL')), # ignore
+        ),
+        MelPackDataInputs('data_inputs1'),
+        MelBaseR(b'XNAM', 'xnam_marker'),
+        MelPackProcedureTree(MelConditions()),
+        MelPackDataInputs('data_inputs2'),
+        MelPackIdleHandler('on_begin'),
+        MelPackIdleHandler('on_end'),
+        MelPackIdleHandler('on_change'),
+    ).with_distributor({
+        b'PKDT': {
+            b'CTDA|CIS1|CIS2': 'conditions',
+            b'CNAM': 'combat_style',
+            b'QNAM': 'owner_quest',
+            b'ANAM': ('data_input_values', {
+                b'BNAM|CNAM|PDTO': 'data_input_values',
+            }),
+            b'UNAM': ('data_inputs1', {
+                b'BNAM|PNAM': 'data_inputs1',
+            }),
+        },
+        b'XNAM': {
+            b'ANAM|CTDA|CIS1|CIS2|PNAM': 'procedure_tree_branches',
+            b'UNAM': ('data_inputs2', {
+                b'BNAM|PNAM': 'data_inputs2',
+            }),
+        },
+        b'POBA': {
+            b'INAM|TNAM|PDTO': 'on_begin',
+        },
+        b'POEA': {
+            b'INAM|TNAM|PDTO': 'on_end',
+        },
+        b'POCA': {
+            b'INAM|TNAM|PDTO': 'on_change',
+        },
+    })
+
+#------------------------------------------------------------------------------
 class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
@@ -2447,6 +2787,22 @@ class MrePerk(MelRecord):
             MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
     ).with_distributor(perk_distributor)
+
+#------------------------------------------------------------------------------
+class MrePkin(MelRecord):
+    """Pack-In."""
+    rec_sig = b'PKIN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        prefab: bool = flag(9)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFilterString(),
+        MelFid(b'CNAM', 'packin_cell'),
+        MelUInt32(b'VNAM', 'packin_version'),
+    )
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done

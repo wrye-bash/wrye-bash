@@ -49,7 +49,7 @@ class APreserver(ImportPatcher):
     # which get carried forward as a 'block' - if one of the attributes in a
     # fused attribute differs, then all attributes in that 'block' get carried
     # forward, even if the others are unchanged. See for example the handling
-    # of level_offset and pcLevelOffset
+    # of level_offset and pc_level_offset
     rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]] = {}
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported. Set this or Filter plugins will

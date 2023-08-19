@@ -26,13 +26,14 @@ from itertools import chain
 
 from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
-    MelSorted, MelTruncatedStruct, MelUnion
+    MelSorted, MelTruncatedStruct, MelUnion, PartialLoadDecider
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
-    MelUInt16Flags, MelUInt32, MelUInt32Flags
+    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8
 from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1, gen_coed_key
+    gen_color3, int_unpacker, null1, gen_coed_key, PackGeneralFlags, \
+    PackInterruptFlags
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -134,19 +135,6 @@ class MelActivateParents(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class MelActorSounds(MelSorted):
-    """Handles the CSDT/CSDI/CSDC subrecord complex used by CREA records in
-    TES4/FO3/FNV and NPC_ records in TES5."""
-    def __init__(self):
-        super().__init__(MelGroups('sounds',
-            MelUInt32(b'CSDT', 'type'),
-            MelSorted(MelGroups('sound_types',
-                MelFid(b'CSDI', 'sound'),
-                MelUInt8(b'CSDC', 'chance'),
-            ), sort_by_attrs='sound'),
-        ), sort_by_attrs='type')
-
-#------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
     def __init__(self):
@@ -154,6 +142,12 @@ class MelAddnDnam(MelStruct):
         # can't hurt and is much simpler
         super().__init__(b'DNAM', ['2H'], 'master_particle_system_cap',
             'addon_flags') # not really flags, behaves more like an enum
+
+#------------------------------------------------------------------------------
+class MelAIPackages(MelFids):
+    """Handles the CREA/NPC_ subrecord PKID (Packages)."""
+    def __init__(self):
+        super().__init__('ai_packages', MelFid(b'PKID'))
 
 #------------------------------------------------------------------------------
 class MelAlchEnit(MelStruct):
@@ -222,6 +216,12 @@ class MelAspcRdat(MelFid):
         super().__init__(b'RDAT', 'use_sound_from_region')
 
 #------------------------------------------------------------------------------
+class MelAttackRace(MelFid):
+    """Handles the NPC_/RACE subrecord ATKR (Attack Race)."""
+    def __init__(self):
+        super().__init__(b'ATKR', 'attack_race')
+
+#------------------------------------------------------------------------------
 class MelAttx(MelLString):
     """Handles the common ATTX (Activate Text Override) subrecord. Skyrim uses
     an RNAM signature instead."""
@@ -260,13 +260,16 @@ class MelBookText(MelLString):
         super().__init__(txt_sig, 'book_text')
 
 #------------------------------------------------------------------------------
+# FIXME(inf) We need to go through xEdit's source code and add is_required to
+#  all our MelBounds wherever xEdit (on the dev-4.1.5 branch) has wbOBND(True)
+#  instead of plain wbOBND
 class MelBounds(MelGroup):
     """Wrapper around MelGroup for the common task of defining OBND - Object
     Bounds. Uses MelGroup to avoid merging them when importing."""
-    def __init__(self):
+    def __init__(self, *, is_required=False):
         super().__init__('bounds',
             MelStruct(b'OBND', ['6h'], 'boundX1', 'boundY1', 'boundZ1',
-                'boundX2', 'boundY2', 'boundZ2'),
+                'boundX2', 'boundY2', 'boundZ2', is_required=is_required),
         )
 
 #------------------------------------------------------------------------------
@@ -311,8 +314,7 @@ class MelCobjOutput(MelSequential):
 class MelColor(MelStruct):
     """Required Color."""
     def __init__(self, color_sig=b'CNAM'):
-        super().__init__(color_sig, ['4B'], 'red', 'green', 'blue',
-            'unused_alpha')
+        super().__init__(color_sig, ['4B'], 'red', 'green', 'blue', 'alpha')
 
 #------------------------------------------------------------------------------
 class MelColorInterpolator(MelArray):
@@ -328,8 +330,7 @@ class MelColorInterpolator(MelArray):
 class MelColorO(MelStruct):
     """Optional Color."""
     def __init__(self, color_sig=b'CNAM'):
-        super().__init__(color_sig, ['4B'], 'red', 'green', 'blue',
-            'unused_alpha')
+        super().__init__(color_sig, ['4B'], 'red', 'green', 'blue', 'alpha')
 
 #------------------------------------------------------------------------------
 class MelCombatStyle(MelFid):
@@ -541,12 +542,23 @@ class MelFactVendorInfo(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelFactions(MelSorted):
-    """Handles the common SNAM (Factions) subrecord."""
-    def __init__(self):
+    """Handles the common SNAM (Factions) subrecord. The unused 3 bytes at the
+    end are gone since FO4."""
+    def __init__(self, *, with_unused=False):
+        snam_types = ['I', 'B']
+        snam_args = [(FID, 'faction'), 'rank']
+        if with_unused:
+            snam_types.append('3s')
+            snam_args.append(('unused1', b'ODB'))
         super().__init__(MelGroups('factions',
-            MelStruct(b'SNAM', ['I', 'B', '3s'], (FID, 'faction'), 'rank',
-                      ('unused1', b'ODB')),
+            MelStruct(b'SNAM', snam_types, *snam_args),
         ), sort_by_attrs='faction')
+
+#------------------------------------------------------------------------------
+class MelFilterString(MelString):
+    """Handles the common FLTR (Filter) subrecord."""
+    def __init__(self):
+        super().__init__(b'FLTR', 'filter_string')
 
 #------------------------------------------------------------------------------
 class MelFlstFids(MelFids):
@@ -716,6 +728,17 @@ class MelIdleData(MelStruct):
             'replay_delay')
 
 #------------------------------------------------------------------------------
+class MelIdleAnimFlags(MelUInt8Flags):
+    """Handles the common subrecord IDLF (Flags)."""
+    class _IdleAnimFlags(Flags):
+        run_in_sequence: bool = flag(0)
+        do_once: bool = flag(2)
+        ignored_by_sandbox: bool = flag(4) # since Skyrim
+
+    def __init__(self):
+        super().__init__(b'IDLF', 'idle_anim_flags', self._IdleAnimFlags)
+
+#------------------------------------------------------------------------------
 class MelIdleEnam(MelString):
     """Handles the IDLE subrecord ENAM (Animation Event)."""
     def __init__(self):
@@ -733,17 +756,6 @@ class MelIdleTimerSetting(MelFloat):
     """Handles the common IDLT subrecord (Idle Timer Setting)."""
     def __init__(self):
         super().__init__(b'IDLT', 'idle_timer_setting')
-
-#------------------------------------------------------------------------------
-class MelIdlmFlags(MelUInt8Flags):
-    """Handles the IDLM subrecord IDLF (Flags)."""
-    class _idlm_flags(Flags):
-        run_in_sequence: bool = flag(0)
-        do_once: bool = flag(2)
-        ignored_by_sandbox: bool = flag(4) # since Skyrim
-
-    def __init__(self):
-        super().__init__(b'IDLF', 'idlm_flags', self._idlm_flags)
 
 #------------------------------------------------------------------------------
 class MelImageSpaceMod(MelFid):
@@ -805,6 +817,12 @@ class MelIngrEnit(MelStruct):
     def __init__(self):
         super().__init__(b'ENIT', ['i', 'I'], 'ingredient_value',
             (self._enit_flags, 'flags'))
+
+#------------------------------------------------------------------------------
+class MelInheritsSoundsFrom(MelFid):
+    """Handles the CREA/NPC_ subrecord CSCR (Inherits Sounds From)."""
+    def __init__(self):
+        super().__init__(b'CSCR', 'inherits_sounds_from')
 
 #------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
@@ -1279,7 +1297,7 @@ class MelMODS(MelBase):
 class MelMovtName(MelString):
     """Handles the MOVT subrecord MNAM (Name)."""
     def __init__(self):
-        super().__init__(b'MNAM', 'movt_name'),
+        super().__init__(b'MNAM', 'movt_name')
 
 #------------------------------------------------------------------------------
 class MelMovtThresholds(MelStruct):
@@ -1342,6 +1360,83 @@ class MelNodeIndex(MelSInt32):
         super().__init__(b'DATA', 'node_index')
 
 #------------------------------------------------------------------------------
+class MelNoteType(MelUInt8):
+    """Handles the NOTE subrecord DNAM (Type)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'note_type')
+
+#------------------------------------------------------------------------------
+class MelNpcAnam(MelFid):
+    """Handles the NPC_ subrecord ANAM (Far-away Model)."""
+    def __init__(self):
+        super().__init__(b'ANAM', 'far_away_model')
+
+#------------------------------------------------------------------------------
+class MelNpcClass(MelFid):
+    """Handles the NPC_ subrecord CNAM (Class)."""
+    def __init__(self):
+        super().__init__(b'CNAM', 'npc_class')
+
+#------------------------------------------------------------------------------
+class MelNpcGiftFilter(MelFid):
+    """Handles the NPC_ subrecord GNAM (Gift Filter)."""
+    def __init__(self):
+        super().__init__(b'GNAM', 'gift_filter')
+
+#------------------------------------------------------------------------------
+class MelNpcHairColor(MelFid):
+    """Handles the NPC_ subrecord HCLF (Hair Color)."""
+    def __init__(self):
+        super().__init__(b'HCLF', 'hair_color')
+
+#------------------------------------------------------------------------------
+class MelNpcHeadParts(MelSorted):
+    """Handles the NPC_ subrecord PNAM (Head Parts)."""
+    def __init__(self):
+        super().__init__(MelFids('head_parts', MelFid(b'PNAM')))
+
+#------------------------------------------------------------------------------
+class MelNpcShared(MelSequential):
+    """Handles the NPC_ subrecords DOFT, SOFT, DPLT, CRIF and FTST."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'DOFT', 'default_outfit'),
+            MelFid(b'SOFT', 'sleeping_outfit'),
+            MelFid(b'DPLT', 'default_package_list'),
+            MelFid(b'CRIF', 'crime_faction'),
+            MelFid(b'FTST', 'head_texture'),
+        )
+
+#------------------------------------------------------------------------------
+class MelNpcPerks(MelSequential):
+    """Handles the NPC_ subrecords PRKZ (Perk Count) and PRKR (Perks). FO4 got
+    rid of the unused data."""
+    def __init__(self, *, with_unused=False):
+        prkr_types = ['I', 'B']
+        prkr_args = [(FID, 'npc_perk_fid'), 'npc_perk_rank']
+        if with_unused:
+            prkr_types.append('3s')
+            prkr_args.append('npc_perk_unused')
+        super().__init__(
+            MelCounter(MelUInt32(b'PRKZ', 'npc_perk_count'),
+                counts='npc_perks'),
+            MelSorted(MelGroups('npc_perks',
+                MelStruct(b'PRKR', prkr_types, *prkr_args),
+            ), sort_by_attrs='npc_perk_fid'),
+        )
+
+#------------------------------------------------------------------------------
+class MelOverridePackageLists(MelSequential):
+    """Handles the NPC_/QUST subrecords SPOR, OCOR, GWOR and ECOR."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'SPOR', 'override_package_list_spectator'),
+            MelFid(b'OCOR', 'override_package_list_observe_dead_body'),
+            MelFid(b'GWOR', 'override_package_list_guard_warn'),
+            MelFid(b'ECOR', 'override_package_list_combat'),
+        )
+
+#------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK for cells and cell children."""
 
@@ -1354,6 +1449,130 @@ class MelOwnership(MelGroup):
     def pack_subrecord_data(self, record):
         if record.ownership and record.ownership.owner:
             return super().pack_subrecord_data(record) # else None - don't dump
+
+#------------------------------------------------------------------------------
+class MelPackDataInputs(MelGroups):
+    """Handles the PACK subrecords UNAM, BNAM and PNAM (Data Inputs)."""
+    def __init__(self, attr):
+        super().__init__(attr,
+            MelSInt8(b'UNAM', 'input_index'),
+            MelString(b'BNAM', 'input_name'),
+            MelUInt32(b'PNAM', 'input_public'), # actually a bool
+        )
+
+#------------------------------------------------------------------------------
+class MelPackDataInputValues(MelGroups):
+    """Handles the PACK subrecord complex for Data Input Values. Needs the
+    right PLDT (aka MelLocation) and PTDA implementations passed to it."""
+    def __init__(self, *, pldt_element: MelBase, ptda_element: MelBase):
+        super().__init__('data_input_values',
+            MelString(b'ANAM', 'data_input_value_type'),
+            MelUnion({
+                'Bool': MelUInt8(b'CNAM', 'data_input_value_val'),
+                'Int': MelUInt32(b'CNAM', 'data_input_value_val'),
+                'Float': MelFloat(b'CNAM', 'data_input_value_val'),
+                # Mirrors what xEdit does, despite how weird it looks
+                'ObjectList': MelFloat(b'CNAM', 'data_input_value_val'),
+            }, decider=AttrValDecider('data_input_value_type'),
+                # All other kinds of values, typically missing
+                fallback=MelBase(b'CNAM', 'data_input_value_val')),
+            MelBase(b'BNAM', 'unknown1'),
+            MelTopicData('value_topic_data'),
+            pldt_element,
+            ptda_element,
+            MelBase(b'TPIC', 'unknown2'),
+        )
+
+#------------------------------------------------------------------------------
+class MelPackOwnerQuest(MelFid):
+    """Handles the PACK subrecord QNAM (Owner Quest)."""
+    def __init__(self):
+        super().__init__(b'QNAM', 'owner_quest')
+
+#------------------------------------------------------------------------------
+class MelPackPkcu(MelStruct):
+    """Handles the PACK subrecord PKCU (Counter)."""
+    def __init__(self):
+        super().__init__(b'PKCU', ['3I'], 'data_input_count',
+            (FID, 'package_template'), 'version_counter')
+
+#------------------------------------------------------------------------------
+class MelPackPkdt(MelStruct):
+    """Handles the new (since Skyrim) version of the PACK subrecord PKDT
+    (Package Data)."""
+    def __init__(self):
+        super().__init__(b'PKDT', ['I', '3B', 's', 'H', '2s'],
+            (PackGeneralFlags, 'package_flags'), 'package_ai_type',
+            'interrupt_override', 'preferred_speed', 'unknown_pkdt1',
+            (PackInterruptFlags, 'interrupt_flags'), 'unknown_pkdt2')
+
+#------------------------------------------------------------------------------
+class MelPackIdleHandler(MelGroup):
+    """Handles the PACK subrecords POBA, POCA and POEA (On Begin, On Change and
+    On End, respectively). Used to have some CK leftovers in it (pre-FO4)."""
+    # The subrecord type used for the marker
+    _attr_lookup = {
+        'on_begin': b'POBA',
+        'on_change': b'POCA',
+        'on_end': b'POEA',
+    }
+
+    def __init__(self, attr, *, ck_leftovers: tuple[MelBase] = ()):
+        super().__init__(attr,
+            MelBase(self._attr_lookup[attr], f'{attr}_marker'),
+            MelFid(b'INAM', 'idle_anim'),
+            *ck_leftovers,
+            MelTopicData('idle_topic_data'),
+        )
+
+#------------------------------------------------------------------------------
+class MelPackProcedureTree(MelGroups):
+    """Handles the PACK Procedure Tree subrecord complex. Needs a MelConditions
+    implementation passed to it."""
+    class _SubBranchFlags(Flags): # One unknown flag, not just a bool
+        repeat_when_complete: bool
+
+    def __init__(self, conditions_element: MelBase):
+        super().__init__('procedure_tree_branches',
+            MelString(b'ANAM', 'branch_type'),
+            conditions_element,
+            MelStruct(b'PRCB', ['2I'], 'sub_branch_count',
+                (self._SubBranchFlags, 'sub_branch_flags')),
+            MelString(b'PNAM', 'procedure_type'),
+            MelUInt32(b'FNAM', 'success_completes_package'), # actually a bool
+            MelGroups('data_input_indices',
+                MelUInt8(b'PKC2', 'input_index'),
+            ),
+            MelGroups('flag_overrides',
+                MelStruct(b'PFO2', ['2I', '2H', 'B', '3s'],
+                    (PackGeneralFlags, 'set_general_flags'),
+                    (PackGeneralFlags, 'clear_general_flags'),
+                    (PackInterruptFlags, 'set_interrupt_flags'),
+                    (PackInterruptFlags, 'clear_interrupt_flags'),
+                    'preferred_speed_override', 'unknown_pfo2'),
+            ),
+            MelGroups('ptb_unknown1',
+                MelBase(b'PFOR', 'unknown_pfor'),
+            ),
+        ),
+
+#------------------------------------------------------------------------------
+class MelPackSchedule(MelStruct):
+    """Handles the new (since Skyrim) version of the PACK subrecord PSDT
+    (Schedule)."""
+    def __init__(self):
+        super().__init__(b'PSDT', ['2b', 'B', '2b', '3s', 'i'],
+            'schedule_month', 'schedule_day', 'schedule_date', 'schedule_hour',
+            'schedule_minute', 'unused1', 'schedule_duration')
+
+#------------------------------------------------------------------------------
+class MelPackScheduleOld(MelStruct):
+    """Handles the old (pre-Skyrim) version of the PACK subrecord PSDT
+    (Schedule)."""
+    def __init__(self, *, is_required: bool):
+        super().__init__(b'PSDT', ['2b', 'B', 'b', 'i'], 'schedule_month',
+            'schedule_day', 'schedule_date', 'schedule_time',
+            'schedule_duration', is_required=is_required)
 
 #------------------------------------------------------------------------------
 class MelPerkData(MelTruncatedStruct):
@@ -1602,6 +1821,12 @@ class MelShortName(MelLString):
         super().__init__(sn_sig, 'short_name')
 
 #------------------------------------------------------------------------------
+class MelSkin(MelFid):
+    """Handles the common WNAM (Skin) subrecord."""
+    def __init__(self):
+        super().__init__(b'WNAM', 'skin')
+
+#------------------------------------------------------------------------------
 class MelSkipInterior(MelUnion):
     """Union that skips dumping if we're in an interior."""
     def __init__(self, element):
@@ -1629,6 +1854,12 @@ class MelSoundClose(MelFid):
         super().__init__(sc_sig, 'sound_close')
 
 #------------------------------------------------------------------------------
+class MelSoundLevel(MelUInt32):
+    """Handles the common subrecord NAM5/NAM8/VNAM (Sound Level)."""
+    def __init__(self, sl_sig=b'VNAM'):
+        super().__init__(sl_sig, 'sound_level')
+
+#------------------------------------------------------------------------------
 class MelSoundLooping(MelFid):
     """Handles the DOOR subrecord BNAM (Sound - Looping)."""
     def __init__(self):
@@ -1645,16 +1876,46 @@ class MelSoundPickupDrop(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelSpellCounter(MelCounter):
+    """Handles the SPCT (Spell Counter) subrecord. To be used in combination
+    with MelSpells."""
+    def __init__(self):
+        super().__init__(MelUInt32(b'SPCT', 'spell_count'), counts='spells')
+
+#------------------------------------------------------------------------------
 class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
         super().__init__(MelFids('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
+class MelTemplate(MelFid):
+    """Handles the CREA/NPC_ subrecord TPLT (Template). Has become "Default
+    Template" in FO4."""
+    def __init__(self, template_attr='template'):
+        super().__init__(b'TPLT', template_attr)
+
+#------------------------------------------------------------------------------
 class MelTemplateArmor(MelFid):
     """Handles the ARMO subrecord TNAM (Template Armor)."""
     def __init__(self):
         super().__init__(b'TNAM', 'template_armor')
+
+
+#------------------------------------------------------------------------------
+class MelTopicData(MelGroups):
+    """Handles the common PDTO (Topic Data) subrecord."""
+    def __init__(self, attr: str):
+        super().__init__(attr,
+            MelUnion({
+                0: MelStruct(b'PDTO', ['2I'], 'data_type', (FID, 'topic_ref')),
+                1: MelStruct(b'PDTO', ['I', '4s'], 'data_type',
+                             'topic_subtype'),
+            }, decider=PartialLoadDecider(
+                loader=MelUInt32(b'PDTO', 'data_type'),
+                decider=AttrValDecider('data_type')),
+            fallback=MelNull(b'NULL')), # ignore
+        )
 
 #------------------------------------------------------------------------------
 class MelTxstFlags(MelUInt16Flags):
@@ -1690,6 +1951,12 @@ class MelValueWeight(MelStruct):
     object)."""
     def __init__(self):
         super().__init__(b'DATA', ['I', 'f'], 'value', 'weight')
+
+#------------------------------------------------------------------------------
+class MelVoice(MelFid):
+    """Handles the common VTCK (Voice) subrecord."""
+    def __init__(self):
+        super().__init__(b'VTCK', 'voice')
 
 #------------------------------------------------------------------------------
 class MelWaterType(MelFid):

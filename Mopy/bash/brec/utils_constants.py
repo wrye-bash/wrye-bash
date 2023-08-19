@@ -381,6 +381,79 @@ class MgefFlags(AMgefFlags):
     painless: bool = flag(26)
     no_death_dispel: bool = flag(28)
 
+class PackGeneralFlags(Flags):
+    """Implements the new version of the general PACK/PKDT flags (Skyrim and
+    newer)."""
+    offers_services: bool = flag(0)
+    must_complete: bool = flag(2)
+    maintain_speed_at_goal: bool = flag(3)
+    unlock_doors_at_package_start: bool = flag(6)
+    unlock_doors_at_package_end: bool = flag(7)
+    continue_if_pc_near: bool = flag(9)
+    once_per_day: bool = flag(10)
+    preferred_speed: bool = flag(13)
+    always_sneak: bool = flag(17)
+    allow_swimming: bool = flag(18)
+    ignore_combat: bool = flag(20)
+    weapons_unequipped: bool = flag(21)
+    weapon_drawn: bool = flag(23)
+    no_combat_alert: bool = flag(27)
+    wear_sleep_outfit: bool = flag(29)
+
+class PackGeneralOldFlags(Flags):
+    """Implements the old version of the general PACK/PKDT flags (FNV and
+    older)."""
+    offers_services: bool = flag(0)
+    must_reach_location: bool = flag(1)
+    must_complete: bool = flag(2)
+    lock_at_start: bool = flag(3)
+    lock_at_end: bool = flag(4)
+    lock_at_location: bool = flag(5)
+    unlock_at_start: bool = flag(6)
+    unlock_at_end: bool = flag(7)
+    unlock_at_location: bool = flag(8)
+    continue_if_pc_near: bool = flag(9)
+    once_per_day: bool = flag(10)
+    skip_fallout_behavior: bool = flag(12)
+    always_run: bool = flag(13)
+    always_sneak: bool = flag(17)
+    allow_swimming: bool = flag(18)
+    allow_falls: bool = flag(19)
+    unequip_armor: bool = flag(20)
+    unequip_weapons: bool = flag(21)
+    defensive_combat: bool = flag(22)
+    use_horse: bool = flag(23)
+    no_idle_anims: bool = flag(24)
+
+class PackInterruptFlags(Flags):
+    """Implements the since-Skyrim interrupt PACK/PKDT flags. Adapted from the
+    'Fallout Behavior Flags' in FO3/FNV."""
+    hellos_to_player: bool = flag(0)
+    random_conversations: bool = flag(1)
+    observe_combat_behavior: bool = flag(2)
+    greet_corpse_behavior: bool = flag(3)
+    reaction_to_player_actions: bool = flag(4)
+    friendly_fire_comments: bool = flag(5)
+    aggro_radius_behavior: bool = flag(6)
+    allow_idle_chatter: bool = flag(7)
+    world_interactions: bool = flag(9)
+
+class TemplateFlags(Flags):
+    """NPC_ (and CREA, in FO3) template flags, present since FO3."""
+    use_traits: bool
+    use_stats: bool
+    use_factions: bool
+    use_spell_list: bool
+    use_ai_data: bool
+    use_ai_packages: bool
+    use_model_animation: bool
+    use_base_data: bool
+    use_inventory: bool
+    use_script: bool
+    use_def_pack_list: bool # since Skyrim
+    use_attack_data: bool # since Skyrim
+    use_keywords: bool # since Skyrim
+
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
@@ -452,10 +525,13 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
-def gen_color(color_attr_pfx: str) -> list[str]:
-    """Helper method for generating red/green/blue/unused color attributes."""
-    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue',
-                                              'unused')]
+def gen_color(color_attr_pfx: str, *, rename_alpha: bool = False) -> list[str]:
+    """Helper method for generating red/green/blue/alpha color attributes. Note
+    that alpha is commonly unused when Bethesda uses this 4-float style of
+    colors and you may have to pass rename_alpha=True to name that attribute
+    '*_unused' instead of '*_alpha' if a separate alpha attribute exists."""
+    return [f'{color_attr_pfx}_{c}' for c in (
+        'red', 'green', 'blue', ('unused' if rename_alpha else 'alpha'))]
 
 def gen_color3(color_attr_pfx: str) -> list[str]:
     """Helper method for generating red/green/blue color attributes."""

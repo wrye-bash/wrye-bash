@@ -576,10 +576,10 @@ class OblivionGameInfo(PatchGame):
     # Import Sounds
     #--------------------------------------------------------------------------
     sounds_attrs = {
-        ##: sounds here has FormIDs, but I don't think filtering it is wise?
+        ##: actor_sounds here has FormIDs, but I don't think filtering it is wise?
         # The structure is complex and I don't know if a sound type entry
         # without any sounds would be valid or not. Leaving as is for now
-        b'CREA': ('footWeight', 'sounds'),
+        b'CREA': ('foot_weight', 'actor_sounds'),
         b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
                   'staticAtten', 'stopTime', 'startTime'),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
@@ -588,7 +588,7 @@ class OblivionGameInfo(PatchGame):
     sounds_fid_attrs = {
         b'ACTI': ('sound',),
         b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('inheritsSoundsFrom',),
+        b'CREA': ('inherits_sounds_from',),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'LIGH': ('sound',),
         b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
@@ -797,40 +797,49 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     actor_importer_attrs = {
         b'CREA': {
-            'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                'fatigue', 'flags.biped', 'flags.essential', 'flags.flies',
-                'flags.noBloodDecal', 'flags.noBloodSpray',
-                'flags.noCombatInWater', 'flags.noCorpseCheck', 'flags.noHead',
-                'flags.noLeftArm', 'flags.noLowLevel', 'flags.noRightArm',
-                'flags.noShadow', 'flags.respawn', 'flags.swims',
-                'flags.walks', 'flags.weaponAndShield',
+            'Actors.ACBS': (
+                'barter_gold', 'base_spell', 'calc_max_level',
+                'calc_min_level', 'fatigue', 'crea_flags.crea_biped',
+                'crea_flags.crea_essential', 'crea_flags.crea_flies',
+                'crea_flags.crea_no_blood_decal',
+                'crea_flags.crea_no_blood_spray',
+                'crea_flags.crea_no_combat_in_water',
+                'crea_flags.no_corpse_check', 'crea_flags.no_head',
+                'crea_flags.no_left_arm', 'crea_flags.no_low_level',
+                'crea_flags.no_right_arm', 'crea_flags.crea_no_shadow',
+                'crea_flags.crea_respawn', 'crea_flags.crea_swims',
+                'crea_flags.crea_walks', 'crea_flags.weapon_and_shield',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('flags.pcLevelOffset', 'level_offset')),
-            'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+                ('crea_flags.pc_level_offset', 'level_offset')),
+            'Actors.AIData': ('ai_aggression', 'ai_confidence',
+                              'ai_energy_level', 'ai_responsibility',
+                              'ai_service_flags', 'ai_train_level',
+                              'ai_train_skill'),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'attackDamage', 'combatSkill',
+            'Actors.Stats': ('agility', 'attackDamage', 'combat_skill',
                              'endurance', 'health', 'intelligence', 'luck',
                              'magic', 'personality', 'soul', 'stealth',
                              'speed', 'strength', 'willpower'),
-            'Creatures.Blood': ('bloodDecalPath', 'bloodSprayPath'),
-            'Creatures.Type': ('creatureType',),
+            'Creatures.Blood': ('blood_decal_path', 'blood_spray_path'),
+            'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
-            'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
-                'flags.essential', 'flags.female', 'flags.noLowLevel',
-                'flags.noPersuasion', 'flags.noRumors', 'flags.respawn',
-                'flags.summonable',
-                ('flags.pcLevelOffset', 'level_offset')), # See above
-            'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                              'responsibility', 'services', 'trainSkill',
-                              'trainLevel'),
+            'Actors.ACBS': (
+                'barter_gold', 'base_spell', 'calc_max_level',
+                'calc_min_level', 'fatigue', 'npc_flags.npc_auto_calc',
+                'npc_flags.can_corpse_check', 'npc_flags.npc_essential',
+                'npc_flags.npc_female', 'npc_flags.no_low_level',
+                'npc_flags.no_persuasion', 'npc_flags.no_rumors',
+                'npc_flags.npc_respawn', 'npc_flags.npc_summonable',
+                ('npc_flags.pc_level_offset', 'level_offset')), # See above
+            'Actors.AIData': ('ai_aggression', 'ai_confidence',
+                              'ai_energy_level', 'ai_responsibility',
+                              'ai_service_flags', 'ai_train_skill',
+                              'ai_train_level'),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -849,7 +858,7 @@ class OblivionGameInfo(PatchGame):
         b'NPC_': {
             'Actors.CombatStyle': ('combat_style',),
             'Actors.DeathItem': ('death_item',),
-            'NPC.Class': ('iclass',),
+            'NPC.Class': ('npc_class',),
             'NPC.Race': ('race',),
         }
     }

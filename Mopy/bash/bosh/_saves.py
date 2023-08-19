@@ -63,15 +63,16 @@ class SreNPC(object):
         modifiers: bool = flag(28)
 
     class ACBS(object):
-        __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
-                     'level_offset', 'calcMin', 'calcMax')
+        __slots__ = ('npc_flags', 'base_spell', 'fatigue', 'barter_gold',
+                     'level_offset', 'calc_min_level', 'calc_max_level')
 
         def __init__(self, ins=None, *, __deflts=(0, 0, 0, 0, 1, 0, 0)):
             if ins is not None:
                 __deflts = struct_unpack('=I3Hh2H', ins.read(16))
             for a, d in zip(self.__slots__, __deflts):
                 setattr(self, a, d)
-            self.flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(self.flags)
+            self.npc_flags = RecordType.sig_to_class[b'NPC_'].NpcFlags(
+                self.npc_flags)
 
         def __str__(self):
             return '\n'.join(
@@ -133,10 +134,10 @@ class SreNPC(object):
             _pack(u'8B', *self.attributes)
         #--Acbs
         if self.acbs is not None:
-            acbs = self.acbs
-            _pack(u'=I3Hh2H', acbs.flags.dump(), acbs.baseSpell, acbs.fatigue,
-                  acbs.barterGold, acbs.level_offset, acbs.calcMin,
-                  acbs.calcMax)
+            _pack('=I3Hh2H', self.acbs.npc_flags.dump(), self.acbs.base_spell,
+                self.acbs.fatigue, self.acbs.barter_gold,
+                self.acbs.level_offset, self.acbs.calc_min_level,
+                self.acbs.calc_max_level)
         #--Factions
         if self.factions is not None:
             pack_short(out, len(self.factions))
