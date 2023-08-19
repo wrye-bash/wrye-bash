@@ -1137,7 +1137,6 @@ class SkyrimGameInfo(PatchGame):
             'NPC.Race': ('race',),
         }
     }
-    spell_types = (b'LVSP', b'SPEL')
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

@@ -862,8 +862,7 @@ class OblivionGameInfo(PatchGame):
             'NPC.Race': ('race',),
         }
     }
-    actor_types = (b'CREA', b'NPC_')
-    spell_types = (b'LVSP', b'SPEL')
+    actor_types = {b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

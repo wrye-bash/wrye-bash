@@ -177,8 +177,8 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
     actor_importer_fid_attrs = {}
-    actor_types = (b'NPC_',)
-    spell_types = (b'SPEL',)
+    actor_types = {b'NPC_'}
+    spell_types = {b'LVSP', b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

@@ -956,7 +956,8 @@ class Fallout3GameInfo(PatchGame):
             'NPC.Race': ('race',),
         },
     }
-    actor_types = (b'CREA', b'NPC_')
+    actor_types = {b'CREA', b'NPC_'}
+    spell_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

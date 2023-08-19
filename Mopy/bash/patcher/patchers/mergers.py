@@ -448,7 +448,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     if bush.game.Esp.sort_lvsp_after_spel:
         # We need to read LVSP & SPEL to properly sort spell lists in actors
         ##: This is a workaround, see MelSpellsTes4 for the proper solution
-        _read_sigs = _actor_sigs + _spel_sigs
+        _read_sigs = _actor_sigs | _spel_sigs
     else:
         _read_sigs = _actor_sigs
     patcher_tags = {'Actors.Spells', 'Actors.SpellsForceAdd'}
