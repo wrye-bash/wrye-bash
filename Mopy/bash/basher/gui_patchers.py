@@ -1163,12 +1163,9 @@ class ImportSpellStats(_ImporterPatcherPanel):
 
 # -----------------------------------------------------------------------------
 class ImportDestructible(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Destructible')
-    patcher_desc = (_(u'Preserves changes to destructible records.')
-                    + u'\n\n' +
-                    _(u'Will have to use if a mod that allows you to destroy '
-                      u'part of the environment is installed and active.'))
-    _config_key = u'DestructiblePatcher'
+    patcher_name = _('Import Destructible')
+    patcher_desc = _('Preserves changes to destructible records.')
+    _config_key = 'DestructiblePatcher'
     patcher_type = preservers.ImportDestructiblePatcher
 
 # -----------------------------------------------------------------------------

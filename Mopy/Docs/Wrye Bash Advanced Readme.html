@@ -3798,7 +3798,7 @@ C.Location, -C.LockList
             <td>Modifies cell lighting or fog.</td>
             <td>The following subrecords:
                 <ul>
-                    <strong>All but Fallout 4:</strong>
+                    <strong>All games but Fallout 4:</strong>
                     <br>
                     <br>
                     <li>(XCLL) Lighting
@@ -4069,13 +4069,21 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#DestructibleFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Destructible</q> section for more information.
+                        See the <a href="#DestructibleFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Destructible</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#DestructibleSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Destructible</q> section for more information.
+                        See the <a href="#DestructibleSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Destructible</q> section for
+                        more information.
+                    </li>
+                    <li>
+                        See the <a href="#DestructibleFO4">Fallout 4</a>
+                        <q>Destructible</q> section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4582,7 +4590,7 @@ C.Location, -C.LockList
             <td>The (DESC) description subrecord of (RACE) Race records.
                 <br>
                 <br>
-                <strong>All but Fallout 4.</strong>
+                <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4695,7 +4703,7 @@ C.Location, -C.LockList
             <td>The (DATA) skills and skill boosts of (RACE) Race records.
                 <br>
                 <br>
-                <strong>All but Fallout 4.</strong>
+                <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4719,7 +4727,7 @@ C.Location, -C.LockList
             <td>The (VNAM / VTCK) female voice of (RACE) Race records.
             <br>
             <br>
-            <strong>All but Fallout 4.</strong>
+            <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4728,7 +4736,7 @@ C.Location, -C.LockList
             <td>The (VNAM / VTCK) male voice of (RACE) Race records.
             <br>
             <br>
-            <strong>All but Fallout 4.</strong>
+            <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4815,7 +4823,7 @@ C.Location, -C.LockList
             <td>Modifies spell stats.</td>
             <td>The following (SPEL) Spell and (SCRL) Scroll (<strong>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only</strong>) subrecords:
                 <ul>
-                    <strong>All but Fallout 4:</strong>
+                    <strong>All games but Fallout 4:</strong>
                     <br>
                     <br>
                     <li>(EDID) Editor ID</li>
@@ -7985,9 +7993,33 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td id="DestructibleFO4">Destructible</td>
+            <td>Modifies destructible records.</td>
+            <td>The Destructible subrecord (DEST, DAMC, DSTA, DSTD, DMDL, DMDT,
+                DMDC, DMDS &amp; DSTF) in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="ObjectBoundsFO4">ObjectBounds</td>
             <td>Changes the object bounds of things.</td>
-            <td>The (OBND) Object Bounds subrecord in the following record types:
+            <td>The (OBND) Object Bounds subrecord in the following record
+                types:
                 <ul>
                     <li>(ACTI) Activator</li>
                     <li>(ADDN) Addon Node</li>
@@ -8165,7 +8197,7 @@ C.Location, -C.LockList
                     <li>(LVLO) Entries</li>
                 </ul>
             </td>
-            <td>All since Fallout 3</td>
+            <td>All games since Fallout 3</td>
             <td></td>
         </tr>
         <tr>
@@ -8220,7 +8252,7 @@ C.Location, -C.LockList
                     <li>(HNAM) Hairs</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
             <td>These subrecords seem to be unused in Skyrim.</td>
         </tr>
         <tr>
@@ -8230,7 +8262,7 @@ C.Location, -C.LockList
                     <li>(SNAM) Sounds</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
             <td></td>
         </tr>
     </tbody>
@@ -8350,7 +8382,7 @@ C.Location, -C.LockList
                         "mark", except as part of "markynaz".</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>All Clothing Playable</td>
@@ -8430,7 +8462,7 @@ C.Location, -C.LockList
             <td>Sets wind speed for all weathers to 0; this means that bushes
                 and trees don't move in the wind since there isn't any. May
                 help on machines with low end graphic cards.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Faction Crime Gold Multiplier Fix</td>
@@ -8483,13 +8515,13 @@ C.Location, -C.LockList
             <td>No Light Fade Value Fix</td>
             <td>Sets the fade values on all lights to a default of 1.0 if not
                 already set.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-assorted-no-flicker">No Light Flicker</td>
             <td>Turns off flickering effects for lights. May help on machines
                 with low end graphic cards.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Number of Uses For Pre-enchanted Weapons and Staves</td>
@@ -8523,13 +8555,13 @@ C.Location, -C.LockList
         <tr>
             <td>Reweigh: Books</td>
             <td>Reweighs books to a maximum weight.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Ingestibles (Minimum)</td>
             <td>Reweighs ingestibles (potions and drinks, as well as food in
                 newer games than Oblivion) to a minimum weight.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Ingredients</td>
@@ -8573,7 +8605,7 @@ C.Location, -C.LockList
                 level, thereby increasing (or decreasing) the sound volume
                 (lower attenuation = higher volume). Does not affect Nirnroots
                 (see below).</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Set Sound Attenuation Levels: Nirnroots Only</td>
@@ -8602,7 +8634,7 @@ C.Location, -C.LockList
                 shrubs, etc). Tall groundcover will still be taller than short
                 groundcover, but there will be less variation in size. May help
                 on lower end machines.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
     </tbody>
 </table>
@@ -8804,7 +8836,7 @@ noted in the description of the tweak.</p>
                 string that must have the same length as the number of codes.
                 See the examples in the table up above.
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchTweakNamesLFTDwemer">Lore Friendly Text: Dwarven -&gt;
@@ -9700,7 +9732,7 @@ noted in the description of the tweak.</p>
             <td>Changes the maximum distance the chase camera can be moved away
                 from the player. Very useful for creating a bird's eye view –
                 but also a little bit unbalancing for that reason.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-settings-camera-chase-tightness">Camera: Chase
@@ -9715,7 +9747,7 @@ noted in the description of the tweak.</p>
                 player's death before the reload menu appears. (Even at
                 "Unlimited", you can hit escape to force reload menu to
                 appear.)</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Alchemy</td>
@@ -9762,7 +9794,7 @@ noted in the description of the tweak.</p>
             <td>Combat: Max Ally Hits In Combat</td>
             <td>The maximum number of hits on an ally allowed in combat before
                 the ally will attack the hitting character.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Max Ally Hits Out Of Combat</td>
@@ -9776,7 +9808,7 @@ noted in the description of the tweak.</p>
             <td>The maximum number of hits on a non-ally friend allowed in
                 combat before the friend will attack the hitting character.
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Max Friend Hits Out Of Combat</td>
@@ -9834,7 +9866,7 @@ noted in the description of the tweak.</p>
             </td>
             <td>The chance that an actor will speak after being hit with a
                 weapon.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Speak on Hit Threshold</td>
@@ -9842,7 +9874,7 @@ noted in the description of the tweak.</p>
                 actor to speak when hit (independent of
                 <a href="#patchCombatSpeakOnHitChance">Combat: Speak on Hit
                 Chance</a>).</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Speak on Power Attack Chance</td>
@@ -10187,31 +10219,31 @@ noted in the description of the tweak.</p>
             <td id="patch-tweak-settings-prompt-a">Prompt: Activate</td>
             <td>Changes the text on the 'Activate' prompt shown when
                 interacting with objects.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Open</td>
             <td>Changes the text on the 'Open' prompt shown when trying to open
                 a door.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Sit</td>
             <td>Changes the text on the 'Sit' prompt shown when interacting
                 with chairs.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Take</td>
             <td>Changes the text on the 'Take' prompt shown when taking
                 items.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Talk</td>
             <td>Changes the text on the 'Talk' prompt shown when interacting
                 with people.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Soul Trap: Common Soul Level</td>
@@ -10339,7 +10371,7 @@ noted in the description of the tweak.</p>
             <td>Time that must pass after you've last visited a cell before the
                 actors and items in it respawn. Note that choosing a longer
                 duration will result in larger savegames.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>World: Cell Respawn Time (Cleared)</td>

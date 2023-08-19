@@ -825,7 +825,8 @@ class Fallout3GameInfo(PatchGame):
         b'COBJ', b'CONT', b'CREA', b'DOOR', b'EXPL', b'FURN', b'GRAS', b'IDLM',
         b'INGR', b'KEYM', b'LIGH', b'LVLC', b'LVLI', b'LVLN', b'MISC', b'MSTT',
         b'NOTE', b'NPC_', b'PROJ', b'PWAT', b'SCOL', b'SOUN', b'STAT', b'TACT',
-        b'TERM', b'TREE', b'TXST', b'WEAP'}
+        b'TERM', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -853,16 +854,20 @@ class Fallout3GameInfo(PatchGame):
     # Import Scripts
     #--------------------------------------------------------------------------
     # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
-    scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT',
-                     b'CREA', b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH',
-                     b'MISC', b'NPC_', b'QUST', b'TACT', b'TERM', b'WEAP'}
+    scripts_types = {
+        b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_', b'QUST', b'TACT',
+        b'TERM', b'WEAP'
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT',
-                          b'CREA', b'DOOR', b'FURN', b'KEYM', b'LIGH', b'MISC',
-                          b'MSTT', b'NPC_', b'PROJ', b'TACT', b'TERM', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'TACT',
+        b'TERM', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors

@@ -329,8 +329,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = Fallout3GameInfo.namesTypes | {b'CCRD', b'CHAL', b'CHIP',
-        b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE', b'REPU', }
+    namesTypes = Fallout3GameInfo.namesTypes | {
+        b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
+        b'REPU',
+    }
 
     #--------------------------------------------------------------------------
     # Import Stats
@@ -412,7 +414,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     # Import Object Bounds
     #--------------------------------------------------------------------------
     object_bounds_types = Fallout3GameInfo.object_bounds_types | {
-        b'CCRD', b'CHIP', b'CMNY', b'IMOD', }
+        b'CCRD', b'CHIP', b'CMNY', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -434,13 +437,15 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     # Import Scripts
     #--------------------------------------------------------------------------
     scripts_types = Fallout3GameInfo.scripts_types | {
-        b'AMMO', b'CCRD', b'CHAL', b'IMOD'}
+        b'AMMO', b'CCRD', b'CHAL', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = Fallout3GameInfo.destructible_types | {b'CHIP',
-        b'IMOD'}
+    destructible_types = Fallout3GameInfo.destructible_types | {
+        b'CHIP', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors

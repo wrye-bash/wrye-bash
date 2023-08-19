@@ -138,10 +138,11 @@ class Fallout4GameInfo(PatchGame):
         validHeaderVersions = (0.95, 1.0)
 
     # Patchers that will need updating for future record types:
+    #  - ImportDestructible
     #  - ImportObjectBounds
     patchers = {
-        'AliasPluginNames', 'ImportObjectBounds', 'ImportOutfits',
-        'ImportRelations', 'LeveledLists', 'TweakSettings',
+        'AliasPluginNames', 'ImportDestructible', 'ImportObjectBounds',
+        'ImportOutfits', 'ImportRelations', 'LeveledLists', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -714,6 +715,14 @@ class Fallout4GameInfo(PatchGame):
         817:  ('IsInRobotWorkbench', 0, 0),
     }
     getvatsvalue_index = 407
+
+    #--------------------------------------------------------------------------
+    # Import Destructible
+    #--------------------------------------------------------------------------
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'CONT', b'DOOR', b'FLOR', b'FURN',
+        b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_',
+    }
 
     #--------------------------------------------------------------------------
     # Import Inventory
