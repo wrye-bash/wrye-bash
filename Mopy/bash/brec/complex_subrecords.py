@@ -1360,6 +1360,7 @@ class MelObjectTemplate(MelSequential):
     containing the OBTS subrecord. Note that this also contains a FULL
     subrecord, so you will probably have to use a distributor."""
     def __init__(self):
+        self._ot_end_marker = MelBaseR(b'STOP', 'ot_combinations_end_marker')
         super().__init__(
             MelCounter(MelUInt32(b'OBTE', 'ot_combination_count'),
                 counts='ot_combinations'),
@@ -1368,8 +1369,16 @@ class MelObjectTemplate(MelSequential):
                 MelFull(),
                 _MelObts(),
             ),
-            MelBaseR(b'STOP', 'ot_combinations_end_marker')
+            self._ot_end_marker,
         )
+
+    ##: I already wrote code like this for CS2E and CS2F up above, this is
+    # screaming for a new building block
+    def dumpData(self, record, out):
+        for element in self.elements:
+            # STOP is required iff there are any combinations present
+            if record.ot_combinations or element is not self._ot_end_marker:
+                element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter
