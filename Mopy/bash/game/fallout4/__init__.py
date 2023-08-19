@@ -139,11 +139,13 @@ class Fallout4GameInfo(PatchGame):
 
     # Patchers that will need updating for future record types:
     #  - ImportDestructible
+    #  - ImportEnchantments
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportDestructible', 'ImportEffectStats',
-        'ImportInventory', 'ImportObjectBounds', 'ImportOutfits',
-        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'ImportEnchantments', 'ImportInventory', 'ImportObjectBounds',
+        'ImportOutfits', 'ImportRelations', 'LeveledLists', 'TimescaleChecker',
+        'TweakSettings',
     }
 
     bethDataFiles = {
@@ -736,6 +738,11 @@ class Fallout4GameInfo(PatchGame):
         'script_effect_ai_score', 'script_effect_ai_delay_time')
     mgef_stats_fid_attrs = ('associated_item', 'resist_value', 'actorValue',
                             'second_av', 'equip_ability', 'perk_to_apply')
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = {b'ARMO', b'EXPL'}
 
     #--------------------------------------------------------------------------
     # Import Inventory
