@@ -141,8 +141,9 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportDestructible
     #  - ImportObjectBounds
     patchers = {
-        'AliasPluginNames', 'ImportDestructible', 'ImportObjectBounds',
-        'ImportOutfits', 'ImportRelations', 'LeveledLists', 'TweakSettings',
+        'AliasPluginNames', 'ImportDestructible', 'ImportInventory',
+        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
+        'LeveledLists', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -727,7 +728,7 @@ class Fallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventory_types = {b'CONT', b'NPC_'}
+    inventory_types = {b'CONT', b'FURN', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Object Bounds
