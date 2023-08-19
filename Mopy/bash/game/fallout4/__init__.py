@@ -144,11 +144,11 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportNames
     #  - ImportObjectBounds
     patchers = {
-        'AliasPluginNames', 'ImportActorsPerks', 'ImportDestructible',
-        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
-        'ImportInventory', 'ImportKeywords', 'ImportNames',
-        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
-        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'AliasPluginNames', 'ImportActorsFactions', 'ImportActorsPerks',
+        'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
+        'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
