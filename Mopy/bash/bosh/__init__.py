@@ -970,6 +970,9 @@ class ModInfo(FileInfo):
 removed_tags = {u'Merge', u'ScriptContents'}
 # Indefinite backwards-compatibility aliases for deprecated tags
 tag_aliases = {
+    'Actors.Perks.Add': {'NPC.Perks.Add'},
+    'Actors.Perks.Change': {'NPC.Perks.Change'},
+    'Actors.Perks.Remove': {'NPC.Perks.Remove'},
     'Body-F': {'R.Body-F'},
     'Body-M': {'R.Body-M'},
     'Body-Size-F': {'R.Body-Size-F'},

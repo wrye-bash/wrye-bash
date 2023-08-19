@@ -252,13 +252,12 @@ class _AMerger(ImportPatcher):
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
 class ImportActorsPerksPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Perk Lists Changed') + u': %d'
-    _add_tag = u'Actors.Perks.Add'
-    _change_tag = u'Actors.Perks.Change'
-    _remove_tag = u'Actors.Perks.Remove'
+    logMsg = '\n=== ' + _('Perk Lists Changed') + ': %d'
+    _add_tag = 'NPC.Perks.Add'
+    _change_tag = 'NPC.Perks.Change'
+    _remove_tag = 'NPC.Perks.Remove'
     _wanted_subrecord = {x: 'npc_perks' for x in bush.game.actor_types}
-    patcher_tags = {'Actors.Perks.Add', 'Actors.Perks.Change',
-                    'Actors.Perks.Remove'}
+    patcher_tags = {'NPC.Perks.Add', 'NPC.Perks.Change', 'NPC.Perks.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.npc_perk_fid
