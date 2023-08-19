@@ -812,18 +812,21 @@ class OblivionGameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('crea_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_confidence',
-                              'ai_energy_level', 'ai_responsibility',
-                              'ai_service_flags', 'ai_train_level',
-                              'ai_train_skill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'attackDamage', 'combat_skill',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magic', 'personality', 'soul', 'stealth',
-                             'speed', 'strength', 'willpower'),
+            'Actors.Stats': (
+                'agility', 'attackDamage', 'combat_skill', 'endurance',
+                'health', 'intelligence', 'luck', 'magic', 'personality',
+                'soul', 'stealth', 'speed', 'strength', 'willpower',
+            ),
             'Creatures.Blood': ('blood_decal_path', 'blood_spray_path'),
             'Creatures.Type': ('creature_type',),
         },
@@ -835,11 +838,13 @@ class OblivionGameInfo(PatchGame):
                 'npc_flags.npc_female', 'npc_flags.no_low_level',
                 'npc_flags.no_persuasion', 'npc_flags.no_rumors',
                 'npc_flags.npc_respawn', 'npc_flags.npc_summonable',
-                ('npc_flags.pc_level_offset', 'level_offset')), # See above
-            'Actors.AIData': ('ai_aggression', 'ai_confidence',
-                              'ai_energy_level', 'ai_responsibility',
-                              'ai_service_flags', 'ai_train_skill',
-                              'ai_train_level'),
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_skill',
+                'ai_train_level',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),

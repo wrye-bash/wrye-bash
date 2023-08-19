@@ -897,19 +897,22 @@ class Fallout3GameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('crea_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
-                              'ai_aggro_radius_behavior', 'ai_assistance',
-                              'ai_confidence', 'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_service_flags',
-                              'ai_train_level', 'ai_train_skill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'charisma', 'combat_skill', 'damage',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magic_skill', 'perception', 'stealth_skill',
-                             'strength'),
+            'Actors.Stats': (
+                'agility', 'charisma', 'combat_skill', 'damage', 'endurance',
+                'health', 'intelligence', 'luck', 'magic_skill', 'perception',
+                'stealth_skill', 'strength',
+            ),
             'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
@@ -924,12 +927,14 @@ class Fallout3GameInfo(PatchGame):
                 'npc_flags.crea_no_rotating_head_track',
                 'npc_flags.crea_not_pushable', 'npc_flags.no_vats_melee',
                 'npc_flags.npc_respawn', 'karma', 'speed_multiplier',
-                ('npc_flags.pc_level_offset', 'level_offset')), # See above
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
-                              'ai_aggro_radius_behavior', 'ai_assistance',
-                              'ai_confidence', 'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_service_flags',
-                              'ai_train_level', 'ai_train_skill'),
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),

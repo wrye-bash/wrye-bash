@@ -144,12 +144,12 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportNames
     #  - ImportObjectBounds
     patchers = {
-        'AliasPluginNames', 'ImportActorsAIPackages', 'ImportActorsFactions',
-        'ImportActorsPerks', 'ImportActorsSpells', 'ImportDestructible',
-        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
-        'ImportInventory', 'ImportKeywords', 'ImportNames',
-        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
-        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'AliasPluginNames', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFactions', 'ImportActorsPerks', 'ImportActorsSpells',
+        'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
+        'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -722,6 +722,58 @@ class Fallout4GameInfo(PatchGame):
         817:  ('IsInRobotWorkbench', 0, 0),
     }
     getvatsvalue_index = 407
+
+    #--------------------------------------------------------------------------
+    # Import Actors
+    #--------------------------------------------------------------------------
+    actor_importer_attrs = {
+        b'NPC_': {
+            'Actors.ACBS': (
+                'npc_flags.npc_female', 'npc_flags.npc_essential',
+                'npc_flags.is_chargen_face_preset', 'npc_flags.npc_respawn',
+                'npc_flags.npc_auto_calc', 'npc_flags.npc_unique',
+                'npc_flags.does_not_affect_stealth', 'npc_flags.npc_protected',
+                'npc_flags.npc_summonable', 'npc_flags.does_not_bleed',
+                'npc_flags.bleedout_override',
+                'npc_flags.opposite_gender_anims', 'npc_flags.simple_actor',
+                'npc_flags.no_activation_or_hellos',
+                'npc_flags.diffuse_alpha_test', 'npc_flags.npc_is_ghost',
+                'npc_flags.npc_invulnerable', 'xp_value_offset',
+                # This flag directly impacts how the level_offset is
+                # calculated, so use a fused attribute to always carry them
+                # forward together
+                ('npc_flags.pc_level_offset', 'level_offset'),
+                'calc_min_level', 'calc_max_level', 'disposition_base',
+                'bleedout_override',
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_mood', 'ai_assistance',
+                'ai_aggro_radius_behavior', 'ai_warn', 'ai_warn_attack',
+                'ai_attack', 'ai_no_slow_approach',
+            ),
+            'Actors.RecordFlags': ('flags1',),
+            'Actors.Stats': ('properties',),
+        }
+    }
+    actor_importer_fid_attrs = {
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
+            'Actors.Voice': ('voice',),
+            'NPC.AIPackageOverrides': (
+                'override_package_list_spectator',
+                'override_package_list_observe_dead_body',
+                'override_package_list_guard_warn',
+                'override_package_list_combat',
+            ),
+            'NPC.AttackRace': ('attack_race',),
+            'NPC.Class': ('npc_class',),
+            'NPC.CrimeFaction': ('crime_faction',),
+            'NPC.DefaultOutfit': ('default_outfit',),
+            'NPC.Race': ('race',),
+        }
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible

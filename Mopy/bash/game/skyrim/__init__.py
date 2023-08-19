@@ -1097,26 +1097,28 @@ class SkyrimGameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('npc_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius_behavior',
-                              'ai_assistance', 'ai_attack', 'ai_confidence',
-                              'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_warn',
-                              'ai_warn_attack'),
+                ('npc_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius_behavior', 'ai_assistance',
+                'ai_attack', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_warn', 'ai_warn_attack',
+            ),
             'Actors.RecordFlags': ('flags1',),
-            'Actors.Stats': ('alchemySO', 'alchemySV', 'alterationSO',
-                             'alterationSV', 'blockSO', 'blockSV',
-                             'conjurationSO', 'conjurationSV', 'destructionSO',
-                             'destructionSV', 'enchantingSO', 'enchantingSV',
-                             'health', 'heavyArmorSO', 'heavyArmorSV',
-                             'illusionSO', 'illusionSV', 'lightArmorSO',
-                             'lightArmorSV', 'lockpickingSO', 'lockpickingSV',
-                             'magicka', 'marksmanSO', 'marksmanSV',
-                             'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
-                             'pickpocketSV', 'restorationSO', 'restorationSV',
-                             'smithingSO', 'smithingSV', 'sneakSO', 'sneakSV',
-                             'speechcraftSO', 'speechcraftSV', 'stamina',
-                             'twoHandedSO', 'twoHandedSV'),
+            ##: This should probably be imported as one or two attributes,
+            # meaning NPC_\DNAM should become a MelLists
+            'Actors.Stats': (
+                'alchemySO', 'alchemySV', 'alterationSO', 'alterationSV',
+                'blockSO', 'blockSV', 'conjurationSO', 'conjurationSV',
+                'destructionSO', 'destructionSV', 'enchantingSO',
+                'enchantingSV', 'health', 'heavyArmorSO', 'heavyArmorSV',
+                'illusionSO', 'illusionSV', 'lightArmorSO', 'lightArmorSV',
+                'lockpickingSO', 'lockpickingSV', 'magicka', 'marksmanSO',
+                'marksmanSV', 'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
+                'pickpocketSV', 'restorationSO', 'restorationSV', 'smithingSO',
+                'smithingSV', 'sneakSO', 'sneakSV', 'speechcraftSO',
+                'speechcraftSV', 'stamina', 'twoHandedSO', 'twoHandedSV',
+            ),
         },
     }
     actor_importer_fid_attrs = {
