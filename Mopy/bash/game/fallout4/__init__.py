@@ -143,9 +143,9 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportDestructible', 'ImportEffectStats',
-        'ImportEnchantments', 'ImportInventory', 'ImportObjectBounds',
-        'ImportOutfits', 'ImportRelations', 'LeveledLists', 'TimescaleChecker',
-        'TweakSettings',
+        'ImportEnchantments', 'ImportEnchantmentStats', 'ImportInventory',
+        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
+        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -743,6 +743,14 @@ class Fallout4GameInfo(PatchGame):
     # Import Enchantments
     #--------------------------------------------------------------------------
     enchantment_types = {b'ARMO', b'EXPL'}
+
+    #--------------------------------------------------------------------------
+    # Import Enchantment Stats
+    #--------------------------------------------------------------------------
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
+                        'enchantment_amount', 'enchantment_target_type',
+                        'enchantment_type', 'charge_time')
+    ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
     # Import Inventory
