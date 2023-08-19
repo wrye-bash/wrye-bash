@@ -141,7 +141,7 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportObjectBounds', 'ImportOutfits',
-        'LeveledLists', 'TweakSettings',
+        'ImportRelations', 'LeveledLists', 'TweakSettings',
     }
 
     bethDataFiles = {
