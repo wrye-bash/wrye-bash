@@ -2789,6 +2789,22 @@ class MrePerk(MelRecord):
     ).with_distributor(perk_distributor)
 
 #------------------------------------------------------------------------------
+class MrePkin(MelRecord):
+    """Pack-In."""
+    rec_sig = b'PKIN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        prefab: bool = flag(9)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFilterString(),
+        MelFid(b'CNAM', 'packin_cell'),
+        MelUInt32(b'VNAM', 'packin_version'),
+    )
+
+#------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done
     """Worldspace."""
     ref_types = MreCell.ref_types
