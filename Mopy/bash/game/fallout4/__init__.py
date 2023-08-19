@@ -137,6 +137,8 @@ class Fallout4GameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.95, 1.0)
 
+    # Patchers that will need updating for future record types:
+    #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportObjectBounds', 'ImportOutfits',
         'LeveledLists', 'TweakSettings',
@@ -714,11 +716,6 @@ class Fallout4GameInfo(PatchGame):
     getvatsvalue_index = 407
 
     #--------------------------------------------------------------------------
-    # Leveled Lists
-    #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
-
-    #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
     inventoryTypes = (b'NPC_', b'CONT')
@@ -726,16 +723,26 @@ class Fallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'LVLI', b'LVLN', b'LVSP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'ASPC', b'BNDS',
+        b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN',
+    }
+
+    #--------------------------------------------------------------------------
+    # Leveled Lists
+    #--------------------------------------------------------------------------
+    listTypes = (b'LVLI', b'LVLN', b'LVSP')
 
     #--------------------------------------------------------------------------
     # Timescale Checker
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
 
-    # ------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Tweak Settings
-    # ------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     settings_tweaks = {
         'GlobalsTweak_Timescale_Tes5',
         'GmstTweak_Actor_GreetingDistance',

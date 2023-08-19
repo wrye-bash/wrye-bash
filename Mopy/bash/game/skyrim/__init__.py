@@ -1035,14 +1035,13 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA',
-                           b'ARMO', b'ARTO', b'ASPC', b'BOOK', b'CONT',
-                           b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR',
-                           b'FURN', b'GRAS', b'HAZD', b'IDLM', b'INGR',
-                           b'KEYM', b'LIGH', b'LVLI', b'LVLN', b'LVSP',
-                           b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL',
-                           b'SLGM', b'SOUN', b'SPEL', b'STAT', b'TACT',
-                           b'TREE', b'TXST', b'WEAP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'ARTO', b'ASPC',
+        b'BOOK', b'CONT', b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM', b'SOUN',
+        b'SPEL', b'STAT', b'TACT', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
