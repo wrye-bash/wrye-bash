@@ -140,12 +140,13 @@ class Fallout4GameInfo(PatchGame):
     # Patchers that will need updating for future record types:
     #  - ImportDestructible
     #  - ImportEnchantments
+    #  - ImportKeywords
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportDestructible', 'ImportEffectStats',
         'ImportEnchantments', 'ImportEnchantmentStats', 'ImportInventory',
-        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
-        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'ImportKeywords', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -756,6 +757,15 @@ class Fallout4GameInfo(PatchGame):
     # Import Inventory
     #--------------------------------------------------------------------------
     inventory_types = {b'CONT', b'FURN', b'NPC_'}
+
+    #--------------------------------------------------------------------------
+    # Import Keywords
+    #--------------------------------------------------------------------------
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
+        b'MSTT', b'NPC_',
+    }
 
     #--------------------------------------------------------------------------
     # Import Object Bounds

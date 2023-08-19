@@ -998,10 +998,11 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Keywords
     #--------------------------------------------------------------------------
-    keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
-                      b'FURN', b'INGR', b'KEYM', b'LCTN', b'MGEF', b'MISC',
-                      b'NPC_', b'RACE', b'SCRL', b'SLGM', b'SPEL', b'TACT',
-                      b'WEAP',)
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR', b'FURN', b'INGR',
+        b'KEYM', b'LCTN', b'MGEF', b'MISC', b'NPC_', b'RACE', b'SCRL', b'SLGM',
+        b'SPEL', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Text

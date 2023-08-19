@@ -338,7 +338,7 @@ class ImportEnchantmentStatsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
-    rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
     patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
