@@ -151,21 +151,18 @@ class Fallout3GameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.85, 0.94)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        'ImportActorsAIPackages', 'NpcChecker',
-        'ImportActorsFaces', 'RaceChecker',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
-        u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
-        u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
-        u'TweakRaces', u'TimescaleChecker', u'TweakNames',
-        'ImportEnchantments',
+        'AliasPluginNames', 'ContentsChecker', 'FormIDLists', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFaces', 'ImportActorsFactions',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectsStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportNames',
+        'ImportObjectBounds', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRelations', 'ImportScripts', 'ImportSounds', 'ImportSpellStats',
+        'ImportStats', 'ImportText', 'LeveledLists', 'MergePatches',
+        'NpcChecker', 'RaceChecker', 'TimescaleChecker', 'TweakActors',
+        'TweakAssorted', 'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (

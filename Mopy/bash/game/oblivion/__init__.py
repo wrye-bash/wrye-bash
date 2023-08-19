@@ -187,21 +187,20 @@ class OblivionGameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
 
-    allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'IIM', 'NoMerge'}
     patchers = {
-        u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
-        u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
-        u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
-        u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
-        u'ImportGraphics', u'ImportInventory', u'ImportNames',
-        u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'MorphFactions', u'NpcChecker', u'ReplaceFormIDs',
-        u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
-        u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
-        'ImportRacesRelations', 'TweakRaces', 'RaceChecker',
-        'TimescaleChecker', 'ImportEnchantments',
+        'AliasPluginNames', 'CoblCatalogs', 'CoblExhaustion',
+        'ContentsChecker', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFaces', 'ImportActorsFactions', 'ImportActorsSpells',
+        'ImportCells', 'ImportEffectsStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportGraphics', 'ImportInventory',
+        'ImportNames', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRacesSpells', 'ImportRelations', 'ImportRoads', 'ImportScripts',
+        'ImportSounds', 'ImportSpellStats', 'ImportStats', 'ImportText',
+        'LeveledLists', 'MergePatches', 'MorphFactions', 'NpcChecker',
+        'RaceChecker', 'ReplaceFormIDs', 'SEWorldTests', 'TimescaleChecker',
+        'TweakActors', 'TweakAssorted', 'TweakClothes', 'TweakNames',
+        'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (

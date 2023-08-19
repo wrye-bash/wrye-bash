@@ -39,7 +39,7 @@ from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
-from ..patcher.patchers.base import AliasModNamesPatcher, \
+from ..patcher.patchers.base import AliasPluginNamesPatcher, \
     MergePatchesPatcher, MultiTweaker, ReplaceFormIDsPatcher
 
 class _PatcherPanel(object):
@@ -134,7 +134,7 @@ class _PatcherPanel(object):
 
         Most patchers just save their enabled state, except the
         _ListPatcherPanel subclasses - which save their choices - and the
-        AliasModNames that saves the aliases."""
+        AliasPluginNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
         config[u'isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
@@ -184,8 +184,8 @@ class _PatcherPanel(object):
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
-    patcher_name = _(u'Alias Mod Names')
-    patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
+    patcher_name = _('Alias Plugin Names')
+    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
 
     def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
@@ -987,9 +987,9 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 # Patchers 10 -----------------------------------------------------------------
-class AliasModNames(_AliasesPatcherPanel):
-    _config_key = u'AliasesPatcher'
-    patcher_type = AliasModNamesPatcher
+class AliasPluginNames(_AliasesPatcherPanel):
+    _config_key = 'AliasesPatcher'
+    patcher_type = AliasPluginNamesPatcher
 
 class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""

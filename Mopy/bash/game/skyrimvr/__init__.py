@@ -64,8 +64,8 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     class Bain(SkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
-    allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
-    patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}
+    allTags = SkyrimSEGameInfo.allTags | {'NoMerge'}
+    patchers = SkyrimSEGameInfo.patchers | {'MergePatches'}
 
     bethDataFiles = SkyrimSEGameInfo.bethDataFiles | {
         'skyrimvr.esm',

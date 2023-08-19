@@ -138,7 +138,8 @@ class Fallout4GameInfo(PatchGame):
         validHeaderVersions = (0.95, 1.0)
 
     patchers = {
-        'ImportObjectBounds', 'LeveledLists', 'TweakSettings',
+        'AliasPluginNames', 'ImportObjectBounds', 'LeveledLists',
+        'TweakSettings',
     }
 
     bethDataFiles = {

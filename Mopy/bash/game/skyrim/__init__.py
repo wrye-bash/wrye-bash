@@ -200,20 +200,18 @@ class SkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.94, 1.70)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
-        'ImportActorsAIPackages',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
-        u'ImportOutfits', u'ImportRelations', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
-        u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
-        'ImportEnchantments', 'TweakNames',
+        'AliasPluginNames', 'ContentsChecker', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFactions', 'ImportActorsPerks',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectsStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportKeywords', 'ImportNames',
+        'ImportObjectBounds', 'ImportOutfits', 'ImportRaces',
+        'ImportRacesSpells', 'ImportRelations', 'ImportSounds',
+        'ImportSpellStats', 'ImportStats', 'ImportText', 'LeveledLists',
+        'MergePatches', 'TimescaleChecker', 'TweakActors', 'TweakAssorted',
+        'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (

@@ -97,8 +97,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     class Esp(Fallout3GameInfo.Esp):
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
-    allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-    patchers = Fallout3GameInfo.patchers | {u'ImportWeaponModifications'}
+    allTags = Fallout3GameInfo.allTags | {'WeaponMods'}
+    patchers = Fallout3GameInfo.patchers | {'ImportWeaponModifications'}
 
     bethDataFiles = {
         'caravanpack - main.bsa',
@@ -473,7 +473,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         super(FalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
         from .patcher import preservers
         cls.game_specific_import_patchers = {
-            u'ImportWeaponModifications':
+            'ImportWeaponModifications':
                 preservers.ImportWeaponModificationsPatcher,
         }
 
