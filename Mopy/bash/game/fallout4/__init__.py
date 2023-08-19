@@ -149,7 +149,8 @@ class Fallout4GameInfo(PatchGame):
         'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
         'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
         'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
-        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakActors',
+        'TweakSettings',
     }
 
     bethDataFiles = {
@@ -853,6 +854,14 @@ class Fallout4GameInfo(PatchGame):
     # Timescale Checker
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
+
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'OppositeGenderAnimsPatcher_Female',
+        'OppositeGenderAnimsPatcher_Male',
+    }
 
     # -------------------------------------------------------------------------
     # Tweak Settings
