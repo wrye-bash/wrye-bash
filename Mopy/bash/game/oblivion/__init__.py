@@ -192,7 +192,7 @@ class OblivionGameInfo(PatchGame):
         'AliasPluginNames', 'CoblCatalogs', 'CoblExhaustion',
         'ContentsChecker', 'ImportActors', 'ImportActorsAIPackages',
         'ImportActorsFaces', 'ImportActorsFactions', 'ImportActorsSpells',
-        'ImportCells', 'ImportEffectsStats', 'ImportEnchantments',
+        'ImportCells', 'ImportEffectStats', 'ImportEnchantments',
         'ImportEnchantmentStats', 'ImportGraphics', 'ImportInventory',
         'ImportNames', 'ImportRaces', 'ImportRacesRelations',
         'ImportRacesSpells', 'ImportRelations', 'ImportRoads', 'ImportScripts',

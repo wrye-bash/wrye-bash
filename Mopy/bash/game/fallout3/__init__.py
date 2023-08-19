@@ -156,7 +156,7 @@ class Fallout3GameInfo(PatchGame):
         'AliasPluginNames', 'ContentsChecker', 'FormIDLists', 'ImportActors',
         'ImportActorsAIPackages', 'ImportActorsFaces', 'ImportActorsFactions',
         'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
-        'ImportEffectsStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
         'ImportGraphics', 'ImportInventory', 'ImportNames',
         'ImportObjectBounds', 'ImportRaces', 'ImportRacesRelations',
         'ImportRelations', 'ImportScripts', 'ImportSounds', 'ImportSpellStats',

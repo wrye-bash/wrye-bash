@@ -205,7 +205,7 @@ class SkyrimGameInfo(PatchGame):
         'AliasPluginNames', 'ContentsChecker', 'ImportActors',
         'ImportActorsAIPackages', 'ImportActorsFactions', 'ImportActorsPerks',
         'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
-        'ImportEffectsStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
         'ImportGraphics', 'ImportInventory', 'ImportKeywords', 'ImportNames',
         'ImportObjectBounds', 'ImportOutfits', 'ImportRaces',
         'ImportRacesSpells', 'ImportRelations', 'ImportSounds',

@@ -1199,12 +1199,12 @@ class ImportEnchantmentStats(_ImporterPatcherPanel):
     patcher_type = preservers.ImportEnchantmentStatsPatcher
 
 # -----------------------------------------------------------------------------
-class ImportEffectsStats(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Effect Stats')
+class ImportEffectStats(_ImporterPatcherPanel):
+    patcher_name = _('Import Effect Stats')
     patcher_desc = _('Import stats from magic/base effects from source '
                      'plugins.')
-    _config_key = u'ImportEffectsStats'
-    patcher_type = preservers.ImportEffectsStatsPatcher
+    _config_key = 'ImportEffectsStats'
+    patcher_type = preservers.ImportEffectStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportEnchantments(_ImporterPatcherPanel):

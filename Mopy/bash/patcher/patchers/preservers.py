@@ -316,7 +316,7 @@ class ImportDestructiblePatcher(APreserver):
     patcher_tags = {'Destructible'}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStatsPatcher(APreserver):
+class ImportEffectStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
     _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}

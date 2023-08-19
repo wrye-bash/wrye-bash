@@ -141,9 +141,9 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportDestructible
     #  - ImportObjectBounds
     patchers = {
-        'AliasPluginNames', 'ImportDestructible', 'ImportInventory',
-        'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
-        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
+        'AliasPluginNames', 'ImportDestructible', 'ImportEffectStats',
+        'ImportInventory', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
@@ -724,6 +724,18 @@ class Fallout4GameInfo(PatchGame):
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'CONT', b'DOOR', b'FLOR', b'FURN',
         b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_',
     }
+
+    #--------------------------------------------------------------------------
+    # Import Effect Stats
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = (
+        'flags', 'base_cost', 'taper_weight', 'minimum_skill_level',
+        'spellmaking_area', 'spellmaking_casting_time', 'taper_curve',
+        'taper_duration', 'second_av_weight', 'effect_archetype',
+        'casting_type', 'delivery', 'skill_usage_multiplier',
+        'script_effect_ai_score', 'script_effect_ai_delay_time')
+    mgef_stats_fid_attrs = ('associated_item', 'resist_value', 'actorValue',
+                            'second_av', 'equip_ability', 'perk_to_apply')
 
     #--------------------------------------------------------------------------
     # Import Inventory
