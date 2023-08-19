@@ -143,7 +143,7 @@ class Fallout4GameInfo(PatchGame):
     patchers = {
         'AliasPluginNames', 'ImportDestructible', 'ImportInventory',
         'ImportObjectBounds', 'ImportOutfits', 'ImportRelations',
-        'LeveledLists', 'TweakSettings',
+        'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
     bethDataFiles = {
