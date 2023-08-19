@@ -533,7 +533,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Prices
     #--------------------------------------------------------------------------
-    namesTypes = {
+    names_types = {
         b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
         b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'FLOR',
         b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC', b'NPC_', b'QUST',

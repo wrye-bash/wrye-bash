@@ -473,7 +473,7 @@ class GameInfo(object):
     #--Game ESM/ESP/BSA files
     ## These are all of the ESM,ESP,and BSA data files that belong to the game
     ## These filenames need to be in lowercase,
-    bethDataFiles = set()  # initialize with literal
+    bethDataFiles = set()
 
     # Known record types - maps integers from the save format to human-readable
     # names for the record types. Used in save editing code.

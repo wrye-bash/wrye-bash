@@ -345,8 +345,8 @@ class ImportKeywordsPatcher(APreserver):
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg =  '\n=== ' + _('Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    srcsHeader = '=== ' + _('Source Mods/Files')
+    rec_attrs = {x: ('full',) for x in bush.game.names_types}
     _csv_parser = parsers.FullNames
     patcher_tags = {'Names'}
     _csv_key = 'Names'

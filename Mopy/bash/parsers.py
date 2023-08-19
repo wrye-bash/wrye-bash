@@ -861,7 +861,7 @@ class FullNames(_HandleAliases):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
-        self._parser_sigs = bush.game.namesTypes
+        self._parser_sigs = bush.game.names_types
         self._attr_dex = {u'full': 4} if self._called_from_patcher else {
             u'eid': 3, u'full': 4}
 

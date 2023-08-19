@@ -557,7 +557,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {
+    names_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
         b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
         b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',

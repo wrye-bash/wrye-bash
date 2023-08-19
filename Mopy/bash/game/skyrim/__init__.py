@@ -719,7 +719,7 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {
+    names_types = {
         b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
         b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES', b'FACT', b'FLOR',
         b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MESG',

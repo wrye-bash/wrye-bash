@@ -141,11 +141,12 @@ class Fallout4GameInfo(PatchGame):
     #  - ImportDestructible
     #  - ImportEnchantments
     #  - ImportKeywords
+    #  - ImportNames
     #  - ImportObjectBounds
     patchers = {
         'AliasPluginNames', 'ImportDestructible', 'ImportEffectStats',
         'ImportEnchantments', 'ImportEnchantmentStats', 'ImportInventory',
-        'ImportKeywords', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportKeywords', 'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
         'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakSettings',
     }
 
@@ -765,6 +766,16 @@ class Fallout4GameInfo(PatchGame):
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
         b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
         b'MSTT', b'NPC_',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Names
+    #--------------------------------------------------------------------------
+    names_types = {
+        b'AACT', b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
+        b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
+        b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
+        b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
     }
 
     #--------------------------------------------------------------------------

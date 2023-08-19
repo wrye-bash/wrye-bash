@@ -329,7 +329,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = Fallout3GameInfo.namesTypes | {
+    names_types = Fallout3GameInfo.names_types | {
         b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
         b'REPU',
     }
