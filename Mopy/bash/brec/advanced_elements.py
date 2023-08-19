@@ -30,7 +30,7 @@ __author__ = 'Infernio'
 
 import copy
 from itertools import chain
-from typing import Any, Callable
+from typing import Any, BinaryIO, Callable
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct
@@ -988,6 +988,9 @@ class _MelWrapper(MelBase):
     def dumpData(self, record, out):
         self._wrapped_mel.dumpData(record, out)
 
+    def packSub(self, out: BinaryIO, binary_data: bytes):
+        self._wrapped_mel.packSub(out, binary_data)
+
     def pack_subrecord_data(self, record):
         return self._wrapped_mel.pack_subrecord_data(record)
 
@@ -1080,10 +1083,16 @@ class MelExtra(_MelWrapper):
         setattr(record, self._extra_attr, ins.read(size_ - read_size))
 
     def dumpData(self, record, out):
-        super().dumpData(record, out)
+        # Need to bypass _MelWrapper.dumpData here so that we can intercept
+        # pack_subrecord_data
+        super(_MelWrapper, self).dumpData(record, out)
+
+    def pack_subrecord_data(self, record):
+        final_packed = self._wrapped_mel.pack_subrecord_data(record)
         extra_data = getattr(record, self._extra_attr)
         if extra_data is not None:
-            out.write(extra_data)
+            final_packed += extra_data
+        return final_packed
 
 #------------------------------------------------------------------------------
 class MelSorted(_MelWrapper):
