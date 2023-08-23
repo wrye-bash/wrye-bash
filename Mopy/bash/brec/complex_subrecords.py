@@ -572,8 +572,9 @@ class MelOmodData(MelPartialCounter):
             od_property.load_property(ins, *debug_strs)
             append_property(od_property)
 
-    def dumpData(self, record, out):
-        super().dumpData(record, out)
+    def pack_subrecord_data(self, record):
+        out = BytesIO()
+        out.write(super().pack_subrecord_data(record))
         for od_aps in record.od_attach_parent_slots:
             pack_int(out, od_aps.dump())
         pack_int(out, len(record.od_items) // 8)
@@ -582,6 +583,7 @@ class MelOmodData(MelPartialCounter):
             od_include.dump_include(out)
         for od_property in record.od_properties:
             od_property.dump_property(out)
+        return out.getvalue()
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
@@ -1334,8 +1336,9 @@ class _MelObts(MelPartialCounter):
             obts_property.load_property(ins, *debug_strs)
             append_property(obts_property)
 
-    def dumpData(self, record, out):
-        super().dumpData(record, out)
+    def pack_subrecord_data(self, record):
+        out = BytesIO()
+        out.write(super().pack_subrecord_data(record))
         for obts_kwd in record.obts_keywords:
             pack_int(out, obts_kwd.dump())
         pack_byte(out, record.obts_min_level_for_ranks)
@@ -1344,6 +1347,7 @@ class _MelObts(MelPartialCounter):
             obts_include.dump_include(out)
         for obts_property in record.obts_properties:
             obts_property.dump_property(out)
+        return out.getvalue()
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)

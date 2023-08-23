@@ -2611,7 +2611,7 @@ class MreNpc_(AMreActor, AMreWithKeywords, _AMreWithProperties):
         ), sort_by_attrs='fm_index'),
         MelFloat(b'FMIN', 'facial_morph_intensity'),
         MelAttx(),
-    )
+    ).with_distributor(_object_template_distributor)
 
 #------------------------------------------------------------------------------
 class MreOmod(MelRecord):

@@ -314,21 +314,22 @@ class QuietFeetPatcher(_ACreatureTweak):
     def _get_silenced_sounds(record):
         """Returns the sounds of the specified record, with all footstep sound
         silenced."""
-        return [s for s in record.sounds if s.type not in (0, 1, 2, 3)]
+        return [s for s in record.actor_sounds
+                if s.actor_sound_type not in (0, 1, 2, 3)]
 
     def wants_record(self, record):
         # Check if we're templated first (only relevant on FO3/FNV)
         if is_templated(record, 'use_model_animation'): return False
         chosen_target = self.choiceValues[self.chosen][0]
         if chosen_target == 'partial' and not any(
-                s.type in (2, 3) for s in record.sounds):
+                s.actor_sound_type in (2, 3) for s in record.actor_sounds):
             return False
         elif chosen_target == 'mounts' and record.creature_type != 4:
             return False
-        return record.sounds != self._get_silenced_sounds(record)
+        return record.actor_sounds != self._get_silenced_sounds(record)
 
     def tweak_record(self, record):
-        record.sounds = self._get_silenced_sounds(record)
+        record.actor_sounds = self._get_silenced_sounds(record)
 
 #------------------------------------------------------------------------------
 class IrresponsibleCreaturesPatcher(_ACreatureTweak):

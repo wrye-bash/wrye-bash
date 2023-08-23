@@ -988,12 +988,6 @@ class _MelWrapper(MelBase):
     def dumpData(self, record, out):
         self._wrapped_mel.dumpData(record, out)
 
-    def packSub(self, out: BinaryIO, binary_data: bytes):
-        self._wrapped_mel.packSub(out, binary_data)
-
-    def pack_subrecord_data(self, record):
-        return self._wrapped_mel.pack_subrecord_data(record)
-
     def mapFids(self, record, function, save_fids=False):
         self._wrapped_mel.mapFids(record, function, save_fids)
 
@@ -1010,6 +1004,21 @@ class _MelWrapper(MelBase):
     @property
     def static_size(self):
         return self._wrapped_mel.static_size
+
+##: This ugliness just exposes how terrible _MelWrapper really is. A better
+# tool is deperately wanted!
+class _MelWrapperNoDD(_MelWrapper):
+    """Variant of _MelWrapper that does not direct dumpData to the wrapped
+    element. Necessary if you want to use pack_subrecord_data or packSub in
+    your wrapper."""
+    def dumpData(self, record, out):
+        super(_MelWrapper, self).dumpData(record, out) # bypass _MelWrapper
+
+    def pack_subrecord_data(self, record):
+        return self._wrapped_mel.pack_subrecord_data(record)
+
+    def packSub(self, out: BinaryIO, binary_data: bytes):
+        self._wrapped_mel.packSub(out, binary_data)
 
 #------------------------------------------------------------------------------
 class MelCounter(_MelWrapper):
@@ -1034,9 +1043,10 @@ class MelCounter(_MelWrapper):
         val_len = len(getattr(record, self.counted_attr, []))
         setattr(record, self._wrapped_mel.attr, val_len)
         if val_len:
-            super(MelCounter, self).dumpData(record, out)
+            super().dumpData(record, out)
 
-class MelPartialCounter(_MelWrapper):
+# NoDD for _MelObts and MelOmodData
+class MelPartialCounter(_MelWrapperNoDD):
     """Similar to MelCounter, but works for MelStructs that contain more than
     just a counter (including multiple counters). This means adding behavior
     for mapping fids, but dropping the conditional dumping behavior."""
@@ -1056,7 +1066,7 @@ class MelPartialCounter(_MelWrapper):
         super().dumpData(record, out)
 
 #------------------------------------------------------------------------------
-class MelExtra(_MelWrapper):
+class MelExtra(_MelWrapperNoDD):
     """Used to wrap another element that has additional unknown/junk data of
     varying length after it."""
     def __init__(self, wrapped_mel: MelBase, *, extra_attr: str):
@@ -1081,11 +1091,6 @@ class MelExtra(_MelWrapper):
         # Now, read the remainder of the subrecord and store it
         read_size = ins.tell() - start_pos
         setattr(record, self._extra_attr, ins.read(size_ - read_size))
-
-    def dumpData(self, record, out):
-        # Need to bypass _MelWrapper.dumpData here so that we can intercept
-        # pack_subrecord_data
-        super(_MelWrapper, self).dumpData(record, out)
 
     def pack_subrecord_data(self, record):
         final_packed = self._wrapped_mel.pack_subrecord_data(record)
