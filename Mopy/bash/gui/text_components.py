@@ -203,7 +203,7 @@ class TextField(_ATextInput):
         """Creates a new TextField instance with the specified properties.
         See _ATextInput for documentation on kwargs."""
         self._wx_parent = self._resolve(parent)
-        super(TextField, self).__init__(parent, *args, multiline=False,
+        super().__init__(parent, *args, multiline=False,
             style=_wx.TE_PROCESS_ENTER, **kwargs)
         # Handle Enter -> OK button event to parent
         self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER)
@@ -229,10 +229,7 @@ class SearchBar(TextField):
 
         :param hint: The string to show if nothing has been entered into
             the search bar. Optional, defaults to 'Search'."""
-        super().__init__(parent, *args, **kwargs)
-        ##: Not sure what the difference between SetHint and SetDescriptiveText
-        # is supposed to be, but this one works while SetHint does not...
-        self._native_widget.SetDescriptiveText(hint)
+        super().__init__(parent, *args, hint=hint, **kwargs)
         # Implement behavior for the small cancel button: show or hide based on
         # text content (present if text is present and vice versa)
         def _update_clear_btn_visibility(new_text: str):
@@ -249,6 +246,16 @@ class SearchBar(TextField):
     def _set_hint(self, hint: str):
         # SearchCtrl.SetHint is broken (at least on Windows), avoid it
         self._native_widget.SetDescriptiveText(hint)
+
+class PasswordField(_ATextInput):
+    """A single-line text edit widget that hides the entered characters. See
+    the documentation for _ATextInput for a list of the events this component
+    offers."""
+    def __init__(self, parent, *args, **kwargs):
+        """Creates a new PasswordField instance with the specified properties.
+        See _ATextInput for documentation on kwargs."""
+        super().__init__(parent, *args, multiline=False, style=_wx.TE_PASSWORD,
+            **kwargs)
 
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):

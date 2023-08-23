@@ -40,7 +40,8 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
-    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton
+    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
+    PasswordField
 from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
@@ -1516,6 +1517,18 @@ class GeneralPage(_AScrollablePage):
             self._request_restart(_(u'Administrator Mode'), [u'--uac'])
         super(GeneralPage, self).on_apply()
 
+# Nexus Mods ------------------------------------------------------------------
+class NexusPage(_AFixedPage):
+    """Integrate with Nexus Mods."""
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        self._manual_api_key = PasswordField(self)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._page_desc_label,
+            HorizontalLine(self),
+            self._manual_api_key,
+        ]).apply_to(self)
+
 # Trusted Binaries ------------------------------------------------------------
 class TrustedBinariesPage(_AFixedPage):
     """Change which binaries are trusted and which aren't."""
@@ -1725,6 +1738,7 @@ _settings_pages = {
     _(u'Backups'): BackupsPage,
     _(u'Confirmations'): ConfirmationsPage,
     _(u'General'): GeneralPage,
+    'Nexus Mods': NexusPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
 }
 
@@ -1750,6 +1764,7 @@ _page_descriptions = {
           u'option.'),
     _(u'General'):
         _(u'Change various general settings.'),
+    'Nexus Mods': _('Integrate Wrye Bash with Nexus Mods.'),
     _(u'Trusted Binaries'):
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')
@@ -1765,5 +1780,6 @@ _page_anchors = defaultdict(lambda: u'settings', {
     _(u'Backups'): u'settings-backups',
     _(u'Confirmations'): u'settings-confirmations',
     _(u'General'): u'settings-general',
+    'Nexus Mods': 'settings-nexus',
     _(u'Trusted Binaries'): u'settings-trusted-binaries',
 })
