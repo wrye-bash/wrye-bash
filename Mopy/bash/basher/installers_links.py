@@ -26,9 +26,9 @@ points to the InstallersList singleton."""
 from itertools import chain
 
 from . import Installers_Link
-from .dialogs import CreateNewProject, CleanDataEditor, \
-    MonitorExternalInstallationEditor
-from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
+    MonitorExternalInstallationEditor, AImportOrderParser
+from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
 from ..gui import copy_text_to_clipboard
@@ -284,12 +284,7 @@ class Installers_CreateNewProject(ItemLink):
         CreateNewProject.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
-class _AInstallers_Order(Installers_Link, CsvParser):
-    """Base class for export/import package order links."""
-    _csv_header = _('Package'), (_('Installed? (%(inst_y)s/%(inst_n)s)')
-                                 % {'inst_y': 'Y', 'inst_n': 'N'})
-
-class Installers_ExportOrder(_AInstallers_Order):
+class Installers_ExportOrder(Installers_Link, AImportOrderParser):
     """Export order and installation status for all packages."""
     _text = _('Export Order...')
     _help = _('Export the order and installation status of all packages.')
@@ -326,7 +321,7 @@ class Installers_ExportOrder(_AInstallers_Order):
             self.packages_exported += 1
 
 #------------------------------------------------------------------------------
-class Installers_ImportOrder(_AInstallers_Order):
+class Installers_ImportOrder(Installers_Link):
     """Import order and installation status for a subset of all packages from a
     previous export."""
     _text = _('Import Order...')
@@ -341,47 +336,7 @@ class Installers_ImportOrder(_AInstallers_Order):
               'that. Packages that are not listed in the CSV file will not be '
               'touched.') + '\n\n' + _('Are you sure you want to proceed?'),
                 title=_('Import Order - Warning')): return
-        self._import_acti_status = self._askYes(
-            _("Do you want to import the enabled/disabled status from the CSV "
-              "file as well? Choosing 'No' will only reorder packages, "
-              "leaving enabled/disabled status unchanged."),
-            title=_('Import Order - Import Activation Status?'),
-            questionIcon=True)
-        imp_path = self._askOpen(title=_('Import Order - Choose Source'),
-            defaultDir=bass.dirs['patches'], defaultFile='PackageOrder.csv',
-            wildcard='*.csv')
-        if not imp_path: return
-        self.first_line = True
-        self._partial_package_order = []
-        try:
-            self.read_csv(imp_path)
-        except (exception.BoltError, NotImplementedError):
-            self._showError(_('The selected file is not a valid '
-                              'package order CSV export.'),
-                title=_('Import Order - Invalid CSV'))
-            return
-        reorder_err = self.idata.reorder_packages(self._partial_package_order)
-        self.idata.refresh_ns()
-        self.window.RefreshUI()
-        if reorder_err:
-            self._showError(reorder_err, title=_('Import Order - Error'))
-        else:
-            self._showInfo(_('Imported order and installation status for '
-                             '%(total_imported)d package(s).') % {
-                'total_imported': len(self._partial_package_order)},
-                title=_('Import Order - Done'))
-
-    def _parse_line(self, csv_fields):
-        if self.first_line: # header validation
-            self.first_line = False
-            if len(csv_fields) != 2:
-                raise exception.BoltError(f'Header error: {csv_fields}')
-            return
-        pkg_fstr, pkg_installed_yn = csv_fields
-        if (pkg_fname := bolt.FName(pkg_fstr)) in self.idata:
-            if self._import_acti_status:
-                self.idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
-            self._partial_package_order.append(pkg_fname)
+        ImportOrderDialog.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

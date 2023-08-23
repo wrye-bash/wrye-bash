@@ -25,8 +25,9 @@ from dataclasses import dataclass
 
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
 from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
-from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs
-from ..bosh import InstallerProject, ModInfo, faces
+from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
+    reverse_dict
+from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
@@ -34,7 +35,9 @@ from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
     OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
     TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
     MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
-    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode
+    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode, ImageButton, \
+    FileOpen
+from ..parsers import CsvParser
 from ..update_checker import LatestVersion
 from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file
 
@@ -919,3 +922,129 @@ class MasterErrorsDialog(_AModsChangeHighlightDialog):
     """Dialog shown when Wrye Bash detected master errors before building a
     BP."""
     title = _('Master Errors')
+
+#------------------------------------------------------------------------------
+class AImportOrderParser(CsvParser):
+    """Base class for export/import package order-related classes."""
+    _csv_header = _('Package'), (_('Installed? (%(inst_y)s/%(inst_n)s)')
+                                 % {'inst_y': 'Y', 'inst_n': 'N'})
+
+class ImportOrderDialog(DialogWindow, AImportOrderParser):
+    """Dialog shown when importing package order."""
+    title = _('Import Order')
+    _key_to_import = {
+        'imp_all':       _('Order and Installed Status'),
+        'imp_order':     _('Order Only'),
+        'imp_installed': _('Installed Status Only'),
+    }
+    _import_to_key = reverse_dict(_key_to_import)
+
+    def __init__(self, parent):
+        super().__init__(parent, icon_bundle=balt.Resources.bashBlue)
+        self._bain_parent = parent
+        self._import_target_field = TextField(self, hint=_('CSV to import'))
+        browse_file_btn = ImageButton(self,
+            balt.images['folder.16'].get_bitmap(),
+            btn_tooltip=_('Open a file dialog to interactively choose the '
+                          'saved package order to import.'))
+        browse_file_btn.on_clicked.subscribe(self._handle_browse)
+        self._import_what = DropDown(self,
+            value=self._key_to_import[
+                bass.settings['bash.installers.import_order.what']],
+            choices=sorted(self._key_to_import.values()),
+            dd_tooltip=_('Select what will be imported.'))
+        self._import_what.on_combo_select.subscribe(self._save_import_what)
+        self._create_markers = CheckBox(self, checked=bass.settings[
+            'bash.installers.import_order.create_markers'],
+            chkbx_tooltip=_("If checked, markers (i.e. entries beginning and "
+                            "ending with '==') that don't exist will be "
+                            "created upon import."))
+        ok_btn = OkButton(self)
+        ok_btn.on_clicked.subscribe(self._handle_ok)
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            HBoxedLayout(self, title=_('File'), spacing=4, items=[
+                (self._import_target_field,
+                 LayoutOptions(expand=True, weight=1)),
+                browse_file_btn,
+            ]),
+            VBoxedLayout(self, title=_('Options'), spacing=4, item_expand=True,
+                items=[
+                    HLayout(spacing=4, items=[
+                        Label(self, _('Import What?')),
+                        (self._import_what,
+                         LayoutOptions(expand=True, weight=1)),
+                    ]),
+                    HLayout(spacing=4, items=[
+                        Label(self, _('Create Missing Markers')),
+                        self._create_markers,
+                    ]),
+            ]),
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(spacing=4, item_expand=True, items=[
+                Stretch(), ok_btn, CancelButton(self),
+            ]),
+        ]).apply_to(self, fit=True)
+
+    def _handle_browse(self):
+        """Internal callback, opens a file dialog to choose the order file."""
+        chosen_order_file = FileOpen.display_dialog(self,
+            title=_('Import Order - Choose File'),
+            defaultFile='PackageOrder.csv', defaultDir=bass.dirs['patches'],
+            wildcard='*.csv')
+        if chosen_order_file:
+            self._import_target_field.text_content = chosen_order_file.s
+
+    def _save_import_what(self, sel_import_what: str):
+        """Internal callback, saves the Import what? value when it's changed so
+        that future Import Order dialogs have a fitting default."""
+        bass.settings['bash.installers.import_order.what'] = \
+            self._import_to_key[sel_import_what]
+
+    def _handle_ok(self):
+        """Internal callback, performs the actual reordering etc."""
+        imp_path = self._import_target_field.text_content
+        if not imp_path: return
+        self.first_line = True
+        self._partial_package_order = []
+        try:
+            self.read_csv(imp_path)
+        except (exception.BoltError, NotImplementedError):
+            balt.showError(self, _('The selected file is not a valid package '
+                                   'order CSV export.'),
+                title=_('Import Order - Invalid CSV'))
+            return
+        bain_idata = self._bain_parent.data_store
+        reorder_err = bain_idata.reorder_packages(self._partial_package_order)
+        bain_idata.refresh_ns()
+        self._bain_parent.RefreshUI()
+        if reorder_err:
+            balt.showError(self, reorder_err, title=_('Import Order - Error'))
+        else:
+            balt.showInfo(self, _('Imported order and installation status for '
+                                  '%(total_imported)d package(s).') % {
+                'total_imported': len(self._partial_package_order)},
+                title=_('Import Order - Done'))
+
+    def _parse_line(self, csv_fields):
+        if self.first_line: # header validation
+            self.first_line = False
+            if len(csv_fields) != 2:
+                raise exception.BoltError(f'Header error: {csv_fields}')
+            return
+        pkg_fstr, pkg_installed_yn = csv_fields
+        bain_idata = self._bain_parent.data_store
+        pkg_fname = bolt.FName(pkg_fstr)
+        pkg_present = pkg_fname in bain_idata
+        pkg_is_marker = pkg_fstr.startswith('==') and pkg_fstr.endswith('==')
+        if (self._create_markers.is_checked and pkg_is_marker and
+                not pkg_present):
+            bain_idata.new_info(pkg_fname, is_mark=True)
+            pkg_present = True
+        if pkg_present:
+            # If we import something other than purely order (and this isn't a
+            # marker, which can't be enabled anyways)
+            if (not pkg_is_marker and
+                    self._import_what.get_value() != 'imp_order'):
+                bain_idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
+            self._partial_package_order.append(pkg_fname)

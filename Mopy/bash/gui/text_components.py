@@ -64,14 +64,17 @@ class _ATextInput(_AComponent):
     _native_widget: _wx.TextCtrl
 
     # TODO: (fixed) font(s)
-    def __init__(self, parent, init_text=None, multiline=True, editable=True,
-            auto_tooltip=True, max_length=None, no_border=False,
+    def __init__(self, parent, init_text: str | None = None,
+            hint: str | None = None, multiline=True, editable=True,
+            auto_tooltip=True, max_length: int | None = None, no_border=False,
             alignment=TextAlignment.LEFT, style=0):
         """Creates a new _ATextInput instance with the specified properties.
 
         :param parent: The object that this text input belongs to. May be a wx
                        object or a component.
         :param init_text: The initial text in this text input.
+        :param hint: The hint for this text input (grey text shown when nothing
+                     has been entered into the text input yet).
         :param multiline: True if this text input allows multiple lines.
         :param editable: True if the user may edit text in this text input.
         :param auto_tooltip: Whether or not to automatically show a tooltip
@@ -96,6 +99,8 @@ class _ATextInput(_AComponent):
             ##: multiline + max length is not supported on GTK
             if not multiline or _wx.Platform != u'__WXGTK__':
                 self._native_widget.SetMaxLength(max_length)
+        if hint:
+            self._set_hint(hint)
         # Events
         # Internal use only - used to implement auto_tooltip below
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
@@ -107,6 +112,11 @@ class _ATextInput(_AComponent):
         if auto_tooltip:
             self._on_size_changed.subscribe(self._on_size_change)
             self.on_text_changed.subscribe(self._update_tooltip)
+
+    def _set_hint(self, hint: str):
+        """Internal method for setting a text input's hint. Needed since
+        SearchCtrl.SetHint does not work correctly on Windows."""
+        self._native_widget.SetHint(hint)
 
     def _update_tooltip(self, new_text: str):
         """Internal callback that shows or hides the tooltip depending on the
@@ -235,6 +245,10 @@ class SearchBar(TextField):
         def _clear_search_bar():
             self.text_content = ''
         on_cancel.subscribe(_clear_search_bar)
+
+    def _set_hint(self, hint: str):
+        # SearchCtrl.SetHint is broken (at least on Windows), avoid it
+        self._native_widget.SetDescriptiveText(hint)
 
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):

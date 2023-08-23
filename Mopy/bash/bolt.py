@@ -345,6 +345,12 @@ def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
     return {**dict_a, **dict_b,
             **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
 
+def reverse_dict(target_dict: dict[K, V]) -> dict[V, K]:
+    """Create a dict that represents the reverse/inverse mapping of the
+    specified dict. If a -> b in target_dict, then b -> a in the returned
+    dict."""
+    return {v: k for k, v in target_dict.items()}
+
 _not_cached = object()
 
 # PY3.12: Benchmark to see if we can now replace this with cached_property

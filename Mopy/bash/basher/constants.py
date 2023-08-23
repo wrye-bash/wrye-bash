@@ -343,6 +343,8 @@ settingDefaults = { # keep current naming format till refactored
     'bash.installers.badDlls': {},
     'bash.installers.onDropFiles.action': None,
     'bash.installers.commentsSplitterSashPos': 0,
+    'bash.installers.import_order.create_markers': True,
+    'bash.installers.import_order.what': 'imp_all',
     #--Wrye Bash: Wizards
     'bash.fomod.size': (600, 500),
     'bash.fomod.pos': DEFAULT_POSITION,

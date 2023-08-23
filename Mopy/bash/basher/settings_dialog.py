@@ -31,7 +31,8 @@ from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion
+from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
+    reverse_dict
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
     DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
@@ -481,8 +482,7 @@ class LanguagePage(_AScrollablePage):
         u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
         u'en_US': _('American English') + ' (American English)',
     })
-    _localized_to_internal = _LangDict(
-        {v: k for k, v in _internal_to_localized.items()})
+    _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
@@ -1044,7 +1044,7 @@ class ConfirmationsPage(_AFixedPage):
         u'COPY': _(u'Copy'),
         u'MOVE': _(u'Move'),
     }
-    _label_to_action = {v: k for k, v in _action_to_label.items()}
+    _label_to_action = reverse_dict(_action_to_label)
     ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
     # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
     # sense for non-SSE/FO4 games
@@ -1273,13 +1273,13 @@ class GeneralPage(_AScrollablePage):
         _(u'UTF-8'): u'utf-8',
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
-    _encodings_reverse = {v: k for k, v in _all_encodings.items()}
+    _encodings_reverse = reverse_dict(_all_encodings)
     _global_menu_options = {
         _('Both'): 0,
         _('Global Menu Only'): 1,
         _('Column Menu Only'): 2,
     }
-    _gm_reverse = {v: k for k, v in _global_menu_options.items()}
+    _gm_reverse = reverse_dict(_global_menu_options)
     _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
                     'plugin_encoding', 'update_check_enabled',
                     'update_check_cooldown', 'uac_restart', 'wb_temp_dir'}

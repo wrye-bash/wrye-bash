@@ -25,8 +25,9 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bolt, bush
+from .. import balt, bass, bush
 from ..balt import EnabledLink, Links, colors
+from ..bolt import LowerDict, dict_sort, reverse_dict
 from ..env import get_file_version, get_game_version_fallback, to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
@@ -44,7 +45,7 @@ class FomodInstallInfo(object):
         # canceled: true if the user canceled or if an error occurred
         self.canceled = False
         # install_files: file->dest mapping of files to install
-        self.install_files = bolt.LowerDict()
+        self.install_files = LowerDict()
         # should_install: boolean on whether to install the files
         self.should_install = True
 
@@ -185,9 +186,8 @@ class InstallerFomod(WizardDialog):
             self._run_wizard()
             # Invert keys and values ahead of time here, so that BAIN doesn't
             # have to do it just in time
-            self.fm_ret.install_files = bolt.LowerDict({
-                v: k for k, v
-                in self.fomod_parser.get_fomod_files().items()})
+            self.fm_ret.install_files = LowerDict(reverse_dict(
+                self.fomod_parser.get_fomod_files()))
         if self._is_arch:
             cleanup_temp_dir(self._fomod_dir)
         return self.fm_ret
@@ -492,7 +492,7 @@ class PageFinish(PageInstaller):
             self._output_text = TextArea(
                 self, editable=False, auto_tooltip=False,
                 init_text=self.display_files(installer_output))
-            sorted_output = bolt.dict_sort(installer_output,
+            sorted_output = dict_sort(installer_output,
                 key_f=lambda k: installer_output[k].lower())  # sort by source
             sorted_src = []
             sorted_dst = []

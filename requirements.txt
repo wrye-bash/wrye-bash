@@ -11,17 +11,17 @@ lxml==4.9.3
 # For parsing download conditions when checking for updates
 packaging==23.1
 # For PDF support in the doc browser
-PyMuPDF==1.22.5
+PyMuPDF==1.23.3
 # For various Internet-based functionality
 requests==2.31.0
 # For sending files to the recycle bin on non-Windows platforms
 send2trash==1.8.2; sys_platform != 'win32'
 # For Nexus Mods integration
-websocket-client==1.6.1
+websocket-client==1.6.2
 # Compile/Build-time ----------------------------------------------------------
 isort==5.12.0
 pyfiglet==0.8.post1
 pygit2==1.12.2
 PyGithub==1.59.1
-pyinstaller==5.13.0
+pyinstaller==5.13.2
 pytest==7.4.0
