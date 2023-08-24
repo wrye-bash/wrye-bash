@@ -460,7 +460,7 @@ class Installer(ListInfo):
     _extensions_to_process = set()
 
     @staticmethod
-    def init_global_skips(askYes):
+    def init_global_skips(ask_yes):
         """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
         and on flipping skip settings - and nowhere else, hopefully."""
@@ -520,7 +520,7 @@ class Installer(ListInfo):
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= bain_image_exts
-        Installer._init_executables_skips(askYes)
+        Installer._init_executables_skips(ask_yes)
 
     @staticmethod
     def init_attributes_process():
@@ -655,7 +655,7 @@ class Installer(ListInfo):
         return skips, skip_ext
 
     @staticmethod
-    def _init_executables_skips(askYes):
+    def _init_executables_skips(ask_yes):
         if force_recalc := (Installer._goodDlls is Installer._badDlls is None):
             Installer._goodDlls = collections.defaultdict(list)
             Installer._badDlls = collections.defaultdict(list)
@@ -670,7 +670,7 @@ class Installer(ListInfo):
                 dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
-            if not askYes(None, message, dialogTitle): ##: was balt.Link.Frame <=> None?
+            if not ask_yes(None, message, dialogTitle): ##: was balt.Link.Frame <=> None?
                 badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True

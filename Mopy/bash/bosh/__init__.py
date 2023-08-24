@@ -55,7 +55,6 @@ from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError
-from ..gui import askYes ##: YAK!
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -3058,16 +3057,16 @@ class ModInfos(FileInfos):
         return self[fileName].get_version() if fileName in self else ''
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _retry(self, old, new):  ##: we should check *before* writing the patch
+    def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
         msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
         msg += '\n\n' + _('The file is in use by another process such as '
                           '%(xedit_name)s.') + '\n'
         msg += _('Please close the other program that is accessing %(new)s.')
         msg += '\n\n' + _('Try again?')
         msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
-        return askYes(self, msg, _('File in use'))
+        return ask_yes(self, msg, _('File in use'))
 
-    def setOblivionVersion(self, newVersion):
+    def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""
         baseName = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
@@ -3100,7 +3099,7 @@ class ModInfos(FileInfos):
             except PermissionError: ##: can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
                 if self._retry(baseInfo.getPath(),
-                        self.store_dir.join(oldName)):
+                        self.store_dir.join(oldName), ask_yes):
                     continue
                 raise
             except CancelError:
@@ -3110,7 +3109,7 @@ class ModInfos(FileInfos):
                 file_info_rename_op(newInfo, self._master_esm)
                 break
             except PermissionError:
-                if self._retry(newInfo.getPath(), baseInfo.getPath()):
+                if self._retry(newInfo.getPath(), baseInfo.getPath(), ask_yes):
                     continue
                 #Undo any changes
                 file_info_rename_op(oldName, self._master_esm)
@@ -3138,7 +3137,7 @@ class ModInfos(FileInfos):
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)
 
-    def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
+    def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
         arcPath, newPath = map(dirs[u'saveBase'].join, (arcSaves, newSaves))
@@ -3149,7 +3148,7 @@ class ModInfos(FileInfos):
         if voNew is None:
             saveInfos.set_profile_attr(newSaves, u'vOblivion', self.voCurrent)
             voNew = self.voCurrent
-        if voNew in self.voAvailable: self.setOblivionVersion(voNew)
+        if voNew in self.voAvailable: self.setOblivionVersion(voNew, ask_yes)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size

@@ -31,7 +31,7 @@ from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
 from ..bolt import FName, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
-    get_shift_down, showError
+    get_shift_down, showError, askYes
 from ..parsers import CsvParser
 
 __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
@@ -272,7 +272,7 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def Execute(self):
         """Handle selection."""
         if bosh.modInfos.voCurrent == self._version_key: return
-        bosh.modInfos.setOblivionVersion(self._version_key)
+        bosh.modInfos.setOblivionVersion(self._version_key, askYes)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,

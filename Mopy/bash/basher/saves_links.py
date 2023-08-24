@@ -184,7 +184,7 @@ class Saves_Profiles(ChoiceLink):
             newSaves = self.relativePath
             with BusyCursor():
                 Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
-                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
+                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
                 Link.Frame.modList.RefreshUI(refreshSaves=False,
                                              focus_list=False)
                 bosh.saveInfos.refresh()
