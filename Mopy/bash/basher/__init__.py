@@ -2764,7 +2764,7 @@ class InstallersList(UIList):
                     else: continue
                 try:
                     bosh.omods.OmodFile(omod).extractToProject(
-                        outDir, SubProgress(progress, i))
+                        outDir, SubProgress(progress, i), askYes)
                     completed.append(omod)
                 except (CancelError, SkipError):
                     # Omod extraction was cancelled, or user denied admin
@@ -2872,7 +2872,7 @@ class InstallersList(UIList):
                         shell_action = (env.shellMove if action == 'MOVE' else
                                         env.shellCopy)
                         shell_action(sources_dests, parent=self,
-                            ask_confirm=True, allow_undo=True)
+                            ask_confirm=askYes, allow_undo=True)
                     except (CancelError, SkipError):
                         pass
         self.panel.frameActivated = True
@@ -3511,7 +3511,7 @@ class InstallersPanel(BashTab):
                 try:
                     omod_path = dirInstallersJoin(fn_omod)
                     bosh.omods.OmodFile(omod_path).extractToProject(
-                        outDir, SubProgress(progress, i))
+                        outDir, SubProgress(progress, i), askYes)
                     omodRemoves.add(omod_path)
                     omod_projects.append(pr_name)
                 except (CancelError, SkipError):

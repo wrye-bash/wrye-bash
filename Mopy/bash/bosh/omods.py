@@ -129,7 +129,7 @@ class OmodFile(object):
         del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.values())
 
-    def extractToProject(self, outDir: Path, progress=None):
+    def extractToProject(self, outDir: Path, progress, ask_confirm):
         """Extract the contents of the OMOD to a project, with OMOD conversion
         data."""
         progress = progress if progress else bolt.Progress()
@@ -145,7 +145,7 @@ class OmodFile(object):
                     self._extract_omod(progress, extract_dir, stage_dir)
                 progress(1, f"{stail_fmt}{_('Extracted')}")
                 # Move files to final directory
-                env.shellMove({stage_dir: outDir}, ask_confirm=True,
+                env.shellMove({stage_dir: outDir}, ask_confirm=ask_confirm,
                     allow_undo=True, auto_rename=True)
             except Exception:
                 # Error occurred, see if final output dir needs deleting

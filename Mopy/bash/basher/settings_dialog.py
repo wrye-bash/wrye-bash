@@ -912,7 +912,7 @@ class BackupsPage(_AFixedPage):
         """Deletes the currently selected backup."""
         settings_file = self._backup_dir.join(self._chosen_backup)
         try:
-            env.shellDelete([settings_file], parent=self, ask_confirm=True,
+            env.shellDelete([settings_file], parent=self, ask_confirm=askYes,
                 recycle=True)
         except (exception.CancelError, exception.SkipError): pass
         finally:
