@@ -632,7 +632,7 @@ class OblivionGameInfo(PatchGame):
         b'CLOT': ('maleBody', 'maleWorld', 'maleIconPath', 'femaleBody',
                   'femaleWorld', 'femaleIconPath', 'biped_flags'),
         b'CONT': ('model',),
-        b'CREA': ('bodyParts', 'nift_p'),
+        b'CREA': ('bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'particle_texture', 'fill_texture', 'efsh_flags',

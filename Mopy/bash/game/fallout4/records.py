@@ -2447,7 +2447,7 @@ class MreNote(MelRecord):
         MelModel(),
         MelIcons(),
         MelSoundPickupDrop(),
-        MelNoteType(),
+        MelNoteType(b'DNAM'),
         MelValueWeight(),
         MelUnion({
             0: MelStruct(b'SNAM', ['4s'], 'note_contents'), # Unused

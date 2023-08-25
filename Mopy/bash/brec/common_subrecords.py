@@ -1361,9 +1361,9 @@ class MelNodeIndex(MelSInt32):
 
 #------------------------------------------------------------------------------
 class MelNoteType(MelUInt8):
-    """Handles the NOTE subrecord DNAM (Type)."""
-    def __init__(self):
-        super().__init__(b'DNAM', 'note_type')
+    """Handles the NOTE subrecord DATA/DNAM (Type)."""
+    def __init__(self, nt_sig: bytes):
+        super().__init__(nt_sig, 'note_type')
 
 #------------------------------------------------------------------------------
 class MelNpcAnam(MelFid):

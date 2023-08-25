@@ -693,7 +693,7 @@ class Fallout3GameInfo(PatchGame):
         b'CLAS': ('iconPath',),
         b'COBJ': ('iconPath', 'smallIconPath', 'model'),
         b'CONT': ('model',),
-        b'CREA': ('model', 'bodyParts', 'nift_p'),
+        b'CREA': ('model', 'bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'efsh_flags', 'particle_texture', 'fill_texture', 'holes_texture',
