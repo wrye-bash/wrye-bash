@@ -68,8 +68,8 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         expanded_plugin_range = False
         validHeaderVersions = (0.95,)
 
-    allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
-    patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
+    allTags = Fallout4GameInfo.allTags | {'NoMerge'}
+    patchers = Fallout4GameInfo.patchers | {'MergePatches'}
 
     bethDataFiles = Fallout4GameInfo.bethDataFiles | {
         'fallout4 - misc - beta.ba2',

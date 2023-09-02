@@ -3390,6 +3390,18 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Actors.Perks.Add</td>
+            <td>Older name for NPC.Perks.Add.</td>
+        </tr>
+        <tr>
+            <td>Actors.Perks.Change</td>
+            <td>Older name for NPC.Perks.Change.</td>
+        </tr>
+        <tr>
+            <td>Actors.Perks.Remove</td>
+            <td>Older name for NPC.Perks.Remove.</td>
+        </tr>
+        <tr>
             <td>Body-F</td>
             <td>Older name for R.Body-F.</td>
         </tr>
@@ -3513,16 +3525,26 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#ActorsACBSOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>Actors.ACBS</q> section for more information.
+                        See the <a href="#ActorsACBSOblivion">Oblivion &amp;
+                        Nehrim&colon; At Fate's Edge</a> <q>Actors.ACBS</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsACBSFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Actors.ACBS</q> section for more information.
+                        See the <a href="#ActorsACBSFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Actors.ACBS</q> section
+                        for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsACBSSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.ACBS</q> section for more information.
+                        See the <a href="#ActorsACBSSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Actors.ACBS</q> section for more
+                        information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsACBSFO4">Fallout 4</a>
+                        <q>Actors.ACBS</q> section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -3531,85 +3553,107 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#ActorsAIDataOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>Actors.AIData</q> section for more information.
+                        See the <a href="#ActorsAIDataOblivion">Oblivion &amp;
+                        Nehrim&colon; At Fate's Edge</a> <q>Actors.AIData</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsAIDataFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Actors.AIData</q> section for more information.
+                        See the <a href="#ActorsAIDataFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Actors.AIData</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsAIDataSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.AIData</q> section for more information.
+                        See the <a href="#ActorsAIDataSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Actors.AIData</q> section for
+                        more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsAIDataFO4">Fallout 4</a>
+                        <q>Actors.AIData</q> section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
-            <td>Actors.AIPackages</td>
-            <td>Modifies AI packages lists of actors.</td>
-            <td>Addition or removal of an (PKID) AI Package in the AI Packages subrecord in the following record types:
+            <td id="tag-actors-aipackages">Actors.AIPackages</td>
+            <td>Modifies AI package lists of actors.</td>
+            <td>Addition or removal of an (PKID) AI Package in the AI Packages
+                subrecord in the following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.AIPackagesForceAdd</td>
-            <td>Adds to actor package lists. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.</td>
-            <td>Addition of an (PKID) AI Package in the AI Packages subrecord in the following record types:
+            <td>Adds to AI package lists of actors. This tag forces the
+                addition of packages even if they are removed by later-loading
+                plugins tagged with
+                <a href="#tag-actors-aipackages">Actors.AIPackages</a>.</td>
+            <td>Addition of an (PKID) AI Package in the AI Packages subrecord
+                in the following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.Anims</td>
             <td>Modifies actor special animations lists.</td>
-            <td>Modification of the (KFFZ) Animations subrecord in the following record types:
+            <td>Modification of the (KFFZ) Animations subrecord in the
+                following record types:
                 <ul>
                     <li>(CREA) Creature</li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.CombatStyle</td>
             <td>Modifies the assigned combat styles of actors.</td>
-            <td>Modification of the (ZNAM) Combat Style subrecord in the following record types:
+            <td>Modification of the (ZNAM) Combat Style subrecord in the
+                following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.DeathItem</td>
             <td>Modifies actor death items.</td>
-            <td>Modification of the (INAM) Death Item subrecord in the following record types:
+            <td>Modification of the (INAM) Death Item subrecord in the
+                following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.Factions</td>
-            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
-            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
+            <td>Changes creature and NPC factions.</td>
+            <td>Addition or removal of a faction, or change of faction rank in
+                (NPC_) Non-Player Character or (CREA) Creature
+                (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3
+                    &amp; Fallout&colon; New Vegas only</strong>) records.
                 <ul>
                     <li>Factions
                         <ul>
@@ -3618,40 +3662,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Actors.Perks.Add</td>
-            <td>Adds new perks to actors.</td>
-            <td>Addition of new (PRKR) Perk objects to the perk list of (NPC_)
-                Non-Player Characters.
-                <br>
-                <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Actors.Perks.Change</td>
-            <td>Changes the rank of actor perks.</td>
-            <td>Change of ranks in (PRKR) Perk objects in the perk list of
-                (NPC_) Non-Player Characters.
-                <br>
-                <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Actors.Perks.Remove</td>
-            <td>Removes perks from actors.</td>
-            <td>Removal of (PRKR) Perk objects from the perk list of (NPC_)
-                Non-Player Characters.
-                <br>
-                <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
             </td>
         </tr>
         <tr>
@@ -3660,11 +3670,11 @@ C.Location, -C.LockList
             <td>Modification of record flags in the following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -3676,33 +3686,41 @@ C.Location, -C.LockList
                     <li>(MODB) Bound Radius.</li>
                     <li>(MODT) Texture File Hashes.</li>
                 </ul>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
-            <td>Actors.Spells</td>
-            <td>Modifies the Spells (also called Actor Effects) list of actors.</td>
-            <td>Addition, modification or removal of spells to the (SPLO) Spells subrecord in the following record types:
+            <td id="tag-actors-spells">Actors.Spells</td>
+            <td>Modifies the spell lists of actors. These are also sometimes
+                called 'actor effects', depending on the game.</td>
+            <td>Addition, modification or removal of spells to the (SPLO)
+                Spells subrecord in the following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Actors.SpellsForceAdd</td>
-            <td>Modifies the Spells (also called Actor Effects) list of actors. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.</td>
-            <td>Addition of (SPLO) spells to the Spells subrecord in the following record types:
+            <td>Modifies the spell lists of actors. These are also sometimes
+                called 'actor effects', depending on the game. This tag forces
+                the addition of spells even if they are removed by other
+                plugins tagged with
+                <a href="#tag-actors-spells">Actors.Spells</a>.</td>
+            <td>Addition of spells to the (SPLO) Spells subrecord in the
+                following record types:
                 <ul>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -3711,16 +3729,26 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#ActorsStatsOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>Actors.Stats</q> section for more information.
+                        See the <a href="#ActorsStatsOblivion">Oblivion &amp;
+                        Nehrim&colon; At Fate's Edge</a> <q>Actors.Stats</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsStatsFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Actors.Stats</q> section for more information.
+                        See the <a href="#ActorsStatsFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Actors.Stats</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#ActorsStatsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.Stats</q> section for more information.
+                        See the <a href="#ActorsStatsSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Actors.Stats</q> section for
+                        more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsStatsFO4">Fallout 4</a>
+                        <q>Actors.Stats</q> section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -3734,8 +3762,8 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Oblivion, Nehrim&colon; At Fate's
-                    Edge &amp; Fallout 4.</strong>
+                <strong>Not available for Oblivion &amp; Nehrim&colon; At
+                    Fate's Edge.</strong>
             </td>
         </tr>
         <tr>
@@ -3798,7 +3826,7 @@ C.Location, -C.LockList
             <td>Modifies cell lighting or fog.</td>
             <td>The following subrecords:
                 <ul>
-                    <strong>All but Fallout 4:</strong>
+                    <strong>All games but Fallout 4:</strong>
                     <br>
                     <br>
                     <li>(XCLL) Lighting
@@ -4056,7 +4084,7 @@ C.Location, -C.LockList
                         <strong>Not available for Oblivion &amp;
                             Nehrim&colon; At Fate's Edge.</strong>
                     </li>
-                    <li>(LVSP) Leveled SPELL &mdash;
+                    <li>(LVSP) Leveled Spell &mdash;
                         <strong>Not available for Fallout 3 &amp;
                             Fallout&colon; New Vegas.</strong>
                     </li>
@@ -4069,13 +4097,21 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#DestructibleFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Destructible</q> section for more information.
+                        See the <a href="#DestructibleFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Destructible</q>
+                        section for more information.
                     </li>
                     <li>
-                        See the <a href="#DestructibleSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Destructible</q> section for more information.
+                        See the <a href="#DestructibleSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Destructible</q> section for
+                        more information.
+                    </li>
+                    <li>
+                        See the <a href="#DestructibleFO4">Fallout 4</a>
+                        <q>Destructible</q> section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4084,7 +4120,7 @@ C.Location, -C.LockList
             <td>The following fields of the (DATA) Data subrecord in (MGEF)
                 Magic Effect / Base Effect records:
                 <ul>
-                    <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only:</strong>
+                    <strong>For games before Skyrim:</strong>
                     <br>
                     <br>
                     <li>Flags</li>
@@ -4096,17 +4132,20 @@ C.Location, -C.LockList
                     <li>Constant Effect Enchantment Factor</li>
                     <li>Constant Effect Barter Factor</li>
                     <li>Archetype &mdash;
-                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong></li>
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas
+                            only.</strong></li>
                     <li>Actor Value &mdash;
-                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong></li>
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas
+                            only.</strong></li>
                     <br>
-                    <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only:</strong>
+                    <strong>For games since Skyrim:</strong>
                     <br>
                     <br>
                     <li>Flags</li>
                     <li>Base Cost</li>
                     <li>Associated Item</li>
-                    <li>Magic Skill</li>
+                    <li>Magic Skill &mdash;
+                        <strong>Not available in Fallout 4.</strong></li>
                     <li>Resist Value</li>
                     <li>Taper Weight</li>
                     <li>Minimum Skill Level</li>
@@ -4134,16 +4173,15 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Enchantments</td>
-            <td>Modifies enchantments / object effects applied to objects.</td>
+            <td>Modifies enchantments applied to objects. These are also
+                sometimes called 'object effects', depending on the game.</td>
             <td>The following records and subrecords:
                 <ul>
-                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's Edge
-                        only:</strong>
+                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's Edge:</strong>
                         <ul>
                             <li>(AMMO) Ammunition: (ENAM) Enchantment</li>
                             <li>(ARMO) Armor: (ENAM) Enchantment</li>
@@ -4152,8 +4190,7 @@ C.Location, -C.LockList
                             <li>(WEAP) Weapon: (ENAM) Enchantment</li>
                         </ul>
                     </li>
-                    <li><strong>Fallout 3 &amp; Fallout&colon; New Vegas
-                        only:</strong>
+                    <li><strong>Fallout 3 &amp; Fallout&colon; New Vegas:</strong>
                         <ul>
                             <li>(ARMO) Armor: (EITM) Object Effect</li>
                             <li>(CREA) Creature: (EITM) Unarmed Attack
@@ -4165,15 +4202,21 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                     <li><strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                        Skyrim&colon; Special Edition only:</strong>
+                        Skyrim&colon; Special Edition:</strong>
                         <ul>
-                            <li>(ARMO) Armor: (EITM) Enchantment</li>
-                            <li>(EXPL) Explosion: (EITM) Enchantment</li>
-                            <li>(WEAP) Weapon: (EITM) Enchantment</li>
+                            <li>(ARMO) Armor: (EITM) Object Effect</li>
+                            <li>(EXPL) Explosion: (EITM) Object Effect</li>
+                            <li>(WEAP) Weapon: (EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                    <!-- Merge with Skyrim up above once WEAP is implemented -->
+                    <li><strong>Fallout 4:</strong>
+                        <ul>
+                            <li>(ARMO) Armor: (EITM) Object Effect</li>
+                            <li>(EXPL) Explosion: (EITM) Object Effect</li>
                         </ul>
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4182,7 +4225,8 @@ C.Location, -C.LockList
             <td>The following fields of the (ENIT) Effect Data subrecord in
                 (ENCH) Enchantment / Object Effect records:
                 <ul>
-                    <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only:</strong>
+                    <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3
+                        &amp; Fallout&colon; New Vegas:</strong>
                     <br>
                     <br>
                     <li>Type</li>
@@ -4190,7 +4234,7 @@ C.Location, -C.LockList
                     <li>Enchant Cost</li>
                     <li>Flags</li>
                     <br>
-                    <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only:</strong>
+                    <strong>Skyrim and newer games:</strong>
                     <br>
                     <br>
                     <li>Enchantment Cost</li>
@@ -4203,7 +4247,6 @@ C.Location, -C.LockList
                     <li>Base Enchantment</li>
                     <li>Worn Restrictions</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4229,9 +4272,16 @@ C.Location, -C.LockList
             <td>Adds items to inventories.</td>
             <td>Addition of items in the following records:
                 <ul>
+                    <li>(COBJ) Constructible Object &mdash;
+                        <strong>Skyrim and newer games only.</strong>
+                    </li>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(FURN) Furniture &mdash;
+                        <strong>Fallout 4 only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
@@ -4240,9 +4290,6 @@ C.Location, -C.LockList
                     FormID, so in that case you will need to tag with both
                     <code>Invent.Add</code> and
                     <code>Invent.Remove</code>.</em>
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4251,13 +4298,19 @@ C.Location, -C.LockList
                 inventories.</td>
             <td>Change of item properties in the following records:
                 <ul>
+                    <li>(COBJ) Constructible Object &mdash;
+                        <strong>Skyrim and newer games only.</strong>
+                    </li>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(FURN) Furniture &mdash;
+                        <strong>Fallout 4 only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4265,9 +4318,16 @@ C.Location, -C.LockList
             <td>Removes items from inventories.</td>
             <td>Removal of items in the following records:
                 <ul>
+                    <li>(COBJ) Constructible Object &mdash;
+                        <strong>Skyrim and newer games only.</strong>
+                    </li>
                     <li>(CONT) Container</li>
                     <li>(CREA) Creature &mdash;
-                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout
+                            3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(FURN) Furniture &mdash;
+                        <strong>Fallout 4 only.</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
@@ -4276,38 +4336,25 @@ C.Location, -C.LockList
                     FormID, so in that case you will need to tag with both
                     <code>Invent.Add</code> and
                     <code>Invent.Remove</code>.</em>
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td id="tag-keywords">Keywords</td>
             <td>Modifies the lists of keywords attached to things.</td>
             <td>
-                Addition or removal of keywords (KWDA / KSIZ subrecord combo) for the following record types:
+                See the game-specific sections below for record types:
                 <ul>
-                    <li>(ACTI) Activator</li>
-                    <li>(ALCH) Ingestible</li>
-                    <li>(AMMO) Ammunition</li>
-                    <li>(ARMO) Armor</li>
-                    <li>(BOOK) Book</li>
-                    <li>(FLOR) Flora</li>
-                    <li>(FURN) Furniture</li>
-                    <li>(INGR) Ingredient</li>
-                    <li>(KEYM) Key</li>
-                    <li>(LCTN) Location</li>
-                    <li>(MGEF) Magic Effect</li>
-                    <li>(MISC) Misc. Item</li>
-                    <li>(NPC_) Non Player Character</li>
-                    <li>(RACE) Race</li>
-                    <li>(SCRL) Scroll</li>
-                    <li>(SLGM) Soul Gem</li>
-                    <li>(SPEL) Spell</li>
-                    <li>(TACT) Talking Activator</li>
-                    <li>(WEAP) Weapon</li>
+                    <li>
+                        See the <a href="#KeywordsSkyrim">Skyrim,
+                        Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                        Special Edition</a> <q>Keywords</q> section for more
+                        information.
+                    </li>
+                    <li>
+                        See the <a href="#KeywordsFO4">Fallout 4</a>
+                        <q>Keywords</q> section for more information.
+                    </li>
                 </ul>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</strong>
             </td>
         </tr>
         <tr>
@@ -4316,16 +4363,25 @@ C.Location, -C.LockList
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
-                        See the <a href="#NamesOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>Names</q> section for more information.
+                        See the <a href="#NamesOblivion">Oblivion &amp;
+                        Nehrim&colon; At Fate's Edge</a> <q>Names</q> section
+                        for more information.
                     </li>
                     <li>
-                        See the <a href="#NamesFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Names</q> section for more information.
+                        See the <a href="#NamesFO3">Fallout 3 &amp;
+                        Fallout&colon; New Vegas</a> <q>Names</q> section for
+                        more information.
                     </li>
                     <li>
-                        See the <a href="#NamesSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Names</q> section for more information.
+                        See the <a href="#NamesSkyrim">Skyrim, Enderal&colon;
+                        Forgotten Stories &amp; Skyrim&colon; Special
+                        Edition</a> <q>Names</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#NamesFO4">Fallout 4</a> <q>Names</q>
+                        section for more information.
                     </li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4338,8 +4394,7 @@ C.Location, -C.LockList
                     <li>(GWOR) Guard Warn Override Package List</li>
                     <li>(ECOR) Combat Override Package List</li>
                 </ul>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
@@ -4349,19 +4404,14 @@ C.Location, -C.LockList
                 records.
                 <br>
                 <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
             <td>NPC.Class</td>
             <td>Changes the classes of NPCs.</td>
             <td>The (CNAM) Class subrecord of (NPC_) Non-Player Character
-                records.
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
+                records.</td>
         </tr>
         <tr>
             <td>NPC.CrimeFaction</td>
@@ -4370,8 +4420,7 @@ C.Location, -C.LockList
                 Character records.
                 <br>
                 <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
@@ -4381,8 +4430,7 @@ C.Location, -C.LockList
                 Character records.
                 <br>
                 <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                    Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
@@ -4423,14 +4471,40 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>NPC.Perks.Add</td>
+            <td>Adds new perks to NPCs.</td>
+            <td>Addition of new (PRKR) Perk objects to the perk list of (NPC_)
+                Non-Player Characters.
+                <br>
+                <br>
+                <strong>Available for Skyrim and newer games.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.Perks.Change</td>
+            <td>Changes the rank of NPC perks.</td>
+            <td>Change of ranks in (PRKR) Perk objects in the perk list of
+                (NPC_) Non-Player Characters.
+                <br>
+                <br>
+                <strong>Available for Skyrim and newer games.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.Perks.Remove</td>
+            <td>Removes perks from NPCs.</td>
+            <td>Removal of (PRKR) Perk objects from the perk list of (NPC_)
+                Non-Player Characters.
+                <br>
+                <br>
+                <strong>Available for Skyrim and newer games.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>NPC.Race</td>
             <td>Changes the races of NPCs.</td>
             <td>The (RNAM) Race subrecord of (NPC_) Non-Player Character
-                records.
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
+                records.</td>
         </tr>
         <tr>
             <td>NpcFacesForceFullImport</td>
@@ -4455,7 +4529,8 @@ C.Location, -C.LockList
                 already does everything those tags do.
                 <br>
                 <br>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
@@ -4482,8 +4557,7 @@ C.Location, -C.LockList
             <td>Additions of items in (OTFT) Outfit records.
                 <br>
                 <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                        Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
@@ -4492,8 +4566,7 @@ C.Location, -C.LockList
             <td>Removal of items in (OTFT) Outfit records.
                 <br>
                 <br>
-                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
-                        Skyrim&colon; Special Edition only.</strong>
+                <strong>Available for Skyrim and newer games.</strong>
             </td>
         </tr>
         <tr>
@@ -4584,7 +4657,7 @@ C.Location, -C.LockList
             <td>The (DESC) description subrecord of (RACE) Race records.
                 <br>
                 <br>
-                <strong>All but Fallout 4.</strong>
+                <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4697,7 +4770,7 @@ C.Location, -C.LockList
             <td>The (DATA) skills and skill boosts of (RACE) Race records.
                 <br>
                 <br>
-                <strong>All but Fallout 4.</strong>
+                <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4721,7 +4794,7 @@ C.Location, -C.LockList
             <td>The (VNAM / VTCK) female voice of (RACE) Race records.
             <br>
             <br>
-            <strong>All but Fallout 4.</strong>
+            <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -4730,18 +4803,14 @@ C.Location, -C.LockList
             <td>The (VNAM / VTCK) male voice of (RACE) Race records.
             <br>
             <br>
-            <strong>All but Fallout 4.</strong>
+            <strong>All games but Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Relations.Add</td>
             <td>Adds faction relationships.</td>
             <td>Additions of (XNAM) Relation subrecords in (FACT) Faction
-                records.
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
+                records.</td>
         </tr>
         <tr>
             <td>Relations.Change</td>
@@ -4753,18 +4822,13 @@ C.Location, -C.LockList
                     <li>Group Combat Reaction &mdash;
                         <strong>Not available for Oblivion.</strong></li>
                 </ul>
-                <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>Relations.Remove</td>
             <td>Removes faction relationships.</td>
             <td>Removal of (XNAM) Relation subrecords from (FACT) Faction
-                records.
-                <br>
-                <br>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
+                records.</td>
         </tr>
         <tr>
             <td>Relev</td>
@@ -4781,7 +4845,7 @@ C.Location, -C.LockList
                         <strong>Not available for Oblivion &amp;
                             Nehrim&colon; At Fate's Edge.</strong>
                     </li>
-                    <li>(LVSP) Leveled SPELL &mdash;
+                    <li>(LVSP) Leveled Spell &mdash;
                         <strong>Not available for Fallout 3 &amp;
                             Fallout&colon; New Vegas.</strong>
                     </li>
@@ -4826,7 +4890,7 @@ C.Location, -C.LockList
             <td>Modifies spell stats.</td>
             <td>The following (SPEL) Spell and (SCRL) Scroll (<strong>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only</strong>) subrecords:
                 <ul>
-                    <strong>All but Fallout 4:</strong>
+                    <strong>All games but Fallout 4:</strong>
                     <br>
                     <br>
                     <li>(EDID) Editor ID</li>
@@ -4910,49 +4974,49 @@ C.Location, -C.LockList
                     <li>(CREA) Creature</li>
                 </ul>
             </td>
-            <td>Changes to the following subrecords in (ACBS) Configuration:
+            <td>Changes to the following fields in (ACBS) Configuration:
                 <ul>
-                    <li>Barter Gold</li>
-                    <li>Base Spell Points</li>
-                    <li>Calc Max</li>
-                    <li>Calc Min</li>
-                    <li>Fatigue</li>
-                    <li>(CREA only) Flags:
+                    <li>(<strong>CREA only</strong>) Flags:
                         <ul>
                             <li>Biped</li>
                             <li>Essential</li>
-                            <li>Flies</li>
-                            <li>No Blood Decal</li>
-                            <li>No Blood Spray</li>
-                            <li>No Combat in Water</li>
-                            <li>No Corpse Check.</li>
-                            <li>No Head</li>
-                            <li>No Left Arm</li>
-                            <li>No Low level Processing</li>
-                            <li>No Right Arm</li>
-                            <li>No Shadow</li>
-                            <li>PC Level Offset</li>
+                            <li>Weapon &amp; Shield</li>
                             <li>Respawn</li>
                             <li>Swims</li>
+                            <li>Flies</li>
                             <li>Walks</li>
-                            <li>Weapon &amp; Shield</li>
-                        </ul>
-                    </li>
-                    <li>(NPC_ only) Flags:
-                        <ul>
-                            <li>Auto-Calc Stats</li>
-                            <li>Can Corpse Check</li>
-                            <li>Essential</li>
-                            <li>Female</li>
-                            <li>No Low Level Processing</li>
-                            <li>No Persuasion</li>
-                            <li>No Rumors</li>
                             <li>PC Level Offset</li>
-                            <li>Respawn</li>
-                            <li>Summonable</li>
+                            <li>No Low level Processing</li>
+                            <li>No Blood Spray</li>
+                            <li>No Blood Decal</li>
+                            <li>No Head</li>
+                            <li>No Right Arm</li>
+                            <li>No Left Arm</li>
+                            <li>No Combat in Water</li>
+                            <li>No Shadow</li>
+                            <li>No Corpse Check</li>
                         </ul>
                     </li>
+                    <li>(<strong>NPC_ only</strong>) Flags:
+                        <ul>
+                            <li>Female</li>
+                            <li>Essential</li>
+                            <li>Respawn</li>
+                            <li>Auto-Calc Stats</li>
+                            <li>PC Level Offset</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Rumors</li>
+                            <li>Summonable</li>
+                            <li>No Persuasion</li>
+                            <li>Can Corpse Check</li>
+                        </ul>
+                    </li>
+                    <li>Base Spell Points</li>
+                    <li>Fatigue</li>
+                    <li>Barter Gold</li>
                     <li>Level (Offset)</li>
+                    <li>Calc Min</li>
+                    <li>Calc Max</li>
                 </ul>
                 <strong>Note:</strong> Level (Offset) and Flags\PC Level Offset
                 are linked.<br>
@@ -4973,12 +5037,12 @@ C.Location, -C.LockList
                     <li>(AIDT) AI Data
                         <ul>
                             <li>Aggression</li>
-                            <li>Buys/Sells and Services</li>
                             <li>Confidence</li>
                             <li>Energy Level</li>
-                            <li>Maximum Training Level</li>
                             <li>Responsibility</li>
+                            <li>Buys/Sells and Services</li>
                             <li>Teaches</li>
+                            <li>Maximum Training Level</li>
                         </ul>
                     </li>
                 </ul>
@@ -5607,68 +5671,69 @@ C.Location, -C.LockList
                     <li>(CREA) Creature</li>
                 </ul>
             </td>
-            <td>Changes to the following subrecords in (ACBS) Configuration:
+            <td>Changes to the following fields in (ACBS) Configuration:
                 <ul>
-                    <li>Barter Gold</li>
-                    <li>Calc Max</li>
-                    <li>Calc Min</li>
-                    <li>Disposition Base</li>
-                    <li>Fatigue</li>
-                    <li>(CREA only) Flags:
+                    <li>(<strong>CREA only</strong>) Flags:
                         <ul>
-                            <li>Allow PC Dialogue</li>
-                            <li>Allow Pickpocket</li>
                             <li>Biped</li>
-                            <li>Can't Open Doors</li>
                             <li>Essential</li>
-                            <li>Flies</li>
-                            <li>Immobile</li>
-                            <li>Invulnerable</li>
-                            <li>Is Ghost</li>
-                            <li>No Blood Decal</li>
-                            <li>No Blood Spray</li>
-                            <li>No Combat in Water</li>
-                            <li>No Head</li>
-                            <li>No Knockdowns</li>
-                            <li>No Left Arm</li>
-                            <li>No Low Level Processing</li>
-                            <li>No Right Arm</li>
-                            <li>No Rotating to Head-Track</li>
-                            <li>No Shadow</li>
-                            <li>No VATS Melee</li>
-                            <li>Not Pushable</li>
-                            <li>PC Level Mult</li>
+                            <li>Weapon &amp; Shield</li>
                             <li>Respawn</li>
                             <li>Swims</li>
+                            <li>Flies</li>
+                            <li>Walks</li>
+                            <li>PC Level Mult</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Blood Spray</li>
+                            <li>No Blood Decal</li>
+                            <li>No Head</li>
+                            <li>No Right Arm</li>
+                            <li>No Left Arm</li>
+                            <li>No Combat in Water</li>
+                            <li>No Shadow</li>
+                            <li>No VATS Melee</li>
+                            <li>Allow PC Dialogue</li>
+                            <li>Can't Open Doors</li>
+                            <li>Immobile</li>
                             <li>Tilt Front/Back</li>
                             <li>Tilt Left/Right</li>
-                            <li>Walks</li>
-                            <li>Weapon &amp; Shield</li>
+                            <li>No Knockdowns</li>
+                            <li>Not Pushable</li>
+                            <li>Allow Pickpocket</li>
+                            <li>Is Ghost</li>
+                            <li>No Rotating to Head-Track</li>
+                            <li>Invulnerable</li>
                         </ul>
                     </li>
-                    <li>(NPC_ only) Flags:
+                    <li>(<strong>NPC_ only</strong>) Flags:
                         <ul>
-                            <li>Auto-Calc Stats</li>
-                            <li>Autocalc Service &mdash;
-                                <strong>Fallout&colon; New Vegas only</strong></li>
-                            <li>Can Be All Races</li>
                             <li>Essential</li>
                             <li>Female</li>
                             <li>Is CharGen Face Preset</li>
-                            <li>No Blood Decal</li>
-                            <li>No Blood Spray</li>
-                            <li>No Knockdowns</li>
-                            <li>No Low Level Processing</li>
-                            <li>No Rotating to Head-Track</li>
-                            <li>No VATS Melee</li>
-                            <li>Not Pushable</li>
-                            <li>PC Level Mult</li>
                             <li>Respawn</li>
+                            <li>Auto-Calc Stats</li>
+                            <li>PC Level Mult</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Blood Spray</li>
+                            <li>No Blood Decal</li>
+                            <li>No VATS Melee</li>
+                            <li>Can Be All Races</li>
+                            <li>Autocalc Service &mdash;
+                                <strong>Fallout&colon; New Vegas
+                                    only</strong></li>
+                            <li>No Knockdowns</li>
+                            <li>Not Pushable</li>
+                            <li>No Rotating to Head-Track</li>
                         </ul>
                     </li>
-                    <li>Karma (Alignment)</li>
+                    <li>Fatigue</li>
+                    <li>Barter Gold</li>
                     <li>Level</li>
+                    <li>Calc Min</li>
+                    <li>Calc Max</li>
                     <li>Speed Multiplier</li>
+                    <li>Karma (Alignment)</li>
+                    <li>Disposition Base</li>
                 </ul>
                 <strong>Note:</strong> Level and Flags\PC Level Mult are
                 linked.<br>
@@ -5689,16 +5754,16 @@ C.Location, -C.LockList
                     <li>(AIDT) AI Data
                         <ul>
                             <li>Aggression</li>
-                            <li>Aggro Radius</li>
-                            <li>Aggro Radius Behavior</li>
-                            <li>Assistance</li>
-                            <li>Buys/Sells and Services</li>
                             <li>Confidence</li>
                             <li>Energy Level</li>
-                            <li>Maximum Training Level</li>
-                            <li>Mood</li>
                             <li>Responsibility</li>
+                            <li>Mood</li>
+                            <li>Buys/Sells and Services</li>
                             <li>Teaches</li>
+                            <li>Maximum Training Level</li>
+                            <li>Assistance</li>
+                            <li>Aggro Radius Behavior</li>
+                            <li>Aggro Radius</li>
                         </ul>
                     </li>
                 </ul>
@@ -5777,7 +5842,8 @@ C.Location, -C.LockList
         <tr>
             <td id="DestructibleFO3">Destructible</td>
             <td>Modifies destructible records.</td>
-            <td>The Destructible subrecord (DEST, DSTD, DMDL, DMDT &amp; DSTF) in the following record types:
+            <td>The Destructible subrecord (DEST, DSTD, DMDL, DMDT &amp; DSTF)
+                in the following record types:
                 <ul>
                     <li>(ACTI) Activator</li>
                     <li>(ALCH) Ingestible</li>
@@ -7040,40 +7106,41 @@ C.Location, -C.LockList
     <tbody>
         <tr>
             <td id="ActorsACBSSkyrim">Actors.ACBS</td>
-            <td>Modifies the (ACBS) Configuration subrecord of (NPC_) Non-Player Character records.</td>
-            <td>Changes to the following subrecords in (ACBS) Configuration:
+            <td>Modifies the (ACBS) Configuration subrecord of (NPC_)
+                Non-Player Character records.</td>
+            <td>Changes to the following fields in (ACBS) Configuration:
                 <ul>
-                    <li>Bleedout Override</li>
-                    <li>Calc Max</li>
-                    <li>Calc Min</li>
-                    <li>Disposition Base</li>
                     <li>Flags:
                         <ul>
-                            <li>Auto-Calc Stats</li>
-                            <li>Bleedout Override</li>
-                            <li>Doesn't Affect Stealth Meter</li>
-                            <li>Doesn't Bleed</li>
-                            <li>Essential</li>
                             <li>Female</li>
-                            <li>Invulnerable</li>
+                            <li>Essential</li>
                             <li>Is CharGen Face Preset</li>
-                            <li>Is Ghost</li>
-                            <li>Looped Audio</li>
-                            <li>Looped Script</li>
-                            <li>Opposite Gender Animations</li>
+                            <li>Respawn</li>
+                            <li>Auto-Calc Stats</li>
+                            <li>Unique</li>
+                            <li>Doesn't Affect Stealth Meter</li>
                             <li>PC Level Mult</li>
                             <li>Protected</li>
-                            <li>Respawn</li>
-                            <li>Simple Actor</li>
                             <li>Summonable</li>
-                            <li>Unique</li>
+                            <li>Doesn't Bleed</li>
+                            <li>Bleedout Override</li>
+                            <li>Opposite Gender Animations</li>
+                            <li>Simple Actor</li>
+                            <li>Looped Script</li>
+                            <li>Looped Audio</li>
+                            <li>Is Ghost</li>
+                            <li>Invulnerable</li>
                         </ul>
                     </li>
-                    <li>Health Offset</li>
-                    <li>Level</li>
                     <li>Magicka Offset</li>
-                    <li>Speed Multiplier</li>
                     <li>Stamina Offset</li>
+                    <li>Level</li>
+                    <li>Calc Min Level</li>
+                    <li>Calc Max Level</li>
+                    <li>Speed Multiplier</li>
+                    <li>Disposition Base</li>
+                    <li>Health Offset</li>
+                    <li>Bleedout Override</li>
                 </ul>
                 <strong>Note:</strong> Level and Flags\PC Level Mult are
                 linked.<br>
@@ -7083,25 +7150,26 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td id="ActorsAIDataSkyrim">Actors.AIData</td>
-            <td>Modifies the (AIDT) AI Data subrecord of (NPC_) Non-Player Character records.</td>
+            <td>Modifies the (AIDT) AI Data subrecord of (NPC_) Non-Player
+                Character records.</td>
             <td>The following subrecords:
                 <ul>
                     <li>(AIDT) AI Data
                         <ul>
                             <li>Aggression</li>
+                            <li>Confidence</li>
+                            <li>Energy Level</li>
+                            <li>Responsibility</li>
+                            <li>Mood</li>
+                            <li>Assistance</li>
                             <li>Aggro:
                                 <ul>
                                     <li>Aggro Radius Behavior</li>
-                                    <li>Attack</li>
                                     <li>Warn</li>
-                                    <li>Warn / Attack</li>
+                                    <li>Warn/Attack</li>
+                                    <li>Attack</li>
                                 </ul>
                             </li>
-                            <li>Assistance</li>
-                            <li>Confidence</li>
-                            <li>Energy Level</li>
-                            <li>Mood</li>
-                            <li>Responsibility</li>
                         </ul>
                     </li>
                 </ul>
@@ -7151,7 +7219,8 @@ C.Location, -C.LockList
         <tr>
             <td id="DestructibleSkyrim">Destructible</td>
             <td>Modifies destructible records.</td>
-            <td>The Destructible subrecord (DEST, DSTD, DMDL, DMDT, DMDS &amp; DSTF) in the following record types:
+            <td>The Destructible subrecord (DEST, DSTD, DMDL, DMDT, DMDS &amp;
+                DSTF) in the following record types:
                 <ul>
                     <li>(ACTI) Activator</li>
                     <li>(ALCH) Ingestible</li>
@@ -7357,6 +7426,34 @@ C.Location, -C.LockList
                     </li>
                     <li>(WTHR) Weather: (DALC) Directional Ambient Lighting
                         Colors.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td i="KeywordsSkyrim">Keywords</td>
+            <td>Modifies the lists of keywords attached to things.</td>
+            <td>Addition or removal of keywords (KWDA / KSIZ subrecord combo)
+                for the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) Book</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LCTN) Location</li>
+                    <li>(MGEF) Magic Effect</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(NPC_) Non Player Character</li>
+                    <li>(RACE) Race</li>
+                    <li>(SCRL) Scroll</li>
+                    <li>(SLGM) Soul Gem</li>
+                    <li>(SPEL) Spell</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(WEAP) Weapon</li>
                 </ul>
             </td>
         </tr>
@@ -7996,13 +8093,211 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td id="ActorsACBSFO4">Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of (NPC_)
+                Non-Player Character records.</td>
+            <td>Changes to the following fields in (ACBS) Configuration:
+                <ul>
+                    <li>Flags:
+                        <ul>
+                            <li>Female</li>
+                            <li>Essential</li>
+                            <li>Is CharGen Face Preset</li>
+                            <li>Respawn</li>
+                            <li>Auto-Calc Stats</li>
+                            <li>Unique</li>
+                            <li>Doesn't Affect Stealth Meter</li>
+                            <li>PC Level Mult</li>
+                            <li>Protected</li>
+                            <li>Summonable</li>
+                            <li>Doesn't Bleed</li>
+                            <li>Bleedout Override</li>
+                            <li>Opposite Gender Anims</li>
+                            <li>Simple Actor</li>
+                            <li>No Activation/Hellos</li>
+                            <li>Diffuse Alpha Test</li>
+                            <li>Is Ghost</li>
+                            <li>Invulnerable</li>
+                        </ul>
+                    </li>
+                    <li>XP Value Offset</li>
+                    <li>Level</li>
+                    <li>Calc Min Level</li>
+                    <li>Calc Max Level</li>
+                    <li>Disposition Base</li>
+                    <li>Bleedout Override</li>
+                </ul>
+                <strong>Note:</strong> Level and Flags\PC Level Mult are
+                linked.<br>
+                If one of them is changed, then they will both be carried
+                forward together.
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsAIDataFO4">Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of (NPC_) Non-Player
+                Character records.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AIDT) AI Data
+                        <ul>
+                            <li>Aggression</li>
+                            <li>Confidence</li>
+                            <li>Energy Level</li>
+                            <li>Responsibility</li>
+                            <li>Mood</li>
+                            <li>Assistance</li>
+                            <li>Aggro:
+                                <ul>
+                                    <li>Aggro Radius Behavior</li>
+                                    <li>Warn</li>
+                                    <li>Warn/Attack</li>
+                                    <li>Attack</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+            <td id="ActorsStatsFO4">Actors.Stats</td>
+            <td>Modifies actor stats (e.g. health, SPECIAL points, action
+                points, etc.).</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li>(PRPS) Properties</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        <tr>
+            <td id="DestructibleFO4">Destructible</td>
+            <td>Modifies destructible records.</td>
+            <td>The Destructible subrecord (DEST, DAMC, DSTA, DSTD, DMDL, DMDT,
+                DMDC, DMDS &amp; DSTF) in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="KeywordsFO4">Keywords</td>
+            <td>Modifies the lists of keywords attached to things.</td>
+            <td>Addition or removal of keywords (KWDA / KSIZ subrecord combo)
+                for the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(ARTO) Art Object</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(IDLM) Idle Marker</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MGEF) Magic Effect</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="NamesFO4">Names</td>
+            <td>Changes the names of things.</td>
+            <td>The (FULL) Name subrecord in the following record types:
+                <ul>
+                    <li>(AACT) Action</li>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(AVIF) Actor Value Information</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CLAS) Class</li>
+                    <li>(CLFM) Color</li>
+                    <li>(CMPO) Component</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(ENCH) Object Effect</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(FACT) Faction</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FLST) FormID List</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(HAZD) Hazard</li>
+                    <li>(HDPT) Head Part</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(KYWD) Keyword</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MESG) Message</li>
+                    <li>(MGEF) Magic Effect</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(OMOD) Object Modification</li>
+                    <li>(PERK) Perk</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="ObjectBoundsFO4">ObjectBounds</td>
             <td>Changes the object bounds of things.</td>
-            <td>The (OBND) Object Bounds subrecord in the following record types:
+            <td>The (OBND) Object Bounds subrecord in the following record
+                types:
                 <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ADDN) Addon Node</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(ARTO) Art Object</li>
+                    <li>(ASPC) Acoustic Space</li>
+                    <li>(BNDS) Bendable Spline</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CMPO) Component</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(ENCH) Object Effect</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(GRAS) Grass</li>
+                    <li>(HAZD) Hazard</li>
+                    <li>(IDLM) Idle Marker</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
                     <li>(LVLI) Leveled Item</li>
                     <li>(LVLN) Leveled NPC</li>
                     <li>(LVSP) Leveled Spell</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(PKIN) Pack-In</li>
                 </ul>
             </td>
         </tr>
@@ -8078,6 +8373,17 @@ C.Location, -C.LockList
                 <a href="#tag-keywords">Keywords</a> tag for a full list.</td>
         </tr>
         <tr>
+            <td>All records</td>
+            <td>
+                <ul>
+                    <li>(PRPS) Properties</li>
+                </ul>
+            </td>
+            <td>Fallout 4</td>
+            <td>Available for all record types that have a (PRPS) Properties
+                section at the top level.</td>
+        </tr>
+        <tr>
             <td>(COBJ) Constructible Object</td>
             <td>
                 <ul>
@@ -8149,7 +8455,7 @@ C.Location, -C.LockList
                     <li>(LVLO) Entries</li>
                 </ul>
             </td>
-            <td>All but Oblivion</td>
+            <td>All games since Fallout 3</td>
             <td></td>
         </tr>
         <tr>
@@ -8204,7 +8510,7 @@ C.Location, -C.LockList
                     <li>(HNAM) Hairs</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
             <td>These subrecords seem to be unused in Skyrim.</td>
         </tr>
         <tr>
@@ -8214,7 +8520,7 @@ C.Location, -C.LockList
                     <li>(SNAM) Sounds</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
             <td></td>
         </tr>
     </tbody>
@@ -8259,8 +8565,7 @@ C.Location, -C.LockList
                 to your whole load order. If you're using this, you probably
                 want <a href="#patch-tweak-races-fbggf">Force Behavior Graph
                     Gender: Female</a> as well.</td>
-            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
-                Edition</td>
+            <td>All games since Skyrim</td>
         </tr>
         <tr>
             <td id="patch-tweak-actors-ogam">Opposite Gender Anims: Male</td>
@@ -8269,8 +8574,7 @@ C.Location, -C.LockList
                 to your whole load order. If you're using this, you probably
                 want <a href="#patch-tweak-races-fbggm">Force Behavior Graph
                     Gender: Male</a> as well.</td>
-            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
-                Edition</td>
+            <td>All games since Skyrim</td>
         </tr>
         <tr><td>Quiet Feet</td><td>Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.</td><td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td></tr>
         <tr><td>Real Walk for female NPCs</td><td>Changes all female NPCs to use Mur Zuk's Real Walk. <strong>Requires</strong> Mur Zuk's Real Walk animation file.</td><td>Oblivion</td></tr>
@@ -8334,7 +8638,7 @@ C.Location, -C.LockList
                         "mark", except as part of "markynaz".</li>
                 </ul>
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>All Clothing Playable</td>
@@ -8414,7 +8718,7 @@ C.Location, -C.LockList
             <td>Sets wind speed for all weathers to 0; this means that bushes
                 and trees don't move in the wind since there isn't any. May
                 help on machines with low end graphic cards.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Faction Crime Gold Multiplier Fix</td>
@@ -8467,13 +8771,13 @@ C.Location, -C.LockList
             <td>No Light Fade Value Fix</td>
             <td>Sets the fade values on all lights to a default of 1.0 if not
                 already set.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-assorted-no-flicker">No Light Flicker</td>
             <td>Turns off flickering effects for lights. May help on machines
                 with low end graphic cards.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Number of Uses For Pre-enchanted Weapons and Staves</td>
@@ -8507,13 +8811,13 @@ C.Location, -C.LockList
         <tr>
             <td>Reweigh: Books</td>
             <td>Reweighs books to a maximum weight.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Ingestibles (Minimum)</td>
             <td>Reweighs ingestibles (potions and drinks, as well as food in
                 newer games than Oblivion) to a minimum weight.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Ingredients</td>
@@ -8557,7 +8861,7 @@ C.Location, -C.LockList
                 level, thereby increasing (or decreasing) the sound volume
                 (lower attenuation = higher volume). Does not affect Nirnroots
                 (see below).</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Set Sound Attenuation Levels: Nirnroots Only</td>
@@ -8586,7 +8890,7 @@ C.Location, -C.LockList
                 shrubs, etc). Tall groundcover will still be taller than short
                 groundcover, but there will be less variation in size. May help
                 on lower end machines.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
     </tbody>
 </table>
@@ -8788,7 +9092,7 @@ noted in the description of the tweak.</p>
                 string that must have the same length as the number of codes.
                 See the examples in the table up above.
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchTweakNamesLFTDwemer">Lore Friendly Text: Dwarven -&gt;
@@ -9684,7 +9988,7 @@ noted in the description of the tweak.</p>
             <td>Changes the maximum distance the chase camera can be moved away
                 from the player. Very useful for creating a bird's eye view –
                 but also a little bit unbalancing for that reason.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-settings-camera-chase-tightness">Camera: Chase
@@ -9699,7 +10003,7 @@ noted in the description of the tweak.</p>
                 player's death before the reload menu appears. (Even at
                 "Unlimited", you can hit escape to force reload menu to
                 appear.)</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Alchemy</td>
@@ -9746,7 +10050,7 @@ noted in the description of the tweak.</p>
             <td>Combat: Max Ally Hits In Combat</td>
             <td>The maximum number of hits on an ally allowed in combat before
                 the ally will attack the hitting character.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Max Ally Hits Out Of Combat</td>
@@ -9760,7 +10064,7 @@ noted in the description of the tweak.</p>
             <td>The maximum number of hits on a non-ally friend allowed in
                 combat before the friend will attack the hitting character.
             </td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Max Friend Hits Out Of Combat</td>
@@ -9818,7 +10122,7 @@ noted in the description of the tweak.</p>
             </td>
             <td>The chance that an actor will speak after being hit with a
                 weapon.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Speak on Hit Threshold</td>
@@ -9826,7 +10130,7 @@ noted in the description of the tweak.</p>
                 actor to speak when hit (independent of
                 <a href="#patchCombatSpeakOnHitChance">Combat: Speak on Hit
                 Chance</a>).</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Speak on Power Attack Chance</td>
@@ -10171,31 +10475,31 @@ noted in the description of the tweak.</p>
             <td id="patch-tweak-settings-prompt-a">Prompt: Activate</td>
             <td>Changes the text on the 'Activate' prompt shown when
                 interacting with objects.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Open</td>
             <td>Changes the text on the 'Open' prompt shown when trying to open
                 a door.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Sit</td>
             <td>Changes the text on the 'Sit' prompt shown when interacting
                 with chairs.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Take</td>
             <td>Changes the text on the 'Take' prompt shown when taking
                 items.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Prompt: Talk</td>
             <td>Changes the text on the 'Talk' prompt shown when interacting
                 with people.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Soul Trap: Common Soul Level</td>
@@ -10323,7 +10627,7 @@ noted in the description of the tweak.</p>
             <td>Time that must pass after you've last visited a cell before the
                 actors and items in it respawn. Note that choosing a longer
                 duration will result in larger savegames.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>World: Cell Respawn Time (Cleared)</td>

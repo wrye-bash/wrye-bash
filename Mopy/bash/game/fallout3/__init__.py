@@ -151,21 +151,18 @@ class Fallout3GameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.85, 0.94)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        'ImportActorsAIPackages', 'NpcChecker',
-        'ImportActorsFaces', 'RaceChecker',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
-        u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
-        u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
-        u'TweakRaces', u'TimescaleChecker', u'TweakNames',
-        'ImportEnchantments',
+        'AliasPluginNames', 'ContentsChecker', 'FormIDLists', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFaces', 'ImportActorsFactions',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportNames',
+        'ImportObjectBounds', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRelations', 'ImportScripts', 'ImportSounds', 'ImportSpellStats',
+        'ImportStats', 'ImportText', 'LeveledLists', 'MergePatches',
+        'NpcChecker', 'RaceChecker', 'TimescaleChecker', 'TweakActors',
+        'TweakAssorted', 'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (
@@ -555,12 +552,12 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVLN')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVLN'}
 
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {
+    names_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
         b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
         b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
@@ -696,7 +693,7 @@ class Fallout3GameInfo(PatchGame):
         b'CLAS': ('iconPath',),
         b'COBJ': ('iconPath', 'smallIconPath', 'model'),
         b'CONT': ('model',),
-        b'CREA': ('model', 'bodyParts', 'nift_p'),
+        b'CREA': ('model', 'bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'efsh_flags', 'particle_texture', 'fill_texture', 'holes_texture',
@@ -800,7 +797,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -828,7 +825,8 @@ class Fallout3GameInfo(PatchGame):
         b'COBJ', b'CONT', b'CREA', b'DOOR', b'EXPL', b'FURN', b'GRAS', b'IDLM',
         b'INGR', b'KEYM', b'LIGH', b'LVLC', b'LVLI', b'LVLN', b'MISC', b'MSTT',
         b'NOTE', b'NPC_', b'PROJ', b'PWAT', b'SCOL', b'SOUN', b'STAT', b'TACT',
-        b'TERM', b'TREE', b'TXST', b'WEAP'}
+        b'TERM', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -848,24 +846,28 @@ class Fallout3GameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLN', b'LVLI'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------
     # Import Scripts
     #--------------------------------------------------------------------------
     # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
-    scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT',
-                     b'CREA', b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH',
-                     b'MISC', b'NPC_', b'QUST', b'TACT', b'TERM', b'WEAP'}
+    scripts_types = {
+        b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_', b'QUST', b'TACT',
+        b'TERM', b'WEAP'
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT',
-                          b'CREA', b'DOOR', b'FURN', b'KEYM', b'LIGH', b'MISC',
-                          b'MSTT', b'NPC_', b'PROJ', b'TACT', b'TERM', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'TACT',
+        b'TERM', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors
@@ -895,19 +897,22 @@ class Fallout3GameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('crea_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
-                              'ai_aggro_radius_behavior', 'ai_assistance',
-                              'ai_confidence', 'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_service_flags',
-                              'ai_train_level', 'ai_train_skill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'charisma', 'combat_skill', 'damage',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magic_skill', 'perception', 'stealth_skill',
-                             'strength'),
+            'Actors.Stats': (
+                'agility', 'charisma', 'combat_skill', 'damage', 'endurance',
+                'health', 'intelligence', 'luck', 'magic_skill', 'perception',
+                'stealth_skill', 'strength',
+            ),
             'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
@@ -922,12 +927,14 @@ class Fallout3GameInfo(PatchGame):
                 'npc_flags.crea_no_rotating_head_track',
                 'npc_flags.crea_not_pushable', 'npc_flags.no_vats_melee',
                 'npc_flags.npc_respawn', 'karma', 'speed_multiplier',
-                ('npc_flags.pc_level_offset', 'level_offset')), # See above
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius',
-                              'ai_aggro_radius_behavior', 'ai_assistance',
-                              'ai_confidence', 'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_service_flags',
-                              'ai_train_level', 'ai_train_skill'),
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -954,7 +961,8 @@ class Fallout3GameInfo(PatchGame):
             'NPC.Race': ('race',),
         },
     }
-    actor_types = (b'CREA', b'NPC_')
+    actor_types = {b'CREA', b'NPC_'}
+    spell_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

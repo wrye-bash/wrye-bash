@@ -137,8 +137,20 @@ class Fallout4GameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.95, 1.0)
 
+    # Patchers that will need updating for future record types:
+    #  - ImportDestructible
+    #  - ImportEnchantments
+    #  - ImportKeywords
+    #  - ImportNames
+    #  - ImportObjectBounds
     patchers = {
-        'ImportObjectBounds', 'LeveledLists', 'TweakSettings',
+        'AliasPluginNames', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFactions', 'ImportActorsPerks', 'ImportActorsSpells',
+        'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
+        'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakActors',
+        'TweakSettings',
     }
 
     bethDataFiles = {
@@ -713,28 +725,147 @@ class Fallout4GameInfo(PatchGame):
     getvatsvalue_index = 407
 
     #--------------------------------------------------------------------------
-    # Leveled Lists
+    # Import Actors
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
+    actor_importer_attrs = {
+        b'NPC_': {
+            'Actors.ACBS': (
+                'npc_flags.npc_female', 'npc_flags.npc_essential',
+                'npc_flags.is_chargen_face_preset', 'npc_flags.npc_respawn',
+                'npc_flags.npc_auto_calc', 'npc_flags.npc_unique',
+                'npc_flags.does_not_affect_stealth', 'npc_flags.npc_protected',
+                'npc_flags.npc_summonable', 'npc_flags.does_not_bleed',
+                'npc_flags.bleedout_override',
+                'npc_flags.opposite_gender_anims', 'npc_flags.simple_actor',
+                'npc_flags.no_activation_or_hellos',
+                'npc_flags.diffuse_alpha_test', 'npc_flags.npc_is_ghost',
+                'npc_flags.npc_invulnerable', 'xp_value_offset',
+                # This flag directly impacts how the level_offset is
+                # calculated, so use a fused attribute to always carry them
+                # forward together
+                ('npc_flags.pc_level_offset', 'level_offset'),
+                'calc_min_level', 'calc_max_level', 'disposition_base',
+                'bleedout_override',
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_mood', 'ai_assistance',
+                'ai_aggro_radius_behavior', 'ai_warn', 'ai_warn_attack',
+                'ai_attack', 'ai_no_slow_approach',
+            ),
+            'Actors.RecordFlags': ('flags1',),
+            # Has FormIDs, but will be filtered in
+            # _AMreWithProperties.keep_fids
+            'Actors.Stats': ('properties',),
+        }
+    }
+    actor_importer_fid_attrs = {
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
+            'Actors.Voice': ('voice',),
+            'NPC.AIPackageOverrides': (
+                'override_package_list_spectator',
+                'override_package_list_observe_dead_body',
+                'override_package_list_guard_warn',
+                'override_package_list_combat',
+            ),
+            'NPC.AttackRace': ('attack_race',),
+            'NPC.Class': ('npc_class',),
+            'NPC.CrimeFaction': ('crime_faction',),
+            'NPC.DefaultOutfit': ('default_outfit',),
+            'NPC.Race': ('race',),
+        }
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Destructible
+    #--------------------------------------------------------------------------
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'CONT', b'DOOR', b'FLOR', b'FURN',
+        b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Effect Stats
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = (
+        'flags', 'base_cost', 'taper_weight', 'minimum_skill_level',
+        'spellmaking_area', 'spellmaking_casting_time', 'taper_curve',
+        'taper_duration', 'second_av_weight', 'effect_archetype',
+        'casting_type', 'delivery', 'skill_usage_multiplier',
+        'script_effect_ai_score', 'script_effect_ai_delay_time')
+    mgef_stats_fid_attrs = ('associated_item', 'resist_value', 'actorValue',
+                            'second_av', 'equip_ability', 'perk_to_apply')
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = {b'ARMO', b'EXPL'}
+
+    #--------------------------------------------------------------------------
+    # Import Enchantment Stats
+    #--------------------------------------------------------------------------
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
+                        'enchantment_amount', 'enchantment_target_type',
+                        'enchantment_type', 'charge_time')
+    ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'NPC_', b'CONT')
+    inventory_types = {b'CONT', b'FURN', b'NPC_'}
+
+    #--------------------------------------------------------------------------
+    # Import Keywords
+    #--------------------------------------------------------------------------
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
+        b'MSTT', b'NPC_',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Names
+    #--------------------------------------------------------------------------
+    names_types = {
+        b'AACT', b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
+        b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
+        b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
+        b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
+    }
 
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'LVLI', b'LVLN', b'LVSP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'ASPC', b'BNDS',
+        b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN',
+    }
+
+    #--------------------------------------------------------------------------
+    # Leveled Lists
+    #--------------------------------------------------------------------------
+    leveled_list_types = {b'LVLI', b'LVLN', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Timescale Checker
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
 
-    # ------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'OppositeGenderAnimsPatcher_Female',
+        'OppositeGenderAnimsPatcher_Male',
+    }
+
+    # -------------------------------------------------------------------------
     # Tweak Settings
-    # ------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     settings_tweaks = {
         'GlobalsTweak_Timescale_Tes5',
         'GmstTweak_Actor_GreetingDistance',

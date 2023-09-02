@@ -426,5 +426,6 @@ class PatchDialog(DialogWindow):
             patcher = self.currentPatcher
             if patcher is not None:
                 patcher.mass_select(select=not wrapped_evt.is_shift_down)
-                # Otherwise will select 'Alias Mod Names' ('A' key is pressed!)
+                # Otherwise will select 'Alias Plugin Names' ('A' key is
+                # pressed!)
                 return EventResult.FINISH

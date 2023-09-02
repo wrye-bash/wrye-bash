@@ -572,8 +572,9 @@ class MelOmodData(MelPartialCounter):
             od_property.load_property(ins, *debug_strs)
             append_property(od_property)
 
-    def dumpData(self, record, out):
-        super().dumpData(record, out)
+    def pack_subrecord_data(self, record):
+        out = BytesIO()
+        out.write(super().pack_subrecord_data(record))
         for od_aps in record.od_attach_parent_slots:
             pack_int(out, od_aps.dump())
         pack_int(out, len(record.od_items) // 8)
@@ -582,6 +583,7 @@ class MelOmodData(MelPartialCounter):
             od_include.dump_include(out)
         for od_property in record.od_properties:
             od_property.dump_property(out)
+        return out.getvalue()
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
@@ -1334,8 +1336,9 @@ class _MelObts(MelPartialCounter):
             obts_property.load_property(ins, *debug_strs)
             append_property(obts_property)
 
-    def dumpData(self, record, out):
-        super().dumpData(record, out)
+    def pack_subrecord_data(self, record):
+        out = BytesIO()
+        out.write(super().pack_subrecord_data(record))
         for obts_kwd in record.obts_keywords:
             pack_int(out, obts_kwd.dump())
         pack_byte(out, record.obts_min_level_for_ranks)
@@ -1344,6 +1347,7 @@ class _MelObts(MelPartialCounter):
             obts_include.dump_include(out)
         for obts_property in record.obts_properties:
             obts_property.dump_property(out)
+        return out.getvalue()
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
@@ -1360,6 +1364,7 @@ class MelObjectTemplate(MelSequential):
     containing the OBTS subrecord. Note that this also contains a FULL
     subrecord, so you will probably have to use a distributor."""
     def __init__(self):
+        self._ot_end_marker = MelBaseR(b'STOP', 'ot_combinations_end_marker')
         super().__init__(
             MelCounter(MelUInt32(b'OBTE', 'ot_combination_count'),
                 counts='ot_combinations'),
@@ -1368,8 +1373,16 @@ class MelObjectTemplate(MelSequential):
                 MelFull(),
                 _MelObts(),
             ),
-            MelBaseR(b'STOP', 'ot_combinations_end_marker')
+            self._ot_end_marker,
         )
+
+    ##: I already wrote code like this for CS2E and CS2F up above, this is
+    # screaming for a new building block
+    def dumpData(self, record, out):
+        for element in self.elements:
+            # STOP is required iff there are any combinations present
+            if record.ot_combinations or element is not self._ot_end_marker:
+                element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter

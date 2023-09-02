@@ -922,7 +922,7 @@ class MreCrea(AMreActor):
         MelItems(),
         MelSpellsTes4(),
         MelBodyParts(),
-        MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
+        MelBase(b'NIFT', 'model_list_textures'), # Texture File Hashes
         MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
             (_CreaFlags, 'crea_flags'), 'base_spell', 'fatigue', 'barter_gold',
             'level_offset', 'calc_min_level', 'calc_max_level'),

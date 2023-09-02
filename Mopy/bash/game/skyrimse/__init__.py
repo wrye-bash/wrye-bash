@@ -98,8 +98,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         extension_forces_flags = True
         warn_older_form_versions = True
 
-    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
-    patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
+    allTags = SkyrimGameInfo.allTags - {'NoMerge'}
+    patchers = SkyrimGameInfo.patchers - {'MergePatches'}
 
     bethDataFiles = {
         'skyrim.esm',

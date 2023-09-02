@@ -200,20 +200,18 @@ class SkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.94, 1.70)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
-        'ImportActorsAIPackages',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
-        u'ImportOutfits', u'ImportRelations', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
-        u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
-        'ImportEnchantments', 'TweakNames',
+        'AliasPluginNames', 'ContentsChecker', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFactions', 'ImportActorsPerks',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportKeywords', 'ImportNames',
+        'ImportObjectBounds', 'ImportOutfits', 'ImportRaces',
+        'ImportRacesSpells', 'ImportRelations', 'ImportSounds',
+        'ImportSpellStats', 'ImportStats', 'ImportText', 'LeveledLists',
+        'MergePatches', 'TimescaleChecker', 'TweakActors', 'TweakAssorted',
+        'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (
@@ -716,18 +714,19 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
+    leveled_list_types = {b'LVLI', b'LVLN', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF',
-                  b'BOOK', b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH',
-                  b'EXPL', b'EYES', b'FACT', b'FLOR', b'FURN', b'HAZD',
-                  b'HDPT', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MESG',
-                  b'MGEF', b'MISC', b'MSTT', b'NPC_', b'PERK', b'PROJ',
-                  b'QUST', b'RACE', b'SCRL', b'SHOU', b'SLGM', b'SNCT',
-                  b'SPEL', b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
+    names_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
+        b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES', b'FACT', b'FLOR',
+        b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MESG',
+        b'MGEF', b'MISC', b'MSTT', b'NPC_', b'PERK', b'PROJ', b'QUST', b'RACE',
+        b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'SPEL', b'TACT', b'TREE', b'WATR',
+        b'WEAP', b'WOOP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -994,15 +993,16 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'NPC_', b'CONT',)
+    inventory_types = {b'COBJ', b'CONT', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Keywords
     #--------------------------------------------------------------------------
-    keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
-                      b'FURN', b'INGR', b'KEYM', b'LCTN', b'MGEF', b'MISC',
-                      b'NPC_', b'RACE', b'SCRL', b'SLGM', b'SPEL', b'TACT',
-                      b'WEAP',)
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR', b'FURN', b'INGR',
+        b'KEYM', b'LCTN', b'MGEF', b'MISC', b'NPC_', b'RACE', b'SCRL', b'SLGM',
+        b'SPEL', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -1037,14 +1037,13 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA',
-                           b'ARMO', b'ARTO', b'ASPC', b'BOOK', b'CONT',
-                           b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR',
-                           b'FURN', b'GRAS', b'HAZD', b'IDLM', b'INGR',
-                           b'KEYM', b'LIGH', b'LVLI', b'LVLN', b'LVSP',
-                           b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL',
-                           b'SLGM', b'SOUN', b'SPEL', b'STAT', b'TACT',
-                           b'TREE', b'TXST', b'WEAP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'ARTO', b'ASPC',
+        b'BOOK', b'CONT', b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM', b'SOUN',
+        b'SPEL', b'STAT', b'TACT', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -1063,9 +1062,9 @@ class SkyrimGameInfo(PatchGame):
         b'OTFT': {b'ARMO', b'LVLI'},
     }
     cc_passes = (
-        ((b'LVLN', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'COBJ', b'CONT', b'NPC_'), 'items', 'item'),
-        ((b'OTFT',), 'items'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
+        ({b'OTFT'},          'items'),
     )
 
     #--------------------------------------------------------------------------
@@ -1098,26 +1097,28 @@ class SkyrimGameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('npc_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_aggro_radius_behavior',
-                              'ai_assistance', 'ai_attack', 'ai_confidence',
-                              'ai_energy_level', 'ai_mood',
-                              'ai_responsibility', 'ai_warn',
-                              'ai_warn_attack'),
+                ('npc_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius_behavior', 'ai_assistance',
+                'ai_attack', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_warn', 'ai_warn_attack',
+            ),
             'Actors.RecordFlags': ('flags1',),
-            'Actors.Stats': ('alchemySO', 'alchemySV', 'alterationSO',
-                             'alterationSV', 'blockSO', 'blockSV',
-                             'conjurationSO', 'conjurationSV', 'destructionSO',
-                             'destructionSV', 'enchantingSO', 'enchantingSV',
-                             'health', 'heavyArmorSO', 'heavyArmorSV',
-                             'illusionSO', 'illusionSV', 'lightArmorSO',
-                             'lightArmorSV', 'lockpickingSO', 'lockpickingSV',
-                             'magicka', 'marksmanSO', 'marksmanSV',
-                             'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
-                             'pickpocketSV', 'restorationSO', 'restorationSV',
-                             'smithingSO', 'smithingSV', 'sneakSO', 'sneakSV',
-                             'speechcraftSO', 'speechcraftSV', 'stamina',
-                             'twoHandedSO', 'twoHandedSV'),
+            ##: This should probably be imported as one or two attributes,
+            # meaning NPC_\DNAM should become a MelLists
+            'Actors.Stats': (
+                'alchemySO', 'alchemySV', 'alterationSO', 'alterationSV',
+                'blockSO', 'blockSV', 'conjurationSO', 'conjurationSV',
+                'destructionSO', 'destructionSV', 'enchantingSO',
+                'enchantingSV', 'health', 'heavyArmorSO', 'heavyArmorSV',
+                'illusionSO', 'illusionSV', 'lightArmorSO', 'lightArmorSV',
+                'lockpickingSO', 'lockpickingSV', 'magicka', 'marksmanSO',
+                'marksmanSV', 'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
+                'pickpocketSV', 'restorationSO', 'restorationSV', 'smithingSO',
+                'smithingSV', 'sneakSO', 'sneakSV', 'speechcraftSO',
+                'speechcraftSV', 'stamina', 'twoHandedSO', 'twoHandedSV',
+            ),
         },
     }
     actor_importer_fid_attrs = {
@@ -1138,7 +1139,6 @@ class SkyrimGameInfo(PatchGame):
             'NPC.Race': ('race',),
         }
     }
-    spell_types = (b'LVSP', b'SPEL')
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

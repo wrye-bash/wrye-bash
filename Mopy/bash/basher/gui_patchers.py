@@ -39,7 +39,7 @@ from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
-from ..patcher.patchers.base import AliasModNamesPatcher, \
+from ..patcher.patchers.base import AliasPluginNamesPatcher, \
     MergePatchesPatcher, MultiTweaker, ReplaceFormIDsPatcher
 
 class _PatcherPanel(object):
@@ -134,7 +134,7 @@ class _PatcherPanel(object):
 
         Most patchers just save their enabled state, except the
         _ListPatcherPanel subclasses - which save their choices - and the
-        AliasModNames that saves the aliases."""
+        AliasPluginNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
         config[u'isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
@@ -184,8 +184,8 @@ class _PatcherPanel(object):
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
-    patcher_name = _(u'Alias Mod Names')
-    patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
+    patcher_name = _('Alias Plugin Names')
+    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
 
     def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
@@ -987,9 +987,9 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 # Patchers 10 -----------------------------------------------------------------
-class AliasModNames(_AliasesPatcherPanel):
-    _config_key = u'AliasesPatcher'
-    patcher_type = AliasModNamesPatcher
+class AliasPluginNames(_AliasesPatcherPanel):
+    _config_key = 'AliasesPatcher'
+    patcher_type = AliasPluginNamesPatcher
 
 class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""
@@ -1060,10 +1060,9 @@ class ImportRelations(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportInventory(_ImporterPatcherPanel):
     """Merge changes to actor inventories."""
-    patcher_name = _(u'Import Inventory')
-    patcher_desc = _(u'Merges changes to NPC, creature and container '
-                     u'inventories.')
-    _config_key = u'ImportInventory'
+    patcher_name = _('Import Inventory')
+    patcher_desc = _('Merges changes to items in various inventories.')
+    _config_key = 'ImportInventory'
     patcher_type = mergers.ImportInventoryPatcher
 
 # -----------------------------------------------------------------------------
@@ -1156,19 +1155,15 @@ class ImportRacesSpells(_ImporterPatcherPanel):
 class ImportSpellStats(_ImporterPatcherPanel):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
-    patcher_desc = _('Import stats from any spells / actor effects from '
-                     'source plugins/files.')
+    patcher_desc = _('Import stats from spells from source plugins/files.')
     _config_key = u'SpellsPatcher'
     patcher_type = preservers.ImportSpellStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportDestructible(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Destructible')
-    patcher_desc = (_(u'Preserves changes to destructible records.')
-                    + u'\n\n' +
-                    _(u'Will have to use if a mod that allows you to destroy '
-                      u'part of the environment is installed and active.'))
-    _config_key = u'DestructiblePatcher'
+    patcher_name = _('Import Destructible')
+    patcher_desc = _('Preserves changes to destructible records.')
+    _config_key = 'DestructiblePatcher'
     patcher_type = preservers.ImportDestructiblePatcher
 
 # -----------------------------------------------------------------------------
@@ -1197,18 +1192,17 @@ class ImportObjectBounds(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportEnchantmentStats(_ImporterPatcherPanel):
     patcher_name = _(u'Import Enchantment Stats')
-    patcher_desc = _('Import stats from enchantments/object effects from '
-                     'source plugins.')
+    patcher_desc = _('Import stats from enchantments from source plugins.')
     _config_key = u'ImportEnchantmentStats'
     patcher_type = preservers.ImportEnchantmentStatsPatcher
 
 # -----------------------------------------------------------------------------
-class ImportEffectsStats(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Effect Stats')
+class ImportEffectStats(_ImporterPatcherPanel):
+    patcher_name = _('Import Effect Stats')
     patcher_desc = _('Import stats from magic/base effects from source '
                      'plugins.')
-    _config_key = u'ImportEffectsStats'
-    patcher_type = preservers.ImportEffectsStatsPatcher
+    _config_key = 'ImportEffectsStats'
+    patcher_type = preservers.ImportEffectStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportEnchantments(_ImporterPatcherPanel):

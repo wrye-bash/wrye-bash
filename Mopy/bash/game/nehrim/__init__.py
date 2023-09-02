@@ -57,8 +57,8 @@ class NehrimGameInfo(OblivionGameInfo):
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
     # Exhaustion, Morph Factions and SEWorld Tests)
     patchers = {p for p in OblivionGameInfo.patchers if p not in
-                (u'CoblCatalogs', u'CoblExhaustion', u'MorphFactions',
-                 u'SEWorldTests')}
+                ('CoblCatalogs', 'CoblExhaustion', 'MorphFactions',
+                 'SEWorldTests')}
 
     raceNames = {
         0x224fc:  _(u'Alemanne'),
@@ -125,7 +125,8 @@ class NehrimGameInfo(OblivionGameInfo):
         # Only Import Roads is of any interest
         from ..oblivion.patcher import preservers
         cls.game_specific_import_patchers = {
-            u'ImportRoads': preservers.ImportRoadsPatcher, }
+            'ImportRoads': preservers.ImportRoadsPatcher,
+        }
 
     @classmethod
     def init(cls, _package_name=None):

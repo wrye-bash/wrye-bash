@@ -252,13 +252,12 @@ class _AMerger(ImportPatcher):
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
 class ImportActorsPerksPatcher(_AMerger):
-    logMsg = u'\n=== ' + _(u'Perk Lists Changed') + u': %d'
-    _add_tag = u'Actors.Perks.Add'
-    _change_tag = u'Actors.Perks.Change'
-    _remove_tag = u'Actors.Perks.Remove'
+    logMsg = '\n=== ' + _('Perk Lists Changed') + ': %d'
+    _add_tag = 'NPC.Perks.Add'
+    _change_tag = 'NPC.Perks.Change'
+    _remove_tag = 'NPC.Perks.Remove'
     _wanted_subrecord = {x: 'npc_perks' for x in bush.game.actor_types}
-    patcher_tags = {'Actors.Perks.Add', 'Actors.Perks.Change',
-                    'Actors.Perks.Remove'}
+    patcher_tags = {'NPC.Perks.Add', 'NPC.Perks.Change', 'NPC.Perks.Remove'}
 
     def _entry_key(self, subrecord_entry):
         return subrecord_entry.npc_perk_fid
@@ -269,7 +268,7 @@ class ImportInventoryPatcher(_AMerger):
     _add_tag = u'Invent.Add'
     _change_tag = u'Invent.Change'
     _remove_tag = u'Invent.Remove'
-    _wanted_subrecord = {x: u'items' for x in bush.game.inventoryTypes}
+    _wanted_subrecord = {x: 'items' for x in bush.game.inventory_types}
     iiMode = True
     patcher_tags = {'Invent.Add', 'Invent.Change', 'Invent.Remove'}
 
@@ -448,7 +447,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     if bush.game.Esp.sort_lvsp_after_spel:
         # We need to read LVSP & SPEL to properly sort spell lists in actors
         ##: This is a workaround, see MelSpellsTes4 for the proper solution
-        _read_sigs = _actor_sigs + _spel_sigs
+        _read_sigs = _actor_sigs | _spel_sigs
     else:
         _read_sigs = _actor_sigs
     patcher_tags = {'Actors.Spells', 'Actors.SpellsForceAdd'}
@@ -842,7 +841,7 @@ class _AListsMerger(ListPatcher):
 
 class LeveledListsPatcher(_AListsMerger):
     """Merges leveled lists."""
-    _read_sigs = bush.game.listTypes # bush.game must be set!
+    _read_sigs = bush.game.leveled_list_types # bush.game must be set!
     _de_tag = u'Delev'
     _re_tag = u'Relev'
     _sig_to_label = {

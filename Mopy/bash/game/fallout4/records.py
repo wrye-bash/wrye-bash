@@ -128,6 +128,15 @@ _object_template_distributor = {
 }
 
 #------------------------------------------------------------------------------
+class _AMreWithProperties(MelRecord):
+    """Mixin class for record types that contain a list of properties (see
+    MelProperties)."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.properties = [c for c in self.properties
+                           if c.prop_actor_value.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
 class MelAnimationSound(MelFid):
     """Handles the common STCP (Animation Sound) subrecord."""
     def __init__(self):
@@ -435,7 +444,7 @@ class MreAact(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreActi(AMreWithKeywords):
+class MreActi(AMreWithKeywords, _AMreWithProperties):
     """Activator."""
     rec_sig = b'ACTI'
 
@@ -907,7 +916,7 @@ class MreCell(AMreCell): ##: Implement once regular records are done
         no_previs: bool = flag(7)
 
 #------------------------------------------------------------------------------
-class MreClas(MelRecord):
+class MreClas(_AMreWithProperties):
     """Class."""
     rec_sig = b'CLAS'
 
@@ -1003,7 +1012,7 @@ class MreCobj(MelRecord):
                                 if c.component_fid.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
-class MreCont(AMreWithItems, AMreWithKeywords):
+class MreCont(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
     """Container."""
     rec_sig = b'CONT'
 
@@ -1423,7 +1432,7 @@ class MreFact(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreFlor(AMreWithKeywords):
+class MreFlor(AMreWithKeywords, _AMreWithProperties):
     """Flora."""
     rec_sig = b'FLOR'
     _has_duplicate_attrs = True # RNAM is an older version of ATTX
@@ -1501,7 +1510,7 @@ class MelFurnMarkerParams(MelArray):
             arr_entry.__slots__ = entry_slots
             load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
 
-class MreFurn(AMreWithItems, AMreWithKeywords):
+class MreFurn(AMreWithItems, AMreWithKeywords, _AMreWithProperties):
     """Furniture."""
     rec_sig = b'FURN'
 
@@ -2034,7 +2043,7 @@ class MreLgtm(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreLigh(AMreWithKeywords):
+class MreLigh(AMreWithKeywords, _AMreWithProperties):
     """Light."""
     rec_sig = b'LIGH'
 
@@ -2309,7 +2318,7 @@ class MreMovt(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreMstt(AMreWithKeywords):
+class MreMstt(AMreWithKeywords, _AMreWithProperties):
     """Moveable Static."""
     rec_sig = b'MSTT'
 
@@ -2438,7 +2447,7 @@ class MreNote(MelRecord):
         MelModel(),
         MelIcons(),
         MelSoundPickupDrop(),
-        MelNoteType(),
+        MelNoteType(b'DNAM'),
         MelValueWeight(),
         MelUnion({
             0: MelStruct(b'SNAM', ['4s'], 'note_contents'), # Unused
@@ -2465,7 +2474,7 @@ class _NpcTendDecider(SizeDecider):
     def decide_dump(self, record):
         return 1 if record.tint_template_color_index is None else 7
 
-class MreNpc_(AMreActor, AMreWithKeywords):
+class MreNpc_(AMreActor, AMreWithKeywords, _AMreWithProperties):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
@@ -2602,7 +2611,7 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         ), sort_by_attrs='fm_index'),
         MelFloat(b'FMIN', 'facial_morph_intensity'),
         MelAttx(),
-    )
+    ).with_distributor(_object_template_distributor)
 
 #------------------------------------------------------------------------------
 class MreOmod(MelRecord):

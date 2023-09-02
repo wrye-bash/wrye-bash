@@ -316,7 +316,7 @@ class ImportDestructiblePatcher(APreserver):
     patcher_tags = {'Destructible'}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStatsPatcher(APreserver):
+class ImportEffectStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
     _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}
@@ -338,15 +338,15 @@ class ImportEnchantmentStatsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
-    rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
     patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg =  '\n=== ' + _('Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    srcsHeader = '=== ' + _('Source Mods/Files')
+    rec_attrs = {x: ('full',) for x in bush.game.names_types}
     _csv_parser = parsers.FullNames
     patcher_tags = {'Names'}
     _csv_key = 'Names'

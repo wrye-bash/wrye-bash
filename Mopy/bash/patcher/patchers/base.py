@@ -152,7 +152,7 @@ class MultiTweaker(ScanPatcher):
             tweak.tweak_log(log, tweak_counter[tweak])
 
 # Patchers: 10 ----------------------------------------------------------------
-class AliasModNamesPatcher(APatcher):
+class AliasPluginNamesPatcher(APatcher):
     """Specify mod aliases for patch files."""
     patcher_group = u'General'
     patcher_order = 10

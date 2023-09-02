@@ -86,7 +86,9 @@ class Subrecord(object):
             self._dump_bytes(out, binary_data, len(binary_data))
         except Exception:
             bolt.deprint(
-                f'{self!r}: Failed packing: {self.mel_sig!r}, {binary_data!r}')
+                f'{self!r}: Failed packing: '
+                f'{getattr(self, "mel_sig", "<no mel_sig>")!r}, '
+                f'{binary_data!r}')
             raise
 
     def _dump_bytes(self, out, binary_data, lenData):

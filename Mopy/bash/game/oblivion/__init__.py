@@ -187,21 +187,20 @@ class OblivionGameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
 
-    allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'IIM', 'NoMerge'}
     patchers = {
-        u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
-        u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
-        u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
-        u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
-        u'ImportGraphics', u'ImportInventory', u'ImportNames',
-        u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'MorphFactions', u'NpcChecker', u'ReplaceFormIDs',
-        u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
-        u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
-        'ImportRacesRelations', 'TweakRaces', 'RaceChecker',
-        'TimescaleChecker', 'ImportEnchantments',
+        'AliasPluginNames', 'CoblCatalogs', 'CoblExhaustion',
+        'ContentsChecker', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFaces', 'ImportActorsFactions', 'ImportActorsSpells',
+        'ImportCells', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportGraphics', 'ImportInventory',
+        'ImportNames', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRacesSpells', 'ImportRelations', 'ImportRoads', 'ImportScripts',
+        'ImportSounds', 'ImportSpellStats', 'ImportStats', 'ImportText',
+        'LeveledLists', 'MergePatches', 'MorphFactions', 'NpcChecker',
+        'RaceChecker', 'ReplaceFormIDs', 'SEWorldTests', 'TimescaleChecker',
+        'TweakActors', 'TweakAssorted', 'TweakClothes', 'TweakNames',
+        'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (
@@ -529,16 +528,17 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVSP')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Prices
     #--------------------------------------------------------------------------
-    namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK',
-                  b'BSGN', b'CLAS', b'CLOT', b'CONT', b'CREA', b'DOOR',
-                  b'ENCH', b'EYES', b'FACT', b'FLOR', b'HAIR', b'INGR',
-                  b'KEYM', b'LIGH', b'MGEF', b'MISC', b'NPC_', b'QUST',
-                  b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
+    names_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
+        b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'FLOR',
+        b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC', b'NPC_', b'QUST',
+        b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -632,7 +632,7 @@ class OblivionGameInfo(PatchGame):
         b'CLOT': ('maleBody', 'maleWorld', 'maleIconPath', 'femaleBody',
                   'femaleWorld', 'femaleIconPath', 'biped_flags'),
         b'CONT': ('model',),
-        b'CREA': ('bodyParts', 'nift_p'),
+        b'CREA': ('bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'particle_texture', 'fill_texture', 'efsh_flags',
@@ -694,7 +694,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # NPC Checker
@@ -781,8 +781,8 @@ class OblivionGameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------
@@ -812,18 +812,21 @@ class OblivionGameInfo(PatchGame):
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('crea_flags.pc_level_offset', 'level_offset')),
-            'Actors.AIData': ('ai_aggression', 'ai_confidence',
-                              'ai_energy_level', 'ai_responsibility',
-                              'ai_service_flags', 'ai_train_level',
-                              'ai_train_skill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'attackDamage', 'combat_skill',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magic', 'personality', 'soul', 'stealth',
-                             'speed', 'strength', 'willpower'),
+            'Actors.Stats': (
+                'agility', 'attackDamage', 'combat_skill', 'endurance',
+                'health', 'intelligence', 'luck', 'magic', 'personality',
+                'soul', 'stealth', 'speed', 'strength', 'willpower',
+            ),
             'Creatures.Blood': ('blood_decal_path', 'blood_spray_path'),
             'Creatures.Type': ('creature_type',),
         },
@@ -835,11 +838,13 @@ class OblivionGameInfo(PatchGame):
                 'npc_flags.npc_female', 'npc_flags.no_low_level',
                 'npc_flags.no_persuasion', 'npc_flags.no_rumors',
                 'npc_flags.npc_respawn', 'npc_flags.npc_summonable',
-                ('npc_flags.pc_level_offset', 'level_offset')), # See above
-            'Actors.AIData': ('ai_aggression', 'ai_confidence',
-                              'ai_energy_level', 'ai_responsibility',
-                              'ai_service_flags', 'ai_train_skill',
-                              'ai_train_level'),
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_skill',
+                'ai_train_level',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -862,8 +867,7 @@ class OblivionGameInfo(PatchGame):
             'NPC.Race': ('race',),
         }
     }
-    actor_types = (b'CREA', b'NPC_')
-    spell_types = (b'LVSP', b'SPEL')
+    actor_types = {b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats

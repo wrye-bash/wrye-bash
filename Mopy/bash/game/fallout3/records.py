@@ -1919,7 +1919,7 @@ class MreNote(MelRecord):
         MelModel(),
         MelIcons(),
         MelSoundPickupDrop(),
-        MelNoteType(),
+        MelNoteType(b'DATA'),
         MelSorted(MelSimpleArray('note_quests', MelFid(b'ONAM'))),
         MelString(b'XNAM', 'note_texture'),
         MelUnion({
@@ -2874,7 +2874,7 @@ class MreSoun(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreSpel(MelRecord):
-    """Actor Effect"""
+    """Actor Effect."""
     rec_sig = b'SPEL'
 
     melSet = MelSet(

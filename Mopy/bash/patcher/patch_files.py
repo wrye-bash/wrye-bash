@@ -382,7 +382,8 @@ class PatchFile(ModFile):
                 if s not in self.loadFactory.sig_to_type:
                     self.readFactory.add_class(s)
                     self.loadFactory.add_class(s)
-            iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
+            iiSkipMerge = (iiMode and
+                           top_grup_sig not in bush.game.leveled_list_types)
             self.tops[top_grup_sig].merge_records(block, loaded_mods,
                                                   self.mergeIds, iiSkipMerge)
 
