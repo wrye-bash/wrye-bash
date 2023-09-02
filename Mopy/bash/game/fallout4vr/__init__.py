@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from .. import ObjectIndexRange
 from ..fallout4 import Fallout4GameInfo
 from ... import bolt
 
@@ -65,7 +66,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
-        expanded_plugin_range = False
+        object_index_range = ObjectIndexRange.RESERVED
         validHeaderVersions = (0.95,)
 
     allTags = Fallout4GameInfo.allTags | {'NoMerge'}

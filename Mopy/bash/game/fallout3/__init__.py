@@ -1218,7 +1218,8 @@ class Fallout3GameInfo(PatchGame):
         b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
         b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
         b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',
-        b'RGDL', b'DOBJ', b'LGTM', b'MUSC']
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):

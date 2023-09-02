@@ -444,8 +444,8 @@ class CreateNewPlugin(DialogWindow):
         chosen_name = ModInfo.unique_name(newName)
         windowSelected = pw.GetSelected()
         pw.data_store.create_new_mod(chosen_name, windowSelected,
-            esm_flag=self._esm_flag.is_checked,
-            esl_flag=self._esl_flag.is_checked,
+            with_esm_flag=self._esm_flag.is_checked,
+            with_esl_flag=self._esl_flag.is_checked,
             wanted_masters=[*map(FName, self._chosen_masters)])
         if windowSelected:  # assign it the group of the first selected mod
             mod_group = pw.data_store.table.getColumn(u'group')

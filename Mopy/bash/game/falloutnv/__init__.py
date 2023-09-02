@@ -495,7 +495,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ',
         b'LGTM', b'MUSC', b'IMOD', b'REPU', b'RCPE', b'RCCT', b'CHIP', b'CSNO',
         b'LSCT', b'MSET', b'ALOC', b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK',
-        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD']
+        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):

@@ -20,15 +20,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module contains only the overrides of record classes needed for
-FO4VR."""
+"""This module contains the Starfield record classes."""
 
 from ...bolt import flag
-from ...brec import AMreHeader, MelBase, MelFid, MelGroups, MelNull, MelSet, \
-    MelSimpleArray, MelStruct, MelUInt32
+from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
+    MelNull, MelSet, MelSimpleArray, MelStruct, MelUInt32, AMreWrld
 
-# Only difference from FO4 is the default version, but this seems less hacky
-# than adding a game var just for this and dynamically importing it in FO4
+#------------------------------------------------------------------------------
+# Starfield Records -----------------------------------------------------------
+#------------------------------------------------------------------------------
+# TODO(SF) verify, all of this is copied from FO4
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
@@ -37,11 +38,13 @@ class MreTes4(AMreHeader):
     class HeaderFlags(AMreHeader.HeaderFlags):
         optimized_file: bool = flag(4)
         localized: bool = flag(7)
-        esl_flag: bool = flag(9)
+        esl_flag: bool = flag(8)
 
     melSet = MelSet(
-        MelStruct(b'HEDR', ['f', '2I'], ('version', 0.95), 'numRecords',
-                  ('nextObject', 0x800), is_required=True),
+        # TODO(SF) verify nextObject begins at 1 (i.e. if expanded range from
+        #  FO4 is a thing)
+        MelStruct(b'HEDR', ['f', '2I'], ('version', 0.96), 'numRecords',
+                  ('nextObject', 0x001), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -55,4 +58,22 @@ class MreTes4(AMreHeader):
         ),
         MelUInt32(b'INTV', 'unknownINTV'),
         MelUInt32(b'INCC', 'internal_cell_count'),
+        MelBase(b'CHGL', 'unknown_chgl'), # TODO(SF) fill out once decoded
     )
+
+#------------------------------------------------------------------------------
+class MreCell(AMreCell): ##: Implement once regular records are done
+    """Cell."""
+    ref_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON', b'PFLA', b'PGRE',
+                 b'PHZD', b'PMIS', b'REFR'}
+    interior_temp_extra = [b'NAVM']
+
+    class HeaderFlags(AMreCell.HeaderFlags):
+        no_previs: bool = flag(7)
+
+#------------------------------------------------------------------------------
+class MreWrld(AMreWrld): ##: Implement once regular records are done
+    """Worldspace."""
+    ref_types = MreCell.ref_types
+    exterior_temp_extra = [b'LAND', b'NAVM']
+    wrld_children_extra = [b'CELL'] # CELL for the persistent block

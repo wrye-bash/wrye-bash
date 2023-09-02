@@ -59,10 +59,10 @@ default_tweaks = {
     'Save Backups, 3.ini': {'General': {'iSaveGameBackupCount': '3'}},
     'Save Backups, 4.ini': {'General': {'iSaveGameBackupCount': '4'}},
     'Save Backups, 5.ini': {'General': {'iSaveGameBackupCount': '5'}},
-    'bInvalidateOlderFiles, Disabled ~Default.ini': {
-        'Archive': {'bInvalidateOlderFiles': '0'}},
-    'bInvalidateOlderFiles, Enabled.ini': {
+    'Invalidate, Allow loose files.ini': {
         'Archive': {'bInvalidateOlderFiles': '1'}},
+    'Invalidate, Disallow loose files ~Default.ini': {
+        'Archive': {'bInvalidateOlderFiles': '0'}},
     'iConsoleTextXPos, ~Default.ini': {'Menu': {'iConsoleTextXPos': '30'}},
     'iConsoleTextXPos, Fixed.ini': {'Menu': {'iConsoleTextXPos': '130'}},
 }

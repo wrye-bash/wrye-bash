@@ -726,3 +726,6 @@ def get_save_header_type(game_fsName):
         return Fallout3SaveHeader
     elif game_fsName == u'Morrowind':
         return MorrowindSaveHeader
+    else:
+        raise RuntimeError(f'Save header decoding not supported for '
+                           f'{game_fsName} yet')

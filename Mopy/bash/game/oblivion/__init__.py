@@ -1183,7 +1183,8 @@ class OblivionGameInfo(PatchGame):
         b'MISC', b'STAT', b'GRAS', b'TREE', b'FLOR', b'FURN', b'WEAP', b'AMMO',
         b'NPC_', b'CREA', b'LVLC', b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST',
         b'LVLI', b'WTHR', b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST',
-        b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH']
+        b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
+    ]
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):

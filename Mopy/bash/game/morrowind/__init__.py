@@ -137,7 +137,8 @@ class MorrowindGameInfo(PatchGame):
         b'WEAP', b'CONT', b'SPEL', b'CREA', b'BODY', b'LIGH', b'ENCH', b'NPC_',
         b'ARMO', b'CLOT', b'REPA', b'ACTI', b'APPA', b'LOCK', b'PROB', b'INGR',
         b'BOOK', b'ALCH', b'LEVI', b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG',
-        b'DIAL', b'INFO']
+        b'DIAL', b'INFO',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):

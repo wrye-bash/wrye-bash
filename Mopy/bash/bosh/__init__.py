@@ -2850,8 +2850,8 @@ class ModInfos(FileInfos):
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
     def create_new_mod(self, newName, selected=(), wanted_masters=None,
-                       dir_path=empty_path, is_bashed_patch=False, esm_flag=False,
-                       esl_flag=False):
+            dir_path=empty_path, is_bashed_patch=False, with_esm_flag=False,
+            with_esl_flag=False):
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -2860,9 +2860,9 @@ class ModInfos(FileInfos):
         newFile.tes4.masters = wanted_masters
         if is_bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
-        if esm_flag:
+        if with_esm_flag:
             newFile.tes4.flags1.esm_flag = True
-        if esl_flag:
+        if with_esl_flag:
             newFile.tes4.flags1.esl_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
@@ -3538,6 +3538,7 @@ def initTooldirs():
     tooldirs[u'Fo3EditPath'] = dirs[u'app'].join(u'FO3Edit.exe')
     tooldirs[u'FnvEditPath'] = dirs[u'app'].join(u'FNVEdit.exe')
     tooldirs[u'FO4VREditPath'] = dirs[u'app'].join(u'FO4VREdit.exe')
+    tooldirs['SF1EditPath'] = dirs['app'].join('SF1Edit.exe')
     tooldirs[u'Tes4LodGenPath'] = dirs[u'app'].join(u'TES4LodGen.exe')
     tooldirs[u'Tes4GeckoPath'] = dirs[u'app'].join(u'Tes4Gecko.jar')
     tooldirs[u'Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')

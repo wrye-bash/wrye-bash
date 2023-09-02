@@ -448,8 +448,8 @@ class PageVersions(PageInstaller):
         _link_row(bush.game.Ge, bush.game.Ge.ge_abbrev, geNeed, geHave, bGEOk)
         # Wrye Bash
         _link_row(None, u'', wbNeed, wbHave, bWBOk, title=u'Wrye Bash',
-                  url=u'https://www.nexusmods.com/oblivion/mods/22368',
-                  tooltip_=u'https://www.nexusmods.com/oblivion')
+                  url=u'https://www.nexusmods.com/site/mods/591',
+                  tooltip_=_('Wrye Bash Download'))
         versions_box = HBoxedLayout(self, _(u'Version Requirements'),
                                     item_expand=True, item_weight=1,
                                     items=[versions_layout])

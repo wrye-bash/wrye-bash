@@ -982,7 +982,10 @@ def get_bsa_type(game_fsName) -> type[ABsa]:
     elif game_fsName in ('Skyrim Special Edition', 'Skyrim VR',
                          'Enderal Special Edition'):
         return SkyrimSeBsa
-    elif game_fsName in ('Fallout4', 'Fallout4VR'):
+    # TODO(SF) verify BA2 has not changed
+    elif game_fsName in ('Fallout4', 'Fallout4VR', 'Starfield'):
         # Hashes are I not Q in BA2s!
         _HashedRecord.formats = [('I', struct_calcsize('I'))]
         return BA2
+    else:
+        raise RuntimeError(f'BSAs not supported for {game_fsName} yet')

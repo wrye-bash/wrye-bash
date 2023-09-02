@@ -1598,6 +1598,13 @@ class EnderalSE(SkyrimSE):
             FName(u'Enderal - Forgotten Stories.esm'),
         }
 
+# TODO(SF) we don't know where the LO is stored yet, AsteriskGame is a guess
+class Starfield(AsteriskGame):
+    must_be_active_if_present = tuple(map(FName, (
+        'Starfield.esm', 'Constellation.esm', 'OldMars.esm',
+        'BlueprintShips-Starfield.esm',
+    )))
+
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
@@ -1617,8 +1624,11 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return Fallout4(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4VR':
         return Fallout4VR(mod_infos, plugins_txt_path)
-    else:
+    elif game_fsName in ('Oblivion', 'Fallout3', 'FalloutNV'):
         return TimestampGame(mod_infos, plugins_txt_path)
+    else:
+        raise RuntimeError(f'Load order management is not supported for '
+                           f'{game_fsName} yet')
 
 # Print helpers
 def _pl(it, legend='', joint=', '):

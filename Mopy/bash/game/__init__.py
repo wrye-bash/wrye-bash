@@ -25,12 +25,30 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+from enum import Enum
 from itertools import chain
 from os.path import join as _j
 
 from .. import bolt
 from ..bolt import FNDict, fast_cached_property
 
+# Constants and Helpers -------------------------------------------------------
+# Files shared by versions of games that are published on the Windows Store
+WS_COMMON_FILES = {'appxmanifest.xml'}
+
+class ObjectIndexRange(Enum):
+    """Valid values for object_index_range."""
+    # FormIDs with object indices in the range 0x000-0x7FF are always
+    # reserved for the engine
+    RESERVED = 0
+    # Plugins with a header version >= 1.0 and at least one master can
+    # use the range 0x000-0x7FF for their own purposes
+    EXPANDED_CONDITIONAL = 1
+    # Plugins with at least one master can use the range 0x001-0x7FF
+    # for their own purposes
+    EXPANDED_ALWAYS = 2
+
+# Abstract class - to be overriden --------------------------------------------
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
     # Name of the game to use in UI.
@@ -135,7 +153,7 @@ class GameInfo(object):
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
-    # game. Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
+    # game. Some examples are sound\voice\PLUGIN_NAME.esp, or the facegendata
     # ones. An empty list means that the game does not have any such
     # directories.
     plugin_name_specific_dirs = [_j(u'sound', u'voice')]
@@ -421,6 +439,7 @@ class GameInfo(object):
 
     # Plugin format stuff
     class Esp(object):
+        """Information about plugins."""
         # WB can create Bashed Patches
         canBash = False
         # WB can edit basic info in the main header record - generally has
@@ -431,10 +450,6 @@ class GameInfo(object):
         # background color if that is the case. Needs meaningful information in
         # the DATA subrecords.
         check_master_sizes = False
-        # If True, then plugins with at least one master can use the
-        # 0x000-0x800 range for their own records.
-        # If False, that range is reserved for hardcoded engine records.
-        expanded_plugin_range = False
         # If True, then plugins with a .esm extension will always be treated
         # as having the ESM flag set and plugins with a .esl extension will
         # always be treated as having the ESL and ESM flags set
@@ -451,6 +466,9 @@ class GameInfo(object):
         # The maximum number of entries inside a leveled list for this game.
         # Zero means no limit.
         max_lvl_list_size = 0
+        # Determines the range of object indices that plugins are allowed to
+        # use. See ObjectIndexRange for more details
+        object_index_range = ObjectIndexRange.RESERVED
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
         # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
@@ -566,9 +584,5 @@ class GameInfo(object):
                 any(test_path.join(p).exists()
                 for p in cls.game_detect_excludes))
 
-# Constants -------------------------------------------------------------------
-# Files shared by versions of games that are published on the Windows Store
-WS_COMMON_FILES = {'appxmanifest.xml'}
-
-# The GameInfo-derived type used for this game
+# The GameInfo-derived type used for this game, to be set by each game package
 GAME_TYPE: type[GameInfo] | dict[str, type[GameInfo]]

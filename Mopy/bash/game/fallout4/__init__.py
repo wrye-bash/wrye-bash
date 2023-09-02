@@ -22,7 +22,7 @@
 # =============================================================================
 from os.path import join as _j
 
-from .. import WS_COMMON_FILES, GameInfo
+from .. import WS_COMMON_FILES, GameInfo, ObjectIndexRange
 from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
 from ..windows_store_game import WindowsStoreMixin
@@ -132,9 +132,9 @@ class Fallout4GameInfo(PatchGame):
     class Esp(GameInfo.Esp):
         canBash = True
         canEditHeader = True
-        expanded_plugin_range = True
         extension_forces_flags = True
         max_lvl_list_size = 255
+        object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
         validHeaderVersions = (0.95, 1.0)
 
     # Patchers that will need updating for future record types:
@@ -919,7 +919,8 @@ class Fallout4GameInfo(PatchGame):
         b'MOVT', b'SNDR', b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
         b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP', b'ZOOM',
         b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG', b'NOCM',
-        b'LENS', b'GDRY', b'OVIS']
+        b'LENS', b'GDRY', b'OVIS',
+    ]
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
     @classmethod

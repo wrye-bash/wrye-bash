@@ -1449,7 +1449,8 @@ class SkyrimGameInfo(PatchGame):
         b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
         b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
-        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB']
+        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
