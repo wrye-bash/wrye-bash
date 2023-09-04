@@ -794,7 +794,7 @@ class WryeParser(ScriptParser.Parser):
             try:
                 self.RunLine(newline)
             except ScriptParser.ParserError as e:
-                bolt.deprint(u'Error in wizard script', traceback=True)
+                bolt.deprint(f'Error in wizard script: {e}')
                 return PageError(self._wiz_parent, _(u'Installer Wizard'),
                      u'\n'.join([_(u'An error occurred in the wizard script:'),
                      _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')),

@@ -120,7 +120,25 @@ def getbestencoding(bitstream):
         # inference can be made (chardet returns None, which breaks when passed
         # to decode())
         return 'utf8', 1.0
-    result = chardet.detect(bitstream)
+    # If we're fed a really big stream, go through it 16 KB at a time so as to
+    # not time out (really only here so we don't freeze on boot when we get
+    # malformed data fed in, no bytestring we pass in under normal
+    # circumstances is *this* large)
+    if len(bitstream) > 16384:
+        bitstream_view = io.BytesIO(bitstream)
+        result = result_sentinel = {
+            'encoding': None,
+            'confidence': 0.0,
+            'language': None,
+        }
+        while block := bitstream_view.read(16384):
+            result = chardet.detect(block)
+            # If we got a useful result out of chardet here, we're done and can
+            # return it
+            if result != result_sentinel:
+                break
+    else:
+        result = chardet.detect(bitstream)
     encoding_, confidence = result[u'encoding'], result[u'confidence']
     encoding_ = _encodingSwap.get(encoding_,encoding_)
     return encoding_, confidence

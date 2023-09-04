@@ -3526,9 +3526,7 @@ def initTooldirs():
         tooldirs['LOOT'] = _get_boss_loot(
             ('LOOT', 'Installed Path'), 'LOOT', 'LOOT.exe')
     else:
-        loot_unix = GPath('/opt/loot/LOOT')
-        if loot_unix.is_file():
-            tooldirs['LOOT'] = loot_unix
+        tooldirs['LOOT'] = GPath('/opt/loot/LOOT')
     tooldirs[u'TES3EditPath'] = dirs[u'app'].join(u'TES3Edit.exe')
     tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
     tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')
