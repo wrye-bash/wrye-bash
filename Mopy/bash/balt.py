@@ -260,16 +260,13 @@ class _Log(object):
         if isinstance(title, Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
-            key__pos_ = f'{self._key_prefix}.pos'
-            key__size_ = f'{self._key_prefix}.size'
             window = DialogWindow(parent, title, sizes_dict=_settings,
-                                  icon_bundle=log_icons, size_key=key__size_,
-                                  pos_key=key__pos_)
+                                  icon_bundle=log_icons)
         else:
             style_ = wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |  \
                      wx.CLOSE_BOX | wx.CLIP_CHILDREN
-            window = WindowFrame(parent, title, log_icons or Resources.bashBlue,
-                                 sizes_dict=_settings, style=style_)
+            window = WindowFrame(parent, title, sizes_dict=_settings,
+                style=style_, icon_bundle=log_icons or Resources.bashBlue)
         window.set_min_size(200, 200)
         self.window = window
 

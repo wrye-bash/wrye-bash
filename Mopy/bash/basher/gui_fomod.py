@@ -105,6 +105,7 @@ class ValidatorPopup(DialogWindow):
 
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
+    _key_prefix = 'bash.fomod'
 
     def __init__(self, parent_window, target_installer, show_install_chkbox,
                  progress):
@@ -132,8 +133,7 @@ class InstallerFomod(WizardDialog):
             version_string)
         super().__init__(parent_window, sizes_dict=bass.settings,
             title=_('FOMOD Installer - %(fomod_title)s') % {
-                'fomod_title': self.fomod_parser.fomod_name},
-            size_key='bash.fomod.size', pos_key='bash.fomod.pos')
+                'fomod_title': self.fomod_parser.fomod_name})
         self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
 

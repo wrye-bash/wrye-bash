@@ -74,11 +74,11 @@ class InstallerWizard(WizardDialog):
     """Class used by Wrye Bash, creates a wx Wizard that dynamically creates
     pages based on a script."""
     _def_size = (600, 500)
+    _key_prefix = 'bash.wizard'
 
     def __init__(self, parent, installer, bAuto, progress):
         super().__init__(parent, title=_('Installer Wizard'),
-            sizes_dict=bass.settings, size_key='bash.wizard.size',
-            pos_key='bash.wizard.pos')
+            sizes_dict=bass.settings)
         # get the wizard file - if we are an archive pass a progress to unpack
         self._wizard_dir = installer.get_wizard_file_dir(progress)
         self._wizard_file = self._wizard_dir.join(installer.hasWizard)

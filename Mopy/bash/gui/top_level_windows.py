@@ -24,7 +24,7 @@
 and the wx.adv (wizards) stuff."""
 from __future__ import annotations
 
-__author__ = u'Utumno, Infernio'
+__author__ = 'Utumno, Infernio'
 
 import wx as _wx
 import wx.adv as _adv
@@ -45,6 +45,7 @@ class _TopLevelWin(_AComponent):
     _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
     _native_widget: _wx.TopLevelWindow
+    _key_prefix = None
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info stored in bass.settings
@@ -122,19 +123,18 @@ class WindowFrame(_TopLevelWin):
     Events:
      - on_activate(): Posted when the frame is activated.
      """
-    _key_prefix = None
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
 
-    def __init__(self, parent, title, icon_bundle=None, sizes_dict={},
+    def __init__(self, parent, title, *, sizes_dict={}, icon_bundle=None,
                  caption=False, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
         if self.__class__._key_prefix:
             self._pos_key = f'{self.__class__._key_prefix}.pos'
             self._size_key = f'{self.__class__._key_prefix}.size'
         if caption: style |= _wx.CAPTION
         if sizes_dict: style |= _wx.RESIZE_BORDER
-        if kwargs.pop(u'clip_children', False): style |= _wx.CLIP_CHILDREN
-        if kwargs.pop(u'tab_traversal', False): style |= _wx.TAB_TRAVERSAL
+        if kwargs.pop('clip_children', False): style |= _wx.CLIP_CHILDREN
+        if kwargs.pop('tab_traversal', False): style |= _wx.TAB_TRAVERSAL
         super(WindowFrame, self).__init__(parent, sizes_dict, icon_bundle,
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
@@ -156,11 +156,12 @@ class DialogWindow(_TopLevelWin):
     title: str
     _native_widget: _wx.Dialog
 
-    def __init__(self, parent=None, title=None, icon_bundle=None,
-            sizes_dict=None, caption=False, size_key=None, pos_key=None,
-            stay_over_parent=False, style=0, **kwargs):
-        self._size_key = size_key or self.__class__.__name__
-        self._pos_key = pos_key
+    def __init__(self, parent=None, title=None, *, sizes_dict=None,
+                 icon_bundle=None, caption=False, style=0,
+                 stay_over_parent=False, **kwargs):
+        sk = self._key_prefix if self._key_prefix else self.__class__.__name__
+        self._size_key = f'{sk}.size'
+        self._pos_key = self._key_prefix and f'{self._key_prefix}.pos'
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
         if stay_over_parent: style |= _wx.FRAME_FLOAT_ON_PARENT
