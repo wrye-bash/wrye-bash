@@ -331,7 +331,7 @@ class Mods_ListMods(ItemLink):
         list_txt = bosh.modInfos.getModList(showCRC=get_shift_down(),
                                             showVersion=not get_ctrl_down())
         copy_text_to_clipboard(list_txt)
-        self._showLog(list_txt, title=_(u'Active Plugins'), fixedFont=False)
+        self._showLog(list_txt, title=_('Active Plugins'))
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
@@ -343,7 +343,7 @@ class Mods_ListBashTags(ItemLink):
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
         copy_text_to_clipboard(tags_text)
-        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
+        self._showLog(tags_text, title=_('Bash Tags'))
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):

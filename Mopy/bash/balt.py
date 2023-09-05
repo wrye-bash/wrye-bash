@@ -279,24 +279,16 @@ class _Log(object):
         else: self.window.show_frame()
 
 class Log(_Log):
-    def __init__(self, parent, logText, title=u'', asDialog=True,
-                 fixedFont=False, log_icons=None):
+    def __init__(self, parent, logText, title='', asDialog=True,
+                 log_icons=None):
         """Display text in a log window"""
-        super(Log, self).__init__(parent, title, asDialog, log_icons)
+        super().__init__(parent, title, asDialog, log_icons)
         #--Bug workaround to ensure that default colour is being used - if not
         # called we get white borders instead of grey todo PY3: test if needed
         self.window.reset_background_color()
         #--Text
         txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
                           # special=True) SUNKEN_BORDER and TE_RICH2
-        # TODO(nycz): GUI fixed width font
-        if fixedFont:
-            fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
-            fixedFont.SetPointSize(8)
-            fixedStyle = wx.TextAttr()
-            #fixedStyle.SetFlags(0x4|0x80)
-            fixedStyle.SetFont(fixedFont)
-            # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
         ok_button = OkButton(self.window)
         ok_button.on_clicked.subscribe(self.window.close_win)
@@ -1716,11 +1708,10 @@ class Link(object):
         return showError(self.window, message, title)
 
     _default_icons = object()
-    def _showLog(self, logText, title='', asDialog=False, fixedFont=False,
+    def _showLog(self, logText, title='', asDialog=False,
                  lg_icons=_default_icons):
         if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
-        Log(self.window, logText, title, asDialog, fixedFont,
-            log_icons=lg_icons)
+        Log(self.window, logText, title, asDialog, log_icons=lg_icons)
 
     def _showInfo(self, message, title=_(u'Information')):
         return showInfo(self.window, message, title)

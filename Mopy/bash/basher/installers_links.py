@@ -159,7 +159,7 @@ class Installers_ListPackages(Installers_Link):
         package_list = self.idata.getPackageList(
             showInactive=not installed_only)
         copy_text_to_clipboard(package_list)
-        self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
+        self._showLog(package_list, title=_('BAIN Packages'))
 
 #------------------------------------------------------------------------------
 class Installers_AnnealAll(Installers_Link):

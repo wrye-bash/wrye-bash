@@ -686,8 +686,7 @@ class Installer_ListStructure(_SingleInstallable):
         source_list_txt = self._selected_info.listSource()
         #--Get masters list
         copy_text_to_clipboard(source_list_txt)
-        self._showLog(source_list_txt, title=_(u'Package Structure'),
-                      fixedFont=False)
+        self._showLog(source_list_txt, title=_('Package Structure'))
 
 class Installer_ExportAchlist(_SingleInstallable):
     """Write an achlist file with all the destinations files for this
@@ -1052,7 +1051,7 @@ class Installer_Espm_List(_Installer_Details_Link):
             subs += f'{sub_prefix}{self.window.get_espm(i)}\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
-        self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
+        self._showLog(subs, title=_('Plugin List'))
 
 class Installer_Espm_JumpToMod(_Installer_Details_Link):
     """Jumps to a plugin in the Mods tab, if it is installed."""
@@ -1122,7 +1121,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
             subs += sp_list.lb_get_str_item_at_index(i) + '\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
-        self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
+        self._showLog(subs, title=_('Sub-Package Lists'))
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------

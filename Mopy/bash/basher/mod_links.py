@@ -635,8 +635,7 @@ class Mod_Details(OneItemLink):
                 for f, e in recs:
                     buff.append(f'  {f} {e}')
                 buff.append('') # an empty line
-            self._showLog('\n'.join(buff), title=self._selected_item,
-                          fixedFont=True)
+            self._showLog('\n'.join(buff), title=self._selected_item)
 
 class Mod_ShowReadme(OneItemLink):
     """Open the readme."""
@@ -658,7 +657,7 @@ class Mod_ListBashTags(ItemLink):
         #--Get masters list
         tags_text = bosh.modInfos.getTagList(list(self.iselected_infos()))
         copy_text_to_clipboard(tags_text)
-        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
+        self._showLog(tags_text, title=_('Bash Tags'))
 
 def _getUrl(installer):
     """"Try to get the url of the installer (order of priority will be:
@@ -713,7 +712,7 @@ class Mod_CreateLOOTReport(_NotObLink):
                         log_txt += u'      - %s\n' % fmt_tag
         # Show results + copy to clipboard
         copy_text_to_clipboard(log_txt)
-        self._showLog(log_txt, title=_(u'LOOT Entry'), fixedFont=False)
+        self._showLog(log_txt, title=_('LOOT Entry'))
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -746,7 +745,7 @@ class Mod_CopyModInfo(ItemLink):
             info_txt = f'[spoiler]\n{info_txt}\n[/spoiler]'
         # Show results + copy to clipboard
         copy_text_to_clipboard(info_txt)
-        self._showLog(info_txt, title=_('Plugin Info Report'), fixedFont=False)
+        self._showLog(info_txt, title=_('Plugin Info Report'))
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -785,7 +784,7 @@ class Mod_ListDependent(OneItemLink):
         log(u'[/spoiler]')
         text_list = log.out.getvalue()
         copy_text_to_clipboard(text_list)
-        self._showLog(text_list, title=legend, fixedFont=False)
+        self._showLog(text_list, title=legend)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1637,8 +1636,9 @@ class Mod_Fids_Replace(OneItemLink):
             progress(1.0,_(u'Done.'))
         #--Log
         if not fids_changed: self._showOk(_(u'No changes required.'))
-        else: self._showLog(fids_changed, title=_(u'Objects Changed'),
-                            asDialog=True)
+        else:
+            self._showLog(fids_changed, title=_('Objects Changed'),
+                          asDialog=True)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1756,11 +1756,10 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             progress(1.0, _(u'Done.'))
         return changes
 
-    def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
+    def _showLog(self, logText, title='', asDialog=False,
                  lg_icons=Link._default_icons):
-        super(_Mod_Import_Link, self)._showLog(logText,
-            title=title or self.__class__.progressTitle, asDialog=asDialog,
-            fixedFont=fixedFont, lg_icons=lg_icons)
+        super()._showLog(logText, title=title or self.__class__.progressTitle,
+                         asDialog=asDialog, lg_icons=lg_icons)
 
     def _log(self, changes, fileName):
         self._showLog(f'* {changes:03d}  {fileName}\n')
