@@ -30,6 +30,10 @@ import wx as _wx
 import wx.adv as _adv
 
 from .base_components import Color, _AComponent, scaled
+from .buttons import OkButton
+from .doc_viewer import DocumentViewer
+from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
+from .text_components import TextArea
 from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
@@ -128,9 +132,9 @@ class WindowFrame(_TopLevelWin):
 
     def __init__(self, parent, title, *, sizes_dict={}, icon_bundle=None,
                  caption=False, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
-        if self.__class__._key_prefix:
-            self._pos_key = f'{self.__class__._key_prefix}.pos'
-            self._size_key = f'{self.__class__._key_prefix}.size'
+        if self._key_prefix:
+            self._pos_key = f'{self._key_prefix}.pos'
+            self._size_key = f'{self._key_prefix}.size'
         if caption: style |= _wx.CAPTION
         if sizes_dict: style |= _wx.RESIZE_BORDER
         if kwargs.pop('clip_children', False): style |= _wx.CLIP_CHILDREN
@@ -224,6 +228,55 @@ class MaybeModalDialogWindow(DialogWindow):
         a WindowFrame."""
         self._native_widget.Show()
         self._native_widget.Raise()
+
+class _LogWin(_TopLevelWin):
+    """Mixin for common log-like windows options. Must come *right* before a
+    DialogWindow or a WindowFrame in the mro."""
+
+    def __init__(self, parent, title, icon_bundle, sizes_dict, logText=None,
+                 dv_bitmaps=None, **kwargs):
+        wrye_log = dv_bitmaps is not None
+        self._key_prefix = 'balt.WryeLog' if wrye_log else 'balt.LogMessage'
+        super().__init__(parent, title, icon_bundle=icon_bundle,
+                         sizes_dict=sizes_dict, **kwargs)
+        self.set_min_size(200, 200)
+        layout_kw = {'border': 2}
+        #--Buttons
+        ok_butt = OkButton(self)
+        ok_butt.on_clicked.subscribe(self.close_win)
+        if wrye_log:
+            #--Text
+            self._html_ctrl = DocumentViewer(self, dv_bitmaps)
+            self._html_ctrl.try_load_html(file_path=logText) # it's a bolt.Path
+            if not isinstance(self, DialogWindow): ##: could we drop this?
+                self.set_background_color(ok_butt.get_background_color())
+            #--Layout
+            layout_kw.update({'item_expand': True, 'items': [
+                (self._html_ctrl, LayoutOptions(weight=1)), (HLayout(items=(
+                    *self._html_ctrl.get_buttons(), Stretch(), ok_butt)),
+                    LayoutOptions(border=2))]})
+        else:
+            #--Bug workaround to ensure that default colour is being used - if not
+            # called we get white borders instead of grey todo PY3: test if needed
+            self.reset_background_color()
+            #--Text
+            txtCtrl = TextArea(self, init_text=logText, auto_tooltip=False)
+                              # special=True) SUNKEN_BORDER and TE_RICH2
+            layout_kw['items'] = [
+                (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
+                (ok_butt, LayoutOptions(h_align=RIGHT, border=2))]
+        VLayout(**layout_kw).apply_to(self)
+
+class LogDialog(_LogWin, DialogWindow):
+    """A log dialog, the user needs to dismiss it to get back to Bash."""
+
+class LogFrame(_LogWin, WindowFrame):
+    """A log frame, stays around."""
+
+    def __init__(self, parent, title, icon_bundle, sizes_dict, **kwargs):
+        kwargs['style'] = (_wx.RESIZE_BORDER | _wx.CAPTION | _wx.SYSTEM_MENU |
+                           _wx.CLOSE_BOX | _wx.CLIP_CHILDREN)
+        super().__init__(parent, title, icon_bundle, sizes_dict, **kwargs)
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):

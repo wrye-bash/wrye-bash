@@ -903,7 +903,7 @@ class Mod_MarkMergeable(ItemLink):
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
-        no = [u'%s:%s' % (x, y) for x, y in result.items() if x in no]
+        no = [f'{x}:{y}' for x, y in result.items() if x in no]
         if bush.game.check_esl:
             message = u'== %s\n\n' % _(
                 u'Plugins that qualify for ESL flagging.')
@@ -1756,10 +1756,9 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             progress(1.0, _(u'Done.'))
         return changes
 
-    def _showLog(self, logText, title='', asDialog=False,
-                 lg_icons=Link._default_icons):
+    def _showLog(self, logText, title='', asDialog=False):
         super()._showLog(logText, title=title or self.__class__.progressTitle,
-                         asDialog=asDialog, lg_icons=lg_icons)
+                         asDialog=asDialog)
 
     def _log(self, changes, fileName):
         self._showLog(f'* {changes:03d}  {fileName}\n')

@@ -226,8 +226,8 @@ class PatchDialog(DialogWindow):
             readme = readme.root + u'.html'
             self.patchInfo.set_table_prop(u'doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
-            balt.WryeLog(self.parent, readme, patch_name,
-                         log_icons=Resources.bashBlue)
+            balt.show_log(self.parent, readme, patch_name, wrye_log=True,
+                          asDialog=True)
             # We have to parse the new info first, since the masters may
             # differ. Most people probably don't keep BAIN packages of BPs, but
             # *I* do, so...
