@@ -443,8 +443,9 @@ class ImportCellsPatcher(ImportPatcher):
                 for cfid, cell_rec in block.iter_present_records(b'CELL'):
                     # If we're in an interior, see if we have to ignore
                     # any attrs
-                    actual_attrs = interior_attrs if \
-                        cell_rec.flags.isInterior else attrs
+                    actual_attrs = (interior_attrs
+                                    if cell_rec.flags and
+                                       cell_rec.flags.isInterior else attrs)
                     for att in actual_attrs:
                         tempCellData[cfid][att] = __attrgetters[att](cell_rec)
             # Add attribute values from record(s) in master file(s). Only adds
@@ -457,8 +458,9 @@ class ImportCellsPatcher(ImportPatcher):
                 for _sig, block in masterFile.iter_tops(self._read_sigs):
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
                         if cfid not in tempCellData: continue
-                        attrs1 = interior_attrs if cell_rec.flags.isInterior\
-                            else attrs
+                        attrs1 = (interior_attrs
+                                  if cell_rec.flags and
+                                     cell_rec.flags.isInterior else attrs)
                         for att in attrs1:
                             master_attr = __attrgetters[att](cell_rec)
                             if tempCellData[cfid][att] != master_attr:

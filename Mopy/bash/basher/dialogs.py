@@ -1044,7 +1044,8 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         if pkg_present:
             # If we import something other than purely order (and this isn't a
             # marker, which can't be enabled anyways)
+            order_only = self._key_to_import['imp_order']
             if (not pkg_is_marker and
-                    self._import_what.get_value() != 'imp_order'):
+                    self._import_what.get_value() != order_only):
                 bain_idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
             self._partial_package_order.append(pkg_fname)

@@ -1546,7 +1546,13 @@ class UIList(PanelWin):
         fn_package = self.get_source(uil_item)
         if fn_package is None:
             return False
-        Link.Frame.notebook.SelectPage('Installers', fn_package)
+        try:
+            Link.Frame.notebook.SelectPage('Installers', fn_package)
+        except KeyError:
+            # The package does not exist anymore
+            ##: This points to deeper bugs in our ownership handling/updating
+            # that should be fixed
+            return False
         return True
 
     def get_source(self, uil_item: FName) -> FName | None:

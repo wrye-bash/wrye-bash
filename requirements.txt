@@ -17,11 +17,11 @@ requests==2.31.0
 # For sending files to the recycle bin on non-Windows platforms
 send2trash==1.8.2; sys_platform != 'win32'
 # For Nexus Mods integration
-websocket-client==1.6.2
+websocket-client==1.6.3
 # Compile/Build-time ----------------------------------------------------------
 isort==5.12.0
-pyfiglet==0.8.post1
-pygit2==1.12.2
+pyfiglet==1.0.1
+pygit2==1.13.0
 PyGithub==1.59.1
 pyinstaller==5.13.2
-pytest==7.4.0
+pytest==7.4.2
