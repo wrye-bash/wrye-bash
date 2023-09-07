@@ -81,6 +81,7 @@ class Store(Enum):
     INSTALLERS = ('Installers', True)
     MODS = ('Mods', True)
     SAVES = ('Saves', True)
+    SE_PLUGINS = ('SEPlugins', True)
     BSAS = ('BSAs', False)
     INIS = ('INI Edits', True)
     SCREENSHOTS = ('Screenshots', True)

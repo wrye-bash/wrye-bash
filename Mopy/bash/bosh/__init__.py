@@ -71,11 +71,12 @@ saveInfos: SaveInfos | None = None
 iniInfos: INIInfos | None = None
 bsaInfos: BSAInfos | None = None
 screen_infos: ScreenInfos | None = None
+se_plugin_infos: SEPluginInfos | None = None
 
 def data_tracking_stores() -> Iterable[FileInfos]:
     """Return an iterable containing all data stores that keep track of the
     Data folder and which files in it are owned by which BAIN package."""
-    return modInfos, iniInfos, bsaInfos, screen_infos
+    return modInfos, iniInfos, bsaInfos, screen_infos, se_plugin_infos
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -1458,6 +1459,18 @@ class ScreenInfo(FileInfo):
 
     @classmethod
     def get_store(cls): return screen_infos
+
+#------------------------------------------------------------------------------
+class SEPluginInfo(FileInfo):
+    """An xSE plugin."""
+    _valid_exts_re = r'(\.dll)'
+
+    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+        super().__init__(fullpath, load_cache)
+
+    @classmethod
+    def get_store(cls):
+        return se_plugin_infos
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -3708,6 +3721,68 @@ class ScreenInfos(FileInfos):
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
+
+#------------------------------------------------------------------------------
+class SELogFile(AFile):
+    def __init__(self):
+        self._loaded_plugins = set()
+        self._plugin_order: defaultdict[FName, int | None] = defaultdict(
+            lambda: None)
+        super().__init__(fullpath=dirs['saveBase'].join(bush.game.Se.se_log),
+            load_cache=True)
+
+    def _reset_cache(self, stat_tuple, **kwargs):
+        if kwargs['load_cache']:
+            self._parse_xse_log()
+        super()._reset_cache(stat_tuple, **kwargs)
+
+    _good_line = re.compile(r'^plugin .+?(\w+\.dll).+ loaded correctly$')
+    _bad_line = re.compile(r'^plugin .+?(\w+\.dll).+ reported as incompatible '
+                           r'during query$')
+    def _parse_xse_log(self):
+        """Parse the xSE log for this game and return the plugin load order
+        along with a boolean indicating if the load was successful or not (None
+        if the plugin was not an xSE plugin at all or was not present during
+        the last load)."""
+        # Ugh, PyCharm needs this verbose type declaration to stop complaining
+        try:
+            with open(self.abs_path, 'rb') as ins:
+                xse_log_lines = decoder(ins.read()).splitlines()
+        except FileNotFoundError:
+            pass # That's fine, we probably raced against a log deletion
+        except UnicodeDecodeError:
+            deprint('Failed to read xSE log due to decoding error',
+                traceback=True)
+        mark_loaded = self._loaded_plugins.add
+        curr_order = 0
+        for xse_line in xse_log_lines:
+            ma_good = self._good_line.match(xse_line)
+            if ma_good:
+                good_fname = FName(ma_good.group(1))
+                mark_loaded(good_fname)
+                self._plugin_order[good_fname] = curr_order
+                curr_order += 1
+            else:
+                ma_bad = self._bad_line.match(xse_line)
+                if ma_bad:
+                    self._plugin_order[FName(ma_bad.group(1))] = curr_order
+                    curr_order += 1
+
+#------------------------------------------------------------------------------
+class SEPluginInfos(FileInfos):
+    """Collection of xSE plugins. This is the backend of the SE Plugins tab."""
+    _bain_notify = True
+    unique_store_key = Store.SE_PLUGINS
+
+    def __init__(self):
+        self.__class__.file_pattern = re.compile(r'\.(dll)$', re.I)
+        super().__init__(dirs['mods'].join(bush.game.Se.plugin_dir, 'Plugins'),
+            factory=SEPluginInfo)
+        self._se_log = SELogFile()
+
+    @property
+    def bash_dir(self):
+        return dirs['modsBash'].join('SEPluginsData')
 
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter
