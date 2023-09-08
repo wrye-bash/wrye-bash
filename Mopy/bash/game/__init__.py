@@ -279,6 +279,9 @@ class GameInfo(object):
         # (e.g. when plugins should be in Data\OBSE\Plugins, this should be
         # u'OBSE')
         plugin_dir = u''
+        # The path to the log used by this script extender. Relative to the
+        # My Games\<game name> folder
+        se_log = ''
         # The magic tag that the cosaves use (e.g. u'SKSE'). If this is empty,
         # it signals that this script extender has no cosaves.
         cosave_tag = u''

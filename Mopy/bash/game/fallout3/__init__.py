@@ -78,6 +78,7 @@ class AFallout3GameInfo(PatchGame):
                      u'fose_1_6.dll', u'fose_1_5.dll', u'fose_1_4b.dll',
                      u'fose_1_4.dll', u'fose_1_1.dll', u'fose_1_0.dll']
         plugin_dir = u'FOSE'
+        se_log = _j('FOSE', 'fose.log')
         cosave_tag = u'FOSE'
         cosave_ext = u'.fose'
         url = u'http://fose.silverlock.org/'

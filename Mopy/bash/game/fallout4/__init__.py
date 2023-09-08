@@ -79,6 +79,7 @@ class AFallout4GameInfo(PatchGame):
         exe = u'f4se_loader.exe'
         ver_files = [u'f4se_loader.exe', u'f4se_steam_loader.dll']
         plugin_dir = u'F4SE'
+        se_log = _j('F4SE', 'f4se.log')
         cosave_tag = u'F4SE'
         cosave_ext = u'.f4se'
         url = u'http://f4se.silverlock.org/'

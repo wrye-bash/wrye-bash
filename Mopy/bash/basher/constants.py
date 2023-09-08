@@ -482,6 +482,17 @@ settingDefaults = { # keep current naming format till refactored
     },
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
+    #--Wrye Bash: xSE Plugins
+    'bash.se_plugins.cols': ['File', 'Modified', 'Size'],
+    'bash.se_plugins.sort': 'File',
+    'bash.se_plugins.colReverse': {
+        'Modified': True,
+    },
+    'bash.se_plugins.colWidths': {
+        'File': 150,
+        'Modified': 150,
+        'Size': 75,
+    },
     #--BOSS/LOOT:
     'BOSS.ClearLockTimes': True,
     'BOSS.UseGUI': False,

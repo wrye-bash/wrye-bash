@@ -3784,6 +3784,16 @@ class SEPluginInfos(FileInfos):
     def bash_dir(self):
         return dirs['modsBash'].join('SEPluginsData')
 
+    def refresh(self, refresh_infos=True, booting=False):
+        se_log_updated = self._se_log.do_update()
+        return super().refresh(refresh_infos, booting) or se_log_updated
+
+    def plugin_checkmark(self, sep_key):
+        sep_state = None #self._plugin_order[sep_key]
+        if sep_state is None: return 0
+        elif sep_state: return 1
+        else: return 2
+
 #------------------------------------------------------------------------------
 # Hack below needed as older Converters.dat expect bosh.InstallerConverter
 # See InstallerConverter.__reduce__()
