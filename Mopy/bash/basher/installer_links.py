@@ -175,7 +175,7 @@ class _Installer_ARunFomod(_Installer_AFomod):
 
     @balt.conversation
     def Execute(self):
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         # Use list() since we're going to deselect packages
         try:
             for sel_package in list(self.iselected_infos()):
@@ -216,7 +216,7 @@ class _Installer_ARunFomod(_Installer_AFomod):
                             'package_name': sel_package.fn_key
                         }, title=_('Invalid FOMOD XML Syntax'))
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.iPanel.RefreshUIMods(ui_refresh)
 
     def _execute_action(self, sel_package, ret, ui_refresh):
         raise NotImplementedError
@@ -315,7 +315,7 @@ class Installer_Wizard(_Installer_AWizardLink):
     def Execute(self):
         ##: Investigate why we have so many refreshCurrents in here.
         # Installer_RunFomod has just one!
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         idetails = self.iPanel.detailsPanel
         try:
             # Use list() since we're going to deselect packages
@@ -369,13 +369,14 @@ class Installer_Wizard(_Installer_AWizardLink):
                     self._perform_install(sel_package, ui_refresh)
                 self._apply_tweaks(sel_package, ret, ui_refresh)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.iPanel.RefreshUIMods(ui_refresh)
 
     def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         new_targets = {}
+        ini_uir_key = bosh.iniInfos.unique_store_key
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
@@ -388,7 +389,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                 out.write(u'\n')
             bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
             # trigger refresh UI
-            ui_refresh[1] = True
+            ui_refresh[ini_uir_key] = True
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
@@ -418,7 +419,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                     target_path.stail, reset_choices=target_updated)
                 BashFrame.iniList.panel.ShowPanel(focus_list=False,
                                                   detail_item=lastApplied)
-            ui_refresh[1] = False
+            ui_refresh[ini_uir_key] = False
         if len(manuallyApply) > 0:
             message = _('The following INI Tweaks were not automatically '
                         'applied. Be sure to apply them after installing the '
@@ -449,7 +450,7 @@ class Installer_Anneal(_NoMarkerLink):
               u'package(s).') % bush.game.mods_dir
 
     def Execute(self):
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Annealing...')) as progress:
                 self.idata.bain_anneal(self._installables, ui_refresh,
@@ -457,7 +458,7 @@ class Installer_Anneal(_NoMarkerLink):
         except (CancelError,SkipError):
             pass
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.iPanel.RefreshUIMods(ui_refresh)
 
 class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
@@ -562,7 +563,7 @@ class Installer_Install(_NoMarkerLink):
 
     @balt.conversation
     def Execute(self):
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Installing...')) as progress:
                 last = (self.mode == 'LAST')
@@ -576,7 +577,7 @@ class Installer_Install(_NoMarkerLink):
                     self._showError(f'{e}')
                     return
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.iPanel.RefreshUIMods(ui_refresh)
         # No error occurred and we didn't cancel or skip, but let RefreshUIMods
         # run first so it can update checkbox colors
         self._warn_nothing_installed()
@@ -878,7 +879,7 @@ class Installer_Uninstall(_NoMarkerLink):
     @balt.conversation
     def Execute(self):
         """Uninstall selected Installers."""
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Uninstalling...')) as progress:
                 self.idata.bain_uninstall(self._installables, ui_refresh,
@@ -886,7 +887,7 @@ class Installer_Uninstall(_NoMarkerLink):
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.iPanel.RefreshUIMods(ui_refresh)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""

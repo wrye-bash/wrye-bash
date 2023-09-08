@@ -3602,14 +3602,14 @@ class InstallersPanel(BashTab):
         return _('Packages: %(status_num)d/%(total_status_num)d') % {
             'status_num': active, 'total_status_num': len(self.listData)}
 
-    def RefreshUIMods(self, mods_changed, inis_changed):
+    def RefreshUIMods(self, ui_refresh):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
-        if mods_changed:
+        if ui_refresh[BashFrame.modList.data_store_key]:
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
             Link.Frame.warn_corrupted(warn_mods=True, warn_strings=True)
             Link.Frame.warn_load_order()
-        if inis_changed:
+        if ui_refresh[BashFrame.iniList.data_store_key]:
             if BashFrame.iniList is not None:
                 BashFrame.iniList.RefreshUI(focus_list=False)
         # TODO(ut) : add bsas_changed param! (or rather move this inside BAIN)

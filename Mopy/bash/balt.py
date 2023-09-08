@@ -784,6 +784,13 @@ class UIList(PanelWin):
     @sort_column.setter
     def sort_column(self, val): _settings[f'{self.keyPrefix}.sort'] = val
 
+    @property
+    def data_store_key(self) -> str:
+        """The unique string key that establishes a correspondence between this
+        UIList and its data store. Used when information is passed along
+        between the backend and the GUI (e.g. for refreshing)."""
+        return self.data_store.unique_store_key
+
     def _handle_select(self, item_key):
         self._select(item_key)
     def _select(self, item): self.panel.SetDetails(item)

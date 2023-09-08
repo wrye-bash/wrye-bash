@@ -73,6 +73,11 @@ iniInfos: INIInfos | None = None
 bsaInfos: BSAInfos | None = None
 screen_infos: ScreenInfos | None = None
 
+def data_tracking_stores() -> Iterable[FileInfos]:
+    """Return an iterable containing all data stores that keep track of the
+    Data folder and which files in it are owned by which BAIN package."""
+    return modInfos, iniInfos, bsaInfos, screen_infos
+
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
 reVersion = re.compile(
@@ -1532,6 +1537,9 @@ class DataStore(DataDict):
 class TableFileInfos(DataStore):
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
+    # Each subclass must define this. Used when information related to the
+    # store is passed between the GUI and the backend
+    unique_store_key: str
 
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
@@ -1583,6 +1591,13 @@ class TableFileInfos(DataStore):
         :rtype: _sre.SRE_Match | None"""
         return cls.file_pattern.search(fileName)
 
+    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+        """Return an FName representing the key of the specified Data
+        folder-relative file path inside this data store iff it belongs to this
+        data store. If it does not, return None."""
+        ret_candidate = FName(os.path.basename(data_path))
+        return ret_candidate if self.rightFileType(ret_candidate) else None
+
     #--Delete
     def files_to_delete(self, fileNames, **kwargs):
         abs_delete_paths = []
@@ -1619,7 +1634,7 @@ class TableFileInfos(DataStore):
     def _notify_bain(self, deleted: set[Path] = frozenset(),
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
         """Note that all of these parameters need to be absolute paths!"""
-        if self.__class__._bain_notify:
+        if self._bain_notify:
             InstallersData.notify_external(deleted=deleted, altered=altered,
                                            renamed=renamed)
 
@@ -1802,6 +1817,7 @@ class INIInfos(TableFileInfos):
     :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
+    unique_store_key = 'ini_store'
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
@@ -1853,6 +1869,17 @@ class INIInfos(TableFileInfos):
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = list(bass.settings[u'bash.ini.choices'].values())[
             bass.settings[u'bash.ini.choice']]
+
+    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+        ci_parts = os.path.split(data_path.lower())
+        # 1. Must have a single parent folder
+        # 2. That folder must be named 'ini tweaks' (case-insensitively)
+        # 3. The extension must be a valid INI-like extension
+        if (len(ci_parts) == 2 and
+                ci_parts[0] == 'ini tweaks' and
+                ci_parts[1].rsplit('.', 1)[1] in supported_ini_exts):
+            return super().data_path_to_key(data_path)
+        return None
 
     @property
     def ini(self):
@@ -2059,6 +2086,7 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
+    unique_store_key = 'mod_store'
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
@@ -3361,6 +3389,7 @@ class SaveInfos(FileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     file_pattern = re.compile('(%s)(f?)$' % '|'.join(r'\.%s' % s for s in
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I | re.U)
+    unique_store_key = 'save_store'
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -3406,6 +3435,9 @@ class SaveInfos(FileInfos):
     @classmethod
     def rightFileType(cls, fileName: bolt.FName | str):
         return all(cls._parse_save_path(fileName))
+
+    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+        return None # Never relative to Data folder
 
     @classmethod
     def valid_save_exts(cls):
@@ -3535,6 +3567,7 @@ class BSAInfos(FileInfos):
     # Maps BA2 hashes to BA2 names, used to detect collisions
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
+    unique_store_key = 'bsa_store'
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3611,16 +3644,16 @@ class BSAInfos(FileInfos):
 class ScreenInfos(FileInfos):
     """Collection of screenshots. This is the backend of the Screenshots
     tab."""
-    _bain_notify = False # BAIN can't install to game dir
     # Files that go in the main game folder (aka default screenshots folder)
     # and have screenshot extensions, but aren't screenshots and therefore
     # shouldn't be managed here - right now only ENB stuff
     _ss_skips = {FName(s) for s in (
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
+    unique_store_key = 'screen_store'
 
     def __init__(self):
-        self._orig_store_dir = dirs[u'app'] # type: bolt.Path
+        self._orig_store_dir: bolt.Path = dirs[u'app']
         self.__class__.file_pattern = re.compile(
             r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
             re.I | re.U)
@@ -3634,6 +3667,20 @@ class ScreenInfos(FileInfos):
             return False
         return super().rightFileType(fileName)
 
+    def data_path_to_key(self, data_path: os.PathLike | str) -> FName | None:
+        if not self._rel_to_data:
+            # Current store_dir is not relative to Data folder, so we do not
+            # need to pay attention to BAIN
+            return None
+        ci_parts = os.path.split(data_path.lower())
+        prefix_len = len(self._ci_curr_data_prefix)
+        # The parent directories must match and the length must be +1 (for the
+        # filename itself)
+        if (len(ci_parts) != prefix_len + 1 or
+                ci_parts[:prefix_len] != self._ci_curr_data_prefix):
+            return None
+        return super().data_path_to_key(data_path)
+
     def refresh(self, refresh_infos=True, booting=False):
         # Check if we need to adjust the screenshot dir
         ss_base = GPath(oblivionIni.getSetting(
@@ -3641,7 +3688,16 @@ class ScreenInfos(FileInfos):
         new_store_dir = self._orig_store_dir.join(ss_base.head)
         if self.store_dir != new_store_dir:
             self.store_dir = new_store_dir
-        return super(ScreenInfos, self).refresh(refresh_infos, booting)
+        # Also check if we're now relative to the Data folder and hence need to
+        # pay attention to BAIN
+        self._rel_to_data = self.store_dir.cs.startswith(bass.dirs['mods'].cs)
+        self._bain_notify = self._rel_to_data
+        if self._rel_to_data:
+            self._ci_curr_data_prefix = os.path.split(os.path.relpath(
+                self.store_dir, bass.dirs['mods']).lower())
+        else:
+            self._ci_curr_data_prefix = []
+        return super().refresh(refresh_infos, booting)
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'Screenshot Data')
