@@ -29,7 +29,6 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AComponent
-from .. import bass
 
 class Button(_AComponent):
     """Represents a generic button that can be pressed, triggering an action.

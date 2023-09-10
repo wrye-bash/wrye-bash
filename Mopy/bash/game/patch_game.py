@@ -294,7 +294,7 @@ class PatchGame(GameInfo):
                     continue
                 rec_class.validate_record_syntax()
         if miss := [s for s in valid_header_sigs if s not in _sig_class]:
-            bolt.deprint(f'Signatures {miss} lack an implementation - '
+            bolt.deprint(f'Signatures {sorted(miss)} lack an implementation - '
                          f'defaulting to MreRecord')
             _sig_class.update(dict.fromkeys(miss, _brec_.MreRecord))
         rtype.sig_to_class = {k: v for k, v in _sig_class.items() if

@@ -261,18 +261,19 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
             raise FileNotFoundError(os.fspath(from_path))
     return operation_results
 
-def file_operation(operation: str | FileOperationType,
+
+def file_operation(operation: FileOperationType,
         sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
         ask_confirm=False, rename_on_collision=False,
         silent = False, parent=None) -> dict[str, str]:
     """file_operation API. Performs a filesystem operation on the specified
     files.
 
-    NOTE: This generic version is still WIP: it doesn't support all the optional
-    features, and returns an empty mapping for the results.
+    NOTE: This generic version is still WIP: it doesn't support all the
+    optional features, and returns an empty mapping for the results.
 
-    :param operation: One of the FileOperationType enum values, corresponding to
-        a move, copy, rename, or delete operation.
+    :param operation: One of the FileOperationType enum values, corresponding
+        to a move, copy, rename, or delete operation.
     :param sources_dests: A mapping of source paths to destinations. The format
         of destinations depends on the operation:
         - For FileOperationTYpe.DELETE: destinations are ignored, they may be
@@ -289,7 +290,7 @@ def file_operation(operation: str | FileOperationType,
     :param ask_confirm: If False, responds to any OS dialog boxes with
         "Yes to All".
     :param rename_on_collision: If True, automatically renames files on a move
-        or copy when collisions occcur.
+        or copy when collisions occur.
     :param silent: If True, do not display progress dialogs.
     :param parent: The parent window for any dialogs.
 

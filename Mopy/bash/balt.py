@@ -87,7 +87,7 @@ class ImageList(object):
     def __init__(self, il_width, il_height):
         self.width = scaled(il_width)
         self.height = scaled(il_height)
-        self.images = []
+        self._images = []
         self.indices = {}
         self.imageList = None
 
@@ -95,10 +95,10 @@ class ImageList(object):
         if not self.imageList:
             imageList = self.imageList = wx.ImageList(self.width, self.height)
             self.indices = {k: imageList.Add(im.get_bitmap()) for k, im in
-                            self.images}
+                            self._images}
         return self.imageList
 
-    def get_icon(self, key): return self.images[self[key]][1].GetIcon() # YAK !
+    def get_icon(self, key): return self._images[self[key]][1].GetIcon() # YAK !
 
     def __getitem__(self,key):
         self.GetImageList()
@@ -118,7 +118,7 @@ class ColorChecks(ImageList):
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img, iconSize=16)
-                self.images.append((shortKey, image))
+                self._images.append((shortKey, image))
 
     def Get(self,status,on):
         self.GetImageList()
@@ -157,7 +157,7 @@ class InstallerColorChecks(ImageList):
         super().__init__(16, 16)
         imDirJn = bass.dirs['images'].join
         def _icc(fname): return ImageWrapper(imDirJn(fname), iconSize=16)
-        self.images.extend({
+        self._images.extend({
             #--Off/Archive
             'off.green':  _icc('checkbox_green_off.png'),
             'off.grey':   _icc('checkbox_grey_off.png'),

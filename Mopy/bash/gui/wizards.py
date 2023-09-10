@@ -35,8 +35,7 @@ class WizardDialog(DialogWindow):
     title = _(u'Wizard')
 
     def __init__(self, parent, **kwargs):
-        super(WizardDialog, self).__init__(parent, style=_wx.MAXIMIZE_BOX,
-                                           **kwargs)
+        super().__init__(parent, style=_wx.MAXIMIZE_BOX, **kwargs)
         self._curr_page = self._dummy_page = WizardPage(self)
         self._sep_line = HorizontalLine(self)
         self._back_button = BackButton(self)

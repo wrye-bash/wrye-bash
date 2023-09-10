@@ -56,7 +56,6 @@ from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
 from ..exception import BoltError, CancelError, SkipError
-from ..wbtemp import TempFile
 
 # File operations -------------------------------------------------------------
 try:

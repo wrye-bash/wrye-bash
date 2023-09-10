@@ -72,8 +72,7 @@ class StatusBar_Button(ItemLink):
         self.canHide = canHide
         self.gButton = None
         self._tip = button_tip or self.__class__._tip
-        if uid is None: uid = (self.__class__.__name__, self._tip)
-        self.uid = uid
+        self.uid = (self.__class__.__name__, self._tip) if uid is None else uid
 
     def IsPresent(self):
         """Due to the way status bar buttons are implemented debugging is a

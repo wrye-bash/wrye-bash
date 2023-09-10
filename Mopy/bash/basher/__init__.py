@@ -3798,7 +3798,6 @@ class BSAPanel(BashTab):
 
     def __init__(self,parent):
         self.listData = bosh.bsaInfos
-        bosh.bsaInfos.refresh()
         super(BSAPanel, self).__init__(parent)
         BashFrame.bsaList = self.uiList
 
@@ -3806,13 +3805,13 @@ class BSAPanel(BashTab):
 _widget_to_panel = {}
 class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
-    def __init__(self,tabKey,canDisable=True):
-        super(_Tab_Link, self).__init__()
+
+    def __init__(self, _text, tabKey, *, canDisable=True):
+        super().__init__(_text)
         self.tabKey = tabKey
         self.enabled = canDisable
-        className, self._text, item = tabInfo.get(self.tabKey,[None,None,None])
-        self._help = _(u'Show/Hide the %(tabtitle)s Tab.') % (
-            {u'tabtitle': self._text})
+        self._help = _('Show/Hide the %(tabtitle)s Tab.') % {
+            'tabtitle': self._text}
 
     def _append(self, window): return self._text is not None
 
@@ -3821,6 +3820,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     def _check(self): return bass.settings[u'bash.tabs.order'][self.tabKey]
 
     def Execute(self):
+        tab_info = tabInfo
         if bass.settings[u'bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
             iMods = None
@@ -3828,11 +3828,11 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             iDelete = None
             for i in range(Link.Frame.notebook.GetPageCount()):
                 pageTitle = Link.Frame.notebook.GetPageText(i)
-                if pageTitle == tabInfo[u'Mods'][1]:
+                if pageTitle == tab_info[u'Mods'][1]:
                     iMods = i
-                elif pageTitle == tabInfo[u'Installers'][1]:
+                elif pageTitle == tab_info[u'Installers'][1]:
                     iInstallers = i
-                if pageTitle == tabInfo[self.tabKey][1]:
+                if pageTitle == tab_info[self.tabKey][1]:
                     iDelete = i
             if iDelete == Link.Frame.notebook.GetSelection():
                 # We're deleting the current page...
@@ -3842,7 +3842,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
                     # the 'Installers' tab.  Change to the
                     # 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
-            tabInfo[self.tabKey][2].ClosePanel() ##: note the panel remains in memory
+            tab_info[self.tabKey][2].ClosePanel() ##: note the panel remains in memory
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
@@ -3852,10 +3852,10 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             for k, k_enabled in bass.settings[u'bash.tabs.order'].items():
                 if k == self.tabKey: break
                 insertAt += k_enabled
-            className,title,panel = tabInfo[self.tabKey]
+            className,title,panel = tab_info[self.tabKey]
             if not panel:
                 panel = globals()[className](Link.Frame.notebook)
-                tabInfo[self.tabKey][2] = panel
+                tab_info[self.tabKey][2] = panel
                 _widget_to_panel[panel.wx_id_()] = panel
             if insertAt > Link.Frame.notebook.GetPageCount():
                 Link.Frame.notebook.AddPage(panel._native_widget,title)
@@ -3892,9 +3892,10 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         balt.TabDragMixin.__init__(self)
         #--Pages
         iInstallers = iMods = -1
+        tab_info = tabInfo
         for page, enabled in self._tabOrder().items():
             if not enabled: continue
-            className, title, item = tabInfo[page]
+            className, title, _item = tab_info[page]
             panel = globals().get(className,None)
             if panel is None: continue
             deprint(f"Constructing panel '{title}'")
@@ -3905,7 +3906,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             try:
                 item = panel(self)
                 self.AddPage(item._native_widget, title)
-                tabInfo[page][2] = item
+                tab_info[page][2] = item
                 _widget_to_panel[item.wx_id_()] = item
                 deprint(f"Panel '{title}' constructed successfully")
             except:
@@ -3930,9 +3931,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def tabLinks(menu):
         # use tabOrder here - it is used in InitLinks which runs *before*
         # settings['bash.tabs.order'] is set!
-        for key in BashNotebook._tabOrder():
-            canDisable = bool(key != u'Mods')
-            menu.append(_Tab_Link(key, canDisable))
+        for key, (__cls, tab_title, __panel) in BashNotebook._tabOrder():
+            menu.append(
+                _Tab_Link(tab_title, key, canDisable=bool(key != 'Mods')))
         return menu
 
     def SelectPage(self, page_title, item):
@@ -3942,12 +3943,12 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         EventResult.FINISH, otherwise a later OS handler may steal focus onto
         the now-invisible tab."""
         ind = 0
-        for title, enabled in settings[u'bash.tabs.order'].items():
-            if title == page_title:
-                if not enabled: return
+        for tab_key, is_enabled in settings['bash.tabs.order'].items():
+            if tab_key == page_title:
+                if not is_enabled: return
                 break
-            ind += enabled
-        else: raise BoltError(f'Invalid page: {page_title}')
+            ind += is_enabled
+        else: raise BoltError(f'Invalid tab key: {page_title}')
         self.SetSelection(ind)
         tabInfo[page_title][2].SelectUIListItem(item, deselectOthers=True)
 
@@ -3970,9 +3971,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 break
         oldOrder.remove(removeKey)
         if newPos == 0: # Moved to the front
-            newOrder = [removeKey] + oldOrder
+            newOrder = [removeKey, *oldOrder]
         elif newPos == self.GetPageCount() - 1: # Moved to the end
-            newOrder = oldOrder + [removeKey]
+            newOrder = [*oldOrder, removeKey]
         else: # Moved somewhere in the middle
             nextTabTitle = self.GetPageText(newPos+1)
             for nextTabKey in oldOrder:

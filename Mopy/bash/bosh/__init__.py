@@ -3260,19 +3260,19 @@ class SaveInfos(FileInfos):
             return accepted_exts
 
     @classmethod
-    def _parse_save_path(cls, save_path: str) -> tuple[str | None,
-                                                       str | None]:
-        """Parses the specified save path into root and extension, returning
+    def _parse_save_path(cls, save_name: FName | str) -> tuple[
+            str | None, str | None]:
+        """Parses the specified save name into root and extension, returning
         them as a tuple. If the save path does not point to a valid save,
         returns two Nones instead."""
         accepted_exts = cls.valid_save_exts()
-        save_root, save_ext = os.path.splitext(save_path)
+        save_root, save_ext = os.path.splitext(save_name)
         save_ext_trunc = save_ext[1:]
         if save_ext_trunc.lower() not in accepted_exts:
             # Can't be a valid save, doesn't end in ess/esr/bak
             return None, None
         cs_ext = bush.game.Se.cosave_ext[1:]
-        if any(s.lower() == cs_ext for s in save_root.split(u'.')):
+        if any(s.lower() == cs_ext for s in save_root.split('.')):
             # Almost certainly not a valid save, had the cosave extension
             # in one of its root parts
             return None, None

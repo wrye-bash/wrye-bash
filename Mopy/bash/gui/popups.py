@@ -758,20 +758,20 @@ def showOk(parent, message, title=''):
     """Shows a modal confirmation message."""
     if isinstance(title, Path): title = title.s
     return AskDialog.display_dialog(parent, message, title, no_cancel=True,
-                                      info_ico=True)
+                                    info_ico=True)
 
 def showError(parent, message, title=_('Error')):
     """Shows a modal error message."""
     if isinstance(title, Path): title = title.s
     return AskDialog.display_dialog(parent, message, title, no_cancel=True,
-                                      error_ico=True)
+                                    error_ico=True)
 
 def showWarning(parent, message, title=_('Warning'), do_center=False):
     """Shows a modal warning message."""
     return AskDialog.display_dialog(parent, message, title, warn_ico=True,
-                                      no_cancel=True, do_center=do_center)
+                                    no_cancel=True, do_center=do_center)
 
 def showInfo(parent, message, title=_('Information')):
     """Shows a modal information message."""
     return AskDialog.display_dialog(parent, message, title, info_ico=True,
-                                      no_cancel=True)
+                                    no_cancel=True)
