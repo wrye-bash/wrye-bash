@@ -166,8 +166,8 @@ GOOD_EXITS                      = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 _re_env = re.compile(r'%(\w+)%', re.U)
 
-def _subEnv(match):
-    env_var = match.group(1).upper()
+def _subEnv(ma_env):
+    env_var = ma_env.group(1).upper()
     # NOTE: On Python 3, this would be better as a try...except KeyError,
     # then raise BoltError(...) from None
     env_val = os.environ.get(env_var, None)

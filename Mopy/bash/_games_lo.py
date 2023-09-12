@@ -1598,37 +1598,44 @@ class EnderalSE(SkyrimSE):
             FName(u'Enderal - Forgotten Stories.esm'),
         }
 
-# TODO(SF) we don't know where the LO is stored yet, AsteriskGame is a guess
+# TODO(SF) Starfield is an AsteriskGame, but the game does not actually load
+#  plugins based on plugins.txt yet (there is code in place to read it, but
+#  Bethesda most likely simply disabled it since the CK is not yet released)
 class Starfield(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
         'Starfield.esm', 'Constellation.esm', 'OldMars.esm',
         'BlueprintShips-Starfield.esm',
     )))
+    # The game tries to read a Starfield.ccc already, but it's not present yet
+    # _ccc_filename = 'Starfield.ccc'
 
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
-    if game_fsName == u'Morrowind':
-        return Morrowind(mod_infos)
-    elif game_fsName == u'Skyrim':
-        return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
-    elif game_fsName == u'Enderal':
-        return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
-    elif game_fsName == u'Enderal Special Edition':
-        return EnderalSE(mod_infos, plugins_txt_path)
-    elif game_fsName  == 'Skyrim Special Edition':
-        return SkyrimSE(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Skyrim VR':
-        return SkyrimVR(mod_infos, plugins_txt_path)
-    elif game_fsName == 'Fallout4':
-        return Fallout4(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Fallout4VR':
-        return Fallout4VR(mod_infos, plugins_txt_path)
-    elif game_fsName in ('Oblivion', 'Fallout3', 'FalloutNV'):
-        return TimestampGame(mod_infos, plugins_txt_path)
-    else:
-        raise RuntimeError(f'Load order management is not supported for '
-                           f'{game_fsName} yet')
+    match game_fsName:
+        case 'Enderal':
+            return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
+        case 'Enderal Special Edition':
+            return EnderalSE(mod_infos, plugins_txt_path)
+        case 'Fallout3' | 'FalloutNV' | 'Oblivion':
+            return TimestampGame(mod_infos, plugins_txt_path)
+        case 'Fallout4':
+            return Fallout4(mod_infos, plugins_txt_path)
+        case 'Fallout4VR':
+            return Fallout4VR(mod_infos, plugins_txt_path)
+        case 'Morrowind':
+            return Morrowind(mod_infos)
+        case 'Skyrim':
+            return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
+        case 'Skyrim Special Edition':
+            return SkyrimSE(mod_infos, plugins_txt_path)
+        case 'Skyrim VR':
+            return SkyrimVR(mod_infos, plugins_txt_path)
+        case 'Starfield':
+            return Starfield(mod_infos, plugins_txt_path)
+        case _:
+            raise RuntimeError(f'Load order management is not supported for '
+                               f'{game_fsName} yet')
 
 # Print helpers
 def _pl(it, legend='', joint=', '):

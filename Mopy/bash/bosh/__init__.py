@@ -1119,7 +1119,7 @@ class AINIInfo(AIniFile):
             return s
         if self._incompatible(target_ini) or not tweak_settings:
             return _status(-20)
-        match = False
+        found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
             else target_ini.get_ci_settings()
@@ -1151,8 +1151,8 @@ class AINIInfo(AIniFile):
                                 mismatch = 1
                                 break
                 else:
-                    match = True
-        if not match:
+                    found_match = True
+        if not found_match:
             return _status(0)
         elif not mismatch:
             return _status(20)
