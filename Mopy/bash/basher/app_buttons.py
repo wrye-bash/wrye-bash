@@ -519,7 +519,8 @@ class Game_Button(_ExeButton):
     @property
     def obseTip(self):
         # Oblivion (version)
-        tip_ = self._obseTip % {'app_version': self.version}
+        tip_ = self._obseTip % {'game_name': bush.game.displayName,
+                                'app_version': self.version}
         # + OBSE
         tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         return tip_
@@ -580,7 +581,8 @@ class TESCS_Button(_ExeButton):
     @property
     def obseTip(self):
         # CS/CK (version)
-        tip_ = self._obseTip % {'app_version': self.version}
+        tip_ = self._obseTip % {'ck_name': bush.game.Ck.long_name,
+                                'app_version': self.version}
         if not self.xse_args: return tip_
         # + OBSE
         tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'

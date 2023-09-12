@@ -207,7 +207,8 @@ class GameInfo(object):
     class Ck(object):
         """Information about the official plugin editor (generally called some
         variation of 'Creation Kit') for this game."""
-        # Abbreviated name
+        # Abbreviated name. If not present, indicates that this game does not
+        # have an official plugin editor
         ck_abbrev = u''
         # Full name
         long_name = u''

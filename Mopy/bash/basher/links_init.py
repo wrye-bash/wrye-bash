@@ -80,19 +80,21 @@ def InitStatusBar():
             bass.dirs['app'].join(bush.game.launch_exe),
             bass.dirs['app'].join(bush.game.version_detect_file),
             _png_list(f'games/{bush.game.game_icon}'),
-            ' '.join((_('Launch'), bush.game.displayName)),
-            ' '.join((_('Launch'), bush.game.displayName, '%(app_version)s'))),
-        TESCS_Button( # Construction Set / Creation Kit
+            _('Launch %(game_name)s') % {'game_name': bush.game.displayName},
+            _('Launch %(game_name)s %(app_version)s')),
+    ]
+    if bush.game.Ck.ck_abbrev:
+        all_links.append(TESCS_Button( # Construction Set / Creation Kit
             bass.dirs['app'].join(bush.game.Ck.exe),
             _png_list(f'tools/{bush.game.Ck.image_name}'),
-            ' '.join((_('Launch'), bush.game.Ck.long_name)),
-            ' '.join((_('Launch'), bush.game.Ck.long_name, '%(app_version)s')),
-            bush.game.Ck.se_args),
-        # OBMM
-        app_button_factory(bass.dirs['app'].join('OblivionModManager.exe'),
-                           _png_list('tools/obmm%s.png'), _('Launch OBMM'),
-                           uid='OBMM'),
-    ]
+            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
+            _('Launch %(ck_name)s %(app_version)s'),
+            bush.game.Ck.se_args))
+    # OBMM
+    all_links.append(app_button_factory(
+        bass.dirs['app'].join('OblivionModManager.exe'),
+        _png_list('tools/obmm%s.png'), _('Launch OBMM'),
+        uid='OBMM'))
     # Just an _App_Button whose path is in bass.tooldirs
     Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
                                                       *args[1:])
