@@ -29,27 +29,25 @@ from ...brec import AMreCell, AMreHeader, MelBase, MelFid, MelGroups, \
 #------------------------------------------------------------------------------
 # Starfield Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
-# TODO(SF) verify, all of this is copied from FO4
 class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
-    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
+    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC', b'CHGL'}
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(8)
+        overrides_only: bool = flag(9) # TODO(SF) Provisional name
 
     melSet = MelSet(
-        # TODO(SF) verify nextObject begins at 1 (i.e. if expanded range from
-        #  FO4 is a thing)
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.96), 'numRecords',
                   ('nextObject', 0x001), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
         AMreHeader.MelDescription(),
-        AMreHeader.MelMasterNames(),
+        AMreHeader.MelMasterNames(has_sizes=False),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelGroups('transient_types',

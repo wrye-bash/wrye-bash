@@ -185,20 +185,26 @@ class AMreHeader(MelRecord):
 
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.
-        This is done to make updating the master list much easier."""
-        def __init__(self):
-            self._debug = False
+        This is done to make updating the master list much easier. Starfield
+        does not feature DATA in the TES4 record anymore. Set has_sizes=False
+        if the game in question follows Starfield in this."""
+        def __init__(self, has_sizes=True):
+            self._has_sizes = has_sizes
             self.mel_sig = b'MAST' # just in case something is expecting this
 
         def getLoaders(self, loaders):
-            loaders[b'MAST'] = loaders[b'DATA'] = self
+            loaders[b'MAST'] = self
+            if self._has_sizes:
+                loaders[b'DATA'] = self
 
         def getSlotsUsed(self):
-            return 'masters', 'master_sizes'
+            return ('masters',) + (('master_sizes',)
+                                   if self._has_sizes else ())
 
         def setDefault(self, record):
             record.masters = []
-            record.master_sizes = []
+            if self._has_sizes:
+                record.master_sizes = []
 
         def load_mel(self, record, ins, sub_type, size_, *debug_strs):
             __unpacker=structs_cache[u'Q'].unpack
@@ -209,19 +215,26 @@ class AMreHeader(MelRecord):
                 master_name = decoder(bolt.cstrip(ins.read(size_, *debug_strs)),
                                       avoidEncodings=(u'utf8', u'utf-8'))
                 record.masters.append(FName(master_name))
-            else: # sub_type == 'DATA'
+            elif self._has_sizes and sub_type == b'DATA':
                 # DATA is the size for TES3, but unknown/unused for later games
                 record.master_sizes.append(
                     ins.unpack(__unpacker, size_, *debug_strs)[0])
+            else:
+                raise RuntimeError(f'Unknown master subrecord {sub_type}')
 
         def dumpData(self,record,out):
-            record._truncate_masters()
-            for master_name, master_size in zip(record.masters,
-                                                record.master_sizes):
-                MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                    out, master_name)
-                MelBase(b'DATA', '').packSub(
-                    out, struct_pack(u'Q', master_size))
+            record._truncate_master_sizes()
+            if self._has_sizes:
+                for master_name, master_size in zip(record.masters,
+                                                    record.master_sizes):
+                    MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
+                        out, master_name)
+                    MelBase(b'DATA', '').packSub(
+                        out, struct_pack(u'Q', master_size))
+            else:
+                for master_name in record.masters:
+                    MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
+                        out, master_name)
 
     class MelAuthor(MelUnicode):
         def __init__(self):
@@ -284,16 +297,19 @@ class AMreHeader(MelRecord):
         if not masters_loaded:
             augmented_masters = (*self.masters, ins.inName)
             utils_constants.FORM_ID = FormId.from_masters(augmented_masters)
-        self._truncate_masters()
+        self._truncate_master_sizes()
 
-    def _truncate_masters(self):
-        # TODO(inf) For Morrowind, this will have to query the files for
-        #  their size and then store that
-        num_masters = self.num_masters
-        num_sizes = len(self.master_sizes)
-        # Just in case, truncate or pad the sizes with zeroes as needed
-        self.master_sizes = self.master_sizes[:num_masters] + [0] * (
-                num_masters - num_sizes) # [] * (-n) == []
+    def _truncate_master_sizes(self):
+        # Starfield (and newer, most likely) don't have DATA and so don't have
+        # a master_sizes either
+        if hasattr(self, 'master_sizes'):
+            num_masters = self.num_masters
+            num_sizes = len(self.master_sizes)
+            # TODO(inf) For Morrowind, this will have to query the files for
+            #  their size and then store that
+            # Just in case, truncate or pad the sizes with zeroes as needed
+            self.master_sizes = self.master_sizes[:num_masters] + [0] * (
+                    num_masters - num_sizes) # [] * (-n) == []
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""
