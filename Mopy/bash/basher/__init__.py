@@ -2402,6 +2402,10 @@ class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
     keyPrefix = u'bash.saves.details' # used in sash/scroll position, sorting
     _master_list_type = _SaveMasterList
+    # We'll hide the picture if the game does not have screenshots in its
+    # saves, so demand a smaller minimum size for that too
+    minimumSize = (_ModsSavesDetails.minimumSize
+                   if bush.game.Ess.has_screenshots else 88)
 
     @property
     def file_info(self): return self.saveInfo
@@ -2424,6 +2428,7 @@ class SaveDetails(_ModsSavesDetails):
         #--Picture
         self.picture = Picture(top, textWidth, 192 * textWidth // 256,
             background=colors[u'screens.bkgd.image']) #--Native: 256x192
+        self.picture.visible = bush.game.Ess.has_screenshots
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
@@ -2472,7 +2477,7 @@ class SaveDetails(_ModsSavesDetails):
         self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
         # Picture - lazily loaded since it takes up so much memory
-        if self.saveInfo:
+        if self.saveInfo and bush.game.Ess.has_screenshots:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
             new_save_screen = ImageWrapper.bmp_from_bitstream(

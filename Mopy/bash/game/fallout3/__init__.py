@@ -93,8 +93,8 @@ class Fallout3GameInfo(PatchGame):
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):
-        ext = u'.fos'
         can_safely_remove_masters = True
+        ext = '.fos'
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True

@@ -46,7 +46,7 @@ import functools
 from enum import Enum
 
 from . import bass, bosh, bush, env # for modInfos
-from .bolt import FName, GPath, LooseVersion, Path
+from .bolt import FName, GPath, LooseVersion, Path, gen_enum_parser
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active
@@ -71,7 +71,7 @@ class FileState(Enum):
     INACTIVE = 'Inactive'
     ACTIVE = 'Active'
 
-_str_to_fs = {f.value: f for f in FileState.__members__.values()}
+_fs_parser = gen_enum_parser(FileState)
 
 class GroupType(Enum):
     """The various types that a group can have. Implements the XML simpleType
@@ -82,7 +82,7 @@ class GroupType(Enum):
     SELECT_ALL = 'SelectAll'
     SELECT_ANY = 'SelectAny'
 
-_str_to_gt = {g.value: g for g in GroupType.__members__.values()}
+_gt_parser = gen_enum_parser(GroupType)
 
 class OptionType(Enum):
     """The various types that an option can have. Implements the XML enum
@@ -93,7 +93,7 @@ class OptionType(Enum):
     NOT_USABLE = 'NotUsable'
     COULD_BE_USABLE = 'CouldBeUsable'
 
-_str_to_ot = {o.value: o for o in OptionType.__members__.values()}
+_ot_parser = gen_enum_parser(OptionType)
 
 class _AFomodBase(object):
     """Base class for FOMOD components. Defines a key to sort instances of this
@@ -163,7 +163,7 @@ class InstallerGroup(_AFomodBase):
             InstallerOption(parent_installer, xml_option_object)
             for xml_option_object in group_object.findall(u'plugins/*')],
             group_object.find(u'plugins').get(u'order', u'Ascending'))
-        self.group_type = _str_to_gt[group_object.get('type')]
+        self.group_type = _gt_parser[group_object.get('type')]
 
     def __getitem__(self, k):
         return self._option_list[k]
@@ -216,7 +216,7 @@ class InstallerOption(_AFomodBase):
                     break
             else:
                 opt_type_str = default_type
-        self.option_type = _str_to_ot[opt_type_str]
+        self.option_type = _ot_parser[opt_type_str]
 
     def __repr__(self):
         return f'InstallerOption<{self.option_name}>'
@@ -557,7 +557,7 @@ class FomodInstaller(object):
 
     def _test_file_condition(self, condition):
         test_file = FName(condition.get('file'))
-        target_type = _str_to_fs[condition.get('state')]
+        target_type = _fs_parser[condition.get('state')]
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():
             if test_file not in bosh.modInfos:

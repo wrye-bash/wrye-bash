@@ -31,8 +31,10 @@ __author__ = u'Utumno'
 
 import copy
 import io
+import os
 import sys
 import zlib
+from enum import Enum
 from functools import partial
 
 import lz4.block
@@ -43,12 +45,10 @@ from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
     unpack_float, unpack_int, unpack_many, unpack_short, unpack_str8, \
     unpack_str16, unpack_str16_delim, unpack_str_byte_delim, \
-    unpack_str_int_delim
+    unpack_str_int_delim, gen_enum_parser, unpack_int64
 from ..exception import SaveHeaderError
 
 # Utilities -------------------------------------------------------------------
-def _unpack_fstr8(ins) -> bytes:
-    return ins.read(8)
 def _unpack_fstr16(ins) -> bytes:
     return ins.read(16)
 def _pack_c(out, value, __pack=structs_cache['=c'].pack):
@@ -63,9 +63,170 @@ def _write_s16_list(out, master_bstrs):
     for master_bstr in master_bstrs:
         pack_short(out, len(master_bstr))
         out.write(master_bstr)
+def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
+    val = encode(val)
+    pack_bzstr8(out, val)
+    return len(val) + 2
 
+##: Maybe all this (de)compression stuff should go to bolt? Then we could try
+# deduplicating the BSA ones as well
+class _SaveCompressionType(Enum):
+    """The possible types of compression that saves can have. Not all games
+    have all of these available."""
+    NONE = 0
+    ZLIB = 1
+    LZ4 = 2
+
+_sc_parser = gen_enum_parser(_SaveCompressionType)
+
+def _decompress_save(ins, compressed_size: int, decompressed_size: int,
+        compression_type: _SaveCompressionType, *, light_decompression=False):
+    """Decompress the specified data using either LZ4 or zlib, depending on
+    compression_type. Do not call for uncompressed files!"""
+    match compression_type:
+        case _SaveCompressionType.ZLIB:
+            decompressor = _decompress_save_zlib
+        case _SaveCompressionType.LZ4:
+            if light_decompression:
+                decompressor = _decompress_save_lz4_light
+            else:
+                decompressor = _decompress_save_lz4
+        case _:
+            raise SaveHeaderError(f'Unknown compression type '
+                                  f'{compression_type} or uncompressed file')
+    return decompressor(ins, compressed_size, decompressed_size)
+
+def _decompress_save_zlib(ins, compressed_size: int, decompressed_size: int):
+    """Decompress compressed_size bytes from the specified input stream using
+    zlib, sanity-checking decompressed size afterwards."""
+    try:
+        decompressed_data = zlib.decompress(ins.read(compressed_size))
+    except zlib.error as e:
+        raise SaveHeaderError(f'zlib error while decompressing '
+                              f'zlib-compressed header: {e!r}')
+    if len(decompressed_data) != decompressed_size:
+        raise SaveHeaderError(
+            f'zlib-decompressed header size incorrect - expected '
+            f'{decompressed_size}, but got {len(decompressed_data)}.')
+    return io.BytesIO(decompressed_data)
+
+def _decompress_save_lz4(ins, compressed_size: int, decompressed_size: int):
+    """Decompress compressed_size bytes from the specified input stream using
+    LZ4, sanity-checking decompressed size afterwards."""
+    try:
+        decompressed_data = lz4.block.decompress(
+            ins.read(compressed_size), uncompressed_size=decompressed_size * 2)
+    except lz4.block.LZ4BlockError as e:
+        raise SaveHeaderError(f'LZ4 error while decompressing '
+                              f'lz4-compressed header: {e!r}')
+    if (len_data := len(decompressed_data)) != decompressed_size:
+        raise SaveHeaderError(f'lz4-decompressed header size incorrect - '
+            f'expected {decompressed_size}, but got {len_data}.')
+    return io.BytesIO(decompressed_data)
+
+def _decompress_save_lz4_light(ins, _comp_size: int, _decomp_size: int):
+    """Read the start of the LZ4 compressed data in the SSE savefile and
+    stop when the whole master table is found.
+    Return a file-like object that can be read by _load_masters_16
+    containing the now decompressed master table.
+    See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
+    for an LZ4 explanation/specification."""
+    def _read_lsic_int():
+        """Read a compressed int from the stream.
+        In short, add every byte to the output until a byte lower than
+        255 is found, then add that as well and return the total sum.
+        LSIC stands for linear small-integer code, taken from
+        https://ticki.github.io/blog/how-lz4-works."""
+        result = 0
+        while True:  # there is no size limit to LSIC values
+            num = unpack_byte(ins)
+            result += num
+            if num != 255:
+                return result
+    uncompressed = b''
+    masters_size: int | None = None
+    while True:  # parse and decompress each block here
+        token = unpack_byte(ins)
+        # How many bytes long is the literals-field?
+        literal_length = token >> 4
+        if literal_length == 15:  # add more if we hit max value
+            literal_length += _read_lsic_int()
+        # Read all the literals (which are good ol' uncompressed bytes)
+        uncompressed += ins.read(literal_length)
+        # The offset is how many bytes back in the uncompressed string the
+        # start of the match-field (copied bytes) is
+        offset = unpack_short(ins)
+        # How many bytes long is the match-field?
+        match_length = token & 0b1111
+        if match_length == 15:
+            match_length += _read_lsic_int()
+        match_length += 4  # the match-field always gets an extra 4 bytes
+        # The boundary of the match-field
+        start_pos = len(uncompressed) - offset
+        end_pos = start_pos + match_length
+        # Matches can be overlapping (aka including not yet decompressed
+        # data) so we can't jump the whole match_length directly
+        while start_pos < end_pos:
+            uncompressed += uncompressed[start_pos:min(start_pos + offset,
+                                                       end_pos)]
+            start_pos += offset
+        # The masters table's size is found in bytes 1-5
+        if masters_size is None and len(uncompressed) >= 5:
+            masters_size = struct_unpack('I', uncompressed[1:5])[0]
+        # Stop when we have the whole masters table
+        if masters_size is not None:
+            if len(uncompressed) >= masters_size + 5:
+                break
+    # Wrap the decompressed data in a file-like object and return it
+    return io.BytesIO(uncompressed)
+
+def _compress_save(to_compress: io.BytesIO,
+        compression_type: _SaveCompressionType):
+    """Compress the specified data using either LZ4 or zlib, depending on
+    compression_type. Do not call for uncompressed files!"""
+    try:
+        match compression_type:
+            case _SaveCompressionType.ZLIB:
+                # SSE uses zlib level 1
+                # TODO(SF) What does Starfield use?
+                return zlib.compress(to_compress.getvalue(), 1)
+            case _SaveCompressionType.LZ4:
+                # SSE uses default lz4 settings; store_size is not in docs, so:
+                # noinspection PyArgumentList
+                return lz4.block.compress(to_compress.getvalue(),
+                                          store_size=False)
+            case _:
+                raise SaveHeaderError(f'Unknown compression type '
+                                      f'{compression_type} or uncompressed '
+                                      f'file')
+    except (zlib.error, lz4.block.LZ4BlockError) as e:
+        raise SaveHeaderError(f'Failed to compress header: {e!r}')
+
+def calc_time_fo4(gameDate: bytes) -> (float, int):
+    """Handle time calculation from FO4 and newer games. Takes gameDate and
+    returns gameDays and gameTicks."""
+    # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
+    # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
+    # So handle it by concatenating digits until we hit a non-digit char
+    def parse_int(gd_bytes: bytes):
+        int_data = b''
+        for i in gd_bytes:
+            c = i.to_bytes(1, sys.byteorder)
+            if c.isdigit():
+                int_data += c
+            else:
+                break # hit the end of the int
+        return int(int_data)
+    days, hours, minutes = [parse_int(x) for x in
+                            gameDate.split(b'.')[:3]]
+    gameDays = float(days) + float(hours) / 24 + float(minutes) / (24 * 60)
+    # Assuming still 1000 ticks per second
+    gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60) * 1000
+    return gameDays, gameTicks
+
+# Save Headers ----------------------------------------------------------------
 class SaveFileHeader(object):
-    save_magic = b'OVERRIDE'
+    save_magic: bytes
     # common slots Bash code expects from SaveHeader (added header_size and
     # turned image to a property)
     __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
@@ -74,6 +235,9 @@ class SaveFileHeader(object):
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     _unpackers = {}
+    # Same as _unpackers, but processed immediately after the screenshot is
+    # read
+    _unpackers_post_ss = {}
 
     def __init__(self, save_inf, load_image=False, ins=None):
         self._save_info = save_inf
@@ -95,13 +259,16 @@ class SaveFileHeader(object):
             deprint(err_msg, traceback=True)
             raise SaveHeaderError(err_msg) from e
 
+    def _load_from_unpackers(self, ins, target_unpackers):
+        for attr, (__pack, _unpack) in target_unpackers.items():
+            setattr(self, attr, _unpack(ins))
+
     def load_header(self, ins, load_image=False):
         save_magic = ins.read(len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
-        for attr, (__pack, _unpack) in self.__class__._unpackers.items():
-            setattr(self, attr, _unpack(ins))
+        self._load_from_unpackers(ins, self.__class__._unpackers)
         self.load_image_data(ins, load_image)
         self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
@@ -124,6 +291,7 @@ class SaveFileHeader(object):
             ins.seek(image_size, 1)
 
     def _load_masters(self, ins):
+        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
         self._mastersStart = ins.tell()
         self.masters = []
         numMasters = unpack_byte(ins)
@@ -205,10 +373,6 @@ class SaveFileHeader(object):
         be read and displayed, but the Save/Cancel buttons will be disabled."""
         return True
 
-def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
-    val = encode(val)
-    pack_bzstr8(out, val)
-    return len(val) + 2
 class OblivionSaveHeader(SaveFileHeader):
     save_magic = b'TES4SAVEGAME'
     __slots__ = (u'major_version', u'minor_version', u'exe_time',
@@ -273,104 +437,58 @@ class OblivionSaveHeader(SaveFileHeader):
         self.__write_masters_ob(out)
         self._decode_masters()
 
-class SkyrimSaveHeader(SaveFileHeader):
-    """Valid Save Game Versions 8, 9, 12 (?)"""
-    save_magic = b'TESV_SAVEGAME'
-    # extra slots - only version is really used, gameDate used once (calc_time)
-    # _formVersion distinguish between old and new save formats
-    # _compressType of Skyrim SE saves - used to decide how to read/write them
-    __slots__ = (u'gameDate', u'saveNumber', u'version', u'raceEid', u'pcSex',
-                 u'pcExp', u'pcLvlExp', u'filetime', u'_formVersion',
-                 u'_compressType', u'_sse_start', u'has_esl_masters',
-                 'masters_regular', 'masters_esl')
+class _AEslSaveHeader(SaveFileHeader):
+    """Base class for save headers that may have ESLs."""
+    __slots__ = ('has_esl_masters', 'masters_regular', 'masters_esl')
 
-    _unpackers = {
-        'header_size': (00, unpack_int),
-        'version':     (00, unpack_int),
-        'saveNumber':  (00, unpack_int),
-        'pcName':      (00, unpack_str16),
-        'pcLevel':     (00, unpack_int),
-        'pcLocation':  (00, unpack_str16),
-        'gameDate':    (00, unpack_str16),
-        'raceEid':     (00, unpack_str16), # pcRace
-        'pcSex':       (00, unpack_short),
-        'pcExp':       (00, unpack_float),
-        'pcLvlExp':    (00, unpack_float),
-        'filetime':    (00, _unpack_fstr8),
-        'ssWidth':     (00, unpack_int),
-        'ssHeight':    (00, unpack_int),
-    }
-
-    def __is_sse(self): return self.version == 12
-
-    def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
+    def _esl_block(self) -> bool:
+        """Return True if this save file has an ESL block."""
+        raise NotImplementedError
 
     @property
     def masters(self):
         return self.masters_regular + self.masters_esl
 
-    @property
-    def has_alpha(self):
-        return self.__is_sse()
-
-    def load_image_data(self, ins, load_image=False):
-        if self.__is_sse():
-            self._compressType = unpack_short(ins)
-        if (actual := ins.tell() - 17) != self.header_size:
-            raise SaveHeaderError(f'New Save game header size ({actual}) not '
-                                  f'as expected ({self.header_size}).')
-        super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
-
     def _load_masters(self, ins):
-        # If on SSE, check _compressType and respond accordingly:
-        #  0 means uncompressed
-        #  1 means zlib
-        #  2 means lz4
-        if self.__is_sse() and self._compressType in (1, 2):
-            self._sse_start = ins.tell()
-            decompressed_size = unpack_int(ins)
-            compressed_size = unpack_int(ins)
-            sse_offset = ins.tell()
-            ins = self._sse_decompress(ins, compressed_size, decompressed_size,
-                light_decompression=True)
-        else:
-            sse_offset = 0
-        self._formVersion = unpack_byte(ins)
-        self._mastersStart = ins.tell() + sse_offset
-        #--Masters
-        self._load_masters_16(ins, sse_offset)
+        # Skip super, that would try to load and assign self.masters
+        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
+        self._mastersStart = ins.tell()
+        self._load_masters_16(ins)
 
-    def _load_masters_16(self, ins, sse_offset=0): # common for skyrim and FO4
-        mastersSize = unpack_int(ins)
+    def _load_masters_16(self, ins, sse_offset=0):
+        """Load regular masters and ESL masters, with an optional offset for
+        the compressed SSE saves."""
+        masters_expected = unpack_int(ins)
         # Store separate lists of regular and ESLs masters for the Indices
         # column on the Saves tab
         self.masters_regular = []
         self.masters_esl = []
-        numMasters = unpack_byte(ins)
+        num_regular_masters = unpack_byte(ins)
         append_regular = self.masters_regular.append
-        for count in range(numMasters):
+        for count in range(num_regular_masters):
             append_regular(unpack_str16(ins))
         # SSE / FO4 save format with esl block
         if self._esl_block():
-            _num_esl_masters = unpack_short(ins)
+            num_esl_masters = unpack_short(ins)
             # Remember if we had ESL masters for the inacurracy warning
-            self.has_esl_masters = _num_esl_masters > 0
+            self.has_esl_masters = num_esl_masters > 0
             append_esl = self.masters_esl.append
-            for count in range(_num_esl_masters):
+            for count in range(num_esl_masters):
                 append_esl(unpack_str16(ins))
         else:
             self.has_esl_masters = False
-        # Check for master's table size
-        masters_size = ins.tell() + sse_offset - self._mastersStart - 4
-        if masters_size != mastersSize:
-            raise SaveHeaderError(f'Save game masters size ({masters_size}) '
-                                  f'not as expected ({mastersSize}).')
+        # Check for master's table size (-4 for the stored size at the start of
+        # the master table)
+        masters_actual = ins.tell() + sse_offset - self._mastersStart - 4
+        if masters_actual != masters_expected:
+            raise SaveHeaderError(f'Save game masters size ({masters_actual}) '
+                                  f'not as expected ({masters_expected}).')
 
     def _decode_masters(self):
         self.masters_regular = [FName(decoder(x, bolt.pluginEncoding,
-            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_regular]
+            avoidEncodings=('utf8', 'utf-8'))) for x in self.masters_regular]
         self.masters_esl = [FName(decoder(x, bolt.pluginEncoding,
-            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_esl]
+            avoidEncodings=('utf8', 'utf-8'))) for x in self.masters_esl]
 
     def _encode_masters(self):
         self.masters_regular = [encode(x) for x in self.masters_regular]
@@ -380,149 +498,6 @@ class SkyrimSaveHeader(SaveFileHeader):
         self.masters_regular = [master_map.get(x, x)
                                 for x in self.masters_regular]
         self.masters_esl = [master_map.get(x, x) for x in self.masters_esl]
-
-    def _sse_compress(self, to_compress):
-        """Compresses the specified data using either LZ4 or zlib, depending on
-        self._compressType. Do not call for uncompressed files!"""
-        try:
-            if self._compressType == 2:
-                # SSE uses default lz4 settings; store_size is not in docs, so:
-                # noinspection PyArgumentList
-                return lz4.block.compress(to_compress.getvalue(),
-                                          store_size=False)
-            else:
-                # SSE uses zlib level 1
-                return zlib.compress(to_compress.getvalue(), 1)
-        except (zlib.error, lz4.block.LZ4BlockError) as e:
-            raise SaveHeaderError(f'Failed to compress header: {e!r}')
-
-    def _sse_decompress(self, ins, compressed_size, decompressed_size,
-            light_decompression=False):
-        """Decompresses the specified data using either LZ4 or zlib, depending
-        on self._compressType. Do not call for uncompressed files!"""
-        if self._compressType == 1:
-            decompressor = self._sse_decompress_zlib
-        else:
-            if light_decompression:
-                decompressor = self._sse_light_decompress_lz4
-            else:
-                decompressor = self._sse_decompress_lz4
-        return decompressor(ins, compressed_size, decompressed_size)
-
-    @staticmethod
-    def _sse_decompress_zlib(ins, compressed_size, decompressed_size):
-        try:
-            decompressed_data = zlib.decompress(ins.read(compressed_size))
-        except zlib.error as e:
-            raise SaveHeaderError(f'zlib error while decompressing '
-                                  f'zlib-compressed header: {e!r}')
-        if len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(
-                f'zlib-decompressed header size incorrect - expected '
-                f'{decompressed_size}, but got {len(decompressed_data)}.')
-        return io.BytesIO(decompressed_data)
-
-    @staticmethod
-    def _sse_decompress_lz4(ins, compressed_size, decompressed_size):
-        try:
-            decompressed_data = lz4.block.decompress(
-                ins.read(compressed_size), uncompressed_size=decompressed_size * 2)
-        except lz4.block.LZ4BlockError as e:
-            raise SaveHeaderError(f'LZ4 error while decompressing '
-                                  f'lz4-compressed header: {e!r}')
-        if (len_data := len(decompressed_data)) != decompressed_size:
-            raise SaveHeaderError(f'lz4-decompressed header size incorrect - '
-                f'expected {decompressed_size}, but got {len_data}.')
-        return io.BytesIO(decompressed_data)
-
-    @staticmethod
-    def _sse_light_decompress_lz4(ins, _comp_size, _decomp_size):
-        """Read the start of the LZ4 compressed data in the SSE savefile and
-        stop when the whole master table is found.
-        Return a file-like object that can be read by _load_masters_16
-        containing the now decompressed master table.
-        See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
-        for an LZ4 explanation/specification."""
-        def _read_lsic_int():
-            # type: () -> int
-            """Read a compressed int from the stream.
-            In short, add every byte to the output until a byte lower than
-            255 is found, then add that as well and return the total sum.
-            LSIC stands for linear small-integer code, taken from
-            https://ticki.github.io/blog/how-lz4-works."""
-            result = 0
-            while True:  # there is no size limit to LSIC values
-                num = unpack_byte(ins)
-                result += num
-                if num != 255:
-                    return result
-        uncompressed = b''
-        masters_size: int | None = None
-        while True:  # parse and decompress each block here
-            token = unpack_byte(ins)
-            # How many bytes long is the literals-field?
-            literal_length = token >> 4
-            if literal_length == 15:  # add more if we hit max value
-                literal_length += _read_lsic_int()
-            # Read all the literals (which are good ol' uncompressed bytes)
-            uncompressed += ins.read(literal_length)
-            # The offset is how many bytes back in the uncompressed string the
-            # start of the match-field (copied bytes) is
-            offset = unpack_short(ins)
-            # How many bytes long is the match-field?
-            match_length = token & 0b1111
-            if match_length == 15:
-                match_length += _read_lsic_int()
-            match_length += 4  # the match-field always gets an extra 4 bytes
-            # The boundary of the match-field
-            start_pos = len(uncompressed) - offset
-            end_pos = start_pos + match_length
-            # Matches can be overlapping (aka including not yet decompressed
-            # data) so we can't jump the whole match_length directly
-            while start_pos < end_pos:
-                uncompressed += uncompressed[start_pos:min(start_pos + offset,
-                                                           end_pos)]
-                start_pos += offset
-            # The masters table's size is found in bytes 1-5
-            if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct_unpack(u'I', uncompressed[1:5])[0]
-            # Stop when we have the whole masters table
-            if masters_size is not None:
-                if len(uncompressed) >= masters_size + 5:
-                    break
-        # Wrap the decompressed data in a file-like object and return it
-        return io.BytesIO(uncompressed)
-
-    def calc_time(self):
-        # gameDate format: hours.minutes.seconds
-        hours, minutes, seconds = [int(x) for x in self.gameDate.split(b'.')]
-        playSeconds = hours * 60 * 60 + minutes * 60 + seconds
-        self.gameDays = float(playSeconds) / (24 * 60 * 60)
-        self.gameTicks = playSeconds * 1000
-
-    def _do_write_header(self, ins, out):
-        if not self.__is_sse() or self._compressType == 0:
-            # Skyrim LE or uncompressed - can use the default implementation
-            return super()._do_write_header(ins, out)
-        # Write out everything up until the compressed portion
-        out.write(ins.read(self._sse_start))
-        # Now we need to decompress the portion again
-        decompressed_size = unpack_int(ins)
-        compressed_size = unpack_int(ins)
-        ins = self._sse_decompress(ins, compressed_size, decompressed_size)
-        # Gather the data that will be compressed
-        to_compress = io.BytesIO()
-        pack_byte(to_compress, self._formVersion)
-        ins.seek(1, 1) # skip the form version
-        self._write_masters(ins, to_compress)
-        for block in iter(partial(ins.read, 0x5000000), b''):
-            to_compress.write(block)
-        # Compress the gathered data, write out the sizes and finally write out
-        # the actual compressed data
-        compressed_data = self._sse_compress(to_compress)
-        pack_int(out, to_compress.tell())   # decompressed_size
-        pack_int(out, len(compressed_data)) # compressed_size
-        out.write(compressed_data)
 
     def _dump_masters(self, ins, out):
         # Skip the old masters
@@ -547,10 +522,111 @@ class SkyrimSaveHeader(SaveFileHeader):
         return (3 if self._esl_block() else 1) + sum(
             len(x) + 2 for x in self.masters)
 
+class SkyrimSaveHeader(_AEslSaveHeader):
+    """Valid Save Game Versions 8, 9, 12 (?)"""
+    save_magic = b'TESV_SAVEGAME'
+    # extra slots - only version is really used, gameDate used once (calc_time)
+    # _formVersion distinguish between old and new save formats
+    # _compress_type in SSE saves - used to decide how to read/write them
+    __slots__ = (u'gameDate', u'saveNumber', u'version', u'raceEid', u'pcSex',
+                 u'pcExp', u'pcLvlExp', u'filetime', u'_formVersion',
+                 'game_ver', '_compress_type', '_sse_start')
+
+    _unpackers = {
+        'header_size': (00, unpack_int),
+        'version':     (00, unpack_int),
+        'saveNumber':  (00, unpack_int),
+        'pcName':      (00, unpack_str16),
+        'pcLevel':     (00, unpack_int),
+        'pcLocation':  (00, unpack_str16),
+        'gameDate':    (00, unpack_str16),
+        'raceEid':     (00, unpack_str16), # pcRace
+        'pcSex':       (00, unpack_short),
+        'pcExp':       (00, unpack_float),
+        'pcLvlExp':    (00, unpack_float),
+        'filetime':    (00, unpack_int64),
+        'ssWidth':     (00, unpack_int),
+        'ssHeight':    (00, unpack_int),
+    }
+    _unpackers_post_ss = {
+        '_formVersion': (00, unpack_byte),
+    }
+
+    def __is_sse(self): return self.version == 12
+
+    def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
+
+    @property
+    def has_alpha(self):
+        return self.__is_sse()
+
+    def load_image_data(self, ins, load_image=False):
+        if self.__is_sse():
+            self._compress_type = _sc_parser[unpack_short(ins)]
+        # -4 for the header size itself (uint32)
+        actual = ins.tell() - len(self.__class__.save_magic) - 4
+        if actual != self.header_size:
+            raise SaveHeaderError(f'New Save game header size ({actual}) not '
+                                  f'as expected ({self.header_size}).')
+        super().load_image_data(ins, load_image)
+
+    def _load_masters(self, ins):
+        if (self.__is_sse() and
+                self._compress_type is not _SaveCompressionType.NONE):
+            self._sse_start = ins.tell()
+            decompressed_size = unpack_int(ins)
+            compressed_size = unpack_int(ins)
+            sse_offset = ins.tell()
+            ins = _decompress_save(ins, compressed_size, decompressed_size,
+                self._compress_type, light_decompression=True)
+        else:
+            sse_offset = 0
+        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
+        self._mastersStart = ins.tell() + sse_offset
+        self._load_masters_16(ins, sse_offset)
+
+    def calc_time(self):
+        # gameDate format: hours.minutes.seconds
+        hours, minutes, seconds = [int(x) for x in self.gameDate.split(b'.')]
+        playSeconds = hours * 60 * 60 + minutes * 60 + seconds
+        self.gameDays = float(playSeconds) / (24 * 60 * 60)
+        self.gameTicks = playSeconds * 1000
+
+    def _do_write_header(self, ins, out):
+        if (not self.__is_sse() or
+                self._compress_type is _SaveCompressionType.NONE):
+            # Skyrim LE or uncompressed - can use the default implementation
+            return super()._do_write_header(ins, out)
+        # Write out everything up until the compressed portion
+        out.write(ins.read(self._sse_start))
+        # Now we need to decompress the portion again
+        decompressed_size = unpack_int(ins)
+        compressed_size = unpack_int(ins)
+        ins = _decompress_save(ins, compressed_size, decompressed_size,
+            self._compress_type)
+        # Gather the data that will be compressed
+        to_compress = io.BytesIO()
+        pack_byte(to_compress, self._formVersion)
+        ins.seek(1, 1) # skip the form version
+        self._write_masters(ins, to_compress)
+        for block in iter(partial(ins.read, 0x5000000), b''):
+            to_compress.write(block)
+        # Compress the gathered data, write out the sizes and finally write out
+        # the actual compressed data
+        compressed_data = _compress_save(to_compress, self._compress_type)
+        pack_int(out, to_compress.tell())   # decompressed_size
+        pack_int(out, len(compressed_data)) # compressed_size
+        out.write(compressed_data)
+
 class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     """Valid Save Game Versions 11, 12, 13, 15 (?)"""
     save_magic = b'FO4_SAVEGAME'
-    __slots__ = ()
+    __slots__ = ('game_ver',)
+    _unpackers_post_ss = {
+        '_formVersion': (00, unpack_byte),
+        'game_ver':     (00, unpack_str16),
+    }
+    _compress_type = _SaveCompressionType.NONE
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
 
@@ -559,42 +635,126 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         return True
 
     def load_image_data(self, ins, load_image=False):
-        if (actual := ins.tell() - 16) != self.header_size:
+        # -4 for the header size itself (uint32)
+        actual = ins.tell() - len(self.__class__.save_magic) - 4
+        if actual != self.header_size:
             raise SaveHeaderError(f'New Save game header size ({actual}) not '
                                   f'as expected ({self.header_size}).')
+        # Call the SaveFileHeader version, skip Skyrim
         super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
-    def _load_masters(self, ins):
-        self._formVersion = unpack_byte(ins)
-        unpack_str16(ins) # drop "gameVersion"
-        self._mastersStart = ins.tell()
-        #--Masters
-        self._load_masters_16(ins)
-
     def calc_time(self):
-        # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
-        # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
-        # So handle it by concatenating digits until we hit a non-digit char
-        def parse_int(gd_bytes: bytes):
-            int_data = b''
-            for i in gd_bytes:
-                c = i.to_bytes(1, sys.byteorder)
-                if c.isdigit():
-                    int_data += c
-                else:
-                    break # hit the end of the int
-            return int(int_data)
-        days, hours, minutes = [parse_int(x) for x in
-                                self.gameDate.split(b'.')[:3]]
-        self.gameDays = float(days) + float(hours) / 24 + float(minutes) / (
-            24 * 60)
-        # Assuming still 1000 ticks per second
-        self.gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes
-                             * 60) * 1000
+        self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
 
     def _do_write_header(self, ins, out):
         # Call the SaveFileHeader version - *not* the Skyrim one
         return super(SkyrimSaveHeader, self)._do_write_header(ins, out)
+
+class _ABcpsSaveHeader(SaveFileHeader):
+    """Base class for BCPS savegames, which are entirely compressed and
+    preceded by a 'BCPS' header (Bethesda Compressed Something Something?)."""
+    _bcps_magic = b'BCPS'
+    ##: We can't fill these slots due to inheritance layout conflicts, so they
+    # have to be filled out in subclasses - really annoying, plus causes
+    # PyCharm warnings down below
+    __slots__ = ()
+    # TODO(SF) Before we can enable editing save headers, all the ##: questions
+    #  here have to be answered
+    _bcps_unpackers = {
+        '_bcps_header_version': (00, unpack_int),
+        ##: Where do we start counting for the 'header size' here?
+        '_bcps_header_size':    (00, unpack_int64),
+        ##: What are unknown1 and unknown2?
+        '_bcps_unknown1':       (00, unpack_int64),
+        '_bcps_comp_location':  (00, unpack_int64),
+        ##: MO2 calls this 'totalSize', but it seems to be much too big for
+        # either the compressed or decompressed size - what is it?
+        '_bcps_unknown2':      (00, unpack_int64),
+        '_bcps_unknown3':      (00, unpack_int64),
+        '_bcps_decomp_size':   (00, unpack_int64),
+        ##: There's a bunch more after this - read as _bcps_rest below. Figure
+        # out what that all is
+    }
+
+    def load_header(self, ins, load_image=False):
+        bcps_magic = ins.read(len(self.__class__._bcps_magic))
+        if bcps_magic != self.__class__._bcps_magic:
+            raise SaveHeaderError(f'Compressed header magic wrong: '
+                                  f'{bcps_magic!r} (expected '
+                                  f'{self.__class__._bcps_magic!r})')
+        self._load_from_unpackers(ins, self.__class__._bcps_unpackers)
+        self._bcps_rest = ins.read(self._bcps_comp_location - ins.tell())
+        # We're at _bcps_comp_location now, no need to store that twice
+        ins.seek(0, os.SEEK_END)
+        ins_size = ins.tell()
+        ins.seek(self._bcps_comp_location)
+        ins = _decompress_save(ins, ins_size - self._bcps_comp_location,
+            self._bcps_decomp_size, compression_type=_SaveCompressionType.ZLIB)
+        super().load_header(ins, load_image)
+
+    ##: Add writing support
+
+class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
+    save_magic = b'SFS_SAVEGAME'
+    __slots__ = ('version', 'unknown1', 'saveNumber', 'gameDate', 'raceEid',
+                 'pcSex', 'pcExp', 'pcLvlExp', 'filetime', 'unknown3',
+                 '_formVersion', 'game_ver', 'game_ver_again',
+                 'plugin_info_size', '_bcps_header_version',
+                 '_bcps_header_size', '_bcps_unknown1', '_bcps_comp_location',
+                 '_bcps_unknown2', '_bcps_unknown3', '_bcps_decomp_size',
+                 '_bcps_rest')
+
+    # TODO(SF) What are the unknowns in here?
+    _unpackers = {
+        'header_size':      (00, unpack_int),
+        'version':          (00, unpack_int),
+        'unknown1':         (00, unpack_byte),
+        'saveNumber':       (00, unpack_int),
+        'pcName':           (00, unpack_str16),
+        'pcLevel':          (00, unpack_int),
+        'pcLocation':       (00, unpack_str16),
+        'gameDate':         (00, unpack_str16),
+        'raceEid':          (00, unpack_str16), # pcRace
+        'pcSex':            (00, unpack_short),
+        'pcExp':            (00, unpack_float),
+        'pcLvlExp':         (00, unpack_float),
+        'filetime':         (00, unpack_int64),
+        'ssWidth':          (00, unpack_int), # Seems unused - always(?) zero
+        'ssHeight':         (00, unpack_int), # Seems unused - always(?) zero
+        'unknown3':         (00, unpack_int),
+    }
+    _unpackers_post_ss = {
+        '_formVersion':     (00, unpack_byte),
+        'game_ver':         (00, unpack_str16),
+        'game_ver_again':   (00, unpack_str16), # huh?
+    }
+
+    def _esl_block(self):
+        return self._formVersion >= 82
+
+    def load_image_data(self, ins, load_image=False):
+        # -4 for the header size itself (uint32)
+        actual = ins.tell() - len(self.__class__.save_magic) - 4
+        if actual != self.header_size:
+            raise SaveHeaderError(f'New Save game header size ({actual}) not '
+                                  f'as expected ({self.header_size}).')
+        super().load_image_data(ins, load_image)
+
+    def _load_masters(self, ins):
+        self._load_from_unpackers(ins, self.__class__._unpackers_post_ss)
+        self._mastersStart = ins.tell()
+        # TODO(SF) For some reason we're off by 2 when reading, though we read
+        #  the master list correctly - maybe there's a new block for the
+        #  override-only plugins? There does seem to be a valid short after
+        #  this, but it has a value of 1 and is followed by no valid plugin
+        #  strings? For now, just HACK our way past the check via sse_offset
+        self._load_masters_16(ins, sse_offset=2)
+
+    def calc_time(self):
+        self.gameDays, self.gameTicks = calc_time_fo4(self.gameDate)
+
+    def _do_write_header(self, ins, out):
+        raise NotImplementedError # TODO(SF) Implement
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = b'FO3SAVEGAME'
@@ -711,21 +871,23 @@ class MorrowindSaveHeader(SaveFileHeader):
         return False
 
 # Factory
-def get_save_header_type(game_fsName):
-    """:rtype: type"""
-    if game_fsName == u'Oblivion':
-        return OblivionSaveHeader
-    elif game_fsName in ('Enderal', 'Skyrim',  'Skyrim Special Edition',
-                         'Skyrim VR', 'Enderal Special Edition'):
-        return SkyrimSaveHeader
-    elif game_fsName in ('Fallout4',  'Fallout4VR'):
-        return Fallout4SaveHeader
-    elif game_fsName == u'FalloutNV':
-        return FalloutNVSaveHeader
-    elif game_fsName == u'Fallout3':
-        return Fallout3SaveHeader
-    elif game_fsName == u'Morrowind':
-        return MorrowindSaveHeader
-    else:
-        raise RuntimeError(f'Save header decoding not supported for '
-                           f'{game_fsName} yet')
+def get_save_header_type(game_fsName) -> type[SaveFileHeader]:
+    match game_fsName:
+        case ('Enderal' | 'Enderal Special Edition' | 'Skyrim' |
+              'Skyrim Special Edition' | 'Skyrim VR'):
+            return SkyrimSaveHeader
+        case 'Fallout3':
+            return Fallout3SaveHeader
+        case 'Fallout4' | 'Fallout4VR':
+            return Fallout4SaveHeader
+        case 'FalloutNV':
+            return FalloutNVSaveHeader
+        case 'Morrowind':
+            return MorrowindSaveHeader
+        case 'Oblivion':
+            return OblivionSaveHeader
+        case 'Starfield':
+            return StarfieldSaveHeader
+        case _:
+            raise RuntimeError(f'Save header decoding is not supported for '
+                               f'{game_fsName} yet')

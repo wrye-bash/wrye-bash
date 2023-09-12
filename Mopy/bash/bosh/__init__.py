@@ -42,7 +42,7 @@ from ._mergeability import is_esl_capable, isPBashMergeable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
-from .save_headers import SaveFileHeader, get_save_header_type
+from .save_headers import get_save_header_type
 from .. import archives, balt, bass, bolt, bush, env, initialization, \
     load_order
 from ..bass import dirs, inisettings

@@ -42,6 +42,7 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from enum import Enum
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
@@ -368,6 +369,12 @@ def reverse_dict(target_dict: dict[K, V]) -> dict[V, K]:
     specified dict. If a -> b in target_dict, then b -> a in the returned
     dict."""
     return {v: k for k, v in target_dict.items()}
+
+def gen_enum_parser(enum_type: type[Enum]):
+    """Create a dict that maps the values of the specified enum to the matching
+    enum entries. Useful e.g. for when the enum's values represent information
+    inside a file and you want to parse that information into enum entries."""
+    return {e.value: e for e in enum_type.__members__.values()}
 
 _not_cached = object()
 
@@ -2075,6 +2082,8 @@ def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
 def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
     out.write(__pack(value))
+def unpack_int64(ins, __unpack=structs_cache['Q'].unpack) -> int:
+    return __unpack(ins.read(8))[0]
 def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
 def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
