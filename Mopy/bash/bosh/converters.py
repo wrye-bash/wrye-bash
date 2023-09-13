@@ -30,7 +30,7 @@ import pickle
 from collections import defaultdict
 from itertools import chain
 
-from .. import archives, balt, bolt
+from .. import archives, bolt
 from ..archives import defaultExt, readExts
 from ..bolt import DataDict, Path, PickleDict, SubProgress, \
     forward_compat_path_to_fn_list, top_level_files, GPath_no_norm
@@ -128,7 +128,7 @@ class ConvertersData(DataDict):
             #--New/update crcs?
             self.bcfCRC_converter = newData  # empty on first run
         if pending_:
-            progress = progress or balt.Progress(_('Refreshing Converters...'))
+            progress = progress or bolt.Progress()
             with progress:
                 progress(0, _('Scanning Converters...'))
                 progress.setFull(len(pending_))

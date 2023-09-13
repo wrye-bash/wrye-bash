@@ -1773,7 +1773,7 @@ class InstallersData(DataStore):
                  projects: _fnames = None):
         """Refresh context parameters are used for updating installers. Note
         that if any of those are not None "changed" will be always True,
-        triggering the rest of the refreshes in irefresh """
+        triggering the rest of the refreshes in irefresh."""
         #--Archive invalidation
         from . import InstallerMarker, modInfos, oblivionIni
         if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
@@ -1902,7 +1902,7 @@ class InstallersData(DataStore):
         deleted = {FName(item.stail) for item in deleted
                    if not check_existence or not item.exists()}
         if deleted:
-            self.irefresh(what=u'I', deleted=deleted)
+            self.irefresh(what='I', deleted=deleted)
         elif markers:
             self.refreshOrder()
 
@@ -1930,7 +1930,7 @@ class InstallersData(DataStore):
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
                                                        window, bash_frame)
-        self.irefresh(what=u'I', pending=moved)
+        self.irefresh(what='I', pending=moved)
         return moved
 
     def reorder_packages(self, partial_order: list[FName]) -> str:

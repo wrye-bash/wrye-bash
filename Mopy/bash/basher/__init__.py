@@ -3485,8 +3485,10 @@ class InstallersPanel(BashTab):
                         self._data_dir_scanned = True
             elif self.frameActivated:
                 try:
-                    refreshui |= self.listData.irefresh(what='C',
-                        fullRefresh=fullRefresh)
+                    with balt.Progress(
+                            _('Refreshing Converters...')) as progress:
+                        refreshui |= self.listData.irefresh(progress, what='C',
+                            fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -4612,7 +4614,7 @@ class BashApp(object):
             settings[u'bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
             deprint(u'Version changed, rescanning mergeability')
-            bosh.modInfos.rescanMergeable(bosh.modInfos, bolt.Progress())
+            bosh.modInfos.rescanMergeable(bosh.modInfos)
             deprint(u'Done rescanning mergeability')
 
 # Initialization --------------------------------------------------------------

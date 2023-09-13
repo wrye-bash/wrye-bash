@@ -884,46 +884,39 @@ class Mod_MarkMergeable(ItemLink):
     def __init__(self):
         Link.__init__(self)
         if bush.game.check_esl:
-            self._text = _(u'Check ESL Qualifications')
-            self._help = _(u'Scans the selected plugin(s) to determine '
-                           u'whether or not they can be assigned the ESL '
-                           u'flag, reporting also the reason(s) if they '
-                           u'cannot be ESL-flagged.')
+            self._text = _('Check ESL Qualifications')
+            self._help = _('Scans the selected plugin(s) to determine whether '
+                'or not they can be assigned the ESL flag, reporting also the '
+                'reason(s) if they cannot be ESL-flagged.')
         else:
-            self._text = _(u'Mark Mergeable...')
-            self._help = _(u'Scans the selected plugin(s) to determine if '
-                           u'they are mergeable into the Python Bashed Patch, '
-                           u'reporting also the reason(s) if they are '
-                           u'unmergeable.')
+            self._text = _('Mark Mergeable...')
+            self._help = _('Scans the selected plugin(s) to determine if they '
+                'are mergeable into the Python Bashed Patch, reporting also '
+                'the reason(s) if they are unmergeable.')
 
     @balt.conversation
     def Execute(self):
+        prog = balt.Progress(self._text + ' ' * 30)
         result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
-            return_results=True)
+            prog, return_results=True)
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
         no = [f'{x}:{y}' for x, y in result.items() if x in no]
-        if bush.game.check_esl:
-            message = u'== %s\n\n' % _(
-                u'Plugins that qualify for ESL flagging.')
+        if check_esl := bush.game.check_esl:
+            message = ['== %s' % _('Plugins that qualify for ESL flagging.')]
         else:
-            message = u'== %s ' % _(u'Python Mergeability') + u'\n\n'
+            message = ['== %s ' % _('Python Mergeability')]
         if yes:
-            message += u'=== ' + (
-                _(u'ESL Capable') if bush.game.check_esl else _(
-                    u'Mergeable')) + u'\n* ' + u'\n\n* '.join(yes)
+            message.append('=== ' + (_('ESL Capable') if check_esl else _(
+                'Mergeable')) + '\n* ' + '\n\n* '.join(yes))
         if yes and no:
-            message += u'\n\n'
+            message.append('') # will add a '\n\n'
         if no:
-            message += u'=== ' + (_(
-                u'ESL Incapable') if bush.game.check_esl else _(
-                u'Not Mergeable')) + u'\n* ' + u'\n\n* '.join(no)
+            message.append('=== ' + (_('ESL Incapable') if check_esl else _(
+                'Not Mergeable')) + '\n* ' + '\n\n* '.join(no))
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
-        if message != u'':
-            title_ = _(u'Check ESL Qualifications') if \
-                bush.game.check_esl else _(u'Mark Mergeable')
-            self._showWryeLog(message, title=title_)
+        self._showWryeLog('\n\n'.join(message), title=self._text)
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(OneItemLink):
@@ -1449,7 +1442,7 @@ class _Esm_Esl_Flip(EnabledLink):
             # we then need to sync order in skyrim's plugins.txt
             bosh.modInfos.refreshLoadOrder()
             # converted to esps/esls - rescan mergeable
-            bosh.modInfos.rescanMergeable(self.selected, bolt.Progress())
+            bosh.modInfos.rescanMergeable(self.selected)
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 altered={p.abs_path for p in self.iselected_infos()})

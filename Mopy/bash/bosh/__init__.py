@@ -43,8 +43,7 @@ from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
 from .save_headers import get_save_header_type
-from .. import archives, balt, bass, bolt, bush, env, initialization, \
-    load_order
+from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
@@ -2265,7 +2264,7 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self)
         if scanList:
-            self.rescanMergeable(scanList)
+            self.rescanMergeable(scanList) ##: maybe re-add progress?
         change |= bool(scanList or difMergeable)
         return bool(change) or lo_changed
 
@@ -2389,12 +2388,11 @@ class ModInfos(FileInfos):
                 newMods.append(fn_mod)
         return newMods
 
-    def rescanMergeable(self, names, prog=None, return_results=False):
+    def rescanMergeable(self, names, prog=bolt.Progress(),
+                            return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
-        messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
-            else _(u'Mark Mergeable')
-        with prog or balt.Progress(messagetext + u' ' * 30) as prog:
+        with prog:
             return self._rescanMergeable(names, prog, return_results)
 
     def _rescanMergeable(self, names, progress, return_results):

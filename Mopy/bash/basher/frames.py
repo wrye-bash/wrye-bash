@@ -31,7 +31,7 @@ from ..balt import Link, Resources
 from ..bolt import FName, GPath
 from ..bosh import empty_path, mods_metadata, omods
 from ..env import normalize_ci_path
-from ..exception import StateError
+from ..exception import StateError, CancelError
 from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
     SaveButton, SearchBar, Spacer, Splitter, Stretch, TextArea, TextField, \
@@ -491,9 +491,15 @@ class PluginChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.check_mods_text = mods_metadata.checkMods(self, bosh.modInfos,
-            *[_get_mod_checker_setting(self._setting_names[setting_key])
-            for setting_key in (_MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS)])
+        with balt.Progress(_('Checking Plugins...'), parent=self,
+                           abort=True) as prog:
+            try:
+                args = prog, bosh.modInfos, *(
+                    _get_mod_checker_setting(self._setting_names[setting_key])
+                for setting_key in (_MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS))
+                self.check_mods_text = mods_metadata.checkMods(*args)
+            except CancelError:
+                return # user pressed cancel early
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
