@@ -4006,35 +4006,28 @@ class BashStatusBar(DnDStatusBar):
 
     def UpdateIconSizes(self, skip_refresh=False):
         self.buttons = {} # populated with SBLinks whose gButtons is not None
+        # when bash is run for the first time those are empty - set here
         order = settings[u'bash.statusbar.order']
         hide = settings[u'bash.statusbar.hide']
-        # Add buttons in order that is saved - on first Bash run order = [] !
-        for uid in order[:]:
-            link = BashStatusBar.all_sb_links.get(uid)
-            # Doesn't exist?
-            if link is None:
-                order.remove(uid)
-                continue
+        # filter for non-existent ids and reorder the dict according to order
+        hidden = {lid for lid in hide if lid in BashStatusBar.all_sb_links}
+        hide.clear()
+        hide.update(hidden)
+        saved_order = {lid: li for lid in order if
+                       (li := BashStatusBar.all_sb_links.get(lid))}
+        # append new buttons and reorder BashStatusBar.all_sb_links
+        BashStatusBar.all_sb_links = saved_order | BashStatusBar.all_sb_links
+        order[:] = list(BashStatusBar.all_sb_links) # set bash.statusbar.order
+        # Add buttons in order that is saved
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             # Hidden?
-            if uid in hide: continue
+            if link_uid in hide: continue
             # Not present ?
             if not link.IsPresent(): continue
             # Add it
             try:
                 self._addButton(link)
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {uid!r}', traceback=True)
-        # Add any new buttons
-        for link_uid, link in BashStatusBar.all_sb_links.items():
-            # Already tested?
-            if link_uid in order: continue
-            # Remove any hide settings, if they exist
-            if link_uid in hide:
-                hide.discard(link_uid)
-            order.append(link_uid)
-            try:
-                self._addButton(link)
-            except AttributeError:
                 deprint(f'Failed to load button {link_uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)

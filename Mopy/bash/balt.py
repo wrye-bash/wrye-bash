@@ -96,8 +96,6 @@ class ImageList(object):
                             self._images}
         return self.imageList
 
-    def get_icon(self, key): return self._images[self[key]][1].GetIcon() # YAK !
-
     def __getitem__(self,key):
         self.GetImageList()
         return self.indices[key]
