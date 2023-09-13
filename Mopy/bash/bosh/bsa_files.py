@@ -40,6 +40,7 @@ from itertools import chain, groupby
 from operator import itemgetter
 from struct import unpack_from as _unpack_from
 
+import lz4.block
 import lz4.frame
 
 from .dds_files import DDSFile, mk_dxgi_fmt
@@ -87,35 +88,57 @@ class _Bsa_zlib(_BsaCompressionType):
         try:
             return zlib.compress(decompressed_data)
         except zlib.error as e:
-            raise BSACompressionError(bsa_name, u'zlib', e)
+            raise BSACompressionError(bsa_name, 'zlib', e) from e
 
     @staticmethod
     def decompress_rec(compressed_data, decompressed_size, bsa_name):
         try:
             decompressed_data = zlib.decompress(compressed_data)
         except zlib.error as e:
-            raise BSADecompressionError(bsa_name, u'zlib', e)
+            raise BSADecompressionError(bsa_name, 'zlib', e) from e
         if len(decompressed_data) != decompressed_size:
             raise BSADecompressionSizeError(
                 bsa_name, u'zlib', decompressed_size, len(decompressed_data))
         return decompressed_data
 
-class _Bsa_lz4(_BsaCompressionType):
-    """Implements BSA record compression and decompression using lz4. Used
-    only for SSE."""
+class _Bsa_lz4_frame(_BsaCompressionType):
+    """Implements BSA record compression and decompression using lz4's frame
+    API. Used only for SSE."""
     @staticmethod
     def compress_rec(decompressed_data, bsa_name):
         try:
             return lz4.frame.compress(decompressed_data, store_size=False)
         except RuntimeError as e: # No custom lz4 exception for frames...
-            raise BSACompressionError(bsa_name, u'LZ4', e)
+            raise BSACompressionError(bsa_name, 'LZ4', e) from e
 
     @staticmethod
     def decompress_rec(compressed_data, decompressed_size, bsa_name):
         try:
             decompressed_data = lz4.frame.decompress(compressed_data)
         except RuntimeError as e: # No custom lz4 exception for frames...
-            raise BSADecompressionError(bsa_name, u'LZ4', e)
+            raise BSADecompressionError(bsa_name, 'LZ4', e) from e
+        if len(decompressed_data) != decompressed_size:
+            raise BSADecompressionSizeError(
+                bsa_name, u'LZ4', decompressed_size, len(decompressed_data))
+        return decompressed_data
+
+class _Bsa_lz4_block(_BsaCompressionType):
+    """Implements BSA record compression and decompression using lz4's block
+    API. Used only for Starfield."""
+    @staticmethod
+    def compress_rec(decompressed_data, bsa_name):
+        try:
+            return lz4.block.compress(decompressed_data)
+        except lz4.block.LZ4BlockError as e:
+            raise BSACompressionError(bsa_name, 'LZ4', e) from e
+
+    @staticmethod
+    def decompress_rec(compressed_data, decompressed_size, bsa_name):
+        try:
+            decompressed_data = lz4.block.decompress(compressed_data,
+                uncompressed_size=decompressed_size)
+        except lz4.block.LZ4BlockError as e:
+            raise BSADecompressionError(bsa_name, 'LZ4', e) from e
         if len(decompressed_data) != decompressed_size:
             raise BSADecompressionSizeError(
                 bsa_name, u'LZ4', decompressed_size, len(decompressed_data))
@@ -212,7 +235,7 @@ class BsaHeader(_Header):
         xmem_codec: bool
 
     def load_header(self, ins, bsa_name):
-        super(BsaHeader, self).load_header(ins, bsa_name)
+        super().load_header(ins, bsa_name)
         for (fmt, fmt_siz), a in zip(BsaHeader.formats, BsaHeader.__slots__):
             setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         self.archive_flags = self._archive_flags(self.archive_flags)
@@ -235,10 +258,9 @@ class Ba2Header(_Header):
     formats = [(f, struct_calcsize(f)) for f in (u'4s', u'I', u'Q')]
     bsa_magic = b'BTDX'
     file_types = {b'GNRL', b'DX10'} # GNRL=General, DX10=Textures
-    header_size = 24
 
     def load_header(self, ins, bsa_name):
-        super(Ba2Header, self).load_header(ins, bsa_name)
+        super().load_header(ins, bsa_name)
         for (fmt, fmt_siz), a in zip(Ba2Header.formats, Ba2Header.__slots__):
             setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
         # error checking
@@ -248,6 +270,22 @@ class Ba2Header(_Header):
             raise BSAError(
                 bsa_name, f'Unrecognised file type: {self.ba2_files_type!r}. '
                           f'Should be {err_types}')
+
+class StarfieldBa2Header(Ba2Header):
+    __slots__ = ( # in the order encountered in the header
+        'ba2_header_unknown1', 'ba2_header_unknown2', 'ba2_header_unknown3')
+    formats = [(f, struct_calcsize(f)) for f in ('I', 'I')]
+
+    def load_header(self, ins, bsa_name):
+        super().load_header(ins, bsa_name)
+        for (fmt, fmt_siz), a in zip(StarfieldBa2Header.formats,
+                                     StarfieldBa2Header.__slots__):
+            setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
+        ##: Investigate this further, does not appear in xEdit's sources but
+        # does seem to appear in MO2's sources (they have an offset of 36 for
+        # v3 BA2s vs. an offset of 32 for v2 BA2s)
+        if self.version == 3:
+            self.ba2_header_unknown3 = unpack_int(ins)
 
 class MorrowindBsaHeader(_Header):
     __slots__ = (u'file_id', u'hash_offset', u'file_count')
@@ -311,15 +349,14 @@ class _BsaHashedRecord(_HashedRecord):
     __slots__ = ()
 
     def load_record(self, ins):
-        super(_BsaHashedRecord, self).load_record(ins)
+        super().load_record(ins)
         ins_read = ins.read
         for (fmt, fmt_siz), a in zip(self.__class__.formats,
                                      self.__class__.__slots__):
             setattr(self, a, struct_unpack(fmt, ins_read(fmt_siz))[0])
 
     def load_record_from_buffer(self, memview, start):
-        start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
-                                                                      start)
+        start = super().load_record_from_buffer(memview, start)
         for (fmt, fmt_siz), a in zip(self.__class__.formats,
                                      self.__class__.__slots__):
             setattr(self, a, _unpack_from(fmt, memview, start)[0])
@@ -328,7 +365,7 @@ class _BsaHashedRecord(_HashedRecord):
 
     @classmethod
     def total_record_size(cls):
-        return super(_BsaHashedRecord, cls).total_record_size() + sum(
+        return super().total_record_size() + sum(
             f[1] for f in cls.formats)
 
 class BSAFolderRecord(_BsaHashedRecord):
@@ -372,12 +409,11 @@ class BSAMorrowindFileRecord(_HashedRecord):
 
     def load_hash(self, ins):
         """Loads the hash from the specified input stream."""
-        super(BSAMorrowindFileRecord, self).load_record(ins)
+        super().load_record(ins)
 
     def load_hash_from_buffer(self, memview, start):
         """Loads the hash from the specified memory buffer."""
-        super(BSAMorrowindFileRecord, self).load_record_from_buffer(memview,
-                                                                    start)
+        super().load_record_from_buffer(memview, start)
 
     def __repr__(self):
         return f'{super().__repr__()}: {self.file_name}'
@@ -392,7 +428,7 @@ class BSAOblivionFileRecord(BSAFileRecord):
 
     def load_record(self, ins):
         self.file_pos = ins.tell()
-        super(BSAOblivionFileRecord, self).load_record(ins)
+        super().load_record(ins)
 
 # BA2s
 class Ba2FileRecordGeneral(_BsaHashedRecord):
@@ -412,7 +448,7 @@ class Ba2FileRecordTexture(_BsaHashedRecord):
                                                  u'H', u'H', u'B', u'B', u'H')]
 
     def load_record(self, ins):
-        super(Ba2FileRecordTexture, self).load_record(ins)
+        super().load_record(ins)
         self.dxgi_format = mk_dxgi_fmt(self.dxgi_format)
         self.tex_chunks = []
         append_tex_chunk = self.tex_chunks.append
@@ -461,7 +497,7 @@ class ABsa(AFile):
     bsa_folders: defaultdict[str, _folder_type]
 
     def __init__(self, fullpath, load_cache=False, names_only=True):
-        super(ABsa, self).__init__(fullpath)
+        super().__init__(fullpath)
         self.bsa_name = self.abs_path.stail
         self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
         self.bsa_folders = defaultdict(self._folder_type) # keep folder order
@@ -563,11 +599,14 @@ class ABsa(AFile):
     def _map_assets_to_folders(self, folder_files_dict):
         folder_to_assets = {}
         for folder_path, bsa_folder in self.bsa_folders.items():
-            if folder_path.lower() not in folder_files_dict: continue
+            # The incoming folder_files_dict uses native path separators, so
+            # convert the BSA separators over
+            ffd_key = folder_path.lower().replace(path_sep, os.sep)
+            if ffd_key not in folder_files_dict: continue
             # Has assets we need to extract. Keep order to avoid seeking
             # back and forth in the file
             folder_to_assets[folder_path] = file_records = []
-            filenames = folder_files_dict[folder_path.lower()]
+            filenames = folder_files_dict[ffd_key]
             for filename, filerecord in bsa_folder.folder_assets.items():
                 if filename.lower() not in filenames: continue
                 file_records.append((filename, filerecord))
@@ -837,6 +876,15 @@ class BA2(ABsa):
         (Data)."""
         return _hash_ba2_string(self.abs_path.sbody)
 
+class StarfieldBA2(BA2):
+    bsa_header: StarfieldBa2Header
+
+    @property
+    def _compression_type(self):
+        # BA2 v3 (introduced with Starfield) uses LZ4 block compression. Yup,
+        # block compression - *not* the frame compression used by SSE
+        return _Bsa_lz4_block if self.bsa_header.version == 3 else _Bsa_zlib
+
 class MorrowindBsa(ABsa):
     bsa_header: MorrowindBsaHeader
 
@@ -968,24 +1016,29 @@ class OblivionBsa(BSA):
 
 class SkyrimSeBsa(BSA):
     folder_record_type = BSASkyrimSEFolderRecord
-    _compression_type = _Bsa_lz4
+    _compression_type = _Bsa_lz4_frame
 
 # Factory
 def get_bsa_type(game_fsName) -> type[ABsa]:
     """Return the bsa type for this game."""
-    if game_fsName == 'Morrowind':
-        return MorrowindBsa
-    elif game_fsName == 'Oblivion':
-        return OblivionBsa
-    elif game_fsName in ('Enderal', 'Fallout3', 'FalloutNV', 'Skyrim'):
-        return BSA
-    elif game_fsName in ('Skyrim Special Edition', 'Skyrim VR',
-                         'Enderal Special Edition'):
-        return SkyrimSeBsa
-    # TODO(SF) verify BA2 has not changed
-    elif game_fsName in ('Fallout4', 'Fallout4VR', 'Starfield'):
-        # Hashes are I not Q in BA2s!
-        _HashedRecord.formats = [('I', struct_calcsize('I'))]
-        return BA2
-    else:
-        raise RuntimeError(f'BSAs not supported for {game_fsName} yet')
+    match game_fsName:
+        case 'Enderal' | 'Fallout3' | 'FalloutNV' | 'Skyrim':
+            return BSA
+        case ('Enderal Special Edition' | 'Skyrim Special Edition' |
+              'Skyrim VR'):
+            return SkyrimSeBsa
+        ##: The _HashedRecord hackery here should go
+        case 'Fallout4' | 'Fallout4VR':
+            # Hashes are I not Q in BA2s!
+            _HashedRecord.formats = [('I', struct_calcsize('I'))]
+            return BA2
+        case 'Starfield':
+            # Hashes are I not Q in BA2s!
+            _HashedRecord.formats = [('I', struct_calcsize('I'))]
+            return StarfieldBA2
+        case 'Morrowind':
+            return MorrowindBsa
+        case 'Oblivion':
+            return OblivionBsa
+        case _:
+            raise RuntimeError(f'BSAs are not supported for {game_fsName} yet')
