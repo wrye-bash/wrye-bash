@@ -53,7 +53,10 @@ class StarfieldGameInfo(PatchGame):
     espm_extensions = GameInfo.espm_extensions | {'.esl'}
     has_achlist = False # TODO(SF) check once CK is out
     check_esl = True
-    # TODO(SF) are there any plugin_name_specific_dirs?
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        _j('textures', 'actors', 'character', 'facecustomization'),
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+    ]
 
     class Ck(GameInfo.Ck): # TODO(SF) add once it exists
         pass

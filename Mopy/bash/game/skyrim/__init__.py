@@ -51,8 +51,11 @@ class SkyrimGameInfo(PatchGame):
     nexusKey = u'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
-        _j(u'textures', u'actors', u'character', u'facegendata', u'facetint')]
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+        _j('textures', 'actors', 'character', 'facegendata', 'facetint'),
+        _j('textures', 'actors', 'character', 'facemods'),
+        _j('textures', 'water'), # SSE only?
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'

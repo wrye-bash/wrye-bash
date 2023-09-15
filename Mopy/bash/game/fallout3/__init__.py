@@ -58,8 +58,9 @@ class Fallout3GameInfo(PatchGame):
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'textures', u'characters', u'BodyMods'),
-        _j(u'textures', u'characters', u'FaceMods')]
+        _j('textures', 'characters', 'bodymods'),
+        _j('textures', 'characters', 'facemods'),
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'GECK'

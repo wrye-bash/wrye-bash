@@ -62,8 +62,12 @@ class Fallout4GameInfo(PatchGame):
     has_achlist = True
     check_esl = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
-        _j(u'meshes', u'actors', u'character', u'facecustomization')]
+        _j('meshes', 'actors', 'character', 'facecustomization'),
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+        _j('meshes', 'scol'),
+        _j('textures', 'actors', 'character', 'facecustomization'),
+        'vis',
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'

@@ -64,6 +64,9 @@ class OblivionGameInfo(PatchGame):
 
     using_txt_file = False
     has_standalone_pluggy = True
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        _j('textures', 'faces'),
+    ]
     check_legacy_paths = True
 
     @classmethod

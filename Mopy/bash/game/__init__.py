@@ -156,7 +156,7 @@ class GameInfo(object):
     # game. Some examples are sound\voice\PLUGIN_NAME.esp, or the facegendata
     # ones. An empty list means that the game does not have any such
     # directories.
-    plugin_name_specific_dirs = [_j(u'sound', u'voice')]
+    plugin_name_specific_dirs = [_j('sound', 'voice')]
     # Whether or not to check for 'Bash' and 'Installers' folders inside the
     # game folder and use those instead of the default paths when present
     check_legacy_paths = False
