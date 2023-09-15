@@ -429,7 +429,7 @@ class PageVersions(PageInstaller):
         versions_layout.append_row([None, Label(self, _(u'Need')),
                                     Label(self, _(u'Have'))])
         # Game
-        linkGame = Label(self, bush.game.displayName)
+        linkGame = Label(self, bush.game.display_name)
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
                                     staticBitmap(self, bmps[bGameOk])])

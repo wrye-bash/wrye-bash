@@ -24,11 +24,12 @@ import re
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from ..store_mixins import SteamMixin
 from ... import bolt
 
-class SkyrimGameInfo(PatchGame):
+class ASkyrimGameInfo(PatchGame):
     """GameInfo override for TES V: Skyrim."""
-    displayName = u'Skyrim'
+    display_name = 'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     game_icon = u'skyrim_%u.png'
@@ -45,7 +46,6 @@ class SkyrimGameInfo(PatchGame):
     loot_dir = u'Skyrim'
     loot_game_name = 'Skyrim'
     boss_game_name = u'Skyrim'
-    registry_keys = [(r'Bethesda Softworks\Skyrim', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = u'bash.installers.openSkyrimNexus.continue'
@@ -1470,4 +1470,9 @@ class SkyrimGameInfo(PatchGame):
         from ... import brec as _brec_
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
-GAME_TYPE = SkyrimGameInfo
+class SteamSkyrimGameInfo(SteamMixin, ASkyrimGameInfo):
+    """GameInfo override for the Steam version of Skyrim."""
+    class St(ASkyrimGameInfo.St):
+        steam_ids = [72850]
+
+GAME_TYPE = SteamSkyrimGameInfo

@@ -233,11 +233,11 @@ class CreateNewProject(DialogWindow):
             # Create the directory first, otherwise some of the file creation
             # calls below may race and cause undebuggable issues otherwise
             tmp_project.makedirs()
-            blank_esp_name = f'Blank, {bush.game.displayName}.esp'
+            blank_esp_name = f'Blank, {bush.game.display_name}.esp'
             if self._check_esp.is_checked:
                 bosh.modInfos.create_new_mod(blank_esp_name,
                     dir_path=tmp_project)
-            blank_ml_name = f'Blank, {bush.game.displayName} (masterless).esp'
+            blank_ml_name = f'Blank, {bush.game.display_name} (masterless).esp'
             if self._check_esp_masterless.is_checked:
                 bosh.modInfos.create_new_mod(blank_ml_name,
                     dir_path=tmp_project, wanted_masters=[])

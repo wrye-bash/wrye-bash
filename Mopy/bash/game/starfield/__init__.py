@@ -24,11 +24,12 @@ from os.path import join as _j
 
 from .. import GameInfo, ObjectIndexRange
 from ..patch_game import PatchGame
+from ..store_mixins import SteamMixin
 from ... import bolt
 
-class StarfieldGameInfo(PatchGame):
+class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
-    displayName = 'Starfield'
+    display_name = 'Starfield'
     fsName = 'Starfield'
     altName = 'Wrye Stash'
     game_icon = 'starfield_%u.png'
@@ -43,9 +44,6 @@ class StarfieldGameInfo(PatchGame):
     taglist_dir = 'Starfield'
     loot_dir = 'Starfield'
     loot_game_name = 'Starfield'
-    # TODO(SF) doesn't seem to have one, we need to accelerate our new Steam
-    #  detection method (plus that one will work on Linux too)
-    registry_keys = []
     nexusUrl = 'https://www.nexusmods.com/starfield/'
     nexusName = 'Starfield Nexus'
     nexusKey = 'bash.installers.openStarfieldNexus.continue'
@@ -233,4 +231,9 @@ class StarfieldGameInfo(PatchGame):
         super().init(_package_name or __name__)
         cls._import_records(__name__)
 
-GAME_TYPE = StarfieldGameInfo
+class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
+    """GameInfo override for the Steam version of Starfield."""
+    class St(_AStarfieldGameInfo.St):
+        steam_ids = [1716740]
+
+GAME_TYPE = SteamStarfieldGameInfo

@@ -51,11 +51,20 @@ class ObjectIndexRange(Enum):
 # Abstract class - to be overriden --------------------------------------------
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
-    # Name of the game to use in UI.
-    displayName = u'' ## Example: u'Skyrim'
+    # The name of the game that will be shown to the user. That is its *only*
+    # use! There are a few places where this is (mis)used for other purposes
+    # left, those should be hunted down and replaced with dedicated game vars
+    display_name = '' ## Example: 'Skyrim'
+    # A name that must be 100% unique per game, but will also be shown in the
+    # GUI (namely when picking what game to launch). This is automatically set
+    # to display_name, with a (Store) suffix appended (e.g. (Steam)) by the
+    # appropriate mixin classes (e.g. SteamMixin), so there is generally no
+    # need to set it manually
+    unique_display_name = '' ## Example: 'Skyrim Special Edition (Steam)'
     # A name used throughout the codebase for identifying the current game in
     # various situations, e.g. to decide which BSAs to use, which save header
-    # types to use, etc.
+    # types to use, etc. *DEPRECATED* for new uses - introduce dedicated game
+    # vars instead
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
@@ -123,17 +132,18 @@ class GameInfo(object):
     # The name that this game has on the BOSS command line. If empty, indicates
     # that BOSS does not support this game
     boss_game_name = u''
-    # Registry keys to read to find the install location. This is a list of
-    # tuples of two strings, where each tuple defines the subkey and entry to
-    # try. Multiple tuples in the list will be tried in order, with the first
-    # one that works being used.
+    # Registry keys to read to find the install location for GOG. This is a
+    # list of tuples of two strings, where each tuple defines the subkey and
+    # entry to try. Multiple tuples in the list will be tried in order, with
+    # the first one that works being used. Generally automatically generated
+    # via GOGMixin, so there is usually no need to fill this in manually.
     # These are relative to:
     #  HKLM\Software
     #  HKLM\Software\Wow6432Node
     #  HKCU\Software
     #  HKCU\Software\Wow6432Node
     # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
-    registry_keys = []
+    gog_registry_keys = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -176,6 +186,12 @@ class GameInfo(object):
             from .. import brec
             return cls.__master_fids.setdefault(object_id,
                 brec.FormId.from_tuple((cls.master_file, object_id)))
+
+    class St:
+        """Information about this game on Steam."""
+        # The app IDs on Steam. An empty list indicates the game is not
+        # available on Steam
+        steam_ids = []
 
     class Ws(object):
         """Information about this game on the Windows Store."""
@@ -521,7 +537,8 @@ class GameInfo(object):
 
     @fast_cached_property
     def modding_esm_size(self):
-        if self.displayName != 'Oblivion': # hack to avoid a bunch of overrides
+        # Hack to avoid a bunch of overrides
+        if self.display_name != 'Oblivion':
             return FNDict()
         b, e = self.master_file.rsplit('.', 1)
         return FNDict({

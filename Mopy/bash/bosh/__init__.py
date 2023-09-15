@@ -2967,7 +2967,7 @@ class ModInfos(FileInfos):
     @staticmethod
     def plugin_wildcard(file_str=_(u'Mod Files')):
         joinstar = ';*'.join(bush.game.espm_extensions)
-        return f'{bush.game.displayName} {file_str} (*{joinstar})|*{joinstar}'
+        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
@@ -3374,7 +3374,8 @@ class BSAInfos(FileInfos):
     ba2_collisions = set()
 
     def __init__(self):
-        if bush.game.displayName == u'Oblivion':
+        ##: Hack, this should not use display_name
+        if bush.game.display_name == 'Oblivion':
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'

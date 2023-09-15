@@ -28,7 +28,8 @@ import subprocess
 import sys
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 
-from .common import _find_legendary_games, _LegacyWinAppInfo
+from .common import _find_legendary_games, _LegacyWinAppInfo, \
+    _parse_steam_manifests
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
@@ -53,7 +54,7 @@ GOOD_EXITS = (BTN_OK, BTN_YES)
 
 # Internals ===================================================================
 def _getShellPath(folderKey): ##: mkdirs
-    home = os.path.expanduser(u'~')
+    home = os.path.expanduser('~')
     return _GPath({
         'Personal': f'{home}/Documents',
         'Local AppData': f'{home}/.local/share',
@@ -61,6 +62,18 @@ def _getShellPath(folderKey): ##: mkdirs
 
 def _get_error_info():
     return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))
+
+@functools.cache
+def _get_steam_path() -> _Path | None:
+    """Retrieve the path used by Steam."""
+    # Resolve the .steam/root symlink, the user may have moved their Steam
+    # install out of the default (.local/share/Steam) location
+    try:
+        steam_path = os.path.realpath(os.path.expanduser('~/.steam/root'),
+            strict=True)
+    except OSError:
+        return None # Steam path doesn't exist
+    return _GPath_no_norm(steam_path)
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
@@ -80,14 +93,20 @@ def find_egs_games():
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
-def get_registry_game_paths(_submod):
-    return [] # no registry on Linux
+def get_gog_game_paths(_submod):
+    ##: Implement reading from Heroic Games launcher (and maybe others like
+    # Lutris?)
+    return []
 
 def get_legacy_ws_game_info(_submod):
     return _LegacyWinAppInfo() # no Windows Store on Linux
 
 def get_ws_game_paths(_submod):
     return [] # no Windows Store on Linux
+
+def get_steam_game_paths(submod):
+    return [_GPath_no_norm(p) for p in
+            _parse_steam_manifests(submod, _get_steam_path())]
 
 def get_personal_path():
     return _getShellPath(u'Personal'), _get_error_info()

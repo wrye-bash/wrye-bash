@@ -591,7 +591,7 @@ class FomodInstaller(object):
             raise FailedCondition(_('%(game_name)s version %(ver_want)s '
                                     'is required, but %(ver_have)s was '
                                     'found.') % {
-                'game_name': bush.game.displayName,
+                'game_name': bush.game.display_name,
                 'ver_have': game_ver,
                 'ver_want': target_ver,
             })

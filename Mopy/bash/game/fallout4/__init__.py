@@ -23,16 +23,15 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo, ObjectIndexRange
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [1998527297]
 
-class Fallout4GameInfo(PatchGame):
+class AFallout4GameInfo(PatchGame):
     """GameInfo override for Fallout 4."""
-    displayName = u'Fallout 4'
+    display_name = 'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
     game_icon = u'fallout4_%u.png'
@@ -53,7 +52,6 @@ class Fallout4GameInfo(PatchGame):
     taglist_dir = u'Fallout4'
     loot_dir = u'Fallout4'
     loot_game_name = 'Fallout4'
-    registry_keys = [(r'Bethesda Softworks\Fallout4', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = u'bash.installers.openFallout4Nexus.continue'
@@ -951,21 +949,24 @@ class Fallout4GameInfo(PatchGame):
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs
 
-class GOGFallout4GameInfo(GOGMixin, Fallout4GameInfo):
+class GOGFallout4GameInfo(GOGMixin, AFallout4GameInfo):
     """GameInfo override for the GOG version of Fallout 4."""
-    displayName = 'Fallout 4 (GOG)'
     _gog_game_ids = _GOG_IDS
     # appdata_name and my_games_name use the original locations
 
-class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
+class SteamFallout4GameInfo(SteamMixin, AFallout4GameInfo):
+    """GameInfo override for the Steam version of Fallout 4."""
+    class St(AFallout4GameInfo.St):
+        steam_ids = [377160]
+
+class WSFallout4GameInfo(WindowsStoreMixin, AFallout4GameInfo):
     """GameInfo override for the Windows Store version of Fallout 4."""
-    displayName = 'Fallout 4 (WS)'
     my_games_name = 'Fallout4 MS'
     appdata_name = 'Fallout4 MS'
 
-    class Ws(Fallout4GameInfo.Ws):
+    class Ws(AFallout4GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout4-PC'
 
-GAME_TYPE = {g.displayName: g for g in
-             (Fallout4GameInfo, GOGFallout4GameInfo, WSFallout4GameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGFallout4GameInfo, SteamFallout4GameInfo, WSFallout4GameInfo)}

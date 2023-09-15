@@ -48,10 +48,11 @@ import win32gui
 from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
-    _LegacyWinAppInfo, _LegacyWinAppVersionInfo
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
+from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
@@ -564,6 +565,12 @@ def _find_ws_games() -> dict[str, _Path]:
                 found_ws_games[msgame_name] = ws_content_path
     return found_ws_games
 
+@functools.cache
+def _get_steam_path() -> _Path | None:
+    """Retrieve the path used by Steam."""
+    return get_registry_path(r'Valve\Steam', 'InstallPath',
+        lambda p: p.join('steam.exe').is_file())
+
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
 # https://gist.github.com/mkropat/7550097 by Michael Kropat
@@ -1043,9 +1050,9 @@ def get_registry_path(subkey, entry, test_path_callback):
             return installPath
     return None
 
-def get_registry_game_paths(submod):
-    """Check registry-supplied game paths for the game detection file(s)."""
-    reg_keys = submod.registry_keys
+def get_gog_game_paths(submod):
+    """Check registry for games with GOG keys."""
+    reg_keys = submod.gog_registry_keys
     if not reg_keys:
         return [] # Game is not detectable via registry
     for subkey, entry in reg_keys:
@@ -1069,6 +1076,12 @@ def get_ws_game_paths(submod):
             return _get_language_paths(submod.Ws.ws_language_dirs,
                 all_ws_games[ws_app_name])
     return []
+
+def get_steam_game_paths(submod):
+    """Read Steam config information to determine which Steam games are
+    installed and return their install paths."""
+    return [_GPath_no_norm(p) for p in
+            _parse_steam_manifests(submod, _get_steam_path())]
 
 def get_personal_path():
     return (_GPath(_get_known_path(_FOLDERID.Documents)),

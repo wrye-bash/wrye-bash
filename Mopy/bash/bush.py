@@ -35,7 +35,8 @@ from configparser import ConfigParser
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_egs_game_paths, get_legacy_ws_game_info, \
-    get_legacy_ws_game_paths, get_registry_game_paths, get_ws_game_paths
+    get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths,\
+    get_steam_game_paths
 from .exception import BoltError
 from .game import GameInfo, patch_game
 from .initialization import get_path_from_ini
@@ -47,7 +48,8 @@ foundGames: dict[str, Path] = {}    # dict used by the Settings switch game menu
 
 # Module Cache
 _allGames: dict[str, type[GameInfo]] = {}
-_registry_games: dict[str, list[Path]] = {}
+_steam_games: dict[str, list[Path]] = {}
+_gog_games: dict[str, list[Path]] = {}
 _ws_legacy_games: dict[str, list[Path]] = {}
 _ws_games: dict[str, list[Path]] = {}
 _egs_games: dict[str, list[Path]] = {}
@@ -57,7 +59,8 @@ def reset_bush_globals():
     global ws_info
     game = None
     ws_info = None
-    for d in (_allGames, _registry_games):
+    for d in (_allGames, _steam_games, _gog_games, _ws_legacy_games, _ws_games,
+              _egs_games):
         d.clear()
 
 def _print_found_games(game_dict):
@@ -95,16 +98,19 @@ def _supportedGames(skip_ws_games=False):
                 continue
             gtype = module_container.GAME_TYPE
             game_types = gtype if isinstance(gtype, dict) else {
-                gtype.displayName: gtype}
+                gtype.unique_display_name: gtype}
             _allGames.update(game_types)
         except (ImportError, AttributeError):
             deprint(f'Error in game support module {modname}', traceback=True)
             continue
         # Get this game's install path(s)
         for gt_display_name, game_type in game_types.items():
-            registry_paths = get_registry_game_paths(game_type)
-            if registry_paths:
-                _registry_games[gt_display_name] = registry_paths
+            steam_paths = get_steam_game_paths(game_type)
+            if steam_paths:
+                _steam_games[gt_display_name] = steam_paths
+            gog_paths = get_gog_game_paths(game_type)
+            if gog_paths:
+                _gog_games[gt_display_name] = gog_paths
             ws_legacy_paths = get_legacy_ws_game_paths(game_type)
             if ws_legacy_paths:
                 _ws_legacy_games[gt_display_name] = ws_legacy_paths
@@ -122,30 +128,32 @@ def _supportedGames(skip_ws_games=False):
     # hack in settings_dialog)
     msg = ['The following games are supported by this version of Wrye Bash:']
     deduped_games = defaultdict(set)
-    for g in _allGames:
+    for g, _v in dict_sort(_allGames):
         g_split = g.split('(')
         base_game_name = g_split[0].strip()
         if len(g_split) > 1:
             deduped_games[base_game_name].add(g_split[1][:-1])
         else:
-            deduped_games[base_game_name].add('Steam')
+            deduped_games[base_game_name].add('Unknown')
     for base_game_name, game_variants in deduped_games.items():
         fmt_game_variants = ', '.join(sorted(game_variants))
         msg.append(f'  - {base_game_name} ({fmt_game_variants})')
     # Dump out info about all games that we *actually* found
     msg.append('Wrye Bash looked for installations of supported games in the '
                'following places:')
-    msg.append(' 1. Windows Registry:')
-    if _registry_games:
-        msg.append('  The following supported games were found via the '
-                   'registry:')
-        msg.extend(_print_found_games(_registry_games))
+    msg.append(' 1. Steam:')
+    if _steam_games:
+        msg.append('  The following supported games were found via Steam:')
+        msg.extend(_print_found_games(_steam_games))
     else:
-        msg.append('  No supported games were found via the registry.')
-    msg.extend(f'  {wrapped_line}' for wrapped_line in textwrap.wrap(
-        'Make sure to run the launcher of each game you installed through '
-        'Steam once, otherwise Wrye Bash will not be able to find it.'))
-    msg.append(' 2. Windows Store (Legacy):')
+        msg.append('  No supported games were found via Steam.')
+    msg.append(' 2. GOG (via Windows Registry):')
+    if _gog_games:
+        msg.append('  The following supported games were found via GOG:')
+        msg.extend(_print_found_games(_gog_games))
+    else:
+        msg.append('  No supported games were found via GOG.')
+    msg.append(' 3. Windows Store (Legacy):')
     if _ws_legacy_games:
         msg.append('  The following supported games with modding enabled were '
                    'found via the legacy Windows Store:')
@@ -153,7 +161,7 @@ def _supportedGames(skip_ws_games=False):
     else:
         msg.append('  No supported games with modding enabled were found via '
                    'the legacy Windows Store.')
-    msg.append(' 3. Windows Store:')
+    msg.append(' 4. Windows Store:')
     if skip_ws_games:
         msg.append('  Windows Store game detection was disabled via bash.ini.')
     elif _ws_games:
@@ -162,7 +170,7 @@ def _supportedGames(skip_ws_games=False):
         msg.extend(_print_found_games(_ws_games))
     else:
         msg.append('  No supported games were found via the Windows Store.')
-    msg.append(' 4. Epic Games Store:')
+    msg.append(' 5. Epic Games Store:')
     if _egs_games:
         msg.append('  The following supported games were found via the Epic '
                    'Games Store:')
@@ -172,7 +180,7 @@ def _supportedGames(skip_ws_games=False):
                    'Store.')
     deprint('\n'.join(msg))
     # Merge the dicts of games we found from all global sources
-    all_found_games = _registry_games.copy()
+    all_found_games = _steam_games.copy()
     def merge_games(to_merge_games):
         """Helper method for merging games and install paths from various
         sources into the final all_found_games dict."""
@@ -181,6 +189,7 @@ def _supportedGames(skip_ws_games=False):
                 all_found_games[found_game].extend(found_paths)
             else:
                 all_found_games[found_game] = found_paths
+    merge_games(_gog_games)
     merge_games(_ws_legacy_games)
     merge_games(_ws_games)
     merge_games(_egs_games)
@@ -287,4 +296,4 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None,
     return {_allGames[found_game]: fg_path for found_game, fg_path
             in foundGames.items()}
 
-def game_path(display_name): return foundGames[display_name]
+def game_path(target_unique_dn): return foundGames[target_unique_dn]

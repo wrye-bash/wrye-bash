@@ -1651,7 +1651,7 @@ class Mod_Face_Import(OneItemLink):
         wildcard = (_(u'%(game_name)s Saves (*%(save_ext_on)s;'
                       u'*%(save_ext_off)s)')
                     + u'|*%(save_ext_on)s;*%(save_ext_off)s') % {
-            u'game_name': bush.game.displayName,
+            'game_name': bush.game.display_name,
             u'save_ext_on': bush.game.Ess.ext,
             u'save_ext_off': bush.game.Ess.ext[:-1] + u'r',
         }

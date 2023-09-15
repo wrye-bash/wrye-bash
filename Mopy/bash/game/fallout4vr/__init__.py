@@ -21,12 +21,13 @@
 #
 # =============================================================================
 from .. import ObjectIndexRange
-from ..fallout4 import Fallout4GameInfo
+from ..fallout4 import AFallout4GameInfo
+from ..store_mixins import SteamMixin
 from ... import bolt
 
-class Fallout4VRGameInfo(Fallout4GameInfo):
+class _AFallout4VRGameInfo(AFallout4GameInfo):
     """GameInfo override for Fallout 4 VR."""
-    displayName = u'Fallout 4 VR'
+    display_name = 'Fallout 4 VR'
     fsName = u'Fallout4VR'
     game_icon = u'fallout4vr_%u.png'
     altName = u'Wrye VRash'
@@ -42,37 +43,36 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     loot_game_name = 'Fallout4VR'
-    registry_keys = [(r'Bethesda Softworks\Fallout 4 VR', 'Installed Path')]
 
-    espm_extensions = Fallout4GameInfo.espm_extensions - {u'.esl'}
+    espm_extensions = AFallout4GameInfo.espm_extensions - {'.esl'}
     check_esl = False
 
-    class Se(Fallout4GameInfo.Se):
+    class Se(AFallout4GameInfo.Se):
         se_abbrev = u'F4SEVR'
         long_name = u'Fallout 4 VR Script Extender'
         exe = u'f4sevr_loader.exe'
         ver_files = [u'f4sevr_loader.exe', u'f4sevr_steam_loader.dll']
 
-    class Ini(Fallout4GameInfo.Ini):
+    class Ini(AFallout4GameInfo.Ini):
         default_ini_file = u'Fallout4.ini' ##: why not Fallout4_default.ini?
-        dropdown_inis = Fallout4GameInfo.Ini.dropdown_inis + [
+        dropdown_inis = AFallout4GameInfo.Ini.dropdown_inis + [
             u'Fallout4VrCustom.ini'] ##: why is this here?
 
-    class Xe(Fallout4GameInfo.Xe):
+    class Xe(AFallout4GameInfo.Xe):
         full_name = u'FO4VREdit'
         xe_key_prefix = u'fo4vrView'
 
-    class Bain(Fallout4GameInfo.Bain):
+    class Bain(AFallout4GameInfo.Bain):
         skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
-    class Esp(Fallout4GameInfo.Esp):
+    class Esp(AFallout4GameInfo.Esp):
         object_index_range = ObjectIndexRange.RESERVED
         validHeaderVersions = (0.95,)
 
-    allTags = Fallout4GameInfo.allTags | {'NoMerge'}
-    patchers = Fallout4GameInfo.patchers | {'MergePatches'}
+    allTags = AFallout4GameInfo.allTags | {'NoMerge'}
+    patchers = AFallout4GameInfo.patchers | {'MergePatches'}
 
-    bethDataFiles = Fallout4GameInfo.bethDataFiles | {
+    bethDataFiles = AFallout4GameInfo.bethDataFiles | {
         'fallout4 - misc - beta.ba2',
         'fallout4 - misc - debug.ba2',
         'fallout4_vr - main.ba2',
@@ -85,4 +85,9 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-GAME_TYPE = Fallout4VRGameInfo
+class SteamFallout4VRGameInfo(SteamMixin, _AFallout4VRGameInfo):
+    """GameInfo override for the Steam version of Fallout 4 VR."""
+    class St(_AFallout4VRGameInfo.St):
+        steam_ids = [611660]
+
+GAME_TYPE = SteamFallout4VRGameInfo

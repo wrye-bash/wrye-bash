@@ -23,9 +23,8 @@
 import struct as _struct
 
 from .. import WS_COMMON_FILES, GameInfo
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [
@@ -34,9 +33,9 @@ _GOG_IDS = [
     1440163901, # Package
 ]
 
-class MorrowindGameInfo(PatchGame):
+class _AMorrowindGameInfo(PatchGame):
     """GameInfo override for TES III: Morrowind."""
-    displayName = u'Morrowind'
+    display_name = 'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
     game_icon = u'morrowind_%u.png'
@@ -54,8 +53,6 @@ class MorrowindGameInfo(PatchGame):
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
     loot_game_name = 'Morrowind'
-    # This is according to xEdit's sources, but it doesn't make that key for me
-    registry_keys = [(r'Bethesda Softworks\Morrowind', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/morrowind/'
     nexusName = u'Morrowind Nexus'
     nexusKey = u'bash.installers.openMorrowindNexus.continue'
@@ -155,23 +152,26 @@ class MorrowindGameInfo(PatchGame):
         sub.sub_header_size = 8
         cls._import_records(__name__)
 
-class GOGMorrowindGameInfo(GOGMixin, MorrowindGameInfo):
+class GOGMorrowindGameInfo(GOGMixin, _AMorrowindGameInfo):
     """GameInfo override for the GOG version of Morrowind."""
-    displayName = 'Morrowind (GOG)'
     _gog_game_ids = _GOG_IDS
     # Morrowind does not use the personal folders, so no my_games_name etc.
 
-class WSMorrowindGameInfo(WindowsStoreMixin, MorrowindGameInfo):
+class SteamMorrowindGameInfo(SteamMixin, _AMorrowindGameInfo):
+    """GameInfo override for the Steam version of Morrowind."""
+    class St(_AMorrowindGameInfo.St):
+        steam_ids = [22320]
+
+class WSMorrowindGameInfo(WindowsStoreMixin, _AMorrowindGameInfo):
     """GameInfo override for the Windows Store version of Morrowind."""
-    displayName = 'Morrowind (WS)'
     # Morrowind does not use the personal folders, so no my_games_name etc.
 
-    class Ws(MorrowindGameInfo.Ws):
+    class Ws(_AMorrowindGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESMorrowind-PC'
         ws_language_dirs = ['Morrowind GOTY English',
                             'Morrowind GOTY French',
                             'Morrowind GOTY German']
 
-GAME_TYPE = {g.displayName: g for g in
-             (MorrowindGameInfo, GOGMorrowindGameInfo, WSMorrowindGameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGMorrowindGameInfo, SteamMorrowindGameInfo, WSMorrowindGameInfo)}

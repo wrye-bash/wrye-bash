@@ -80,7 +80,7 @@ def InitStatusBar():
             bass.dirs['app'].join(bush.game.launch_exe),
             bass.dirs['app'].join(bush.game.version_detect_file),
             _png_list(f'games/{bush.game.game_icon}'),
-            _('Launch %(game_name)s') % {'game_name': bush.game.displayName},
+            _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
             _('Launch %(game_name)s %(app_version)s')),
     ]
     if bush.game.Ck.ck_abbrev:
@@ -107,8 +107,10 @@ def InitStatusBar():
         App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
             _png_list('tools/tes4view%s.png'), _('Launch TES4View'),
             uid='TES4View'))
+    all_xes = set()
     for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
-        xe_name = game_class.Xe.full_name
+        all_xes.add(game_class.Xe.full_name)
+    for xe_name in all_xes:
         all_links.append(App_xEdit((bass.tooldirs[f'{xe_name}Path'],
              '-%s -edit' % xe_name[:-4]), # chop off edit
             _png_list('tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,

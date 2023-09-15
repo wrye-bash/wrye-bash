@@ -645,7 +645,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'This probably means that the plugin was not properly '
               u'converted to work with %(game_name)s.') % {
             u'ck_name': bush.game.Ck.long_name,
-            u'game_name': bush.game.displayName,
+            'game_name': bush.game.display_name,
         })
         log_plugins(old_fvers)
     if cleaning_messages:
@@ -706,7 +706,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               'subrecord to restore the correct data, which should usually be '
               'done by the mod author. Failing that, the safest course of '
               'action is to uninstall the plugins.') % {
-            u'game_name': bush.game.displayName,
+            'game_name': bush.game.display_name,
             u'ck_name': bush.game.Ck.long_name,
         })
         log_plugin_messages(old_weaps)

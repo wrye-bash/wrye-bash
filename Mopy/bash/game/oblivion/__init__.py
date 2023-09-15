@@ -23,9 +23,8 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [
@@ -33,9 +32,9 @@ _GOG_IDS = [
     1242989820, # Package
 ]
 
-class OblivionGameInfo(PatchGame):
+class AOblivionGameInfo(PatchGame):
     """GameInfo override for TES IV: Oblivion."""
-    displayName = u'Oblivion'
+    display_name = 'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
     game_icon = u'oblivion_%u.png'
@@ -57,7 +56,6 @@ class OblivionGameInfo(PatchGame):
     loot_dir = u'Oblivion'
     loot_game_name = 'Oblivion'
     boss_game_name = u'Oblivion'
-    registry_keys = [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'
@@ -1191,7 +1189,7 @@ class OblivionGameInfo(PatchGame):
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
-        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        super(AOblivionGameInfo, cls)._dynamic_import_modules(package_name)
         from .patcher import checkers, preservers
         cls.gameSpecificPatchers = {
             u'CoblCatalogs': checkers.CoblCatalogsPatcher,
@@ -1226,20 +1224,23 @@ class OblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
-class GOGOblivionGameInfo(GOGMixin, OblivionGameInfo):
+class GOGOblivionGameInfo(GOGMixin, AOblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
-    displayName = 'Oblivion (GOG)'
     _gog_game_ids = _GOG_IDS
     # appdata_name and my_games_name use the original locations
     check_legacy_paths = False
 
-class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
+class SteamOblivionGameInfo(SteamMixin, AOblivionGameInfo):
+    """GameInfo override for the Steam version of Oblivion."""
+    class St(AOblivionGameInfo.St):
+        steam_ids = [22330]
+
+class WSOblivionGameInfo(WindowsStoreMixin, AOblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""
-    displayName = 'Oblivion (WS)'
     # appdata_name and my_games_name use the original locations
     check_legacy_paths = False
 
-    class Ws(OblivionGameInfo.Ws):
+    class Ws(AOblivionGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESOblivion-PC'
         ws_language_dirs = ['Oblivion GOTY English',
@@ -1248,5 +1249,5 @@ class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
                             'Oblivion GOTY Italian',
                             'Oblivion GOTY Spanish']
 
-GAME_TYPE = {g.displayName: g for g in
-             (OblivionGameInfo, GOGOblivionGameInfo, WSOblivionGameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo)}
