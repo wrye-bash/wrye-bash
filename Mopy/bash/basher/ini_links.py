@@ -20,10 +20,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Menu items for the main and item menus of the ini tweaks tab - their window
-attribute points to BashFrame.iniList singleton.
-"""
+attribute points to IniList singleton."""
+
 from .. import balt, bass, bosh
 from ..balt import BoolLink, EnabledLink, ItemLink, OneItemLink, \
     UIList_OpenItems

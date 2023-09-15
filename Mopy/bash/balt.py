@@ -26,9 +26,11 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial, wraps
+from typing import final
 
 import wx
 import wx.adv
@@ -46,6 +48,7 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
     askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
 from .gui.base_components import _AComponent
+from .tab_comms import SAVES
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -700,6 +703,10 @@ class UIList(PanelWin):
     def __init__(self, parent, keyPrefix, listData=None, panel=None):
         super().__init__(parent, wants_chars=True, no_border=False)
         self.data_store = listData # never use as local variable name !
+        try:
+            Link.Frame.all_uilists[self.data_store.unique_store_key] = self
+        except AttributeError:
+            pass # not one of the singleton DataStores
         self.panel = panel
         #--Settings key
         self.keyPrefix = keyPrefix
@@ -871,10 +878,21 @@ class UIList(PanelWin):
 
     __all = ()
     _same_item = object()
+    @final
     def RefreshUI(self, *, redraw=__all, to_del=__all,
-            detail_item=_same_item, focus_list=True, **kwargs):
-        """Populate specified files or ALL files, sort, set status bar count.
-        """
+            detail_item=_same_item, focus_list=True,
+            refresh_others: defaultdict[str, bool] | None = None):
+        """Populate specified files or ALL files, sort, set status bar count,
+        etc. See parameter docs below.
+
+        :param redraw: If specified, refresh only these UIList items.
+        :param to_del: If specified, delete only these UIList items. If both
+            this and redraw are kept at the default, entirely repopulate this
+            UIList.
+        :param focus_list: If True, focus this UIList.
+        :param refresh_others: A dict mapping unique data store keys (see
+            tab_comms.py) to booleans that indicate whether or not to refresh
+            that tab. If None, no other tab will be refreshed."""
         if redraw is to_del is self.__all:
             self.populate_items()
         else:  #--Iterable
@@ -891,6 +909,20 @@ class UIList(PanelWin):
         self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
+        if refresh_others:
+            if refresh_others[self.data_store_key]:
+                deprint("A tab's own data store key got passed to "
+                        "refresh_others, this will cause an unnecessary "
+                        "refresh - fix it!", traceback=True)
+            Link.Frame.distribute_ui_refresh(refresh_others)
+
+    def issue_warnings(self,
+            warn_others: defaultdict[str, bool] | None = None):
+        """Show warnings for this tab and any others that are specified."""
+        final_warn_dict = defaultdict(bool, {self.data_store_key: True})
+        if warn_others:
+            final_warn_dict |= warn_others
+        Link.Frame.distribute_warnings(final_warn_dict)
 
     def _refresh_details(self, redraw, detail_item):
         if detail_item is None:
@@ -1449,7 +1481,7 @@ class UIList(PanelWin):
         try:
             self.data_store.delete(dd_items, recycle=dd_recycle)
         except (PermissionError, CancelError, SkipError): pass
-        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
+        self.RefreshUI(refresh_others=SAVES) # also cleans _gList internal dicts
 
     def open_data_store(self):
         try:
@@ -2105,7 +2137,7 @@ class UIList_Hide(EnabledLink):
                           {'hdir': self._data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
         self.window.hide(self._filter_unhideable(self.selected))
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=SAVES)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------

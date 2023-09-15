@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """Menu items for the _main_ menu of the mods tab - their window attribute
-points to BashFrame.modList singleton."""
+points to ModList singleton."""
 
 from .dialogs import CreateNewPlugin
 from .frames import PluginChecker
@@ -33,6 +33,7 @@ from ..bolt import FName, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
     get_shift_down, showError, askYes
 from ..parsers import CsvParser
+from ..tab_comms import SAVES
 
 __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
            'Mods_OblivionEsmMenu', 'Mods_CreateBlankBashedPatch',
@@ -79,7 +80,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
     def _refresh_mods_ui(self):
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=SAVES)
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
@@ -273,7 +274,11 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
         """Handle selection."""
         if bosh.modInfos.voCurrent == self._version_key: return
         bosh.modInfos.setOblivionVersion(self._version_key, askYes)
-        self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
+        bosh.modInfos.setOblivionVersion(self._version_key)
+        ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
+        # not any of the modding ESMs. Maybe we should enforce that those
+        # modding ESMs are never active and drop this refresh_others?
+        self.window.RefreshUI(refresh_others=SAVES)
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)

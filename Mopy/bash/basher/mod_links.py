@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """Menu items for the _item_ menu of the mods tab - their window attribute
-points to BashFrame.modList singleton."""
+points to ModList singleton."""
 
 import copy
 import io
@@ -50,6 +50,7 @@ from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
     FactionRelations, FidReplacer, FullNames, IngredientDetails, ItemPrices, \
     ItemStats, ScriptText, SigilStoneDetails, SpellRecords, _AParser
 from ..patcher.patch_files import PatchFile
+from ..tab_comms import SAVES
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
@@ -225,7 +226,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
         bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(refreshSaves=True, detail_item=to_select[-1])
+        self.window.RefreshUI(detail_item=to_select[-1], refresh_others=SAVES)
         self.window.SelectItemsNoCallback(to_select)
 
 #------------------------------------------------------------------------------
@@ -261,7 +262,7 @@ class Mod_OrderByName(EnabledLink):
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=SAVES)
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -305,7 +306,8 @@ class Mod_Move(EnabledLink):
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(refreshSaves=True, detail_item=self.selected[0])
+        self.window.RefreshUI(detail_item=self.selected[0],
+            refresh_others=SAVES)
 
 #------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
@@ -996,7 +998,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 for mod in self.mods_to_reselect:
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 bosh.modInfos.cached_lo_save_active()
-                self.window.RefreshUI(refreshSaves=True)
+                self.window.RefreshUI(refresh_others=SAVES)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
@@ -1079,7 +1081,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         self.mods_to_reselect = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
-            self.window.RefreshUI(refreshSaves=True)
+            self.window.RefreshUI(refresh_others=SAVES)
         return True
 
 #------------------------------------------------------------------------------
@@ -1399,7 +1401,7 @@ class _CopyToLink(EnabledLink):
         if added:
             if do_save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=True, # just in case
+            self.window.RefreshUI(refresh_others=SAVES,
                                   detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
 
@@ -1504,9 +1506,8 @@ class _AFlipFlagLink(EnabledLink):
             # plugin that was affected to update the Indices column
             lowest_selected = min(self.selected,
                                   key=load_order.cached_lo_index_or_max)
-            self.window.RefreshUI(
-                redraw=load_order.cached_higher_loading(lowest_selected),
-                refreshSaves=True)
+            self.window.RefreshUI(refresh_others=SAVES,
+                redraw=load_order.cached_higher_loading(lowest_selected))
 
 class Mod_FlipEsm(_AFlipFlagLink):
     """Add or remove the ESM flag. Extension must be .esp or .esu."""

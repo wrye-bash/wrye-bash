@@ -23,7 +23,7 @@
 
 """Installer*: Menu items for the __item__ menu of the installer tab. Their
 window attribute points to the InstallersList singleton. Check before using
-BashFrame.iniList - can be None (ini panel not shown).
+IniList singleton - can be None (ini panel not shown).
 Installer_Espm_*: Menu items for the Plugin Filter list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
@@ -50,6 +50,7 @@ from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
+from ..tab_comms import KEY_INIS, INIS
 from ..wbtemp import cleanup_temp_dir
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
@@ -216,7 +217,8 @@ class _Installer_ARunFomod(_Installer_AFomod):
                             'package_name': sel_package.fn_key
                         }, title=_('Invalid FOMOD XML Syntax'))
         finally:
-            self.iPanel.RefreshUIMods(ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.issue_warnings(warn_others=ui_refresh)
 
     def _execute_action(self, sel_package, ret, ui_refresh):
         raise NotImplementedError
@@ -369,14 +371,14 @@ class Installer_Wizard(_Installer_AWizardLink):
                     self._perform_install(sel_package, ui_refresh)
                 self._apply_tweaks(sel_package, ret, ui_refresh)
         finally:
-            self.iPanel.RefreshUIMods(ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.issue_warnings(warn_others=ui_refresh)
 
     def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         new_targets = {}
-        ini_uir_key = bosh.iniInfos.unique_store_key
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
@@ -389,7 +391,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                 out.write(u'\n')
             bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
             # trigger refresh UI
-            ui_refresh[ini_uir_key] = True
+            ui_refresh |= INIS
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
@@ -414,12 +416,12 @@ class Installer_Wizard(_Installer_AWizardLink):
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             target_updated = bosh.INIInfos.update_targets(new_targets)
-            if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.detailsPanel.set_choice(
+            if (ini_uilist := BashFrame.all_uilists[KEY_INIS]) is not None:
+                ini_uilist.panel.detailsPanel.set_choice(
                     target_path.stail, reset_choices=target_updated)
-                BashFrame.iniList.panel.ShowPanel(focus_list=False,
-                                                  detail_item=lastApplied)
-            ui_refresh[ini_uir_key] = False
+                ini_uilist.panel.ShowPanel(focus_list=False,
+                                           detail_item=lastApplied)
+            ui_refresh[KEY_INIS] = False
         if len(manuallyApply) > 0:
             message = _('The following INI Tweaks were not automatically '
                         'applied. Be sure to apply them after installing the '
@@ -458,7 +460,8 @@ class Installer_Anneal(_NoMarkerLink):
         except (CancelError,SkipError):
             pass
         finally:
-            self.iPanel.RefreshUIMods(ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.issue_warnings(warn_others=ui_refresh)
 
 class Installer_Duplicate(_SingleInstallable):
     """Duplicate selected Installer."""
@@ -577,11 +580,12 @@ class Installer_Install(_NoMarkerLink):
                     self._showError(f'{e}')
                     return
         finally:
-            self.iPanel.RefreshUIMods(ui_refresh)
-        # No error occurred and we didn't cancel or skip, but let RefreshUIMods
-        # run first so it can update checkbox colors
+            self.window.RefreshUI(refresh_others=ui_refresh)
+        # No error occurred and we didn't cancel or skip, but let RefreshUI run
+        # first so it can update checkbox colors
         self._warn_nothing_installed()
         self._warn_mismatched_ini_tweaks_created(new_tweaks)
+        self.window.issue_warnings(warn_others=ui_refresh)
 
     def _warn_mismatched_ini_tweaks_created(self, new_tweaks):
         if not new_tweaks: return
@@ -887,7 +891,7 @@ class Installer_Uninstall(_NoMarkerLink):
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:
-            self.iPanel.RefreshUIMods(ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
