@@ -30,10 +30,10 @@ from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
+from ..bass import Store
 from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     showError
-from ..tab_comms import MODS, SAVES
 
 __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
@@ -444,7 +444,8 @@ class _AApp_LOManager(_ExeButton):
                 bosh.modInfos.refresh(
                     refresh_infos=not bush.game.using_txt_file)
             # Refresh UI, so WB is made aware of the changes to load order
-            Link.Frame.distribute_ui_refresh(ui_refresh=MODS | SAVES)
+            Link.Frame.distribute_ui_refresh(
+                ui_refresh=Store.MODS.DO() | Store.SAVES.DO())
         else:
             super().Execute()
 

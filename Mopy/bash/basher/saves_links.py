@@ -32,6 +32,7 @@ from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
+from ..bass import Store
 from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
@@ -39,7 +40,6 @@ from ..exception import ArgumentError, BoltError, ModError
 from ..gui import BusyCursor, FileSave, ImageWrapper, askText, showError, \
     askYes, showOk
 from ..mod_files import LoadFactory, MasterMap, ModFile
-from ..tab_comms import MODS
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
            u'Save_ActivateMasters', u'Save_DiffMasters', u'Save_Stats',
@@ -188,7 +188,8 @@ class Saves_Profiles(ChoiceLink):
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
                 bosh.saveInfos.refresh()
                 self.window.DeleteAll() # let call below repopulate
-                self.window.RefreshUI(detail_item=None, refresh_others=MODS)
+                self.window.RefreshUI(detail_item=None,
+                                      refresh_others=Store.MODS.DO())
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_saves=True)
 
@@ -223,7 +224,7 @@ class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
         lo_warn_msg = self._lo_operation()
-        self.window.RefreshUI(focus_list=False, refresh_others=MODS)
+        self.window.RefreshUI(focus_list=False, refresh_others=Store.MODS.DO())
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)

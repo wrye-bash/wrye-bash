@@ -24,9 +24,9 @@ import re
 
 from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
+from ..bass import Store
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
-from ..tab_comms import SAVES
 from ..wbtemp import TempFile
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
@@ -79,7 +79,7 @@ class Files_Unhide(ItemLink):
             self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
-                detail_item=next(iter(moved)), refresh_others=SAVES)
+                detail_item=next(iter(moved)), refresh_others=Store.SAVES.DO())
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -347,7 +347,7 @@ class File_Redate(ItemLink):
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
         self._perform_refresh()
-        self.window.RefreshUI(refresh_others=SAVES)
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):

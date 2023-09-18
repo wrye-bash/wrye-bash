@@ -43,7 +43,7 @@ from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
 from .save_headers import get_save_header_type
 from .. import archives, bass, bolt, bush, env, initialization, load_order
-from ..bass import dirs, inisettings
+from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
@@ -57,8 +57,6 @@ from ..game import MergeabilityCheck
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
-from ..tab_comms import KEY_BSAS, KEY_INIS, KEY_INSTALLERS, KEY_MODS, \
-    KEY_SAVES, KEY_SCREENSHOTS
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
@@ -1468,7 +1466,7 @@ class DataStore(DataDict):
     store_dir = empty_path # where the data sit, static except for SaveInfos
     # Each subclass must define this. Used when information related to the
     # store is passed between the GUI and the backend
-    unique_store_key: str
+    unique_store_key: Store
 
     def __init__(self, store_dict=None):
         super().__init__(FNDict() if store_dict is None else store_dict)
@@ -1821,7 +1819,7 @@ class INIInfos(TableFileInfos):
     :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
-    unique_store_key = KEY_INIS
+    unique_store_key = Store.INIS
 
     def __init__(self):
         self._default_tweaks = FNDict((k, DefaultIniInfo(k, v)) for k, v in
@@ -2090,7 +2088,7 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
-    unique_store_key = KEY_MODS
+    unique_store_key = Store.MODS
 
     def __init__(self):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
@@ -3393,7 +3391,7 @@ class SaveInfos(FileInfos):
     # Enabled and disabled saves, no .bak files ##: needed?
     file_pattern = re.compile('(%s)(f?)$' % '|'.join(r'\.%s' % s for s in
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I | re.U)
-    unique_store_key = KEY_SAVES
+    unique_store_key = Store.SAVES
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -3569,7 +3567,7 @@ class BSAInfos(FileInfos):
     # Maps BA2 hashes to BA2 names, used to detect collisions
     _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
-    unique_store_key = KEY_BSAS
+    unique_store_key = Store.BSAS
 
     def __init__(self):
         ##: Hack, this should not use display_name
@@ -3652,7 +3650,7 @@ class ScreenInfos(FileInfos):
     _ss_skips = {FName(s) for s in (
         'enblensmask.png', 'enbpalette.bmp', 'enbsunsprite.bmp',
         'enbsunsprite.tga', 'enbunderwaternoise.bmp')}
-    unique_store_key = KEY_SCREENSHOTS
+    unique_store_key = Store.SCREENSHOTS
 
     def __init__(self):
         self._orig_store_dir: bolt.Path = dirs[u'app']

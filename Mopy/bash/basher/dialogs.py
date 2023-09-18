@@ -22,9 +22,11 @@
 # =============================================================================
 import webbrowser
 from dataclasses import dataclass
+from typing import Iterable
 
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
-from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors
+from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors, Link
+from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
 from ..bosh import ModInfo, faces
@@ -892,16 +894,25 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
             wl.auto_wrap()
         self.update_layout()
 
-class _AModsChangeHighlightDialog(_AChangeHighlightDialog):
-    """Version of _AChangeHighlightDialog for the Mods tab."""
-    @staticmethod
-    def make_change_entry(*, mods_list_images: ImageList,
-            mods_change_desc: str, decorated_plugins: DecoratedTreeDict):
-        """Helper for creating a _ChangeData object for load order
-        sanitizations."""
-        return _ChangeData(uil_image_list=mods_list_images,
-            change_desc=mods_change_desc, changed_items=decorated_plugins,
-            parent_tab_key='Mods')
+    @classmethod
+    def make_change_entry(cls, warn_change_desc: str,
+            warning_items: Iterable[FName] | dict[FName, list[FName]],
+            data_key=Store.MODS):
+        """Create a _ChangeData object for multi-warning dialogs."""
+        target_uil = Link.Frame.all_uilists[data_key]
+        if target_uil is not None:
+            tree_dict = warning_items if isinstance(warning_items, dict) else {
+                i: [] for i in sorted(warning_items)}
+            warning_dec_items = target_uil.decorate_tree_dict(tree_dict)
+            uil_images = target_uil._icons
+        else:
+            # Tab is not enabled, no way to decorate with it
+            warning_dec_items = {
+                i: (None, []) for i in sorted(warning_items)}
+            uil_images = None
+        return _ChangeData(uil_image_list=uil_images,
+            change_desc=warn_change_desc, changed_items=warning_dec_items,
+            parent_tab_key=data_key.value)
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name
@@ -913,14 +924,12 @@ class _ALORippleHighlightDialog(_AChangeHighlightDialog):
     _change_title: str
     _change_desc: str
 
-    def __init__(self, parent, *, mods_list_images: ImageList,
-            decorated_plugins: DecoratedTreeDict):
+    def __init__(self, parent, changes_dict: dict[FName, list[FName]]):
         # Only count the additional masters/dependents
-        total_affected = sum(len(v[1]) for v in decorated_plugins.values())
-        super().__init__(parent, highlight_changes=[_ChangeData(
-            uil_image_list=mods_list_images,
-            change_desc=self._change_desc % {'num_affected': total_affected},
-            changed_items=decorated_plugins, parent_tab_key='Mods')])
+        total_affected = sum(map(len, changes_dict.values()))
+        change_desc = self._change_desc % {'num_affected': total_affected}
+        super().__init__(parent, highlight_changes=[self.make_change_entry(
+            change_desc, changes_dict)])
 
 class MastersAffectedDialog(_ALORippleHighlightDialog):
     """Dialog shown when a plugin was activated and thus its masters got
@@ -941,7 +950,7 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
                      'dependent(s) to be deactivated as well.')
 
 #------------------------------------------------------------------------------
-class LoadOrderSanitizedDialog(_AModsChangeHighlightDialog):
+class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
     """Dialog shown when certain load order problems have been fixed."""
     title = _('Warning: Load Order Sanitized')
 
@@ -951,17 +960,8 @@ class MultiWarningDialog(_AChangeHighlightDialog):
     setup."""
     title = _('Warnings')
 
-    @staticmethod
-    def make_change_entry(*, uil_images: ImageList, warn_change_desc: str,
-            decorated_items: DecoratedTreeDict, origin_tab_key: str):
-        """Helper for creating a _ChangeData object for multi-warning
-        dialogs."""
-        return _ChangeData(uil_image_list=uil_images,
-            change_desc=warn_change_desc, changed_items=decorated_items,
-            parent_tab_key=origin_tab_key)
-
 #------------------------------------------------------------------------------
-class MasterErrorsDialog(_AModsChangeHighlightDialog):
+class MasterErrorsDialog(_AChangeHighlightDialog):
     """Dialog shown when Wrye Bash detected master errors before building a
     BP."""
     title = _('Master Errors')

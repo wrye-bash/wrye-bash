@@ -44,10 +44,10 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items
+from ..bass import Store
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
-from ..tab_comms import INIS_IF, KEY_INSTALLERS, MODS
 from ..wbtemp import TempFile, cleanup_temp_dir, new_temp_dir
 
 os_sep = os.path.sep ##: track
@@ -1699,7 +1699,7 @@ class InstallersData(DataStore):
     installers_dir_skips = set()
     file_pattern = re.compile(
         fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
-    unique_store_key = KEY_INSTALLERS
+    unique_store_key = Store.INSTALLERS
 
     def __init__(self):
         super().__init__()
@@ -2579,7 +2579,7 @@ class InstallersData(DataStore):
                 if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
-                refresh_ui |= INIS_IF(bool(tweaksCreated))
+                refresh_ui |= Store.INIS.IF(tweaksCreated)
             return tweaksCreated
         finally:
             self.refresh_ns()
@@ -2836,7 +2836,7 @@ class InstallersData(DataStore):
                     full_path.moveTo(destDir.join(filename)) # will drop .ghost
                     if modInfos.rightFileType(full_path.stail):
                         mods.add(FName(str(filename)))
-                        refresh_ui |= MODS
+                        refresh_ui |= Store.MODS.DO()
                     self.data_sizeCrcDate.pop(filename, None)
                     emptyDirs.add(full_path.head)
                 except (StateError, OSError):

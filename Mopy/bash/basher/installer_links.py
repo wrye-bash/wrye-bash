@@ -45,12 +45,12 @@ from .gui_fomod import InstallerFomod
 from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
+from ..bass import Store
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
-from ..tab_comms import KEY_INIS, INIS
 from ..wbtemp import cleanup_temp_dir
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
@@ -391,7 +391,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                 out.write(u'\n')
             bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
             # trigger refresh UI
-            ui_refresh |= INIS
+            ui_refresh |= Store.INIS.DO()
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
             game_ini = bosh.get_game_ini(iniFile, is_abs=False)
@@ -416,12 +416,12 @@ class Installer_Wizard(_Installer_AWizardLink):
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             target_updated = bosh.INIInfos.update_targets(new_targets)
-            if (ini_uilist := BashFrame.all_uilists[KEY_INIS]) is not None:
+            if (ini_uilist := BashFrame.all_uilists[Store.INIS]) is not None:
                 ini_uilist.panel.detailsPanel.set_choice(
                     target_path.stail, reset_choices=target_updated)
                 ini_uilist.panel.ShowPanel(focus_list=False,
                                            detail_item=lastApplied)
-            ui_refresh[KEY_INIS] = False
+            ui_refresh[Store.INIS] = False
         if len(manuallyApply) > 0:
             message = _('The following INI Tweaks were not automatically '
                         'applied. Be sure to apply them after installing the '

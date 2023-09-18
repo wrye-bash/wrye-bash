@@ -99,7 +99,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
                 refresh_result = store.refresh()
                 ##: This is really ugly - refresh() should pick one type and
                 # return that consistently, not sometimes tuple[set, set, set]
-                # and sometimes bool
+                # and sometimes bool - plus this is *duplicated in RefreshData
+                # now*!
                 if isinstance(refresh_result, tuple):
                     refresh_result = any(refresh_result)
                 # May be an int etc.

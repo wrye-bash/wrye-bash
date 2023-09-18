@@ -29,6 +29,7 @@ from datetime import timedelta
 
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
+from ..bass import Store
 from ..bolt import GPath_no_norm, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
     PluginsFullError, SkipError
@@ -38,7 +39,6 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning
 from ..patcher import exportConfig
-from ..tab_comms import SAVES_IF
 from ..wbtemp import TempDir
 
 # Final lists of gui patcher classes instances, initialized in
@@ -262,7 +262,7 @@ class PatchDialog(DialogWindow):
                 # would not detect the crc change. That's a general problem
                 # with crc cache - API limits
                 info.calculate_crc(recalculate=True)
-            self.parent.RefreshUI(refresh_others=SAVES_IF(bool(count)))
+            self.parent.RefreshUI(refresh_others=Store.SAVES.IF(count))
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly
