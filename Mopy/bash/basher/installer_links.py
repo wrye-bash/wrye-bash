@@ -970,14 +970,13 @@ class Installer_CopyConflicts(_SingleInstallable):
 #------------------------------------------------------------------------------
 class _Installer_Details_Link(EnabledLink):
     window: InstallersDetails
+    selected: int
 
     def _enable(self): return len(self.window.espm_checklist_fns) != 0
 
-    def _initData(self, window, selection):
-        """:type window: bosh.InstallersDetails
-        :type selection: int"""
-        super(_Installer_Details_Link, self)._initData(window, selection)
-        self._installer = self.window.file_info
+    @property
+    def _installer(self):
+        return self.window.file_info
 
 class Installer_Espm_SelectAll(_Installer_Details_Link):
     """Select all plugins in installer for installation."""

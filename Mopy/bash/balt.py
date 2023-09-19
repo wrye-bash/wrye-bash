@@ -223,10 +223,10 @@ def get_dv_bitmaps():
         'back.16', 'forward.16', 'reload.16'))
 
 # TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bitmap=None):
+def staticBitmap(parent, bmp=None):
     """Tailored to current usages - IAW: do not use."""
     return wx.StaticBitmap(_AComponent._resolve(parent),
-        bitmap=images['warning.32'].get_bitmap() if bitmap is None else bitmap)
+        bitmap=images['warning.32'].get_bitmap() if bmp is None else bmp)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -58,7 +58,7 @@ class _TopLevelWin(_AComponent):
         self._set_pos_size(kwargs)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
-        if icon_bundle: self.set_icons(icon_bundle)
+        if icon_bundle is not None: self.set_icons(icon_bundle)
         if self._min_size: self.set_min_size(*self._min_size) ##: shouldn't we set this in _set_pos_size??
 
     def _set_pos_size(self, kwargs):

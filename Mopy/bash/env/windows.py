@@ -216,21 +216,21 @@ def _get_default_app_icon(idex, target):
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
-            icon = filedata
+            icon_path = filedata
         else:
-            icon, idex = filedata.split(u',')
-            icon = os.path.expandvars(icon)
-        if not os.path.isabs(icon):
+            icon_path, idex = filedata.split(',')
+            icon_path = os.path.expandvars(icon_path)
+        if not os.path.isabs(icon_path):
             # Get the correct path to the dll
             for dir_ in os.environ[u'PATH'].split(u';'):
-                test = os.path.join(dir_, icon)
+                test = os.path.join(dir_, icon_path)
                 if os.path.exists(test):
-                    icon = test
+                    icon_path = test
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
         _deprint(f'Error finding icon for {target}:', traceback=True)
-        icon = u'not\\a\\path'
-    return icon, idex
+        icon_path = r'not\a\path'
+    return icon_path, idex
 
 def _get_app_links(apps_dir):
     """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
@@ -1094,7 +1094,7 @@ def get_local_app_data_path(_submod):
 
 def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
-    for path, (target, icon, shortcut_descr) in _get_app_links(
+    for path, (target, icon_location, shortcut_descr) in _get_app_links(
             apps_dir).items():
         # msi shortcuts: dc0c8de
         if target.lower().find(r'installer\{') != -1:
@@ -1105,30 +1105,30 @@ def init_app_links(apps_dir, badIcons, iconList):
         # Target exists - extract path, icon and shortcut_descr
         # First try a custom icon #TODO(ut) docs - also comments methods here!
         fileName = f'{path.sbody}%i.png'
-        customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
-        if customIcons[0].exists():
-            icon = customIcons
+        custom_icon_paths = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
+        if custom_icon_paths[0].exists():
+            icon_location = custom_icon_paths
         # Next try the shortcut specified icon
         else:
-            icon, idex = icon.split(u',')
-            if icon == u'':
+            icon_location, idex = icon_location.split(',')
+            if icon_location == '':
                 if target.cext == u'.exe':
                     if win32gui and win32gui.ExtractIconEx(target.s, -1):
                         # -1 queries num of icons embedded in the exe
-                        icon = target
+                        icon_location = target
                     else: # generic exe icon, hardcoded and good to go
-                        icon, idex = os.path.expandvars(
+                        icon_location, idex = os.path.expandvars(
                             u'%SystemRoot%\\System32\\shell32.dll'), u'2'
                 else:
-                    icon, idex = _get_default_app_icon(idex, target)
-            icon = _GPath(icon)
-            if icon.exists():
-                fileName = u';'.join((icon.s, idex))
-                icon = iconList(_GPath(fileName))
+                    icon_location, idex = _get_default_app_icon(idex, target)
+            icon_location = _GPath(icon_location)
+            if icon_location.exists():
+                fileName = ';'.join((icon_location.s, idex))
+                icon_location = iconList(_GPath(fileName))
                 # Last, use the 'x' icon
             else:
-                icon = badIcons
-        init_params.append((path, icon, shortcut_descr))
+                icon_location = badIcons
+        init_params.append((path, icon_location, shortcut_descr))
     return init_params
 
 def get_file_version(filename):
@@ -1379,11 +1379,11 @@ class TaskDialog(object):
         self._default_radio = default
         return self
 
-    def set_footer_icon(self, icon):
+    def set_footer_icon(self, footer_icon: str):
         """Set the icon that appears in the footer of the dialog."""
-        self._footer_is_stock = icon in self.stock_icons
+        self._footer_is_stock = footer_icon in self.stock_icons
         self._footer_icon = self.stock_icons[
-            icon] if self._footer_is_stock else icon
+            footer_icon] if self._footer_is_stock else footer_icon
         return self
 
     def set_expander(self, expander_data, expanded=False, at_footer=False):

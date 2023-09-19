@@ -84,8 +84,8 @@ class ImageDropDown(DropDown):
     def set_bitmaps(self, bitmaps):
         """Changes the bitmaps shown in the dropdown."""
         with self.pause_drawing():
-            for i, bitmap in enumerate(bitmaps):
-                self._native_widget.SetItemBitmap(i, bitmap)
+            for i, bmp in enumerate(bitmaps):
+                self._native_widget.SetItemBitmap(i, bmp)
 
 class ColorPicker(_AComponent):
     """A button with a color that launches a color picker dialog.

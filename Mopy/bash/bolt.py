@@ -1095,7 +1095,7 @@ class Path(os.PathLike):
     def __add__(self,other):
         # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
-    def join(*args: str | os.PathLike[str]):
+    def join(*args: str | os.PathLike[str]) -> Path:
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 

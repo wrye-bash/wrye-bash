@@ -279,22 +279,25 @@ class _RevertBackup(OneItemLink):
             u'Revert to Backup...')
         self.first = first
 
-    def _initData(self, window, selection):
-        super()._initData(window, selection)
-        self.backup_path = self._selected_info.backup_dir.join(
-            self._selected_item) + (u'f' if self.first else u'')
-        self._help = _(u'Revert %(file)s to its first backup') if self.first \
-            else _(u'Revert %(file)s to its last backup')
-        self._help %= {'file': self._selected_item}
+    @property
+    def _backup_path(self):
+        return self._selected_info.backup_dir.join(
+            self._selected_item) + ('f' if self.first else '')
+
+    @property
+    def link_help(self):
+        return (_('Revert %(file)s to its first backup') if self.first else _(
+            'Revert %(file)s to its last backup')) % {
+            'file': self._selected_item}
 
     def _enable(self):
-        return super()._enable() and self.backup_path.exists()
+        return super()._enable() and self._backup_path.exists()
 
     @balt.conversation
     def Execute(self):
         #--Warning box
         sel_file = self._selected_item
-        backup_date_fmt = format_date(self.backup_path.mtime)
+        backup_date_fmt = format_date(self._backup_path.mtime)
         message = _('Revert %(target_file_name)s to backup dated '
                     '%(backup_date)s?') % {'target_file_name': sel_file,
                                            'backup_date': backup_date_fmt}

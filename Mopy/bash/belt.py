@@ -168,7 +168,7 @@ class PageSelect(PageInstaller):
                  image_paths):
         PageInstaller.__init__(self, parent)
         self.listItems = list(items_default)
-        self._images = image_paths
+        self._image_paths = image_paths
         self.descs = listDescs
         self.bMany = bMany
         self.index = None
@@ -215,7 +215,7 @@ class PageSelect(PageInstaller):
         self.Selection(lb_selection_dex)
 
     def _click_on_image(self):
-        img = self._images[self.index]
+        img = self._image_paths[self.index]
         if not img:
             return # None - no image path specified
         try:
@@ -234,7 +234,7 @@ class PageSelect(PageInstaller):
         self._page_parent.enable_forward(True)
         self.index = index
         self.textItem.text_content = self.descs[index]
-        self.bmp_item.set_bitmap(self._images[index])
+        self.bmp_item.set_bitmap(self._image_paths[index])
         # self.Layout() # the bitmap would change size and show blurred
 
     def OnNext(self):

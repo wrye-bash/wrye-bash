@@ -90,7 +90,7 @@ class Screen_ConvertTo(EnabledLink):
     def __init__(self, ext):
         super().__init__()
         self._ext = ext
-        self.imageType = ImageWrapper.img_types[ext]
+        self._convert_to = ImageWrapper.img_types[ext]
         self._text = _('Convert to %(img_ext)s') % {'img_ext': ext}
 
     def _enable(self):
@@ -106,9 +106,9 @@ class Screen_ConvertTo(EnabledLink):
                     srcPath = bosh.screen_infos[fileName].abs_path
                     destPath = srcPath.root + self._ext
                     if srcPath == destPath or destPath.exists(): continue
-                    bitmap = ImageWrapper.Load(srcPath, quality=bass.settings[
+                    bmp = ImageWrapper.Load(srcPath, quality=bass.settings[
                         u'bash.screens.jpgQuality'])
-                    result = bitmap.SaveFile(destPath.s,self.imageType)
+                    result = bmp.SaveFile(destPath.s, self._convert_to)
                     if not result: continue
                     srcPath.remove()
         finally:
