@@ -30,6 +30,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial, wraps
+from itertools import islice
 from typing import final
 
 import wx
@@ -479,7 +480,7 @@ class TabDragMixin(object):
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
         # TODO(inf) Test in wx3
-        if wx.Platform != u'__WXGTK__': # CaptureMouse() works badly in wxGTK
+        if wx.Platform == '__WXMSW__': # CaptureMouse works badly in wxGTK/OSX
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
             self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
@@ -2215,8 +2216,7 @@ class DnDStatusBar(wx.StatusBar):
         #--Bind events
         self.Bind(wx.EVT_SIZE, self.OnSize)
         #--Setup Drag-n-Drop reordering
-        self.dragging = wx.NOT_FOUND
-        self.dragStart = 0
+        self.__reset_drag(False)
         self.moved = False
 
     def UpdateIconSizes(self, skip_refresh=False): raise NotImplementedError
@@ -2229,14 +2229,11 @@ class DnDStatusBar(wx.StatusBar):
         link.SetBitmapButton(self)
         if gButton := link.gButton:
             self.buttons[link.uid] = link
-            # TODO(inf) Test in wx3
-            # DnD events (only on windows, CaptureMouse works badly in wxGTK)
-            if wx.Platform != u'__WXGTK__':
-                gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
-                gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
-                gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                                            self.OnDragEndForced)
-                gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
+            gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
+            gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
+            gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                                        self.OnDragEndForced)
+            gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
         native_button = mouseEvent.EventObject
@@ -2252,51 +2249,41 @@ class DnDStatusBar(wx.StatusBar):
                 return i, button_link
         return wx.NOT_FOUND, None
 
-    def OnDragStart(self, event):
+    def OnDragStart(self, event): # we don't skip blocks EVT_MOTION somehow
         self.dragging, button_link = self._getButtonIndex(event)
-        if self.dragging != wx.NOT_FOUND:
-            if not button_link.gButton._native_widget.HasCapture():
-                self.dragStart = event.GetPosition()[0]
-                button_link.gButton._native_widget.CaptureMouse()
-                # Otherwise blows up on py3
-                button_link.gButton._native_widget.Bind(
-                    wx.EVT_MOUSE_CAPTURE_LOST, lambda e: None)
-        event.Skip()
+        if wx.Platform == '__WXMSW__':
+            button_link.gButton._native_widget.CaptureMouse()
 
     def OnDragEndForced(self, event):
-        if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
-            # The event for clicking the button sends a force capture loss
-            # message.  Ignore lost capture messages if we're the active
-            # window.  If we're not, that means something else forced the
-            # loss of mouse capture.
-            self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
-        event.Skip()
+        self.__reset_drag()
+        # NOTE: Don't Skip, otherwise wxPython treats this event as unhandled,
+        # and raises an exception.
 
     def OnDragEnd(self, event):
+        __, button_link = self._getButtonIndex(event)
+        if button_link.gButton._native_widget.HasCapture():
+            button_link.gButton._native_widget.ReleaseMouse()
         if self.dragging != wx.NOT_FOUND:
-            try:
-                if self.moved:
-                    for button in self.buttons.values():
-                        if button.gButton._native_widget.HasCapture():
-                            button.gButton._native_widget.ReleaseMouse()
-                            break
-            except:
-                # deprint(u'Exception while handling mouse up on button',
-                #         traceback=True)
-                pass
-            self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            self.__reset_drag()
             if self.moved:
                 self.moved = False
                 return
+            else:
+                button_link.Execute()
         event.Skip()
+
+    def __reset_drag(self, set_cursor=True):
+        self.dragStart = 0
+        self.dragging = wx.NOT_FOUND
+        if set_cursor: self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
     def OnDrag(self, event):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
+                self.moved = True # just lost your chance to click the button
                 self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            over, button_link = self._getButtonIndex(event)
+            over, _ = self._getButtonIndex(event)
+            button_link = next(islice(self.buttons.values(), self.dragging, None), None)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
                 # update settings

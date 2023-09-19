@@ -87,7 +87,7 @@ class StatusBar_Button(ItemLink):
             self.gButton.destroy_component()
         self.gButton = ClickableImage(window, self._btn_bmp(),
                                       btn_tooltip=self.sb_button_tip)
-        self.gButton.on_clicked.subscribe(self.Execute)
+        # self.gButton.on_clicked.subscribe(self.Execute)
         self.gButton.on_right_clicked.subscribe(self.DoPopupMenu)
 
     def _btn_bmp(self):
