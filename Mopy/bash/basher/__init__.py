@@ -3861,29 +3861,20 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
-    # default tabs order and default enabled state, keys as in tabInfo
-    _tabs_enabled_ordered = {
-        'Installers': True,
-        'Mods': True,
-        'Saves': True,
-        # 'BSAs': True,
-        'INI Edits': True,
-        'Screenshots': True,
-    }
-
     @staticmethod
     def _tabOrder():
         """Return dict containing saved tab order and enabled state of tabs."""
-        newOrder = settings.get(u'bash.tabs.order',
-                                BashNotebook._tabs_enabled_ordered)
+        # default tabs order and default enabled state, keys as in tabInfo
+        tabs_enabled_ordered = dict(e.value for e in Store)
+        newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
         # append any new tabs - appends last
         newTabs = set(tabInfo) - set(newOrder)
-        for n in newTabs: newOrder[n] = BashNotebook._tabs_enabled_ordered[n]
+        for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
         # delete any removed tabs
         deleted = set(newOrder) - set(tabInfo)
         for d in deleted: del newOrder[d]
         # Ensure the 'Mods' tab is always shown
-        if u'Mods' not in newOrder: newOrder[u'Mods'] = True # inserts last
+        newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
         return newOrder
 

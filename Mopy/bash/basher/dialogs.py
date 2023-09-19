@@ -912,7 +912,7 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
             uil_images = None
         return _ChangeData(uil_image_list=uil_images,
             change_desc=warn_change_desc, changed_items=warning_dec_items,
-            parent_tab_key=data_key.value)
+            parent_tab_key=data_key.value[0])
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
 # bass.settings['bash.window.sizes'] key provided by the unique class name

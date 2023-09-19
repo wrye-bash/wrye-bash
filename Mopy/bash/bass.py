@@ -76,13 +76,14 @@ def get_ini_option(ini_parser, option_key, section_key=u'General'):
     return ini_parser.get(section_key, option_key, fallback=None)
 
 class Store(Enum):
-    """Inter panel communication - member values are the tab titles."""
-    BSAS = 'BSAs'
-    INIS = 'INI Edits'
-    INSTALLERS = 'Installers'
-    MODS = 'Mods'
-    SAVES = 'Saves'
-    SCREENSHOTS = 'Screenshots'
+    """Inter panel communication - member values are the tab keys in tabInfo
+    and default enabled state, members order is the default tabs order."""
+    INSTALLERS = ('Installers', True)
+    MODS = ('Mods', True)
+    SAVES = ('Saves', True)
+    BSAS = ('BSAs', False)
+    INIS = ('INI Edits', True)
+    SCREENSHOTS = ('Screenshots', True)
 
     def IF(self, is_changed):
         """Decide IF a refresh of the respective UIList is needed -
@@ -92,3 +93,6 @@ class Store(Enum):
     def DO(self):
         """Unconditionally refresh the respective UIList."""
         return self.IF(True)
+
+    def __repr__(self):
+        return self.name
