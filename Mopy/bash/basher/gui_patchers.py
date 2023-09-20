@@ -256,7 +256,8 @@ class _ListPatcherPanel(_PatcherPanel):
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     show_empty_sublist_checkbox = False
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    default_remove_empty_sublists = bush.game.displayName == u'Oblivion'
+    ##: Hack, this should not use display_name
+    default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     gList: ListBox | CheckListBox
     patcher_type: ListPatcher
 

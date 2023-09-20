@@ -91,36 +91,32 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
             yield os.path.join(full_game_folder, resource_file)
 
 # Here be hacks ---------------------------------------------------------------
-# Maps the resource subfolder game names back to displayNames
-resource_to_displayName = {
-    u'enderal': u'Enderal',
-    u'enderalse': u'Enderal Special Edition',
-    u'fallout3': u'Fallout 3',
-    u'fallout4': u'Fallout 4',
-    u'fallout4vr': u'Fallout 4 VR',
-    u'falloutnv': u'Fallout New Vegas',
-    u'morrowind': u'Morrowind',
-    u'oblivion': u'Oblivion',
-    u'skyrim': u'Skyrim',
-    u'skyrimse': u'Skyrim Special Edition',
-    u'skyrimvr': u'Skyrim VR',
-    u'ws_fallout4': u'Fallout 4 (WS)',
-    u'ws_morrowind': u'Morrowind (WS)',
-    u'ws_oblivion': u'Oblivion (WS)',
-    u'ws_skyrimse': u'Skyrim Special Edition (WS)',
+# Maps the resource subfolder game names back to unique_display_names
+resource_to_unique_display_name = {
+    'enderal': 'Enderal (Steam)',
+    'enderalse': 'Enderal Special Edition (Steam)',
+    'fallout3': 'Fallout 3 (Steam)',
+    'fallout4': 'Fallout 4 (Steam)',
+    'fallout4vr': 'Fallout 4 VR (Steam)',
+    'falloutnv': 'Fallout New Vegas (Steam)',
+    'morrowind': 'Morrowind (Steam)',
+    'oblivion': 'Oblivion (Steam)',
+    'skyrim': 'Skyrim (Steam)',
+    'skyrimse': 'Skyrim Special Edition (Steam)',
+    'skyrimvr': 'Skyrim VR (Steam)',
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
-def set_game(gm_displayName):
+def set_game(gm_unique_display_name):
     """Hotswitches bush.game to the game with the specified resource subfolder
     name."""
     # noinspection PyProtectedMember
     try:
-        bush.game = _game_cache[gm_displayName]
+        bush.game = _game_cache[gm_unique_display_name]
     except KeyError:
-        bush.game = new_game = bush._allGames[gm_displayName]('')
+        bush.game = new_game = bush._allGames[gm_unique_display_name]('')
         new_game.init()
-        _game_cache[gm_displayName] = new_game
+        _game_cache[gm_unique_display_name] = new_game
 
 _wx_app = None
 
@@ -149,11 +145,14 @@ def _emulate_startup():
     # noinspection PyProtectedMember
     bush._supportedGames()
     from ..game.patch_game import PatchGame
-    for gm_display_name in sorted(game_class.displayName for game_class in
-                                  PatchGame.supported_games()):
-        if gm_display_name != 'Oblivion':
-            set_game(gm_display_name)
+    # Filter out the abstract classes (they have unique_display_name == '')
+    all_unique_dns = sorted(game_class.unique_display_name
+                            for game_class in PatchGame.supported_games()
+                            if game_class.unique_display_name)
+    for gm_unique_display_name in all_unique_dns:
+        if gm_unique_display_name != 'Oblivion (Steam)':
+            set_game(gm_unique_display_name)
     else: # pick Oblivion as the most fully supported
-        set_game('Oblivion')
+        set_game('Oblivion (Steam)')
 
 _emulate_startup()

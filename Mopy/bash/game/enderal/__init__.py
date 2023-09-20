@@ -20,11 +20,12 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ..skyrim import SkyrimGameInfo
+from ..skyrim import ASkyrimGameInfo
+from ..store_mixins import SteamMixin
 
-class EnderalGameInfo(SkyrimGameInfo):
+class AEnderalGameInfo(ASkyrimGameInfo):
     """GameInfo override for Enderal."""
-    displayName = u'Enderal'
+    display_name = 'Enderal'
     fsName = u'Enderal'
     game_icon = u'enderal_%u.png'
     bash_root_prefix = u'Enderal'
@@ -41,21 +42,20 @@ class EnderalGameInfo(SkyrimGameInfo):
     loot_dir = u'Enderal'
     loot_game_name = 'Enderal'
     boss_game_name = u'' # BOSS does not support Enderal
-    registry_keys = [(r'SureAI\Enderal', 'Install_Path')]
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'
 
-    class Ini(SkyrimGameInfo.Ini):
+    class Ini(ASkyrimGameInfo.Ini):
         default_ini_file = u'enderal_default.ini'
         dropdown_inis = [u'Enderal.ini', u'EnderalPrefs.ini']
         save_prefix = u'..\\Enderal\\Saves'
 
-    class Xe(SkyrimGameInfo.Xe):
+    class Xe(ASkyrimGameInfo.Xe):
         full_name = u'EnderalEdit'
         xe_key_prefix = u'enderalView'
 
-    class Bain(SkyrimGameInfo.Bain):
+    class Bain(ASkyrimGameInfo.Bain):
         skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
 
     raceNames = {
@@ -114,11 +114,17 @@ class EnderalGameInfo(SkyrimGameInfo):
 
     nirnroots = _(u'Vynroots')
 
-    names_tweaks = SkyrimGameInfo.names_tweaks | {
-        'NamesTweak_RenamePennies'} - {'NamesTweak_RenameGold'}
+    names_tweaks = ((ASkyrimGameInfo.names_tweaks |
+                    {'NamesTweak_RenamePennies'}) -
+                    {'NamesTweak_RenameGold'})
 
     @classmethod
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-GAME_TYPE = EnderalGameInfo
+class SteamEnderalGameInfo(SteamMixin, AEnderalGameInfo):
+    """GameInfo override for the Steam version of Enderal."""
+    class St(AEnderalGameInfo.St):
+        steam_ids = [933480]
+
+GAME_TYPE = SteamEnderalGameInfo

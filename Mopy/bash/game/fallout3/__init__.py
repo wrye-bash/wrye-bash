@@ -23,16 +23,15 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 _GOG_IDS = [1454315831]
 
-class Fallout3GameInfo(PatchGame):
+class AFallout3GameInfo(PatchGame):
     """GameInfo override for Fallout 3."""
-    displayName = u'Fallout 3'
+    display_name = 'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
     game_icon = u'fallout3_%u.png'
@@ -51,15 +50,15 @@ class Fallout3GameInfo(PatchGame):
     loot_dir = u'Fallout3'
     loot_game_name = 'Fallout3'
     boss_game_name = u'Fallout3'
-    registry_keys = [(r'Bethesda Softworks\Fallout3', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'textures', u'characters', u'BodyMods'),
-        _j(u'textures', u'characters', u'FaceMods')]
+        _j('textures', 'characters', 'bodymods'),
+        _j('textures', 'characters', 'facemods'),
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'GECK'
@@ -93,8 +92,8 @@ class Fallout3GameInfo(PatchGame):
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):
-        ext = u'.fos'
         can_safely_remove_masters = True
+        ext = '.fos'
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
@@ -1218,7 +1217,8 @@ class Fallout3GameInfo(PatchGame):
         b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
         b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
         b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',
-        b'RGDL', b'DOBJ', b'LGTM', b'MUSC']
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -1241,9 +1241,8 @@ FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',
                  'Fallout 3 GOTY German', 'Fallout 3 GOTY Italian',
                  'Fallout 3 GOTY Spanish']
 
-class EGSFallout3GameInfo(Fallout3GameInfo):
+class EGSFallout3GameInfo(EGSMixin, AFallout3GameInfo):
     """GameInfo override for the Epic Games Store version of Fallout 3."""
-    displayName = 'Fallout 3 (EGS)'
     # appdata_name and my_games_name use the original locations
 
     @classproperty
@@ -1254,26 +1253,32 @@ class EGSFallout3GameInfo(Fallout3GameInfo):
     def game_detect_excludes(cls):
         return super().game_detect_excludes - {'FalloutLauncherEpic.exe'}
 
-    class Eg(Fallout3GameInfo.Eg):
+    class Eg(AFallout3GameInfo.Eg):
         egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
         egs_language_dirs = FO3_LANG_DIRS
 
-class GOGFallout3GameInfo(GOGMixin, Fallout3GameInfo):
+class GOGFallout3GameInfo(GOGMixin, AFallout3GameInfo):
     """GameInfo override for the GOG version of Fallout 3."""
-    displayName = 'Fallout 3 (GOG)'
     _gog_game_ids = _GOG_IDS
     # appdata_name and my_games_name use the original locations
 
-class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
+class SteamFallout3GameInfo(SteamMixin, AFallout3GameInfo):
+    """GameInfo override for the Steam version of Fallout 3."""
+    class St(AFallout3GameInfo.St):
+        steam_ids = [
+            22300, # Fallout 3
+            22370, # Fallout 3 - Game of the Year Edition
+        ]
+
+class WSFallout3GameInfo(WindowsStoreMixin, AFallout3GameInfo):
     """GameInfo override for the Windows Store version of Fallout 3."""
-    displayName = 'Fallout 3 (WS)'
     # appdata_name and my_games_name use the original locations
 
-    class Ws(Fallout3GameInfo.Ws):
+    class Ws(AFallout3GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout3'
         ws_language_dirs = FO3_LANG_DIRS
 
-GAME_TYPE = {g.displayName: g for g in
-             (Fallout3GameInfo, EGSFallout3GameInfo, GOGFallout3GameInfo,
-              WSFallout3GameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    EGSFallout3GameInfo, GOGFallout3GameInfo, SteamFallout3GameInfo,
+    WSFallout3GameInfo)}

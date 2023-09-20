@@ -24,11 +24,12 @@ import re
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from ..store_mixins import SteamMixin
 from ... import bolt
 
-class SkyrimGameInfo(PatchGame):
+class ASkyrimGameInfo(PatchGame):
     """GameInfo override for TES V: Skyrim."""
-    displayName = u'Skyrim'
+    display_name = 'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     game_icon = u'skyrim_%u.png'
@@ -45,14 +46,16 @@ class SkyrimGameInfo(PatchGame):
     loot_dir = u'Skyrim'
     loot_game_name = 'Skyrim'
     boss_game_name = u'Skyrim'
-    registry_keys = [(r'Bethesda Softworks\Skyrim', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = u'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
-        _j(u'textures', u'actors', u'character', u'facegendata', u'facetint')]
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+        _j('textures', 'actors', 'character', 'facegendata', 'facetint'),
+        _j('textures', 'actors', 'character', 'facemods'),
+        _j('textures', 'water'), # SSE only?
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'
@@ -1449,7 +1452,8 @@ class SkyrimGameInfo(PatchGame):
         b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
         b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
-        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB']
+        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -1466,4 +1470,9 @@ class SkyrimGameInfo(PatchGame):
         from ... import brec as _brec_
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
-GAME_TYPE = SkyrimGameInfo
+class SteamSkyrimGameInfo(SteamMixin, ASkyrimGameInfo):
+    """GameInfo override for the Steam version of Skyrim."""
+    class St(ASkyrimGameInfo.St):
+        steam_ids = [72850]
+
+GAME_TYPE = SteamSkyrimGameInfo

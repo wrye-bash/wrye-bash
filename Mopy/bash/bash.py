@@ -154,6 +154,10 @@ def _import_deps():
         import yaml
     except ImportError:
         deps_msg += u'- PyYAML\n'
+    try:
+        import vdf
+    except ImportError:
+        deps_msg += '- vdf\n'
     if deps_msg:
         deps_msg += u'\n'
         if bass.is_standalone:
@@ -277,6 +281,11 @@ def dump_environment(wxver=None):
     except ImportError:
         requests_ver = 'not found (optional)'
     try:
+        import vdf
+        vdf_ver = vdf.__version__
+    except ImportError:
+        vdf_ver = 'not found'
+    try:
         import websocket
         websocket_client_ver = websocket.__version__
     except ImportError:
@@ -308,6 +317,7 @@ def dump_environment(wxver=None):
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
         f' - requests: {requests_ver}',
+        f' - vdf: {vdf_ver}',
         f' - websocket-client: {websocket_client_ver}',
         f' - wxPython: {wx_ver}',
         # Standalone: stdout will actually be pointing to stderr, which has no
@@ -488,7 +498,7 @@ def _main(opts, wx_locale, wxver):
                 'the %(gameName)s directory.  If you do not start Wrye Bash '
                 'with elevated privileges, you will be prompted at each '
                 'operation that requires elevated privileges.') % {
-                    'gameName': bush_game.displayName}
+                    'gameName': bush_game.display_name}
             uacRestart = balt.ask_uac_restart(message, mopy=bass.dirs['mopy'])
         if uacRestart:
             bass.update_sys_argv(['--uac'])
@@ -679,13 +689,14 @@ def _select_game_popup(game_infos):
             super().__init__(None, title=_('Select Game'),
                 icon_bundle=Resources.bashRed)
             self._callback = callback
-            self._sorted_games = sorted(g.displayName for g in game_infos)
-            self._game_to_paths = {g.displayName: ps for g, ps
+            self._sorted_games = sorted(
+                g.unique_display_name for g in game_infos)
+            self._game_to_paths = {g.unique_display_name: ps for g, ps
                                   in game_infos.items()}
-            self._game_to_info = {g.displayName: g for g in game_infos}
+            self._game_to_info = {g.unique_display_name: g for g in game_infos}
             gi_join = bass.dirs['images'].join('games').join
             self._game_to_bitmap = {
-                g.displayName: ImageWrapper(gi_join(g.game_icon % 32),
+                g.unique_display_name: ImageWrapper(gi_join(g.game_icon % 32),
                     iconSize=32).get_bitmap() for g in game_infos}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self, hint=_('Search Games'))

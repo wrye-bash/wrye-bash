@@ -42,7 +42,7 @@ from ._mergeability import is_esl_capable, isPBashMergeable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
-from .save_headers import SaveFileHeader, get_save_header_type
+from .save_headers import get_save_header_type
 from .. import archives, balt, bass, bolt, bush, env, initialization, \
     load_order
 from ..bass import dirs, inisettings
@@ -1118,7 +1118,7 @@ class AINIInfo(AIniFile):
             return s
         if self._incompatible(target_ini) or not tweak_settings:
             return _status(-20)
-        match = False
+        found_match = False
         mismatch = 0
         ini_settings = target_ini_settings if target_ini_settings is not None \
             else target_ini.get_ci_settings()
@@ -1150,8 +1150,8 @@ class AINIInfo(AIniFile):
                                 mismatch = 1
                                 break
                 else:
-                    match = True
-        if not match:
+                    found_match = True
+        if not found_match:
             return _status(0)
         elif not mismatch:
             return _status(20)
@@ -2853,8 +2853,8 @@ class ModInfos(FileInfos):
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
     def create_new_mod(self, newName, selected=(), wanted_masters=None,
-                       dir_path=empty_path, is_bashed_patch=False, esm_flag=False,
-                       esl_flag=False):
+            dir_path=empty_path, is_bashed_patch=False, with_esm_flag=False,
+            with_esl_flag=False):
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -2863,9 +2863,9 @@ class ModInfos(FileInfos):
         newFile.tes4.masters = wanted_masters
         if is_bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
-        if esm_flag:
+        if with_esm_flag:
             newFile.tes4.flags1.esm_flag = True
-        if esl_flag:
+        if with_esl_flag:
             newFile.tes4.flags1.esl_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
@@ -2970,7 +2970,7 @@ class ModInfos(FileInfos):
     @staticmethod
     def plugin_wildcard(file_str=_(u'Mod Files')):
         joinstar = ';*'.join(bush.game.espm_extensions)
-        return f'{bush.game.displayName} {file_str} (*{joinstar})|*{joinstar}'
+        return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
@@ -3377,7 +3377,8 @@ class BSAInfos(FileInfos):
     ba2_collisions = set()
 
     def __init__(self):
-        if bush.game.displayName == u'Oblivion':
+        ##: Hack, this should not use display_name
+        if bush.game.display_name == 'Oblivion':
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
                 u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
@@ -3541,6 +3542,7 @@ def initTooldirs():
     tooldirs[u'Fo3EditPath'] = dirs[u'app'].join(u'FO3Edit.exe')
     tooldirs[u'FnvEditPath'] = dirs[u'app'].join(u'FNVEdit.exe')
     tooldirs[u'FO4VREditPath'] = dirs[u'app'].join(u'FO4VREdit.exe')
+    tooldirs['SF1EditPath'] = dirs['app'].join('SF1Edit.exe')
     tooldirs[u'Tes4LodGenPath'] = dirs[u'app'].join(u'TES4LodGen.exe')
     tooldirs[u'Tes4GeckoPath'] = dirs[u'app'].join(u'Tes4Gecko.jar')
     tooldirs[u'Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')

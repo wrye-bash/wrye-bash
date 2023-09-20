@@ -42,6 +42,7 @@ import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from enum import Enum
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
@@ -368,6 +369,12 @@ def reverse_dict(target_dict: dict[K, V]) -> dict[V, K]:
     specified dict. If a -> b in target_dict, then b -> a in the returned
     dict."""
     return {v: k for k, v in target_dict.items()}
+
+def gen_enum_parser(enum_type: type[Enum]):
+    """Create a dict that maps the values of the specified enum to the matching
+    enum entries. Useful e.g. for when the enum's values represent information
+    inside a file and you want to parse that information into enum entries."""
+    return {e.value: e for e in enum_type.__members__.values()}
 
 _not_cached = object()
 
@@ -858,9 +865,9 @@ class Path(os.PathLike):
 
     @staticmethod
     def has_invalid_chars(path_str):
-        match = Path.invalid_chars_re.match(path_str)
-        if not match: return None
-        return match.groups()[1]
+        ma_invalid_chars = Path.invalid_chars_re.match(path_str)
+        if not ma_invalid_chars: return None
+        return ma_invalid_chars.groups()[1]
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
@@ -2075,6 +2082,8 @@ def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
 def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
     out.write(__pack(value))
+def unpack_int64(ins, __unpack=structs_cache['Q'].unpack) -> int:
+    return __unpack(ins.read(8))[0]
 def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
 def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
@@ -2951,11 +2960,11 @@ class WryeText:
         reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
         codeLines = None
         codeboxLines = None
-        def subCode(match):
+        def subCode(ma_code):
             try:
-                return u' '.join(codebox([match.group(1)],False,False))
+                return ' '.join(codebox([ma_code.group(1)], False, False))
             except:
-                return match(1)
+                return ma_code(1)
         #--Misc. text
         reHr = re.compile(u'^------+$',re.U)
         reEmpty = re.compile(r'\s+$', re.U)
@@ -2963,8 +2972,8 @@ class WryeText:
         rePreBegin = re.compile(u'<pre',re.I|re.U)
         rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
-        def subAnchor(match):
-            text = match.group(1)
+        def subAnchor(ma_anchor):
+            text = ma_anchor.group(1)
             anchor = quote(reWd.sub(u'', text))
             count = 0
             if re.match(r'\d', anchor):
@@ -2982,13 +2991,13 @@ class WryeText:
         reItalic = re.compile(u'~~',re.U)
         reBoldItalic = re.compile(r'\*\*',re.U)
         states = {u'bold':False,u'italic':False,u'boldItalic':False,u'code':0}
-        def subBold(match):
+        def subBold(_ma_bold):
             state = states[u'bold'] = not states[u'bold']
             return u'<b>' if state else u'</b>'
-        def subItalic(match):
+        def subItalic(_ma_italic):
             state = states[u'italic'] = not states[u'italic']
             return u'<i>' if state else u'</i>'
-        def subBoldItalic(match):
+        def subBoldItalic(_ma_bold_icalic):
             state = states[u'boldItalic'] = not states[u'boldItalic']
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
@@ -3001,14 +3010,14 @@ class WryeText:
         reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
         reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
         reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
-        def subColor(match):
-            return (f'<span style="color:{match.group(1)};">'
-                    f'{match.group(2)}</span>')
-        def subBGColor(match):
-            return (f'<span style="background-color:{match.group(1)};">'
-                    f'{match.group(2)}</span>')
-        def subLink(match):
-            address = text = match.group(1).strip()
+        def subColor(ma_sub_color):
+            return (f'<span style="color:{ma_sub_color.group(1)};">'
+                    f'{ma_sub_color.group(2)}</span>')
+        def subBGColor(ma_bg_color):
+            return (f'<span style="background-color:{ma_bg_color.group(1)};">'
+                    f'{ma_bg_color.group(2)}</span>')
+        def subLink(ma_link):
+            address = text = ma_link.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
                 if address == u'#': address += quote(reWd.sub(u'', text))

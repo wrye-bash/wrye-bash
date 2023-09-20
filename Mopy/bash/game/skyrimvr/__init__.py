@@ -21,11 +21,11 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
+from ..skyrimse import ASkyrimSEGameInfo
+from ..store_mixins import SteamMixin
 
-from ..skyrimse import SkyrimSEGameInfo
-
-class SkyrimVRGameInfo(SkyrimSEGameInfo):
-    displayName = u'Skyrim VR'
+class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
+    display_name = 'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
     game_icon = u'skyrimvr_%u.png'
@@ -40,34 +40,33 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     taglist_dir = 'SkyrimVR'
     loot_dir = u'Skyrim VR'
     loot_game_name = 'Skyrim VR'
-    registry_keys = [(r'Bethesda Softworks\Skyrim VR', 'Installed Path')]
 
-    espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}
+    espm_extensions = ASkyrimSEGameInfo.espm_extensions - {'.esl'}
     check_esl = False
 
-    class Se(SkyrimSEGameInfo.Se):
+    class Se(ASkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
         long_name = u'Skyrim VR Script Extender'
         exe = u'sksevr_loader.exe'
         ver_files = [u'sksevr_loader.exe', u'sksevr_steam_loader.dll']
 
-    class Ini(SkyrimSEGameInfo.Ini):
+    class Ini(ASkyrimSEGameInfo.Ini):
         default_ini_file = u'Skyrim.ini' # yes, that's the default one
         dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
         resource_override_key = u'sVrResourceArchiveList'
         resource_override_defaults = [u'Skyrim_VR - Main.bsa']
 
-    class Xe(SkyrimSEGameInfo.Xe):
+    class Xe(ASkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'
         xe_key_prefix = u'tes5vrview'
 
-    class Bain(SkyrimSEGameInfo.Bain):
+    class Bain(ASkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
-    allTags = SkyrimSEGameInfo.allTags | {'NoMerge'}
-    patchers = SkyrimSEGameInfo.patchers | {'MergePatches'}
+    allTags = ASkyrimSEGameInfo.allTags | {'NoMerge'}
+    patchers = ASkyrimSEGameInfo.patchers | {'MergePatches'}
 
-    bethDataFiles = SkyrimSEGameInfo.bethDataFiles | {
+    bethDataFiles = ASkyrimSEGameInfo.bethDataFiles | {
         'skyrimvr.esm',
         'skyrim_vr - main.bsa',
     }
@@ -76,4 +75,9 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-GAME_TYPE = SkyrimVRGameInfo
+class SteamSkyrimVRGameInfo(SteamMixin, _ASkyrimVRGameInfo):
+    """GameInfo override for the Steam version of Skyrim VR."""
+    class St(_ASkyrimVRGameInfo.St):
+        steam_ids = [611670]
+
+GAME_TYPE = SteamSkyrimVRGameInfo

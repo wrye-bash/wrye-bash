@@ -1860,7 +1860,7 @@ class ModDetails(_ModsSavesDetails):
             #--Bad name?
             if bosh.modInfos.isBadFileName(str(newName)):
                 msg = self.__bad_name_msg % {'bad_file_name': newName,
-                    'game_name': bush.game.displayName}
+                    'game_name': bush.game.display_name}
                 if not balt.askContinue(self, msg,
                                         'bash.rename.isBadFileName.continue'):
                     return ##: cancels all other changes - move to validate_filename (without the balt part)
@@ -2331,7 +2331,7 @@ class SaveList(UIList):
     @staticmethod
     def _unhide_wildcard():
         starred = f'*{bush.game.Ess.ext};*.bak'
-        return f'{bush.game.displayName} ' + _(
+        return f'{bush.game.display_name} ' + _(
             'Save files') + f' ({starred})|{starred}'
 
     #--Populate Item
@@ -2402,6 +2402,10 @@ class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
     keyPrefix = u'bash.saves.details' # used in sash/scroll position, sorting
     _master_list_type = _SaveMasterList
+    # We'll hide the picture if the game does not have screenshots in its
+    # saves, so demand a smaller minimum size for that too
+    minimumSize = (_ModsSavesDetails.minimumSize
+                   if bush.game.Ess.has_screenshots else 88)
 
     @property
     def file_info(self): return self.saveInfo
@@ -2424,6 +2428,7 @@ class SaveDetails(_ModsSavesDetails):
         #--Picture
         self.picture = Picture(top, textWidth, 192 * textWidth // 256,
             background=colors[u'screens.bkgd.image']) #--Native: 256x192
+        self.picture.visible = bush.game.Ess.has_screenshots
         #--Save Info
         self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
         self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
@@ -2472,7 +2477,7 @@ class SaveDetails(_ModsSavesDetails):
         self.gCoSaves.label_text = self.coSaves
         self.uilist.SetFileInfo(self.saveInfo)
         # Picture - lazily loaded since it takes up so much memory
-        if self.saveInfo:
+        if self.saveInfo and bush.game.Ess.has_screenshots:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
             new_save_screen = ImageWrapper.bmp_from_bitstream(
@@ -2573,7 +2578,7 @@ class SavePanel(BashTab):
     def __init__(self,parent):
         if not bush.game.Ess.canReadBasic:
             raise BoltError(f'Wrye Bash cannot read save games for '
-                            f'{bush.game.displayName}.')
+                            f'{bush.game.display_name}.')
         self.listData = bosh.saveInfos
         super(SavePanel, self).__init__(parent)
         BashFrame.saveList = self.uiList
@@ -2722,7 +2727,7 @@ class InstallersList(UIList):
     @staticmethod
     def _unhide_wildcard():
         starred = ';'.join(f'*{e}' for e in archives.readExts)
-        return f'{bush.game.displayName} {_("Mod Archives")} ' \
+        return f'{bush.game.display_name} {_("Mod Archives")} ' \
                f'({starred})|{starred}'
 
     #--Drag and Drop-----------------------------------------------------------
@@ -4135,7 +4140,7 @@ class BashFrame(WindowFrame):
                 'auto-ghost section of the readme for more details and '
                 'consider enabling auto-ghosting.') % {
                 'data_folder': bush.game.mods_dir,
-                'game_name': bush.game.displayName}
+                'game_name': bush.game.display_name}
             if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
                 message = _(
                     'It appears that you have more than 400 plugins and BSAs '
@@ -4143,7 +4148,7 @@ class BashFrame(WindowFrame):
                     'disabled. This will cause problems in %(game_name)s; see '
                     'the auto-ghost section of the readme for more '
                     'details.') % {'data_folder': bush.game.mods_dir,
-                                   'game_name': bush.game.displayName}
+                                   'game_name': bush.game.display_name}
             showWarning(self, message, title=_('Too Many Plugins.'))
 
     def bind_refresh(self, bind=True):
@@ -4194,7 +4199,7 @@ class BashFrame(WindowFrame):
                 title = _('Wrye Bash %(wb_version)s for %(game_name)s')
         title %= {'wb_alt_name': bush.game.altName,
                   'wb_version': bass.AppVersion,
-                  'game_name': bush.game.displayName}
+                  'game_name': bush.game.display_name}
         title += ': '
         # chop off save prefix - +1 for the path separator
         maProfile = bosh.saveInfos.localSave[len(
@@ -4315,7 +4320,7 @@ class BashFrame(WindowFrame):
         #         _('The following plugins have been deactivated because they '
         #           'have filenames that cannot be encoded in Windows-1252 and '
         #           'thus cannot be loaded by %(game_name)s.') % {
-        #             'game_name': bush.game.displayName,
+        #             'game_name': bush.game.display_name,
         #         }, bosh.modInfos.activeBad))
         #     bosh.modInfos.activeBad = set()
         if lo_warnings:
@@ -4398,7 +4403,7 @@ class BashFrame(WindowFrame):
                 _('The following BSAs have a version different from the one '
                   '%(game_name)s expects. This can lead to CTDs, please '
                   'extract and repack them using the %(ck_name)s-provided '
-                  'tool.') % {'game_name': bush.game.displayName,
+                  'tool.') % {'game_name': bush.game.display_name,
                               'ck_name': bush.game.Ck.long_name},
                 bsa_mvers - self.known_mismatched_version_bsas))
             self.known_mismatched_version_bsas |= bsa_mvers
@@ -4433,7 +4438,7 @@ class BashFrame(WindowFrame):
             if self._oblivionIniMissing:
                 showWarning(self, self._ini_missing % {
                     'game_ini_file': bosh.oblivionIni.abs_path,
-                    'game_name': bush.game.displayName},
+                    'game_name': bush.game.display_name},
                     title=_('Missing Game INI'))
 
     def on_closing(self, destroy=True):
