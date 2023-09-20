@@ -823,8 +823,8 @@ class AFallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     keywords_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
-        b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
-        b'MSTT', b'NPC_',
+        b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MGEF',
+        b'MISC', b'MSTT', b'NPC_',
     }
 
     #--------------------------------------------------------------------------
