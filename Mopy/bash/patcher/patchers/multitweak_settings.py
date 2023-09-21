@@ -349,11 +349,12 @@ class GmstTweak_Camera_ChaseTightness(_AGmstCCTweak):
     tweak_name = _(u'Camera: Chase Tightness')
     tweak_tip = _(u'Tightness of chase camera to player turning.')
     tweak_key = (u'fChase3rdPersonVanityXYMult', u'fChase3rdPersonXYMult')
-    tweak_choices = [(u'x1.5',                              6.0, 6.0),
-                     (u'x2.0',                              8.0, 8.0),
-                     (u'x3.0',                            12.0, 12.0),
-                     (u'x5.0',                            20.0, 20.0),
-                     (_(u'ChaseCameraMod.esp (x 24.75)'), 99.0, 99.0)]
+    tweak_choices = [('x1.5',                    6.0, 6.0),
+                     ('x2.0',                    8.0, 8.0),
+                     ('x3.0',                    12.0, 12.0),
+                     ('x5.0',                    20.0, 20.0),
+                     # Don't translate - name of Nexus mod
+                     ('ChaseCameraMod (x24.75)', 99.0, 99.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Camera_ChaseDistance(_AGmstCCTweak):
@@ -375,6 +376,33 @@ class GmstTweak_Camera_ChaseDistance_Fo3(GmstTweak_Camera_ChaseDistance):
                      (u'x3',  1800.0, 2400.0),
                      (u'x5',  3000.0, 4000.0),
                      (u'x10', 6000.0, 5000.0)]
+
+#------------------------------------------------------------------------------
+class GmstTweak_Camera_VanityDelay(_AGmstCCTweak):
+    tweak_name = _('Camera: Vanity Delay')
+    tweak_tip = _('The number of seconds that must be spent idle before the '
+                  'automatic vanity camera mode starts.')
+    tweak_key = 'fVanityModeAutoDelay'
+    tweak_choices = [(_('10 Seconds'), 10.0),
+                     (_('30 Seconds'), 30.0),
+                     (_('1 Minute'),   60.0),
+                     (_('2 Minutes'),  120.0),
+                     (_('5 Minutes'),  300.0),
+                     (_('Disabled'),   86400.0)] # One full day
+    default_choice = _('2 Minutes')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Camera_VanitySpeedMultiplier(_AGmstCCTweak):
+    tweak_name = _('Camera: Vanity Speed Multiplier')
+    tweak_tip = _('How quickly the manual vanity camera can be rotated.')
+    tweak_key = ('fVanityModeXMult', 'fVanityModeYMult')
+    # Don't translate - name of Nexus mod
+    tweak_choices = [('Vanity Camera Smoother (x0.25, x0.3)', 5.0, 6.0),
+                     ('x0.45, x0.5',                          9.0, 10.0),
+                     ##: What's the actual default here? This is a guess based
+                     # on a Discord message
+                     ('x1, x1',                               20.0, 20.0),
+                     ('x1.45, x1.5',                          29.0, 30.0)]
 
 #------------------------------------------------------------------------------
 class GmstTweak_Magic_ChameleonRefraction(_AGmstCCTweak):

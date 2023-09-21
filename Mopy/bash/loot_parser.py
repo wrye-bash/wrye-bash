@@ -58,7 +58,7 @@ except ImportError:
             'version')
 
 # API
-metadata_version = '0.18' # The LOOT metadata version with which this
+metadata_version = '0.21' # The LOOT metadata version with which this
                           # implementation is compatible
 
 class LOOTParser(object):
