@@ -38,7 +38,7 @@ import wx.svg as _svg
 
 from .events import EventHandler, null_processor
 from ..bolt import deprint
-from ..exception import ArgumentError
+from ..exception import ArgumentError, GuiError
 
 # Utilities -------------------------------------------------------------------
 @functools.cache
@@ -130,8 +130,11 @@ class _AComponent:
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
         wx_widget_type = get_type_hints(self.__class__)['_native_widget']
-        self._native_widget = wx_widget_type(self._resolve(parent), *args,
-                                             **kwargs)
+        widget = wx_widget_type(self._resolve(parent), *args, **kwargs)
+        if isinstance(self, Lazy):
+            self._cached_widget = widget
+        else:
+            self._native_widget = widget
 
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
@@ -388,6 +391,60 @@ class _AComponent:
     def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
 
+class Lazy(_AComponent):
+    """Lazily create the native widget on first accessing self._native_widget.
+    Base class needs to know about us - think of Lazy on the same level as
+    _AComponent. Only access self._native_widget after a successful call to
+    create_widget."""
+
+    # noinspection PyMissingConstructor
+    def __init__(self, *args, **kwargs):
+        """Postpone calling super.__init__ till the widget is accessed."""
+        self._parent = None
+        self._cached_args = args
+        self._cached_kwargs = kwargs
+        self._cached_widget = None
+        self.__create_widget_called = False
+
+    @property
+    def _native_widget(self):
+        if not self._is_created():
+            if not self.__create_widget_called:
+                raise GuiError(f'{self!r} accessing the native widget without '
+                               f'calling create_widget first')
+            super().__init__(self._parent, *self._cached_args,
+                             **self._cached_kwargs)
+        return self._cached_widget
+
+    def destroy_component(self):
+        if self._is_created():
+            self._cached_widget.Destroy()
+            self._cached_widget = None
+            self.__create_widget_called = False
+
+    # Lazy API - probe into the internals of the class - special occasions only
+    def _is_created(self):
+        """Return True if self._cached_widget is available."""
+        return self._cached_widget is not None
+
+    def allow_create(self):
+        """Check if the required resources to create the widget exist."""
+        return True
+
+    def create_widget(self, parent, recreate=True, **kwargs):
+        """Create the widget - if the widget was freshly created return
+        True."""
+        if not self.allow_create(): return False
+        if recreate:
+            self.destroy_component()
+        elif self._is_created():
+            return False
+        self._parent = parent
+        self._cached_kwargs.update(kwargs)
+        self.__create_widget_called = True
+        # will call super init and create the widget
+        return bool(self._native_widget)
+
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.
@@ -429,6 +486,10 @@ class WithMouseEvents(_AComponent):
         def is_alt_down(self):
             return self.__mouse_evt.AltDown()
 
+        @property
+        def event_object_(self): # yak, for dragging, any better way?
+            return self.__mouse_evt.GetEventObject()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         lb_hit_test = lambda event: [ # HitTest may return an int or a tuple...
@@ -440,6 +501,9 @@ class WithMouseEvents(_AComponent):
             self.on_mouse_left_down = self._evt_handler(_wx.EVT_LEFT_DOWN,
                 lambda event: [self._WrapMouseEvt(event),
                                lb_hit_test(event)[0]])
+        if self.__class__.bind_lclick_up:
+            self.on_mouse_left_up = self._evt_handler(_wx.EVT_LEFT_UP,
+                lambda event: [self._WrapMouseEvt(event)])
         if self.__class__.bind_rclick_up:
             self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
                                                        lb_hit_test)
@@ -493,6 +557,25 @@ class WithCharEvents(_AComponent):
         wrap_processor = lambda event: [self._WrapKeyEvt(event)]
         self.on_key_down = self._evt_handler(_wx.EVT_KEY_DOWN, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
+
+class WithDragEvents(WithMouseEvents):
+    """An _AComponent that handles drag events for the mouse - alpha.
+
+    Drag events.
+      - on_mouse_capture_lost(wrapped_evt: _WrapMouseEvt) - only on __WXMSW__.
+    """
+    bind_lclick_up = bind_lclick_down = bind_motion = True
+
+    def __init__(self, *args, on_drag_start, on_drag_end, on_drag_end_forced,
+                 on_drag, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.on_mouse_left_down.subscribe(on_drag_start)
+        self.on_mouse_left_up.subscribe(on_drag_end)
+        if _wx.Platform == '__WXMSW__':
+            self.on_mouse_capture_lost = self._evt_handler(
+                _wx.EVT_MOUSE_CAPTURE_LOST)
+            self.on_mouse_capture_lost.subscribe(on_drag_end_forced)
+        self.on_mouse_motion.subscribe(on_drag)
 
 class ImageWrapper:
     """Wrapper for images, allowing access in various formats/classes.

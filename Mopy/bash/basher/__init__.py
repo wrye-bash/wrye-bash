@@ -3995,35 +3995,42 @@ class BashStatusBar(DnDStatusBar):
         for link_uid, link in BashStatusBar.all_sb_links.items():
             # Hidden?
             if link_uid in hide: continue
-            # Not present ?
-            if not link.IsPresent(): continue
-            # Add it
+            # Add it, if allow_create allows us
             try:
-                self._addButton(link)
+                if link.create_widget(self, on_drag_start=self.OnDragStart,
+                        on_drag_end=self.OnDragEnd, on_drag=self.OnDrag,
+                        on_drag_end_forced=self.OnDragEndForced):
+                    self.buttons[link.uid] = link
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
                 deprint(f'Failed to load button {link_uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 
-    def HideButton(self, button, skip_refresh=False):
-        for link_uid, link in self.buttons.items():
-            if link.gButton is button:
-                button.visible = False
-                del self.buttons[link_uid]
-                settings['bash.statusbar.hide'].add(link_uid)
-                if not skip_refresh:
-                    self.refresh_status_bar()
-                return
+    def HideButton(self, link_uid, skip_refresh=False):
+        if button := self.buttons.get(link_uid):
+            button.visible = False
+            del self.buttons[link_uid]
+            settings['bash.statusbar.hide'].add(link_uid)
+            if not skip_refresh:
+                self.refresh_status_bar()
+            return
 
-    def UnhideButton(self, link):
-        uid = link.uid
-        settings[u'bash.statusbar.hide'].discard(uid)
+    def UnhideButton(self, link_uid):
+        settings['bash.statusbar.hide'].discard(link_uid)
+        link = self.all_sb_links[link_uid]
+        if not link.create_widget(self, recreate=False,
+                on_drag_start=self.OnDragStart, on_drag_end=self.OnDragEnd,
+                on_drag=self.OnDrag, on_drag_end_forced=self.OnDragEndForced):
+            if not link.allow_create():
+                deprint(f'requested to create non existent button {link}')
+                return
+            link.visible = True  # button was already created and hidden
+        self.buttons[link_uid] = link
         # Find the position to insert it at
         order = settings[u'bash.statusbar.order']
-        self._addButton(link)
-        if uid not in order:
+        if link_uid not in order:
             # Not specified, put it at the end
-            order.append(uid)
+            order.append(link_uid)
         else:
             self._sort_buttons(order)
 
@@ -4042,6 +4049,12 @@ class BashStatusBar(DnDStatusBar):
         ##: See if removing this call entirely causes problems on Windows
         if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent()
         self.OnSize()
+
+    @classmethod
+    def set_tooltips(cls):
+        """Reset the tooltips of all *created* items, even hidden ones."""
+        for button in cls.all_sb_links.values():
+            button.tooltip = button.sb_button_tip
 
 #------------------------------------------------------------------------------
 class BashFrame(WindowFrame):

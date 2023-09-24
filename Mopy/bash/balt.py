@@ -1630,8 +1630,7 @@ class Link(object):
         super(Link, self).__init__()
         self._text = _text or self.__class__._text # menu label
 
-    def _initData(self,
-            window: UIList | wx.Panel | Button | DnDStatusBar | CheckListBox,
+    def _initData(self, window: UIList | wx.Panel | Button | CheckListBox,
             selection: list[FName | int] | int | None):
         """Initialize the Link instance data based on UI state when the
         menu is Popped up.
@@ -2225,21 +2224,11 @@ class DnDStatusBar(wx.StatusBar):
     def iconsSize(self): # +8 as each button has 4 px border on left and right
         return _settings[u'bash.statusbar.iconSize'] + 8
 
-    def _addButton(self, link):
-        link.SetBitmapButton(self)
-        if gButton := link.gButton:
-            self.buttons[link.uid] = link
-            gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
-            gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
-            gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
-                                        self.OnDragEndForced)
-            gButton._native_widget.Bind(wx.EVT_MOTION, self.OnDrag)
-
     def _getButtonIndex(self, mouseEvent):
-        native_button = mouseEvent.EventObject
+        native_button = mouseEvent.event_object_
         for i, button_link in enumerate(self.buttons.values()):
-            if button_link.gButton._native_widget == native_button:
-                x = mouseEvent.GetPosition()[0]
+            if button_link._native_widget == native_button:
+                x = mouseEvent.evt_pos[0]
                 # position is 0 at the beginning of the button's _icon_
                 # negative beyond that (on the left) and positive after
                 if x < -4:
@@ -2249,40 +2238,41 @@ class DnDStatusBar(wx.StatusBar):
                 return i, button_link
         return wx.NOT_FOUND, None
 
-    def OnDragStart(self, event): # we don't skip blocks EVT_MOTION somehow
-        self.dragging, button_link = self._getButtonIndex(event)
+    def OnDragStart(self, mouse_evnt):
+        self.dragging, button_link = self._getButtonIndex(mouse_evnt)
         if wx.Platform == '__WXMSW__':
-            button_link.gButton._native_widget.CaptureMouse()
+            button_link._native_widget.CaptureMouse()
+        return EventResult.FINISH # we don't skip blocks EVT_MOTION somehow
 
-    def OnDragEndForced(self, event):
+    def OnDragEndForced(self):
         self.__reset_drag()
         # NOTE: Don't Skip, otherwise wxPython treats this event as unhandled,
         # and raises an exception.
+        return EventResult.FINISH
 
-    def OnDragEnd(self, event):
-        __, button_link = self._getButtonIndex(event)
-        if button_link.gButton._native_widget.HasCapture():
-            button_link.gButton._native_widget.ReleaseMouse()
+    def OnDragEnd(self, mouse_evnt, _hittest0):
+        __, button_link = self._getButtonIndex(mouse_evnt)
+        if button_link._native_widget.HasCapture():
+            button_link._native_widget.ReleaseMouse()
         if self.dragging != wx.NOT_FOUND:
             self.__reset_drag()
             if self.moved:
                 self.moved = False
-                return
+                return EventResult.FINISH
             else:
-                button_link.Execute()
-        event.Skip()
+                button_link.sb_click()
 
     def __reset_drag(self, set_cursor=True):
         self.dragStart = 0
         self.dragging = wx.NOT_FOUND
         if set_cursor: self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
 
-    def OnDrag(self, event):
+    def OnDrag(self, mouse_evnt, _hittest0):
         if self.dragging != wx.NOT_FOUND:
-            if abs(event.GetPosition()[0] - self.dragStart) > 4:
+            if abs(mouse_evnt.evt_pos[0] - self.dragStart) > 4:
                 self.moved = True # just lost your chance to click the button
                 self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
-            over, _ = self._getButtonIndex(event)
+            over, _ = self._getButtonIndex(mouse_evnt)
             button_link = next(islice(self.buttons.values(), self.dragging, None), None)
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
@@ -2298,7 +2288,6 @@ class DnDStatusBar(wx.StatusBar):
                 self.dragging = over
                 # Refresh button positions
                 self.OnSize()
-        event.Skip()
 
     def _sort_buttons(self, uid_order):
         uid_order = {k: j for j, k in enumerate(uid_order)}
@@ -2309,7 +2298,7 @@ class DnDStatusBar(wx.StatusBar):
         rect = self.GetFieldRect(0)
         xPos, yPos = rect.x + 4, rect.y
         for button_link in self.buttons.values():
-            button_link.gButton.component_position = (xPos, yPos)
+            button_link.component_position = (xPos, yPos)
             xPos += self.iconsSize
         if event: event.Skip()
 

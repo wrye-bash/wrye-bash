@@ -33,7 +33,9 @@ from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
 from ..bass import Store
 from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
-    showError
+    Lazy, WithDragEvents, showError
+##: we need to move SB_Button to gui but we are blocked by Link
+from ..gui.base_components import _AComponent
 
 __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
@@ -41,7 +43,7 @@ __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'App_Restart', 'app_button_factory']
 
 #------------------------------------------------------------------------------
-# StatusBar Links--------------------------------------------------------------
+# StatusBar Buttons -----------------------------------------------------------
 #------------------------------------------------------------------------------
 class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
@@ -56,9 +58,9 @@ class _StatusBar_Hide(ItemLink):
                  "restored through the settings menu).") % {
             'status_btn_name': self.window.tooltip}
 
-    def Execute(self): Link.Frame.statusBar.HideButton(self.window)
+    def Execute(self): Link.Frame.statusBar.HideButton(self.window.uid)
 
-class StatusBar_Button(ItemLink):
+class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
     """Launch an application."""
     _tip = u''
     @property
@@ -71,24 +73,26 @@ class StatusBar_Button(ItemLink):
         super().__init__()
         self.mainMenu = Links()
         self.canHide = canHide
-        self.gButton = None
-        self._tip = button_tip or self.__class__._tip
+        self._tip = button_tip or self.__class__._tip # must be set see below
         self.uid = (self.__class__.__name__, self._tip) if uid is None else uid
 
-    def IsPresent(self):
-        """Due to the way status bar buttons are implemented debugging is a
-        pain - I provided this base class method to early filter out non
-        existent buttons."""
-        return True
+    def create_widget(self, parent, recreate=True, on_drag_start=None,
+                      on_drag_end=None, on_drag_end_forced=None, on_drag=None):
+        """Create and return gui button."""
+        created = super().create_widget(recreate=recreate, parent=parent,
+            wx_bitmap=self._btn_bmp(), btn_tooltip=self.sb_button_tip,
+            on_drag_start=on_drag_start, on_drag_end=on_drag_end,
+            on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
+        if created:
+            # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
+            # self.on_clicked.subscribe(self.sb_click)
+            self.on_right_clicked.subscribe(self.DoPopupMenu)
+        return created
 
-    def SetBitmapButton(self, window):
-        """Create and return gui button - you must define imageKey - WIP overrides"""
-        if self.gButton is not None:
-            self.gButton.destroy_component()
-        self.gButton = ClickableImage(window, self._btn_bmp(),
-                                      btn_tooltip=self.sb_button_tip)
-        # self.gButton.on_clicked.subscribe(self.Execute)
-        self.gButton.on_right_clicked.subscribe(self.DoPopupMenu)
+    @_AComponent.tooltip.setter
+    def tooltip(self, new_tooltip: str):
+        if self._is_created():
+            _AComponent.tooltip.fset(self, new_tooltip)
 
     def _btn_bmp(self):
         return balt.images[self.imageKey % bass.settings[
@@ -103,7 +107,7 @@ class StatusBar_Button(ItemLink):
                     button_menu.append(SeparatorLink())
                 button_menu.append(_StatusBar_Hide())
         if len(button_menu) > 0:
-            button_menu.popup_menu(self.gButton, 0)
+            button_menu.popup_menu(self, 0)
             return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
@@ -118,30 +122,30 @@ class StatusBar_Button(ItemLink):
         else:
             return u''
 
-    def set_sb_button_tooltip(self): pass
+    def sb_click(self):
+        """Execute an action when clicking the button."""
+        raise NotImplementedError
 
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _App_Button(StatusBar_Button):
     """Launch an application."""
-    obseButtons = []
 
     @property
     def version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
-        if self.IsPresent():
+        if self.allow_create():
             version = self.exePath.strippedVersion
             if version != (0,):
                 version = '.'.join([f'{x}' for x in version])
                 return version
         return u''
 
-    def set_sb_button_tooltip(self):
-        if self.gButton: self.gButton.tooltip = self.sb_button_tip
-
     @property
     def sb_button_tip(self):
+        if self._obseTip and BashStatusBar.obseButton.button_state:
+            return self.obseTip
         if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
             return f'{self._tip} {self.version}'
@@ -151,7 +155,7 @@ class _App_Button(StatusBar_Button):
         if self._obseTip is None: return None
         return self._obseTip % {'app_version': self.version}
 
-    def __init__(self, exePath, exeArgs, images, tip, obseTip=None, uid=None,
+    def __init__(self, exePath, exeArgs, images, tip, obse_tip=None, uid=None,
                  canHide=True):
         """images: [16x16,24x24,32x32] images"""
         super(_App_Button, self).__init__(uid, canHide, tip)
@@ -159,21 +163,13 @@ class _App_Button(StatusBar_Button):
         self.exePath = exePath
         self.images = images
         #--**SE stuff
-        self._obseTip = obseTip
-        # used by _App_Button.Execute: be sure to set them _before_ calling it
+        self._obseTip = obse_tip
+        # used by _App_Button.sb_click: be sure to set them _before_ calling it
         self.extraArgs = ()
         self.wait = False
 
-    def IsPresent(self):
+    def allow_create(self):
         return self.exePath != bolt.undefinedPath and self.exePath.exists()
-
-    def SetBitmapButton(self, window):
-        if not self.IsPresent(): return
-        super().SetBitmapButton(window)
-        if self.obseTip is not None:
-            _App_Button.obseButtons.append(self)
-            if BashStatusBar.obseButton.button_state:
-                self.gButton.tooltip = self.obseTip
 
     def _btn_bmp(self):
         iconSize = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
@@ -194,8 +190,8 @@ class _App_Button(StatusBar_Button):
         self.ShowError(msg=_('Execution failed because one or more of the '
                              'command line arguments failed to encode.'))
 
-    def Execute(self):
-        if not self.IsPresent():
+    def sb_click(self):
+        if not self.allow_create():
             msg = _('Application missing: %(launched_exe_path)s')
             self.ShowError(msg=msg % {'launched_exe_path': self.exePath})
             return
@@ -278,8 +274,8 @@ class _JavaButton(_App_Button):
     @property
     def version(self): return u''
 
-    def IsPresent(self):
-        return self._java.exists() and self.exePath.exists()
+    def allow_create(self):
+        return self._java.exists() and super().allow_create()
 
     def _app_button_execute(self):
         cwd = bolt.Path.getcwd()
@@ -387,8 +383,8 @@ class App_xEdit(_ExeButton):
             self.mainMenu.append(_Mods_xEditQAC(self))
             self.mainMenu.append(_Mods_xEditVQSC(self))
 
-    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
-        if not super().IsPresent():
+    def allow_create(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
+        if not super().allow_create():
             testPath = bass.tooldirs[u'Tes4ViewPath']
             if testPath != bolt.undefinedPath and testPath.exists():
                 self.exePath = testPath
@@ -396,7 +392,7 @@ class App_xEdit(_ExeButton):
             return False
         return True
 
-    def Execute(self):
+    def sb_click(self):
         self.launch_with_args(custom_args=())
 
     def launch_with_args(self, custom_args: tuple[str, ...]):
@@ -414,7 +410,7 @@ class App_xEdit(_ExeButton):
             extraArgs.append('-skipbsa')
         self.extraArgs = old_args = tuple(extraArgs)
         self.extraArgs += custom_args
-        super().Execute()
+        super().sb_click()
         self.extraArgs = old_args
 
 #------------------------------------------------------------------------------
@@ -431,12 +427,12 @@ class _AApp_LOManager(_ExeButton):
         super().__init__(lom_path, (), *args, **kwargs)
         self.mainMenu.append(_Mods_SuspendLockLO())
 
-    def Execute(self):
+    def sb_click(self):
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
         if self.wait:
             # Clear the saved times from before
             with load_order.Unlock():
-                super().Execute()
+                super().sb_click()
                 # Refresh to get the new load order that the manager specified.
                 # If on timestamp method scan the data dir, if not
                 # loadorder.txt should have changed, refreshLoadOrder should
@@ -447,7 +443,7 @@ class _AApp_LOManager(_ExeButton):
             Link.Frame.distribute_ui_refresh(
                 ui_refresh=Store.MODS.DO() | Store.SAVES.DO())
         else:
-            super().Execute()
+            super().sb_click()
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
@@ -463,7 +459,7 @@ class App_BOSS(_AApp_LOManager):
         self.boss_path = self.exePath
         self.mainMenu.append(_Mods_BOSSLaunchGUI())
 
-    def Execute(self):
+    def sb_click(self):
         if bass.settings['BOSS.UseGUI']:
             self.exePath = self.boss_path.head.join('boss_gui.exe')
         else:
@@ -483,7 +479,7 @@ class App_BOSS(_AApp_LOManager):
             # After version 2.0, need to pass in the -g argument
             curr_args.append(f'-g{bush.game.boss_game_name}')
         self.extraArgs = tuple(curr_args)
-        super().Execute()
+        super().sb_click()
 
 #------------------------------------------------------------------------------
 class _Mods_LOOTAutoSort(BoolLink):
@@ -498,12 +494,12 @@ class App_LOOT(_AApp_LOManager):
         super().__init__(*args, **kwargs)
         self.mainMenu.append(_Mods_LOOTAutoSort())
 
-    def Execute(self):
+    def sb_click(self):
         curr_args = [f'--game={bush.game.loot_game_name}']
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
         self.extraArgs = tuple(curr_args)
-        super().Execute()
+        super().sb_click()
 
 #------------------------------------------------------------------------------
 class Game_Button(_ExeButton):
@@ -511,11 +507,13 @@ class Game_Button(_ExeButton):
     def __init__(self, exe_path_args, version_path, images, tip, obse_tip):
         exePath, exeArgs = _parse_button_arguments(exe_path_args)
         super(Game_Button, self).__init__(exePath, exeArgs, images=images,
-            tip=tip, obseTip=obse_tip, uid=u'Oblivion')
+            tip=tip, obse_tip=obse_tip, uid=u'Oblivion')
         self._version_path = version_path
 
     @property
     def sb_button_tip(self):
+        if BashStatusBar.obseButton.button_state:
+            return self.obseTip
         return f'{self._tip} {self.version}' if self.version else self._tip
 
     @property
@@ -564,11 +562,9 @@ class Game_Button(_ExeButton):
             return version
         return u''
 
-    def IsPresent(self):
-        if bush.ws_info.installed:
-            # Always possible to run, even if the EXE is missing/inaccessible
-            return True
-        return super(Game_Button, self).IsPresent()
+    def allow_create(self):
+        # Always possible to run, even if the EXE is missing/inaccessible
+        return bush.ws_info.installed or super().allow_create()
 
 #------------------------------------------------------------------------------
 class TESCS_Button(_ExeButton):
@@ -577,7 +573,7 @@ class TESCS_Button(_ExeButton):
                  ck_uid=u'TESCS'):
         super(TESCS_Button, self).__init__(
             exePath=ck_path, exeArgs=(), images=ck_images, tip=ck_tip,
-            obseTip=ck_xse_tip, uid=ck_uid)
+            obse_tip=ck_xse_tip, uid=ck_uid)
         self.xse_args = (ck_xse_arg,) if ck_xse_arg else ()
 
     @property
@@ -621,19 +617,8 @@ class _StatefulButton(StatusBar_Button):
     @property
     def sb_button_tip(self): raise NotImplementedError
 
-    def SetState(self, state=None):
-        """Set state related info. If newState != None, sets to new state
-        first. For convenience, returns state when done."""
-        if state is None: #--Default
-            self.button_state = self.button_state
-        elif state == -1: #--Invert
-            self.button_state = True ^ self.button_state
-        if self.gButton:
-            self.gButton.tooltip = self.sb_button_tip
-            self.gButton.image = self._btn_bmp()
-
     @property
-    def button_state(self): return self._present and bass.settings.get(
+    def button_state(self): return self.allow_create() and bass.settings.get(
         self._state_key, self._default_state)
     @button_state.setter
     def button_state(self, val):
@@ -643,35 +628,25 @@ class _StatefulButton(StatusBar_Button):
     def imageKey(self): return self.__class__._state_img_key % (
         [u'off', u'on'][self.button_state], u'%d')
 
-    @property
-    def _present(self): return True
-
-    def SetBitmapButton(self, window):
-        if not self._present: return
-        self.SetState()
-        super().SetBitmapButton(window)
-
-    def IsPresent(self):
-        return self._present
-
-    def Execute(self):
+    def sb_click(self):
         """Invert state."""
-        self.SetState(-1)
+        self.button_state = True ^ self.button_state
+        # reset image and tooltip for the flipped state
+        self.image = self._btn_bmp()
+        self.tooltip = self.sb_button_tip
 
 class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
     _state_key = u'bash.obse.on'
     _state_img_key = u'checkbox.green.%s.%s'
 
-    @property
-    def _present(self):
+    def allow_create(self):
         return (bool(bush.game.Se.se_abbrev)
                 and bass.dirs[u'app'].join(bush.game.Se.exe).exists())
 
-    def SetState(self,state=None):
-        super().SetState(state)
-        self.UpdateToolTips()
-        return state
+    def sb_click(self):
+        super().sb_click()
+        BashStatusBar.set_tooltips()
 
     @property
     def sb_button_tip(self):
@@ -680,11 +655,6 @@ class Obse_Button(_StatefulButton):
             _('%(se_name)s%(se_ver)s Disabled'))
         return tip_to_fmt % {'se_name': bush.game.Se.se_abbrev,
                              'se_ver': self.obseVersion}
-
-    def UpdateToolTips(self):
-        tipAttr = (u'sb_button_tip', u'obseTip')[self.button_state]
-        for button in _App_Button.obseButtons:
-            button.gButton.tooltip = getattr(button, tipAttr, u'')
 
 #------------------------------------------------------------------------------
 class AutoQuit_Button(_StatefulButton):
@@ -702,7 +672,7 @@ class App_Help(StatusBar_Button):
     """Show help browser."""
     imageKey, _tip = 'help.%s', _('Help')
 
-    def Execute(self):
+    def sb_click(self):
         webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))
 
 #------------------------------------------------------------------------------
@@ -711,7 +681,7 @@ class App_DocBrowser(StatusBar_Button):
     imageKey = 'doc_browser.%s'
     _tip = _('Doc Browser')
 
-    def Execute(self):
+    def sb_click(self):
         if not Link.Frame.docBrowser:
             DocBrowser().show_frame()
         Link.Frame.docBrowser.raise_frame()
@@ -721,11 +691,11 @@ class App_Settings(StatusBar_Button):
     """Show settings dialog."""
     imageKey, _tip = 'settings_button.%s', _('Settings')
 
-    def Execute(self):
+    def sb_click(self):
         SettingsDialog.display_dialog()
 
     def DoPopupMenu(self):
-        self.Execute()
+        self.sb_click()
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):
@@ -733,7 +703,7 @@ class App_Restart(StatusBar_Button):
     _tip = _(u'Restart')
     imageKey = 'reload.%s'
 
-    def Execute(self): Link.Frame.Restart()
+    def sb_click(self): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
 class App_PluginChecker(StatusBar_Button):
@@ -741,5 +711,5 @@ class App_PluginChecker(StatusBar_Button):
     _tip = _(u'Plugin Checker')
     imageKey = 'plugin_checker.%s'
 
-    def Execute(self):
+    def sb_click(self):
         PluginChecker.create_or_raise()

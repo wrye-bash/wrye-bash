@@ -73,9 +73,9 @@ def InitStatusBar():
                 _(u'Launch TesVGecko'), {'uid': u'TesVGecko'}),
         )
     #--Bash Status/LinkBar
-    BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
+    BashStatusBar.obseButton = obse_button = Obse_Button(uid='OBSE')
     all_links = [
-        obseButton,
+        obse_button,
         AutoQuit_Button(uid='AutoQuit'),
         Game_Button(
             bass.dirs['app'].join(bush.game.launch_exe),
