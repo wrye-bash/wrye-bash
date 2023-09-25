@@ -63,7 +63,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelUInt32, MelUInt32Flags, MelUnion, MelUnloadEvent, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, PartialLoadDecider, MelMovtThresholds, MelMovtName, MelVoice, \
-    PerkEpdfDecider, gen_ambient_lighting, gen_color, gen_color3, MelSkin, \
+    PerkEpdfDecider, ambient_lighting_attrs, color_attrs, color3_attrs, \
     null3, null4, perk_distributor, perk_effect_key, MelLinkColors, \
     MelMesgButtons, MelMesgShared, MelMgefData, MelMgefEsce, MgefFlags, \
     MelMgefSounds, AMreMgefTes5, MelMgefDnam, MelMuscShared, MelMustShared, \
@@ -72,8 +72,9 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelNpcHeadParts, MelNpcHairColor, MelNpcGiftFilter, MelSoundLevel, \
     MelInheritsSoundsFrom, MelNpcShared, MelFilterString, MelIdleAnimFlags, \
     MelPackPkdt, MelPackSchedule, MelTopicData, MelPackOwnerQuest, \
-    MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, \
-    MelPackProcedureTree, MelPackIdleHandler
+    MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, MelSkin, \
+    MelPackProcedureTree, MelPackIdleHandler, MelProjMuzzleFlashModel, \
+    position_attrs, rotation_attrs
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -821,10 +822,9 @@ class MreBptd(MelRecord):
                 'bpnd_explodable_debris_scale', 'bpnd_severable_debris_count',
                 (FID, 'bpnd_severable_debris'),
                 (FID, 'bpnd_severable_explosion'),
-                'bpnd_severable_debris_scale', 'bpnd_gore_effect_pos_trans_x',
-                'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
-                'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
-                'bpnd_gore_effect_pos_rot_z',
+                'bpnd_severable_debris_scale',
+                *position_attrs('bpnd_gore_effect'),
+                *rotation_attrs('bpnd_gore_effect'),
                 (FID, 'bpnd_severable_impact_dataset'),
                 (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
@@ -1215,12 +1215,12 @@ class MreEfsh(MelRecord):
              's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's', 'f', '2I',
              '6f', 'I', '3B', 's', '3B', 's', '9f', '8I', '2f', '4s'],
             'unknown1', 'ms_source_blend_mode', 'ms_blend_operation',
-            'ms_z_test_function', *gen_color('fill_color1'),
+            'ms_z_test_function', *color_attrs('fill_color1'),
             'fill_alpha_fade_in_time', 'fill_full_alpha_time',
             'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
             'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
             'fill_texture_animation_speed_u', 'fill_texture_animation_speed_v',
-            'ee_fall_off', *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            'ee_fall_off', *color_attrs('ee_color'), 'ee_alpha_fade_in_time',
             'ee_full_alpha_time', 'ee_alpha_fade_out_time',
             'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
             'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
@@ -1235,22 +1235,22 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
             'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
             'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1', rename_alpha=True),
-            *gen_color('color_key2', rename_alpha=True),
-            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            *color_attrs('color_key1', rename_alpha=True),
+            *color_attrs('color_key2', rename_alpha=True),
+            *color_attrs('color_key3', rename_alpha=True), 'color_key1_alpha',
             'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
             'color_key2_time', 'color_key3_time',
             'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
             'ps_initial_rotation_delta', 'ps_rotation_speed',
             'ps_rotation_speed_delta', (FID, 'addon_models'),
             'holes_start_time', 'holes_end_time', 'holes_start_value',
-            'holes_end_value', 'ee_width', *gen_color('edge_color'),
+            'holes_end_value', 'ee_width', *color_attrs('edge_color'),
             'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
             'addon_models_fade_in_time', 'addon_models_fade_out_time',
             'addon_models_scale_start', 'addon_models_scale_end',
             'addon_models_scale_in_time', 'addon_models_scale_out_time',
-            (FID, 'sound_ambient'), *gen_color('fill_color2'),
-            *gen_color('fill_color3'), 'fill_color1_scale',
+            (FID, 'sound_ambient'), *color_attrs('fill_color2'),
+            *color_attrs('fill_color3'), 'fill_color1_scale',
             'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
             'fill_color2_time', 'fill_color3_time', 'color_scale',
             'birth_position_offset', 'birth_position_offset_range_delta',
@@ -1732,16 +1732,17 @@ class MreLgtm(MelRecord):
         MelEdid(),
         MelTruncatedStruct(b'DATA',
             ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f', '28B', 'f',
-             '3B', 's', '3f', '4s'], *gen_color('lgtm_ambient_color'),
-            *gen_color('lgtm_directional_color'),
-            *gen_color('lgtm_fog_color_near'), 'lgtm_fog_near',
+             '3B', 's', '3f', '4s'], *color_attrs('lgtm_ambient_color'),
+            *color_attrs('lgtm_directional_color'),
+            *color_attrs('lgtm_fog_color_near'), 'lgtm_fog_near',
             'lgtm_fog_far', 'lgtm_directional_rotation_xy',
             'lgtm_directional_rotation_z', 'lgtm_directional_fade',
             'lgtm_fog_clip_distance', 'lgtm_fog_power',
-            *gen_ambient_lighting('lgtm'), *gen_color('lgtm_fog_color_far'),
-            'lgtm_fog_max', 'lgtm_light_fade_distances_start',
-            'lgtm_light_fade_distances_end', 'lgtm_unknown_data',
-            old_versions={'3Bs3Bs3Bs2f2i3f28Bf', '3Bs3Bs3Bs2f2i3f24B'}),
+            *ambient_lighting_attrs('lgtm'),
+            *color_attrs('lgtm_fog_color_far'), 'lgtm_fog_max',
+            'lgtm_light_fade_distances_start', 'lgtm_light_fade_distances_end',
+            'lgtm_unknown_data', old_versions={'3Bs3Bs3Bs2f2i3f28Bf',
+                                               '3Bs3Bs3Bs2f2i3f24B'}),
         MelDalc(),
     )
 
@@ -1779,7 +1780,7 @@ class MreLigh(MelRecord):
         MelFull(),
         MelIcons(),
         MelStruct(b'DATA', ['i', 'I', '4B', 'I', '6f', 'I', 'f'],
-            'duration', 'light_radius', *gen_color('light_color'),
+            'duration', 'light_radius', *color_attrs('light_color'),
             (_light_flags, 'light_flags'), 'light_falloff', 'light_fov',
             'light_near_clip', 'light_fe_period', # fe = 'Flicker Effect'
             'light_fe_intensity_amplitude', 'light_fe_movement_amplitude',
@@ -1892,13 +1893,13 @@ class MreMato(MelRecord):
                 'falloff_scale', 'falloff_bias', 'noise_uv_scale',
                 'material_uv_scale', 'projection_vector_x',
                 'projection_vector_y', 'projection_vector_z',
-                'normal_dampener', *gen_color3('single_pass_color'),
+                'normal_dampener', *color3_attrs('single_pass_color'),
                 'is_single_pass', old_versions={'7f'}),
             se_version=MelTruncatedStruct(b'DATA', ['11f', 'I', 'B', '3s'],
                 'falloff_scale', 'falloff_bias', 'noise_uv_scale',
                 'material_uv_scale', 'projection_vector_x',
                 'projection_vector_y', 'projection_vector_z',
-                'normal_dampener', *gen_color3('single_pass_color'),
+                'normal_dampener', *color3_attrs('single_pass_color'),
                 'is_single_pass', 'is_considered_snow', 'unused1',
                 old_versions={'7f', '11fI'}),
         ),
@@ -2171,7 +2172,7 @@ class MreNpc_(AMreActor, AMreWithKeywords):
         MelActorSounds(),
         MelInheritsSoundsFrom(),
         MelNpcShared(),
-        MelStruct(b'QNAM', ['3f'], *gen_color3('texture_lighting')),
+        MelStruct(b'QNAM', ['3f'], *color3_attrs('texture_lighting')),
         # fm = 'face morph'
         MelStruct(b'NAM9', ['19f'], 'fm_nose_long', 'fm_nose_up', 'fm_jaw_up',
             'fm_jaw_wide', 'fm_jaw_forward', 'fm_cheeks_up', 'fm_cheeks_back',
@@ -2182,7 +2183,7 @@ class MreNpc_(AMreActor, AMreWithKeywords):
             'face_part_unknown', 'face_part_eyes', 'face_part_mouth'),
         MelSorted(MelGroups('face_tint_layers',
             MelUInt16(b'TINI', 'tint_index'),
-            MelStruct(b'TINC', ['4B'], *gen_color('tint_color')),
+            MelStruct(b'TINC', ['4B'], *color_attrs('tint_color')),
             MelSInt32(b'TINV', 'tint_interpolation_value'),
             MelSInt16(b'TIAS', 'tint_preset'),
         ), sort_by_attrs='tint_index'),
@@ -2336,7 +2337,7 @@ class MreProj(MelRecord):
     """Projectile."""
     rec_sig = b'PROJ'
 
-    class ProjTypeFlags(Flags):
+    class _ProjFlags(Flags):
         is_hitscan: bool = flag(0)
         is_explosive: bool = flag(1)
         alt_trigger: bool = flag(2)
@@ -2356,26 +2357,20 @@ class MreProj(MelRecord):
         MelModel(),
         MelDestructible(),
         MelTruncatedStruct(b'DATA',
-            [u'2H', u'3f', u'2I', u'3f', u'2I', u'3f', u'3I', u'4f', u'2I'],
-            (ProjTypeFlags, u'flags'),
-            'projectileTypes', 'gravity', ('speed', 10000.0),
-            ('range', 10000.0), (FID, u'light'), (FID, u'muzzleFlash'),
-            'tracerChance', 'explosionAltTrigerProximity',
-            'explosionAltTrigerTimer', (FID, u'explosion'),
-            (FID, u'sound'), 'muzzleFlashDuration',
-            'fadeDuration', 'impactForce',
-            (FID, 'sound_countdown'), (FID, 'sound_disable'),
-            (FID, u'defaultWeaponSource'), 'coneSpread',
-            'collisionRadius', 'lifetime',
-            'relaunchInterval', (FID, u'decalData'),
-            (FID, u'collisionLayer'), old_versions={'2H3f2I3f2I3f3I4fI',
-                                                    '2H3f2I3f2I3f3I4f'}),
-        MelGroup('models',
-            MelString(b'NAM1','muzzleFlashPath'),
-            # Ignore texture hashes - they're only an optimization, plenty of
-            # records in Skyrim.esm are missing them
-            MelNull(b'NAM2'),
-        ),
+            ['2H', '3f', '2I', '3f', '2I', '3f', '3I', '4f', '2I'],
+            (_ProjFlags, 'proj_flags'), 'proj_type', 'proj_gravity',
+            'proj_speed', 'proj_range', (FID, 'proj_light'),
+            (FID, 'muzzle_flash'), 'tracer_chance',
+            'explosion_alt_trigger_proximity',
+            'explosion_alt_trigger_timer', (FID, 'proj_explosion'),
+            (FID, 'proj_sound'), 'muzzle_flash_duration',
+            'proj_fade_duration', 'proj_impact_force',
+            (FID, 'proj_sound_countdown'), (FID, 'proj_sound_disable'),
+            (FID, 'default_weapon_source'), 'proj_cone_spread',
+            'proj_collision_radius', 'proj_lifetime', 'proj_relaunch_interval',
+            (FID, 'proj_decal_data'), (FID, 'proj_collision_layer'),
+            old_versions={'2H3f2I3f2I3f3I4fI', '2H3f2I3f2I3f3I4f'}),
+        MelProjMuzzleFlashModel(),
         MelSoundLevel(),
     )
 

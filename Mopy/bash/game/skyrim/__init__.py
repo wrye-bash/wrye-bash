@@ -816,7 +816,7 @@ class ASkyrimGameInfo(PatchGame):
         b'LIGH': ('sound',),
         b'MISC': ('sound_pickup', 'sound_drop'),
         b'MSTT': ('sound',),
-        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
+        b'PROJ': ('proj_sound', 'proj_sound_countdown', 'proj_sound_disable'),
         b'SCRL': ('sound_pickup', 'sound_drop'),
         b'SLGM': ('sound_pickup', 'sound_drop'),
         b'SNCT': ('parent',),
@@ -957,8 +957,8 @@ class ASkyrimGameInfo(PatchGame):
         b'MGEF': ('dual_casting_scale',),
         b'MISC': ('iconPath', 'model'),
         b'PERK': ('iconPath',),
-        b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
-                  'models'),
+        b'PROJ': ('model', 'muzzle_flash_duration', 'proj_fade_duration',
+                  'muzzle_flash_model'),
         b'SLGM': ('iconPath', 'model'),
         b'STAT': ('model',),
         b'TREE': ('model',),
@@ -984,7 +984,8 @@ class ASkyrimGameInfo(PatchGame):
                   'hit_effect_art', 'effect_impact_data', 'dual_casting_art',
                   'enchant_art', 'hit_visuals', 'enchant_visuals',
                   'effect_imad'),
-        b'PROJ': ('light', 'muzzleFlash', 'explosion', 'decalData'),
+        b'PROJ': ('proj_light', 'muzzle_flash', 'proj_explosion',
+                  'proj_decal_data'),
         b'SCRL': ('menu_display_object',),
         b'SPEL': ('menu_display_object',),
         b'WEAP': ('firstPersonModelObject',),
@@ -1073,10 +1074,11 @@ class ASkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK',
-                          b'CONT', b'DOOR', b'FLOR', b'FURN', b'KEYM', b'LIGH',
-                          b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM',
-                          b'TACT', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
+        b'SCRL', b'SLGM', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors

@@ -32,7 +32,7 @@ from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
     MelLLFlagsTes3, MelNull, MelRecord, MelRef3D, MelRefScale, MelSequential, \
     MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
     MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
-    SizeDecider, gen_color, gen_color3
+    SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -121,10 +121,10 @@ class MelArmorData(MelGroups):
 class MelDestinations(MelGroups):
     """Handles the common DODT/DNAM subrecords."""
     def __init__(self):
-        super(MelDestinations, self).__init__(u'cell_travel_destinations',
-            MelStruct(b'DODT', [u'6f'], u'dest_pos_x', u'dest_pos_y',
-                u'dest_pos_z', u'dest_rot_x', u'dest_rot_y', u'dest_rot_z'),
-            MelString(b'DNAM', u'dest_cell_name'),
+        super().__init__('cell_travel_destinations',
+            MelStruct(b'DODT', ['6f'], *position_attrs('destination'),
+                *rotation_attrs('destination')),
+            MelString(b'DNAM', 'destination_cell_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -373,8 +373,8 @@ class MreCell(AMreCell):
         MelString(b'RGNN', u'region_name'),
         MelColorO(b'NAM5'),
         MelFloat(b'WHGT', u'water_height'),
-        MelStruct(b'AMBI', ['12B', 'f'], *gen_color('ambi_ambient'),
-            *gen_color('ambi_sunlight'), *gen_color('ambi_fog'),
+        MelStruct(b'AMBI', ['12B', 'f'], *color_attrs('ambi_ambient'),
+            *color_attrs('ambi_sunlight'), *color_attrs('ambi_fog'),
             'fog_density'),
         MelGroups(u'moved_references',
             MelUInt32(b'MVRF', u'reference_id'),
@@ -752,7 +752,7 @@ class MreLigh(MelRecord):
         MelFullTes3(),
         MelIconTes3(),
         MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'weight', 'value',
-            'duration', 'light_radius', *gen_color('light_color'),
+            'duration', 'light_radius', *color_attrs('light_color'),
             (_light_flags, 'light_flags')),
         MelString(b'SNAM', 'sound_name'),
         MelScriptId(),
@@ -802,8 +802,8 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelUInt32(b'INDX', u'mgef_index'),
         MelStruct(b'MEDT', ['I', 'f', '4I', '3f'], 'school', 'base_cost',
-            (_mgef_flags, 'flags'), *gen_color3('mgef'), 'speed_x', 'size_x',
-            'size_cap'),
+            (_mgef_flags, 'flags'), *color3_attrs('mgef_color'), 'speed_x',
+            'size_x', 'size_cap'),
         MelIconTes3(),
         MelString(b'PTEX', u'particle_texture'),
         MelString(b'BSND', u'boltSound'),

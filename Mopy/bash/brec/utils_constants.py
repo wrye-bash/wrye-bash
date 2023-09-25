@@ -525,7 +525,18 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
-def gen_color(color_attr_pfx: str, *, rename_alpha: bool = False) -> list[str]:
+def ambient_lighting_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating a ton of repetitive attributes that are
+    shared between a couple record types (wbAmbientColors in xEdit)."""
+    color_types = [f'directional_{t}' for t in (
+        'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
+    color_types.append('specular')
+    color_iters = chain.from_iterable(color_attrs(d) for d in color_types)
+    ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
+    return ambient_lighting + [f'{attr_prefix}_ac_scale']
+
+def color_attrs(color_attr_pfx: str, *,
+        rename_alpha: bool = False) -> list[str]:
     """Helper method for generating red/green/blue/alpha color attributes. Note
     that alpha is commonly unused when Bethesda uses this 4-float style of
     colors and you may have to pass rename_alpha=True to name that attribute
@@ -533,19 +544,21 @@ def gen_color(color_attr_pfx: str, *, rename_alpha: bool = False) -> list[str]:
     return [f'{color_attr_pfx}_{c}' for c in (
         'red', 'green', 'blue', ('unused' if rename_alpha else 'alpha'))]
 
-def gen_color3(color_attr_pfx: str) -> list[str]:
+def color3_attrs(color_attr_pfx: str) -> list[str]:
     """Helper method for generating red/green/blue color attributes."""
     return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
 
-def gen_ambient_lighting(attr_prefix):
-    """Helper method for generating a ton of repetitive attributes that are
-    shared between a couple record types (wbAmbientColors in xEdit)."""
-    color_types = [f'directional_{t}' for t in (
-        'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
-    color_types.append('specular')
-    color_iters = chain.from_iterable(gen_color(d) for d in color_types)
-    ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
-    return ambient_lighting + [f'{attr_prefix}_ac_scale']
+def _gen_3d_attrs(attr_prefix: str) -> list[str]:
+    """Internal helper for position_attrs and rotation_attrs."""
+    return [f'{attr_prefix}_{d}' for d in ('x', 'y', 'z')]
+
+def position_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z position attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_pos')
+
+def rotation_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z rotation attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_rot')
 
 # Distributors ----------------------------------------------------------------
 # Shared distributor for LENS records

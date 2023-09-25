@@ -31,9 +31,9 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8
-from .utils_constants import FID, ZERO_FID, gen_ambient_lighting, gen_color, \
-    gen_color3, int_unpacker, null1, gen_coed_key, PackGeneralFlags, \
-    PackInterruptFlags
+from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
+    color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
+    PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs
 from ..bolt import Flags, TrimmedFlags, dict_sort, encode, flag, struct_pack, \
     structs_cache
 from ..exception import ModError
@@ -368,7 +368,7 @@ class MelDalc(MelTruncatedStruct):
     subrecord."""
     def __init__(self):
         super().__init__(b'DALC', ['28B', 'f'],
-            *gen_ambient_lighting(attr_prefix='dalc'), old_versions={'24B'})
+            *ambient_lighting_attrs('dalc'), old_versions={'24B'})
 
 #------------------------------------------------------------------------------
 class MelDeathItem(MelFid):
@@ -420,7 +420,7 @@ class MelDecalData(MelStruct):
             'decal_max_height', 'decal_depth', 'decal_shininess',
             'decal_parallax_scale', 'decal_parallax_passes',
             (self._decal_flags, 'decal_flags'), 'decal_unused1',
-            *gen_color('decal_color'))
+            *color_attrs('decal_color'))
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
@@ -775,7 +775,7 @@ class MelImgsTint(MelStruct):
     """Handles the IMGS subrecord TNAM (Tint)."""
     def __init__(self):
         super().__init__(b'TNAM', ['4f'], 'tint_amount',
-            *gen_color3('tint_color'))
+            *color3_attrs('tint_color'))
 
 #------------------------------------------------------------------------------
 class MelImpactDataset(MelFid):
@@ -1003,7 +1003,7 @@ class MelLensShared(MelSequential):
         lfs_element = MelGroups('lens_flare_sprites',
             MelString(b'DNAM', 'lfs_sprite_id'),
             MelString(b'FNAM', 'lfs_texture'),
-            MelStruct(b'LFSD', ['8f', 'I'], *gen_color3('lfs_tint'),
+            MelStruct(b'LFSD', ['8f', 'I'], *color3_attrs('lfs_tint'),
                 'lfs_width', 'lfs_height', 'lfs_position', 'lfs_angular_fade',
                 'lfs_opacity', (self._lfs_flags, 'lfs_flags')),
             )
@@ -1035,7 +1035,7 @@ class MelLinkColors(MelStruct):
     """Handles the common XCLP (Link Colors) subrecord."""
     def __init__(self):
         super().__init__(b'XCLP', ['3B', 's', '3B', 's'],
-            *gen_color('start_color'), *gen_color('end_color'))
+            *color_attrs('start_color'), *color_attrs('end_color'))
 
 #------------------------------------------------------------------------------
 class MelLLChanceNone(MelUInt8):
@@ -1158,7 +1158,7 @@ class MelMattShared(MelSequential):
         super().__init__(
             MelFid(b'PNAM', 'matt_material_parent'),
             MelString(b'MNAM', 'matt_material_name'),
-            MelStruct(b'CNAM', ['3f'], *gen_color3('havok_display_color')),
+            MelStruct(b'CNAM', ['3f'], *color3_attrs('havok_display_color')),
             MelFloat(b'BNAM', 'matt_buoyancy'),
             MelUInt32Flags(b'FNAM', 'matt_flags', self._matt_flags),
             MelImpactDataset(b'HNAM'),
@@ -1596,6 +1596,18 @@ class MelPerkParamsGroups(MelGroups):
         return target
 
 #------------------------------------------------------------------------------
+class MelProjMuzzleFlashModel(MelGroup):
+    """Handles the PROJ subrecords NAM1 and NAM2 (Muzzle Flash Model)."""
+    def __init__(self, ignore_texture_hashes: bool = True):
+        super().__init__('muzzle_flash_model',
+            MelString(b'NAM1', 'muzzle_flash_path'),
+            # Ignore texture hashes - they're only an optimization, plenty of
+            # records in Skyrim.esm are missing them
+            (MelNull(b'NAM2') if ignore_texture_hashes else
+             MelBase(b'NAM2', 'muzzle_flash_hashes')),
+        )
+
+#------------------------------------------------------------------------------
 class MelRace(MelFid):
     """Handles the common RNAM (Race) subrecord."""
     def __init__(self):
@@ -1721,8 +1733,8 @@ class MelRandomTeleports(MelSorted):
 class MelRef3D(MelStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
-        super().__init__(b'DATA', ['6f'], 'ref_pos_x', 'ref_pos_y',
-            'ref_pos_z', 'ref_rot_x', 'ref_rot_y', 'ref_rot_z')
+        super().__init__(b'DATA', ['6f'], *position_attrs('ref'),
+            *rotation_attrs('ref'))
 
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
