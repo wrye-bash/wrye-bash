@@ -32,7 +32,6 @@ import json
 import os
 import shutil
 import stat
-import subprocess
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, TypeVar
@@ -48,7 +47,14 @@ except ImportError:
         deprint('send2trash missing, recycling will not be possible')
     send2trash = TrashPermissionError = None
 
+try:
+    import vdf
+except ImportError:
+    vdf = None # We will raise an error on boot in bash._import_deps
+
 # Internals ===================================================================
+_StrPath = TypeVar('_StrPath', str, os.PathLike[str], covariant=True)
+
 @functools.cache
 def _find_legendary_games():
     """Reads the manifests from the third-party Legendary launcher to find all
@@ -74,6 +80,87 @@ def _find_legendary_games():
     except (json.JSONDecodeError, KeyError):
         deprint('Failed to parse Legendary manifest file', traceback=True)
     return found_lgd_games
+
+##: This typing assumes a VDF root node is always a dict, is that correct?
+@functools.cache
+def _parse_vdf(vdf_path: _StrPath, *, vdf_root: str) -> dict | None:
+    """Parse the specified KeyValues file (.vdf or .acf extension, so generally
+    just called 'VDF') and return its root node."""
+    try:
+        with open(vdf_path, 'rb') as ins:
+            # Checked all the VDFs shipped by Steam. Some are ASCII, some are
+            # UTF-8, some are UTF-8 with BOM and some are binary data. Let's go
+            # with this for now and hope this file will never be binary
+            vdf_data = bolt.decoder(ins.read())
+    except OSError:
+        # Be silent about this, often just means someone transferred a Steam
+        # library to another location/computer and some games haven't been
+        # reinstalled yet
+        return None
+    except UnicodeDecodeError:
+        deprint(f'Failed to parse {vdf_path}: failed to determine its '
+                f'encoding', traceback=True)
+        return None
+    try:
+        # Do this in its own try because vdf does not use a custom error type -
+        # don't want to accidentally catch a SyntaxError from decoder(), for
+        # example
+        parsed_vdf = vdf.loads(vdf_data)
+    except SyntaxError:
+        deprint(f'Failed to parse {vdf_path}: file has invalid syntax',
+            traceback=True)
+        return None
+    vdf_root = parsed_vdf.get(vdf_root)
+    if vdf_root is None:
+        deprint(f"Failed to parse {vdf_path}: expected root node "
+                f"'{vdf_root}', but got '{next(iter(parsed_vdf))}' "
+                f"instead", traceback=True)
+        return None
+    return vdf_root
+
+@functools.cache
+def _get_steam_manifests(steam_path: _StrPath) -> dict[int, str]:
+    """Read the libraryfolders.vdf file used by Steam for storing the Steam
+    library folder locations and return the installed app IDs along with the
+    paths at which the corresponding manifests are stored."""
+    lf_vdf_path = os.path.join(steam_path, 'config', 'libraryfolders.vdf')
+    lf_dict = _parse_vdf(lf_vdf_path, vdf_root='libraryfolders')
+    if lf_dict is None:
+        return {}
+    steam_manifests = {}
+    for library_folder_info in lf_dict.values():
+        if not library_folder_info: continue
+        lf_path = library_folder_info.get('path')
+        if not lf_path or not isinstance(lf_path, str): continue
+        lf_apps = library_folder_info.get('apps')
+        if not lf_apps or not isinstance(lf_apps, dict): continue
+        for steam_game_id in lf_apps.keys():
+            try:
+                steam_manifests[int(steam_game_id)] = os.path.join(lf_path,
+                    'steamapps', f'appmanifest_{steam_game_id}.acf')
+            except ValueError:
+                continue
+    return steam_manifests
+
+def _parse_steam_manifests(submod, steam_path: _StrPath | None):
+    """Parse the Steam game manifests (appmanifest_*.acf files) for this game
+    to determine the paths (if any) this game has been installed at via
+    Steam."""
+    if not (wanted_game_ids := submod.St.steam_ids) or steam_path is None:
+        return []
+    steam_manifests = _get_steam_manifests(steam_path)
+    steam_paths = []
+    for wanted_game_id in wanted_game_ids:
+        wanted_manifest_path = steam_manifests.get(wanted_game_id)
+        if not wanted_manifest_path: continue
+        wanted_game_dict = _parse_vdf(wanted_manifest_path,
+            vdf_root='AppState')
+        if not wanted_game_dict: continue
+        wanted_game_dir = wanted_game_dict.get('installdir')
+        if not wanted_game_dir: continue
+        steam_paths.append(os.path.join(os.path.dirname(wanted_manifest_path),
+            'common', wanted_game_dir))
+    return steam_paths
 
 # Windows store dataclasses
 @dataclass(slots=True)
@@ -187,7 +274,6 @@ def get_egs_game_paths(submod):
     return []
 
 # API - Filesystem methods ====================================================
-_StrPath = TypeVar('_StrPath', str, os.PathLike[str], covariant=True)
 T = TypeVar('T')
 
 class FileOperationType(Enum):

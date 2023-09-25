@@ -4,6 +4,7 @@ ifileoperation==1.2.6; sys_platform == 'win32'
 lz4==4.3.2
 pywin32==306; sys_platform == 'win32'
 PyYAML==6.0.1
+vdf==3.4
 wxPython==4.2.1
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation

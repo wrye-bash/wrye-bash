@@ -673,8 +673,8 @@ class EditorIds(_HandleAliases):
         changed_stats = []
         if not old_new: return changed_stats
         reWord = re.compile(r'\w+')
-        def subWord(match):
-            word = match.group(0)
+        def subWord(ma_word):
+            word = ma_word.group(0)
             newWord = old_new.get(word.lower())
             if not newWord:
                 return word

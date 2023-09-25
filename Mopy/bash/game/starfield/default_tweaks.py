@@ -20,26 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Module providing a mixin class to set some common defaults for Windows Store
-games."""
-from . import WS_COMMON_FILES, GameInfo
-from ..bolt import classproperty
-
-class WindowsStoreMixin(GameInfo):
-    registry_keys = []
-
-    @classproperty
-    def game_detect_includes(cls):
-        return super().game_detect_includes | WS_COMMON_FILES
-
-    @classproperty
-    def game_detect_excludes(cls):
-        return super().game_detect_excludes - WS_COMMON_FILES
-
-    # Disable any tools that require hooking into the game's executable. Even
-    # if the user manually installs these, they will not work, with no workable
-    # solution found by the tool devs.
-    class Se(GameInfo.Se):
-        pass
-    class Sd(GameInfo.Sd):
-        pass
+default_tweaks = {
+    'Invalidate, Allow loose files [Starfield].ini': {
+        'Archive': {'bInvalidateOlderFiles': '1',
+                    'sResourceDataDirsFinal': ''}},
+    'Invalidate, Disallow loose files ~Default [Starfield].ini': {
+        'Archive': {'bInvalidateOlderFiles': '0',
+                    'sResourceDataDirsFinal': 'STRINGS\\'}},
+}

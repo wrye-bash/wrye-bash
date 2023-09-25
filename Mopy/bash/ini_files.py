@@ -379,10 +379,10 @@ class IniFile(AIniFile, AFile):
                     else:
                         match_set = reSetting.match(line)
                         match_del = reDeleted.match(line)
-                        if match := (match_set or match_del):
+                        if match_set_del := (match_set or match_del):
                             ##: What about inline comments in deleted lines?
                             comment = match_set.group(3) if match_set else ''
-                            setting = match.group(1)
+                            setting = match_set_del.group(1)
                             if setting in sectionSettings:
                                 value = sectionSettings[setting]
                                 line = self._fmt_setting(setting, value)
@@ -541,9 +541,9 @@ class OBSEIniFile(IniFile):
     @classmethod
     def _parse_obse_line(cls, line):
         for regex, sectionKey, format_string in cls._regex_tuples:
-            match = regex.match(line)
-            if match:
-                return match, sectionKey, format_string
+            ma_obse = regex.match(line)
+            if ma_obse:
+                return ma_obse, sectionKey, format_string
         return None, None, None
 
     def _get_ci_settings(self, tweakPath):
@@ -561,10 +561,10 @@ class OBSEIniFile(IniFile):
                 else:
                     settings_dict = ini_settings
                 stripped = reComment.sub(u'',line).strip()
-                match, section_key, _fmt = self._parse_obse_line(stripped)
-                if match:
-                    settings_dict[section_key][match.group(1)] = match.group(
-                        2).strip(), i
+                ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
+                if ma_obse:
+                    settings_dict[section_key][ma_obse.group(1)] = (
+                        ma_obse.group(2).strip(), i)
         return ini_settings, deleted_settings, False
 
     def analyse_tweak(self, tweak_file):
@@ -579,9 +579,9 @@ class OBSEIniFile(IniFile):
             else: stripped = line
             stripped = reComment.sub(u'',stripped).strip()
             # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-            match, section, _fmt = self._parse_obse_line(stripped)
-            if match:
-                groups = match.groups()
+            ma_obse, section, _fmt = self._parse_obse_line(stripped)
+            if ma_obse:
+                groups = ma_obse.groups()
             else:
                 if stripped:
                     # Some other kind of line
@@ -628,10 +628,10 @@ class OBSEIniFile(IniFile):
                     # Test what kind of line it is - 'set' or 'setGS' or
                     # 'SetNumericGameSetting'
                     stripped = reComment.sub('', stripped).strip()
-                    match, section_key, format_string = self._parse_obse_line(
-                        stripped)
-                    if match:
-                        setting = match.group(1)
+                    ma_obse, section_key, format_string = \
+                        self._parse_obse_line(stripped)
+                    if ma_obse:
+                        setting = ma_obse.group(1)
                         # Apply the modification
                         if (section_key in ini_settings and
                                 setting in ini_settings[section_key]):
@@ -675,9 +675,9 @@ class OBSEIniFile(IniFile):
                 settings_ = ini_settings
             # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
             stripped = reComment.sub(u'',stripped).strip()
-            match, section_key, _fmt = self._parse_obse_line(stripped)
-            if match:
-                setting = match.group(1)
+            ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
+            if ma_obse:
+                setting = ma_obse.group(1)
                 # Save the setting for applying
                 if line[-1] != u'\n': line += u'\n'
                 settings_[section_key][setting] = line
@@ -696,7 +696,7 @@ class OBSEIniFile(IniFile):
                 for line in self.read_ini_content(as_unicode=True):
                     stripped = re_comment.sub('', line).strip()
                     # Try checking if it's an OBSE line first
-                    _match, section, _fmt = self._parse_obse_line(stripped)
+                    _ma_obse, section, _fmt = self._parse_obse_line(stripped)
                     if not section:
                         # It's not, assume it's a regular line
                         match_section = re_section.match(stripped)

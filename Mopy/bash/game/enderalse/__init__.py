@@ -20,17 +20,17 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ..enderal import EnderalGameInfo
-from ..gog_game import GOGMixin
-from ..skyrimse import SkyrimSEGameInfo
+from ..enderal import AEnderalGameInfo
+from ..skyrimse import ASkyrimSEGameInfo
+from ..store_mixins import GOGMixin, SteamMixin
 
 _GOG_IDS = [1708684988]
 
 # We want the final chain of attribute lookups to be Enderal SE -> Enderal LE
 # -> Skyrim SE -> Skyrim LE -> Defaults, i.e. the narrower overrides first
-class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
+class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
     """GameInfo override for Enderal Special Edition."""
-    displayName = u'Enderal Special Edition'
+    display_name = 'Enderal Special Edition'
     fsName = u'Enderal Special Edition'
     game_icon = u'enderalse_%u.png'
     bash_root_prefix = u'EnderalSE'
@@ -43,21 +43,18 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     game_detect_excludes = set(GOGMixin.get_unique_filenames(_GOG_IDS))
     loot_dir = u'Enderal Special Edition'
     loot_game_name = 'Enderal Special Edition'
-    # This is in HKCU. There's also one in HKLM that uses 'SureAI\Enderal SE'
-    # for some reason
-    registry_keys = [(r'SureAI\EnderalSE', 'Install_Path')]
     nexusUrl = u'https://www.nexusmods.com/enderalspecialedition/'
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
 
-    class Ini(EnderalGameInfo.Ini, SkyrimSEGameInfo.Ini):
+    class Ini(AEnderalGameInfo.Ini, ASkyrimSEGameInfo.Ini):
         save_prefix = u'..\\Enderal Special Edition\\Saves'
 
-    class Xe(EnderalGameInfo.Xe, SkyrimSEGameInfo.Xe):
+    class Xe(AEnderalGameInfo.Xe, ASkyrimSEGameInfo.Xe):
         full_name = u'EnderalSEEdit'
         xe_key_prefix = u'enderalSEView'
 
-    class Bain(EnderalGameInfo.Bain, SkyrimSEGameInfo.Bain):
+    class Bain(AEnderalGameInfo.Bain, ASkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'enderalseedit backups', u'enderalseedit cache'}
 
     bethDataFiles = {
@@ -97,7 +94,8 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
         'update.esm',
     }
 
-    names_tweaks = (SkyrimSEGameInfo.names_tweaks |
+    # Override like this so that we get the SkyrimSE ammo tweak
+    names_tweaks = (ASkyrimSEGameInfo.names_tweaks |
                     {'NamesTweak_RenamePennies'} -
                     {'NamesTweak_RenameGold'})
 
@@ -105,15 +103,19 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-class GOGEnderalSEGameInfo(GOGMixin, EnderalSEGameInfo):
+class GOGEnderalSEGameInfo(GOGMixin, _AEnderalSEGameInfo):
     """GameInfo override for the GOG version of Enderal Special Edition."""
-    displayName = 'Enderal Special Edition (GOG)'
     my_games_name = 'Enderal Special Edition GOG'
     appdata_name = 'Enderal Special Edition GOG'
     _gog_game_ids = _GOG_IDS
 
-    class Ini(EnderalSEGameInfo.Ini):
+    class Ini(_AEnderalSEGameInfo.Ini):
         save_prefix = '..\\Enderal Special Edition GOG\\Saves'
 
-GAME_TYPE = {g.displayName: g for g in
-             (EnderalSEGameInfo, GOGEnderalSEGameInfo)}
+class SteamEnderalSEGameInfo(SteamMixin, _AEnderalSEGameInfo):
+    """GameInfo override for the Steam version of Enderal SE."""
+    class St(_AEnderalSEGameInfo.St):
+        steam_ids = [976620]
+
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGEnderalSEGameInfo, SteamEnderalSEGameInfo)}

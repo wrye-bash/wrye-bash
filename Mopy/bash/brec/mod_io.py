@@ -33,6 +33,7 @@ from .. import bolt, bush
 from ..bolt import decoder, sig_to_str, struct_pack, struct_unpack, \
     structs_cache
 from ..exception import ModError, ModReadError, ModSizeError, StateError
+from ..game import ObjectIndexRange
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
@@ -412,16 +413,17 @@ class FormIdWriteContext:
     def _get_short_mapper(self, skip_engine=False):
         # Set utils_constants.short_mapper based on this mod's masters
         indices = self._get_indices()
-        has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if skip_engine or (has_expanded_range and
-                           len(self._augmented_masters) > 1 and
-                           self._plugin_header_ver >= 1.0):
+        oi_range = bush.game.Esp.object_index_range
+        if skip_engine or (len(self._augmented_masters) > 1 and
+                           (oi_range is ObjectIndexRange.EXPANDED_ALWAYS or
+                            (oi_range is ObjectIndexRange.EXPANDED_CONDITIONAL
+                             and self._plugin_header_ver >= 1.0))):
             # Plugin has at least one master, it may freely use the
-            # expanded (0x000-0x800) range (or we want to skip the check)
+            # expanded (0x000-0x7FF) range (or we want to skip the check)
             def _short_mapper(formid):
                 return (indices[formid.mod_fn] << 24) | formid.object_dex
         else:
-            # 0x000-0x800 are reserved for hardcoded (engine) records
+            # 0x000-0x7FF are reserved for hardcoded (engine) records
             def _short_mapper(formid):
                 return ((object_id := formid.object_dex) >= 0x800 and indices[
                     formid.mod_fn] << 24) | object_id

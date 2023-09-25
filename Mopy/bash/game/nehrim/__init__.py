@@ -20,15 +20,15 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ..gog_game import GOGMixin
-from ..oblivion import OblivionGameInfo
+from ..oblivion import AOblivionGameInfo
+from ..store_mixins import GOGMixin, SteamMixin
 from ...bolt import DefaultFNDict, FName
 
 _GOG_IDS = [1497007810]
 
-class NehrimGameInfo(OblivionGameInfo):
+class _ANehrimGameInfo(AOblivionGameInfo):
     """GameInfo override for Nehrim: At Fate's Edge."""
-    displayName = u'Nehrim'
+    display_name = 'Nehrim'
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
@@ -43,7 +43,7 @@ class NehrimGameInfo(OblivionGameInfo):
     nexusKey = u'bash.installers.openNehrimNexus.continue'
     check_legacy_paths = False
 
-    class Bsa(OblivionGameInfo.Bsa):
+    class Bsa(AOblivionGameInfo.Bsa):
         redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'N - Textures1.bsa': 1104530400, # '2005-01-01'
             u'N - Textures2.bsa': 1104616800, # '2005-01-02'
@@ -56,7 +56,7 @@ class NehrimGameInfo(OblivionGameInfo):
 
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
     # Exhaustion, Morph Factions and SEWorld Tests)
-    patchers = {p for p in OblivionGameInfo.patchers if p not in
+    patchers = {p for p in AOblivionGameInfo.patchers if p not in
                 ('CoblCatalogs', 'CoblExhaustion', 'MorphFactions',
                  'SEWorldTests')}
 
@@ -121,7 +121,7 @@ class NehrimGameInfo(OblivionGameInfo):
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         # bypass setting the patchers in super class
-        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        super(AOblivionGameInfo, cls)._dynamic_import_modules(package_name)
         # Only Import Roads is of any interest
         from ..oblivion.patcher import preservers
         cls.game_specific_import_patchers = {
@@ -132,9 +132,14 @@ class NehrimGameInfo(OblivionGameInfo):
     def init(cls, _package_name=None):
         super().init(_package_name or __name__)
 
-class GOGNehrimGameInfo(GOGMixin, NehrimGameInfo):
+class GOGNehrimGameInfo(GOGMixin, _ANehrimGameInfo):
     """GameInfo override for the GOG version of Nehrim."""
-    displayName = 'Nehrim (GOG)'
     _gog_game_ids = _GOG_IDS
 
-GAME_TYPE = {g.displayName: g for g in (NehrimGameInfo, GOGNehrimGameInfo)}
+class SteamNehrimGameInfo(SteamMixin, _ANehrimGameInfo):
+    """GameInfo override for the Steam version of Nehrim."""
+    class St(_ANehrimGameInfo.St):
+        steam_ids = [1014940]
+
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGNehrimGameInfo, SteamNehrimGameInfo)}

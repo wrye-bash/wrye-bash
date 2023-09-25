@@ -71,7 +71,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from . import bass
-from .bolt import JsonParsable, json_remap
+from .bolt import JsonParsable, gen_enum_parser, json_remap
 from .exception import EndorsedTooSoonError, EndorsedWithoutDownloadError, \
     LimitReachedError, RequestError
 from .web import ARestHandler
@@ -111,7 +111,7 @@ class EndorsementStatus(Enum):
     # The user has abstained from endorsing the mod
     ABSTAINED = 'Abstained'
 
-_str_to_es = {e.value: e for e in EndorsementStatus.__members__.values()}
+_es_parser = gen_enum_parser(EndorsementStatus)
 
 @dataclass(slots=True)
 class NxModUpdate(JsonParsable):
@@ -140,7 +140,7 @@ class NxUploadUser(JsonParsable):
 class NxModEndorsement(JsonParsable):
     """Represents a user's endorsement relative to a mod."""
     _parsers = {
-        'endorse_status': lambda d, a: _str_to_es[d[a]],
+        'endorse_status': lambda d, a: _es_parser[d[a]],
         'endorse_timestamp': json_remap('timestamp'),
         'endorse_version': json_remap('version'),
     }

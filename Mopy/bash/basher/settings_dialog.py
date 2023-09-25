@@ -1094,12 +1094,8 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
-        # Strip off the '(GOG)' etc. suffixes for display names
-        ##: Game handling! These different display names shouldn't exist and
-        # such games should instead just show up as 'variants' of the main game
-        # in the GUI
         _("[Mods] Renaming a plugin to something that %(game_name)s can't "
-          'load') % {'game_name': bush.game.displayName.split('(')[0].strip()}:
+          'load') % {'game_name': bush.game.display_name}:
             'bash.rename.isBadFileName.continue',
         _(u'[Mods] Reordering plugins by name'):
             u'bash.sortMods.continue',
@@ -1286,7 +1282,8 @@ class GeneralPage(_AScrollablePage):
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
-        self._managed_game = DropDown(self, value=bush.game.displayName,
+        self._managed_game = DropDown(self,
+            value=bush.game.unique_display_name,
             choices=sorted(bush.foundGames), dd_tooltip=_(
                 'Changes which game Wrye Bash is managing.'))
         self._managed_game.on_combo_select.subscribe(self._on_managed_game)
@@ -1420,7 +1417,7 @@ class GeneralPage(_AScrollablePage):
 
     def _on_managed_game(self, new_game: str):
         self._mark_setting_changed(u'managed_game',
-            new_game != bush.game.displayName)
+            new_game != bush.game.unique_display_name)
 
     def _on_plugin_enc(self, new_enc: str):
         self._mark_setting_changed(u'plugin_encoding',
