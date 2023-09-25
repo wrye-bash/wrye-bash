@@ -69,7 +69,10 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelIdleAnimFlags, MelPackPkdt, MelPackSchedule, MelPackOwnerQuest, \
     MelPackPkcu, MelPackDataInputValues, MelPackDataInputs, MelNoteType, \
     MelPackProcedureTree, MelPackIdleHandler, MelProjMuzzleFlashModel, \
-    position_attrs, rotation_attrs
+    position_attrs, rotation_attrs, AMreRegn, MelRegnEntryMapName, \
+    MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
+    MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
+    MelRegnEntryGrasses
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2856,6 +2859,35 @@ class MreProj(MelRecord):
         MelProjMuzzleFlashModel(),
         MelSoundLevel(),
     )
+
+#------------------------------------------------------------------------------
+class MreRegn(AMreRegn):
+    """Region."""
+    melSet = MelSet(
+        MelEdid(),
+        MelColor(b'RCLR'),
+        MelWorldspace(),
+        MelRegnAreas(with_unknown_anam=True),
+        MelSorted(MelGroups('regn_entries',
+            MelRegnRdat(),
+            MelIcon(),
+            MelRegnEntryMusic(),
+            MelRegnEntrySounds(),
+            MelRegnEntryMapName(),
+            MelRegnEntryObjects(),
+            MelRegnEntryGrasses(),
+            MelRegnEntryWeatherTypes(),
+            MelFloat(b'RLDM', 'lod_display_distance_multiplier'),
+            MelFloat(b'ANAM', 'occlusion_accuracy_distance'),
+        ), sort_by_attrs='regn_data_type'),
+    ).with_distributor({
+        b'RCLR': {
+            b'ANAM': 'regn_areas',
+        },
+        b'RDAT': {
+            b'ANAM': 'regn_entries',
+        },
+    })
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done

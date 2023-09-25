@@ -568,6 +568,14 @@ class AMreRace(MelRecord):
         self.hairs = [h for h in self.hairs if h.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
+class AMreRegn(MelRecord):
+    """Base class for REGN records."""
+    rec_sig = b'REGN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        border_region: bool = flag(6)
+
+#------------------------------------------------------------------------------
 class AMreWrld(MelRecord):
     """Base class for WRLD records."""
     rec_sig = b'WRLD'

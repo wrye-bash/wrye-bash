@@ -26,7 +26,7 @@ from itertools import chain
 
 from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
-    MelSorted, MelTruncatedStruct, MelUnion, PartialLoadDecider
+    MelSorted, MelTruncatedStruct, MelUnion, PartialLoadDecider, MelExtra
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
@@ -311,6 +311,8 @@ class MelCobjOutput(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+##: This should pass is_required and be renamed to MelColorR, also double-check
+# that all these really are required in xEdit
 class MelColor(MelStruct):
     """Required Color."""
     def __init__(self, color_sig=b'CNAM'):
@@ -327,6 +329,7 @@ class MelColorInterpolator(MelArray):
             'green', 'blue', 'alpha'))
 
 #------------------------------------------------------------------------------
+##: This should be renamed MelColor, see comment near current MelColor above
 class MelColorO(MelStruct):
     """Optional Color."""
     def __init__(self, color_sig=b'CNAM'):
@@ -1598,7 +1601,7 @@ class MelPerkParamsGroups(MelGroups):
 #------------------------------------------------------------------------------
 class MelProjMuzzleFlashModel(MelGroup):
     """Handles the PROJ subrecords NAM1 and NAM2 (Muzzle Flash Model)."""
-    def __init__(self, ignore_texture_hashes: bool = True):
+    def __init__(self, ignore_texture_hashes=True):
         super().__init__('muzzle_flash_model',
             MelString(b'NAM1', 'muzzle_flash_path'),
             # Ignore texture hashes - they're only an optimization, plenty of
@@ -1771,9 +1774,33 @@ class MelRegions(MelSorted):
         super().__init__(MelSimpleArray('regions', MelFid(b'XCLR')))
 
 #------------------------------------------------------------------------------
+class MelRegnAreas(MelGroups):
+    """Handles the REGN subrecords RPLI and RPLD (and ANAM in FO4)."""
+    def __init__(self, with_unknown_anam=False):
+        super().__init__('regn_areas',
+            MelUInt32(b'RPLI', 'edge_falloff'),
+            MelArray('regn_area_points',
+                MelStruct(b'RPLD', ['2f'], 'regn_ap_x', 'regn_ap_y'),
+            ),
+            MelBase(b'ANAM', 'unknown_anam') if with_unknown_anam else None,
+        )
+
+#------------------------------------------------------------------------------
+class MelRegnRdat(MelExtra):
+    """Handles the REGN subrecord RDAT (Data Header)."""
+    def __init__(self):
+        ##: xEdit marks the last unknown as 2 bytes, but only in Oblivion. In
+        # all other games they are an unlimited-length byte array. Figure
+        # out if 2 bytes (which is what we had for all games) is correct and
+        # submit a PR to xEdit to fix that if it is
+        super().__init__(MelStruct(b'RDAT', ['I', '2B'],
+            'regn_data_type', 'regn_data_override', 'regn_data_priority'),
+            extra_attr='regn_data_unknown')
+
+#------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):
     """Wrapper around MelUnion to correctly read/write REGN entry data.
-    Skips loading and dumping if entryType != entry_type_val.
+    Skips loading and dumping if regn_data_type != entry_type_val.
 
     entry_type_val meanings:
       - 2: Objects
@@ -1786,8 +1813,107 @@ class MelRegnEntrySubrecord(MelUnion):
     def __init__(self, entry_type_val: int, element):
         super().__init__({
             entry_type_val: element,
-        }, decider=AttrValDecider('entryType'),
+        }, decider=AttrValDecider('regn_data_type'),
             fallback=MelNull(b'NULL')) # ignore
+
+#------------------------------------------------------------------------------
+class MelRegnEntryGrasses(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDGS (Grasses)."""
+    def __init__(self):
+        super().__init__(6, MelSorted(MelArray('regn_grasses',
+            MelStruct(b'RDGS', ['I', '4s'], (FID, 'regn_grass_fid'),
+                'regn_grass_unknown'),
+        ), sort_by_attrs='regn_grass_fid'))
+
+#------------------------------------------------------------------------------
+class MelRegnEntryMapName(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDMP (Map Name)."""
+    def __init__(self):
+        super().__init__(4, MelString(b'RDMP', 'regn_map_name'))
+
+#------------------------------------------------------------------------------
+class MelRegnEntryMusic(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDMO (Music) - FO3 and newer."""
+    def __init__(self):
+        super().__init__(7, MelFid(b'RDMO', 'regn_music'))
+
+#------------------------------------------------------------------------------
+class MelRegnEntryMusicType(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDMD (Music Type) - FO3 and older."""
+    def __init__(self):
+        super().__init__(7, MelUInt32(b'RDMD', 'regn_music_type'))
+
+#------------------------------------------------------------------------------
+class _AMelRegnEntrySounds(MelRegnEntrySubrecord):
+    """Base class for MelRegnEntrySounds and MelRegnEntrySoundsOld since they
+    share the same flags and attrs, only signature and attr types differ."""
+    _rds_sig: bytes
+    _rds_fmt: list[str]
+
+    class _SoundFlags(Flags):
+        regn_sound_pleasant: bool
+        regn_sound_cloudy: bool
+        regn_sound_rainy: bool
+        regn_sound_snowy: bool
+
+    def __init__(self):
+        super().__init__(7, MelSorted(MelArray('regn_sounds',
+            MelStruct(self._rds_sig, self._rds_fmt,
+                (FID, 'regn_sound_fid'),
+                (self._SoundFlags, 'regn_sound_flags'), 'regn_sound_chance'),
+            ), sort_by_attrs='regn_sound_fid'))
+
+class MelRegnEntrySounds(_AMelRegnEntrySounds):
+    """Handles the REGN subrecord RDSA (Sounds) - Skyrim and newer."""
+    _rds_sig = b'RDSA'
+    _rds_fmt = ['2I', 'f']
+
+class MelRegnEntrySoundsOld(_AMelRegnEntrySounds):
+    """Handles the REGN subrecord RDSD (Sounds) - FO3 and older."""
+    _rds_sig = b'RDSD'
+    _rds_fmt = ['3I']
+
+#------------------------------------------------------------------------------
+class MelRegnEntryObjects(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDOT (Objects)."""
+    class _ObjectFlags(Flags):
+        regn_obj_conform_to_slope: bool
+        regn_obj_paint_vertices: bool
+        regn_obj_delta_size_variance: bool
+        regn_obj_delta_x: bool
+        regn_obj_delta_y: bool
+        regn_obj_delta_z: bool
+        regn_obj_tree: bool
+        regn_obj_huge_rock: bool
+
+    def __init__(self):
+        super().__init__(2, MelArray('regn_objects',
+            MelStruct(b'RDOT',
+                ['I', 'H', '2s', 'f', '4B', '2H', '5f', '3H', '2s', '4s'],
+                (FID, 'regn_obj_fid'), 'regn_obj_parent_index',
+                'regn_obj_unknown1', 'regn_obj_density', 'regn_obj_clustering',
+                'regn_obj_min_slope', 'regn_obj_max_slope',
+                (self._ObjectFlags, 'regn_obj_flags'),
+                'regn_obj_radius_wrt_parent', 'regn_obj_radius',
+                'regn_obj_min_height', 'regn_obj_max_height', 'regn_obj_sink',
+                'regn_obj_sink_var', 'regn_obj_size_var',
+                *rotation_attrs('regn_obj_angle_var'), 'regn_obj_unknown2',
+                'regn_obj_unknown3'),
+            ))
+
+#------------------------------------------------------------------------------
+class MelRegnEntryWeatherTypes(MelRegnEntrySubrecord):
+    """Handles the REGN subrecord RDWT (Weather Types) - FO3 added a new
+    FormID (Global) to the end."""
+    def __init__(self, with_global=True):
+        rdwt_elements = [(FID, 'regn_wt_weather'), 'regn_wt_chance']
+        rdwt_fmt = ['I', 'I']
+        if with_global:
+            rdwt_elements.append((FID, 'regn_wt_global'))
+            rdwt_fmt.append('I')
+        super().__init__(3, MelSorted(MelArray('regn_weather_types',
+            MelStruct(b'RDWT', rdwt_fmt, *rdwt_elements),
+        ), sort_by_attrs='regn_wt_weather'))
 
 #------------------------------------------------------------------------------
 class MelRelations(MelSorted):
@@ -1993,6 +2119,12 @@ class MelWorldBounds(MelSequential):
             MelStruct(b'NAM9', ['2f'], 'object_bounds_max_x',
                 'object_bounds_max_y'),
         )
+
+#------------------------------------------------------------------------------
+class MelWorldspace(MelFid):
+    """Handles the REGN/WRLD subrecord WNAM (Worldspace)."""
+    def __init__(self, ws_attr='worldspace'):
+        super().__init__(b'WNAM', ws_attr)
 
 #------------------------------------------------------------------------------
 class MelWthrColors(MelStruct):

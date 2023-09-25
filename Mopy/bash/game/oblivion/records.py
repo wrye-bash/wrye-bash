@@ -41,7 +41,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelObme, MelOwnership, MelMgefEsceTes4, MelMgefData, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
     MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
-    MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
+    MelRegnEntryMusicType, MelRelations, MelScript, MelScriptVars, \
     MelSeasons, MelSequential, MelSet, MelSimpleArray, MelSInt16, MelSInt32, \
     MelSkipInterior, MelSorted, MelSound, MelSoundClose, MelSoundLooping, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
@@ -49,7 +49,10 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
     SpellFlags, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
     AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
-    PackGeneralOldFlags, MelPackScheduleOld
+    PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
+    MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
+    MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
+    MelRegnEntryMapName
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -2029,71 +2032,23 @@ class MreRefr(MelRecord):
     })
 
 #------------------------------------------------------------------------------
-class MreRegn(MelRecord):
+class MreRegn(AMreRegn):
     """Region."""
-    rec_sig = b'REGN'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        border_region: bool = flag(6)
-
-    class _RdatFlags(Flags):
-        Override: bool
-
-    class _ObFlags(Flags):
-        conform: bool = flag(0)
-        paintVertices: bool = flag(1)
-        sizeVariance: bool = flag(2)
-        deltaX: bool = flag(3)
-        deltaY: bool = flag(4)
-        deltaZ: bool = flag(5)
-        Tree: bool = flag(6)
-        hugeRock: bool = flag(7)
-
-    class _SdFlags(Flags):
-        pleasant: bool = flag(0)
-        cloudy: bool = flag(1)
-        rainy: bool = flag(2)
-        snowy: bool = flag(3)
-
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelStruct(b'RCLR', ['3B', 's'], 'mapRed', 'mapBlue', 'mapGreen',
-                  'unused1'),
-        MelFid(b'WNAM','worldspace'),
-        MelGroups('areas',
-            MelUInt32(b'RPLI', 'edgeFalloff'),
-            MelArray('points',
-                MelStruct(b'RPLD', ['2f'], 'posX', 'posY'),
-            ),
-        ),
-        MelSorted(MelGroups('entries',
-            MelStruct(b'RDAT', ['I', '2B', '2s'], 'entryType',
-                      (_RdatFlags, 'flags'), 'priority', 'unused1'),
-            MelRegnEntrySubrecord(2, MelArray('objects',
-                MelStruct(b'RDOT', ['I', 'H', '2s', 'f', '4B', '2H', '5f',
-                    '3H', '2s', '4s'], (FID, 'objectId'), 'parentIndex',
-                    'unk1', 'density', 'clustering', 'minSlope',
-                    'maxSlope', (_ObFlags, 'flags'), 'radiusWRTParent',
-                    'radius', 'minHeight', 'maxHeight', 'sink', 'sinkVar',
-                    'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
-                    'unk2', 'unk3'),
-            )),
-            ##: Was disabled previously - not in xEdit either...
-            # MelRegnEntrySubrecord(5, MelIcon()),
-            MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
-            MelRegnEntrySubrecord(6, MelSorted(MelArray('grasses',
-                MelStruct(b'RDGS', ['I', '4s'], (FID, 'grass'), 'unknown'),
-            ), sort_by_attrs='grass')),
-            MelRegnEntrySubrecord(7, MelUInt32(b'RDMD', 'musicType')),
-            MelRegnEntrySubrecord(7, MelSorted(MelArray('sounds',
-                MelStruct(b'RDSD', ['3I'], (FID, 'sound'), (_SdFlags, 'flags'),
-                          'chance'),
-            ), sort_by_attrs='sound')),
-            MelRegnEntrySubrecord(3, MelSorted(MelArray('weatherTypes',
-                MelStruct(b'RDWT', ['2I'], (FID, 'weather'), 'chance')
-            ), sort_by_attrs='weather')),
-        ), sort_by_attrs='entryType'),
+        MelColor(b'RCLR'),
+        MelWorldspace(),
+        MelRegnAreas(),
+        MelSorted(MelGroups('regn_entries',
+            MelRegnRdat(),
+            MelRegnEntryObjects(),
+            MelRegnEntryMapName(),
+            MelRegnEntryGrasses(),
+            MelRegnEntryMusicType(),
+            MelRegnEntrySoundsOld(),
+            MelRegnEntryWeatherTypes(with_global=False),
+        ), sort_by_attrs='regn_data_type'),
     )
 
 #------------------------------------------------------------------------------
@@ -2370,7 +2325,7 @@ class MreWrld(AMreWrld):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid(b'WNAM', 'parent'),
+        MelWorldspace('wrld_parent'),
         MelFid(b'CNAM', 'climate'),
         MelFid(b'NAM2', 'water'),
         MelIcon('mapPath'),
