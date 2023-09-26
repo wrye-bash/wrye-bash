@@ -72,7 +72,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     position_attrs, rotation_attrs, AMreRegn, MelRegnEntryMapName, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
-    MelRegnEntryGrasses
+    MelRegnEntryGrasses, MelRevbData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1935,9 +1935,9 @@ class MreKssm(MelRecord):
         MelFloat(b'TNAM', 'vats_threshold'),
         MelFids('kssm_keywords', MelFid(b'KNAM')),
         MelSorted(MelGroups('kssm_sounds',
-            MelStruct(b'RNAM', ['2I'], 'reverb_class',
-                (FID, 'sound_descriptor')),
-        ), sort_by_attrs='reverb_class'),
+            MelStruct(b'RNAM', ['2I'], 'ks_reverb_class',
+                (FID, 'ks_sound_descriptor')),
+        ), sort_by_attrs='ks_reverb_class'),
     )
 
 #------------------------------------------------------------------------------
@@ -2888,6 +2888,33 @@ class MreRegn(AMreRegn):
             b'ANAM': 'regn_entries',
         },
     })
+
+#------------------------------------------------------------------------------
+class MreRela(MelRecord):
+    """Relationship."""
+    rec_sig = b'RELA'
+
+    class _RelationshipFlags(Flags):
+        rela_secret: bool = flag(7)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['2I', 'B', '2s', 'B', 'I'], (FID, 'rela_parent'),
+            (FID, 'rela_child'), 'rela_rank_type', 'rela_unknown',
+            (_RelationshipFlags,  'rela_flags'),
+            (FID,'rela_association_type')),
+    )
+
+#------------------------------------------------------------------------------
+class MreRevb(MelRecord):
+    """Reverb Parameters"""
+    rec_sig = b'REVB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelRevbData(),
+        MelUInt32(b'ANAM', 'revb_reverb_class'),
+    )
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done

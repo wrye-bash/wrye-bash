@@ -1930,6 +1930,16 @@ class MelRelations(MelSorted):
         ), sort_by_attrs='faction')
 
 #------------------------------------------------------------------------------
+class MelRevbData(MelStruct):
+    """Handles the REVB subrecord DATA (Data)."""
+    def __init__(self):
+        super().__init__(b'DATA', ['2H', '4b', '6B'], 'revb_decay_time',
+            'revb_hf_reference', 'revb_room_filter', 'revb_room_hf_filter',
+            'revb_reflections', 'revb_reverb_amp', 'revb_decay_hf_ratio',
+            'revb_reflect_delay', 'revb_reverb_delay', 'revb_diffusion',
+            'revb_density', 'revb_unknown', is_required=True)
+
+#------------------------------------------------------------------------------
 class MelScript(MelFid):
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):

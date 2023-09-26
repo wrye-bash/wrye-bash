@@ -778,3 +778,19 @@ class MreOtft(MelRecord):
     def keep_fids(self, keep_plugins):
         super().keep_fids(keep_plugins)
         self.items = [i for i in self.items if i.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class MreRfct(MelRecord):
+    """Visual Effect."""
+    rec_sig = b'RFCT'
+
+    class _RfctFlags(Flags):
+        rotate_to_face_target: bool
+        attach_to_camera: bool
+        inherit_rotation: bool
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['3I'], (FID, 'rfct_effect_art'),
+            (FID, 'rfct_shader'), (_RfctFlags, 'rfct_flags')),
+    )

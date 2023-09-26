@@ -76,7 +76,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelPackProcedureTree, MelPackIdleHandler, MelProjMuzzleFlashModel, \
     position_attrs, rotation_attrs, AMreRegn, MelWorldspace, MelRegnAreas, \
     MelRegnRdat, MelRegnEntryObjects, MelRegnEntryMusic, MelRegnEntrySounds, \
-    MelRegnEntryWeatherTypes, MelRegnEntryGrasses
+    MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3047,22 +3047,17 @@ class MreRela(MelRecord):
     rec_sig = b'RELA'
 
     class HeaderFlags(MelRecord.HeaderFlags):
-        secret: bool = flag(6)
+        rela_secret: bool = flag(6)
 
-    class RelationshipFlags(Flags):
-        unknown_1: bool = flag(0)
-        unknown_2: bool = flag(1)
-        unknown_3: bool = flag(2)
-        unknown_4: bool = flag(3)
-        unknown_5: bool = flag(4)
-        unknown_6: bool = flag(5)
-        unknown_7: bool = flag(6)
-        Secret: bool = flag(7)
+    class _RelationshipFlags(Flags):
+        rela_secret: bool = flag(7)
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2I', u'H', u's', u'B', u'I'],(FID,'parent'),(FID,'child'),'rankType',
-                  'unknown',(RelationshipFlags, u'relaFlags'),(FID,'associationType'),),
+        MelStruct(b'DATA', ['2I', 'H', 's', 'B', 'I'], (FID, 'rela_parent'),
+            (FID, 'rela_child'), 'rela_rank_type', 'rela_unknown',
+            (_RelationshipFlags,  'rela_flags'),
+            (FID,'rela_association_type')),
     )
 
 #------------------------------------------------------------------------------
@@ -3072,26 +3067,7 @@ class MreRevb(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'2H', u'4b', u'6B'],'decayTimeMS','hfReferenceHZ','roomFilter',
-                  'hfRoomFilter','reflections','reverbAmp','decayHFRatio',
-                  'reflectDelayMS','reverbDelayMS','diffusion','density',
-                  'unknown',),
-        )
-
-#------------------------------------------------------------------------------
-class MreRfct(MelRecord):
-    """Visual Effect."""
-    rec_sig = b'RFCT'
-
-    class RfctTypeFlags(Flags):
-        rotate_to_face_target: bool
-        attach_to_camera: bool
-        inherit_rotation: bool
-
-    melSet = MelSet(
-        MelEdid(),
-        MelStruct(b'DATA', [u'3I'], (FID, u'rfct_art'), (FID, u'rfct_shader'),
-            (RfctTypeFlags, u'rfct_flags')),
+        MelRevbData(),
     )
 
 #------------------------------------------------------------------------------
