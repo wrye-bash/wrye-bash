@@ -30,7 +30,7 @@ from .advanced_elements import AttrValDecider, FidNotNullDecider, \
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
-    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8
+    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16
 from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
     PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs
@@ -480,7 +480,7 @@ class MelEquipmentType(MelFid):
 class MelEqupPnam(MelSimpleArray):
     """Handles the EQUP subrecord PNAM (Slot Parents)."""
     def __init__(self):
-        super().__init__('slot_parents', MelFid(b'PNAM'))
+        super().__init__('slot_parents', MelParent())
 
 #------------------------------------------------------------------------------
 class MelFactFlags(MelUInt32Flags):
@@ -988,7 +988,7 @@ class MelLctnShared(MelSequential):
             ),
             MelFull(),
             MelKeywords(),
-            MelFid(b'PNAM', 'parent_location'),
+            MelParent(),
             MelFid(b'NAM1', 'lctn_music'),
             MelFid(b'FNAM', 'unreported_crime_faction'),
             MelFid(b'MNAM', 'world_location_marker_ref'),
@@ -1159,7 +1159,7 @@ class MelMattShared(MelSequential):
 
     def __init__(self):
         super().__init__(
-            MelFid(b'PNAM', 'matt_material_parent'),
+            MelParent(),
             MelString(b'MNAM', 'matt_material_name'),
             MelStruct(b'CNAM', ['3f'], *color3_attrs('havok_display_color')),
             MelFloat(b'BNAM', 'matt_buoyancy'),
@@ -1576,6 +1576,12 @@ class MelPackScheduleOld(MelStruct):
         super().__init__(b'PSDT', ['2b', 'B', 'b', 'i'], 'schedule_month',
             'schedule_day', 'schedule_date', 'schedule_time',
             'schedule_duration', is_required=is_required)
+
+#------------------------------------------------------------------------------
+class MelParent(MelFid):
+    """Handles the common subrecord PNAM (Parent)."""
+    def __init__(self):
+        super().__init__(b'PNAM', 'parent_fid')
 
 #------------------------------------------------------------------------------
 class MelPerkData(MelTruncatedStruct):
@@ -2022,8 +2028,8 @@ class _StoryManagerShared(MelSequential):
     def __init__(self, conditions_element: MelBase, with_quest_flags=False):
         super().__init__(
             MelEdid(),
-            MelFid(b'PNAM', 'sm_parent'),
-            MelFid(b'SNAM', 'sm_child'),
+            MelParent(),
+            MelFid(b'SNAM', 'child_fid'),
             conditions_element,
             _MelSMFlags(with_quest_flags=with_quest_flags),
             MelUInt32(b'XNAM', 'max_concurrent_quests'),
@@ -2061,6 +2067,31 @@ class MelSmqnShared(MelSequential):
                 MelUInt32(b'FNAM', 'sm_quest_flags'), # All flags unknown
                 MelFloat(b'RNAM', 'hours_until_reset'),
             ),
+        )
+
+#------------------------------------------------------------------------------
+class MelSnctFlags(MelUInt32Flags):
+    """Handles the SNCT subrecord FNAM (Flags)."""
+    class _SnctFnamFlags(Flags):
+        mute_when_submerged: bool
+        should_appear_on_menu: bool
+        immune_to_time_speedup: bool # since FO4
+        pause_during_menus_immed: bool # since FO4
+        pause_during_menus_fade: bool # since FO4
+        exclude_from_player_opm_override: bool # since FO4
+        pause_during_start_menu: bool # since FO4
+
+    def __init__(self):
+        super().__init__(b'FNAM', 'snct_flags', self._SnctFnamFlags) # required
+
+#------------------------------------------------------------------------------
+class MelSnctVnamUnam(MelSequential):
+    """Handles the SNCT subrecords VNAM (Static Volume Multiplier) and UNAM
+    (Default Menu Value)."""
+    def __init__(self):
+        super().__init__(
+            MelUInt16(b'VNAM', 'static_volume_multiplier'),
+            MelUInt16(b'UNAM', 'default_menu_value'),
         )
 
 #------------------------------------------------------------------------------

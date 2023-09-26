@@ -73,7 +73,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
-    MelSmenShared, MelSmqnShared
+    MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1977,7 +1977,7 @@ class MreLayr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'PNAM', 'layr_parent'),
+        MelParent(),
     )
 
 #------------------------------------------------------------------------------
@@ -3026,6 +3026,22 @@ class MreSmqn(MelRecord):
 
     melSet = MelSet(
         MelSmqnShared(MelConditions(), with_extra_hours_until_reset=True),
+    )
+
+#------------------------------------------------------------------------------
+class MreSnct(MelRecord):
+    """Sound Category."""
+    rec_sig = b'SNCT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelSnctFlags(),
+        MelParent(),
+        MelFid(b'ONAM', 'menu_slider_category'),
+        MelSnctVnamUnam(),
+        MelFloat(b'MNAM', 'min_frequency_multiplier'),
+        MelFloat(b'CNAM', 'sidechain_target_multiplier'),
     )
 
 #------------------------------------------------------------------------------

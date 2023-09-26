@@ -779,7 +779,7 @@ class ASkyrimGameInfo(PatchGame):
         # mgef_sounds has FormIDs, but will be filtered in MreMgef.keep_fids
         b'MGEF': ('casting_sound_level', 'mgef_sounds'),
         b'PROJ': ('sound_level',),
-        b'SNCT': ('staticVolumeMultiplier',),
+        b'SNCT': ('static_volume_multiplier',),
         # sound_files does not need to loop here
         b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
                   'pct_frequency_shift', 'pct_frequency_variance',
@@ -819,7 +819,7 @@ class ASkyrimGameInfo(PatchGame):
         b'PROJ': ('proj_sound', 'proj_sound_countdown', 'proj_sound_disable'),
         b'SCRL': ('sound_pickup', 'sound_drop'),
         b'SLGM': ('sound_pickup', 'sound_drop'),
-        b'SNCT': ('parent',),
+        b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
         b'SOUN': ('soundDescriptor',),
         b'TACT': ('sound',),

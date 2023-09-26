@@ -2799,7 +2799,7 @@ class MreSoun(MelRecord):
         envelopeFast: bool = flag(9)
         envelopeSlow: bool = flag(10)
         twoDRadius: bool = flag(11)
-        muteWhenSubmerged: bool = flag(12)
+        mute_when_submerged: bool = flag(12)
         startatRandomPosition: bool = flag(fnv_only(13))
 
     melSet = MelSet(

@@ -76,8 +76,9 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelPackProcedureTree, MelPackIdleHandler, MelProjMuzzleFlashModel, \
     position_attrs, rotation_attrs, AMreRegn, MelWorldspace, MelRegnAreas, \
     MelRegnRdat, MelRegnEntryObjects, MelRegnEntryMusic, MelRegnEntrySounds, \
-    MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData, \
-    MelSmbnShared, MelSmenShared, MelSmqnShared
+    MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData, MelParent, \
+    MelSmbnShared, MelSmenShared, MelSmqnShared, MelSnctFlags, \
+    MelSnctVnamUnam
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3230,17 +3231,12 @@ class MreSnct(MelRecord):
     """Sound Category."""
     rec_sig = b'SNCT'
 
-    class SoundCategoryFlags(Flags):
-        muteWhenSubmerged: bool
-        shouldAppearOnMenu: bool
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt32Flags(b'FNAM', u'flags', SoundCategoryFlags),
-        MelFid(b'PNAM','parent',),
-        MelUInt16(b'VNAM', 'staticVolumeMultiplier'),
-        MelUInt16(b'UNAM', 'defaultMenuValue'),
+        MelSnctFlags(),
+        MelParent(),
+        MelSnctVnamUnam(),
     )
 
 #------------------------------------------------------------------------------
