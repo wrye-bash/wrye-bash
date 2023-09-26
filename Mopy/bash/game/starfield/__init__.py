@@ -24,7 +24,7 @@ from os.path import join as _j
 
 from .. import GameInfo, ObjectIndexRange
 from ..patch_game import PatchGame
-from ..store_mixins import SteamMixin
+from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 class _AStarfieldGameInfo(PatchGame):
@@ -236,4 +236,10 @@ class SteamStarfieldGameInfo(SteamMixin, _AStarfieldGameInfo):
     class St(_AStarfieldGameInfo.St):
         steam_ids = [1716740]
 
-GAME_TYPE = SteamStarfieldGameInfo
+class WSStarfieldGameInfo(WindowsStoreMixin, _AStarfieldGameInfo):
+    """GameInfo override for the Windows Store version of Starfield."""
+    class Ws(_AStarfieldGameInfo.Ws):
+        win_store_name = 'BethesdaSoftworks.ProjectGold'
+
+GAME_TYPE = {g.unique_display_name: g for g in (
+    SteamStarfieldGameInfo, WSStarfieldGameInfo)}
