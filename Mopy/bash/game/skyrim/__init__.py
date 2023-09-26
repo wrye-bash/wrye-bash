@@ -1035,7 +1035,7 @@ class ASkyrimGameInfo(PatchGame):
         b'SHOU': ('description',),
         b'SPEL': ('description',),
         b'WEAP': ('description',),
-        b'WOOP': ('translation',),
+        b'WOOP': ('woop_translation',),
     }
 
     #--------------------------------------------------------------------------
@@ -1257,7 +1257,7 @@ class ASkyrimGameInfo(PatchGame):
         b'TREE': ('full',),
         b'WATR': ('full',),
         b'WEAP': ('full', 'description'),
-        b'WOOP': ('full',),
+        b'WOOP': ('full', 'woop_translation'),
     }
     gold_attrs = lambda self: {
         'eid': 'Gold001',

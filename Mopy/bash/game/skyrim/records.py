@@ -3710,7 +3710,7 @@ class MreWoop(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelLString(b'TNAM','translation'),
+        MelLString(b'TNAM', 'woop_translation'),
     )
 
 #------------------------------------------------------------------------------

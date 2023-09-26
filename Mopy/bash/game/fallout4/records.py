@@ -2918,6 +2918,49 @@ class MreRevb(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreRfgp(MelRecord):
+    """Reference Group."""
+    rec_sig = b'RFGP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'NNAM', 'rfgp_name'),
+        MelFid(b'RNAM', 'rfgp_reference'),
+        MelBase(b'PNAM', 'unknown_pnam'),
+    )
+
+#------------------------------------------------------------------------------
+class _MelSccoXnam(MelStruct):
+    """Occurs twice in SCCO (because Bethesda), so deduplicated here."""
+    def __init__(self):
+        super().__init__(b'XNAM', ['2i'], 'scco_scene_unknown1',
+            'scco_scene_unknown2'),
+
+class MreScco(MelRecord):
+    """Scene Collection."""
+    rec_sig = b'SCCO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'QNAM', 'scco_quest'),
+        MelGroups('scco_scenes',
+            MelFid(b'SNAM', 'scco_scene_fid'),
+            _MelSccoXnam(),
+        ),
+        MelBaseR(b'VNAM', 'scco_unknown_vnam1'), # required, marker?
+        MelGroups('scco_unknown_array',
+            _MelSccoXnam(),
+        ),
+        MelBaseR(b'VNAM', 'scco_unknown_vnam2'), # required, marker?
+    ).with_distributor({
+        b'XNAM': 'scco_scenes',
+        b'VNAM': ('scco_unknown_vnam1', {
+            b'VNAM': 'scco_unknown_vnam2',
+            b'XNAM': 'scco_unknown_array',
+        }),
+    })
+
+#------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done
     """Worldspace."""
     ref_types = MreCell.ref_types
