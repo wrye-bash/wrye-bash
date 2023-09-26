@@ -1940,6 +1940,20 @@ class MelRevbData(MelStruct):
             'revb_density', 'revb_unknown', is_required=True)
 
 #------------------------------------------------------------------------------
+class MelScolParts(MelGroups):
+    """Handles the SCOL subrecords ONAM and DATA (Parts)."""
+    def __init__(self):
+        super().__init__('scol_parts',
+            MelFid(b'ONAM', 'scol_part_static'),
+            MelSorted(MelArray('scol_part_placements',
+                MelStruct(b'DATA', ['7f'], *position_attrs('scol_part'),
+                    *rotation_attrs('scol_part'), 'scol_part_scale'),
+            ), sort_by_attrs=(*position_attrs('scol_part'),
+                              *rotation_attrs('scol_part'),
+                              'scol_part_scale')),
+        )
+
+#------------------------------------------------------------------------------
 class MelScript(MelFid):
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):

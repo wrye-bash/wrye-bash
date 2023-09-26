@@ -61,7 +61,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelProjMuzzleFlashModel, position_attrs, rotation_attrs, AMreRegn, \
     MelColor, MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
-    MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType
+    MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
+    MelScolParts
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -2766,14 +2767,7 @@ class MreScol(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelGroups('parts',
-            MelFid(b'ONAM','static'),
-            MelSorted(MelArray('placements',
-                MelStruct(b'DATA', [u'7f'], u'posX', u'posY', u'posZ', u'rotX',
-                          u'rotY', u'rotZ', u'scale'),
-            ), sort_by_attrs=('posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ',
-                              'scale')),
-        ),
+        MelScolParts(),
     )
 
 #------------------------------------------------------------------------------

@@ -72,7 +72,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     position_attrs, rotation_attrs, AMreRegn, MelRegnEntryMapName, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
-    MelRegnEntryGrasses, MelRevbData
+    MelRegnEntryGrasses, MelRevbData, MelScolParts
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2959,6 +2959,46 @@ class MreScco(MelRecord):
             b'XNAM': 'scco_unknown_array',
         }),
     })
+
+#------------------------------------------------------------------------------
+class MreScol(MelRecord):
+    """Static Collection."""
+    rec_sig = b'SCOL'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        non_occluder: bool = flag(4)
+        hidden_from_local_map: bool = flag(9)
+        scol_loadscreen: bool = flag(10)
+        used_as_platform: bool = flag(11)
+        has_distant_lod: bool = flag(15)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        navmesh_ground: bool = flag(30)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelModel(),
+        MelFull(),
+        MelFilterString(),
+        MelSorted(MelScolParts(), sort_by_attrs='scol_part_static'),
+    )
+
+#------------------------------------------------------------------------------
+class MreScsn(MelRecord):
+    """Audio Category Snapshot."""
+    rec_sig = b'SCSN'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUInt16(b'PNAM', 'scsn_priority'),
+        MelGroups('category_multipliers',
+            MelStruct(b'CNAM', ['I', 'f'], (FID, 'cm_category'),
+                'cm_multiplier'),
+        ),
+    )
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done

@@ -209,6 +209,7 @@ _rt_names = {
     b'SCOL': 'Static Collection',
     b'SCPT': 'Script',
     b'SCRL': 'Scroll',
+    b'SCSN': 'Audio Category Snapshot',
     b'SGST': 'Sigil Stone',
     b'SHOU': 'Shout',
     b'SKIL': 'Skill',
