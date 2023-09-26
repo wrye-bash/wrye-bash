@@ -522,6 +522,7 @@ def InitModLinks():
         dev_tools_menu.links.append(Mod_FullLoad())
         dev_tools_menu.links.append(Mod_RecalcRecordCounts())
         dev_tools_menu.links.append(Mod_DumpSubrecords())
+        dev_tools_menu.links.append(Mod_DumpRecordTypeNames())
         ModList.context_links.append(dev_tools_menu)
     if True: #--File
         file_menu = MenuLink(_('File..'))

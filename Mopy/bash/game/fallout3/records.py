@@ -572,7 +572,7 @@ class MreAmmo(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
-    """Animation Object."""
+    """Animated Object."""
     rec_sig = b'ANIO'
 
     melSet = MelSet(

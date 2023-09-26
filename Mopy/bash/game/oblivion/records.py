@@ -612,7 +612,7 @@ class MreAmmo(_ObIcon):
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
-    """Animation Object."""
+    """Animated Object."""
     rec_sig = b'ANIO'
 
     melSet = MelSet(
@@ -2053,7 +2053,7 @@ class MreRegn(AMreRegn):
 
 #------------------------------------------------------------------------------
 class MreRoad(MelRecord):
-    """Road. Part of large worldspaces."""
+    """Road."""
     ####Could probably be loaded via MelArray,
     ####but little point since it is too complex to manipulate
     rec_sig = b'ROAD'

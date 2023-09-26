@@ -1872,6 +1872,7 @@ class MreInnr(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreIpct(MelRecord):
+    """Impact."""
     rec_sig = b'IPCT'
 
     melSet = MelSet(
