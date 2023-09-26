@@ -72,7 +72,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     position_attrs, rotation_attrs, AMreRegn, MelRegnEntryMapName, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
-    MelRegnEntryGrasses, MelRevbData, MelScolParts
+    MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
+    MelSmenShared, MelSmqnShared
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -2998,6 +2999,33 @@ class MreScsn(MelRecord):
             MelStruct(b'CNAM', ['I', 'f'], (FID, 'cm_category'),
                 'cm_multiplier'),
         ),
+    )
+
+#------------------------------------------------------------------------------
+class MreSmbn(MelRecord):
+    """Story Manager Branch Node."""
+    rec_sig = b'SMBN'
+
+    melSet = MelSet(
+        MelSmbnShared(MelConditions()),
+    )
+
+#------------------------------------------------------------------------------
+class MreSmen(MelRecord):
+    """Story Manager Event Node."""
+    rec_sig = b'SMEN'
+
+    melSet = MelSet(
+        MelSmenShared(MelConditions()),
+    )
+
+#------------------------------------------------------------------------------
+class MreSmqn(MelRecord):
+    """Story Manager Quest Node."""
+    rec_sig = b'SMQN'
+
+    melSet = MelSet(
+        MelSmqnShared(MelConditions(), with_extra_hours_until_reset=True),
     )
 
 #------------------------------------------------------------------------------

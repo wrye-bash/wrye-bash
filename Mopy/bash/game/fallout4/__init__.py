@@ -943,7 +943,7 @@ class AFallout4GameInfo(PatchGame):
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL', b'NAVI', b'NOCM', b'QUST', b'SCEN',
             b'RACE', # later :(
-            b'SMBN', b'SMEN', b'SMQN', b'SNCT', b'SNDR',
+            b'SNCT', b'SNDR',
             b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}

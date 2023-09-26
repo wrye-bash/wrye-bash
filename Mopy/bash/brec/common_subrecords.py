@@ -1998,6 +1998,72 @@ class MelSkipInterior(MelUnion):
         }, decider=FlagDecider('flags', ['isInterior']))
 
 #------------------------------------------------------------------------------
+class _MelSMFlags(MelStruct):
+    """Handles Story Manager flags shared by SMBN, SMQN and SMEN."""
+    class _NodeFlags(Flags):
+        sm_random: bool
+        no_child_warn: bool
+
+    class _QuestFlags(Flags):
+        do_all_before_repeating: bool
+        shares_event: bool
+        num_quests_to_run: bool
+
+    def __init__(self, with_quest_flags=False):
+        sm_fmt = ['I']
+        sm_elements = [(self._NodeFlags, 'node_flags')]
+        if with_quest_flags:
+            sm_fmt = ['2H']
+            sm_elements.append((self._QuestFlags, 'quest_flags'))
+        super().__init__(b'DNAM', sm_fmt, *sm_elements)
+
+class _StoryManagerShared(MelSequential):
+    """Deduplicates some subrecords shared by SMBN, SMEN and SMQN."""
+    def __init__(self, conditions_element: MelBase, with_quest_flags=False):
+        super().__init__(
+            MelEdid(),
+            MelFid(b'PNAM', 'sm_parent'),
+            MelFid(b'SNAM', 'sm_child'),
+            conditions_element,
+            _MelSMFlags(with_quest_flags=with_quest_flags),
+            MelUInt32(b'XNAM', 'max_concurrent_quests'),
+        )
+
+##: Same situation as with MelMustShared above
+class MelSmbnShared(_StoryManagerShared):
+    """Handles the subrecords shared by SMBN."""
+
+#------------------------------------------------------------------------------
+##: Same situation as with MelMustShared above
+class MelSmenShared(MelSequential):
+    """Handles the subrecords shared by SMEN."""
+    def __init__(self, conditions_element: MelBase):
+        super().__init__(
+            _StoryManagerShared(conditions_element),
+            MelUInt32(b'ENAM', 'sm_type'),
+        )
+
+#------------------------------------------------------------------------------
+##: Same situation as with MelMustShared above
+class MelSmqnShared(MelSequential):
+    """Handles the subrecords shared by SMQN."""
+    def __init__(self, conditions_element: MelBase,
+            with_extra_hours_until_reset=False):
+        super().__init__(
+            _StoryManagerShared(conditions_element, with_quest_flags=True),
+            MelUInt32(b'MNAM', 'num_quests_to_run'),
+            (MelFloat(b'HNAM', 'hours_until_reset')
+             if with_extra_hours_until_reset else None),
+            MelCounter(MelUInt32(b'QNAM', 'sm_quest_count'),
+                counts='sm_quests'),
+            MelGroups('sm_quests',
+                MelFid(b'NNAM', 'sm_quest_fid'),
+                MelUInt32(b'FNAM', 'sm_quest_flags'), # All flags unknown
+                MelFloat(b'RNAM', 'hours_until_reset'),
+            ),
+        )
+
+#------------------------------------------------------------------------------
 class MelSound(MelFid):
     """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):

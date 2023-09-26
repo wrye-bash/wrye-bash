@@ -76,7 +76,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelPackProcedureTree, MelPackIdleHandler, MelProjMuzzleFlashModel, \
     position_attrs, rotation_attrs, AMreRegn, MelWorldspace, MelRegnAreas, \
     MelRegnRdat, MelRegnEntryObjects, MelRegnEntryMusic, MelRegnEntrySounds, \
-    MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData
+    MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData, \
+    MelSmbnShared, MelSmenShared, MelSmqnShared
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -355,26 +356,6 @@ class MelNvnm(AMelNvnm):
         nvnm_has_waypoints = False
 
     _nvnm_context_class = _NvnmContextTes5
-
-#------------------------------------------------------------------------------
-class MelSMFlags(MelStruct):
-    """Handles Story Manager flags shared by SMBN, SMQN and SMEN."""
-    class _node_flags(Flags):
-        sm_random: bool
-        no_child_warn: bool
-
-    class _quest_flags(Flags):
-        do_all_before_repeating: bool
-        shares_event: bool
-        num_quests_to_run: bool
-
-    def __init__(self, with_quest_flags=False):
-        sm_fmt = [u'I']
-        sm_elements = [(self._node_flags, u'node_flags')]
-        if with_quest_flags:
-            sm_fmt = [u'2H']
-            sm_elements.append((self._quest_flags, u'quest_flags'))
-        super(MelSMFlags, self).__init__(b'DNAM', sm_fmt, *sm_elements)
 
 #------------------------------------------------------------------------------
 class MelSpit(MelStruct):
@@ -3223,12 +3204,7 @@ class MreSmbn(MelRecord):
     rec_sig = b'SMBN'
 
     melSet = MelSet(
-        MelEdid(),
-        MelFid(b'PNAM', u'sm_parent'),
-        MelFid(b'SNAM', u'sm_child'),
-        MelConditions(),
-        MelSMFlags(),
-        MelUInt32(b'XNAM', u'max_concurrent_quests'),
+        MelSmbnShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------
@@ -3237,13 +3213,7 @@ class MreSmen(MelRecord):
     rec_sig = b'SMEN'
 
     melSet = MelSet(
-        MelEdid(),
-        MelFid(b'PNAM', u'sm_parent'),
-        MelFid(b'SNAM', u'sm_child'),
-        MelConditions(),
-        MelSMFlags(),
-        MelUInt32(b'XNAM', u'max_concurrent_quests'),
-        MelUInt32(b'ENAM', u'sm_type'),
+        MelSmenShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------
@@ -3252,19 +3222,7 @@ class MreSmqn(MelRecord):
     rec_sig = b'SMQN'
 
     melSet = MelSet(
-        MelEdid(),
-        MelFid(b'PNAM', u'sm_parent'),
-        MelFid(b'SNAM', u'sm_child'),
-        MelConditions(),
-        MelSMFlags(with_quest_flags=True),
-        MelUInt32(b'XNAM', u'max_concurrent_quests'),
-        MelUInt32(b'MNAM', u'num_quests_to_run'),
-        MelCounter(MelUInt32(b'QNAM', u'quest_count'), counts=u'sm_quests'),
-        MelGroups(u'sm_quests',
-            MelFid(b'NNAM', u'sm_quest'),
-            MelUInt32(b'FNAM', u'sm_quest_flags'), # all unknown
-            MelFloat(b'RNAM', u'hours_until_reset'),
-        )
+        MelSmqnShared(MelConditions()),
     )
 
 #------------------------------------------------------------------------------
