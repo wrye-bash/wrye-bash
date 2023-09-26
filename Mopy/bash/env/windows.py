@@ -1084,11 +1084,11 @@ def get_steam_game_paths(submod):
     return [_GPath_no_norm(p) for p in
             _parse_steam_manifests(submod, _get_steam_path())]
 
-def get_personal_path():
+def get_personal_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.Documents)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def get_local_app_data_path():
+def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 

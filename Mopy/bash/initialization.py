@@ -48,9 +48,17 @@ mopy_dirs_initialized = bash_dirs_initialized = False
 #--Config Helper files (LOOT Master List, etc.)
 lootDb = None # type: LOOTParser | None
 
-def getPersonalPath(bash_ini_, my_docs_path):
-    #--Determine User folders from Personal and Local Application Data directories
-    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
+def getPersonalPath(bash_ini_, my_docs_path, game_info):
+    # Determine the user's personal (i.e. My Documents) folder. Attempt to pull
+    # from, in order:
+    #  - CLI
+    #  - bash.ini
+    #  - Windows only:
+    #    - SHGetKnownFolderPath
+    #  - Linux only:
+    #    - Proton prefix (For Windows games installed via Steam's Proton)
+    #    - XDG_DOCUMENTS_DIR
+    #    - ~/Documents
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
         sErrorInfo = _('Folder path specified on command line '
@@ -62,7 +70,12 @@ def getPersonalPath(bash_ini_, my_docs_path):
                            '(%(bash_ini_setting)s)') % {
                 'bash_ini_setting': 'sPersonalPath'}
         else:
-            my_docs_path, sErrorInfo = get_personal_path()
+            my_docs_path, sErrorInfo = get_personal_path(game_info)
+    if my_docs_path is None:
+        raise BoltError('\n'.join([
+            _('Failed to determine personal folder.'),
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     #  If path is relative, make absolute
     if not my_docs_path.is_absolute():
         my_docs_path = dirs['app'].join(my_docs_path)
@@ -76,9 +89,17 @@ def getPersonalPath(bash_ini_, my_docs_path):
         ]))
     return my_docs_path
 
-def getLocalAppDataPath(bash_ini_, app_data_local_path):
-    #--Determine User folders from Personal and Local Application Data directories
-    #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
+def getLocalAppDataPath(bash_ini_, app_data_local_path, game_info):
+    # Determine the user's AppData\Local (i.e. %LOCALAPPDATA%) folder. Attempt
+    # to pull from, in order:
+    #  - CLI
+    #  - bash.ini
+    #  - Windows only:
+    #    - SHGetKnownFolderPath
+    #  - Linux only:
+    #    - Proton prefix (For Windows games installed via Steam's Proton)
+    #    - XDG_DATA_HOME
+    #    - ~/.local/share
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
         sErrorInfo = _('Folder path specified on command line '
@@ -91,7 +112,13 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
                            '(%(bash_ini_setting)s)') % {
                 'bash_ini_setting': 'sLocalAppDataPath'}
         else:
-            app_data_local_path, sErrorInfo = get_local_app_data_path()
+            app_data_local_path, sErrorInfo = get_local_app_data_path(
+                game_info)
+    if app_data_local_path is None:
+        raise BoltError('\n'.join([
+            _('Failed to determine LocalAppData folder.'),
+            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
+        ]))
     #  If path is relative, make absolute
     if not app_data_local_path.is_absolute():
         app_data_local_path = dirs[u'app'].join(app_data_local_path)
@@ -171,15 +198,16 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         if game_info.bash_patches_dir else u'')
     dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
     #  Personal
-    dirs[u'personal'] = personal = getPersonalPath(bashIni_, personal)
+    dirs[u'personal'] = personal = getPersonalPath(bashIni_, personal,
+        game_info)
     if game_info.uses_personal_folders:
         dirs[u'saveBase'] = personal.join(u'My Games', game_info.my_games_name)
     else:
         dirs[u'saveBase'] = dirs[u'app']
     deprint(f'My Games location set to {dirs[u"saveBase"]}')
     #  Local Application Data
-    dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
-                                                                localAppData)
+    dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(
+        bashIni_, localAppData, game_info)
     # AppData for the game, depends on if it's a WS game or not.
     ws_info = get_legacy_ws_game_info(game_info)
     if ws_info.installed:
