@@ -332,6 +332,9 @@ class _ModsUIList(UIList):
 class MasterList(_ModsUIList):
     column_links = Links()
     context_links = Links()
+    # Since there is no global menu for master lists, bypass the global menu
+    # setting (otherwise the user would never be able to access these links)
+    _bypass_gm_setting = True
     keyPrefix = u'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
     #--Sorting
@@ -611,13 +614,8 @@ class MasterList(_ModsUIList):
         self.detailsPanel.SetEdited() # inform the details panel
 
     #--Column Menu
-    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
-        if self.fileInfo:
-            # Since there is no global menu for master lists, bypass the global
-            # menu setting (otherwise the user would never be able to access
-            # these links)
-            super().DoColumnMenu(evt_col, bypass_gm_setting=True)
-        return EventResult.FINISH
+    def _pop_menu(self):
+        return self.fileInfo and super()._pop_menu()
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         if self.allowEdit: self.InitEdit()
@@ -4014,7 +4012,7 @@ class BashStatusBar(DnDStatusBar):
                     self.refresh_status_bar()
                 return
 
-    def UnhideButton(self, link, skip_refresh=False):
+    def UnhideButton(self, link):
         uid = link.uid
         settings[u'bash.statusbar.hide'].discard(uid)
         # Find the position to insert it at
@@ -4025,8 +4023,6 @@ class BashStatusBar(DnDStatusBar):
             order.append(uid)
         else:
             self._sort_buttons(order)
-        if not skip_refresh:
-            self.refresh_status_bar()
 
     def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is

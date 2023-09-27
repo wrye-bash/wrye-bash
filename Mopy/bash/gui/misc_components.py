@@ -473,7 +473,7 @@ class GlobalMenu(_AComponent):
         text resetting, because wxPython does not permit more than one event
         handler."""
         ##: de-wx! move links to gui
-        from ..balt import Link
+        from ..balt import Link, Links
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
@@ -485,7 +485,7 @@ class GlobalMenu(_AComponent):
             for old_menu_item in wx_menu.GetMenuItems():
                 wx_menu.DestroyItem(old_menu_item)
             # Need to set this, otherwise help text won't be shown
-            Link.Popup = wx_menu
+            Links.Popup = wx_menu
             try:
                 self._category_handlers[wx_menu.category_label](wx_menu)
             except KeyError:
@@ -496,5 +496,5 @@ class GlobalMenu(_AComponent):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
             ##: de-wx! move links to gui
-            from ..balt import Link
-            Link.Popup = None
+            from ..balt import Links
+            Links.Popup = None

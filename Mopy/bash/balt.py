@@ -675,6 +675,9 @@ class UIList(PanelWin):
     # when the corresponding category is clicked on in the global menu. The
     # order in which categories are added will also be the display order.
     global_links = None
+    # If set to True, ignore the bash.global_menu setting when determining
+    # whether to show a column menu or not
+    _bypass_gm_setting = False
     #--gList image collection
     _icons = ColorChecks()
     max_items_open = 7 # max number of items one can open without prompt
@@ -1001,18 +1004,20 @@ class UIList(PanelWin):
                 for i, i_children in tree_dict.items()}
 
     #--Right Click Menus ------------------------------------------------------
-    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
+    def DoColumnMenu(self, evt_col: int):
         """Show column menu.
 
-        :param evt_col: The index of the column that the user clicked on.
-        :param bypass_gm_setting: If set to True, ignore the bash.global_menu
-            setting when determining whether to show a column menu or not."""
-        # See DoItemMenu below
-        if self.column_links and not self.__gList.ec_rename_prompt_opened():
-            # bash.global_menu == 1 -> Global Menu Only
-            if bypass_gm_setting or _settings['bash.global_menu'] != 1:
-                self.column_links.popup_menu(self, evt_col)
+        :param evt_col: The index of the column that the user clicked on."""
+        if self._pop_menu():
+            self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
+
+    def _pop_menu(self):
+        """Decide if we should pop the columns menu - must be set for one."""
+        return (self.column_links and not # column menu must be set
+            self.__gList.ec_rename_prompt_opened() and # See DoItemMenu below
+            # bash.global_menu == 1 -> Global Menu Only
+            (self._bypass_gm_setting or _settings['bash.global_menu'] != 1))
 
     def DoItemMenu(self):
         """Show item menu."""
@@ -1576,20 +1581,22 @@ class UIList(PanelWin):
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
+    # Current popup menu, set in Links.popup_menu()
+    Popup = None
+
     def popup_menu(self, parent, selection):
         """Pops up a new menu from these links."""
-        parent = parent or Link.Frame
         to_popup = wx.Menu() # TODO(inf) de-wx!
         for link in self:
             link.AppendToMenu(to_popup, parent, selection)
-        Link.Popup = to_popup
+        Links.Popup = to_popup
         if isinstance(parent, _AComponent):
             parent.show_popup_menu(to_popup)
         else:
-            # TODO(inf) de-wx! Hunt down
+            # TODO de-wx! Only use in BashNotebook
             parent.PopupMenu(to_popup)
         to_popup.Destroy()
-        Link.Popup = None # do not leak the menu reference
+        Links.Popup = None # do not leak the menu reference
 
 #------------------------------------------------------------------------------
 class Link(object):
@@ -1610,8 +1617,6 @@ class Link(object):
       singleton. Use (sparingly) as the 'link' between menus and data layer."""
     # BashFrame singleton, set once and for all in BashFrame()
     Frame = None
-    # Current popup menu, set in Links.popup_menu()
-    Popup = None
     # Menu label (may depend on UI state when the menu is shown)
     _text = u''
 
@@ -1791,8 +1796,8 @@ class ItemLink(Link):
     @staticmethod
     def ShowHelp(event): # <wx._core.MenuEvent>
         """Hover over an item, set the statusbar text"""
-        if Link.Popup:
-            item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
+        if Links.Popup:
+            item = Links.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
             Link.Frame.set_status_info(item.GetHelp() if item else u'')
 
 class MenuLink(Link):

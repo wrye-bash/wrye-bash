@@ -95,14 +95,15 @@ class StatusBar_Button(ItemLink):
             'bash.statusbar.iconSize']].get_bitmap()
 
     def DoPopupMenu(self):
+        button_menu = self.mainMenu
         if self.canHide:
-            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],
-                                                         _StatusBar_Hide):
-                if len(self.mainMenu) > 0:
-                    self.mainMenu.append(SeparatorLink())
-                self.mainMenu.append(_StatusBar_Hide())
-        if len(self.mainMenu) > 0:
-            self.mainMenu.popup_menu(self.gButton, 0)
+            if len(button_menu) == 0 or not isinstance(button_menu[-1],
+                                                       _StatusBar_Hide):
+                if len(button_menu) > 0:
+                    button_menu.append(SeparatorLink())
+                button_menu.append(_StatusBar_Hide())
+        if len(button_menu) > 0:
+            button_menu.popup_menu(self.gButton, 0)
             return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version

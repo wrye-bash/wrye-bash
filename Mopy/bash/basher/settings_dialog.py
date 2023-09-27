@@ -810,8 +810,7 @@ class StatusBarPage(_AScrollablePage):
                 Link.Frame.statusBar.HideButton(
                     self._link_by_uid(to_hide).gButton, skip_refresh=True)
             for to_unhide in hidden_removed:
-                Link.Frame.statusBar.UnhideButton(self._link_by_uid(to_unhide),
-                    skip_refresh=True)
+                Link.Frame.statusBar.UnhideButton(self._link_by_uid(to_unhide))
         # Perform a single update of the status bar if needed
         if hidden_icons_changed or icon_size_changed:
             Link.Frame.statusBar.refresh_status_bar(
