@@ -2021,13 +2021,13 @@ class ModDetails(_ModsSavesDetails):
             def Execute(self):
                 self.window.lb_select_none()
         tag_links = Links()
-        tag_links.append(Tags_Automatic())
-        tag_links.append(SeparatorLink())
-        tag_links.append(Tags_CopyToBashTags())
-        tag_links.append(Tags_CopyToDescription())
-        tag_links.append(SeparatorLink())
-        tag_links.append(Tags_SelectAll())
-        tag_links.append(Tags_DeselectAll())
+        tag_links.append_link(Tags_Automatic())
+        tag_links.append_link(SeparatorLink())
+        tag_links.append_link(Tags_CopyToBashTags())
+        tag_links.append_link(Tags_CopyToDescription())
+        tag_links.append_link(SeparatorLink())
+        tag_links.append_link(Tags_SelectAll())
+        tag_links.append_link(Tags_DeselectAll())
         tag_links.popup_menu(self.gTags, None)
 
 #------------------------------------------------------------------------------
@@ -3881,7 +3881,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         settings[u'bash.tabs.order'] = newOrder
         tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
         for page, (enabled, className, title) in tabs.items():
-            self._tab_menu.append(
+            self._tab_menu.append_link(
                 _Tab_Link(title, page, canDisable=page != 'Mods'))
             if not enabled: continue
             panel = globals().get(className,None)

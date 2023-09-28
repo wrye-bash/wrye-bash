@@ -1485,7 +1485,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
         linkSet = set()
-        del self.links[:]
+        self.links.clear_links()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
@@ -1504,13 +1504,13 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             linkSet = {conv for conv in bcfs if conv.srcCRCs <= selectedCRCs}
         #--If the archive is a single archive with an embedded BCF, add that
         if len(selected) == 1 and self._first_selected().hasBCF:
-            self.links.append(InstallerConverter_ApplyEmbedded())
+            self.links.append_link(InstallerConverter_ApplyEmbedded())
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
             return False
         #--Otherwise add each link in alphabetical order
         for converter in sorted(linkSet, key=lambda x: x.fullPath.tail):
-            self.links.append(InstallerConverter_Apply(converter))
+            self.links.append_link(InstallerConverter_Apply(converter))
         return True
 
 class _Installer_TypeOnlyMenu(AppendableLink, balt.MenuLink):

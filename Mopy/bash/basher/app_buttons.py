@@ -71,10 +71,17 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
                 icons and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
         super().__init__()
-        self.mainMenu = Links()
         self.canHide = canHide
+        self.mainMenu = self._init_menu(Links())
         self._tip = button_tip or self.__class__._tip # must be set see below
         self.uid = (self.__class__.__name__, self._tip) if uid is None else uid
+
+    def _init_menu(self, bt_links):
+        if self.canHide:
+            if bt_links:
+                bt_links.append_link(SeparatorLink())
+            bt_links.append_link(_StatusBar_Hide())
+        return bt_links
 
     def create_widget(self, parent, recreate=True, on_drag_start=None,
                       on_drag_end=None, on_drag_end_forced=None, on_drag=None):
@@ -99,15 +106,8 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
             'bash.statusbar.iconSize']].get_bitmap()
 
     def DoPopupMenu(self):
-        button_menu = self.mainMenu
-        if self.canHide:
-            if len(button_menu) == 0 or not isinstance(button_menu[-1],
-                                                       _StatusBar_Hide):
-                if len(button_menu) > 0:
-                    button_menu.append(SeparatorLink())
-                button_menu.append(_StatusBar_Hide())
-        if len(button_menu) > 0:
-            button_menu.popup_menu(self, 0)
+        if self.mainMenu:
+            self.mainMenu.popup_menu(self, 0)
             return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
@@ -376,12 +376,15 @@ class App_xEdit(_ExeButton):
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
         super().__init__(exePath, exeArgs, *args[1:], **kwdargs)
+
+    def _init_menu(self, bt_links):
         if bush.game.Xe.xe_key_prefix:
-            self.mainMenu.append(_Mods_xEditExpert())
-            self.mainMenu.append(_Mods_xEditSkipBSAs())
-            self.mainMenu.append(SeparatorLink())
-            self.mainMenu.append(_Mods_xEditQAC(self))
-            self.mainMenu.append(_Mods_xEditVQSC(self))
+            bt_links.append_link(_Mods_xEditExpert())
+            bt_links.append_link(_Mods_xEditSkipBSAs())
+            bt_links.append_link(SeparatorLink())
+            bt_links.append_link(_Mods_xEditQAC(self))
+            bt_links.append_link(_Mods_xEditVQSC(self))
+        return super()._init_menu(bt_links)
 
     def allow_create(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
         if not super().allow_create():
@@ -425,7 +428,10 @@ class _AApp_LOManager(_ExeButton):
     """Base class for load order managers like BOSS and LOOT."""
     def __init__(self, lom_path, *args, **kwargs):
         super().__init__(lom_path, (), *args, **kwargs)
-        self.mainMenu.append(_Mods_SuspendLockLO())
+
+    def _init_menu(self, bt_links):
+        bt_links.append_link(_Mods_SuspendLockLO())
+        return super()._init_menu(bt_links)
 
     def sb_click(self):
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
@@ -457,7 +463,10 @@ class App_BOSS(_AApp_LOManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.boss_path = self.exePath
-        self.mainMenu.append(_Mods_BOSSLaunchGUI())
+
+    def _init_menu(self, bt_links):
+        bt_links.append_link(_Mods_BOSSLaunchGUI())
+        return super()._init_menu(bt_links)
 
     def sb_click(self):
         if bass.settings['BOSS.UseGUI']:
@@ -490,9 +499,10 @@ class _Mods_LOOTAutoSort(BoolLink):
 
 class App_LOOT(_AApp_LOManager):
     """Runs LOOT if it's present."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mainMenu.append(_Mods_LOOTAutoSort())
+
+    def _init_menu(self, bt_links):
+        bt_links.append_link(_Mods_LOOTAutoSort())
+        return super()._init_menu(bt_links)
 
     def sb_click(self):
         curr_args = [f'--game={bush.game.loot_game_name}']

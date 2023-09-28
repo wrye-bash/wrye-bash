@@ -721,12 +721,12 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             elif itm_txt == tweak.custom_choice:
                 itm_txt = _custom_label(itm_txt, tweak.choiceValues[index][0])
-                links.append(_ValueLinkCustom(itm_txt, index))
+                links.append_link(_ValueLinkCustom(itm_txt, index))
             else:
-                links.append(_ValueLink(itm_txt, index))
+                links.append_link(_ValueLink(itm_txt, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
@@ -959,9 +959,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         links = Links()
         for index, item_label in enumerate(self.choiceMenu):
             if item_label == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             else:
-                links.append(_OnItemChoice(item_label, index))
+                links.append_link(_OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gList, None)
 

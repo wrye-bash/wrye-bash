@@ -1580,15 +1580,18 @@ class UIList(PanelWin):
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Links(list):
+class Links:
     """List of menu or button links."""
     # Current popup menu, set in Links.popup_menu()
     Popup = None
 
+    def __init__(self):
+        self._link_list = []
+
     def popup_menu(self, parent, selection):
         """Pops up a new menu from these links."""
         to_popup = wx.Menu() # TODO(inf) de-wx!
-        for link in self:
+        for link in self._link_list:
             link.AppendToMenu(to_popup, parent, selection)
         Links.Popup = to_popup
         if isinstance(parent, _AComponent):
@@ -1598,6 +1601,21 @@ class Links(list):
             parent.PopupMenu(to_popup)
         to_popup.Destroy()
         Links.Popup = None # do not leak the menu reference
+    # self._link_list accessors
+    def append_link(self, l):
+        """Append a link to this Links instance."""
+        self._link_list.append(l)
+
+    def clear_links(self):
+        """Remove all links from this Links instance."""
+        self._link_list.clear()
+
+    def __getitem__(self, item):
+        self._link_list.__getitem__(item)
+
+    def __len__(self): return len(self._link_list)
+
+    def __iter__(self): return self._link_list.__iter__()
 
 #------------------------------------------------------------------------------
 class Link(object):
@@ -1810,7 +1828,8 @@ class MenuLink(Link):
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
-    def append(self, link): self.links.append(link) ##: MenuLink(Link, Links) !
+    def append(self, link):
+        self.links.append_link(link) ##: MenuLink(Link, Links) !
 
     def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
 

@@ -892,9 +892,9 @@ class Mod_AllowGhosting(TransLink):
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_('Ghosting..'))
-            subMenu.links.append(_Mod_AllowGhosting_All())
-            subMenu.links.append(_Mod_DisallowGhosting_All())
-            subMenu.links.append(_Mod_AllowGhostingInvert_All())
+            subMenu.links.append_link(_Mod_AllowGhosting_All())
+            subMenu.links.append_link(_Mod_DisallowGhosting_All())
+            subMenu.links.append_link(_Mod_AllowGhostingInvert_All())
             return subMenu
 
 # BP Links --------------------------------------------------------------------
@@ -1199,9 +1199,9 @@ class Mod_SkipDirtyCheck(TransLink):
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_('Dirty Edit Scanning..'))
-            subMenu.links.append(_Mod_SkipDirtyCheckAll(True))
-            subMenu.links.append(_Mod_SkipDirtyCheckAll(False))
-            subMenu.links.append(_Mod_SkipDirtyCheckInvert())
+            subMenu.links.append_link(_Mod_SkipDirtyCheckAll(True))
+            subMenu.links.append_link(_Mod_SkipDirtyCheckAll(False))
+            subMenu.links.append_link(_Mod_SkipDirtyCheckInvert())
             return subMenu
 
 #------------------------------------------------------------------------------

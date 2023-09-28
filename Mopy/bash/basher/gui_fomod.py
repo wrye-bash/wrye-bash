@@ -253,9 +253,9 @@ class PageSelect(PageInstaller):
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
-        self._group_links.append(_Group_SelectAll())
-        self._group_links.append(_Group_DeselectAll())
-        self._group_links.append(_Group_ToggleAll())
+        self._group_links.append_link(_Group_SelectAll())
+        self._group_links.append_link(_Group_DeselectAll())
+        self._group_links.append_link(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
         first_checkable = None
