@@ -28,14 +28,14 @@ from itertools import chain
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bolt, bosh, bush, load_order
-from ..balt import CheckLink, Links, SeparatorLink
+from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
 from ..game import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
-    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout, \
-    askText, showError, askNumber
+    ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
+    VLayout, askText, showError, askNumber
 from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \

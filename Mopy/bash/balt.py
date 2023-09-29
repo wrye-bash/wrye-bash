@@ -44,8 +44,8 @@ from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
-    GlobalMenu, HLayout, ImageWrapper, LayoutOptions, ListBox, LogDialog, \
-    LogFrame, PanelWin, TextArea, UIListCtrl, VLayout, bell, \
+    GlobalMenu, HLayout, ImageWrapper, LayoutOptions, ListBox, Links, \
+    LogDialog, LogFrame, PanelWin, TextArea, UIListCtrl, VLayout, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
     askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
@@ -1579,44 +1579,6 @@ class UIList(PanelWin):
                 self._populate_category, curr_cat))
 
 # Links -----------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Links:
-    """List of menu or button links."""
-    # Current popup menu, set in Links.popup_menu()
-    Popup = None
-
-    def __init__(self):
-        self._link_list = []
-
-    def popup_menu(self, parent, selection):
-        """Pops up a new menu from these links."""
-        to_popup = wx.Menu() # TODO(inf) de-wx!
-        for link in self._link_list:
-            link.AppendToMenu(to_popup, parent, selection)
-        Links.Popup = to_popup
-        if isinstance(parent, _AComponent):
-            parent.show_popup_menu(to_popup)
-        else:
-            # TODO de-wx! Only use in BashNotebook
-            parent.PopupMenu(to_popup)
-        to_popup.Destroy()
-        Links.Popup = None # do not leak the menu reference
-    # self._link_list accessors
-    def append_link(self, l):
-        """Append a link to this Links instance."""
-        self._link_list.append(l)
-
-    def clear_links(self):
-        """Remove all links from this Links instance."""
-        self._link_list.clear()
-
-    def __getitem__(self, item):
-        self._link_list.__getitem__(item)
-
-    def __len__(self): return len(self._link_list)
-
-    def __iter__(self): return self._link_list.__iter__()
-
 #------------------------------------------------------------------------------
 class Link(object):
     """Link is a command to be encapsulated in a graphic element (menu item,

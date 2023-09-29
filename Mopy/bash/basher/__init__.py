@@ -71,7 +71,7 @@ from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
     load_order
 from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
-    INIListCtrl, InstallerColorChecks, ItemLink, Link, Links, NotebookPanel, \
+    INIListCtrl, InstallerColorChecks, ItemLink, Link, NotebookPanel, \
     Resources, SeparatorLink, colors, images, UIList
 from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
@@ -83,7 +83,7 @@ from ..exception import BoltError, CancelError, FileError, SkipError, \
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, ImageWrapper, Label, \
-    LayoutOptions, ListBox, MultiChoicePopup, PanelWin, Picture, \
+    LayoutOptions, ListBox, Links, MultiChoicePopup, PanelWin, Picture, \
     PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
     TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
     get_shift_down, read_files_from_clipboard_cb, showError, askYes, \

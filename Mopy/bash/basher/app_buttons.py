@@ -29,11 +29,11 @@ from . import BashStatusBar
 from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
-from ..balt import BoolLink, ItemLink, Link, Links, SeparatorLink
+from ..balt import BoolLink, ItemLink, Link, SeparatorLink
 from ..bass import Store
 from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
-    Lazy, WithDragEvents, showError
+    Lazy, Links, WithDragEvents, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
 from ..gui.base_components import _AComponent
 

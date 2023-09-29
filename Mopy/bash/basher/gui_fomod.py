@@ -26,15 +26,15 @@ __author__ = u'Ganda'
 from collections import defaultdict
 
 from .. import balt, bass, bush
-from ..balt import EnabledLink, Links, colors
+from ..balt import EnabledLink, colors
 from ..bolt import LowerDict, dict_sort, reverse_dict_multi
 from ..env import get_file_version, get_game_version_fallback, to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
-    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
-    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
-    TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
+    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, Links, \
+    OkButton, PictureWithCursor, RadioButton, ScrollableWindow, Stretch, \
+    Table, TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
     copy_text_to_clipboard, showWarning
 from ..wbtemp import cleanup_temp_dir
 

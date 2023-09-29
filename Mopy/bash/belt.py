@@ -28,12 +28,13 @@ import traceback
 from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
-from .balt import ItemLink, Links, images, staticBitmap
+from .balt import ItemLink, images, staticBitmap
 from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback, to_os_path
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
-    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
-    PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
+    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
+    ListBox, PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, \
+    WizardPage
 from .ini_files import OBSEIniFile
 from .ScriptParser import error
 from .wbtemp import cleanup_temp_dir

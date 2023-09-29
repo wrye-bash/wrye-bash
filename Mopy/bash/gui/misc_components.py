@@ -39,6 +39,7 @@ from .base_components import Color, ImageWrapper, WithCharEvents, \
     WithMouseEvents, _AComponent
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
+from .menus import Links
 from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
@@ -473,7 +474,7 @@ class GlobalMenu(_AComponent):
         text resetting, because wxPython does not permit more than one event
         handler."""
         ##: de-wx! move links to gui
-        from ..balt import Link, Links
+        from ..balt import Link
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
@@ -495,6 +496,4 @@ class GlobalMenu(_AComponent):
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
-            ##: de-wx! move links to gui
-            from ..balt import Links
             Links.Popup = None
