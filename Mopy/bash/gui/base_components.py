@@ -121,10 +121,11 @@ class _ACFrozen:
         self._wx_parent.Thaw()
 
 # Base Elements ---------------------------------------------------------------
-class _AComponent:
+class _ANative:
     """Abstract base class for all GUI items. Holds a reference to the native
-    wx widget that we abstract over."""
-    _native_widget: _wx.Window
+    wx widget that we abstract over. We choose EvtHandler as the base wx class
+    as all of our currently wrapped classes inherit from it."""
+    _native_widget: _wx.EvtHandler
 
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
@@ -185,15 +186,78 @@ class _AComponent:
         :param obj: The object to resolve.
         :return: The resolved wx object.
         """
-        if isinstance(obj, _AComponent):
+        if isinstance(obj, _ANative):
             return obj._native_widget
-        elif isinstance(obj, _wx.Window):
+        elif isinstance(obj, _wx.EvtHandler):
             return obj
         elif obj is None:
             return None
         else:
             raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
                                f"object.")
+
+    def destroy_component(self):
+        """Destroys this component - non-internal usage is a smell, avoid if at
+        all possible."""
+        self._native_widget.Destroy()
+
+class Lazy(_ANative):
+    """Lazily create the native widget on first accessing self._native_widget.
+    Base class needs to know about us - think of Lazy on the same level as
+    __ANative. Only access self._native_widget after a successful call to
+    create_widget."""
+
+    # noinspection PyMissingConstructor
+    def __init__(self, *args, **kwargs):
+        """Postpone calling super.__init__ till the widget is accessed."""
+        self._parent = None
+        self._cached_args = args
+        self._cached_kwargs = kwargs
+        self._cached_widget = None
+        self.__create_widget_called = False
+
+    @property
+    def _native_widget(self):
+        if not self._is_created():
+            if not self.__create_widget_called:
+                raise GuiError(f'{self!r} accessing the native widget without '
+                               f'calling create_widget first')
+            super(Lazy, self).__init__(self._parent, *self._cached_args,
+                                       **self._cached_kwargs)
+        return self._cached_widget
+
+    def destroy_component(self):
+        if self._is_created():
+            self._cached_widget.Destroy()
+            self._cached_widget = None
+            self.__create_widget_called = False
+
+    # Lazy API - probe into the internals of the class - special occasions only
+    def _is_created(self):
+        """Return True if self._cached_widget is available."""
+        return self._cached_widget is not None
+
+    def allow_create(self):
+        """Check if the required resources to create the widget exist."""
+        return True
+
+    def create_widget(self, parent, recreate=True, **kwargs):
+        """Create the widget - if the widget was freshly created return
+        True."""
+        if not self.allow_create(): return False
+        if recreate:
+            self.destroy_component()
+        elif self._is_created():
+            return False
+        self._parent = parent
+        self._cached_kwargs.update(kwargs)
+        self.__create_widget_called = True
+        # will call super init and create the widget
+        return bool(self._native_widget)
+
+class _AComponent(_ANative):
+    """Wrap an inheritor of wx.Window. Wraps methods present in wx.Window."""
+    _native_widget: _wx.Window
 
     def get_component_name(self) -> str:
         """Returns the name of this component.
@@ -354,11 +418,6 @@ class _AComponent:
         input."""
         self._native_widget.SetFocus()
 
-    def destroy_component(self):
-        """Destroys this component - non-internal usage is a smell, avoid if at
-        all possible."""
-        self._native_widget.Destroy()
-
     def wx_id_(self): ##: Avoid, we do not want to program with gui ids
         return self._native_widget.GetId()
 
@@ -390,60 +449,6 @@ class _AComponent:
     # TODO(inf) de-wx! Menu should become a wrapped component as well
     def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
-
-class Lazy(_AComponent):
-    """Lazily create the native widget on first accessing self._native_widget.
-    Base class needs to know about us - think of Lazy on the same level as
-    _AComponent. Only access self._native_widget after a successful call to
-    create_widget."""
-
-    # noinspection PyMissingConstructor
-    def __init__(self, *args, **kwargs):
-        """Postpone calling super.__init__ till the widget is accessed."""
-        self._parent = None
-        self._cached_args = args
-        self._cached_kwargs = kwargs
-        self._cached_widget = None
-        self.__create_widget_called = False
-
-    @property
-    def _native_widget(self):
-        if not self._is_created():
-            if not self.__create_widget_called:
-                raise GuiError(f'{self!r} accessing the native widget without '
-                               f'calling create_widget first')
-            super().__init__(self._parent, *self._cached_args,
-                             **self._cached_kwargs)
-        return self._cached_widget
-
-    def destroy_component(self):
-        if self._is_created():
-            self._cached_widget.Destroy()
-            self._cached_widget = None
-            self.__create_widget_called = False
-
-    # Lazy API - probe into the internals of the class - special occasions only
-    def _is_created(self):
-        """Return True if self._cached_widget is available."""
-        return self._cached_widget is not None
-
-    def allow_create(self):
-        """Check if the required resources to create the widget exist."""
-        return True
-
-    def create_widget(self, parent, recreate=True, **kwargs):
-        """Create the widget - if the widget was freshly created return
-        True."""
-        if not self.allow_create(): return False
-        if recreate:
-            self.destroy_component()
-        elif self._is_created():
-            return False
-        self._parent = parent
-        self._cached_kwargs.update(kwargs)
-        self.__create_widget_called = True
-        # will call super init and create the widget
-        return bool(self._native_widget)
 
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
