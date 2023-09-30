@@ -26,19 +26,22 @@ from __future__ import annotations
 
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, Lazy
 
-class Links:
+class Links(Lazy):
     """List of menu or button links."""
     # Current popup menu, set in Links.popup_menu()
     Popup = None
+    _native_widget: _wx.Menu
 
     def __init__(self):
+        super().__init__()
         self._link_list = []
 
     def popup_menu(self, parent, selection):
         """Pops up a new menu from these links."""
-        to_popup = _wx.Menu() # TODO(inf) de-wx!
+        self.create_widget()
+        to_popup = self._native_widget
         for link in self._link_list:
             link.AppendToMenu(to_popup, parent, selection)
         Links.Popup = to_popup
@@ -47,7 +50,7 @@ class Links:
         else:
             # TODO de-wx! Only use in BashNotebook
             parent.PopupMenu(to_popup)
-        to_popup.Destroy()
+        self.destroy_component()
         Links.Popup = None # do not leak the menu reference
 
     # self._link_list accessors

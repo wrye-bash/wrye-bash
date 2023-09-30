@@ -36,7 +36,7 @@ import wx.adv as _adv
 from wx.grid import Grid
 
 from .base_components import Color, ImageWrapper, WithCharEvents, \
-    WithMouseEvents, _AComponent
+    WithMouseEvents, _AComponent, _ANative
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .menus import Links
@@ -415,7 +415,7 @@ class TimePicker(_AComponent):
             new_time.second)
 
 # Other -----------------------------------------------------------------------
-class GlobalMenu(_AComponent):
+class GlobalMenu(_ANative):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
@@ -425,11 +425,11 @@ class GlobalMenu(_AComponent):
         """wx-derived class used to differentiate between events on regular
         menus and categories and to provide the category label at runtime."""
         def __init__(self, cat_lbl):
-            super(GlobalMenu._GMCategory, self).__init__()
+            super().__init__()
             self.category_label = cat_lbl
 
     def __init__(self):
-        self._native_widget = _wx.MenuBar() # no parent
+        super().__init__() # no parent
         self._category_handlers = {}
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*

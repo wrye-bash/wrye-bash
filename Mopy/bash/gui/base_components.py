@@ -121,17 +121,20 @@ class _ACFrozen:
         self._wx_parent.Thaw()
 
 # Base Elements ---------------------------------------------------------------
+_no_parent = object() # signals that this native component has no parent
 class _ANative:
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over. We choose EvtHandler as the base wx class
     as all of our currently wrapped classes inherit from it."""
     _native_widget: _wx.EvtHandler
 
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent=_no_parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
         wx_widget_type = get_type_hints(self.__class__)['_native_widget']
-        widget = wx_widget_type(self._resolve(parent), *args, **kwargs)
+        if parent is not _no_parent:
+            args = self._resolve(parent), *args
+        widget = wx_widget_type(*args, **kwargs)
         if isinstance(self, Lazy):
             self._cached_widget = widget
         else:
@@ -188,10 +191,8 @@ class _ANative:
         """
         if isinstance(obj, _ANative):
             return obj._native_widget
-        elif isinstance(obj, _wx.EvtHandler):
+        elif isinstance(obj, _wx.EvtHandler) or obj is None:
             return obj
-        elif obj is None:
-            return None
         else:
             raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
                                f"object.")
@@ -200,6 +201,11 @@ class _ANative:
         """Destroys this component - non-internal usage is a smell, avoid if at
         all possible."""
         self._native_widget.Destroy()
+
+    def pause_drawing(self) -> _ACFrozen:
+        """To be used via Python's 'with' statement. Pauses all visual updates
+        to this component while in the with statement."""
+        return _ACFrozen(self._native_widget)
 
 class Lazy(_ANative):
     """Lazily create the native widget on first accessing self._native_widget.
@@ -210,7 +216,8 @@ class Lazy(_ANative):
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs):
         """Postpone calling super.__init__ till the widget is accessed."""
-        self._parent = None
+        # passed from create_widget for classes that have a parent
+        self._parent = _no_parent
         self._cached_args = args
         self._cached_kwargs = kwargs
         self._cached_widget = None
@@ -230,6 +237,7 @@ class Lazy(_ANative):
         if self._is_created():
             self._cached_widget.Destroy()
             self._cached_widget = None
+            self._parent = _no_parent
             self.__create_widget_called = False
 
     # Lazy API - probe into the internals of the class - special occasions only
@@ -241,7 +249,7 @@ class Lazy(_ANative):
         """Check if the required resources to create the widget exist."""
         return True
 
-    def create_widget(self, parent, recreate=True, **kwargs):
+    def create_widget(self, parent=_no_parent, recreate=True, **kwargs):
         """Create the widget - if the widget was freshly created return
         True."""
         if not self.allow_create(): return False
@@ -428,11 +436,6 @@ class _AComponent(_ANative):
         resized one of the sub-components, so that the other sub-components can
         be resized/moved/otherwise updated to account for that."""
         self._native_widget.Layout()
-
-    def pause_drawing(self) -> _ACFrozen:
-        """To be used via Python's 'with' statement. Pauses all visual updates
-        to this component while in the with statement."""
-        return _ACFrozen(self._native_widget)
 
     def to_absolute_position(self,
             relative_pos: tuple[int, int]) -> tuple[int, int]:
