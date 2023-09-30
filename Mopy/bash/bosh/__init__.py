@@ -43,8 +43,7 @@ from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
 from .save_headers import get_save_header_type
-from .. import archives, balt, bass, bolt, bush, env, initialization, \
-    load_order
+from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
@@ -55,7 +54,6 @@ from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError
-from ..gui import askYes ##: YAK!
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -2266,7 +2264,7 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self)
         if scanList:
-            self.rescanMergeable(scanList)
+            self.rescanMergeable(scanList) ##: maybe re-add progress?
         change |= bool(scanList or difMergeable)
         return bool(change) or lo_changed
 
@@ -2390,12 +2388,11 @@ class ModInfos(FileInfos):
                 newMods.append(fn_mod)
         return newMods
 
-    def rescanMergeable(self, names, prog=None, return_results=False):
+    def rescanMergeable(self, names, prog=bolt.Progress(),
+                            return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
-        messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
-            else _(u'Mark Mergeable')
-        with prog or balt.Progress(messagetext + u' ' * 30) as prog:
+        with prog:
             return self._rescanMergeable(names, prog, return_results)
 
     def _rescanMergeable(self, names, progress, return_results):
@@ -2462,11 +2459,15 @@ class ModInfos(FileInfos):
             if autoTag:
                 modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
-    def refresh_crcs(self, mods=None): #TODO(ut) progress !
+    def refresh_crcs(self, mods=None, progress=None):
         pairs = {}
-        for mod_key in (self if mods is None else mods):
-            inf = self[mod_key]
-            pairs[mod_key] = inf.calculate_crc(recalculate=True)
+        with (progress := progress or bolt.Progress()):
+            mods = (self if mods is None else mods)
+            if mods: progress.setFull(len(mods))
+            for dex, mod_key in enumerate(mods):
+                progress(dex, _('Calculating crc:') + f'\n{mod_key}')
+                inf = self[mod_key]
+                pairs[mod_key] = inf.calculate_crc(recalculate=True)
         return pairs
 
     #--Refresh File
@@ -3054,16 +3055,16 @@ class ModInfos(FileInfos):
         return self[fileName].get_version() if fileName in self else ''
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def _retry(self, old, new):  ##: we should check *before* writing the patch
+    def _retry(self, old, new, ask_yes):  ##: we should check *before* writing the patch
         msg = _('Bash encountered an error when renaming %(old)s to %(new)s.')
         msg += '\n\n' + _('The file is in use by another process such as '
                           '%(xedit_name)s.') + '\n'
         msg += _('Please close the other program that is accessing %(new)s.')
         msg += '\n\n' + _('Try again?')
         msg %= {'xedit_name': bush.game.Xe.full_name, 'old': old, 'new': new}
-        return askYes(self, msg, _('File in use'))
+        return ask_yes(self, msg, _('File in use'))
 
-    def setOblivionVersion(self, newVersion):
+    def setOblivionVersion(self, newVersion, ask_yes):
         """Swaps Oblivion.esm to specified version."""
         baseName = self._master_esm # Oblivion.esm, say it's currently SI one
         # if new version is '1.1' then newName is FName(Oblivion_1.1.esm)
@@ -3096,7 +3097,7 @@ class ModInfos(FileInfos):
             except PermissionError: ##: can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
                 if self._retry(baseInfo.getPath(),
-                        self.store_dir.join(oldName)):
+                        self.store_dir.join(oldName), ask_yes):
                     continue
                 raise
             except CancelError:
@@ -3106,7 +3107,7 @@ class ModInfos(FileInfos):
                 file_info_rename_op(newInfo, self._master_esm)
                 break
             except PermissionError:
-                if self._retry(newInfo.getPath(), baseInfo.getPath()):
+                if self._retry(newInfo.getPath(), baseInfo.getPath(), ask_yes):
                     continue
                 #Undo any changes
                 file_info_rename_op(oldName, self._master_esm)
@@ -3134,7 +3135,7 @@ class ModInfos(FileInfos):
         self.voAvailable.add(current_version)
         self.voAvailable.remove(newVersion)
 
-    def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
+    def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
         arcPath, newPath = map(dirs[u'saveBase'].join, (arcSaves, newSaves))
@@ -3145,7 +3146,7 @@ class ModInfos(FileInfos):
         if voNew is None:
             saveInfos.set_profile_attr(newSaves, u'vOblivion', self.voCurrent)
             voNew = self.voCurrent
-        if voNew in self.voAvailable: self.setOblivionVersion(voNew)
+        if voNew in self.voAvailable: self.setOblivionVersion(voNew, ask_yes)
 
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size

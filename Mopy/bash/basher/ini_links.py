@@ -63,7 +63,7 @@ class INI_ListINIs(ItemLink):
         """Handle printing out the errors."""
         tweak_list = self.window.ListTweaks()
         copy_text_to_clipboard(tweak_list)
-        self._showLog(tweak_list, title=_(u'Active INIs'), fixedFont=False)
+        self._showLog(tweak_list, title=_('Active INIs'))
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -80,8 +80,7 @@ class INI_ListErrors(EnabledLink):
         """Handle printing out the errors."""
         error_text = '\n'.join(inf.listErrors() for inf in self._erroneous)
         copy_text_to_clipboard(error_text)
-        self._showLog(error_text, title=_(u'INI Tweak Errors'),
-                      fixedFont=False)
+        self._showLog(error_text, title=_('INI Tweak Errors'))
 
 #------------------------------------------------------------------------------
 class INI_Open(UIList_OpenItems):

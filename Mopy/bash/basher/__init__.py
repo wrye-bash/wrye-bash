@@ -2764,7 +2764,7 @@ class InstallersList(UIList):
                     else: continue
                 try:
                     bosh.omods.OmodFile(omod).extractToProject(
-                        outDir, SubProgress(progress, i))
+                        outDir, SubProgress(progress, i), askYes)
                     completed.append(omod)
                 except (CancelError, SkipError):
                     # Omod extraction was cancelled, or user denied admin
@@ -2803,7 +2803,7 @@ class InstallersList(UIList):
                 f.stail for f in sorted(chain(packages, converters))) + '\n'
             msg += '\n' + _('What would you like to do with them?')
             action, remember = CopyOrMovePopup.display_dialog(self, msg,
-                sizes_dict=balt.sizes, icon_bundle=balt.Resources.bashBlue)
+                sizes_dict=settings, icon_bundle=balt.Resources.bashBlue)
             if action and remember:
                 settings[u'bash.installers.onDropFiles.action'] = action
         return action
@@ -2872,7 +2872,7 @@ class InstallersList(UIList):
                         shell_action = (env.shellMove if action == 'MOVE' else
                                         env.shellCopy)
                         shell_action(sources_dests, parent=self,
-                            ask_confirm=True, allow_undo=True)
+                            ask_confirm=askYes, allow_undo=True)
                     except (CancelError, SkipError):
                         pass
         self.panel.frameActivated = True
@@ -3485,8 +3485,10 @@ class InstallersPanel(BashTab):
                         self._data_dir_scanned = True
             elif self.frameActivated:
                 try:
-                    refreshui |= self.listData.irefresh(what='C',
-                        fullRefresh=fullRefresh)
+                    with balt.Progress(
+                            _('Refreshing Converters...')) as progress:
+                        refreshui |= self.listData.irefresh(progress, what='C',
+                            fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -3511,7 +3513,7 @@ class InstallersPanel(BashTab):
                 try:
                     omod_path = dirInstallersJoin(fn_omod)
                     bosh.omods.OmodFile(omod_path).extractToProject(
-                        outDir, SubProgress(progress, i))
+                        outDir, SubProgress(progress, i), askYes)
                     omodRemoves.add(omod_path)
                     omod_projects.append(pr_name)
                 except (CancelError, SkipError):
@@ -4006,35 +4008,28 @@ class BashStatusBar(DnDStatusBar):
 
     def UpdateIconSizes(self, skip_refresh=False):
         self.buttons = {} # populated with SBLinks whose gButtons is not None
+        # when bash is run for the first time those are empty - set here
         order = settings[u'bash.statusbar.order']
         hide = settings[u'bash.statusbar.hide']
-        # Add buttons in order that is saved - on first Bash run order = [] !
-        for uid in order[:]:
-            link = BashStatusBar.all_sb_links.get(uid)
-            # Doesn't exist?
-            if link is None:
-                order.remove(uid)
-                continue
+        # filter for non-existent ids and reorder the dict according to order
+        hidden = {lid for lid in hide if lid in BashStatusBar.all_sb_links}
+        hide.clear()
+        hide.update(hidden)
+        saved_order = {lid: li for lid in order if
+                       (li := BashStatusBar.all_sb_links.get(lid))}
+        # append new buttons and reorder BashStatusBar.all_sb_links
+        BashStatusBar.all_sb_links = saved_order | BashStatusBar.all_sb_links
+        order[:] = list(BashStatusBar.all_sb_links) # set bash.statusbar.order
+        # Add buttons in order that is saved
+        for link_uid, link in BashStatusBar.all_sb_links.items():
             # Hidden?
-            if uid in hide: continue
+            if link_uid in hide: continue
             # Not present ?
             if not link.IsPresent(): continue
             # Add it
             try:
                 self._addButton(link)
             except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {uid!r}', traceback=True)
-        # Add any new buttons
-        for link_uid, link in BashStatusBar.all_sb_links.items():
-            # Already tested?
-            if link_uid in order: continue
-            # Remove any hide settings, if they exist
-            if link_uid in hide:
-                hide.discard(link_uid)
-            order.append(link_uid)
-            try:
-                self._addButton(link)
-            except AttributeError:
                 deprint(f'Failed to load button {link_uid!r}', traceback=True)
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
@@ -4095,7 +4090,7 @@ class BashFrame(WindowFrame):
     # Panels - use sparingly
     iPanel = None # BAIN panel
     # initial size/position
-    _frame_settings_key = u'bash.frame'
+    _key_prefix = 'bash.frame'
     _def_size = (1024, 512)
     _size_hints = (512, 512)
 
@@ -4619,7 +4614,7 @@ class BashApp(object):
             settings[u'bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
             deprint(u'Version changed, rescanning mergeability')
-            bosh.modInfos.rescanMergeable(bosh.modInfos, bolt.Progress())
+            bosh.modInfos.rescanMergeable(bosh.modInfos)
             deprint(u'Done rescanning mergeability')
 
 # Initialization --------------------------------------------------------------
@@ -4628,7 +4623,6 @@ def InitSettings(): # this must run first !
     bosh.initSettings(askYes)
     global settings
     balt._settings = bass.settings
-    balt.sizes = bass.settings.get(u'bash.window.sizes', {})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
     bass.settings['bash.mods.renames'] = forward_compat_path_to_fn(
@@ -4648,7 +4642,7 @@ def InitSettings(): # this must run first !
         bass.settings[dict_key] = {k: v for k, v
                                    in bass.settings[dict_key].items()
                                    if not k.endswith(u':')}
-    bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
+    bosh.bain.Installer.init_global_skips(askYes) # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']

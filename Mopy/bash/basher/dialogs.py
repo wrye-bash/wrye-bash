@@ -58,7 +58,7 @@ class ImportFaceDialog(DialogWindow):
         self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
-                                               sizes_dict=balt.sizes)
+                                               sizes_dict=bass.settings)
         #--List Box
         self.listBox = ListBox(self, choices=self.list_items,
                                onSelect=self.EvtListBox)
@@ -295,7 +295,7 @@ class CreateNewPlugin(DialogWindow):
 
     def __init__(self, parent):
         super(CreateNewPlugin, self).__init__(parent,
-            icon_bundle=balt.Resources.bashBlue, sizes_dict=balt.sizes)
+            icon_bundle=balt.Resources.bashBlue, sizes_dict=bass.settings)
         self._parent_window = parent
         self._plugin_ext = DropDown(self, value='.esp',
             choices=sorted(bush.game.espm_extensions), dd_tooltip=_(
@@ -509,7 +509,7 @@ class _AWBMLE(AMultiListEditor):
         cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
             'square_check.16', 'square_empty.16'))
         super().__init__(parent, data_desc=data_desc, list_data=list_data,
-            check_uncheck_bitmaps=cu_bitmaps, sizes_dict=balt.sizes,
+            check_uncheck_bitmaps=cu_bitmaps, sizes_dict=bass.settings,
             icon_bundle=balt.Resources.bashBlue, **kwargs)
 
 class _ABainMLE(_AWBMLE):
@@ -681,7 +681,7 @@ class UpdateNotification(DialogWindow):
 
     def __init__(self, parent, new_version: LatestVersion):
         super().__init__(parent, icon_bundle=balt.Resources.bashBlue,
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         self._do_quit = False
         new_ver_msg = _('A new version of Wrye Bash, version %(new_wb_ver)s, '
                         'is available! You are currently using version '
@@ -809,8 +809,8 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
 
     def __init__(self, parent, *, highlight_changes: list[_ChangeData],
             add_cancel_btn=False):
-        super().__init__(parent, stay_over_parent=True, sizes_dict=balt.sizes,
-            icon_bundle=balt.Resources.bashBlue)
+        super().__init__(parent, stay_over_parent=True,
+            sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)
         ch_layout = VLayout(border=4, spacing=6, item_expand=True)
         labels_to_wrap = []
         for change_data in highlight_changes:
@@ -861,7 +861,7 @@ class _AModsChangeHighlightDialog(_AChangeHighlightDialog):
             parent_tab_key='Mods')
 
 # Note: we sometimes use 'unnecessary' subclasses here for the separate
-# balt.sizes key provided by the unique class name
+# bass.settings['bash.window.sizes'] key provided by the unique class name
 #------------------------------------------------------------------------------
 class _ALORippleHighlightDialog(_AChangeHighlightDialog):
     """Base class for dialogs highlighting when a load order change had a

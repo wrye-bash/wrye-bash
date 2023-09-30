@@ -229,7 +229,7 @@ class ModFile(object):
             # for strings
             lang = bosh.oblivionIni.get_ini_language()
             stringsPaths = self.fileInfo.getStringsPaths(lang)
-            stringsProgress.setFull(max(len(stringsPaths), 1))
+            if stringsPaths: stringsProgress.setFull(len(stringsPaths))
             for i, path in enumerate(stringsPaths):
                 self.strings.loadFile(path,
                                       SubProgress(stringsProgress, i, i + 1),

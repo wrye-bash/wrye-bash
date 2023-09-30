@@ -24,7 +24,7 @@ import io
 from collections import Counter, defaultdict
 
 from ._mergeability import is_esl_capable
-from .. import balt, bass, bolt, bush, load_order
+from .. import bass, bolt, bush, load_order
 from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
@@ -111,10 +111,9 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
+def checkMods(progress, modInfos, showModList=False, showCRC=False,
               showVersion=True, scan_plugins=True):
-    """Checks currently loaded mods for certain errors / warnings.
-    mc_parent should be the instance of PluginChecker, to scan."""
+    """Checks currently loaded mods for certain errors / warnings."""
     if not bush.game.Esp.canBash:
         # If we can't load plugins, then trying to do so will obviously fail
         scan_plugins = False
@@ -243,12 +242,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     duplicate_formids = defaultdict(dict) # fid -> plugin -> int
     all_hitmes = defaultdict(list) # fn_key -> list[fid]
     if scan_plugins:
-        progress = None
         try:
             # Extract data for all plugins (we'll need the context from all of
             # them, even the game master)
-            progress = balt.Progress(_('Checking Plugins...'),
-                                     parent=mc_parent, abort=True)
             load_progress = SubProgress(progress, 0, 0.7)
             load_progress.setFull(len(all_present_minfs))
             all_extracted_data = {}
@@ -390,9 +386,6 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                     collision_progress(num_collisions, prog_msg % first_plugin)
         except CancelError:
             scanning_canceled = True
-        finally:
-            if progress:
-                progress.Destroy()
     # -------------------------------------------------------------------------
     # Check for unnecessary deletions, i.e. new records that have the Deleted
     # flag set and should probably just be removed entirely instead

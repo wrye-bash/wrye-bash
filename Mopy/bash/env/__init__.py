@@ -35,6 +35,7 @@ from ..bolt import os_name, GPath_no_norm, Path
 from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
+_ConfirmationPrompt = Callable[[Any, str, str], bool] | None
 
 # Then check which OS we are running on and import *only* from there
 match platform.system():
@@ -58,8 +59,9 @@ def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
     for more information."""
     return normalize_ci_path(convert_separators(os.fspath(questionable_path)))
 
-def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
-                ask_confirm=False, recycle=False, __shell=True):
+def shellDelete(files: Iterable[Path], parent: _TShellWindow = None, *,
+                ask_confirm: _ConfirmationPrompt=None, recycle=False,
+                __shell=True):
     operate = file_operation if __shell else _default_file_operation
     srcs_dsts = dict.fromkeys(files, GPath(''))
     try:
@@ -72,23 +74,23 @@ def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
             return None
         raise
 
-def shellDeletePass(node: Path, parent: _TShellWindow = None, __shell= True):
+def shellDeletePass(node: Path, parent: _TShellWindow = None, *, __shell=True):
     """Delete tmp dirs/files - ignore errors (but log them)."""
     if node.exists():
-        try: shellDelete([node], parent=parent, __shell=__shell)
+        try: shellDelete([node], parent, __shell=__shell)
         except OSError: deprint(f'Error deleting {node}:', traceback=True)
 
-def shellMove(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
-        ask_confirm: bool = False, allow_undo: bool = False,
-        auto_rename: bool = False, silent: bool = False, __shell: bool = True):
+def shellMove(sources_dests: dict[Path, Path], parent: _TShellWindow = None, *,
+        ask_confirm: _ConfirmationPrompt=None, allow_undo=False,
+        auto_rename=False, silent=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.MOVE, sources_dests,
         parent=_resolve(parent), ask_confirm=ask_confirm, allow_undo=allow_undo,
         rename_on_collision=auto_rename, silent=silent)
 
-def shellCopy(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
-        ask_confirm: bool = False, allow_undo: bool = False,
-        auto_rename: bool = False, __shell: bool = True):
+def shellCopy(sources_dests: dict[Path, Path], parent: _TShellWindow = None, *,
+        ask_confirm: _ConfirmationPrompt=None, allow_undo=False,
+        auto_rename=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.COPY, sources_dests,
         allow_undo=allow_undo, ask_confirm=ask_confirm,

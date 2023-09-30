@@ -162,8 +162,7 @@ class File_ListMasters(OneItemLink):
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
         copy_text_to_clipboard(list_of_mods)
-        self._showLog(list_of_mods, title=self._selected_item,
-                      fixedFont=False)
+        self._showLog(list_of_mods, title=self._selected_item)
 
 #------------------------------------------------------------------------------
 class File_Snapshot(ItemLink):

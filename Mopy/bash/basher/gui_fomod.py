@@ -67,7 +67,7 @@ class ValidatorPopup(DialogWindow):
         super().__init__(parent,
             title=_('FOMOD Validation Failed - %(fomod_title)s') % {
                 'fomod_title': fm_name},
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         copy_log_btn = Button(self, _('Copy Log'))
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')
@@ -105,8 +105,10 @@ class ValidatorPopup(DialogWindow):
 
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
+    _key_prefix = 'bash.fomod'
 
-    def __init__(self, parent_window, target_installer, show_install_chkbox):
+    def __init__(self, parent_window, target_installer, show_install_chkbox,
+                 progress):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         files_list = [a[0] for a in target_installer.fileSizeCrcs]
@@ -114,7 +116,7 @@ class InstallerFomod(WizardDialog):
         self.installer_root = (
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
-        self._fomod_dir = target_installer.get_fomod_file_dir()
+        self._fomod_dir = target_installer.get_fomod_file_dir(progress)
         fm_file = self._fomod_dir.join(target_installer.has_fomod_conf).s
         self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
@@ -129,11 +131,9 @@ class InstallerFomod(WizardDialog):
         self.fomod_parser = FomodInstaller(
             fm_file, files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
-        super(InstallerFomod, self).__init__(
-            parent_window, sizes_dict=bass.settings,
+        super().__init__(parent_window, sizes_dict=bass.settings,
             title=_('FOMOD Installer - %(fomod_title)s') % {
-                'fomod_title': self.fomod_parser.fomod_name},
-            size_key='bash.fomod.size', pos_key='bash.fomod.pos')
+                'fomod_title': self.fomod_parser.fomod_name})
         self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
 
