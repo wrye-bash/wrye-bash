@@ -3860,9 +3860,12 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
-    @staticmethod
-    def _tabOrder():
-        """Return dict containing saved tab order and enabled state of tabs."""
+    def __init__(self, parent):
+        wx.Notebook.__init__(self, parent)
+        balt.TabDragMixin.__init__(self)
+        #--Pages
+        iInstallers = iMods = -1
+        self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
         tabs_enabled_ordered = dict(e.value for e in Store)
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
@@ -3875,17 +3878,11 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         # Ensure the 'Mods' tab is always shown
         newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
-        return newOrder
-
-    def __init__(self, parent):
-        wx.Notebook.__init__(self, parent)
-        balt.TabDragMixin.__init__(self)
-        #--Pages
-        iInstallers = iMods = -1
-        tab_info = tabInfo
-        for page, enabled in self._tabOrder().items():
+        tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
+        for page, (enabled, className, title) in tabs.items():
+            self._tab_menu.append(
+                _Tab_Link(title, page, canDisable=page != 'Mods'))
             if not enabled: continue
-            className, title, _item = tab_info[page]
             panel = globals().get(className,None)
             if panel is None: continue
             deprint(f"Constructing panel '{title}'")
@@ -3896,7 +3893,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             try:
                 item = panel(self)
                 self.AddPage(item._native_widget, title)
-                tab_info[page][2] = item
+                tabInfo[page][2] = item
                 deprint(f"Panel '{title}' constructed successfully")
             except:
                 if page == 'Mods':
@@ -3919,15 +3916,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         return tabInfo[_title_to_tab[
             self.GetPageText(self.GetSelection())]][2]
 
-    @staticmethod
-    def tabLinks(menu):
-        # use tabOrder here - it is used in InitLinks which runs *before*
-        # settings['bash.tabs.order'] is set!
-        for key, (__cls, tab_title, __panel) in BashNotebook._tabOrder():
-            menu.append(
-                _Tab_Link(tab_title, key, canDisable=bool(key != 'Mods')))
-        return menu
-
     def SelectPage(self, page_title, item):
         """Jumps to the specified item on the specified tab.
 
@@ -3949,8 +3937,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         pos = self.ScreenToClient(pos)
         tabId = self.HitTest(pos)
         if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
-            menu = self.tabLinks(Links())
-            menu.popup_menu(self, None)
+            self._tab_menu.popup_menu(self, None)
         else:
             event.Skip()
 

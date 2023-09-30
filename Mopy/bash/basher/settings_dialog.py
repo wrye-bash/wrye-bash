@@ -282,7 +282,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
         with BusyCursor():
-            for (className,title,panel) in tabInfo.values():
+            for (_className, _title, panel) in tabInfo.values():
                 if panel is not None:
                     panel.RefreshUIColors()
 
