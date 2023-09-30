@@ -48,7 +48,8 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     LogDialog, LogFrame, PanelWin, TextArea, UIListCtrl, VLayout, bell, \
     copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
     AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
-    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat
+    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat, \
+    DnDStatusBar
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -2183,28 +2184,26 @@ class INIListCtrl(wx.ListCtrl):
     def _get_selected_line(self, index): raise NotImplementedError
 
 # Status bar ------------------------------------------------------------------
-# TODO(inf) de_wx! Wrap wx.StatusBar
-# It's currently full of _native_widget hacks to keep it functional, this one
-# is the next big step
-class DnDStatusBar(wx.StatusBar):
+class BashStatusBar(DnDStatusBar):
     all_sb_links: dict = {} # all possible status bar links - visible or not
+    obseButton = None # the OBSE button singleton
 
-    def __init__(self, parent):
-        wx.StatusBar.__init__(self, parent)
-        self.SetFieldsCount(3)
+    def __init__(self, parent, txt_len):
+        super().__init__(parent)
+        self._txt_len = txt_len
+        self._native_widget.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self._on_size.subscribe(self.OnSize)
         #--Setup Drag-n-Drop reordering
-        self.__reset_drag(False)
+        self._reset_drag(False)
         self.moved = False
-
-    def UpdateIconSizes(self, skip_refresh=False): raise NotImplementedError
 
     @property
     def iconsSize(self): # +8 as each button has 4 px border on left and right
         return _settings[u'bash.statusbar.iconSize'] + 8
 
+    # Buttons drag and drop ---------------------------------------------------
     def _getButtonIndex(self, mouseEvent):
         native_button = mouseEvent.event_object_
         for i, button_link in enumerate(self.buttons.values()):
@@ -2219,40 +2218,40 @@ class DnDStatusBar(wx.StatusBar):
                 return i, button_link
         return wx.NOT_FOUND, None
 
-    def OnDragStart(self, mouse_evnt):
+    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
         self.dragging, button_link = self._getButtonIndex(mouse_evnt)
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
         return EventResult.FINISH # we don't skip blocks EVT_MOTION somehow
 
-    def OnDragEndForced(self):
-        self.__reset_drag()
+    def _on_drag_end_forced(self):
+        self._reset_drag()
         # NOTE: Don't Skip, otherwise wxPython treats this event as unhandled,
         # and raises an exception.
         return EventResult.FINISH
 
-    def OnDragEnd(self, mouse_evnt, _hittest0):
+    def _on_drag_end(self, mouse_evnt):
         __, button_link = self._getButtonIndex(mouse_evnt)
         if button_link._native_widget.HasCapture():
             button_link._native_widget.ReleaseMouse()
         if self.dragging != wx.NOT_FOUND:
-            self.__reset_drag()
+            self._reset_drag()
             if self.moved:
                 self.moved = False
                 return EventResult.FINISH
             else:
                 button_link.sb_click()
 
-    def __reset_drag(self, set_cursor=True):
+    def _reset_drag(self, set_cursor=True):
         self.dragStart = 0
         self.dragging = wx.NOT_FOUND
-        if set_cursor: self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        if set_cursor: self.set_cursor()
 
-    def OnDrag(self, mouse_evnt, _hittest0):
+    def _on_drag(self, mouse_evnt, _hittest0):
         if self.dragging != wx.NOT_FOUND:
             if abs(mouse_evnt.evt_pos[0] - self.dragStart) > 4:
                 self.moved = True # just lost your chance to click the button
-                self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+                self.set_cursor(hand=True)
             over, _ = self._getButtonIndex(mouse_evnt)
             button_link = next(islice(self.buttons.values(), self.dragging, None), None)
             if over not in (wx.NOT_FOUND, self.dragging):
@@ -2275,13 +2274,93 @@ class DnDStatusBar(wx.StatusBar):
         self.buttons = {k: self.buttons[k] for k in
                         sorted(self.buttons, key=uid_order.get)}
 
-    def OnSize(self, event=None):
-        rect = self.GetFieldRect(0)
+    def OnSize(self):
+        rect = self._native_widget.GetFieldRect(0)
         xPos, yPos = rect.x + 4, rect.y
         for button_link in self.buttons.values():
             button_link.component_position = (xPos, yPos)
             xPos += self.iconsSize
-        if event: event.Skip()
+
+    def UpdateIconSizes(self, skip_refresh=False):
+        self.buttons = {} # populated with SBLinks whose gButtons is not None
+        # when bash is run for the first time those are empty - set here
+        order = _settings['bash.statusbar.order']
+        hide = _settings['bash.statusbar.hide']
+        # filter for non-existent ids and reorder the dict according to order
+        hidden = {lid for lid in hide if lid in self.all_sb_links}
+        hide.clear()
+        hide.update(hidden)
+        saved_order = {lid: li for lid in order if
+                       (li := self.all_sb_links.get(lid))}
+        # append new buttons and reorder BashStatusBar.all_sb_links
+        self.all_sb_links = saved_order | self.all_sb_links
+        order[:] = list(self.all_sb_links) # set bash.statusbar.order
+        # Add buttons in order that is saved
+        for link_uid, link in self.all_sb_links.items():
+            # Hidden?
+            if link_uid in hide: continue
+            # Add it, if allow_create allows us
+            try:
+                if link.create_widget(self, on_drag_start=self._on_drag_start,
+                          on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                          on_drag_end_forced=self._on_drag_end_forced):
+                    self.buttons[link.uid] = link
+            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
+                deprint(f'Failed to load button {link_uid!r}', traceback=True)
+        if not skip_refresh:
+            self.refresh_status_bar(refresh_icon_size=True)
+
+    def HideButton(self, link_uid, skip_refresh=False):
+        if button := self.buttons.get(link_uid):
+            button.visible = False
+            del self.buttons[link_uid]
+            _settings['bash.statusbar.hide'].add(link_uid)
+            if not skip_refresh:
+                self.refresh_status_bar()
+            return
+
+    def UnhideButton(self, link_uid):
+        _settings['bash.statusbar.hide'].discard(link_uid)
+        link = self.all_sb_links[link_uid]
+        if not link.create_widget(self, recreate=False,
+                on_drag_start=self._on_drag_start,
+                on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                on_drag_end_forced=self._on_drag_end_forced):
+            if not link.allow_create():
+                deprint(f'requested to create non existent button {link}')
+                return
+            link.visible = True  # button was already created and hidden
+        self.buttons[link_uid] = link
+        # Find the position to insert it at
+        order = _settings['bash.statusbar.order']
+        if link_uid not in order:
+            # Not specified, put it at the end
+            order.append(link_uid)
+        else:
+            self._sort_buttons(order)
+
+    def refresh_status_bar(self, refresh_icon_size=False):
+        """Updates status widths and the icon sizes, if refresh_icon_size is
+        True. Also propagates resizing events.
+
+        :param refresh_icon_size: Whether or not to update icon sizes too."""
+        self._native_widget.SetStatusWidths(
+            [self.iconsSize * len(self.buttons), -1, self._txt_len])
+        if refresh_icon_size:
+            ##: Why - 12? I just tried values until it looked good, why does
+            # this one work best?
+            self._native_widget.SetMinHeight(self.iconsSize - 12)
+        # Causes the status bar to fill half the screen on wxGTK
+        ##: See if removing this call entirely causes problems on Windows
+        if wx.Platform != u'__WXGTK__':
+            self._native_widget.SendSizeEventToParent()
+        self.OnSize()
+
+    @classmethod
+    def set_tooltips(cls):
+        """Reset the tooltips of all *created* items, even hidden ones."""
+        for button in cls.all_sb_links.values():
+            button.tooltip = button.sb_button_tip
 
 #------------------------------------------------------------------------------
 class NotebookPanel(PanelWin):

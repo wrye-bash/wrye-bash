@@ -25,7 +25,7 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 
-from . import BashStatusBar, BSAList, INIList, InstallersList, \
+from . import BSAList, INIList, InstallersList, \
     InstallersPanel, MasterList, ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -40,8 +40,8 @@ from .mods_links import *
 from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
-from ..balt import MenuLink, SeparatorLink, UIList_Delete, UIList_Hide, \
-    UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
+from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
+    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame

@@ -414,6 +414,10 @@ class _AComponent(_ANative):
         self._native_widget.SetMinSize(self._native_widget.FromDIP(
             (width, height)))
 
+    def set_cursor(self, hand=False):
+        self._native_widget.SetCursor(_wx.Cursor(
+            _wx.CURSOR_HAND if hand else _wx.CURSOR_ARROW))
+
     # focus methods wrappers
     def set_focus_from_kb(self):
         """Set focus to this window as the result of a keyboard action.

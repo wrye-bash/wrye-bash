@@ -25,11 +25,10 @@ import shlex
 import subprocess
 import webbrowser
 
-from . import BashStatusBar
 from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
-from ..balt import BoolLink, ItemLink, Link, SeparatorLink
+from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
 from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \

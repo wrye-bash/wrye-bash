@@ -497,3 +497,27 @@ class GlobalMenu(_ANative):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
             Links.Popup = None
+
+class Dragger(_AComponent):
+    """Class that supports a drag and drop operation on one of its elements."""
+    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
+        raise NotImplementedError
+    def _on_drag(self, mouse_evnt, _hittest0):
+        raise NotImplementedError
+    def _on_drag_end(self, mouse_evnt):
+        raise NotImplementedError
+    def _on_drag_end_forced(self):
+        raise NotImplementedError
+    def _reset_drag(self, set_cursor=True):
+        raise NotImplementedError
+
+class DnDStatusBar(Dragger):
+    """A status bar wrapper. Supports Drag and drop of its buttons."""
+    _native_widget: _wx.StatusBar
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._on_size = self._evt_handler(_wx.EVT_SIZE)
+
+    def set_sb_text(self, status_text, i=0):
+        self._native_widget.SetStatusText(status_text, i)

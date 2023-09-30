@@ -26,11 +26,11 @@ import subprocess
 import webbrowser
 from collections import defaultdict
 
-from . import BashStatusBar, tabInfo
+from . import tabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import Link, Resources, colors
+from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
     reverse_dict
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \

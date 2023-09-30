@@ -70,7 +70,7 @@ from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
     load_order
-from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
+from ..balt import AppendableLink, BashStatusBar, CheckLink, EnabledLink, \
     INIListCtrl, InstallerColorChecks, ItemLink, Link, NotebookPanel, \
     Resources, SeparatorLink, colors, images, UIList
 from ..bass import Store
@@ -3973,90 +3973,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
-class BashStatusBar(DnDStatusBar):
-    #--Class Data
-    obseButton = None
-
-    def UpdateIconSizes(self, skip_refresh=False):
-        self.buttons = {} # populated with SBLinks whose gButtons is not None
-        # when bash is run for the first time those are empty - set here
-        order = settings[u'bash.statusbar.order']
-        hide = settings[u'bash.statusbar.hide']
-        # filter for non-existent ids and reorder the dict according to order
-        hidden = {lid for lid in hide if lid in BashStatusBar.all_sb_links}
-        hide.clear()
-        hide.update(hidden)
-        saved_order = {lid: li for lid in order if
-                       (li := BashStatusBar.all_sb_links.get(lid))}
-        # append new buttons and reorder BashStatusBar.all_sb_links
-        BashStatusBar.all_sb_links = saved_order | BashStatusBar.all_sb_links
-        order[:] = list(BashStatusBar.all_sb_links) # set bash.statusbar.order
-        # Add buttons in order that is saved
-        for link_uid, link in BashStatusBar.all_sb_links.items():
-            # Hidden?
-            if link_uid in hide: continue
-            # Add it, if allow_create allows us
-            try:
-                if link.create_widget(self, on_drag_start=self.OnDragStart,
-                        on_drag_end=self.OnDragEnd, on_drag=self.OnDrag,
-                        on_drag_end_forced=self.OnDragEndForced):
-                    self.buttons[link.uid] = link
-            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {link_uid!r}', traceback=True)
-        if not skip_refresh:
-            self.refresh_status_bar(refresh_icon_size=True)
-
-    def HideButton(self, link_uid, skip_refresh=False):
-        if button := self.buttons.get(link_uid):
-            button.visible = False
-            del self.buttons[link_uid]
-            settings['bash.statusbar.hide'].add(link_uid)
-            if not skip_refresh:
-                self.refresh_status_bar()
-            return
-
-    def UnhideButton(self, link_uid):
-        settings['bash.statusbar.hide'].discard(link_uid)
-        link = self.all_sb_links[link_uid]
-        if not link.create_widget(self, recreate=False,
-                on_drag_start=self.OnDragStart, on_drag_end=self.OnDragEnd,
-                on_drag=self.OnDrag, on_drag_end_forced=self.OnDragEndForced):
-            if not link.allow_create():
-                deprint(f'requested to create non existent button {link}')
-                return
-            link.visible = True  # button was already created and hidden
-        self.buttons[link_uid] = link
-        # Find the position to insert it at
-        order = settings[u'bash.statusbar.order']
-        if link_uid not in order:
-            # Not specified, put it at the end
-            order.append(link_uid)
-        else:
-            self._sort_buttons(order)
-
-    def refresh_status_bar(self, refresh_icon_size=False):
-        """Updates status widths and the icon sizes, if refresh_icon_size is
-        True. Also propagates resizing events.
-
-        :param refresh_icon_size: Whether or not to update icon sizes too."""
-        txt_len = 280 if bush.game.has_esl else 130
-        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, txt_len])
-        if refresh_icon_size:
-            ##: Why - 12? I just tried values until it looked good, why does
-            # this one work best?
-            self.SetMinHeight(self.iconsSize - 12)
-        # Causes the status bar to fill half the screen on wxGTK
-        ##: See if removing this call entirely causes problems on Windows
-        if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent()
-        self.OnSize()
-
-    @classmethod
-    def set_tooltips(cls):
-        """Reset the tooltips of all *created* items, even hidden ones."""
-        for button in cls.all_sb_links.values():
-            button.tooltip = button.sb_button_tip
-
-#------------------------------------------------------------------------------
 class BashFrame(WindowFrame):
     """Main application frame."""
     ##:ex basher globals - hunt their use down - replace with methods - see #63
@@ -4072,9 +3988,6 @@ class BashFrame(WindowFrame):
     _def_size = (1024, 512)
     _size_hints = (512, 512)
 
-    @property
-    def statusBar(self): return self._native_widget.GetStatusBar()
-
     def __init__(self, parent=None):
         #--Singleton
         balt.Link.Frame = self
@@ -4084,7 +3997,9 @@ class BashFrame(WindowFrame):
                                         sizes_dict=bass.settings)
         self.set_bash_frame_title()
         # Status Bar & Global Menu
-        self._native_widget.SetStatusBar(BashStatusBar(self._native_widget))
+        txt_len = 280 if bush.game.has_esl else 130
+        status_bar = self.statusBar = BashStatusBar(self, txt_len)
+        self._native_widget.SetStatusBar(self._resolve(status_bar))
         self.global_menu = None
         self.set_global_menu(GlobalMenu())
         #--Notebook panel
@@ -4221,11 +4136,11 @@ class BashFrame(WindowFrame):
         # requesting Panel is currently shown because Refresh UI path may call
         # Refresh UI of other tabs too - this results for instance in mods
         # count flickering when deleting a save in saves tab - ##: hunt down
-            self.statusBar.SetStatusText(countTxt, 2)
+            self.statusBar.set_sb_text(countTxt, 2)
 
     def set_status_info(self, infoTxt):
         """Sets status bar info field."""
-        self.statusBar.SetStatusText(infoTxt, 1)
+        self.statusBar.set_sb_text(infoTxt, 1)
 
     # Events ------------------------------------------------------------------
     @balt.conversation
