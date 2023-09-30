@@ -41,15 +41,18 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelObme, MelOwnership, MelMgefEsceTes4, MelMgefData, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
     MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
-    MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
+    MelRegnEntryMusicType, MelRelations, MelScript, MelScriptVars, \
     MelSeasons, MelSequential, MelSet, MelSimpleArray, MelSInt16, MelSInt32, \
     MelSkipInterior, MelSorted, MelSound, MelSoundClose, MelSoundLooping, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4, \
+    SpellFlags, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
     AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
-    PackGeneralOldFlags, MelPackScheduleOld
+    PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
+    MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
+    MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
+    MelRegnEntryMapName
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -609,7 +612,7 @@ class MreAmmo(_ObIcon):
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
-    """Animation Object."""
+    """Animated Object."""
     rec_sig = b'ANIO'
 
     melSet = MelSet(
@@ -1050,12 +1053,12 @@ class MreEfsh(MelRecord):
              '3B', 's', '3B', 's', '3B', 's', '6f'],
             (_EfshFlags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
             'ms_blend_operation', 'ms_z_test_function',
-            *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+            *color_attrs('fill_color1'), 'fill_alpha_fade_in_time',
             'fill_full_alpha_time', 'fill_alpha_fade_out_time',
             'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
             'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
             'fill_texture_animation_speed_v', 'ee_fall_off',
-            *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            *color_attrs('ee_color'), 'ee_alpha_fade_in_time',
             'ee_full_alpha_time', 'ee_alpha_fade_out_time',
             'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
             'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
@@ -1071,9 +1074,9 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
             'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
             'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1', rename_alpha=True),
-            *gen_color('color_key2', rename_alpha=True),
-            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            *color_attrs('color_key1', rename_alpha=True),
+            *color_attrs('color_key2', rename_alpha=True),
+            *color_attrs('color_key3', rename_alpha=True), 'color_key1_alpha',
             'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
             'color_key2_time', 'color_key3_time',
             old_versions={'B3s3I3Bs9f3Bs8fI'}),
@@ -1298,7 +1301,7 @@ class MreLigh(_ObIcon):
         MelIcon(),
         MelTruncatedStruct(b'DATA',
             ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I', 'f'], 'duration',
-            'light_radius', *gen_color('light_color'),
+            'light_radius', *color_attrs('light_color'),
             (_LighFlags, 'light_flags'), 'light_falloff', 'light_fov',
             'value', 'weight', old_versions={'iI3BsI2f'}),
         MelLighFade(),
@@ -2029,76 +2032,28 @@ class MreRefr(MelRecord):
     })
 
 #------------------------------------------------------------------------------
-class MreRegn(MelRecord):
+class MreRegn(AMreRegn):
     """Region."""
-    rec_sig = b'REGN'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        border_region: bool = flag(6)
-
-    class _RdatFlags(Flags):
-        Override: bool
-
-    class _ObFlags(Flags):
-        conform: bool = flag(0)
-        paintVertices: bool = flag(1)
-        sizeVariance: bool = flag(2)
-        deltaX: bool = flag(3)
-        deltaY: bool = flag(4)
-        deltaZ: bool = flag(5)
-        Tree: bool = flag(6)
-        hugeRock: bool = flag(7)
-
-    class _SdFlags(Flags):
-        pleasant: bool = flag(0)
-        cloudy: bool = flag(1)
-        rainy: bool = flag(2)
-        snowy: bool = flag(3)
-
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelStruct(b'RCLR', ['3B', 's'], 'mapRed', 'mapBlue', 'mapGreen',
-                  'unused1'),
-        MelFid(b'WNAM','worldspace'),
-        MelGroups('areas',
-            MelUInt32(b'RPLI', 'edgeFalloff'),
-            MelArray('points',
-                MelStruct(b'RPLD', ['2f'], 'posX', 'posY'),
-            ),
-        ),
-        MelSorted(MelGroups('entries',
-            MelStruct(b'RDAT', ['I', '2B', '2s'], 'entryType',
-                      (_RdatFlags, 'flags'), 'priority', 'unused1'),
-            MelRegnEntrySubrecord(2, MelArray('objects',
-                MelStruct(b'RDOT', ['I', 'H', '2s', 'f', '4B', '2H', '5f',
-                    '3H', '2s', '4s'], (FID, 'objectId'), 'parentIndex',
-                    'unk1', 'density', 'clustering', 'minSlope',
-                    'maxSlope', (_ObFlags, 'flags'), 'radiusWRTParent',
-                    'radius', 'minHeight', 'maxHeight', 'sink', 'sinkVar',
-                    'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
-                    'unk2', 'unk3'),
-            )),
-            ##: Was disabled previously - not in xEdit either...
-            # MelRegnEntrySubrecord(5, MelIcon()),
-            MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
-            MelRegnEntrySubrecord(6, MelSorted(MelArray('grasses',
-                MelStruct(b'RDGS', ['I', '4s'], (FID, 'grass'), 'unknown'),
-            ), sort_by_attrs='grass')),
-            MelRegnEntrySubrecord(7, MelUInt32(b'RDMD', 'musicType')),
-            MelRegnEntrySubrecord(7, MelSorted(MelArray('sounds',
-                MelStruct(b'RDSD', ['3I'], (FID, 'sound'), (_SdFlags, 'flags'),
-                          'chance'),
-            ), sort_by_attrs='sound')),
-            MelRegnEntrySubrecord(3, MelSorted(MelArray('weatherTypes',
-                MelStruct(b'RDWT', ['2I'], (FID, 'weather'), 'chance')
-            ), sort_by_attrs='weather')),
-        ), sort_by_attrs='entryType'),
+        MelColor(b'RCLR'),
+        MelWorldspace(),
+        MelRegnAreas(),
+        MelSorted(MelGroups('regn_entries',
+            MelRegnRdat(),
+            MelRegnEntryObjects(),
+            MelRegnEntryMapName(),
+            MelRegnEntryGrasses(),
+            MelRegnEntryMusicType(),
+            MelRegnEntrySoundsOld(),
+            MelRegnEntryWeatherTypes(with_global=False),
+        ), sort_by_attrs='regn_data_type'),
     )
 
 #------------------------------------------------------------------------------
 class MreRoad(MelRecord):
-    """Road. Part of large worldspaces."""
+    """Road."""
     ####Could probably be loaded via MelArray,
     ####but little point since it is too complex to manipulate
     rec_sig = b'ROAD'
@@ -2370,7 +2325,7 @@ class MreWrld(AMreWrld):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid(b'WNAM', 'parent'),
+        MelWorldspace('wrld_parent'),
         MelFid(b'CNAM', 'climate'),
         MelFid(b'NAM2', 'water'),
         MelIcon('mapPath'),

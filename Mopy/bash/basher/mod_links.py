@@ -69,7 +69,8 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FogFixer', u'Mod_CopyToMenu', u'Mod_DecompileAll',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
-           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords']
+           'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
+           'Mod_DumpRecordTypeNames']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -154,6 +155,22 @@ class Mod_DumpSubrecords(_LoadLink):
                         bolt.deprint(f'  - {sig_to_str(ds_sub.mel_sig)}, '
                                      f'{len(ds_sub.mel_data)} bytes')
             bolt.deprint(f'=== Finished dump for {ds_p} ===')
+
+class Mod_DumpRecordTypeNames(ItemLink):
+    """Useful for updating the mk_html_list script (in record_work_utils). Also
+    highlights record types where you forgot to add a docstring."""
+    _text = 'Dump Record Type Names'
+    _help = ('Write a mapping of record type signatures to record type names '
+             'to the BashBugDump.')
+
+    def Execute(self):
+        rt_mapping = dict_sort({
+            s: (c.__doc__.rstrip('.') if c.__doc__ else '<Missing Docstring>')
+            for s, c in RecordType.sig_to_class.items()
+            if c.__name__ != 'MreRecord' # Skip annoying generic docstring
+        })
+        bolt.deprint(dict(rt_mapping))
+        self._showOk('Done, see BashBugDump for results.')
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py

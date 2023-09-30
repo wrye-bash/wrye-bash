@@ -290,7 +290,10 @@ class PatchGame(GameInfo):
                 # override the rec_class in sig_to_class with a stub (for
                 # instance <class 'bash.game.fallout4.records.MreCell'>)
                 if rec_class.melSet is None:
-                    bolt.deprint(f'{rec_class}: no melSet')
+                    # Don't log about record types that don't even exist for
+                    # this game
+                    if rec_sig in valid_header_sigs:
+                        bolt.deprint(f'{rec_class}: no melSet')
                     continue
                 rec_class.validate_record_syntax()
         if miss := [s for s in valid_header_sigs if s not in _sig_class]:

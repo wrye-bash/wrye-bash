@@ -779,7 +779,7 @@ class ASkyrimGameInfo(PatchGame):
         # mgef_sounds has FormIDs, but will be filtered in MreMgef.keep_fids
         b'MGEF': ('casting_sound_level', 'mgef_sounds'),
         b'PROJ': ('sound_level',),
-        b'SNCT': ('staticVolumeMultiplier',),
+        b'SNCT': ('static_volume_multiplier',),
         # sound_files does not need to loop here
         b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
                   'pct_frequency_shift', 'pct_frequency_variance',
@@ -816,10 +816,10 @@ class ASkyrimGameInfo(PatchGame):
         b'LIGH': ('sound',),
         b'MISC': ('sound_pickup', 'sound_drop'),
         b'MSTT': ('sound',),
-        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
+        b'PROJ': ('proj_sound', 'proj_sound_countdown', 'proj_sound_disable'),
         b'SCRL': ('sound_pickup', 'sound_drop'),
         b'SLGM': ('sound_pickup', 'sound_drop'),
-        b'SNCT': ('parent',),
+        b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
         b'SOUN': ('soundDescriptor',),
         b'TACT': ('sound',),
@@ -957,8 +957,8 @@ class ASkyrimGameInfo(PatchGame):
         b'MGEF': ('dual_casting_scale',),
         b'MISC': ('iconPath', 'model'),
         b'PERK': ('iconPath',),
-        b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
-                  'models'),
+        b'PROJ': ('model', 'muzzle_flash_duration', 'proj_fade_duration',
+                  'muzzle_flash_model'),
         b'SLGM': ('iconPath', 'model'),
         b'STAT': ('model',),
         b'TREE': ('model',),
@@ -984,7 +984,8 @@ class ASkyrimGameInfo(PatchGame):
                   'hit_effect_art', 'effect_impact_data', 'dual_casting_art',
                   'enchant_art', 'hit_visuals', 'enchant_visuals',
                   'effect_imad'),
-        b'PROJ': ('light', 'muzzleFlash', 'explosion', 'decalData'),
+        b'PROJ': ('proj_light', 'muzzle_flash', 'proj_explosion',
+                  'proj_decal_data'),
         b'SCRL': ('menu_display_object',),
         b'SPEL': ('menu_display_object',),
         b'WEAP': ('firstPersonModelObject',),
@@ -1034,7 +1035,7 @@ class ASkyrimGameInfo(PatchGame):
         b'SHOU': ('description',),
         b'SPEL': ('description',),
         b'WEAP': ('description',),
-        b'WOOP': ('translation',),
+        b'WOOP': ('woop_translation',),
     }
 
     #--------------------------------------------------------------------------
@@ -1073,10 +1074,11 @@ class ASkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK',
-                          b'CONT', b'DOOR', b'FLOR', b'FURN', b'KEYM', b'LIGH',
-                          b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM',
-                          b'TACT', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
+        b'SCRL', b'SLGM', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors
@@ -1255,7 +1257,7 @@ class ASkyrimGameInfo(PatchGame):
         b'TREE': ('full',),
         b'WATR': ('full',),
         b'WEAP': ('full', 'description'),
-        b'WOOP': ('full',),
+        b'WOOP': ('full', 'woop_translation'),
     }
     gold_attrs = lambda self: {
         'eid': 'Gold001',
@@ -1465,8 +1467,7 @@ class ASkyrimGameInfo(PatchGame):
         # package name is skyrim here
         super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {
-            b'RGDL', b'SCPT', b'CELL', b'SCEN', b'SCOL', b'HAIR', b'CLDC',
-            b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
+            b'CELL', b'SCEN', b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
         from ... import brec as _brec_
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 

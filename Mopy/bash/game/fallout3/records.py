@@ -54,10 +54,15 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, PartialLoadDecider, PerkEpdfDecider, SizeDecider, AMreGlob, \
-    SpellFlags, gen_color, gen_color3, null2, perk_distributor, MelMgefData, \
+    SpellFlags, color_attrs, color3_attrs, null2, perk_distributor, \
     perk_effect_key, MelLinkColors, MelNpcClass, TemplateFlags, MelTemplate, \
     MelAIPackages, MelNpcHeadParts, MelInheritsSoundsFrom, MelSoundLevel, \
-    MelIdleAnimFlags, PackGeneralOldFlags, MelPackScheduleOld
+    MelIdleAnimFlags, PackGeneralOldFlags, MelPackScheduleOld, MelMgefData, \
+    MelProjMuzzleFlashModel, position_attrs, rotation_attrs, AMreRegn, \
+    MelColor, MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
+    MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
+    MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
+    MelScolParts
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -568,7 +573,7 @@ class MreAmmo(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
-    """Animation Object."""
+    """Animated Object."""
     rec_sig = b'ANIO'
 
     melSet = MelSet(
@@ -762,10 +767,9 @@ class MreBptd(MelRecord):
                 'bpnd_explodable_debris_scale', 'bpnd_severable_debris_count',
                 (FID, 'bpnd_severable_debris'),
                 (FID, 'bpnd_severable_explosion'),
-                'bpnd_severable_debris_scale', 'bpnd_gore_effect_pos_trans_x',
-                'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
-                'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
-                'bpnd_gore_effect_pos_rot_z',
+                'bpnd_severable_debris_scale',
+                *position_attrs('bpnd_gore_effect'),
+                *rotation_attrs('bpnd_gore_effect'),
                 (FID, 'bpnd_severable_impact_dataset'),
                 (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
@@ -1191,12 +1195,12 @@ class MreEfsh(MelRecord):
              '3B', 's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's', 'f',
              '2I', '6f'], (_efsh_flags, 'efsh_flags'), 'unused1',
             'ms_source_blend_mode', 'ms_blend_operation', 'ms_z_test_function',
-            *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+            *color_attrs('fill_color1'), 'fill_alpha_fade_in_time',
             'fill_full_alpha_time', 'fill_alpha_fade_out_time',
             'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
             'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
             'fill_texture_animation_speed_v', 'ee_fall_off',
-            *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            *color_attrs('ee_color'), 'ee_alpha_fade_in_time',
             'ee_full_alpha_time', 'ee_alpha_fade_out_time',
             'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
             'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
@@ -1211,16 +1215,16 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity2', 'ps_initial_velocity3', 'ps_acceleration1',
             'ps_acceleration2', 'ps_acceleration3', 'ps_scale_key1',
             'ps_scale_key2', 'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1', rename_alpha=True),
-            *gen_color('color_key2', rename_alpha=True),
-            *gen_color('color_key3', rename_alpha=True), 'color_key1_alpha',
+            *color_attrs('color_key1', rename_alpha=True),
+            *color_attrs('color_key2', rename_alpha=True),
+            *color_attrs('color_key3', rename_alpha=True), 'color_key1_alpha',
             'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
             'color_key2_time', 'color_key3_time',
             'ps_initial_speed_along_normal_delta', 'ps_initial_rotation',
             'ps_initial_rotation_delta', 'ps_rotation_speed',
             'ps_rotation_speed_delta', (FID, 'addon_models'),
             'holes_start_time', 'holes_end_time', 'holes_start_value',
-            'holes_end_value', 'ee_width', *gen_color('edge_color'),
+            'holes_end_value', 'ee_width', *color_attrs('edge_color'),
             'explosion_wind_speed', 'texture_count_u', 'texture_count_v',
             'addon_models_fade_in_time', 'addon_models_fade_out_time',
             'addon_models_scale_start', 'addon_models_scale_end',
@@ -1459,10 +1463,10 @@ class MreImgs(MelRecord):
         'grass_dimmer', 'tree_dimmer', 'skin_dimmer', 'bloom_blur_radius',
         'bloom_alpha_mult_interior', 'bloom_alpha_mult_exterior',
         'get_hit_blur_radius', 'get_hit_blur_damping_constant',
-        'get_hit_damping_constant', *gen_color3('night_eye_tint'),
+        'get_hit_damping_constant', *color3_attrs('night_eye_tint'),
         'night_eye_brightness', 'cinematic_saturation',
         'cinematic_avg_lum_value', 'cinematic_value',
-        'cinematic_brightness_value', *gen_color3('cinematic_tint'),
+        'cinematic_brightness_value', *color3_attrs('cinematic_tint'),
         'cinematic_tint_value',
     ]
     _dnam_fmts = ['33f', '4s', '4s', '4s', '4s']
@@ -1616,11 +1620,12 @@ class MreLgtm(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelStruct(b'DATA', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '3f'],
-            *gen_color('lgtm_ambient_color'),
-            *gen_color('lgtm_directional_color'), *gen_color('lgtm_fog_color'),
-            'lgtm_fog_near', 'lgtm_fog_far', 'lgtm_directional_rotation_xy',
-            'lgtm_directional_rotation_z', 'lgtm_directional_fade',
-            'lgtm_fog_clip_distance', 'lgtm_fog_power'),
+            *color_attrs('lgtm_ambient_color'),
+            *color_attrs('lgtm_directional_color'),
+            *color_attrs('lgtm_fog_color'), 'lgtm_fog_near', 'lgtm_fog_far',
+            'lgtm_directional_rotation_xy', 'lgtm_directional_rotation_z',
+            'lgtm_directional_fade', 'lgtm_fog_clip_distance',
+            'lgtm_fog_power'),
     )
 
 #------------------------------------------------------------------------------
@@ -1654,7 +1659,7 @@ class MreLigh(MelRecord):
         MelFull(),
         MelIcons(),
         MelStruct(b'DATA', ['i', 'I', '3B', 's', 'I', '2f', 'I', 'f'],
-            'duration', 'light_radius', *gen_color('light_color'),
+            'duration', 'light_radius', *color_attrs('light_color'),
             (_light_flags, 'light_flags'), 'light_falloff', 'light_fov',
             'value', 'weight'),
         MelLighFade(),
@@ -2311,7 +2316,7 @@ class MreProj(MelRecord):
     """Projectile."""
     rec_sig = b'PROJ'
 
-    class _flags(Flags):
+    class _ProjFlags(Flags):
         is_hitscan: bool = flag(0)
         is_explosive: bool = flag(1)
         alt_trigger: bool = flag(2)
@@ -2325,13 +2330,15 @@ class MreProj(MelRecord):
         projectile_rotates: bool = flag(fnv_only(11))
 
     # Attributes shared between FO3 and FNV for the DATA subrecord
-    _shared_data = [(_flags, 'flags'), 'type', 'gravity', ('speed', 10000.0),
-                    ('range', 10000.0), (FID, 'light'), (FID, 'muzzleFlash'),
-                    'tracerChance', 'explosionAltTrigerProximity',
-                    'explosionAltTrigerTimer', (FID, 'explosion'),
-                    (FID, 'sound'), 'muzzleFlashDuration', 'fadeDuration',
-                    'impactForce', (FID, 'sound_countdown'),
-                    (FID, 'sound_disable'), (FID, 'defaultWeaponSource')]
+    _shared_data = [(_ProjFlags, 'proj_flags'), 'proj_type', 'proj_gravity',
+                    'proj_speed', 'proj_range', (FID, 'proj_light'),
+                    (FID, 'muzzle_flash'), 'tracer_chance',
+                    'explosion_alt_trigger_proximity',
+                    'explosion_alt_trigger_timer', (FID, 'proj_explosion'),
+                    (FID, 'proj_sound'), 'muzzle_flash_duration',
+                    'proj_fade_duration', 'proj_impact_force',
+                    (FID, 'proj_sound_countdown'), (FID, 'proj_sound_disable'),
+                    (FID, 'default_weapon_source')]
 
     melSet = MelSet(
         MelEdid(),
@@ -2341,17 +2348,15 @@ class MreProj(MelRecord):
         MelDestructible(),
         if_fnv(
             fo3_version=MelStruct(
-                b'DATA', [u'2H', u'3f', u'2I', u'3f', u'2I', u'3f', u'3I'],
+                b'DATA', ['2H', '3f', '2I', '3f', '2I', '3f', '3I'],
                 *_shared_data),
             fnv_version=MelTruncatedStruct(
-                b'DATA', [u'2H', u'3f', u'2I', u'3f', u'2I', u'3f', u'3I',
-                          u'4f'],
-                *(_shared_data + ['rotationX', 'rotationY', 'rotationZ',
-                                  'bouncyMult']),
+                b'DATA', ['2H', '3f', '2I', '3f', '2I', '3f', '3I', '4f'],
+                *(_shared_data + [*rotation_attrs('proj'),
+                                  'bouncy_multiplier']),
                 old_versions={'2H3f2I3f2I3f3If', '2H3f2I3f2I3f3I'}),
         ),
-        MelString(b'NAM1','muzzleFlashPath'),
-        MelBase(b'NAM2','_nam2'),
+        MelProjMuzzleFlashModel(ignore_texture_hashes=False),
         MelSoundLevel(),
     )
 
@@ -2688,77 +2693,30 @@ class MreRefr(_AMreReferenceFo3):
     )
 
 #------------------------------------------------------------------------------
-class MreRegn(MelRecord):
+class MreRegn(AMreRegn):
     """Region."""
-    rec_sig = b'REGN'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        border_region: bool = flag(6)
-
-    class obflags(Flags):
-        conform: bool
-        paintVertices: bool
-        sizeVariance: bool
-        deltaX: bool
-        deltaY: bool
-        deltaZ: bool
-        Tree: bool
-        hugeRock: bool
-
-    class sdflags(Flags):
-        pleasant: bool
-        cloudy: bool
-        rainy: bool
-        snowy: bool
-
-    class rdatFlags(Flags):
-        Override: bool
-
     melSet = MelSet(
         MelEdid(),
         MelIcons(),
-        MelStruct(b'RCLR', [u'3B', u's'],'mapRed','mapBlue','mapGreen','unused1'),
-        MelFid(b'WNAM','worldspace'),
-        MelGroups('areas',
-            MelUInt32(b'RPLI', 'edgeFalloff'),
-            MelArray('points',
-                MelStruct(b'RPLD', [u'2f'], 'posX', 'posY'),
-            ),
-        ),
-        MelSorted(MelGroups('entries',
-            MelStruct(b'RDAT', [u'I', u'2B', u'2s'], 'entryType', (rdatFlags, 'flags'),
-                      'priority', 'unused1'),
-            MelRegnEntrySubrecord(2, MelArray('objects',
-                MelStruct(b'RDOT',
-                    [u'I', u'H', u'2s', u'f', u'4B', u'2H', u'5f', u'3H',
-                     u'2s', u'4s'], (FID, 'objectId'),
-                    'parentIndex', 'unk1', 'density', 'clustering',
-                    'minSlope', 'maxSlope', (obflags, 'flags'),
-                    'radiusWRTParent', 'radius', 'minHeight', 'maxHeight',
-                    'sink', 'sinkVar', 'sizeVar', 'angleVarX', 'angleVarY',
-                    'angleVarZ', 'unk2', 'unk3'),
-            )),
-            MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
-            MelRegnEntrySubrecord(6, MelSorted(MelArray('grasses',
-                MelStruct(b'RDGS', [u'I', u'4s'], (FID, 'grass'), 'unknown'),
-            ), sort_by_attrs='grass')),
-            MelRegnEntrySubrecord(7, MelUInt32(b'RDMD', 'musicType')),
-            MelRegnEntrySubrecord(7, MelFid(b'RDMO', 'music')),
-            fnv_only(MelRegnEntrySubrecord(
-                7, MelFid(b'RDSI', 'incidentalMediaSet'))),
-            fnv_only(MelRegnEntrySubrecord(
-                7, MelFids('battleMediaSets', MelFid(b'RDSB')))),
-            MelRegnEntrySubrecord(7, MelSorted(MelArray('sounds',
-                MelStruct(b'RDSD', [u'3I'], (FID, 'sound'), (sdflags, 'flags'),
-                          'chance'),
-            ), sort_by_attrs='sound')),
-            MelRegnEntrySubrecord(3, MelSorted(MelArray('weatherTypes',
-                MelStruct(b'RDWT', [u'3I'], (FID, u'weather'), u'chance',
-                          (FID, u'global')),
-            ), sort_by_attrs='weather')),
-            fnv_only(MelRegnEntrySubrecord(
-                8, MelSimpleArray('imposters', MelFid(b'RDID')))),
-        ), sort_by_attrs='entryType'),
+        MelColor(b'RCLR'),
+        MelWorldspace(),
+        MelRegnAreas(),
+        MelSorted(MelGroups('regn_entries',
+            MelRegnRdat(),
+            MelRegnEntryObjects(),
+            MelRegnEntryMapName(),
+            MelRegnEntryGrasses(),
+            MelRegnEntryMusicType(),
+            MelRegnEntryMusic(),
+            fnv_only(MelRegnEntrySubrecord(7,
+                MelFid(b'RDSI', 'incidental_media_set'))),
+            fnv_only(MelRegnEntrySubrecord(7,
+                MelFids('battle_media_sets', MelFid(b'RDSB')))),
+            MelRegnEntrySoundsOld(),
+            MelRegnEntryWeatherTypes(),
+            fnv_only(MelRegnEntrySubrecord(8,
+                MelSimpleArray('regn_imposters', MelFid(b'RDID')))),
+        ), sort_by_attrs='regn_data_type'),
     )
 
 #------------------------------------------------------------------------------
@@ -2809,14 +2767,7 @@ class MreScol(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelGroups('parts',
-            MelFid(b'ONAM','static'),
-            MelSorted(MelArray('placements',
-                MelStruct(b'DATA', [u'7f'], u'posX', u'posY', u'posZ', u'rotX',
-                          u'rotY', u'rotZ', u'scale'),
-            ), sort_by_attrs=('posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ',
-                              'scale')),
-        ),
+        MelScolParts(),
     )
 
 #------------------------------------------------------------------------------
@@ -2848,7 +2799,7 @@ class MreSoun(MelRecord):
         envelopeFast: bool = flag(9)
         envelopeSlow: bool = flag(10)
         twoDRadius: bool = flag(11)
-        muteWhenSubmerged: bool = flag(12)
+        mute_when_submerged: bool = flag(12)
         startatRandomPosition: bool = flag(fnv_only(13))
 
     melSet = MelSet(
@@ -3302,7 +3253,7 @@ class MreWrld(MelRecord, AMreWrld):
         MelEdid(),
         MelFull(),
         MelFid(b'XEZN','encounterZone'),
-        MelFid(b'WNAM','parent'),
+        MelWorldspace('wrld_parent'),
         MelStruct(b'PNAM', ['B', 'B'], (pnamFlags, 'parentFlags'),
                   'unknownff'),
         MelFid(b'CNAM','climate'),

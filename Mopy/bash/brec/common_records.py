@@ -568,6 +568,14 @@ class AMreRace(MelRecord):
         self.hairs = [h for h in self.hairs if h.mod_fn in keep_plugins]
 
 #------------------------------------------------------------------------------
+class AMreRegn(MelRecord):
+    """Base class for REGN records."""
+    rec_sig = b'REGN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        border_region: bool = flag(6)
+
+#------------------------------------------------------------------------------
 class AMreWrld(MelRecord):
     """Base class for WRLD records."""
     rec_sig = b'WRLD'
@@ -770,3 +778,19 @@ class MreOtft(MelRecord):
     def keep_fids(self, keep_plugins):
         super().keep_fids(keep_plugins)
         self.items = [i for i in self.items if i.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class MreRfct(MelRecord):
+    """Visual Effect."""
+    rec_sig = b'RFCT'
+
+    class _RfctFlags(Flags):
+        rotate_to_face_target: bool
+        attach_to_camera: bool
+        inherit_rotation: bool
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['3I'], (FID, 'rfct_effect_art'),
+            (FID, 'rfct_shader'), (_RfctFlags, 'rfct_flags')),
+    )
