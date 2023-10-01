@@ -24,21 +24,18 @@
 more specialized parts (e.g. _AComponent)."""
 from __future__ import annotations
 
-__author__ = 'nycz, Infernio'
+__author__ = 'nycz, Infernio, Utumno'
 
 import functools
-import os
 import platform
 import textwrap
 from typing import get_type_hints
 
 import wx as _wx
 import wx.lib.newevent as _newevent
-import wx.svg as _svg
 
 from .events import EventHandler, null_processor
-from ..bolt import deprint
-from ..exception import ArgumentError, GuiError
+from ..exception import GuiError
 
 # Utilities -------------------------------------------------------------------
 @functools.cache
@@ -122,11 +119,11 @@ class _ACFrozen:
 
 # Base Elements ---------------------------------------------------------------
 _no_parent = object() # signals that this native component has no parent
-class _ANative:
+class _AObject:
     """Abstract base class for all GUI items. Holds a reference to the native
-    wx widget that we abstract over. We choose EvtHandler as the base wx class
-    as all of our currently wrapped classes inherit from it."""
-    _native_widget: _wx.EvtHandler
+    wx widget that we abstract over. We mimic wx hierarchy as we need to wrap
+    components on all levels."""
+    _native_widget: _wx.Object
 
     def __init__(self, parent=_no_parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
@@ -139,27 +136,6 @@ class _ANative:
             self._cached_widget = widget
         else:
             self._native_widget = widget
-
-    def _evt_handler(self, evt, arg_proc=null_processor):
-        """Register an EventHandler on _native_widget"""
-        return EventHandler(self._native_widget, evt, arg_proc)
-
-    def _make_custom_event(self, callback):
-        """Creates a wrapper around a custom event.
-
-        :param callback: The method to call when the event is posted.
-        :return: A method that will pass whatever kwargs are given to it along
-            to the callback."""
-        event_cls, binder = _newevent.NewEvent()
-        def _receiver(event):
-            received_kwargs = {a: getattr(event, a)
-                               for a in getattr(event, '_kwargs', [])}
-            callback(**received_kwargs)
-        self._native_widget.Bind(binder, _receiver)
-        def _sender(**kwargs):
-            _wx.PostEvent(self._native_widget, event_cls(**kwargs,
-                _kwargs=list(kwargs))) # So that we can access them again
-        return _sender
 
     @staticmethod
     def _escape(s):
@@ -189,9 +165,9 @@ class _ANative:
         :param obj: The object to resolve.
         :return: The resolved wx object.
         """
-        if isinstance(obj, _ANative):
+        if isinstance(obj, _AObject):
             return obj._native_widget
-        elif isinstance(obj, _wx.EvtHandler) or obj is None:
+        elif isinstance(obj, _wx.Object) or obj is None:
             return obj
         else:
             raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
@@ -202,16 +178,43 @@ class _ANative:
         all possible."""
         self._native_widget.Destroy()
 
+class _AEvtHandler(_AObject):
+    """Wrap an EvtHandler instance."""
+    _native_widget: _wx.EvtHandler
+
+    def _evt_handler(self, evt, arg_proc=null_processor):
+        """Register an EventHandler on _native_widget"""
+        return EventHandler(self._native_widget, evt, arg_proc)
+
+    def _make_custom_event(self, callback):
+        """Creates a wrapper around a custom event.
+
+        :param callback: The method to call when the event is posted.
+        :return: A method that will pass whatever kwargs are given to it along
+            to the callback."""
+        event_cls, binder = _newevent.NewEvent()
+        def _receiver(event):
+            received_kwargs = {a: getattr(event, a)
+                               for a in getattr(event, '_kwargs', [])}
+            callback(**received_kwargs)
+        self._native_widget.Bind(binder, _receiver)
+        def _sender(**kwargs):
+            _wx.PostEvent(self._native_widget, event_cls(**kwargs,
+                _kwargs=list(kwargs))) # So that we can access them again
+        return _sender
+
     def pause_drawing(self) -> _ACFrozen:
         """To be used via Python's 'with' statement. Pauses all visual updates
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
-class Lazy(_ANative):
+class Lazy(_AObject):
     """Lazily create the native widget on first accessing self._native_widget.
-    Base class needs to know about us - think of Lazy on the same level as
-    __ANative. Only access self._native_widget after a successful call to
-    create_widget."""
+    _AObject needs to know about us - think of Lazy on the same level as it."""
+    # allow creating the native widget by directly accessing the _native_widget
+    # if False you can *only* access _native_widget after successfully calling
+    # create_widget
+    _bypass_create_widget = False
 
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs):
@@ -221,7 +224,7 @@ class Lazy(_ANative):
         self._cached_args = args
         self._cached_kwargs = kwargs
         self._cached_widget = None
-        self.__create_widget_called = False
+        self.__create_widget_called = self._bypass_create_widget
 
     @property
     def _native_widget(self):
@@ -238,7 +241,7 @@ class Lazy(_ANative):
             self._cached_widget.Destroy()
             self._cached_widget = None
             self._parent = _no_parent
-            self.__create_widget_called = False
+            self.__create_widget_called = self._bypass_create_widget
 
     # Lazy API - probe into the internals of the class - special occasions only
     def _is_created(self):
@@ -263,7 +266,7 @@ class Lazy(_ANative):
         # will call super init and create the widget
         return bool(self._native_widget)
 
-class _AComponent(_ANative):
+class _AComponent(_AEvtHandler):
     """Wrap an inheritor of wx.Window. Wraps methods present in wx.Window."""
     _native_widget: _wx.Window
 
@@ -367,7 +370,7 @@ class _AComponent(_ANative):
     def component_position(self) -> tuple[int, int]:
         """Returns the X and Y position of this component as a tuple.
 
-        :return: A tuple containing the X and Y position of this this component
+        :return: A tuple containing the X and Y position of this component
                  as two integers."""
         curr_pos = self._native_widget.GetPosition()
         return curr_pos.x, curr_pos.y
@@ -588,109 +591,6 @@ class WithDragEvents(WithMouseEvents):
                 _wx.EVT_MOUSE_CAPTURE_LOST)
             self.on_mouse_capture_lost.subscribe(on_drag_end_forced)
         self.on_mouse_motion.subscribe(on_drag)
-
-class ImageWrapper:
-    """Wrapper for images, allowing access in various formats/classes.
-
-    Allows image to be specified before wx.App is initialized."""
-    img_types = {
-        '.bmp': _wx.BITMAP_TYPE_BMP,
-        '.ico': _wx.BITMAP_TYPE_ICO,
-        '.jpeg': _wx.BITMAP_TYPE_JPEG,
-        '.jpg': _wx.BITMAP_TYPE_JPEG,
-        '.png': _wx.BITMAP_TYPE_PNG,
-        '.svg': None, # Special handling needed, see _is_svg
-        '.tif': _wx.BITMAP_TYPE_TIF,
-        '.tga': _wx.BITMAP_TYPE_TGA,
-    }
-
-    def __init__(self, filename, imageType=None, iconSize=-1):
-        self._img_path = filename.s # must be a bolt.Path
-        try:
-            self._img_type = imageType or self.img_types[filename.cext]
-        except KeyError:
-            deprint(f'Unknown image extension {filename.cext}')
-            self._img_type = _wx.BITMAP_TYPE_ANY
-        self._is_svg = filename.cext == '.svg'
-        if self._is_svg and iconSize == -1:
-            raise ArgumentError('You must specify iconSize to '
-                                'rasterize an SVG to a bitmap!')
-        self.bitmap = None
-        self.icon = None
-        self.iconSize = iconSize
-        if not os.path.exists(self._img_path.split(';')[0]):
-            raise ArgumentError(f'Missing resource file: {filename}.')
-
-    def get_bitmap(self, force_reload=False):
-        if not self.bitmap or force_reload:
-            if self._img_type == _wx.BITMAP_TYPE_ICO:
-                self.GetIcon()
-                w, h = self.icon.GetWidth(), self.icon.GetHeight()
-                self.bitmap = _wx.Bitmap(w, h)
-                self.bitmap.CopyFromIcon(self.icon)
-                # Hack - when user scales windows display icon may need scaling
-                if (self.iconSize != -1 and w != self.iconSize or
-                    h != self.iconSize): # rescale !
-                    self.bitmap = _wx.Bitmap(
-                        self.bitmap.ConvertToImage().Scale(
-                            self.iconSize, self.iconSize,
-                            _wx.IMAGE_QUALITY_HIGH))
-            elif self._is_svg:
-                with open(self._img_path, 'rb') as ins:
-                    svg_data = ins.read()
-                if b'var(--invert)' in svg_data:
-                    svg_data = svg_data.replace(b'var(--invert)',
-                        b'#FFF' if self._should_invert_svg() else b'#000')
-                svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
-                svg_size = scaled(self.iconSize)
-                self.bitmap = svg_img.ConvertToScaledBitmap(
-                    (svg_size, svg_size))
-            else:
-                bm_img = _wx.Image(self._img_path, self._img_type)
-                if self.iconSize != -1:
-                    wanted_size = scaled(self.iconSize)
-                    if bm_img.GetWidth() != wanted_size:
-                        bm_img.Rescale(wanted_size, wanted_size,
-                            _wx.IMAGE_QUALITY_HIGH)
-                self.bitmap = _wx.Bitmap(bm_img)
-        return self.bitmap
-
-    @staticmethod
-    def _should_invert_svg():
-        from .. import bass
-        return bass.settings['bash.use_reverse_icons']
-
-    def GetIcon(self):
-        if not self.icon:
-            if self._img_type == _wx.BITMAP_TYPE_ICO:
-                self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO,
-                                     self.iconSize, self.iconSize)
-                # we failed to get the icon? (when display resolution changes)
-                if not self.icon.GetWidth() or not self.icon.GetHeight():
-                    self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO)
-            else:
-                self.icon = _wx.Icon()
-                self.icon.CopyFromBitmap(self.get_bitmap())
-        return self.icon
-
-    @staticmethod
-    def bmp_from_bitstream(bm_width, bm_height, stream_data, with_alpha):
-        """Creates a bitmap from the specified stream data."""
-        wx_depth = (32 if with_alpha else 24)
-        wx_fmt = (_wx.BitmapBufferFormat_RGBA if with_alpha
-                  else _wx.BitmapBufferFormat_RGB)
-        bm = _wx.Bitmap(bm_width, bm_height, wx_depth)
-        bm.CopyFromBuffer(stream_data, wx_fmt)
-        return bm
-
-    @staticmethod
-    def Load(srcPath, quality):
-        """Hasty wrapper around wx.Image - loads srcPath with specified
-        quality if a jpeg."""
-        bitmap = _wx.Image(srcPath.s)
-        # This only has an effect on jpegs, so it's ok to do it on every kind
-        bitmap.SetOption(_wx.IMAGE_OPTION_QUALITY, quality)
-        return bitmap
 
 # Automatic column sizing -----------------------------------------------------
 class AutoSize:

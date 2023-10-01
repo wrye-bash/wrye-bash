@@ -28,15 +28,15 @@ import traceback
 from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
-from .balt import ItemLink, images, staticBitmap
+from .ScriptParser import error
+from .balt import ItemLink, images
 from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback, to_os_path
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
-    ListBox, PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, \
-    WizardPage
+    ListBox, PictureWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
+    WizardDialog, WizardPage
 from .ini_files import OBSEIniFile
-from .ScriptParser import error
 from .wbtemp import cleanup_temp_dir
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -424,8 +424,7 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [images[i].get_bitmap() for i in (
-            'error_cross.16', 'checkmark.16')]
+        bmps = [images[i] for i in ('error_cross.16', 'checkmark.16')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -434,7 +433,7 @@ class PageVersions(PageInstaller):
         linkGame = Label(self, bush.game.display_name)
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
-                                    staticBitmap(self, bmps[bGameOk])])
+                                    StaticBmp(self, bmps[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip_=None):
             if tool is None or tool_name != u'':
@@ -443,7 +442,7 @@ class PageVersions(PageInstaller):
                 link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
-                                            staticBitmap(self, bmps[ok])])
+                                            StaticBmp(self, bmps[ok])])
         # Script Extender
         _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender

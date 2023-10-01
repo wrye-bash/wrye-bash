@@ -82,12 +82,12 @@ from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
-    EventResult, FileOpen, GlobalMenu, HLayout, ImageWrapper, Label, \
+    EventResult, FileOpen, GlobalMenu, GuiImage, HLayout, Label, \
     LayoutOptions, ListBox, Links, MultiChoicePopup, PanelWin, Picture, \
     PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
-    TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
-    get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
-    showWarning, askWarning, showOk
+    TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, get_shift_down, \
+    read_files_from_clipboard_cb, showError, askYes, showWarning, askWarning, \
+    showOk, BmpFromStream
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
@@ -714,7 +714,7 @@ class INIList(UIList):
         status = iniInfo.tweak_status(target_ini_setts)
         #--Image
         checkMark = 0
-        icon = 0    # Ok tweak, not applied
+        icon_ = 0    # Ok tweak, not applied
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
@@ -728,16 +728,16 @@ class INIList(UIList):
                           'by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
-            icon = 10
+            icon_ = 10
             checkMark = 3
             mousetext = _('Some settings are changed.')
         elif status < 0:
             # Bad tweak
             if not iniInfo.is_applicable(status):
-                icon = 20
+                icon_ = 20
                 mousetext = _('Tweak is invalid.')
             else:
-                icon = 0
+                icon_ = 0
                 mousetext = _('Tweak adds new settings.')
         if iniInfo.is_default_tweak:
             def_tweak_text = _('Default Wrye Bash tweak.')
@@ -745,7 +745,7 @@ class INIList(UIList):
                          if mousetext else def_tweak_text)
             item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
-        item_format.icon_key = icon, checkMark
+        item_format.icon_key = icon_, checkMark
         #--Font/BG Color
         if status < 0:
             item_format.back_key = u'ini.bkgd.invalid'
@@ -1617,7 +1617,7 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
         calendar_button = PureImageButton(top,
-            balt.images['calendar.16'].get_bitmap(),
+            balt.images['calendar.16'],
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
@@ -1634,11 +1634,11 @@ class ModDetails(_ModsSavesDetails):
         class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
-            balt.images['plus.16'].get_bitmap(),
+            balt.images['plus.16'],
             btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
-            balt.images['minus.16'].get_bitmap(),
+            balt.images['minus.16'],
             btn_tooltip=_('Remove the selected tags from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
@@ -2488,7 +2488,7 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo and bush.game.Ess.has_screenshots:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = ImageWrapper.bmp_from_bitstream(
+            new_save_screen = BmpFromStream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
@@ -2657,16 +2657,18 @@ class InstallersList(UIList):
             item_format.back_key = u'installers.bkgd.outOfOrder'
             mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
-        item_format.icon_key = u'on' if inst.is_active else u'off'
-        item_format.icon_key += u'.' + self._status_color[inst.status]
-        if inst.is_corrupt_package: item_format.icon_key = 'corrupt'
+        if inst.is_corrupt_package:
+            iconkey = 'corrupt'
         else:
-            if inst.is_project: item_format.icon_key += u'.dir'
+            iconkey = 'on' if inst.is_active else 'off'
+            iconkey += f'.{self._status_color[inst.status]}'
+            if inst.is_project: iconkey += '.dir'
             if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
-                item_format.icon_key += u'.wiz'
+                iconkey += '.wiz'
+        item_format.icon_key = iconkey, # the image keys are passed as a tuple
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
-        #--TODO: add mouse  mouse tips
+        #--TODO: add more mouse tips
         self.mouseTexts[item] = mouse_text
 
     def _check_rename_requirements(self):
@@ -4537,14 +4539,14 @@ def InitImages():
         colors[color_key] = Color(*color_val)
     #--Images
     imgDirJn = bass.dirs[u'images'].join
-    def _png(fname): return ImageWrapper(imgDirJn(fname))
+    def _png(fname): return GuiImage.from_path(imgDirJn(fname))
     def _svg(fname, bm_px_size):
         """Creates an SVG wrapper.
 
         :param fname: The SVG's filename, relative to bash/images.
         :param bm_px_size: The size of the resulting bitmap, in
             device-independent pixels (DIP)."""
-        return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size)
+        return GuiImage.from_path(imgDirJn(fname), iconSize=bm_px_size)
     # PNGs --------------------------------------------------------------------
     # Checkboxes
     images['checkbox.red.on.16'] = _png('checkbox_red_on.png')

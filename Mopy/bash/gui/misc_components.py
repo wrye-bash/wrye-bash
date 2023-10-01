@@ -35,10 +35,11 @@ import wx as _wx
 import wx.adv as _adv
 from wx.grid import Grid
 
-from .base_components import Color, ImageWrapper, WithCharEvents, \
-    WithMouseEvents, _AComponent, _ANative
+from .base_components import Color, WithCharEvents, WithMouseEvents, \
+    _AComponent, _AEvtHandler
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
+from .images import GuiImage
 from .menus import Links
 from ..bolt import Path, dict_sort
 
@@ -61,7 +62,7 @@ class Picture(_AComponent):
         super(Picture, self).__init__(parent, size=(width, height),
                                       style=style)
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
-        self.bitmap = None
+        self._gui_bitmap = None
         self.background = self._get_brush(
             background or self._native_widget.GetBackgroundColour())
         #self.SetSizeHints(width,height,width,height)
@@ -90,10 +91,10 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.is_file() and ImageWrapper(bmp).get_bitmap()) or None
-        self.bitmap = bmp
+            bmp = (bmp.is_file() and GuiImage.from_path(bmp)) or None
+        self._gui_bitmap = bmp
         self._handle_resize()
-        return self.bitmap
+        return self._gui_bitmap
 
     def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
         x, y = self.scaled_size()
@@ -104,14 +105,15 @@ class Picture(_AComponent):
         # Draw
         dc.SetBackground(self.background)
         dc.Clear()
-        if self.bitmap:
-            old_x,old_y = self.bitmap.GetSize()
+        if self._gui_bitmap is not None:
+            ##: wrap _native_widget calls below - a better way?
+            old_x,old_y = self._gui_bitmap._native_widget.GetSize()
             scale = min(float(x)/old_x, float(y)/old_y)
             new_x = old_x * scale
             new_y = old_y * scale
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
-            image = self.bitmap.ConvertToImage()
+            image = self._gui_bitmap._native_widget.ConvertToImage()
             image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
             dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
@@ -415,7 +417,7 @@ class TimePicker(_AComponent):
             new_time.second)
 
 # Other -----------------------------------------------------------------------
-class GlobalMenu(_ANative):
+class GlobalMenu(_AEvtHandler):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""

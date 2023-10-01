@@ -24,7 +24,7 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
 from ..game import MergeabilityCheck
-from ..gui import DEFAULT_POSITION, ImageWrapper
+from ..gui import DEFAULT_POSITION, GuiImage
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -499,9 +499,9 @@ if bush.game.has_esl or bush.game.has_overlay_plugins:
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 imDirJn = bass.dirs['images'].join
-def _png(fname): return ImageWrapper(imDirJn(fname))
+def _png(fname): return GuiImage.from_path(imDirJn(fname))
 def _svg(fname, bm_px_size):
-    return ImageWrapper(imDirJn(fname), iconSize=bm_px_size)
+    return GuiImage.from_path(imDirJn(fname), iconSize=bm_px_size)
 
 #--Buttons
 def _png_list(template):

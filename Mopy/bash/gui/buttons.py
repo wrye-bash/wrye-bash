@@ -192,33 +192,20 @@ class NextButton(Button):
     _id = _wx.ID_FORWARD
     _default_label = u'%s >' % _(u'Next')
 
-# TODO(inf) Image API! Need to get rid of all bitmaps passed to this
 class ImageButton(Button):
     """A button that display an image alongside its label.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, wx_bitmap=None, **kwargs):
+    def __init__(self, parent, gui_bitmap=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.
 
-        :param wx_bitmap: The bitmap shown on this button."""
+        :param gui_bitmap: The bitmap shown on this button."""
         super(ImageButton, self).__init__(parent, **kwargs)
-        self.image = wx_bitmap
+        self._set_button_image(gui_bitmap)
 
-    @property
-    def image(self) -> _wx.Bitmap:
-        """Returns the image that is shown on this button.
-
-        :return: The image on this button."""
-        return self._native_widget.GetBitmap()
-
-    @image.setter
-    def image(self, new_image: _wx.Bitmap):
-        """Changes the image that is shown on this button to the specified
-        image.
-
-        :param new_image: The image that should be shown on this button."""
-        self._native_widget.SetBitmap(new_image)
+    def _set_button_image(self, gui_image):
+        self._native_widget.SetBitmap(self._resolve(gui_image))
         # Changing bitmap may change the 'best size', so resize it
         self._native_widget.SetInitialSize()
 
@@ -228,17 +215,17 @@ class PureImageButton(ImageButton):
     See Button for documentation on button events.
 
     See also ClickableImage."""
-    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
+    def __init__(self, parent, gui_bitmap, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param wx_bitmap: The image id to be shown on this button.
+        :param gui_bitmap: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
             button. Required for accessibility purposes - without it users
             would have to guess based on the image."""
-        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
-            exact_fit=True)
+        super().__init__(parent, gui_bitmap, btn_tooltip=btn_tooltip,
+                         exact_fit=True)
 
 class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
@@ -246,14 +233,14 @@ class ClickableImage(ImageButton):
     See Button for documentation on button events.
 
     See also PureImageButton."""
-    def __init__(self, parent, wx_bitmap, *, btn_tooltip: str):
+    def __init__(self, parent, gui_bitmap, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param wx_bitmap: The image id to be shown on this button.
+        :param gui_bitmap: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
             button. Required for accessibility purposes - without it users
             would have to guess based on the image."""
-        super().__init__(parent, wx_bitmap, btn_tooltip=btn_tooltip,
-            exact_fit=True, no_border=True)
+        super().__init__(parent, gui_bitmap, btn_tooltip=btn_tooltip,
+                         exact_fit=True, no_border=True)

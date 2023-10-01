@@ -35,6 +35,7 @@ from .base_components import Color, _AComponent
 from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
     PureImageButton, SelectAllButton
 from .checkables import CheckBox
+from .images import StaticBmp
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout, TOP
 from .misc_components import DatePicker, HorizontalLine, TimePicker
@@ -264,8 +265,6 @@ class DeletionDialog(DialogWindow):
             checked by default or not."""
         super().__init__(parent, sizes_dict=sizes_dict, title=title,
             icon_bundle=icon_bundle)
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         self._deletable_items = CheckListBox(self, choices=items_to_delete)
         self._deletable_items.set_all_checkmarks(checked=True)
         self._recycle_checkbox = CheckBox(self, _('Recycle'),
@@ -279,7 +278,7 @@ class DeletionDialog(DialogWindow):
         self._delete_button = OkButton(self, self._get_button_text())
         VLayout(border=6, spacing=4, item_expand=True, items=[
             HLayout(spacing=4, item_expand=True, items=[
-                staticBitmap(self, trash_icon),
+                StaticBmp(self, trash_icon),
                 (VLayout(spacing=4, item_expand=True, items=[
                     self._question_label,
                     HorizontalLine(self),
@@ -567,7 +566,7 @@ class AMultiListEditor(DialogWindow):
 
 # Message Dialogs -------------------------------------------------------------
 def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
-                  icon='warning', commandLinks=True, footer='', expander=None,
+                  icon_='warning', commandLinks=True, footer='', expander=None,
                   heading=''):
     """Always guard with TASK_DIALOG_AVAILABLE == True."""
     vista_buttons = ((BTN_OK, 'ok'), (BTN_CANCEL, 'cancel')) \
@@ -577,7 +576,7 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
     parent_handle = (_AComponent._resolve(parent).GetHandle()
                      if parent else None)
     dialog = TaskDialog(title, heading, message,
-                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon,
+                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon_,
                         parenthwnd=parent_handle, footer=footer)
     if expander:
         dialog.set_expander(expander, False, not footer)
@@ -643,15 +642,15 @@ class AskDialog(DialogWindow):
                     vista_buttons.append((BTN_OK, 'ok'))
                 if style & _wx.CANCEL:
                     vista_buttons.append((BTN_CANCEL, 'cancel'))
-            icon = None
+            icon_ = None
             if info_ico:
-                icon = 'information'
+                icon_ = 'information'
             if error_ico:
-                icon = 'error'
-            if warn_ico or not icon: # default to warning icon
-                icon = 'warning'
+                icon_ = 'error'
+            if warn_ico or not icon_: # default to warning icon
+                icon_ = 'warning'
             parent, message, title = args
-            result, _check = _vista_dialog(parent, message, title, icon=icon,
+            result, _check = _vista_dialog(parent, message, title, icon_=icon_,
                 vista_buttons=vista_buttons, expander=expander)
         else:
             kwargs['style'] = style

@@ -86,7 +86,7 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
                       on_drag_end=None, on_drag_end_forced=None, on_drag=None):
         """Create and return gui button."""
         created = super().create_widget(recreate=recreate, parent=parent,
-            wx_bitmap=self._btn_bmp(), btn_tooltip=self.sb_button_tip,
+            gui_bitmap=self._btn_bmp(), btn_tooltip=self.sb_button_tip,
             on_drag_start=on_drag_start, on_drag_end=on_drag_end,
             on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
         if created:
@@ -102,7 +102,7 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
 
     def _btn_bmp(self):
         return balt.images[self.imageKey % bass.settings[
-            'bash.statusbar.iconSize']].get_bitmap()
+            'bash.statusbar.iconSize']]
 
     def DoPopupMenu(self):
         if self.mainMenu:
@@ -172,8 +172,8 @@ class _App_Button(StatusBar_Button):
 
     def _btn_bmp(self):
         iconSize = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
-        idex = (iconSize // 8) - 2 # 0, 1, 2, duh
-        return self.images[idex].get_bitmap()
+        idex = (iconSize // 8) - 2 # 0, 1, 2
+        return self.images[idex]
 
     def ShowError(self, error=None, *, msg=None):
         if error is not None:
@@ -641,8 +641,8 @@ class _StatefulButton(StatusBar_Button):
         """Invert state."""
         self.button_state = True ^ self.button_state
         # reset image and tooltip for the flipped state
-        self.image = self._btn_bmp()
         self.tooltip = self.sb_button_tip
+        self._set_button_image(self._btn_bmp())
 
 class Obse_Button(_StatefulButton):
     """Obse on/off state button."""

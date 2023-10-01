@@ -45,7 +45,7 @@ from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
-from ..gui import ImageWrapper
+from ..gui import GuiImage
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
 
@@ -53,11 +53,11 @@ _is_oblivion = bush.game.fsName == 'Oblivion'
 def InitStatusBar():
     """Initialize status bar links."""
     def _png_list(template):
-        return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
-                (16, 24, 32)]
-    def _svg_list(svg_fname):
-        return [ImageWrapper(bass.dirs['images'].join(svg_fname), iconSize=i)
+        return [GuiImage.from_path(bass.dirs['images'].join(template % i))
                 for i in (16, 24, 32)]
+    def _svg_list(svg_fname):
+        return [GuiImage.from_path(bass.dirs['images'].join(svg_fname),
+                                   iconSize=i) for i in (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs[u'OblivionBookCreatorPath'],
                   bass.inisettings[u'OblivionBookCreatorJavaArg']),
@@ -162,12 +162,12 @@ def InitStatusBar():
     for mt in misc_tools: all_links.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [images['error_cross.16'].get_bitmap()] * 3
+    badIcons = [images['error_cross.16']] * 3
     for pth, img_path, shortcut_descr in init_app_links(dirApps):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
         else:
-            imgs = [ImageWrapper(img_path, ImageWrapper.img_types['.ico'], x)
+            imgs = [GuiImage.from_path(img_path, GuiImage.img_types['.ico'], x)
                     for x in (16, 24, 32)]
         all_links.append(app_button_factory(
             (pth, ()), imgs, shortcut_descr, canHide=False))

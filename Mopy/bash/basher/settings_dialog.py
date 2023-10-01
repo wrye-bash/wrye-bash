@@ -80,7 +80,7 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, balt.images[u'help.24'].get_bitmap(),
+        help_btn = ClickableImage(self, balt.images['help.24'],
             btn_tooltip=_(u'View the readme section for the currently active '
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
@@ -423,8 +423,7 @@ class ConfigureEditorDialog(DialogWindow):
             sizes_dict=bass.settings)
         self._editor_location = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.path'])
-        browse_editor_btn = ImageButton(self,
-            balt.images['folder.16'].get_bitmap(),
+        browse_editor_btn = ImageButton(self, balt.images['folder.16'],
             btn_tooltip=_('Open a file dialog to interactively choose the '
                           'editor binary.'))
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
@@ -1329,15 +1328,13 @@ class GeneralPage(_AScrollablePage):
             init_text=bass.settings['bash.temp_dir'])
         self._temp_folder_path.on_text_changed.subscribe(
             self._on_temp_folder_change)
-        browse_temp_folder_btn = ImageButton(self,
-            balt.images['folder.16'].get_bitmap(),
+        browse_temp_folder_btn = ImageButton(self, balt.images['folder.16'],
             btn_tooltip=_('Open a file dialog to interactively choose the '
                           'path at which Wrye Bash will store temporary '
                           'files.'))
         browse_temp_folder_btn.on_clicked.subscribe(
             self._on_temp_folder_browse)
-        reset_temp_folder_btn = ImageButton(self,
-            balt.images['reset.16'].get_bitmap(),
+        reset_temp_folder_btn = ImageButton(self, balt.images['reset.16'],
             btn_tooltip=_('Reset the path at which Wrye Bash will store '
                           'temporary files back to its default value.'))
         reset_temp_folder_btn.on_clicked.subscribe(self._on_temp_folder_reset)
