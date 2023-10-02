@@ -1729,18 +1729,20 @@ class MreImad(AMreImad): # see AMreImad for details
 class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
+    _has_duplicate_attrs = True # ENAM is an older version of HNAM/CNAM/TNAM
 
     melSet = MelSet(
         MelEdid(),
         # Only found in one record (DefaultImageSpaceExterior [IMGS:00000161]),
         # skip for everything else
-        MelStruct(b'ENAM', ['14f'], 'enam_hdr_eye_adapt_speed',
-            'enam_hdr_tonemap_e', 'enam_hdr_bloom_threshold',
-            'enam_hdr_bloom_scale', 'enam_hdr_auto_exposure_min_max',
-            'enam_hdr_sunlight_scale', 'enam_hdr_sky_scale',
-            'enam_cinematic_saturation', 'enam_cinematic_brightness',
-            'enam_cinematic_contrast', 'enam_tint_amount',
-            *color3_attrs('enam_tint_color')),
+        MelReadOnly(MelStruct(b'ENAM', ['14f'], 'hdr_eye_adapt_speed',
+            'hdr_tonemap_e', 'hdr_bloom_threshold', 'hdr_bloom_scale',
+            'hdr_auto_exposure_min_max', 'hdr_sunlight_scale', 'hdr_sky_scale',
+            'cinematic_saturation', 'cinematic_brightness',
+            'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'))),
+        ##: Do we need to specify defaults for hdr_auto_exposure_max,
+        # hdr_auto_exposure_min and hdr_middle_gray so that we can upgrade ENAM
+        # to HNAM?
         MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed', 'hdr_tonemap_e',
             'hdr_bloom_threshold', 'hdr_bloom_scale', 'hdr_auto_exposure_max',
             'hdr_auto_exposure_min', 'hdr_sunlight_scale', 'hdr_sky_scale',

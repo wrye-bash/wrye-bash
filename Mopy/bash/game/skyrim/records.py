@@ -1582,10 +1582,18 @@ class MreImad(AMreImad): # see AMreImad for details
 class MreImgs(MelRecord):
     """Image Space."""
     rec_sig = b'IMGS'
+    _has_duplicate_attrs = True # ENAM is an older version of HNAM/CNAM
 
     melSet = MelSet(
         MelEdid(),
-        MelBase(b'ENAM', 'unknown_enam'),
+        # Only found in two records, skip for everything else
+        MelReadOnly(MelStruct(b'ENAM', ['14f'], 'hdr_eye_adapt_speed',
+            'hdr_bloom_blur_radius', 'hdr_bloom_threshold', 'hdr_bloom_scale',
+            'hdr_receive_bloom_threshold', 'hdr_sunlight_scale',
+            'hdr_sky_scale', 'cinematic_saturation', 'cinematic_brightness',
+            'cinematic_contrast', 'tint_amount', *color3_attrs('tint_color'))),
+        ##: Do we need to specify defaults for hdr_white and
+        # hdr_eye_adapt_strength so that we can upgrade ENAM to HNAM?
         MelStruct(b'HNAM', ['9f'], 'hdr_eye_adapt_speed',
             'hdr_bloom_blur_radius', 'hdr_bloom_threshold', 'hdr_bloom_scale',
             'hdr_receive_bloom_threshold', 'hdr_white', 'hdr_sunlight_scale',
