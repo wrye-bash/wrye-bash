@@ -273,7 +273,7 @@ class Ba2Header(_Header):
 
 class StarfieldBa2Header(Ba2Header):
     __slots__ = ( # in the order encountered in the header
-        'ba2_header_unknown1', 'ba2_header_unknown2', 'ba2_header_unknown3')
+        'ba2_header_unknown1', 'ba2_header_unknown2', 'ba2_compression_type')
     formats = [(f, struct_calcsize(f)) for f in ('I', 'I')]
 
     def load_header(self, ins, bsa_name):
@@ -281,11 +281,10 @@ class StarfieldBa2Header(Ba2Header):
         for (fmt, fmt_siz), a in zip(StarfieldBa2Header.formats,
                                      StarfieldBa2Header.__slots__):
             setattr(self, a, struct_unpack(fmt, ins.read(fmt_siz))[0])
-        ##: Investigate this further, does not appear in xEdit's sources but
-        # does seem to appear in MO2's sources (they have an offset of 36 for
-        # v3 BA2s vs. an offset of 32 for v2 BA2s)
         if self.version == 3:
-            self.ba2_header_unknown3 = unpack_int(ins)
+            # Only present for v3 BA2s - 3 means block LZ4, unknown what other
+            # values mean
+            self.ba2_compression_type = unpack_int(ins)
 
 class MorrowindBsaHeader(_Header):
     __slots__ = (u'file_id', u'hash_offset', u'file_count')
@@ -882,8 +881,13 @@ class StarfieldBA2(BA2):
     @property
     def _compression_type(self):
         # BA2 v3 (introduced with Starfield) uses LZ4 block compression. Yup,
-        # block compression - *not* the frame compression used by SSE
-        return _Bsa_lz4_block if self.bsa_header.version == 3 else _Bsa_zlib
+        # block compression - *not* the frame compression used by SSE. Note
+        # that there is also a compression type field in the header, which is
+        # currently always 3 but could maybe(?) take other values
+        return (_Bsa_lz4_block
+                if self.bsa_header.version == 3 and
+                   self.bsa_header.ba2_compression_type == 3 else
+                _Bsa_zlib)
 
 class MorrowindBsa(ABsa):
     bsa_header: MorrowindBsaHeader
