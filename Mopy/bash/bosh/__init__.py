@@ -349,7 +349,8 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
-    _has_esm_flag = _is_esl = False # Cached, since we need it so often
+    # Cached, since we need them so often
+    _has_esm_flag = _is_esl = _is_overlay = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
 
@@ -383,7 +384,10 @@ class ModInfo(FileInfo):
         # check if we have a cached crc for this file, use fresh mtime and size
         if kwargs['load_cache']:
             self.calculate_crc() # for added and hopefully updated
-            if bush.game.has_esl: self._recalc_esl()
+            if bush.game.has_esl:
+                self._recalc_esl()
+            if bush.game.has_overlay_plugins:
+                self._recalc_overlay()
             self._recalc_esm()
 
     @classmethod
@@ -413,7 +417,7 @@ class ModInfo(FileInfo):
         header must be set"""
         return self._has_esm_flag
 
-    def set_esm_flag(self, new_esm_flag):
+    def set_esm_flag(self, new_esm_flag: bool):
         """Changes this file's ESM flag to the specified value. Recalculates
         ONAM info if necessary."""
         self.header.flags1.esm_flag = new_esm_flag
@@ -430,10 +434,16 @@ class ModInfo(FileInfo):
         must be set."""
         return self.header.flags1.esl_flag
 
-    def set_esl_flag(self, new_esl_flag):
-        """Changes this file's ESL flag to the specified value."""
+    def set_esl_flag(self, new_esl_flag: bool):
+        """Change this file's ESL flag to the specified value. Disables the
+        Overlay flag if the ESL flag is set and the game supports the Overlay
+        flag."""
         if bush.game.has_esl:
             self.header.flags1.esl_flag = new_esl_flag
+            if new_esl_flag and bush.game.has_overlay_plugins:
+                # Can't have both, so unset the Overlay flag
+                self.header.flags1.overlay_flag = False
+                self._recalc_overlay()
             self._recalc_esl()
             self.writeHeader()
 
@@ -445,6 +455,27 @@ class ModInfo(FileInfo):
     def _recalc_esl(self):
         """Forcibly recalculates the cached ESL status."""
         self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
+
+    def set_overlay_flag(self, new_overlay_flag: bool):
+        """Change this file's Overlay flag to the specified value. Disables the
+        ESL flag if the Overlay flag is set and the game supports the ESL
+        flag."""
+        if bush.game.has_overlay_plugins:
+            self.header.flags1.overlay_flag = new_overlay_flag
+            if new_overlay_flag and bush.game.has_esl:
+                # Can't have both, so unset the ESL flag
+                self.header.flags1.esl_flag = False
+                self._recalc_esl()
+            self._recalc_overlay()
+            self.writeHeader()
+
+    def is_overlay(self):
+        """Check if this is an overlay plugin."""
+        return self._is_overlay
+
+    def _recalc_overlay(self):
+        """Forcibly recalculate the cached overlay status."""
+        self._is_overlay = self.header.flags1.overlay_flag
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
