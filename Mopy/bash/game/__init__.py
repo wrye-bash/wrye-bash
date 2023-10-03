@@ -477,7 +477,7 @@ class GameInfo(object):
         # the ESM flag to plugins and discard it when removing the ESM flag.
         generate_temp_child_onam = False
         # The maximum number of masters that a plugin can have for this game.
-        master_limit = 255 # 256 - 1 for the plugin itself
+        master_limit = 255
         # Maximum length of the Author string in the plugin header
         max_author_length = 511 # 512 - 1 for the null terminator
         # Maximum length of the Description string in the plugin header

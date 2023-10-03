@@ -67,6 +67,7 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
 
     class Esp(AFallout4GameInfo.Esp):
         object_index_range = ObjectIndexRange.RESERVED
+        master_limit = 255
         validHeaderVersions = (0.95,)
 
     allTags = AFallout4GameInfo.allTags | {'NoMerge'}

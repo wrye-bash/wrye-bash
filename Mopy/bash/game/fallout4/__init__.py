@@ -135,6 +135,9 @@ class AFallout4GameInfo(PatchGame):
         canBash = True
         canEditHeader = True
         extension_forces_flags = True
+        # Because the FE slot is reserved for ESLs - yes, including in master
+        # lists. Thanks, Bethesda
+        master_limit = 253
         max_lvl_list_size = 255
         object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
         validHeaderVersions = (0.95, 1.0)

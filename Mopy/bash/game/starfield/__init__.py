@@ -123,6 +123,9 @@ class _AStarfieldGameInfo(PatchGame):
 
     class Esp(GameInfo.Esp):
         extension_forces_flags = True
+        # Because the FE slot is reserved for ESLs - yes, including in master
+        # lists. Thanks, Bethesda
+        master_limit = 253
         max_lvl_list_size = 255
         object_index_range = ObjectIndexRange.EXPANDED_ALWAYS
         validHeaderVersions = (0.96,)

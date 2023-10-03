@@ -93,6 +93,9 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
 
     class Esp(ASkyrimGameInfo.Esp):
         extension_forces_flags = True
+        # Because the FE slot is reserved for ESLs - yes, including in master
+        # lists. Thanks, Bethesda
+        master_limit = 253
         warn_older_form_versions = True
 
     allTags = ASkyrimGameInfo.allTags - {'NoMerge'}

@@ -63,6 +63,9 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     class Bain(ASkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
+    class Esp(ASkyrimSEGameInfo.Esp):
+        master_limit = 255
+
     allTags = ASkyrimSEGameInfo.allTags | {'NoMerge'}
     patchers = ASkyrimSEGameInfo.patchers | {'MergePatches'}
 
