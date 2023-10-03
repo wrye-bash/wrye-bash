@@ -443,6 +443,8 @@ class PatchFile(ModFile):
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
+        ##: Consider flagging as Overlay instead if that flag is supported by
+        # the game and no new records have been included?
         # Flag as ESL if the game supports them and the option is enabled
         # Note that we can always safely mark as ESL as long as the number of
         # new records we created is smaller than 0xFFF, since the BP only ever

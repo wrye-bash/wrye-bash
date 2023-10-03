@@ -514,7 +514,7 @@ class ModInfo(FileInfo):
     def real_index(self):
         """Returns the 'real index' for this plugin, which is the one the game
         will assign it. ESLs will land in the 0xFE spot, while inactive plugins
-        don't get any - so we sort them last."""
+        and overlay plugins don't get any - so we sort them last."""
         return modInfos.real_indices[self.fn_key]
 
     def real_index_string(self):
@@ -3201,12 +3201,13 @@ class ModInfos(FileInfos):
         self.real_indices.clear()
         self.real_index_strings.clear()
         for p in load_order.cached_active_tuple():
-            if self[p].is_esl():
+            if (pi := self[p]).is_esl():
                 # sort ESLs after all regular plugins
                 self.real_indices[p] = esl_offset + esl_index
                 self.real_index_strings[p] = f'FE {esl_index:03X}'
                 esl_index += 1
-            else:
+            elif not pi.is_overlay():
+                # Skip overlay plugins as they get no active index at runtime
                 self.real_indices[p] = regular_index
                 self.real_index_strings[p] = f'{regular_index:02X}'
                 regular_index += 1
