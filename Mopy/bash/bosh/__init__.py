@@ -2691,8 +2691,10 @@ class ModInfos(FileInfos):
             if espms_extra or esls_extra:
                 msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
-                    msg += f'{load_order.max_espms():d} espms'
-                else:
+                    msg += f'{load_order.max_espms():d} regular plugins'
+                if esls_extra:
+                    if espms_extra:
+                        msg += ' and '
                     msg += f'{load_order.max_esls():d} light plugins'
                 raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
