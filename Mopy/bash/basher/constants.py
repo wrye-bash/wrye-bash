@@ -42,7 +42,7 @@ colorInfo = {
     ),
     'mods.text.esm': (_('ESM'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESMs in the Mods Tab, and in the '
+        _('This is the text color used for ESMs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
     ),
     'mods.bkgd.ghosted': (_('Ghosted Plugin'),
@@ -144,14 +144,26 @@ if bush.game.Esp.canBash:
 if bush.game.has_esl:
     colorInfo['mods.text.esl'] = (_('ESL'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs in the Mods Tab, and in the '
+        _('This is the text color used for ESLs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
     )
     colorInfo['mods.text.eslm'] = (_('ESLM'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag in the '
+        _('This is the text color used for ESLs with a master flag on the '
           'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
           'Tab.'),
+    )
+
+# Are Overlay plugins supported? ----------------------------------------------
+if bush.game.has_overlay_plugins:
+    colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for Overlay plugins on the Mods Tab.'),
+    )
+    colorInfo['mods.text.esom'] = (_('Overlay Master'),
+        _('Tabs: Mods') + '\n\n' +
+        _('This is the text color used for Overlay plugins with a master flag '
+          'on the Mods Tab.'),
     )
 
 # Do we check mergeability or ESL capability? ---------------------------------
@@ -208,8 +220,10 @@ settingDefaults = { # keep current naming format till refactored
         'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
         'mods.bkgd.size_mismatch':      (255, 238, 217),
-        'mods.text.eslm':               (123, 29,  223),
         'mods.text.esl':                (226, 54,  197),
+        'mods.text.eslm':               (123, 29,  223),
+        'mods.text.eso':                (235, 119, 44),
+        'mods.text.esom':               (234, 49, 9),
         'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (223, 223, 223),

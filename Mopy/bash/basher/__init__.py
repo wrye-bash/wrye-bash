@@ -56,7 +56,7 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial, reduce
+from functools import partial
 from itertools import chain
 
 import wx
@@ -1061,6 +1061,8 @@ class ModList(_ModsUIList):
             mouseText += _('Bashed Patch.') + ' '
             if mod_info.is_esl(): # ugh, copy-paste from below
                 mouseText += _('Light plugin.') + ' '
+            elif mod_info.is_overlay():
+                mouseText += _('Overlay plugin.') + ' '
         elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
                 item_format.text_key = u'mods.text.noMerge'
@@ -1082,7 +1084,10 @@ class ModList(_ModsUIList):
             if mod_info.is_esl():
                 final_text_key += u'l'
                 mouseText += _('Light plugin.') + ' '
-            if mod_info.in_master_block():
+            elif mod_info.is_overlay():
+                final_text_key += 'o'
+                mouseText += _('Overlay plugin.') + ' '
+            if mod_info.in_master_block(): # if, not elif!
                 final_text_key += u'm'
                 mouseText += _('Master plugin.') + ' '
             # Check if it's special, leave ESPs alone
