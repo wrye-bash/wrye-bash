@@ -3997,8 +3997,7 @@ class BashFrame(WindowFrame):
                                         sizes_dict=bass.settings)
         self.set_bash_frame_title()
         # Status Bar & Global Menu
-        txt_len = 280 if bush.game.has_esl else 130
-        status_bar = self.statusBar = BashStatusBar(self, txt_len)
+        status_bar = self.statusBar = BashStatusBar(self)
         self._native_widget.SetStatusBar(self._resolve(status_bar))
         self.global_menu = None
         self.set_global_menu(GlobalMenu())

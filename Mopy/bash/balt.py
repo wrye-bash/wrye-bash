@@ -2188,9 +2188,8 @@ class BashStatusBar(DnDStatusBar):
     all_sb_links: dict = {} # all possible status bar links - visible or not
     obseButton = None # the OBSE button singleton
 
-    def __init__(self, parent, txt_len):
+    def __init__(self, parent):
         super().__init__(parent)
-        self._txt_len = txt_len
         self._native_widget.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
@@ -2339,13 +2338,23 @@ class BashStatusBar(DnDStatusBar):
         else:
             self._sort_buttons(order)
 
+    def set_sb_text(self, status_text, i=0):
+        super().set_sb_text(status_text, i)
+        self.refresh_status_bar()
+
     def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is
         True. Also propagates resizing events.
 
         :param refresh_icon_size: Whether or not to update icon sizes too."""
+        text_length_px = self._native_widget.GetTextExtent(
+            self._native_widget.GetStatusText(2)).width
+        # +10 is necessary to make the entire text fit without it getting
+        # ellipsized on GTK/OSX, but not on MSW
+        if wx.Platform != '__WXMSW__':
+            text_length_px += 10
         self._native_widget.SetStatusWidths(
-            [self.iconsSize * len(self.buttons), -1, self._txt_len])
+            [self.iconsSize * len(self.buttons), -1, text_length_px])
         if refresh_icon_size:
             ##: Why - 12? I just tried values until it looked good, why does
             # this one work best?
