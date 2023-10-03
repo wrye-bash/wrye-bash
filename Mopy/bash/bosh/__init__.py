@@ -53,7 +53,7 @@ from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    StateError
+    StateError, InvalidPluginFlagsError
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -2887,9 +2887,38 @@ class ModInfos(FileInfos):
         # values in active order, later loading inis override previous settings
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
-    def create_new_mod(self, newName, selected=(), wanted_masters=None,
-            dir_path=empty_path, is_bashed_patch=False, with_esm_flag=False,
-            with_esl_flag=False):
+    ##: This honestly does way too much. Look at the jumble of parameters and
+    # the giant docstring for evidence
+    def create_new_mod(self, newName: str | FName,
+            selected: tuple[FName, ...] = (),
+            wanted_masters: list[FName] | None = None, dir_path=empty_path,
+            is_bashed_patch=False, with_esm_flag=False, with_esl_flag=False,
+            with_overlay_flag=False):
+        """Create a new plugin.
+
+        :param newName: The name the created plugin will have.
+        :param selected: The currently selected after which the plugin will be
+            created in the load order. If empty, the new plugin will be placed
+            last in the load order. Only relevant if dir_path is unset or
+            matches the Data folder.
+        :param wanted_masters: The masters the created plugin will have.
+        :param dir_path: The directory in which the plugin will be created. If
+            empty, defaults to the Data folder.
+        :param is_bashed_patch: If True, mark the created plugin as a Bashed
+            Patch.
+        :param with_esm_flag: If True, set the created plugin's ESM flag.
+        :param with_esl_flag: If True, set the created plugin's ESL flag. Only
+            set this to True if the game actually supports ESLs, otherwise an
+            InvalidPluginFlagsError will be raised. Mutually exclusive with
+            with_overlay_flag, setting both to True raises an
+            InvalidPluginFlagsError as well.
+        :param with_esl_flag: If True, set the created plugin's Overlay flag.
+            Only set this to True if the game actually supports overlay
+            plugins, otherwise an InvalidPluginFlagsError will be raised.
+            Mutually exclusive with with_esl_flag, setting both to True raises
+            an InvalidPluginFlagsError as well."""
+        if with_esl_flag and with_overlay_flag:
+            raise InvalidPluginFlagsError('both ESL and Overlay flags set.')
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -2901,7 +2930,16 @@ class ModInfos(FileInfos):
         if with_esm_flag:
             newFile.tes4.flags1.esm_flag = True
         if with_esl_flag:
+            if not bush.game.has_esl:
+                raise InvalidPluginFlagsError('an ESL flag, but the game does '
+                                              'not support ESLs.')
             newFile.tes4.flags1.esl_flag = True
+        elif with_overlay_flag:
+            if not bush.game.has_overlay_plugins:
+                raise InvalidPluginFlagsError('an Overlay flag, but the game '
+                                              'does not support Overlay '
+                                              'plugins.')
+            newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
             self.new_info(newName, notify_bain=True)  # notify just in case...

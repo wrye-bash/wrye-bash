@@ -238,6 +238,12 @@ class XMLParsingError(Exception):
     """An error that occurred during XML parsing."""
 
 # Misc exceptions -------------------------------------------------------------
+class InvalidPluginFlagsError(Exception):
+    """Indicates that an attempt was made to create a plugin with invalid flags
+    for the current game."""
+    def __init__(self, message: str):
+        super().__init__(f'Attempted to create a plugin with {message}')
+
 class StateError(BoltError):
     """Error: Object is corrupted."""
     def __init__(self, message=u'Object is in a bad state.'):
