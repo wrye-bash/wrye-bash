@@ -2428,7 +2428,8 @@ class ModInfos(FileInfos):
 
     def _rescanMergeable(self, names, progress, return_results):
         reasons = None if not return_results else []
-        if bush.game.check_esl:
+        esl_checking = bush.game.check_esl
+        if esl_checking:
             is_mergeable = is_esl_capable
         else:
             is_mergeable = isPBashMergeable
@@ -2442,16 +2443,19 @@ class ModInfos(FileInfos):
             if cs_name in bush.game.bethDataFiles:
                 if return_results: reasons.append(_(u'Is Vanilla Plugin.'))
                 canMerge = False
-            elif fileInfo.is_esl():
-                # Do not mark esls as esl capable
-                if return_results: reasons.append(_(u'Already ESL-flagged.'))
+            elif esl_checking and fileInfo.is_esl():
+                if return_results:
+                    reasons.append(_('Already ESL-flagged.')) # duh
+                canMerge = False
+            elif esl_checking and fileInfo.is_overlay():
+                if return_results: reasons.append(_('Has Overlay flag.'))
                 canMerge = False
             elif not bush.game.Esp.canBash:
                 canMerge = False
             else:
                 try:
                     canMerge = is_mergeable(fileInfo, self, reasons)
-                except Exception as e:
+                except Exception: # as e
                     # deprint(f'Error scanning mod {fileName} ({e})')
                     # canMerge = False #presume non-mergeable.
                     raise
