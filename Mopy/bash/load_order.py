@@ -36,6 +36,7 @@ lo/active from inside Bash.
 - modInfos singleton must be up to date when calling the API methods that
 delegate to the game_handle.
 """
+from __future__ import annotations
 
 __author__ = u'Utumno'
 
@@ -43,17 +44,19 @@ import collections
 import math
 import sys
 import time
+from collections.abc import Iterable
 
 from . import _games_lo # LoGame instance providing load order operations API
 from . import bass, bolt, exception
-from .bolt import forward_compat_path_to_fn_list, sig_to_str
+from ._games_lo import _LoTuple # for typing
+from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 
-_game_handle = None # type: _games_lo.LoGame
+_game_handle: _games_lo.LoGame | None = None
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
 warn_locked = False
-_lords_pickle = None # type: bolt.PickleDict
+_lords_pickle: bolt.PickleDict | None = None
 _LORDS_PICKLE_VERSION = 2
 # active mod lists were saved in BashSettings.dat - sentinel needed for moving
 # them to BashloadOrder.dat
@@ -93,9 +96,8 @@ class LoadOrder(object):
     __empty = ()
     __none = frozenset()
 
-    def __init__(self, loadOrder=__empty, active=__none):
-        """:type loadOrder: list | set | tuple
-        :type active: list | set | tuple"""
+    def __init__(self, loadOrder: Iterable[FName] = __empty,
+            active: Iterable[FName] = __none):
         set_act = frozenset(active)
         if missing := (set_act - set(loadOrder)):
             raise exception.BoltError(
@@ -122,12 +124,10 @@ class LoadOrder(object):
     def __hash__(self): return hash((self._loadOrder, self._active))
 
     def lindex(self, mname): return self.__mod_loIndex[mname] # KeyError
-    def lorder(self, paths):
+    def lorder(self, paths: Iterable[FName]) -> _LoTuple:
         """Return a tuple containing the given paths in their load order.
-        :param paths: iterable of paths that must all have a load order
-        :type paths: collections.Iterable[FName]
-        :rtype: tuple
-        """
+
+        :param paths: iterable of paths that must all have a load order"""
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
     def activeIndex(self, mname): return self.__mod_actIndex[mname]
 
@@ -157,7 +157,7 @@ cached_lord = __empty # must always be valid (or __empty)
 
 # Saved load orders
 lo_entry = collections.namedtuple(u'lo_entry', [u'date', u'lord'])
-_saved_load_orders = [] # type: list[lo_entry]
+_saved_load_orders: list[lo_entry] = []
 _current_list_index = -1
 
 def _new_entry():
@@ -191,17 +191,13 @@ def _keep_max(max_to_keep, length):
     return x, y
 
 # Load Order utility methods - make sure the cache is valid when using them
-def cached_active_tuple():
-    """Return the currently cached active mods in load order as a tuple.
-
-    :rtype: tuple[FName, ...]"""
+def cached_active_tuple() -> _LoTuple:
+    """Return the currently cached active mods in load order as a tuple."""
     return cached_lord.activeOrdered
 
-def cached_lo_tuple():
+def cached_lo_tuple() -> _LoTuple:
     """Return the currently cached load order (including inactive mods) as a
-    tuple.
-
-    :rtype: tuple[FName, ...]"""
+    tuple."""
     return cached_lord.loadOrder
 
 def cached_is_active(mod):
@@ -225,15 +221,12 @@ def cached_lower_loading(mod):
 def cached_higher_loading(mod):
     return cached_lord.loadOrder[cached_lo_index(mod):]
 
-def get_ordered(mod_paths):
+def get_ordered(mod_paths: Iterable[FName]) -> list[FName]:
     """Return a list containing mod_paths' elements sorted into load order.
 
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
-    modification time conflicts).
-    :type mod_paths: collections.Iterable[FName]
-    :rtype : list[FName]
-    """
+    modification time conflicts)."""
     # resolve time conflicts or no load order
     mod_paths = sorted(mod_paths)
     mod_paths.sort(key=cached_lo_index_or_max)
@@ -311,7 +304,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
 
-def _update_cache(lord=None, acti_sorted=None, __index_move=0):
+def _update_cache(lord: _LoTuple=None, acti_sorted=None, __index_move=0):
     """
     :type lord: tuple[FName, ...] | list[FName]
     :type acti_sorted: tuple[FName, ...] | list[FName]
@@ -354,7 +347,7 @@ def refresh_lo(cached=False, cached_active=True):
     order just involves getting mtime info from modInfos cache. This last one
     **must be up to date** for correct load order/active validation."""
     if locked and _saved_load_orders:
-        saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
+        saved: LoadOrder = _saved_load_orders[_current_list_index].lord
         lord, acti = _game_handle.set_load_order( # make sure saved lo is valid
             list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
         fixed = LoadOrder(lord, acti)
