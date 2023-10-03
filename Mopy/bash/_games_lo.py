@@ -1008,11 +1008,6 @@ class TextfileGame(LoGame):
     def pinned_mods(self):
         return super().pinned_mods() | set(self.must_be_active_if_present)
 
-    def _active_entries_to_remove(self):
-        # Starting with Skyrim LE, the Update.esm file needs to be removed from
-        # plugins.txt too
-        return super()._active_entries_to_remove() | {FName(u'Update.esm')}
-
     def load_order_changed(self):
         # if active changed externally refetch load order to check for desync
         return self.active_changed() or (self.loadorder_txt_path.exists() and (
@@ -1598,9 +1593,6 @@ class EnderalSE(SkyrimSE):
             FName(u'Enderal - Forgotten Stories.esm'),
         }
 
-# TODO(SF) Starfield is an AsteriskGame, but the game does not actually load
-#  plugins based on plugins.txt yet (there is code in place to read it, but
-#  Bethesda most likely simply disabled it since the CK is not yet released)
 class Starfield(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
         'Starfield.esm', 'Constellation.esm', 'OldMars.esm',
@@ -1608,6 +1600,13 @@ class Starfield(AsteriskGame):
     )))
     # The game tries to read a Starfield.ccc already, but it's not present yet
     # _ccc_filename = 'Starfield.ccc'
+
+    def _active_entries_to_remove(self):
+        return super()._active_entries_to_remove() - {
+            # BlueprintShips-Starfield.esm is hardcoded to be active, but does
+            # not have a hardcoded load order, so don't remove it from the LO
+            FName('BlueprintShips-Starfield.esm'),
+        }
 
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
