@@ -51,6 +51,7 @@ class _AStarfieldGameInfo(PatchGame):
     espm_extensions = GameInfo.espm_extensions | {'.esl'}
     has_achlist = False # TODO(SF) check once CK is out
     check_esl = True
+    has_overlay_plugins = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'actors', 'character', 'facecustomization'),
         _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),

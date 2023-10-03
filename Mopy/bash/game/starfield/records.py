@@ -38,7 +38,7 @@ class MreTes4(AMreHeader):
         optimized_file: bool = flag(4)
         localized: bool = flag(7)
         esl_flag: bool = flag(8)
-        overrides_only: bool = flag(9) # TODO(SF) Provisional name
+        overlay_flag: bool = flag(9)
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.96), 'numRecords',

@@ -151,15 +151,22 @@ class GameInfo(object):
                      # settings.dat
 
     # Additional game info - override as needed -------------------------------
-    # plugin extensions
+    # All file extensions used by plugins for this game
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Load order info
     using_txt_file = True
-    # bethesda net export files
+    # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
-    # check if a plugin is convertible to a light master instead of checking
-    # mergeability
+    # If True, check if a plugin is convertible to a light plugin instead of
+    # checking its mergeability
     check_esl = False
+    # True if this game supports overlay plugins (i.e. its TES4 record's header
+    # flags feature an overlay_flag); these are plugins that don't take up a
+    # load order slot but can only contain overrides (any non-override records
+    # in it will become injected into either the first plugin in the master
+    # list or the first plugin in the whole LO - probably the former)
+    # TODO(SF) check which of those two is true
+    has_overlay_plugins = False
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
