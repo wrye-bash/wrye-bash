@@ -2167,15 +2167,15 @@ tab. The directories skipped are:
         <tr>
             <td id="mods-col-index">Index</td>
             <td>Display or hide a column showing each plugin's index that it
-                will be assigned by the game at runtime. Inactive plugins will
-                not receive any index and in games with ESL support,
-                ESL-flagged plugins will all receive an index like
-                <code>FE xyz</code>. This column is useful e.g. if you have an
-                index from using the console to inspect an object while playing
-                the game, and want to identify what plugin the object comes
-                from. For games with ESL support, this column will be enabled
-                by default, for games without ESL support it will be disabled
-                by default.</td>
+                will be assigned by the game at runtime. Inactive plugins and
+                overlay plugins (in games with Overlay support) will not
+                receive any index and in games with ESL support, ESL-flagged
+                plugins will all receive an index like <code>FE xyz</code>.
+                This column is useful e.g. if you have an index from using the
+                console to inspect an object while playing the game, and want
+                to identify what plugin the object comes from. For games with
+                ESL and/or Overlay support, this column will be enabled by
+                default, for other games it will be disabled by default.</td>
         </tr>
         <tr>
             <td>Rating</td>
