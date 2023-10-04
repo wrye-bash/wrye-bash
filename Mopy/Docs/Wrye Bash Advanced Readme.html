@@ -2639,6 +2639,8 @@ tab. The directories skipped are:
             <td>Scan the selected plugins to check their qualifications for
                 various actions, depending on the game:
                 <ul>
+                    <!-- TODO We should document the exact requirements for
+                          merging a plugin into the BP and link them here -->
                     <li>For games that have the <q>Merge Patches</q> patcher
                         available in the Bashed Patch (currently all games that
                         <em>don't</em> have ESL support), this will check if
@@ -2646,11 +2648,15 @@ tab. The directories skipped are:
                     <li>For games with ESL support, this will check if the
                         plugin could receive an ESL flag, which can then be
                         added via
-                        <a href="modsEslifySelf">Add ESL Flag</a>.</li>
+                        <a href="modsEslifySelf">Add ESL Flag</a>. See
+                        <a href="Wrye%20Bash%20General%20Readme.html#intro-esls">the ESLs section</a>
+                        for details about requirements.</li>
                     <li>For games with Overlay plugin support, this will check
                         if the plugin could receive an Overlay flag, which can
                         then be added via <a href="mods-add-overlay-flag">Add
-                            Overlay Flag</a>.</li>
+                            Overlay Flag</a>. See
+                        <a href="Wrye%20Bash%20General%20Readme.html#intro-overlays">the Overlay Plugins section</a>
+                        for details about the .</li>
                 </ul>
                 If a game falls into multiple of the categories, this command
                 will check all the appropriate categories. For example,
@@ -2690,6 +2696,16 @@ tab. The directories skipped are:
                 <a href="#modsEsmifySelf">Add/Remove ESM Flag</a>, but targets
                 the ESL flag instead of the ESM flag. This command is only
                 enabled if the plugin is ESL-capable. See
+                <a href="#mods-check-qualifications">Check Qualifications...</a>
+                for more information.</td>
+        </tr>
+        <tr>
+            <td colspan="4" id="mods-add-overlay-flag">Add/Remove Overlay
+                Flag</td>
+            <td><em>Games with Overlay plugin support only.</em> Similar to
+                <a href="#modsEslifySelf">Add/Remove ESL Flag</a>, but targets
+                the Overlay flag instead of the ESL flag. This command is only
+                enabled if the plugin is Overlay-capable. See
                 <a href="#mods-check-qualifications">Check Qualifications...</a>
                 for more information.</td>
         </tr>

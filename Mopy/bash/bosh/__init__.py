@@ -398,24 +398,10 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
-    def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
-        """Return true for files that load in the masters' block."""
-        ##: we should cache this and calculate in reset_cache and co
-        mod_ext = self.get_extension()
-        if  bush.game.Esp.extension_forces_flags:
-            # For games since FO4/SSE, .esm and .esl files set the master flag
-            # in memory even if not set on the file on disk. For .esp files we
-            # must check for the flag explicitly.
-            return mod_ext in __master_exts or self.has_esm_flag()
-        elif bush.game.fsName == 'Morrowind':
-            ##: This is wrong, but works for now. We need game-specific
-            # record headers to parse the ESM flag for MW correctly - #480!
-            return mod_ext == '.esm'
-        else: return self.has_esm_flag()
-
+    # ESM flag ----------------------------------------------------------------
     def has_esm_flag(self):
-        """Check if the mod info is a master file based on master flag -
-        header must be set"""
+        """Check if the mod info is a master file based on ESM flag alone -
+        header must be set. You generally want in_master_block() instead."""
         return self._has_esm_flag
 
     def set_esm_flag(self, new_esm_flag: bool):
@@ -426,13 +412,39 @@ class ModInfo(FileInfo):
         self.update_onam()
         self.writeHeader()
 
+    def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
+        """Return true for files that load in the masters' block."""
+        ##: we should cache this and calculate in reset_cache and co
+        mod_ext = self.get_extension()
+        if bush.game.Esp.extension_forces_flags:
+            # For games since FO4/SSE, .esm and .esl files set the master flag
+            # in memory even if not set on the file on disk. For .esp files we
+            # must check for the flag explicitly.
+            return mod_ext in __master_exts or self.has_esm_flag()
+        elif bush.game.fsName == 'Morrowind':
+            ##: This is wrong, but works for now. We need game-specific
+            # record headers to parse the ESM flag for MW correctly - #480!
+            return mod_ext == '.esm'
+        else:
+            return self.has_esm_flag()
+
     def _recalc_esm(self):
         """Forcibly recalculates the cached ESM status."""
         self._has_esm_flag = self.header.flags1.esm_flag
 
+    def isInvertedMod(self):
+        """Extension indicates esp/esm, but byte setting indicates opposite."""
+        mod_ext = self.get_extension()
+        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
+            raise ArgumentError(
+                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
+        return (self.header and
+                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+
+    # ESL flag ----------------------------------------------------------------
     def has_esl_flag(self):
         """Check if the mod info is an ESL based on ESL flag alone - header
-        must be set."""
+        must be set. You generally want is_esl() instead."""
         return self.header.flags1.esl_flag
 
     def set_esl_flag(self, new_esl_flag: bool):
@@ -457,6 +469,12 @@ class ModInfo(FileInfo):
         """Forcibly recalculates the cached ESL status."""
         self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
 
+    # Overlay flag ------------------------------------------------------------
+    def has_overlay_flag(self):
+        """Check if the mod info is an Overlay plugin based on Overlay flag
+        alone - header must be set. You generally want is_overlay() instead."""
+        return self.header.flags1.overlay_flag
+
     def set_overlay_flag(self, new_overlay_flag: bool):
         """Change this file's Overlay flag to the specified value. Disables the
         ESL flag if the Overlay flag is set and the game supports the ESL
@@ -476,17 +494,9 @@ class ModInfo(FileInfo):
 
     def _recalc_overlay(self):
         """Forcibly recalculate the cached overlay status."""
-        self._is_overlay = self.header.flags1.overlay_flag
+        self._is_overlay = self.has_overlay_flag()
 
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        mod_ext = self.get_extension()
-        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
-            raise ArgumentError(
-                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
-        return (self.header and
-                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
-
+    # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
         cached_crc = self.get_table_prop(u'crc')
         if not recalculate:

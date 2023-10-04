@@ -39,8 +39,17 @@ WS_COMMON_FILES = {'appxmanifest.xml'}
 # The int values get stored in the settings files (mergeability cache), so they
 # should always remain the same just to be safe
 class MergeabilityCheck(Enum):
+    """The various mergeability checks that a game can have. See the comment
+    above each of them for more information."""
+    # If set for the game, the Merge Patches patcher will be enabled, the
+    # NoMerge tag will be available and WB will check plugins for their BP
+    # mergeability.
     MERGE = 0
+    # If set for the game, the Add ESL Flag command will be available and WB
+    # will check plugins for their ESL capability.
     ESL_CHECK = 1
+    # If set for the game, the Add Overlay Flag command will be available and
+    # WB will check plugins for their Overlay capability.
     OVERLAY_CHECK = 2
 
 class ObjectIndexRange(Enum):
@@ -164,7 +173,8 @@ class GameInfo(object):
     using_txt_file = True
     # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
-    # What mergeability checks to do for this game
+    # What mergeability checks to perform for this game. See MergeabilityCheck
+    # above for more information
     mergeability_checks = {MergeabilityCheck.MERGE}
     check_esl = False # FIXME TEMP DROP
     # True if this game supports overlay plugins (i.e. its TES4 record's header

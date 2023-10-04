@@ -71,7 +71,7 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
            'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
-           'Mod_DumpRecordTypeNames']
+           'Mod_DumpRecordTypeNames', 'Mod_FlipOverlay']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -1471,7 +1471,9 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 self._showOk(m, fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
-class _Esm_Esl_Flip(EnabledLink):
+class _AFlipFlagLink(EnabledLink):
+    """Base class for links that enable or disable a flag in the plugin
+    header."""
     _add_flag: str
     _remove_flag: str
 
@@ -1504,74 +1506,87 @@ class _Esm_Esl_Flip(EnabledLink):
                 redraw=load_order.cached_higher_loading(lowest_selected),
                 refreshSaves=True)
 
-class Mod_FlipEsm(_Esm_Esl_Flip):
-    """Flip ESM flag. Extension must be .esp or .esu."""
-    _help = _(u'Flips the ESM flag on the selected plugin(s), turning a master'
-              u' into a regular plugin and vice versa.')
-    _add_flag, _remove_flag = _(u'Add ESM Flag'), _(u'Remove ESM Flag')
+class Mod_FlipEsm(_AFlipFlagLink):
+    """Add or remove the ESM flag. Extension must be .esp or .esu."""
+    _help = _('Flip the ESM flag on the selected plugin(s), turning a master '
+              'into a regular plugin and vice versa.')
+    _add_flag, _remove_flag = _('Add ESM Flag'), _('Remove ESM Flag')
 
     @property
     def _already_flagged(self):
         return self._first_selected().has_esm_flag()
 
     def _enable(self):
-        """For pre esl games check if all mods are of the same type (esm or
-        esp), based on the flag and if are all esp extension files. For esl
-        games the esp extension is even more important as .esm and .esl files
-        implicitly have the master flag set no matter what."""
+        """Allow if all selected mods have valid extensions and have the same
+        ESM flag state."""
         first_is_esm = self._already_flagged
-        return all(m.fn_ext in (u'.esp', u'.esu') and
+        return all(m.fn_ext in ('.esp', '.esu') and
                    minfo.has_esm_flag() == first_is_esm
                    for m, minfo in self.iselected_pairs())
 
     def _exec_flip(self):
-        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
-            _(u'This command flips an internal bit in the mod, converting an '
-              u'ESP to an ESM and vice versa. For older games (Skyrim and '
-              u'earlier), only this bit determines whether or not a plugin is '
-              u'loaded as a master. In newer games (FO4 and later), files '
-              u'with the ".esm" and ".esl" extension are always forced to '
-              u'load as masters. Therefore, we disallow selecting those '
-              u'plugins for ESP/ESM conversion on newer games.'))
-        if not self._askContinue(message, u'bash.flipToEsmp.continue',
-                                 _(u'Flip to ESM')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esm_flag(not modInfo.has_esm_flag())
 
-class Mod_FlipEsl(_Esm_Esl_Flip):
-    """Flip an esp(esl) to an esl(esp)."""
-    _help = _(u'Flips the ESL flag on the selected plugin(s), turning a light '
-              u'plugin into a regular one and vice versa.')
-    _add_flag, _remove_flag = _(u'Add ESL Flag'), _(u'Remove ESL Flag')
+#------------------------------------------------------------------------------
+class Mod_FlipEsl(_AFlipFlagLink):
+    """Add or remove the ESL flag. Extension must be .esm, .esp or .esu."""
+    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
+              'plugin into a regular one and vice versa.')
+    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
 
     @property
     def _already_flagged(self):
         return self._first_selected().has_esl_flag()
 
     def _enable(self):
-        """Allow if all selected mods have valid extensions, have same esl flag
-        and are esl capable if converting to esl."""
+        """Allow if all selected mods have valid extensions, have the same ESL
+        flag state and are ESL-capable if converting to ESL."""
         first_is_esl = self._already_flagged
-        return all(m.fn_ext in (u'.esm', u'.esp', u'.esu') and
+        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
                    minfo.has_esl_flag() == first_is_esl and
                    (first_is_esl or m in bosh.modInfos.esl_capable_plugins)
                    for m, minfo in self.iselected_pairs())
 
     def _exec_flip(self):
-        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
-            _(u'This command flips an internal bit in the mod, converting an '
-              u'ESP to an ESL and vice versa.  Note that it is this bit OR '
-              u'the ".esl" file extension that turns a mod into a light '
-              u'plugin. We therefore disallow selecting files with the .esl '
-              u'extension for converting into a light plugin (as they '
-              u'implicitly are light plugins already).'))
-        if not self._askContinue(message, u'bash.flipToEslp.continue',
-                                 _(u'Flip to ESL')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esl_flag(not modInfo.has_esl_flag())
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
+class Mod_FlipOverlay(_AFlipFlagLink):
+    """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
+    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
+              'plugin into a regular one and vice versa.')
+    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
+
+    @property
+    def _already_flagged(self):
+        return self._first_selected().has_overlay_flag()
+
+    def _enable(self):
+        """Allow if all selected mods have valid extensions, have the same
+        Overlay flag state and are Overlay-capable if converting to Overlay."""
+        first_is_overlay = self._already_flagged
+        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
+                   minfo.has_esl_flag() == first_is_overlay and
+                   (first_is_overlay or
+                    m in bosh.modInfos.overlay_capable_plugins)
+                   for m, minfo in self.iselected_pairs())
+
+    def _exec_flip(self):
+        message = (_('WARNING! For advanced modders only!') + '\n\n' +
+            _('This command flips an internal bit in the mod, converting a '
+              'regular plugin to an overlay plugin and vice versa. The '
+              'Overlay flag is still new and our understanding of how it '
+              'works may be incomplete. Back up your plugins and saves '
+              'before using this!'))
+        if not self._askContinue(message, 'bash.flip_to_overlay.continue',
+                _('Flip to Overlay')): return
+        for modInfo in self.iselected_infos():
+            modInfo.set_overlay_flag(not modInfo.has_overlay_flag())
+
+#------------------------------------------------------------------------------
+class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (
