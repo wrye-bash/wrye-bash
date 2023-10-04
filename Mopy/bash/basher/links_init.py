@@ -558,7 +558,7 @@ def InitModLinks():
         ModList.context_links.append(info_menu)
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
-        ModList.context_links.append(Mod_MarkMergeable())
+        ModList.context_links.append(Mod_CheckQualifications())
         ModList.context_links.append(Mod_RebuildPatch())
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_FlipEsm())

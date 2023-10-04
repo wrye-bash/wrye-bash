@@ -36,6 +36,13 @@ from ..bolt import FNDict, fast_cached_property
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
 
+# The int values get stored in the settings files (mergeability cache), so they
+# should always remain the same just to be safe
+class MergeabilityCheck(Enum):
+    MERGE = 0
+    ESL_CHECK = 1
+    OVERLAY_CHECK = 2
+
 class ObjectIndexRange(Enum):
     """Valid values for object_index_range."""
     # FormIDs with object indices in the range 0x000-0x7FF are always
@@ -157,9 +164,9 @@ class GameInfo(object):
     using_txt_file = True
     # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
-    # If True, check if a plugin is convertible to a light plugin instead of
-    # checking its mergeability
-    check_esl = False
+    # What mergeability checks to do for this game
+    mergeability_checks = {MergeabilityCheck.MERGE}
+    check_esl = False # FIXME TEMP DROP
     # True if this game supports overlay plugins (i.e. its TES4 record's header
     # flags feature an overlay_flag); these are plugins that don't take up a
     # load order slot but can only contain overrides (any non-override records

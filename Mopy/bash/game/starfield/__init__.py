@@ -22,7 +22,7 @@
 # =============================================================================
 from os.path import join as _j
 
-from .. import GameInfo, ObjectIndexRange
+from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
@@ -50,7 +50,8 @@ class _AStarfieldGameInfo(PatchGame):
 
     espm_extensions = GameInfo.espm_extensions | {'.esl'}
     has_achlist = False # TODO(SF) check once CK is out
-    check_esl = True
+    mergeability_checks = {MergeabilityCheck.ESL_CHECK,
+                           MergeabilityCheck.OVERLAY_CHECK}
     has_overlay_plugins = True
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j('textures', 'actors', 'character', 'facecustomization'),

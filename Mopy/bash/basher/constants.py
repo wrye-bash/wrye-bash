@@ -23,6 +23,7 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
+from ..game import MergeabilityCheck
 from ..gui import DEFAULT_POSITION, ImageWrapper
 
 # Color Descriptions ----------------------------------------------------------
@@ -166,16 +167,48 @@ if bush.game.has_overlay_plugins:
           'on the Mods Tab.'),
     )
 
-# Do we check mergeability or ESL capability? ---------------------------------
-if bush.game.check_esl:
-    colorInfo['mods.text.mergeable'] = (_('ESL Capable plugin'),
+# What do we check w.r.t. mergeability? ---------------------------------------
+if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
+    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch, ESL-flagged or '
+                        'Overlay-flagged.')
+        else: # -> no mergeables
+            mc_title = _('ESL-Capable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be ESL-flagged or Overlay-flagged.')
+    else: # -> no ESLs
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch or Overlay-flagged.')
+        else: # -> no ESLs or mergeables
+            mc_title = _('Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be Overlay-flagged.')
+else: # -> no overlays
+    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable or ESL-Capable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch or ESL-flagged.')
+        else: # -> no mergeables
+            mc_title = _('ESL-Capable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be ESL-flagged.')
+    else: # -> no ESLs
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch.')
+        else:
+            mc_title = mc_desc = None
+if mc_title is not None and mc_desc is not None:
+    colorInfo['mods.text.mergeable'] = (mc_title,
         _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for ESL Capable plugins.'),
-    )
-else:
-    colorInfo['mods.text.mergeable'] = (_('Mergeable Plugin'),
-        _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for mergeable plugins.'),
+        mc_desc,
     )
 
 # Does NoMerge exist? ---------------------------------------------------------

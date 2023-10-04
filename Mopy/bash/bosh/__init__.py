@@ -38,7 +38,7 @@ from itertools import chain
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
-from ._mergeability import is_esl_capable, isPBashMergeable
+from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
@@ -54,6 +54,7 @@ from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
     StateError, InvalidPluginFlagsError
+from ..game import MergeabilityCheck
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -701,9 +702,9 @@ class ModInfo(FileInfo):
             self.abs_path.replace_with_temp(tmp_plugin)
         self.setmtime(crc_changed=True)
         #--Merge info
-        merge_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
+        merge_size, canMerge = self.get_table_prop('mergeInfo', (None, {}))
         if merge_size is not None:
-            self.set_table_prop(u'mergeInfo', (self.abs_path.psize, canMerge))
+            self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -2066,7 +2067,10 @@ class ModInfos(FileInfos):
         self.real_index_strings = collections.defaultdict(lambda: '')
         # Maps each plugin to a set of all plugins that have it as a master
         self.dependents = collections.defaultdict(set)
-        self.mergeable = set() #--Set of all mods which can be merged.
+        # Map each mergeability type to a set of plugins that can be handled
+        # via that type
+        self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
+        self._mergeable_parser = bolt.gen_enum_parser(MergeabilityCheck)
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2111,6 +2115,29 @@ class ModInfos(FileInfos):
             self._bashed_patches = {mname for mname, modinf in self.items()
                                     if modinf.isBP()}
         return self._bashed_patches
+
+    ##: Do we need fast_cached_property here?
+    @property
+    def mergeable_plugins(self) -> set[FName]:
+        """All plugins that can be merged into the Bashed Patch (they may
+        already *be* merged - see ModInfos.merged)."""
+        return self._mergeable_by_type[MergeabilityCheck.MERGE]
+
+    @property
+    def esl_capable_plugins(self) -> set[FName]:
+        """All plugins that could receive an ESL flag, but don't have one
+        yet."""
+        return self._mergeable_by_type[MergeabilityCheck.ESL_CHECK]
+
+    @property
+    def overlay_capable_plugins(self) -> set[FName]:
+        """All plugins that could receive al Overlay flag, but don't have one
+        yet."""
+        return self._mergeable_by_type[MergeabilityCheck.OVERLAY_CHECK]
+
+    def all_merg_type_plugins(self) -> set[FName]: ##: Ugh, better name pls
+        """All plugins that could be merged, ESL-flagged or Overlay-flagged."""
+        return set(chain.from_iterable(self._mergeable_by_type.values()))
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2291,9 +2318,10 @@ class ModInfos(FileInfos):
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
         self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        oldMergeable = set(self.mergeable)
+        oldMergeable = self.all_merg_type_plugins()
         scanList = self._refreshMergeable()
-        difMergeable = (oldMergeable ^ self.mergeable) & set(self)
+        difMergeable = (oldMergeable ^
+                        self.all_merg_type_plugins()) & set(self)
         if scanList:
             self.rescanMergeable(scanList) ##: maybe re-add progress?
         change |= bool(scanList or difMergeable)
@@ -2401,21 +2429,61 @@ class ModInfos(FileInfos):
         """Refreshes set of mergeable mods."""
         #--Mods that need to be rescanned - call rescanMergeable !
         newMods = []
-        self.mergeable.clear()
-        name_mergeInfo = self.table.getColumn(u'mergeInfo')
+        for m in self._mergeable_by_type.values():
+            m.clear()
+        name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
+        merg_checks = bush.game.mergeability_checks
+        # We store ints in the settings files, so use those for comparing
+        merg_checks_ints = {c.value for c in merg_checks}
+        quick_checks = {
+            MergeabilityCheck.ESL_CHECK: ModInfo.is_esl,
+            MergeabilityCheck.OVERLAY_CHECK: ModInfo.is_overlay,
+        }
+        # No need to do quick checks that aren't actually required for this
+        # game
+        quick_checks = {k: v for k, v in quick_checks.items()
+                        if k in merg_checks}
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
-            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
-            # if ESL bit was flipped size won't change, so check this first
-            if modInfo.is_esl():
-                # Don't mark ESLs as ESL-capable (duh) - modInfo must have its
-                # header set
-                name_mergeInfo[fn_mod] = (modInfo.fsize, False)
-            elif cached_size == modInfo.fsize:
-                if canMerge: self.mergeable.add(fn_mod)
+            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
+            if not isinstance(canMerge, dict):
+                canMerge = {} # Convert older settings (had a bool here)
+            # Quickly check if some mergeability types are impossible for this
+            # plugin (because it already has the target type)
+            covered_checks = set()
+            for m, m_check in quick_checks.items():
+                if m_check(modInfo):
+                    canMerge[m.value] = False
+                    covered_checks.add(m)
+            # Clean up cached mergeability info - this can get out of sync if
+            # we add or remove a mergeability type from a game or change a
+            # mergeability type's int key in the enum
+            for m in list(canMerge):
+                if m not in merg_checks_ints:
+                    del canMerge[m]
+            name_mergeInfo[fn_mod] = (cached_size, canMerge)
+            if not (merg_checks - covered_checks):
+                # We've already covered all required checks with those checks
+                # above (e.g. an ESL-flagged plugin in a game with only ESL
+                # support -> not ESL-flaggable), so move on
+                continue
+            elif (cached_size == modInfo.fsize and
+                  set(canMerge) == merg_checks_ints):
+                # The cached size matches what we have on disk and we have data
+                # for all required mergeability checks, so use the cached info
+                for m, m_merg in canMerge.items():
+                    merg_set = self._mergeable_by_type[
+                        self._mergeable_parser[m]]
+                    if m_merg:
+                        merg_set.add(fn_mod)
+                    else:
+                        merg_set.discard(fn_mod)
             else:
+                # We have to rescan mergeability - either the plugin's size
+                # changed or there is at least one required mergeability check
+                # we have not yet run for this plugin
                 newMods.append(fn_mod)
         return newMods
 
@@ -2427,51 +2495,60 @@ class ModInfos(FileInfos):
             return self._rescanMergeable(names, prog, return_results)
 
     def _rescanMergeable(self, names, progress, return_results):
-        reasons = None if not return_results else []
-        esl_checking = bush.game.check_esl
-        if esl_checking:
-            is_mergeable = is_esl_capable
-        else:
-            is_mergeable = isPBashMergeable
-        mod_mergeInfo = self.table.getColumn(u'mergeInfo')
+        all_known_checks = {
+            MergeabilityCheck.MERGE: isPBashMergeable,
+            MergeabilityCheck.ESL_CHECK: is_esl_capable,
+            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
+        }
+        # The checks that are actually required for this game
+        required_checks = {m: c for m, c in all_known_checks.items()
+                           if m in bush.game.mergeability_checks}
+        mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
-        result, tagged_no_merge = OrderedDict(), set()
-        for i,fileName in enumerate(names):
-            progress(i,fileName)
+        result, tagged_no_merge = {}, set()
+        for i, fileName in enumerate(names):
+            all_reasons = (None if not return_results else
+                           {m: [] for m in bush.game.mergeability_checks})
+            progress(i, fileName)
             fileInfo = self[fileName]
             cs_name = fileName.lower()
-            if cs_name in bush.game.bethDataFiles:
-                if return_results: reasons.append(_(u'Is Vanilla Plugin.'))
-                canMerge = False
-            elif esl_checking and fileInfo.is_esl():
-                if return_results:
-                    reasons.append(_('Already ESL-flagged.')) # duh
-                canMerge = False
-            elif esl_checking and fileInfo.is_overlay():
-                if return_results: reasons.append(_('Has Overlay flag.'))
-                canMerge = False
-            elif not bush.game.Esp.canBash:
-                canMerge = False
-            else:
-                try:
-                    canMerge = is_mergeable(fileInfo, self, reasons)
-                except Exception: # as e
-                    # deprint(f'Error scanning mod {fileName} ({e})')
-                    # canMerge = False #presume non-mergeable.
-                    raise
-            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
+            check_results = {}
+            for merg_type, merg_check in required_checks.items():
+                reasons = (None if not return_results else
+                           all_reasons[merg_type])
+                if cs_name in bush.game.bethDataFiles:
+                    # Fail all mergeability checks for vanilla plugins
+                    if return_results: reasons.append(_('Is Vanilla Plugin.'))
+                    check_results[merg_type] = False
+                else:
+                    try:
+                        check_results[merg_type] = merg_check(
+                            fileInfo, self, reasons)
+                    except Exception: # as e
+                        # deprint(f'Error scanning mod {fileName} ({e})')
+                        # # Assume it's not mergeable
+                        # check_results[merg_type] = False
+                        raise
+            # Special handling for MERGE: NoMerge-tagged plugins
+            if (fileName in self.mergeable_plugins and
+                    'NoMerge' in fileInfo.getBashTags()):
                 tagged_no_merge.add(fileName)
-                if return_results: reasons.append(_(u'Technically mergeable '
-                                                    u'but has NoMerge tag.'))
-            result[fileName] = reasons is not None and (
-                    u'\n.    ' + u'\n.    '.join(reasons))
-            if canMerge:
-                self.mergeable.add(fileName)
-                mod_mergeInfo[fileName] = (fileInfo.fsize, True)
-            else:
-                mod_mergeInfo[fileName] = (fileInfo.fsize, False)
-                self.mergeable.discard(fileName)
-            reasons = reasons if reasons is None else []
+                if return_results:
+                    all_reasons[MergeabilityCheck.MERGE].append(_(
+                        'Technically mergeable, but has NoMerge tag.'))
+            result[fileName] = all_reasons is not None and {
+                m: (check_results[m], r) for m, r in all_reasons.items()}
+            for m, m_mergeable in check_results.items():
+                merg_set = self._mergeable_by_type[m]
+                if m_mergeable:
+                    merg_set.add(fileName)
+                else:
+                    merg_set.discard(fileName)
+            # Only store the enum values (i.e. the ints) in our settings files,
+            # that way we can move the enum itself around etc.
+            mod_mergeInfo[fileName] = (fileInfo.fsize, {
+                k.value: v for k, v in check_results.items()
+            })
         return result, tagged_no_merge
 
     def _refresh_bash_tags(self):
@@ -2769,14 +2846,14 @@ class ModInfos(FileInfos):
             try:
                 # First, activate non-mergeable plugins not tagged Deactivate
                 for p in s_plugins:
-                    if p not in self.mergeable: _add_to_actives(p)
+                    if p not in self.mergeable_plugins: _add_to_actives(p)
             except PluginsFullError:
                 raise
             if activate_mergeable:
                 try:
                     # Then activate as many of the mergeable plugins as we can
                     for p in s_plugins:
-                        if p in self.mergeable: _add_to_actives(p)
+                        if p in self.mergeable_plugins: _add_to_actives(p)
                 except PluginsFullError as e:
                     raise SkippedMergeablePluginsError() from e
         except (BoltError, NotImplementedError):

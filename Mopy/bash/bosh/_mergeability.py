@@ -92,6 +92,11 @@ def isPBashMergeable(modInfo, minfos, reasons):
     verbose = reasons is not None
     if not _pbash_mergeable_no_load(modInfo, reasons) and not verbose:
         return False  # non verbose mode
+    if not bush.game.Esp.canBash:
+        if not verbose: return False
+        reasons.append(_('Wrye Bash does not currently support loading '
+                         'plugins for %(game_name)s.') % {
+            'game_name': bush.game.display_name})
     #--Load test: use generic MreRecord (without unpacking). ModFile.load will
     # unpack the header which is enough for record.flags1|fid checks
     merge_types_fact = LoadFactory(False, generic=bush.game.mergeable_sigs)
@@ -136,12 +141,12 @@ def _dependent(minfo_key, minfos):
     mergeable)."""
     dependent = [mname for mname, info in minfos.items() if not info.isBP() and
                  minfo_key in info.masterNames and mname not in
-                 minfos.mergeable]
+                 minfos.mergeable_plugins]
     return dependent
 
 def is_esl_capable(modInfo, _minfos, reasons):
-    """Determines whether or not the specified mod can be converted to a light
-    plugin. Optionally also returns the reasons it can't be converted.
+    """Determine whether or not the specified mod can be converted to a light
+    plugin. Optionally also return the reasons it can't be converted.
 
     :param modInfo: The mod to check.
     :param _minfos: Ignored. Needed to mirror the signature of
@@ -151,6 +156,12 @@ def is_esl_capable(modInfo, _minfos, reasons):
                     return value of this method is of interest.
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
+    if modInfo.is_esl():
+        if not verbose: return False
+        reasons.append(_('Already ESL-flagged.')) # duh
+    if modInfo.is_overlay():
+        if not verbose: return False
+        reasons.append(_('Has Overlay flag.'))
     formids_valid = True
     try:
         formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
@@ -159,5 +170,37 @@ def is_esl_capable(modInfo, _minfos, reasons):
         reasons.append(f'{e}.')
     if not formids_valid:
         if not verbose: return False
-        reasons.append(_(u'New FormIDs greater than 0xFFF.'))
+        reasons.append(_('Contains records with FormIDs greater than 0xFFF.'))
+    return False if reasons else True
+
+def is_overlay_capable(modInfo, _minfos, reasons):
+    """Determine whether or not the specified mod can be converted to an
+    overlay plugin. Optionally also return the reasons it can't be converted.
+
+    :param modInfo: The mod to check.
+    :param _minfos: Ignored. Needed to mirror the signature of
+        isPBashMergeable.
+    :param reasons: A list of strings that should be filled with the reasons
+        why this mod can't be Overlay-flagged, or None if only the return value
+        of this method is of interest.
+    :return: True if the specified mod could be flagged as Overlay."""
+    verbose = reasons is not None
+    if modInfo.is_overlay():
+        if not verbose: return False
+        reasons.append(_('Already Overlay-flagged.')) # duh
+    if modInfo.is_esl():
+        if not verbose: return False
+        reasons.append(_('Has ESL flag.'))
+    if not modInfo.masterNames:
+        if not verbose: return False
+        reasons.append(_('Does not have any masters.'))
+    has_new_recs = False
+    try:
+        has_new_recs = ModHeaderReader.has_new_records(modInfo)
+    except ModError as e:
+        if not verbose: return False
+        reasons.append(f'{e}.')
+    if has_new_recs:
+        if not verbose: return False
+        reasons.append(_('Contains new records.'))
     return False if reasons else True

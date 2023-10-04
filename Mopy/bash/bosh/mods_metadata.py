@@ -23,7 +23,6 @@
 import io
 from collections import Counter, defaultdict
 
-from ._mergeability import is_esl_capable
 from .. import bass, bolt, bush, load_order
 from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
@@ -137,18 +136,14 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    if bush.game.check_esl:
-        # Check for ESL-capable plugins that aren't ESL-flagged.
-        can_esl_flag = modInfos.mergeable
-        can_merge = set()
-    else:
-        # Check for mergeable plugins that aren't merged into a BP.
-        can_esl_flag = set()
-        can_merge = all_active_plugins & modInfos.mergeable
-    # Don't show NoMerge-tagged plugins as mergeable
-    for mod in list(can_merge):
-        if u'NoMerge' in modInfos[mod].getBashTags():
-            can_merge.discard(mod)
+    can_merge = modInfos.mergeable_plugins
+    can_esl_flag = modInfos.esl_capable_plugins
+    can_overlay_flag = modInfos.overlay_capable_plugins
+    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
+    # already been merged into a BP
+    for m in list(can_merge):
+        if 'NoMerge' in modInfos[m].getBashTags() or m in modInfos.merged:
+            can_merge.discard(m)
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
     # plugins that shouldn't be Overlay-flagged. Also check for conflicts
@@ -160,7 +155,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     if bush.game.check_esl:
         for m, modinf in modInfos.items():
             if m_is_esl := modinf.is_esl():
-                if not is_esl_capable(modinf, modInfos, reasons=None):
+                if not ModHeaderReader.formids_in_esl_range(modinf):
                     remove_esl_flag.add(m)
             if modinf.is_overlay():
                 if not modinf.masterNames:
@@ -592,8 +587,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just log_plugins?
     if can_esl_flag:
-        log.setHeader(u'=== ' + _(u'ESL Capable'))
-        log(_(u'The following plugins could be assigned an ESL flag.'))
+        log.setHeader('=== ' + _('ESL-Capable'))
+        log(_('The following plugins could be assigned an ESL flag, but do '
+              'not have one right now.'))
         log_plugins(can_esl_flag)
     if remove_esl_flag:
         log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
@@ -601,6 +597,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
               u"Either remove the flag with 'Remove ESL Flag', or "
               u"change the extension to '.esp' if it is '.esl'."))
         log_plugins(remove_esl_flag)
+    if can_overlay_flag:
+        log.setHeader('=== ' + _('Overlay-Capable'))
+        log(_('The following plugins could be assigned an Overlay flag, but '
+              'do not have one right now.'))
+        log_plugins(can_overlay_flag)
     if overlays_with_new_recs:
         log.setHeader('=== ' + _('Incorrect Overlay Flag: New Records'))
         log(_("The following plugins have an Overlay flag, but do not "
@@ -629,9 +630,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             'game_name': bush.game.display_name})
         log_plugins(conflicting_esl_overlay_flags)
     if can_merge:
-        log.setHeader(u'=== ' + _(u'Mergeable'))
-        log(_(u'The following plugins are active, but could be merged into '
-              u'the Bashed Patch.'))
+        log.setHeader('=== ' + _('Mergeable'))
+        log(_('The following plugins could be merged into a Bashed Patch, but '
+              'are currently not merged.'))
         log_plugins(can_merge)
     if should_deactivate:
         log.setHeader(u'=== ' + _(u'Deactivate-tagged But Active'))

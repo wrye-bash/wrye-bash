@@ -2634,23 +2634,34 @@ tab. The directories skipped are:
                 to the Details view in the Construction Set/Creation Kit.</td>
         </tr>
         <tr>
-            <td colspan="4" id="modsMarkMergeable">Mark Mergeable...</td>
-            <td><em>Not available for games with ESL support.</em> Scan the
-                selected plugins to determine if they are mergeable or not.
-                Wrye Bash does this automatically, but this command lists the
-                reasons why a plugin is unmergeable. This is useful if you
-                think some plugins should be mergeable, but the Bashed Patch is
-                refusing to merge them.</td>
-        </tr>
-        <tr>
-            <td colspan="4" id="mods-check-esl">Check ESL Qualifications</td>
-            <td><em>Games with ESL support only.</em> Check if the selected
-                plugins can be ESL-flagged using
-                <a href="#modsEslifySelf">Add ESL Flag</a>. Wrye Bash does this
-                automatically, but this command reports why plugins can't be
-                ESL-flagged. This is useful if you think some plugins are
-                ESL-capable and Wrye Bash is refusing to mark them as
-                such.</td>
+            <td colspan="4" id="mods-check-qualifications">Check
+                Qualifications...</td>
+            <td>Scan the selected plugins to check their qualifications for
+                various actions, depending on the game:
+                <ul>
+                    <li>For games that have the <q>Merge Patches</q> patcher
+                        available in the Bashed Patch (currently all games that
+                        <em>don't</em> have ESL support), this will check if
+                        the plugin could be merged into the Bashed Patch.</li>
+                    <li>For games with ESL support, this will check if the
+                        plugin could receive an ESL flag, which can then be
+                        added via
+                        <a href="modsEslifySelf">Add ESL Flag</a>.</li>
+                    <li>For games with Overlay plugin support, this will check
+                        if the plugin could receive an Overlay flag, which can
+                        then be added via <a href="mods-add-overlay-flag">Add
+                            Overlay Flag</a>.</li>
+                </ul>
+                If a game falls into multiple of the categories, this command
+                will check all the appropriate categories. For example,
+                Starfield supports both ESLs and Overlay plugins, so this
+                command checks both of them.<br>
+                <br>
+                Wrye Bash does these checks automatically, but this command
+                lists the reasons why a plugin may not qualify for one of these
+                actions. This is useful if you think some plugins should be
+                mergeable/ESL-capable/etc., but Wrye Bash seems to
+                disagree.</td>
         </tr>
         <tr>
             <td colspan="4">Rebuild Patch...</td>
@@ -2679,8 +2690,8 @@ tab. The directories skipped are:
                 <a href="#modsEsmifySelf">Add/Remove ESM Flag</a>, but targets
                 the ESL flag instead of the ESM flag. This command is only
                 enabled if the plugin is ESL-capable. See
-                <a href="#mods-check-esl">Check ESL Qualifications</a> for more
-                information.</td>
+                <a href="#mods-check-qualifications">Check Qualifications...</a>
+                for more information.</td>
         </tr>
         <tr>
             <td colspan="4" id="modsEsmifyMasters">Add/Remove ESM Flag to/From
@@ -12337,12 +12348,12 @@ iScreenShotIndex=0</code></td>
             <td>All games</td>
         </tr>
         <tr>
-            <td>ESL-capable plugins</td>
-            <td>All games</td>
+            <td>Plugins that could be ESL-flagged</td>
+            <td>Skyrim&colon; Special Edition, Fallout 4 &amp; Starfield</td>
         </tr>
         <tr>
             <td>Incorrectly ESL-flagged plugins</td>
-            <td>All games</td>
+            <td>Skyrim&colon; Special Edition, Fallout 4 &amp; Starfield</td>
         </tr>
         <tr>
             <td>Mergeable plugins</td>
@@ -12372,11 +12383,11 @@ iScreenShotIndex=0</code></td>
         </tr>
         <tr>
             <td>Plugins with form version &lt;44</td>
-            <td>Skyrim Special Edition</td>
+            <td>Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>(WEAP) Weapon records with form version &lt;44</td>
-            <td>Skyrim Special Edition</td>
+            <td>Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Cleaning information retrieved from LOOT</td>
@@ -12409,6 +12420,10 @@ iScreenShotIndex=0</code></td>
         <tr>
             <td>Duplicate FormIDs</td>
             <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins that could be Overlay-flagged</td>
+            <td>Starfield</td>
         </tr>
         <tr>
             <td>Overlay plugins with new records</td>
