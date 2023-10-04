@@ -70,9 +70,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
         master_limit = 255
         validHeaderVersions = (0.95,)
 
-    allTags = AFallout4GameInfo.allTags | {'NoMerge'}
-    patchers = AFallout4GameInfo.patchers | {'MergePatches'}
-
     bethDataFiles = AFallout4GameInfo.bethDataFiles | {
         'fallout4 - misc - beta.ba2',
         'fallout4 - misc - debug.ba2',

@@ -67,9 +67,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     class Esp(ASkyrimSEGameInfo.Esp):
         master_limit = 255
 
-    allTags = ASkyrimSEGameInfo.allTags | {'NoMerge'}
-    patchers = ASkyrimSEGameInfo.patchers | {'MergePatches'}
-
     bethDataFiles = ASkyrimSEGameInfo.bethDataFiles | {
         'skyrimvr.esm',
         'skyrim_vr - main.bsa',

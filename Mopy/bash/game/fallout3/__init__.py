@@ -150,7 +150,6 @@ class AFallout3GameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.85, 0.94)
 
-    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
         'AliasPluginNames', 'ContentsChecker', 'FormIDLists', 'ImportActors',
         'ImportActorsAIPackages', 'ImportActorsFaces', 'ImportActorsFactions',
@@ -159,9 +158,9 @@ class AFallout3GameInfo(PatchGame):
         'ImportGraphics', 'ImportInventory', 'ImportNames',
         'ImportObjectBounds', 'ImportRaces', 'ImportRacesRelations',
         'ImportRelations', 'ImportScripts', 'ImportSounds', 'ImportSpellStats',
-        'ImportStats', 'ImportText', 'LeveledLists', 'MergePatches',
-        'NpcChecker', 'RaceChecker', 'TimescaleChecker', 'TweakActors',
-        'TweakAssorted', 'TweakNames', 'TweakRaces', 'TweakSettings',
+        'ImportStats', 'ImportText', 'LeveledLists', 'NpcChecker',
+        'RaceChecker', 'TimescaleChecker', 'TweakActors', 'TweakAssorted',
+        'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (

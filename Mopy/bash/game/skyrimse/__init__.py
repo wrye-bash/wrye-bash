@@ -98,9 +98,6 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         master_limit = 253
         warn_older_form_versions = True
 
-    allTags = ASkyrimGameInfo.allTags - {'NoMerge'}
-    patchers = ASkyrimGameInfo.patchers - {'MergePatches'}
-
     bethDataFiles = {
         'skyrim.esm',
         'update.esm',

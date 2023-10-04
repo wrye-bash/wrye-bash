@@ -212,7 +212,7 @@ if mc_title is not None and mc_desc is not None:
     )
 
 # Does NoMerge exist? ---------------------------------------------------------
-if 'NoMerge' in bush.game.allTags:
+if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
     colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
         _('Tabs: Mods') + '\n\n' +
         _('This is the text color used for a mergeable plugin that is '
