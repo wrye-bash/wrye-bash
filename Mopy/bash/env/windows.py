@@ -232,7 +232,7 @@ def _get_default_app_icon(idex, target):
         icon_path = r'not\a\path'
     return icon_path, idex
 
-def _get_app_links(apps_dir):
+def _get_app_links(apps_dir) -> dict[_Path, tuple[str, str, str]]:
     """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
@@ -242,19 +242,19 @@ def _get_app_links(apps_dir):
     if win32client is None: return {}
     links = {}
     try:
-        sh = win32client.Dispatch(u'WScript.Shell')
+        sh = win32client.Dispatch('WScript.Shell')
         for lnk in apps_dir.ilist():
             lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.is_file():
+            if lnk.cext == '.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)
                 shortcut_descr = shortcut.Description
                 if not shortcut_descr:
-                    shortcut_descr = u' '.join((_(u'Launch'), lnk.sbody))
+                    shortcut_descr = ' '.join((_('Launch'), lnk.sbody))
                 links[lnk] = (shortcut.TargetPath, shortcut.IconLocation,
                               # shortcut.WorkingDirectory, shortcut.Arguments,
                               shortcut_descr)
     except:
-        _deprint(u'Error initializing links:', traceback=True)
+        _deprint('Error initializing links:', traceback=True)
     return links
 
 def _should_ignore_ver(test_ver):
@@ -1092,7 +1092,7 @@ def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def init_app_links(apps_dir, badIcons, iconList):
+def init_app_links(apps_dir, badIcons, iconList) -> [tuple[_Path, _Path, str]]:
     init_params = []
     for path, (target, icon_location, shortcut_descr) in _get_app_links(
             apps_dir).items():

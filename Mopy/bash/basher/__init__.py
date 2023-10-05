@@ -3487,10 +3487,10 @@ class InstallersPanel(BashTab):
                         self._data_dir_scanned = True
             elif self.frameActivated:
                 try:
-                    with balt.Progress(
-                            _('Refreshing Converters...')) as progress:
-                        refreshui |= self.listData.irefresh(progress, what='C',
-                            fullRefresh=fullRefresh)
+                    # with balt.Progress(
+                    #         _('Refreshing Converters...')) as progress:
+                    refreshui |= self.listData.irefresh(what='C',
+                        fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
