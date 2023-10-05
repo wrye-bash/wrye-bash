@@ -958,11 +958,13 @@ class Mod_CheckQualifications(ItemLink):
             MergeabilityCheck.OVERLAY_CHECK: (_('Not Overlay-Capable'),
                                               _('Overlay-Capable')),
         }
-        message = ['== ' + _('Qualification Check Results')]
+        message = ['= ' + _('Qualification Check Results')]
         for p in self.selected:
-            message.append(f'=== {p}')
+            message.append('')
+            message.append(f'== {p}')
             for chk_ty, (chk_result, chk_reason) in result[p].items():
-                message.append(f'==== {mergeability_strs[chk_ty][chk_result]}')
+                message.append('')
+                message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
                 for r in chk_reason:
                     message.append(f'.    {r}')
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
