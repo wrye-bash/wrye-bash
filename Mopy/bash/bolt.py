@@ -1411,8 +1411,9 @@ def clearReadOnly(dirPath):
     # elif platform.system() == u'Darwin':
     #     cmd = f'chflags -R nouchg {dirPath}'
     else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
-        cmds = (fr'find {dirPath} -not -executable -exec chmod a=rw {{}} \; &',
-                fr'find {dirPath} -executable -exec chmod a=rwx {{}} \; &')
+        cmds = (
+            fr'find "{dirPath}" -not -executable -exec chmod a=rw {{}} \; &',
+            fr'find "{dirPath}" -executable -exec chmod a=rwx {{}} \; &')
     for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
 
 # Util Constants --------------------------------------------------------------
