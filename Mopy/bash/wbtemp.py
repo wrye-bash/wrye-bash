@@ -259,7 +259,17 @@ def default_global_temp_dir() -> str:
                        else data_folder_path.drive)
         return base_folder + os.sep + '.wbtemp'
     def _default_global_unix():
-        dfp_stat = os.stat(data_folder_path)
+        # We have to use a file inside the Data folder, since the Data folder
+        # itself may be a mount point and so belong to a different FS than its
+        # *contents*, which is what we really care about
+        dfp_contents = os.listdir(data_folder_path)
+        if not dfp_contents:
+            # If the Data folder is empty, we'll blow up later anyways because
+            # the game master will be missing, so this doesn't really matter
+            dfp_test_path = data_folder_path
+        else:
+            dfp_test_path = os.path.join(data_folder_path, dfp_contents[0])
+        dfp_stat = os.stat(dfp_test_path)
         data_device_id = dfp_stat.st_dev
         data_uid = dfp_stat.st_uid
         max_path = data_folder_path
