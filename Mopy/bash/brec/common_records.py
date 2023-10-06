@@ -39,7 +39,7 @@ from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId, gen_coed_key
-from .. import bolt, exception
+from .. import bolt, bush, exception
 from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
 
@@ -238,13 +238,11 @@ class AMreHeader(MelRecord):
 
     class MelAuthor(MelUnicode):
         def __init__(self):
-            from .. import bush
             super().__init__(b'CNAM', 'author_pstr',
                              maxSize=bush.game.Esp.max_author_length)
 
     class MelDescription(MelUnicode):
         def __init__(self):
-            from .. import bush
             super().__init__(b'SNAM', 'description_pstr',
                              maxSize=bush.game.Esp.max_desc_length)
 
@@ -269,13 +267,15 @@ class AMreHeader(MelRecord):
         # Load each subrecord
         ins_at_end = ins.atEnd
         masters_loaded = False
+        in_overlay_plugin = (bush.game.has_overlay_plugins and
+                             self.flags1.overlay_flag)
         while not ins_at_end(endPos, self._rec_sig):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
             if not masters_loaded and sub_type in self._post_masters_sigs:
                 masters_loaded = True
                 utils_constants.FORM_ID = FormId.from_masters(
-                    (*self.masters, ins.inName))
+                    (*self.masters, ins.inName), in_overlay_plugin)
             try:
                 loader = loaders[sub_type]
                 try:
@@ -296,7 +296,8 @@ class AMreHeader(MelRecord):
             raise exception.ModError(ins.inName, f'{error!r}') from error
         if not masters_loaded:
             augmented_masters = (*self.masters, ins.inName)
-            utils_constants.FORM_ID = FormId.from_masters(augmented_masters)
+            utils_constants.FORM_ID = FormId.from_masters(
+                augmented_masters, in_overlay_plugin)
         self._truncate_master_sizes()
 
     def _truncate_master_sizes(self):
@@ -497,7 +498,6 @@ class AMreLeveledList(MelRecord):
                 newItemsAdd(entry.listId)
         # Check if merging exceeded the counter's limit and, if so, truncate it
         # and warn. Note that pre-Skyrim games do not have this limitation.
-        from .. import bush
         max_lvl_size = bush.game.Esp.max_lvl_list_size
         if max_lvl_size and len(self.entries) > max_lvl_size:
             # TODO(inf) In the future, offer an option to auto-split these into

@@ -38,7 +38,7 @@ from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
     MelUnorderedGroups, MelUInt8
 from .common_subrecords import MelFull
 from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
-from .. import bolt
+from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
 from ..exception import ModError
@@ -205,7 +205,6 @@ class _MelCtda(MelUnion):
         if suffix_fmt is None: suffix_fmt = []
         if suffix_elements is None: suffix_elements = []
         if old_suffix_fmts is None: old_suffix_fmts = set()
-        from .. import bush
         super().__init__({
             # Build a (potentially truncated) struct for each function index
             func_index: self._build_struct(func_data, ctda_sub_sig, suffix_fmt,
@@ -330,7 +329,6 @@ class _MelCtdaFo3(_MelCtda):
             old_suffix_fmts: set[str] | None = None):
         super().__init__(suffix_fmt=suffix_fmt,
             suffix_elements=suffix_elements, old_suffix_fmts=old_suffix_fmts)
-        from .. import bush
         self._getvatsvalue_ifunc = bush.game.getvatsvalue_index
         self._ignore_ifuncs = ({106, 285} if bush.game.fsName == 'FalloutNV'
                                else set()) # 106 == IsFacingUp, 285 == IsLeftUp

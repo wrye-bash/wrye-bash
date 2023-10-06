@@ -33,6 +33,7 @@ from ..brec import FormId, int_unpacker, null2, RecordType
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
+##: Last use of from_object_id, can we get rid of it?
 _player_fid = FormId.from_object_id(0, 0x7)
 
 class PCFaces(object):

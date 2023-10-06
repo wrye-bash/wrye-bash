@@ -30,7 +30,7 @@ from typing import BinaryIO
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
     int_unpacker, null1
-from .. import bolt, exception
+from .. import bolt, bush, exception
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
 
@@ -50,7 +50,6 @@ class MelObject(object):
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
-        from .. import bush
         cond_val_data = bush.game.condition_function_data
         to_show = []
         if hasattr(self, u'__slots__'):

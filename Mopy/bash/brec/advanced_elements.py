@@ -35,6 +35,7 @@ from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct
+from .. import bush
 from ..bolt import attrgetter_cache, deprint, structs_cache
 from ..exception import ArgumentError, ModSizeError
 
@@ -738,7 +739,6 @@ class PerkEpdfDecider(ACommonDecider):
 class SaveDecider(ADecider):
     """Decider that returns True if the input file is a save."""
     def __init__(self):
-        from .. import bush
         self._save_ext = bush.game.Ess.ext
 
     def decide_load(self, record, ins, sub_type, rec_size):
