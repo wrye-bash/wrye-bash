@@ -32,10 +32,11 @@ import json
 import os
 import shutil
 import stat
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
-from typing import Callable, TypeVar, Any
+from typing import TypeVar, Any
 
 from .. import bolt
 from ..bolt import GPath, Path, deprint
@@ -284,13 +285,13 @@ class FileOperationType(Enum):
     RENAME = 'RENAME'
     DELETE = 'DELETE'
 
-def _retry(operation: Callable[[], T], folder_to_make: Path) -> T:
+def _retry(operation: Callable[..., T], from_path: Path, to_path: Path) -> T:
     """Helper to auto-retry an operation if it fails due to a missing folder."""
     try:
-        return operation()
+        return operation(from_path, to_path)
     except FileNotFoundError:
-        folder_to_make.makedirs()
-        return operation()
+        to_path.head.makedirs()
+        return operation(from_path, to_path)
 
 def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
                    ask_confirm, parent, move: bool) -> dict[str, str]:
@@ -323,9 +324,7 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
                     # directory, this is always the case
                     shutil.move(from_path, to_path.head)
                 else:
-                    operation = functools.partial(shutil.copytree,
-                                                  from_path, to_path)
-                    _retry(operation, to_path.head)
+                    _retry(shutil.copytree, from_path, to_path)
                 operation_results[os.fspath(from_path)] = os.fspath(to_path)
         elif from_path.is_file():
             # Copying a file: check for collisions if the user wants prompts
@@ -337,12 +336,7 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
                     if not ask_confirm(parent, msg, _('Overwrite file?')):
                         continue
             # Perform the copy/move
-            if move:
-                # Move already makes intermediate directories
-                shutil.move(from_path, to_path)
-            else:
-                operation = functools.partial(shutil.copy2, from_path, to_path)
-                _retry(operation, to_path.head)
+            _retry(shutil.move if move else shutil.copy2, from_path, to_path)
             operation_results[os.fspath(from_path)] = os.fspath(to_path)
         else:
             raise FileNotFoundError(os.fspath(from_path))
