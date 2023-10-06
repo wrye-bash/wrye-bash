@@ -1259,6 +1259,13 @@ def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
         new_attr_flags = curr_attr_flags & ~FILE_ATTRIBUTE_HIDDEN
     win32api.SetFileAttributes(path_to_hide, new_attr_flags)
 
+def get_case_sensitivity_advice():
+    """Retrieve information on how to make the Data folder case-insensitive."""
+    return _("On Windows, you can use fsutil.exe to mark the Data folder as "
+             "case-insensitive again. See Microsoft's 'Adjust case "
+             "sensitivity' page (https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity) "
+             "for more information.")
+
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section
 # below.

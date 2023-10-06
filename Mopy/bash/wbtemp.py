@@ -128,13 +128,13 @@ def _get_global_dir() -> PPath:
 ##: We will probably want all these APIs to return pathlib.Path objects in the
 # future (once Path is refactored) - would let us get rid of many stupid
 # GPath_no_norm calls done on the returned strings right now
-def new_temp_dir(*, temp_prefix='', temp_suffix='') -> str:
+def new_temp_dir(*, temp_prefix='', temp_suffix='', base_dir='') -> str:
     """Create a new, unique, temporary directory. The caller is responsible for
     cleaning it up via cleanup_temp_dir once done.
 
     Use only when absolutely needed, TempDir is almost always a better
     choice."""
-    ntd = tempfile.mkdtemp(dir=_get_global_dir(),
+    ntd = tempfile.mkdtemp(dir=base_dir or _get_global_dir(),
         prefix=f'{temp_prefix}_' if temp_prefix else '', suffix=temp_suffix)
     _our_temp_dirs.add(PPath(ntd))
     return ntd
@@ -167,26 +167,27 @@ def cleanup_temp_dir(temp_dir: str | os.PathLike) -> None:
 class TempDir:
     """Convenient and error-resistant way to create and clean up a unique
     temporary directory with a context handler."""
-    def __init__(self, *, temp_prefix='', temp_suffix=''):
+    def __init__(self, *, temp_prefix='', temp_suffix='', base_dir=''):
         self._temp_prefix = temp_prefix
         self._temp_suffix = temp_suffix
+        self._base_dir = base_dir
 
     def __enter__(self):
         self._temp_dir = new_temp_dir(temp_prefix=self._temp_prefix,
-            temp_suffix=self._temp_suffix)
+            temp_suffix=self._temp_suffix, base_dir=self._base_dir)
         return self._temp_dir
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         cleanup_temp_dir(self._temp_dir)
 
 # API - Temporary Files -------------------------------------------------------
-def new_temp_file(*, temp_prefix='', temp_suffix='.dat') -> str:
+def new_temp_file(*, temp_prefix='', temp_suffix='.dat', base_dir='') -> str:
     """Create a new, unique, temporary file. The caller is responsible for
     cleaning it up via cleanup_temp_file once done.
 
     Use only when absolutely needed, TempFile is almost always a better
     choice."""
-    ntf_fd, ntf = tempfile.mkstemp(dir=_get_global_dir(),
+    ntf_fd, ntf = tempfile.mkstemp(dir=base_dir or _get_global_dir(),
         prefix=f'{temp_prefix}_' if temp_prefix else '', suffix=temp_suffix)
     _our_temp_files.add(PPath(ntf))
     os.close(ntf_fd)
@@ -220,13 +221,14 @@ def cleanup_temp_file(temp_file: str | os.PathLike) -> None:
 class TempFile:
     """Convenient and error-resistant way to create and clean up a unique
     temporary file with a context handler."""
-    def __init__(self, *, temp_prefix='', temp_suffix='.dat'):
+    def __init__(self, *, temp_prefix='', temp_suffix='.dat', base_dir=''):
         self._temp_prefix = temp_prefix
         self._temp_suffix = temp_suffix
+        self._base_dir = base_dir
 
     def __enter__(self):
         self._temp_file = new_temp_file(temp_prefix=self._temp_prefix,
-            temp_suffix=self._temp_suffix)
+            temp_suffix=self._temp_suffix, base_dir=self._base_dir)
         return self._temp_file
 
     def __exit__(self, exc_type, exc_val, exc_tb):

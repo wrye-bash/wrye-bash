@@ -32,7 +32,8 @@ from configparser import ConfigParser, MissingSectionHeaderError
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
-    get_personal_path, shellMakeDirs
+    get_personal_path, shellMakeDirs, is_case_sensitive, \
+    get_case_sensitivity_advice
 from .exception import BoltError
 
 ##: we need to import LOOTParser after defining this as LOOTParser imports bush
@@ -259,6 +260,15 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             # Set the data folder to sLocalMasterPath
             dirs[u'mods'] = dirs[u'app'].join(get_ini_option(oblivionIni,
                 u'SLocalMasterPath') or game_info.mods_dir)
+    # Check and warn if the Data folder is case-sensitive
+    if is_case_sensitive(dirs['mods']):
+        ci_warn = _(
+            'The %(data_folder)s folder is case sensitive. This will cause '
+            'serious problems for Wrye Bash, like BAIN not working if the '
+            'case differs between a mod-added file and an existing version of '
+            'that file in the Data folder.') % {
+            'data_folder': game_info.mods_dir}
+        init_warnings.append(ci_warn + '\n\n' + get_case_sensitivity_advice())
     # these are relative to the mods path so they must be set here
     dirs[u'patches'] = dirs[u'mods'].join(u'Bash Patches')
     dirs[u'tag_files'] = dirs[u'mods'].join(u'BashTags')

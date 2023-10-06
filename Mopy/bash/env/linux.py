@@ -375,6 +375,17 @@ def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
             os.rename(file_to_hide, os.path.join(fth_head,
                 fth_tail.lstrip('.')))
 
+def get_case_sensitivity_advice():
+    return (_("On Linux, if your filesystem supports casefolding, you can "
+              "utilize that feature. An ext4 filesystem that was created with "
+              "the '-O casefold' option can use 'chattr +F' to mark the Data "
+              "folder as case-insensitive, for example. Please check if your "
+              "filesystem supports this and how to enable it.") + '\n\n' +
+            _('Otherwise, you can use ciopfs, which is a FUSE layer that '
+              'needs to be setup and added to your fstab file. See its '
+              'website (https://www.brain-dump.org/projects/ciopfs/) for more '
+              'information.'))
+
 # API - Classes ===============================================================
 class TaskDialog(object):
     def __init__(self, title, heading, content, tsk_buttons=(),

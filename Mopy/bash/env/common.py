@@ -34,10 +34,12 @@ import shutil
 import stat
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 from typing import Callable, TypeVar, Any
 
 from .. import bolt
 from ..bolt import GPath, Path, deprint
+from ..wbtemp import TempDir
 
 try:
     from send2trash import send2trash, TrashPermissionError
@@ -434,3 +436,11 @@ def file_operation(operation: FileOperationType,
         }
     return __copy_or_move(srcs_dsts, rename_on_collision, ask_confirm, parent,
                           move=(operation is FileOperationType.MOVE))
+
+def is_case_sensitive(test_path):
+    """Check if the specified path is case-sensitive."""
+    with TempDir(base_dir=test_path) as temp_ci_test:
+        ci_test_path = PPath(temp_ci_test)
+        (ci_test_path / '.wb_case_test').touch()
+        (ci_test_path / '.Wb_CaSe_TeSt').touch()
+        return len(list(ci_test_path.iterdir())) == 2
