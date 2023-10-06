@@ -609,7 +609,7 @@ def _show_boot_popup(msg, is_critical=True):
     try:
         from .balt import Resources
         from .gui import CENTER, CancelButton, Color, LayoutOptions, \
-            StartupDialogWindow, TextArea, VLayout
+            StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
         class MessageBox(StartupDialogWindow):
             def __init__(self, msg):
                 popup_title = (_(u'Wrye Bash Error') if is_critical else
@@ -623,15 +623,20 @@ def _show_boot_popup(msg, is_critical=True):
                 self.component_size = (400, 300)
                 msg_text = TextArea(self, editable=False, init_text=msg,
                                     auto_tooltip=False)
+                if is_critical:
+                    bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
+                else:
+                    bottom_btns = [OkButton(self, btn_label=_('Continue')),
+                                   CancelButton(self, btn_label=_('Abort'))]
                 VLayout(item_border=5, items=[
                     (msg_text, LayoutOptions(expand=True, weight=1)),
-                    (CancelButton(self, btn_label=_(u'Quit') if is_critical
-                                                 else _(u'OK')),
+                    (HLayout(spacing=4, items=bottom_btns),
                      LayoutOptions(h_align=CENTER)),
                 ]).apply_to(self)
         print(msg) # Print msg into error log.
-        MessageBox.display_dialog(msg)
-        if is_critical: sys.exit(1)
+        msg_choice = MessageBox.display_dialog(msg)
+        if is_critical or not msg_choice:
+            sys.exit(1) # Critical error or user aborted
     except Exception: ##: tighten these excepts?
         # Instantiating wx.App failed, fallback to tkinter.
         but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',
