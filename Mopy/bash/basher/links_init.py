@@ -24,6 +24,7 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
+import os
 
 from . import BSAList, INIList, InstallersList, \
     InstallersPanel, MasterList, ModList, SaveList, ScreensList
@@ -41,37 +42,23 @@ from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
-    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
+    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
-from ..gui import GuiImage
+from ..gui import GuiImage, get_image
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
+_j = os.path.join
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
     def _png_list(template):
-        return [GuiImage.from_path(bass.dirs['images'].join(template % i))
-                for i in (16, 24, 32)]
+        return [GuiImage.from_path(template % i) for i in (16, 24, 32)]
     def _svg_list(svg_fname):
-        return [GuiImage.from_path(bass.dirs['images'].join(svg_fname),
-                                   iconSize=i) for i in (16, 24, 32)]
-    def _init_tool_buttons(): # tooldirs must have been initialized
-        return (((bass.tooldirs[u'OblivionBookCreatorPath'],
-                  bass.inisettings[u'OblivionBookCreatorJavaArg']),
-                 _png_list('tools/oblivionbookcreator%s.png'),
-                 _(u'Launch Oblivion Book Creator'),
-                 {'uid': u'OblivionBookCreator'}),
-                ((bass.tooldirs[u'Tes4GeckoPath'],
-                  bass.inisettings[u'Tes4GeckoJavaArg']),
-                 _png_list('tools/tes4gecko%s.png'),
-                 _(u'Launch Tes4Gecko'), {'uid': u'Tes4Gecko'}),
-                ((bass.tooldirs[u'Tes5GeckoPath']),
-                _png_list('tools/tesvgecko%s.png'),
-                _(u'Launch TesVGecko'), {'uid': u'TesVGecko'}),
-        )
+        return [GuiImage.from_path(svg_fname, iconSize=i) for i in
+                (16, 24, 32)]
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obse_button = Obse_Button(uid='OBSE')
     all_links = [
@@ -91,86 +78,91 @@ def InitStatusBar():
             _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
             _('Launch %(ck_name)s %(app_version)s'),
             bush.game.Ck.se_args))
+    def _init_params(args, func=app_button_factory, **kwargs):
+        return func, args, kwargs
+    def _tool_args(toolkey, tooltip_str):
+        # Just an _App_Button whose path is in bass.tooldirs
+        if isinstance(toolkey, tuple):
+            toolkey, *rest = toolkey
+        else: rest = None
+        if toolkey in {'Steam', 'LOOT'}: ##: YAK YAK YAK
+            list_img = _svg_list(_j('tools', f'{toolkey.lower()}.svg'))
+        else:
+            list_img = _png_list(_j('tools', f'{toolkey.lower()}%s.png'))
+        tooldir = bass.tooldirs[toolkey]
+        return (tooldir, *rest) if rest else tooldir, list_img, tooltip_str
     # OBMM
-    all_links.append(app_button_factory(
-        bass.dirs['app'].join('OblivionModManager.exe'),
-        _png_list('tools/obmm%s.png'), _('Launch OBMM'),
-        uid='OBMM'))
-    # Just an _App_Button whose path is in bass.tooldirs
-    Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
-                                                      *args[1:])
+    params = [_init_params((bass.dirs['app'].join('OblivionModManager.exe'),
+        _png_list('tools/obmm%s.png'), _('Launch OBMM')), uid='OBMM')]
+    # Launchers of tools ------------------------------------------------------
     from .constants import toolbar_buttons
-    for tb in toolbar_buttons:
-        all_links.append(Tooldir_Button(*tb))
-    for tb2 in _init_tool_buttons():
-        all_links.append(app_button_factory(*tb2[:-1], **tb2[-1]))
-    all_links.append( #Tes4View
-        App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
-            _png_list('tools/tes4view%s.png'), _('Launch TES4View'),
-            uid='TES4View'))
+    params.extend(_init_params(_tool_args(*tool)) for tool in toolbar_buttons)
+    params.append(_init_params(_tool_args(('OblivionBookCreatorPath',
+        bass.inisettings['OblivionBookCreatorJavaArg']),
+        _('Launch Oblivion Book Creator')), uid='OblivionBookCreator'))
+    params.append(_init_params(_tool_args(('Tes4GeckoPath',
+        bass.inisettings['Tes4GeckoJavaArg']), _('Launch Tes4Gecko')),
+        uid='Tes4Gecko'))
+    params.append(_init_params(
+        _tool_args('Tes5GeckoPath', _('Launch TesVGecko')), uid='TesVGecko'))
+    params.append( #Tes4View
+        _init_params(_tool_args(('Tes4ViewPath', '-TES4 -view'),
+            _('Launch TES4View')), func=App_xEdit, uid='TES4View'))
     all_xes = set()
     for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
         all_xes.add(game_class.Xe.full_name)
     for xe_name in all_xes:
-        all_links.append(App_xEdit((bass.tooldirs[f'{xe_name}Path'],
-             '-%s -edit' % xe_name[:-4]), # chop off edit
-            _png_list('tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
-            uid=xe_name))
-    all_links.append(  #TesVGecko
-        app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
-                           _png_list('tools/tesvgecko%s.png'),
-                           _(u"Launch TesVGecko"), uid=u'TesVGecko'))
-    all_links.append(  #Tes4Trans
-        App_xEdit((bass.tooldirs['Tes4TransPath'], '-TES4 -translate'),
-            _png_list('tools/tes4trans%s.png'), _('Launch TES4Trans'),
-            uid='TES4Trans'))
-    all_links.append(  #Tes4LODGen
-        App_xEdit((bass.tooldirs['Tes4LodGenPath'], '-TES4 -lodgen'),
-            _png_list('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
-            uid='TES4LODGen'))
+        args = [(bass.tooldirs[f'{xe_name}Path'], f'-{xe_name[:-4]} -edit'),
+                # chop off edit
+                _png_list('tools/tes4edit%s.png'), _('Launch %s') % xe_name]
+        params.append(_init_params(args, func=App_xEdit, uid=xe_name))
+    params.append(  #Tes4Trans
+        _init_params(_tool_args(('Tes4TransPath', '-TES4 -translate'),
+            _('Launch TES4Trans')), func=App_xEdit, uid='TES4Trans'))
+    params.append(  #Tes4LODGen
+        _init_params(_tool_args(('Tes4LodGenPath', '-TES4 -lodgen'),
+            _('Launch Tes4LODGen')), func=App_xEdit, uid='TES4LODGen'))
     if bush.game.boss_game_name:
-        all_links.append( #BOSS
-            App_BOSS(bass.tooldirs['boss'], _png_list('tools/boss%s.png'),
-                _('Launch BOSS'), uid='BOSS'))
+        params.append( #BOSS
+            _init_params(_tool_args('boss', _('Launch BOSS')), func=App_BOSS,
+                         uid='BOSS'))
     if bush.game.loot_game_name:
-        all_links.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], _svg_list('tools/loot.svg'),
-                _('Launch LOOT'), uid='LOOT'))
+        params.append( #LOOT
+            _init_params(_tool_args('LOOT', _('Launch LOOT')), func=App_LOOT,
+                         uid='LOOT'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
-        for mb in modeling_tools_buttons:
-            all_links.append(Tooldir_Button(*mb))
-        all_links.append( #Softimage Mod Tool
-            app_button_factory((bass.tooldirs[u'SoftimageModTool'], u'-mod'),
-                               _png_list('tools/softimagemodtool%s.png'),
-                               _(u"Launch Softimage Mod Tool"),
-                               uid=u'SoftimageModTool'))
+        params.extend(
+            _init_params(_tool_args(*mt)) for mt in modeling_tools_buttons)
+        params.append( #Softimage Mod Tool
+            _init_params(_tool_args(('SoftimageModTool', '-mod'),
+            _('Launch Softimage Mod Tool')), uid='SoftimageModTool'))
     if bass.inisettings[u'ShowModelingToolLaunchers'] \
             or bass.inisettings[u'ShowTextureToolLaunchers']:
-        all_links.append( #Nifskope
-            Tooldir_Button(u'NifskopePath', _png_list('tools/nifskope%s.png'),
-                _(u'Launch Nifskope')))
+        params.append( #Nifskope
+            _init_params(_tool_args('NifskopePath', _('Launch Nifskope'))))
     if bass.inisettings[u'ShowTextureToolLaunchers']:
         from .constants import texture_tool_buttons
-        for tt in texture_tool_buttons:
-            all_links.append(Tooldir_Button(*tt))
+        params.extend(
+            _init_params(_tool_args(*tt)) for tt in texture_tool_buttons)
     if bass.inisettings[u'ShowAudioToolLaunchers']:
         from .constants import audio_tools
-        for at in audio_tools:
-            all_links.append(Tooldir_Button(*at))
+        params.extend(_init_params(_tool_args(*at)) for at in audio_tools)
     from .constants import misc_tools
-    for mt in misc_tools: all_links.append(Tooldir_Button(*mt))
+    params.extend(_init_params(_tool_args(*mt)) for mt in misc_tools)
     #--Custom Apps
     dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [images['error_cross.16']] * 3
+    badIcons = [get_image('error_cross.16')] * 3
     for pth, img_path, shortcut_descr in init_app_links(dirApps):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
         else:
-            imgs = [GuiImage.from_path(img_path, GuiImage.img_types['.ico'], x)
-                    for x in (16, 24, 32)]
-        all_links.append(app_button_factory(
-            (pth, ()), imgs, shortcut_descr, canHide=False))
+            imgs = [GuiImage.from_path(p, GuiImage.img_types['.ico'], x) for
+                    x, p in zip((16, 24, 32), img_path)]
+        params.append(_init_params(((pth, ()), imgs, shortcut_descr),
+                                   canHide=False))
+    # add all these!
+    all_links.extend(func(*args, **kwargs) for func, args, kwargs in params)
     #--Final couple
     all_links.append(App_DocBrowser(uid='DocBrowser'))
     all_links.append(App_PluginChecker(uid='ModChecker'))

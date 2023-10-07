@@ -58,8 +58,6 @@ class CopyOrMovePopup(DialogWindow):
     def __init__(self, parent, message, *, sizes_dict, icon_bundle):
         super().__init__(parent, sizes_dict=sizes_dict,
             icon_bundle=icon_bundle)
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
         move_button = Button(self, btn_label=_(u'Move'))
@@ -68,7 +66,7 @@ class CopyOrMovePopup(DialogWindow):
         copy_button.on_clicked.subscribe(lambda: self._return_action(u'COPY'))
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, item_border=6, items=[
-                (staticBitmap(self), LayoutOptions(v_align=CENTER)),
+                (StaticBmp(self), LayoutOptions(v_align=CENTER)),
                 (Label(self, message), LayoutOptions(expand=True))
             ]), LayoutOptions(weight=1)),
             Stretch(),
@@ -670,11 +668,9 @@ class ContinueDialog(DialogWindow):
         bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
         if show_cancel:
             bottom_items.append(CancelButton(self))
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
-                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
+                (StaticBmp(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
             HorizontalLine(self),

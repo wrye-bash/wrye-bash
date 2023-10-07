@@ -29,7 +29,7 @@ from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
     ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
 from ..bolt import GPath, FName
-from ..gui import AutoSize, BusyCursor, GuiImage, ImgFromPath
+from ..gui import AutoSize, BusyCursor, ImgFromPath
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
@@ -90,7 +90,6 @@ class Screen_ConvertTo(EnabledLink):
     def __init__(self, ext):
         super().__init__()
         self._ext = ext
-        self._convert_to = GuiImage.img_types[ext]
         self._text = _('Convert to %(img_ext)s') % {'img_ext': ext}
 
     def _enable(self):
@@ -106,9 +105,9 @@ class Screen_ConvertTo(EnabledLink):
                     srcPath = bosh.screen_infos[fileName].abs_path
                     destPath = srcPath.root + self._ext
                     if srcPath == destPath or destPath.exists(): continue
-                    bmp = ImgFromPath.from_path(srcPath, quality=bass.settings[
-                        'bash.screens.jpgQuality'])
-                    result = bmp._native_widget.SaveFile(destPath.s, self._convert_to)
+                    bmp = ImgFromPath.from_path(srcPath.s,
+                        quality=bass.settings['bash.screens.jpgQuality'])
+                    result = bmp.save_bmp(destPath.s, self._ext)
                     if not result: continue
                     srcPath.remove()
         finally:

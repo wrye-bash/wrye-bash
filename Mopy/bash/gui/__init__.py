@@ -26,6 +26,7 @@ around without breaking third-party code."""
 
 __author__ = u'Infernio'
 
+from ._gui_globals import *
 from .base_components import *
 from .buttons import *
 from .checkables import *

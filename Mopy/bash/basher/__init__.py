@@ -50,13 +50,12 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 from __future__ import annotations
 
-import collections
 import os
 import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial
+from functools import partial, cached_property
 from itertools import chain
 
 import wx
@@ -70,9 +69,9 @@ from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
     load_order
-from ..balt import AppendableLink, BashStatusBar, CheckLink, EnabledLink, \
-    INIListCtrl, InstallerColorChecks, ItemLink, Link, NotebookPanel, \
-    Resources, SeparatorLink, colors, images, UIList
+from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
+    EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
+    SeparatorLink, UIList, colors
 from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
@@ -82,12 +81,12 @@ from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
-    EventResult, FileOpen, GlobalMenu, GuiImage, HLayout, Label, \
-    LayoutOptions, ListBox, Links, MultiChoicePopup, PanelWin, Picture, \
-    PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
-    TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, get_shift_down, \
-    read_files_from_clipboard_cb, showError, askYes, showWarning, askWarning, \
-    showOk, BmpFromStream
+    EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, ListBox, \
+    Links, MultiChoicePopup, PanelWin, Picture, PureImageButton, RadioButton, \
+    SaveButton, Splitter, Stretch, TabbedPanel, TextArea, TextField, VLayout, \
+    WindowFrame, WithMouseEvents, get_shift_down, read_files_from_clipboard_cb, \
+    showError, askYes, showWarning, askWarning, showOk, BmpFromStream, \
+    init_image_resources, get_image, get_installer_color_checks, get_image_dir
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
@@ -1616,8 +1615,7 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
-        calendar_button = PureImageButton(top,
-            balt.images['calendar.16'],
+        calendar_button = PureImageButton(top, get_image('calendar.16'),
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
@@ -1634,11 +1632,11 @@ class ModDetails(_ModsSavesDetails):
         class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
-            balt.images['plus.16'],
+            get_image('plus.16'),
             btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
-            balt.images['minus.16'],
+            get_image('minus.16'),
             btn_tooltip=_('Remove the selected tags from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
@@ -2599,7 +2597,6 @@ class InstallersList(UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
-    _icons = InstallerColorChecks()
     _sunkenBorder = False
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
@@ -2635,6 +2632,10 @@ class InstallersList(UIList):
     #--GUI
     _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
                      20: u'yellow', 30: u'green'}
+
+    @cached_property
+    def icons(self):
+        return ColorChecks(get_installer_color_checks())
 
     #--Item Info
     def set_item_format(self, item, item_format, target_ini_setts):
@@ -4426,8 +4427,8 @@ class BashApp(object):
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
             if bass.inisettings[u'EnableSplashScreen']:
-                if (splash := bass.dirs['images'].join(
-                    'wryesplash.png')).is_file():
+                if (splash := GPath(os.path.join(get_image_dir(),
+                                                 'wryesplash.png'))).is_file():
                     splash_screen = CenteredSplash(splash.s)
             #--Init Data
             progress(0.2, _(u'Initializing Data'))
@@ -4538,80 +4539,7 @@ def InitImages():
             settings[u'bash.colors'][color_key] = color_val
         colors[color_key] = Color(*color_val)
     #--Images
-    imgDirJn = bass.dirs[u'images'].join
-    def _png(fname): return GuiImage.from_path(imgDirJn(fname))
-    def _svg(fname, bm_px_size):
-        """Creates an SVG wrapper.
-
-        :param fname: The SVG's filename, relative to bash/images.
-        :param bm_px_size: The size of the resulting bitmap, in
-            device-independent pixels (DIP)."""
-        return GuiImage.from_path(imgDirJn(fname), iconSize=bm_px_size)
-    # PNGs --------------------------------------------------------------------
-    # Checkboxes
-    images['checkbox.red.on.16'] = _png('checkbox_red_on.png')
-    images['checkbox.red.on.24'] = _png('checkbox_red_on_24.png')
-    images['checkbox.red.on.32'] = _png('checkbox_red_on_32.png')
-    images[u'checkbox.red.off.16'] = _png(u'checkbox_red_off.png')
-    images[u'checkbox.red.off.24'] = _png(u'checkbox_red_off_24.png')
-    images[u'checkbox.red.off.32'] = _png(u'checkbox_red_off_32.png')
-    images[u'checkbox.green.on.16'] = _png(u'checkbox_green_on.png')
-    images[u'checkbox.green.off.16'] = _png(u'checkbox_green_off.png')
-    images[u'checkbox.green.on.24'] = _png(u'checkbox_green_on_24.png')
-    images[u'checkbox.green.off.24'] = _png(u'checkbox_green_off_24.png')
-    images[u'checkbox.green.on.32'] = _png(u'checkbox_green_on_32.png')
-    images[u'checkbox.green.off.32'] = _png(u'checkbox_green_off_32.png')
-    images[u'checkbox.blue.on.16'] = _png(u'checkbox_blue_on.png')
-    images[u'checkbox.blue.on.24'] = _png(u'checkbox_blue_on_24.png')
-    images[u'checkbox.blue.on.32'] = _png(u'checkbox_blue_on_32.png')
-    images[u'checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
-    images[u'checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
-    images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    # SVGs --------------------------------------------------------------------
-    # Up/Down arrows for UIList columns
-    images['arrow.up.16'] = _svg('arrow_up.svg', 16)
-    images['arrow.down.16'] = _svg('arrow_down.svg', 16)
-    # Modification time button
-    images['calendar.16'] = _svg('calendar.svg', 16)
-    # DocumentViewer
-    images['back.16'] = _svg('back.svg', 16)
-    images['forward.16'] = _svg('forward.svg', 16)
-    # Browse and Reset buttons
-    images['folder.16'] = _svg('folder.svg', 16)
-    images['reset.16'] = _svg('reset.svg', 16)
-    # DocumentViewer and Restart
-    images['reload.16'] = _svg('reload.svg', 16)
-    images['reload.24'] = _svg('reload.svg', 24)
-    images['reload.32'] = _svg('reload.svg', 32)
-    # Checkmark/Cross
-    images['checkmark.16'] = _svg('checkmark.svg', 16)
-    images['error_cross.16'] = _svg('error_cross.svg', 16)
-    # Minus/Plus for the Bash Tags popup
-    images['minus.16'] = _svg('minus.svg', 16)
-    images['plus.16'] = _svg('plus.svg', 16)
-    # Warning icon in various GUIs
-    images['warning.32'] = _svg('warning.svg', 32)
-    # Settings button
-    images['settings_button.16'] = _svg('gear.svg', 16)
-    images['settings_button.24'] = _svg('gear.svg', 24)
-    images['settings_button.32'] = _svg('gear.svg', 32)
-    # Help button(s)
-    images['help.16'] = _svg('help.svg', 16)
-    images['help.24'] = _svg('help.svg', 24)
-    images['help.32'] = _svg('help.svg', 32)
-    # Plugin Checker
-    images['plugin_checker.16'] = _svg('checklist.svg', 16)
-    images['plugin_checker.24'] = _svg('checklist.svg', 24)
-    images['plugin_checker.32'] = _svg('checklist.svg', 32)
-    # Doc Browser
-    images['doc_browser.16'] = _svg('book.svg', 16)
-    images['doc_browser.24'] = _svg('book.svg', 24)
-    images['doc_browser.32'] = _svg('book.svg', 32)
-    # Check/Uncheck All buttons
-    images['square_empty.16'] = _svg('square_empty.svg', 16)
-    images['square_check.16'] = _svg('square_checked.svg', 16)
-    # Deletion dialog button
-    images['trash_can.32'] = _svg('trash_can.svg', 32)
+    init_image_resources(bass.dirs['images'].s)
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

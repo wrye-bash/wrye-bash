@@ -27,9 +27,10 @@ import os
 import wx as _wx
 import wx.svg as _svg
 
+from . import get_image
+from ._gui_globals import get_image_dir
 from .base_components import Lazy, scaled
-from .. import bolt
-from ..bolt import deprint
+from ..bolt import deprint, Path
 from ..exception import ArgumentError
 
 class GuiImage(Lazy):
@@ -52,7 +53,7 @@ class GuiImage(Lazy):
                  *args, **kwargs):
         self._img_path = img_path
         if not self.allow_create():
-            raise ArgumentError(f'Missing resource file: {self._img_path}.')
+            raise ArgumentError(f'Missing resource file: {self._img_path}')
         super().__init__(*args, **kwargs)
         self.iconSize = iconSize
         self._img_type = imageType
@@ -65,18 +66,20 @@ class GuiImage(Lazy):
         return self._native_widget.GetWidth(), self._native_widget.GetHeight()
 
     @classmethod
-    def from_path(cls, filename: bolt.Path, imageType=None, iconSize=-1,
+    def from_path(cls, img_path: str| Path, imageType=None, iconSize=-1,
                   quality=None):
         """Static factory - creates an Image component from an image file."""
-        img_path = filename.s # must be a bolt.Path
+        _root, extension = os.path.splitext(img_path := f'{img_path}')
         try:
-            img_type = imageType or cls.img_types[filename.cext]
+            img_type = imageType or cls.img_types[extension.lower()]
         except KeyError:
-            deprint(f'Unknown image extension {filename.cext}')
+            deprint(f'Unknown image extension {extension}')
             img_type = _wx.BITMAP_TYPE_ANY
         if (is_svg := img_type is None) and iconSize == -1:
             raise ArgumentError('You must specify iconSize to '
                                 'rasterize an SVG to a bitmap!')
+        if not os.path.isabs(img_path):
+            img_path = os.path.join(get_image_dir(), img_path)
         if cls is not GuiImage:
             return cls(img_path, iconSize, img_type, quality)
         if img_type == _wx.BITMAP_TYPE_ICO:
@@ -113,7 +116,7 @@ class IcoFromPng(GuiImage):
     _native_widget: _wx.Icon
 
     def __init__(self, gui_image):
-        super(GuiImage, self).__init__() # call Lazy.__init__
+        super(GuiImage, self).__init__() # bypass GuiImage.__init__
         self._gui_image = gui_image
 
     @property
@@ -195,7 +198,7 @@ class BmpFromStream(GuiImage):
     _native_widget: _wx.Bitmap
 
     def __init__(self, bm_width, bm_height, stream_data, with_alpha):
-        super(GuiImage, self).__init__() # call Lazy.__init__
+        super(GuiImage, self).__init__() # bypass GuiImage.__init__
         self._with_alpha = with_alpha
         self._stream_data = stream_data
         self._bm_height = bm_height
@@ -213,14 +216,16 @@ class BmpFromStream(GuiImage):
         self._stream_data = None # save some memory
         return native
 
-    def save_bmp(self, imagePath):
+    def save_bmp(self, imagePath, exten='.jpg'):
         self._native_widget.ConvertToImage()
-        return self._native_widget.SaveFile(imagePath, self.img_types['.jpg'])
+        return self._native_widget.SaveFile(imagePath, self.img_types[exten])
 
 class StaticBmp(GuiImage):
-    """This one has a parent."""
+    """This one has a parent and a default value - we should generalize the
+    latter."""
     _native_widget: _wx.StaticBitmap
 
-    def __init__(self, parent, gui_image):
-        super(GuiImage, self).__init__(bitmap=gui_image)#call Lazy.__init__
+    def __init__(self, parent, gui_image=None):
+        super(GuiImage, self).__init__( # bypass GuiImage.__init__
+            bitmap=self._resolve(gui_image or get_image('warning.32')))
         self._parent = parent

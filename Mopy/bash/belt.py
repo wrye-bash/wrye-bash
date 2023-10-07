@@ -29,13 +29,13 @@ from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .balt import ItemLink, images
+from .balt import ItemLink
 from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback, to_os_path
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
     ListBox, PictureWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
-    WizardDialog, WizardPage
+    WizardDialog, WizardPage, get_image_dir, get_image
 from .ini_files import OBSEIniFile
 from .wbtemp import cleanup_temp_dir
 
@@ -424,7 +424,7 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [images[i] for i in ('error_cross.16', 'checkmark.16')]
+        bmps = [*map(get_image, ('error_cross.16', 'checkmark.16'))]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -1370,7 +1370,7 @@ class WryeParser(ScriptParser.Parser):
             if wiz_img_path and wiz_img_path.is_file():
                 image_paths.append(wiz_img_path)
             elif i.lower().startswith('wizard images'):
-                std_img_path = to_os_path(bass.dirs['images'].join(i).s)
+                std_img_path = to_os_path(os.path.join(get_image_dir(), i))
                 if std_img_path and std_img_path.is_file():
                     image_paths.append(std_img_path)
                 else:

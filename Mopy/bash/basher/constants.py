@@ -22,9 +22,9 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
-from .. import bass, bush
+from .. import bush
 from ..game import MergeabilityCheck
-from ..gui import DEFAULT_POSITION, GuiImage
+from ..gui import DEFAULT_POSITION
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -496,128 +496,90 @@ if bush.game.has_esl or bush.game.has_overlay_plugins:
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 
-# Images ----------------------------------------------------------------------
-#------------------------------------------------------------------------------
-imDirJn = bass.dirs['images'].join
-def _png(fname): return GuiImage.from_path(imDirJn(fname))
-def _svg(fname, bm_px_size):
-    return GuiImage.from_path(imDirJn(fname), iconSize=bm_px_size)
-
-#--Buttons
-def _png_list(template):
-    return [_png(template % x) for x in (16, 24, 32)]
-def _svg_list(svg_fname):
-    return [_svg(svg_fname, p) for p in (16, 24, 32)]
-
+# Specify various launchers in the format (tool_key, tool_tip) - each one has a
+# (3) matching image file(s) in `images/tools` - image filename starts with
+# tool_key.lower() and ends in '.svg' (or '[16|24|32].png')
 # TODO(65): game handling refactoring - some of the buttons are game specific
 toolbar_buttons = (
-    ('ISOBL', _png_list('tools/isobl%s.png'),
-    _(u"Launch InsanitySorrow's Oblivion Launcher")),
-    ('ISRMG', _png_list("tools/insanity'sreadmegenerator%s.png"),
-    _(u"Launch InsanitySorrow's Readme Generator")),
-    ('ISRNG', _png_list("tools/insanity'srng%s.png"),
-    _(u"Launch InsanitySorrow's Random Name Generator")),
-    ('ISRNPCG', _png_list('tools/randomnpc%s.png'),
-    _(u"Launch InsanitySorrow's Random NPC Generator")),
-    ('OBFEL', _png_list('tools/oblivionfaceexchangerlite%s.png'),
-    _('Oblivion Face Exchange Lite')),
-    ('OBMLG', _png_list('tools/modlistgenerator%s.png'),
-    _('Oblivion Mod List Generator')),
-    ('BSACMD', _png_list('tools/bsacommander%s.png'),
-    _('Launch BSA Commander')),
-    ('Tabula', _png_list('tools/tabula%s.png'), _('Launch Tabula')),
-    ('Tes4FilesPath', _png_list('tools/tes4files%s.png'),
-    _('Launch TES4Files')),
+    ('ISOBL', _("Launch InsanitySorrow's Oblivion Launcher")),
+    ('ISRMG', _("Launch InsanitySorrow's Readme Generator")),
+    ('ISRNG', _("Launch InsanitySorrow's Random Name Generator")),
+    ('ISRNPCG', _("Launch InsanitySorrow's Random NPC Generator")),
+    ('OBFEL', _('Oblivion Face Exchange Lite')),
+    ('OBMLG', _('Oblivion Mod List Generator')),
+    ('BSACMD', _('Launch BSA Commander')),
+    ('Tabula',  _('Launch Tabula')),
+    ('Tes4FilesPath', _('Launch TES4Files')),
 )
 
 modeling_tools_buttons = (
-    ('AutoCad', _png_list('tools/autocad%s.png'), _('Launch AutoCad')),
-    ('BlenderPath', _png_list('tools/blender%s.png'), _('Launch Blender')),
-    ('Dogwaffle', _png_list('tools/dogwaffle%s.png'), _('Launch Dogwaffle')),
-    ('GmaxPath', _png_list('tools/gmax%s.png'), _('Launch Gmax')),
-    ('MayaPath', _png_list('tools/maya%s.png'), _('Launch Maya')),
-    ('MaxPath', _png_list('tools/3dsmax%s.png'), _('Launch 3dsMax')),
-    ('Milkshape3D', _png_list('tools/milkshape3d%s.png'),
-     _('Launch Milkshape 3D')),
-    ('Mudbox', _png_list('tools/mudbox%s.png'), _('Launch Mudbox')),
-    ('Sculptris', _png_list('tools/sculptris%s.png'), _('Launch Sculptris')),
-    ('SpeedTree', _png_list('tools/speedtree%s.png'), _('Launch SpeedTree')),
-    ('Treed', _png_list('tools/treed%s.png'), _('Launch Tree\[d\]')),
-    ('Wings3D', _png_list('tools/wings3d%s.png'), _('Launch Wings 3D')),
+    ('AutoCad',  _('Launch AutoCad')),
+    ('BlenderPath',  _('Launch Blender')),
+    ('Dogwaffle',  _('Launch Dogwaffle')),
+    ('GmaxPath',  _('Launch Gmax')),
+    ('MayaPath',  _('Launch Maya')),
+    ('MaxPath',  _('Launch 3dsMax')),
+    ('Milkshape3D', _('Launch Milkshape 3D')),
+    ('Mudbox',  _('Launch Mudbox')),
+    ('Sculptris',  _('Launch Sculptris')),
+    ('SpeedTree',  _('Launch SpeedTree')),
+    ('Treed',  _('Launch Tree\[d\]')),
+    ('Wings3D',  _('Launch Wings 3D')),
 )
 
 texture_tool_buttons = (
-    ('AniFX', _png_list('tools/anifx%s.png'), _('Launch AniFX')),
-    ('ArtOfIllusion', _png_list('tools/artofillusion%s.png'),
-     _('Launch Art Of Illusion')),
-    ('Artweaver', _png_list('tools/artweaver%s.png'), _('Launch Artweaver')),
-    ('CrazyBump', _png_list('tools/crazybump%s.png'), _('Launch CrazyBump')),
-    ('DDSConverter', _png_list('tools/ddsconverter%s.png'),
-     _('Launch DDSConverter')),
-    ('DeepPaint', _png_list('tools/deeppaint%s.png'), _('Launch DeepPaint')),
-    ('FastStone', _png_list('tools/faststoneimageviewer%s.png'),
-     _('Launch FastStone Image Viewer')),
-    ('Genetica', _png_list('tools/genetica%s.png'), _('Launch Genetica')),
-    ('GeneticaViewer', _png_list('tools/geneticaviewer%s.png'),
-     _('Launch Genetica Viewer')),
-    ('GIMP', _png_list('tools/gimp%s.png'), _('Launch GIMP')),
-    ('IcoFX', _png_list('tools/icofx%s.png'), _('Launch IcoFX')),
-    ('Inkscape', _png_list('tools/inkscape%s.png'), _('Launch Inkscape')),
-    ('IrfanView', _png_list('tools/irfanview%s.png'), _('Launch IrfanView')),
-    ('Krita', _png_list('tools/krita%s.png'), _('Launch Krita')),
-    ('MaPZone', _png_list('tools/mapzone%s.png'), _('Launch MaPZone')),
-    ('MyPaint', _png_list('tools/mypaint%s.png'), _('Launch MyPaint')),
-    ('NVIDIAMelody', _png_list('tools/nvidiamelody%s.png'),
-     _('Launch Nvidia Melody')),
-    ('PaintNET', _png_list('tools/paint.net%s.png'), _('Launch Paint.NET')),
-    ('PaintShopPhotoPro', _png_list('tools/paintshopprox3%s.png'),
-     _('Launch PaintShop Photo Pro')),
-    ('PhotoshopPath', _png_list('tools/photoshop%s.png'),
-     _('Launch Photoshop')),
-    ('PhotoScape', _png_list('tools/photoscape%s.png'),
-     _('Launch PhotoScape')),
-    ('PhotoSEAM', _png_list('tools/photoseam%s.png'), _('Launch PhotoSEAM')),
-    ('Photobie', _png_list('tools/photobie%s.png'), _('Launch Photobie')),
-    ('PhotoFiltre', _png_list('tools/photofiltre%s.png'),
-     _('Launch PhotoFiltre')),
-    ('PixelStudio', _png_list('tools/pixelstudiopro%s.png'),
-     _('Launch Pixel Studio Pro')),
-    ('Pixia', _png_list('tools/pixia%s.png'), _('Launch Pixia')),
-    ('TextureMaker', _png_list('tools/texturemaker%s.png'),
-     _('Launch TextureMaker')),
-    ('TwistedBrush', _png_list('tools/twistedbrush%s.png'),
-     _('Launch TwistedBrush')),
-    ('WTV', _png_list('tools/wtv%s.png'), _('Launch Windows Texture Viewer')),
-    ('xNormal', _png_list('tools/xnormal%s.png'), _('Launch xNormal')),
-    ('XnView', _png_list('tools/xnview%s.png'), _('Launch XnView')),
+    ('AniFX',  _('Launch AniFX')),
+    ('ArtOfIllusion', _('Launch Art Of Illusion')),
+    ('Artweaver',  _('Launch Artweaver')),
+    ('CrazyBump',  _('Launch CrazyBump')),
+    ('DDSConverter', _('Launch DDSConverter')),
+    ('DeepPaint',  _('Launch DeepPaint')),
+    ('FastStone', _('Launch FastStone Image Viewer')),
+    ('Genetica',  _('Launch Genetica')),
+    ('GeneticaViewer', _('Launch Genetica Viewer')),
+    ('GIMP',  _('Launch GIMP')),
+    ('IcoFX',  _('Launch IcoFX')),
+    ('Inkscape',  _('Launch Inkscape')),
+    ('IrfanView',  _('Launch IrfanView')),
+    ('Krita',  _('Launch Krita')),
+    ('MaPZone',  _('Launch MaPZone')),
+    ('MyPaint',  _('Launch MyPaint')),
+    ('NVIDIAMelody', _('Launch Nvidia Melody')),
+    ('PaintNET', _('Launch Paint.NET')),
+    ('PaintShopPhotoPro', _('Launch PaintShop Photo Pro')),
+    ('PhotoshopPath', _('Launch Photoshop')),
+    ('PhotoScape', _('Launch PhotoScape')),
+    ('PhotoSEAM',  _('Launch PhotoSEAM')),
+    ('Photobie',  _('Launch Photobie')),
+    ('PhotoFiltre', _('Launch PhotoFiltre')),
+    ('PixelStudio', _('Launch Pixel Studio Pro')),
+    ('Pixia',  _('Launch Pixia')),
+    ('TextureMaker', _('Launch TextureMaker')),
+    ('TwistedBrush', _('Launch TwistedBrush')),
+    ('WTV',  _('Launch Windows Texture Viewer')),
+    ('xNormal',  _('Launch xNormal')),
+    ('XnView',  _('Launch XnView')),
 )
 
 audio_tools = (
-    ('Audacity', _png_list('tools/audacity%s.png'), _('Launch Audacity')),
-    ('ABCAmberAudioConverter', _png_list('tools/abcamberaudioconverter%s.png'),
-    _('Launch ABC Amber Audio Converter')),
-    ('Switch', _png_list('tools/switch%s.png'), _('Launch Switch')),
+    ('Audacity',  _('Launch Audacity')),
+    ('ABCAmberAudioConverter', _('Launch ABC Amber Audio Converter')),
+    ('Switch',  _('Launch Switch')),
 )
 
 misc_tools = (
-    ('Fraps', _png_list('tools/fraps%s.png'), _('Launch Fraps')),
-    ('MAP', _png_list('tools/interactivemapofcyrodiil%s.png'),
-     _('Interactive Map of Cyrodiil and Shivering Isles')),
-    ('LogitechKeyboard', _png_list('tools/logitechkeyboard%s.png'),
-     _('Launch LogitechKeyboard')),
-    ('MediaMonkey', _png_list('tools/mediamonkey%s.png'),
-     _('Launch MediaMonkey')),
-    ('NPP', _png_list('tools/notepad++%s.png'), _('Launch Notepad++')),
-    ('Steam', _svg_list('tools/steam.svg'), _('Launch Steam')),
-    ('EVGAPrecision', _png_list('tools/evgaprecision%s.png'),
-     _('Launch EVGA Precision')),
-    ('WinMerge', _png_list('tools/winmerge%s.png'), _('Launch WinMerge')),
-    ('FreeMind', _png_list('tools/freemind%s.png'), _('Launch FreeMind')),
-    ('Freeplane', _png_list('tools/freeplane%s.png'), _('Launch Freeplane')),
-    ('FileZilla', _png_list('tools/filezilla%s.png'), _('Launch FileZilla')),
-    ('EggTranslator', _png_list('tools/eggtranslator%s.png'),
-     _('Launch Egg Translator')),
-    ('RADVideo', _png_list('tools/radvideotools%s.png'),
-     _('Launch RAD Video Tools')),
-    ('WinSnap', _png_list('tools/winsnap%s.png'), _('Launch WinSnap')),
+    ('Fraps',  _('Launch Fraps')),
+    ('MAP', _('Interactive Map of Cyrodiil and Shivering Isles')),
+    ('LogitechKeyboard', _('Launch LogitechKeyboard')),
+    ('MediaMonkey', _('Launch MediaMonkey')),
+    ('NPP',  _('Launch Notepad++')),
+    ('Steam', _('Launch Steam')),
+    ('EVGAPrecision', _('Launch EVGA Precision')),
+    ('WinMerge',  _('Launch WinMerge')),
+    ('FreeMind',  _('Launch FreeMind')),
+    ('Freeplane',  _('Launch Freeplane')),
+    ('FileZilla',  _('Launch FileZilla')),
+    ('EggTranslator', _('Launch Egg Translator')),
+    ('RADVideo', _('Launch RAD Video Tools')),
+    ('WinSnap',  _('Launch WinSnap')),
 )

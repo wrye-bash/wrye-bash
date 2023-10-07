@@ -32,7 +32,7 @@ from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
 from ..env import get_game_version_fallback, getJava
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
-    Lazy, Links, WithDragEvents, showError
+    Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
 from ..gui.base_components import _AComponent
 
@@ -101,8 +101,8 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
             _AComponent.tooltip.fset(self, new_tooltip)
 
     def _btn_bmp(self):
-        return balt.images[self.imageKey % bass.settings[
-            'bash.statusbar.iconSize']]
+        return get_image(self.imageKey % bass.settings[
+            'bash.statusbar.iconSize'])
 
     def DoPopupMenu(self):
         if self.mainMenu:
@@ -321,11 +321,11 @@ def _parse_button_arguments(exePathArgs):
 
 def app_button_factory(exePathArgs, *args, **kwargs):
     exePath, exeArgs = _parse_button_arguments(exePathArgs)
-    if exePath and exePath.cext == u'.exe': # note: sometimes exePath is None
+    if exePath and exePath.cext == '.exe': # note: sometimes exePath is None
         return _ExeButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and exePath.cext == u'.jar':
+    if exePath and exePath.cext == '.jar':
         return _JavaButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and( exePath.cext == u'.lnk' or exePath.is_dir()):
+    if exePath and (exePath.cext == '.lnk' or exePath.is_dir()):
         return _LnkOrDirButton(exePath, exeArgs, *args, **kwargs)
     return _App_Button(exePath, exeArgs, *args, **kwargs)
 
