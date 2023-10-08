@@ -1573,9 +1573,7 @@ class MelPackProcedureTree(MelGroups):
                 (self._SubBranchFlags, 'sub_branch_flags')),
             MelString(b'PNAM', 'procedure_type'),
             MelUInt32(b'FNAM', 'success_completes_package'), # actually a bool
-            MelGroups('data_input_indices',
-                MelUInt8(b'PKC2', 'input_index'),
-            ),
+            MelSimpleGroups('data_input_indices', MelUInt8(b'PKC2')),
             MelGroups('flag_overrides',
                 MelStruct(b'PFO2', ['2I', '2H', 'B', '3s'],
                     (PackGeneralFlags, 'set_general_flags'),

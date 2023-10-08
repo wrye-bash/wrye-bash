@@ -3077,9 +3077,7 @@ class MreSndr(MelRecord):
             # AutoWeapon
             0xED157AE3: MelFid(b'BNAM', 'base_descriptor'),
         }, decider=AttrValDecider('descriptor_type'), fallback=MelSndrBnam()),
-        MelGroups('sndr_descriptors',
-            MelFid(b'DNAM', 'sndr_descriptor'), ##: MelSimpleGroups!
-        ),
+        MelSimpleGroups('sndr_descriptors', MelFid(b'DNAM')),
         MelCounter(MelUInt32(b'ITMC', 'rates_of_fire_count'),
             counts='rates_of_fire'),
         MelSorted(MelGroups('rates_of_fire',
