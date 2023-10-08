@@ -256,7 +256,7 @@ class GameInfo(object):
         exe = u'*DNE*'
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
-        se_args = None
+        se_args = ()
         # Image name template for the status bar, relative to images/tools
         image_name = u''
 

@@ -2201,14 +2201,11 @@ class BashStatusBar(DnDStatusBar):
         for link_uid, link in self.all_sb_links.items():
             # Hidden?
             if link_uid in hide: continue
-            # Add it, if allow_create allows us
-            try:
-                if link.create_widget(self, on_drag_start=self._on_drag_start,
-                          on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                          on_drag_end_forced=self._on_drag_end_forced):
-                    self.buttons[link.uid] = link
-            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {link_uid!r}', traceback=True)
+            # Add it, if allow_create allows it
+            if link.create_widget(self, on_drag_start=self._on_drag_start,
+                    on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                    on_drag_end_forced=self._on_drag_end_forced):
+                self.buttons[link.uid] = link
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 

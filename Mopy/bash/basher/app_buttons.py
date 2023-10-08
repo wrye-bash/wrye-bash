@@ -30,7 +30,9 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
-from ..env import get_game_version_fallback, getJava, get_file_version
+from ..bolt import GPath
+from ..env import get_game_version_fallback, getJava, get_file_version, \
+    AppLauncher, get_registry_path
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
@@ -39,7 +41,7 @@ from ..gui.base_components import _AComponent
 __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
            'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
-           'App_Restart', 'app_button_factory']
+           'App_Restart', 'App_Button', "LnkOrDirButton"]
 
 #------------------------------------------------------------------------------
 # StatusBar Buttons -----------------------------------------------------------
@@ -60,7 +62,8 @@ class _StatusBar_Hide(ItemLink):
     def Execute(self): Link.Frame.statusBar.HideButton(self.window.uid)
 
 def _strip_version(exe_path=None, ver_tuple=()):
-    """File_version with leading and trailing zeros stripped."""
+    """File version with leading and trailing zeros stripped - if
+    bash.statusbar.showversion is True."""
     if not bass.settings['bash.statusbar.showversion']: return ''
     try:
         version = list(ver_tuple or get_file_version(exe_path.s))
@@ -76,15 +79,16 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
     """Launch an application."""
     _tip = u''
 
-    def __init__(self, uid=None, canHide=True, button_tip=u''):
+    def __init__(self, uid: str, canHide=True, button_tip=''):
         """uid: Unique identifier, used for saving the order of status bar
                 icons and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
         super().__init__()
         self.canHide = canHide
         self.mainMenu = self._init_menu(Links())
-        self._tip = button_tip or self.__class__._tip # must be set see below
-        self.uid = (self.__class__.__name__, self._tip) if uid is None else uid
+        # the _tip must be set and be as unique as uid - see SettingsDialog
+        self._tip = button_tip or self.__class__._tip or uid
+        self.uid = uid
 
     @property
     def sb_button_tip(self): return self._tip
@@ -147,46 +151,34 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _App_Button(StatusBar_Button):
+class App_Button(AppLauncher, StatusBar_Button):
     """Launch an application."""
+    _obseTip = None
 
-    @property
-    def _app_version(self):
-        return _strip_version(self.exePath)
-
-    @property
-    def sb_button_tip(self):
-        if self._obseTip and BashStatusBar.obseButton.button_state:
-            return self.obseTip
-        if not bass.settings[u'bash.statusbar.showversion']: return self._tip
-        else:
-            return f'{self._tip} {self._app_version}'
-
-    @property
-    def obseTip(self):
-        if self._obseTip is None: return None
-        return self._obseTip % {'app_version': self._app_version}
-
-    def __init__(self, exePath, exeArgs, images, tip, obse_tip=None, uid=None,
-                 canHide=True):
+    def __init__(self, exePath, images, tip, uid, exeArgs=(), canHide=True,
+                 display_launcher=True):
         """images: [16x16,24x24,32x32] images"""
-        super(_App_Button, self).__init__(uid, canHide, tip)
-        self.exeArgs = exeArgs
-        self.exePath = exePath
+        super().__init__(exePath, exeArgs, display_launcher, uid, canHide, tip)
         self.images = images
-        #--**SE stuff
-        self._obseTip = obse_tip
         # used by _App_Button.sb_click: be sure to set them _before_ calling it
         self.extraArgs = ()
         self.wait = False
-
-    def allow_create(self):
-        return self.exePath != bolt.undefinedPath and self.exePath.exists()
 
     def _btn_bmp(self):
         iconSize = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2
         return self.images[idex]
+
+    @property
+    def sb_button_tip(self):
+        if (obse_tip := self._obseTip) and BashStatusBar.obseButton.button_state:
+            return obse_tip
+        return f'{self._tip} {app_ver}' if (
+            app_ver := self._app_version) else self._tip
+
+    @property
+    def _app_version(self):
+        return _strip_version(self.exePath)
 
     def ShowError(self, error=None, *, msg=None):
         if error is not None:
@@ -234,26 +226,37 @@ class _App_Button(StatusBar_Button):
                 finally:
                     cwd.setcwd()
 
-class _ExeButton(_App_Button):
+    @classmethod
+    def app_button_factory(cls, app_key, app_launcher, path_kwargs, bash_ini,
+                           *args, **kwargs):
+        exe_path, is_present = cls.find_launcher(app_launcher, app_key,
+                                                 bash_ini, **path_kwargs)
+        if cls is not App_Button:
+            return cls(exe_path, *args, **kwargs)
+        if exe_path.cext == '.exe':
+            return _ExeButton(exe_path, *args, **kwargs)
+        if exe_path.cext == '.jar':
+            return _JavaButton(exe_path, *args, **kwargs)
+        if exe_path.cext == '.lnk' or exe_path.is_dir():
+            return LnkOrDirButton(exe_path, *args, **kwargs)
+        return cls(exe_path, *args, **kwargs)
+
+class _ExeButton(App_Button):
 
     def sb_click(self):
-        self._run_exe(self.exePath, [self.exePath.s])
-
-    def _run_exe(self, exe_path, exe_args):
-        exe_args.extend(self.exeArgs)
-        if self.extraArgs: exe_args.extend(self.extraArgs)
+        exe_args = [self.exePath.s, *self.exeArgs, *self.extraArgs]
         Link.Frame.set_status_info(u' '.join(exe_args[1:]))
         cwd = bolt.Path.getcwd()
-        exe_path.head.setcwd()
+        self.exePath.head.setcwd()
         try:
             popen = subprocess.Popen(exe_args, close_fds=True)
             if self.wait:
                 with balt.Progress(_('Waiting for %(other_process)s...') % {
-                    'other_process': exe_path.stail}) as progress:
+                        'other_process': self.exePath.stail}) as progress:
                     progress(0, bolt.text_wrap(
                         _('Wrye Bash will be paused until you have completed '
                           'your work in %(other_process)s and closed '
-                          'it.') % {'other_process': exe_path.stail}, 50))
+                          'it.') % {'other_process': self.exePath.stail}, 50))
                     progress.setFull(1)
                     popen.wait()
         except UnicodeError:
@@ -263,8 +266,8 @@ class _ExeButton(_App_Button):
                 self.ShowError(werr)
             try:
                 import win32api
-                win32api.ShellExecute(0, 'runas', exe_path.s,
-                    shlex.join(exe_args[1:]), exe_path.head.s, 1)
+                win32api.ShellExecute(0, 'runas', self.exePath.s,
+                    shlex.join(exe_args[1:]), self.exePath.head.s, 1)
             except:
                 self.ShowError(werr)
         except Exception as error:
@@ -272,12 +275,12 @@ class _ExeButton(_App_Button):
         finally:
             cwd.setcwd()
 
-class _JavaButton(_App_Button):
+class _JavaButton(App_Button):
     """_App_Button pointing to a .jar file."""
     _java = getJava()
 
     @property
-    def _app_version(self): return u''
+    def _app_version(self): return ''
 
     def allow_create(self):
         return self._java.exists() and super().allow_create()
@@ -296,44 +299,9 @@ class _JavaButton(_App_Button):
         finally:
             cwd.setcwd()
 
-class _LnkOrDirButton(_App_Button):
+class LnkOrDirButton(App_Button):
 
     def sb_click(self): webbrowser.open(self.exePath.s)
-
-def _parse_button_arguments(exePathArgs):
-    """Expected formats:
-        exePathArgs (string): exePath
-        exePathArgs (tuple): (exePath,*exeArgs)
-        exePathArgs (list):  [exePathArgs,altExePathArgs,...]"""
-    if isinstance(exePathArgs, list):
-        use = exePathArgs[0]
-        for item in exePathArgs:
-            if isinstance(item, tuple):
-                exe_Path = item[0]
-            else:
-                exe_Path = item
-            if exe_Path.exists():
-                # Use this one
-                use = item
-                break
-        exePathArgs = use
-    if isinstance(exePathArgs, tuple):
-        exe_Path = exePathArgs[0]
-        exeArgs = exePathArgs[1:]
-    else:
-        exe_Path = exePathArgs
-        exeArgs = tuple()
-    return exe_Path, exeArgs
-
-def app_button_factory(exePathArgs, *args, **kwargs):
-    exePath, exeArgs = _parse_button_arguments(exePathArgs)
-    if exePath and exePath.cext == '.exe': # note: sometimes exePath is None
-        return _ExeButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and exePath.cext == '.jar':
-        return _JavaButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and (exePath.cext == '.lnk' or exePath.is_dir()):
-        return _LnkOrDirButton(exePath, exeArgs, *args, **kwargs)
-    return _App_Button(exePath, exeArgs, *args, **kwargs)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
@@ -360,7 +328,7 @@ class _AMods_xEditLaunch(ItemLink):
         self._xedit_link = parent_link
 
     def Execute(self):
-        self._xedit_link.launch_with_args(custom_args=(self._custom_arg,))
+        self._xedit_link.sb_click(custom_args=(self._custom_arg,))
 
 class _Mods_xEditQAC(_AMods_xEditLaunch):
     """Launch xEdit in QAC mode."""
@@ -378,9 +346,6 @@ class _Mods_xEditVQSC(_AMods_xEditLaunch):
 
 class App_xEdit(_ExeButton):
     """Launch xEdit, potentially with some extra args."""
-    def __init__(self, *args, **kwdargs):
-        exePath, exeArgs = _parse_button_arguments(args[0])
-        super().__init__(exePath, exeArgs, *args[1:], **kwdargs)
 
     def _init_menu(self, bt_links):
         if bush.game.Xe.xe_key_prefix:
@@ -391,35 +356,21 @@ class App_xEdit(_ExeButton):
             bt_links.append_link(_Mods_xEditVQSC(self))
         return super()._init_menu(bt_links)
 
-    def allow_create(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
-        if not super().allow_create():
-            testPath = bass.tooldirs[u'Tes4ViewPath']
-            if testPath != bolt.undefinedPath and testPath.exists():
-                self.exePath = testPath
-                return True
-            return False
-        return True
-
-    def sb_click(self):
-        self.launch_with_args(custom_args=())
-
-    def launch_with_args(self, custom_args: tuple[str, ...]):
+    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         """Computes arguments based on checked links and INI settings, then
         appends the specified custom arguments only for this launch."""
         xe_prefix = bush.game.Xe.xe_key_prefix
         is_expert = xe_prefix and bass.settings[
             f'{xe_prefix}.iKnowWhatImDoing']
         skip_bsas = xe_prefix and bass.settings[f'{xe_prefix}.skip_bsas']
-        extraArgs = bass.inisettings[
+        extra_args = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
         if is_expert:
-            extraArgs.append('-IKnowWhatImDoing')
+            extra_args.append('-IKnowWhatImDoing')
         if skip_bsas:
-            extraArgs.append('-skipbsa')
-        self.extraArgs = old_args = tuple(extraArgs)
-        self.extraArgs += custom_args
+            extra_args.append('-skipbsa')
+        self.extraArgs = (*extra_args, *custom_args)
         super().sb_click()
-        self.extraArgs = old_args
 
 #------------------------------------------------------------------------------
 class _Mods_SuspendLockLO(BoolLink):
@@ -431,8 +382,20 @@ class _Mods_SuspendLockLO(BoolLink):
 
 class _AApp_LOManager(_ExeButton):
     """Base class for load order managers like BOSS and LOOT."""
-    def __init__(self, lom_path, *args, **kwargs):
-        super().__init__(lom_path, (), *args, **kwargs)
+    _registry_keys = () # find the path for those in the registry
+
+    @classmethod
+    def find_launcher(cls, app_exe, *args, **kwargs):
+        # Check game folder for a copy first
+        launcher, is_present = super().find_launcher(app_exe, root_dirs='app',
+                                                     *args, **kwargs)
+        if not is_present:
+            # Detect globally installed program (into Program Files)
+            path_in_registry = get_registry_path(*cls._registry_keys,
+                lambda p: p.join(app_exe).is_file())
+            if path_in_registry:
+                return path_in_registry.join(app_exe), True
+        return launcher, is_present
 
     def _init_menu(self, bt_links):
         bt_links.append_link(_Mods_SuspendLockLO())
@@ -465,6 +428,8 @@ class _Mods_BOSSLaunchGUI(BoolLink):
 
 class App_BOSS(_AApp_LOManager):
     """Runs BOSS if it's present."""
+    _registry_keys = ('Boss', 'Installed Path')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.boss_path = self.exePath
@@ -504,6 +469,7 @@ class _Mods_LOOTAutoSort(BoolLink):
 
 class App_LOOT(_AApp_LOManager):
     """Runs LOOT if it's present."""
+    _registry_keys = ('LOOT', 'Installed Path')
 
     def _init_menu(self, bt_links):
         bt_links.append_link(_Mods_LOOTAutoSort())
@@ -516,29 +482,25 @@ class App_LOOT(_AApp_LOManager):
         self.extraArgs = tuple(curr_args)
         super().sb_click()
 
+    @classmethod
+    def find_launcher(cls, *args, **kwargs):
+        if bolt.os_name == 'nt':
+            return super().find_launcher(*args, **kwargs)
+        return (p := GPath('/opt/loot/LOOT')), p.exists()
+
 #------------------------------------------------------------------------------
 class Game_Button(_ExeButton):
     """Will close app on execute if autoquit is on."""
-    def __init__(self, exe_path_args, version_path, images, tip, obse_tip):
-        exePath, exeArgs = _parse_button_arguments(exe_path_args)
-        super(Game_Button, self).__init__(exePath, exeArgs, images=images,
-            tip=tip, obse_tip=obse_tip, uid=u'Oblivion')
-        self._version_path = version_path
+    _obseTip = _('Launch %(game_name)s %(app_version)s')
 
-    @property
-    def sb_button_tip(self):
-        if BashStatusBar.obseButton.button_state:
-            return self.obseTip
-        return f'{self._tip} {self._app_version}' if self._app_version else self._tip
-
-    @property
-    def obseTip(self):
-        # Oblivion (version)
-        tip_ = self._obseTip % {'game_name': bush.game.display_name,
-                                'app_version': self._app_version}
-        # + OBSE
-        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
-        return tip_
+    def __init__(self, images):
+        super().__init__(bass.dirs['app'].join(bush.game.launch_exe), images,
+            _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
+            'Oblivion') # the uid
+        self._obseTip = self._obseTip % {
+            'game_name': bush.game.display_name,
+            'app_version': self._app_version
+        } + f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
 
     def sb_click(self):
         if bush.ws_info.installed:
@@ -557,16 +519,21 @@ class Game_Button(_ExeButton):
                         or u'steam' not in bass.dirs[u'app'].cs):
                     # Should use the xSE launcher if it's present
                     exe_path = (exe_xse if exe_xse.is_file() else exe_path)
-            self._run_exe(exe_path, [exe_path.s])
+            old, self.exePath = self.exePath, exe_path
+            try:
+                super().sb_click()
+            finally:
+                self.exePath = old
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.exit_wb()
 
     @property
     def _app_version(self):
-        if gversion := _strip_version(self._version_path):
+        ver_path = bass.dirs['app'].join(bush.game.version_detect_file)
+        if gversion := _strip_version(ver_path):
             return gversion
         return _strip_version(ver_tuple=get_game_version_fallback(
-            self._version_path, bush.ws_info))
+            ver_path, bush.ws_info))
 
     def allow_create(self):
         # Always possible to run, even if the EXE is missing/inaccessible
@@ -575,40 +542,37 @@ class Game_Button(_ExeButton):
 #------------------------------------------------------------------------------
 class TESCS_Button(_ExeButton):
     """CS/CK button. Needs a special tooltip when OBSE is enabled."""
-    def __init__(self, ck_path, ck_images, ck_tip, ck_xse_tip, ck_xse_arg,
-                 ck_uid=u'TESCS'):
-        super(TESCS_Button, self).__init__(
-            exePath=ck_path, exeArgs=(), images=ck_images, tip=ck_tip,
-            obse_tip=ck_xse_tip, uid=ck_uid)
-        self.xse_args = (ck_xse_arg,) if ck_xse_arg else ()
 
-    @property
-    def obseTip(self):
-        # CS/CK (version)
-        tip_ = self._obseTip % {'ck_name': bush.game.Ck.long_name,
-                                'app_version': self._app_version}
-        if not self.xse_args: return tip_
-        # + OBSE
-        tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
-        # + CSE
-        cse_path = bass.dirs['mods'].join('obse', 'plugins',
-            'Construction Set Extender.dll')
-        cse_version = f' {cse_ver}' if (
-            cse_ver := _strip_version(cse_path)) else ''
-        tip_ += f' + CSE{cse_version}'
-        return tip_
+    def __init__(self, ck_images):
+        ck_path = bass.dirs['app'].join(bush.game.Ck.exe)
+        ck_tip = _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name}
+        super().__init__(ck_path, ck_images, ck_tip, 'TESCS',
+                         exeArgs=bush.game.Ck.se_args,
+                         display_launcher=bool(bush.game.Ck.ck_abbrev))
+        self._obseTip = _('Launch %(ck_name)s %(app_version)s') % {
+            'ck_name': bush.game.Ck.long_name, 'app_version': self._app_version
+        }
+        if self.exeArgs: # + OBSE
+            self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
+            # + CSE
+            cse_path = bass.dirs['mods'].join('obse', 'plugins',
+                'Construction Set Extender.dll')
+            cse_version = f' {cse_ver}' if (
+                cse_ver := _strip_version(cse_path)) else ''
+            self._obseTip += f' + CSE{cse_version}'
 
     def sb_click(self):
-        exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
-        if (self.xse_args and BashStatusBar.obseButton.button_state
-                and exe_xse.is_file()):
+        old = self.exePath
+        if (self.exeArgs and BashStatusBar.obseButton.button_state and (
+                exe_xse := bass.dirs['app'].join(bush.game.Se.exe)).is_file()):
             # If the script extender for this game has CK support, the xSE
             # loader is present and xSE is enabled, use that executable and
             # pass the editor argument to it
-            self._run_exe(exe_xse, [exe_xse.s] + list(self.xse_args))
-        else:
-            # Fall back to the standard CK executable, with no arguments
+            self.exePath = exe_xse
+        try:
             super().sb_click()
+        finally:
+            self.exePath = old
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBar_Button):
@@ -703,6 +667,8 @@ class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u'Restart')
     imageKey = 'reload.%s'
+
+    def allow_create(self): return bass.inisettings['ShowDevTools']
 
     def sb_click(self): Link.Frame.Restart()
 
