@@ -73,7 +73,9 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySounds, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
-    MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam
+    MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
+    MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
+    MelSndrLnam, MelSndrBnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -3054,6 +3056,38 @@ class MreSnct(MelRecord):
         MelSnctVnamUnam(),
         MelFloat(b'MNAM', 'min_frequency_multiplier'),
         MelFloat(b'CNAM', 'sidechain_target_multiplier'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSndr(MelRecord):
+    """Sound Descriptor."""
+    rec_sig = b'SNDR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'NNAM', 'descriptor_notes'),
+        MelSndrType(),
+        MelSndrCategory(),
+        MelSound(),
+        MelSndrSounds(),
+        MelSndrOutputModel(),
+        MelConditionList(),
+        MelSndrLnam(),
+        MelUnion({
+            # AutoWeapon
+            0xED157AE3: MelFid(b'BNAM', 'base_descriptor'),
+        }, decider=AttrValDecider('descriptor_type'), fallback=MelSndrBnam()),
+        MelGroups('sndr_descriptors',
+            MelFid(b'DNAM', 'sndr_descriptor'), ##: MelSimpleGroups!
+        ),
+        MelCounter(MelUInt32(b'ITMC', 'rates_of_fire_count'),
+            counts='rates_of_fire'),
+        MelSorted(MelGroups('rates_of_fire',
+            MelBase(b'ITMS', 'rof_marker_start'),
+            MelUInt32(b'INTV', 'rof_rpm'),
+            MelString(b'FNAM', 'rof_file'),
+            MelBase(b'ITME', 'rof_marker_end'), # marker, but not(?) required
+        ), sort_by_attrs='rof_rpm'),
     )
 
 #------------------------------------------------------------------------------

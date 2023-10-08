@@ -80,7 +80,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelRegnEntryWeatherTypes, MelRegnEntryGrasses, MelRevbData, MelParent, \
     MelSmbnShared, MelSmenShared, MelSmqnShared, MelSnctFlags, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
-    MelOcclusionPlane
+    MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
+    MelSndrOutputModel, MelSndrLnam, MelSndrBnam
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3288,20 +3289,15 @@ class MreSndr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelBase(b'CNAM', 'descriptor_type'),
-        MelFid(b'GNAM', 'descriptor_category'),
+        MelSndrType(),
+        MelSndrCategory(),
         MelSound(),
-        MelGroups('sound_files',
-            MelString(b'ANAM', 'sound_file_name',),
-        ),
-        MelFid(b'ONAM', 'output_model'),
+        MelSndrSounds(),
+        MelSndrOutputModel(),
         MelLString(b'FNAM', 'descriptor_string'),
         MelConditionList(),
-        MelStruct(b'LNAM', ['s', 'B', 's', 'B'], 'unknown1', 'looping_type',
-            'unknown2', 'rumble_send_value'),
-        MelStruct(b'BNAM', ['2b', '2B', 'H'], 'pct_frequency_shift',
-            'pct_frequency_variance', 'descriptor_priority', 'db_variance',
-            'staticAtten'),
+        MelSndrLnam(),
+        MelSndrBnam(),
     )
 
 #------------------------------------------------------------------------------

@@ -2124,6 +2124,49 @@ class MelSnctVnamUnam(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelSndrBnam(MelStruct):
+    """Handles the SNDR subrecord BNAM (Values)."""
+    def __init__(self):
+        super().__init__(b'BNAM', ['2b', '2B', 'H'], 'pct_frequency_shift',
+            'pct_frequency_variance', 'descriptor_priority', 'db_variance',
+            'staticAtten')
+
+#------------------------------------------------------------------------------
+class MelSndrCategory(MelFid):
+    """Handles the SNDR subrecord GNAM (Category)."""
+    def __init__(self):
+        super().__init__(b'GNAM', 'descriptor_category')
+
+#------------------------------------------------------------------------------
+class MelSndrLnam(MelStruct):
+    """Handles the SNDR subrecord LNAM (Values)."""
+    def __init__(self):
+        # 'sidechain' is marked unknown in Skyrim - no matter, both are 1 byte
+        # and having it as an int can't hurt
+        super().__init__(b'LNAM', ['s', '3B'], 'unknown1', 'looping_type',
+            'sidechain', 'rumble_send_value')
+
+#------------------------------------------------------------------------------
+class MelSndrOutputModel(MelFid):
+    """Handles the SNDR subrecord ONAM (Output Model)."""
+    def __init__(self):
+        super().__init__(b'ONAM', 'output_model')
+
+#------------------------------------------------------------------------------
+class MelSndrSounds(MelGroups):
+    """Handles the SNDR subrecord ANAM (Sounds)."""
+    def __init__(self):
+        super().__init__('sound_files',
+            MelString(b'ANAM', 'sound_file_name'),
+        )
+
+#------------------------------------------------------------------------------
+class MelSndrType(MelUInt32):
+    """Handles the SNDR subrecord CNAM (Descriptor Type)."""
+    def __init__(self):
+        super().__init__(b'CNAM', 'descriptor_type')
+
+#------------------------------------------------------------------------------
 class MelSound(MelFid):
     """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):
