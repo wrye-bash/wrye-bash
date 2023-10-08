@@ -26,7 +26,7 @@ import functools
 import os
 import subprocess
 import sys
-from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
+from collections import deque
 
 from .common import _find_legendary_games, _LegacyWinAppInfo, \
     _parse_steam_manifests
@@ -335,14 +335,19 @@ def convert_separators(p):
 
 ##: A more performant implementation would maybe cache folder contents or
 # something similar, as it stands this is not usable for fixing BAIN on Linux
-def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     if os.path.exists(ci_path):
         # Fast path, but GPath it as we haven't normpathed it yet
         return _GPath(ci_path)
-    # The first part is root, which we can obviously skip (has no other case)
-    ci_parts = PPath(os.path.normpath(os.fspath(ci_path))).parts[1:]
-    constructed_path = '/'
-    for ci_part in ci_parts:
+    # Find the longest prefix that exists in the filesystem - *some* prefix
+    # must exist, even if it's only root
+    path_prefix, ci_rem_part = os.path.split(os.path.normpath(ci_path))
+    ci_remaining_parts = deque([ci_rem_part])
+    while not os.path.exists(path_prefix):
+        path_prefix, ci_rem_part = os.path.split(path_prefix)
+        ci_remaining_parts.appendleft(ci_rem_part)
+    constructed_path = path_prefix
+    for ci_part in ci_remaining_parts:
         new_ci_path = os.path.join(constructed_path, ci_part)
         if os.path.exists(new_ci_path):
             # If this part exists with the correct case, keep going

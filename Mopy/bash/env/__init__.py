@@ -55,9 +55,9 @@ def _resolve(parent: _TShellWindow):
 # Higher level APIs using imported OS-specific ones ---------------------------
 def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
     """Convenience method for converting a path of unknown origin to a path
-    compatible with this OS/FS. See normalize_ci_path and convert_separators
+    compatible with this OS/FS. See canonize_ci_path and convert_separators
     for more information."""
-    return normalize_ci_path(convert_separators(os.fspath(questionable_path)))
+    return canonize_ci_path(convert_separators(os.fspath(questionable_path)))
 
 def shellDelete(files: Iterable[Path], parent: _TShellWindow = None, *,
                 ask_confirm: _ConfirmationPrompt=None, recycle=False,

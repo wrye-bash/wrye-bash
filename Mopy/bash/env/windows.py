@@ -1239,7 +1239,7 @@ def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')
 
-def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     """Alter the case of a case-insensitive path to match directories and files
     actually present in the filesystem, if any. This is basically identical to
     what Wine does when emulating case insensitivity. If this returns None, the
