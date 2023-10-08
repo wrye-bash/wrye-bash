@@ -27,10 +27,11 @@ from itertools import chain
 from .advanced_elements import AttrValDecider, FidNotNullDecider, \
     FlagDecider, MelArray, MelCounter, MelPartialCounter, MelSimpleArray, \
     MelSorted, MelTruncatedStruct, MelUnion, PartialLoadDecider, MelExtra
-from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroup, \
+from .basic_elements import MelBase, MelFid, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
-    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16
+    MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16, \
+    MelSimpleGroups
 from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
     PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs, \
@@ -145,7 +146,7 @@ class MelAddnDnam(MelStruct):
             'addon_flags') # not really flags, behaves more like an enum
 
 #------------------------------------------------------------------------------
-class MelAIPackages(MelFids):
+class MelAIPackages(MelSimpleGroups):
     """Handles the CREA/NPC_ subrecord PKID (Packages)."""
     def __init__(self):
         super().__init__('ai_packages', MelFid(b'PKID'))
@@ -192,7 +193,7 @@ class MelArmaShared(MelSequential):
             MelFid(b'NAM1', 'skin1'),
             MelFid(b'NAM2', 'skin2'),
             MelFid(b'NAM3', 'skin3'),
-            MelSorted(MelFids('additional_races', MelFid(b'MODL'))),
+            MelSorted(MelSimpleGroups('additional_races', MelFid(b'MODL'))),
             MelFid(b'SNDD', 'footstep_sound'),
             MelFid(b'ONAM', 'art_object'),
         )
@@ -363,7 +364,7 @@ class MelCpthShared(MelSequential):
         super().__init__(
             MelSimpleArray('related_camera_paths', MelFid(b'ANAM')),
             MelUInt8(b'DATA', 'camera_zoom'),
-            MelFids('camera_shots', MelFid(b'SNAM')),
+            MelSimpleGroups('camera_shots', MelFid(b'SNAM')),
         )
 
 #------------------------------------------------------------------------------
@@ -559,7 +560,7 @@ class MelFilterString(MelString):
         super().__init__(b'FLTR', 'filter_string')
 
 #------------------------------------------------------------------------------
-class MelFlstFids(MelFids):
+class MelFlstFids(MelSimpleGroups):
     """Handles the FLST subrecord LNAM (FormIDs)."""
     def __init__(self):
         super().__init__('formIDInList', MelFid(b'LNAM')) # Do *not* sort!
@@ -643,7 +644,7 @@ class MelHdptShared(MelSequential):
         super().__init__(
             MelUInt8Flags(b'DATA', 'flags', self._hdpt_flags),
             MelUInt32(b'PNAM', 'hdpt_type'),
-            MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
+            MelSorted(MelSimpleGroups('extra_parts', MelFid(b'HNAM'))),
             MelGroups('head_parts',
                 MelUInt32(b'NAM0', 'head_part_type'),
                 MelString(b'NAM1', 'head_part_filename'),
@@ -1131,7 +1132,7 @@ class MelLscrRotation(MelStruct):
 class MelLtexGrasses(MelSorted):
     """Handles the LTEX subrecord GNAM (Grasses)."""
     def __init__(self):
-        super().__init__(MelFids('ltex_grasses', MelFid(b'GNAM')))
+        super().__init__(MelSimpleGroups('ltex_grasses', MelFid(b'GNAM')))
 
 #------------------------------------------------------------------------------
 class MelLtexSnam(MelUInt8):
@@ -1415,7 +1416,7 @@ class MelNpcHairColor(MelFid):
 class MelNpcHeadParts(MelSorted):
     """Handles the NPC_ subrecord PNAM (Head Parts)."""
     def __init__(self):
-        super().__init__(MelFids('head_parts', MelFid(b'PNAM')))
+        super().__init__(MelSimpleGroups('head_parts', MelFid(b'PNAM')))
 
 #------------------------------------------------------------------------------
 class MelNpcShared(MelSequential):
@@ -1765,7 +1766,7 @@ class MelRaceVoices(MelStruct):
 class MelRandomTeleports(MelSorted):
     """Handles the DOOR subrecord TNAM (Random Teleport Destinations)."""
     def __init__(self):
-        super().__init__(MelFids('random_teleports', MelFid(b'TNAM')))
+        super().__init__(MelSimpleGroups('random_teleports', MelFid(b'TNAM')))
 
 #------------------------------------------------------------------------------
 class MelRef3D(MelStruct):
@@ -2217,7 +2218,7 @@ class MelSpellCounter(MelCounter):
 class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
-        super().__init__(MelFids('spells', MelFid(b'SPLO')))
+        super().__init__(MelSimpleGroups('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
 class MelTemplate(MelFid):

@@ -387,9 +387,9 @@ class MelArray(MelBase):
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
                                    *debug_strs)
             size_ -= self._prelude_size
-        self._load_array(record, ins, sub_type, size_, debug_strs)
+        self._load_array(record, ins, sub_type, size_, *debug_strs)
 
-    def _load_array(self, record, ins, sub_type, size_, debug_strs):
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
         append_entry = getattr(record, self.attr).append
         entry_slots = self.array_element_attrs
         entry_size = self._element_size
@@ -423,7 +423,7 @@ class MelArray(MelBase):
 #------------------------------------------------------------------------------
 class MelSimpleArray(MelArray):
     """A MelArray of simple elements (currently MelNum) - override loading and
-    dumping of the array to avoid creating mel objects."""
+    dumping of the array to avoid creating MelObjects."""
     _element: MelNum
 
     def __init__(self, array_attr, element: MelNum, prelude=None):

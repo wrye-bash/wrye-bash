@@ -530,36 +530,29 @@ class MelUnorderedGroups(MelGroups):
             *debug_strs)
 
 #------------------------------------------------------------------------------
-##: Turn into MelSimpleGroups, same way we do MelSimpleArray
-class MelFids(MelGroups):
-    """A lighter version of MelGroups, holding an array of separate form id
-    subrecords."""
-
-    def __init__(self, attr, *elements):
-        if not len(elements) == 1 or not isinstance(elements[0], MelFid):
-            raise SyntaxError(
-                f'{type(self)} requires a single initializer of type MelFid, '
-                f'passed: {elements}')
-        super().__init__(attr, *elements)
-
-    def hasFids(self,formElements):
-        formElements.add(self)
+class MelSimpleGroups(MelGroups):
+    """A MelGroups of simple elements (currently MelNum) - override loading and
+    dumping of the groups to avoid creating MelObjects."""
+    def __init__(self, groups_attr, element: MelNum):
+        if not isinstance(element, MelNum):
+            raise SyntaxError(f'MelSimpleGroups only accepts MelNum, passed: '
+                              f'{element!r}')
+        self._element = element
+        super().__init__(groups_attr, element)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        """Override MelGroups.load_mel to not create the MelObjects."""
-        getattr(record, self.attr).append(
-            self.elements[0].load_bytes(ins, size_, *debug_strs))
-
-    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
-        fid_mel = self.elements[0]
-        for fid in getattr(record, self.attr):
-            fid_mel.packSub(out, fid_mel.packer(fid))
+        getattr(record, self.attr).append(self._element.load_bytes(
+            ins, size_, *debug_strs))
 
     def mapFids(self, record, function, save_fids=False):
-        fids = getattr(record, self.attr)
-        for index,fid in enumerate(fids):
-            result = function(fid)
-            if save_fids: fids[index] = result
+        if self.form_elements:
+            groups_val = getattr(record, self.attr)
+            mapped = [function(group_entry) for group_entry in groups_val]
+            if save_fids:
+                setattr(record, self.attr, mapped)
+
+    def pack_subrecord_data(self, record):
+        return b''.join(map(self._element.packer, getattr(record, self.attr)))
 
 #------------------------------------------------------------------------------
 class MelString(MelBase):

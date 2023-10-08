@@ -34,7 +34,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelClmtWeatherTypes, MelCombatStyle, MelConditionsFo3, MelContData, \
     MelCpthShared, MelDeathItem, MelDecalData, MelDescription, MelDoorFlags, \
     MelEdid, MelEffectsFo3, MelEnableParent, MelEnchantment, MelExtra, \
-    MelFactions, MelFactRanks, MelFid, MelFids, MelFloat, MelFlstFids, \
+    MelFactions, MelFactRanks, MelFid, MelFloat, MelFlstFids, \
     MelFull, MelGrasData, MelGroup, MelGroups, MelHairFlags, MelIco2, \
     MelIcon, MelIcons, MelIcons2, MelIdleAnimationCountOld, MelMesgButtons, \
     MelIdleAnimations, MelIdleRelatedAnims, MelIdleTimerSetting, \
@@ -62,7 +62,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelColor, MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
-    MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane
+    MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
+    MelSimpleGroups
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -569,7 +570,7 @@ class MreAmmo(MelRecord):
             'consumedPercentage', old_versions={'2If'})),
         MelShortName(),
         fnv_only(MelString(b'QNAM', 'abbreviation')),
-        fnv_only(MelFids('effects', MelFid(b'RCIL'))),
+        fnv_only(MelSimpleGroups('effects', MelFid(b'RCIL'))),
     )
 
 #------------------------------------------------------------------------------
@@ -1099,8 +1100,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
-        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
+        MelSorted(MelSimpleGroups('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelSimpleGroups('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelTruncatedStruct(b'DATA', [u'2B'], 'dialType',
@@ -1385,7 +1386,7 @@ class MreHdpt(MelRecord):
         MelFull(),
         MelModel(),
         MelUInt8Flags(b'DATA', 'flags', _hdpt_flags),
-        MelSorted(MelFids('extra_parts', MelFid(b'HNAM'))),
+        MelSorted(MelSimpleGroups('extra_parts', MelFid(b'HNAM'))),
     )
 
 #------------------------------------------------------------------------------
@@ -1511,12 +1512,12 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', 'info_quest'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('add_topics', MelFid(b'NAME')),
+        MelSimpleGroups('add_topics', MelFid(b'NAME')),
         MelInfoResponsesFo3(),
         MelConditionsFo3(),
-        MelFids('info_choices', MelFid(b'TCLT')),
-        MelFids('link_from', MelFid(b'TCLF')),
-        fnv_only(MelFids('follow_up', MelFid(b'TCFU'))),
+        MelSimpleGroups('info_choices', MelFid(b'TCLT')),
+        MelSimpleGroups('link_from', MelFid(b'TCLF')),
+        fnv_only(MelSimpleGroups('follow_up', MelFid(b'TCFU'))),
         MelGroup('script_begin',
             MelEmbeddedScript(),
         ),
@@ -2654,7 +2655,7 @@ class MreRefr(_AMreReferenceFo3):
             MelUInt32(b'XAMC', 'count'),
         ),
         MelReflectedRefractedBy(),
-        MelSorted(MelFids('litWaters', MelFid(b'XLTW'))),
+        MelSorted(MelSimpleGroups('litWaters', MelFid(b'XLTW'))),
         MelLinkedDecals(),
         MelFid(b'XLKR','linkedReference'),
         MelLinkColors(),
@@ -2679,7 +2680,7 @@ class MreRefr(_AMreReferenceFo3):
             MelPartialCounter(MelStruct(b'XRMR', ['H', '2s'],
                 'linked_rooms_count', 'unknown1'),
                 counters={'linked_rooms_count': 'linked_rooms'}),
-            MelSorted(MelFids('linked_rooms', MelFid(b'XLRM'))),
+            MelSorted(MelSimpleGroups('linked_rooms', MelFid(b'XLRM'))),
         ),
         MelOcclusionPlane(),
         MelLinkedOcclusionReferences(),
@@ -2707,7 +2708,7 @@ class MreRegn(AMreRegn):
             fnv_only(MelRegnEntrySubrecord(7,
                 MelFid(b'RDSI', 'incidental_media_set'))),
             fnv_only(MelRegnEntrySubrecord(7,
-                MelFids('battle_media_sets', MelFid(b'RDSB')))),
+                MelSimpleGroups('battle_media_sets', MelFid(b'RDSB')))),
             MelRegnEntrySoundsOld(),
             MelRegnEntryWeatherTypes(),
             fnv_only(MelRegnEntrySubrecord(8,

@@ -30,7 +30,7 @@ from operator import attrgetter
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelSimpleArray, MelSorted, \
     MelUnion
-from .basic_elements import MelBase, MelFid, MelFids, MelFixedString, \
+from .basic_elements import MelBase, MelFid, MelSimpleGroups, MelFixedString, \
     MelFloat, MelGroups, MelLString, MelNull, MelSInt32, MelString, \
     MelStruct, MelUInt8Flags, MelUInt32, MelUInt32Flags, MelUnicode, \
     unpackSubHeader
@@ -679,7 +679,7 @@ class MreDlvw(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'QNAM', 'dlvw_quest'),
-        MelFids('dlvw_branches', MelFid(b'BNAM')),
+        MelSimpleGroups('dlvw_branches', MelFid(b'BNAM')),
         MelGroups('unknown_tnam',
             MelBase(b'TNAM', 'unknown1'),
         ),

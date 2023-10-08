@@ -26,11 +26,11 @@
 from ..fallout3.records import MelDestructible, MelModel, MelRecord
 from ...bolt import Flags, flag
 from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
-    MelDescription, MelEdid, MelFid, MelFids, MelFloat, MelFull, MelGroups, \
+    MelDescription, MelEdid, MelFid, MelFloat, MelFull, MelGroups, \
     MelIco2, MelIcon, MelIcons, MelNull, MelScript, MelSet, \
     MelSimpleArray, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
     MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
-    MelValueWeight
+    MelValueWeight, MelSimpleGroups
 
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
@@ -68,12 +68,12 @@ class MreAloc(MelRecord):
         MelUInt32(b'NAM5', 'dayStart'),
         MelUInt32(b'NAM6', 'nightStart'),
         MelUInt32(b'NAM7', 'retrigerDelay'),
-        MelSorted(MelFids('neutralSets', MelFid(b'HNAM'))),
-        MelSorted(MelFids('allySets', MelFid(b'ZNAM'))),
-        MelSorted(MelFids('friendSets', MelFid(b'XNAM'))),
-        MelSorted(MelFids('enemySets', MelFid(b'YNAM'))),
-        MelSorted(MelFids('locationSets', MelFid(b'LNAM'))),
-        MelSorted(MelFids('battleSets', MelFid(b'GNAM'))),
+        MelSorted(MelSimpleGroups('neutralSets', MelFid(b'HNAM'))),
+        MelSorted(MelSimpleGroups('allySets', MelFid(b'ZNAM'))),
+        MelSorted(MelSimpleGroups('friendSets', MelFid(b'XNAM'))),
+        MelSorted(MelSimpleGroups('enemySets', MelFid(b'YNAM'))),
+        MelSorted(MelSimpleGroups('locationSets', MelFid(b'LNAM'))),
+        MelSorted(MelSimpleGroups('battleSets', MelFid(b'GNAM'))),
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
@@ -121,7 +121,7 @@ class MreCdck(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelSorted(MelFids('cards', MelFid(b'CARD'))),
+        MelSorted(MelSimpleGroups('cards', MelFid(b'CARD'))),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
 
@@ -238,7 +238,7 @@ class MreDial(MelRecord):
             ),
         ), sort_by_attrs='added_quest'),
         # Apparently unused, but xEdit has it so we should keep it too
-        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
+        MelSorted(MelSimpleGroups('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),

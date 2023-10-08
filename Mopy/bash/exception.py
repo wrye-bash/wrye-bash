@@ -92,9 +92,9 @@ def _join_sigs(debug_str):
 
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
-    def __init__(self, in_name, debug_str, try_pos, max_pos):
+    def __init__(self, in_name, debug_strs, try_pos, max_pos):
         ## type: (Path, str|bytes, int, int) -> None
-        debug_str = _join_sigs(debug_str)
+        debug_str = _join_sigs(debug_strs)
         if try_pos < 0:
             message = f'{debug_str}: Attempted to read before ({try_pos}) ' \
                       f'beginning of file/buffer.'

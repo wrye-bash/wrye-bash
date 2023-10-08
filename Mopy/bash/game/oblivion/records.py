@@ -34,7 +34,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelConditionsTes4, MelContData, MelDeathItem, MelDescription, AMreGlob, \
     MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
-    MelFids, MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, \
+    MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, MelSimpleGroups, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
@@ -170,7 +170,7 @@ class MelOwnershipTes4(MelOwnership):
         )
 
 #------------------------------------------------------------------------------
-class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
+class MelSpellsTes4(MelSimpleGroups): ##: HACKy workaround, see docstring
     """Handles the common SPLO subrecord. This is a workaround to fix Oblivion
     hanging on load in some edge cases. The CS does some sort of processing or
     sorting to SPLOs that we don't fully understand yet. All we know for sure
@@ -1015,8 +1015,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
-        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
+        MelSorted(MelSimpleGroups('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelSimpleGroups('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelUInt8(b'DATA', 'dialType'),
     )
@@ -1212,7 +1212,7 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', 'info_quest'),
         MelFid(b'TPIC', 'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
-        MelFids('add_topics', MelFid(b'NAME')),
+        MelSimpleGroups('add_topics', MelFid(b'NAME')),
         MelGroups('info_responses',
             MelStruct(b'TRDT', ['I', 'i', '4s', 'B', '3s'], 'rd_emotion_type',
                 'rd_emotion_value', 'rd_unused1', 'rd_response_number',
@@ -1221,8 +1221,8 @@ class MreInfo(MelRecord):
             MelString(b'NAM2', 'script_notes'),
         ),
         MelConditionsTes4(),
-        MelFids('info_choices', MelFid(b'TCLT')),
-        MelFids('link_from', MelFid(b'TCLF')),
+        MelSimpleGroups('info_choices', MelFid(b'TCLT')),
+        MelSimpleGroups('link_from', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
 

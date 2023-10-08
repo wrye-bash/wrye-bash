@@ -35,7 +35,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelContData, MelCounter, MelCpthShared, MelDalc, MelDecalData, \
     MelDescription, MelDoorFlags, MelEdid, MelEffects, MelEnchantment, \
     MelEquipmentType, MelEqupPnam, MelFactFids, MelFactFlags, MelFactRanks, \
-    MelFactVendorInfo, MelFid, MelFids, MelFloat, MelFlstFids, MelFull, \
+    MelFactVendorInfo, MelFid, MelFloat, MelFlstFids, MelFull, \
     MelFurnMarkerData, MelGrasData, MelGroup, MelGroups, MelHdptShared, \
     MelIco2, MelIcon, MelIcons, MelIcons2, MelIdleAnimationCount, \
     MelIdleAnimations, MelIdleData, MelIdleEnam, MelIdleRelatedAnims, \
@@ -75,7 +75,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
-    MelSndrLnam, MelSndrBnam
+    MelSndrLnam, MelSndrBnam, MelSimpleGroups
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1949,7 +1949,7 @@ class MreKssm(MelRecord):
         MelFid(b'ENAM', 'exterior_tail'),
         MelFid(b'VNAM', 'vats_descriptor'),
         MelFloat(b'TNAM', 'vats_threshold'),
-        MelFids('kssm_keywords', MelFid(b'KNAM')),
+        MelSimpleGroups('kssm_keywords', MelFid(b'KNAM')),
         MelSorted(MelGroups('kssm_sounds',
             MelStruct(b'RNAM', ['2I'], 'ks_reverb_class',
                 (FID, 'ks_sound_descriptor')),
