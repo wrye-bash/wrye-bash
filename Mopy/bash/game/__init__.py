@@ -433,10 +433,10 @@ class GameInfo(object):
     class Xe(object):
         """Information about xEdit for this game."""
         # The name that xEdit has for this game, e.g. 'TES5Edit' for Skyrim
-        full_name = u'xEdit'
+        full_name = 'xEdit'
         # A prefix for settings keys related to this version of xEdit (e.g.
         # expert mode)
-        xe_key_prefix = u''
+        xe_key_prefix = ''
 
     class Bain(object):
         """Information about what BAIN should do for this game. All strings in

@@ -46,7 +46,8 @@ from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
+    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
+    undefinedPath
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -60,9 +61,7 @@ from ..mod_files import ModFile, ModHeaderReader
 from ..wbtemp import TempFile
 
 # Singletons, Constants -------------------------------------------------------
-undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
-undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Singletons
 gameInis: tuple[GameIni | IniFile] | None = None
@@ -3842,7 +3841,7 @@ def initTooldirs():
     tooldirs[u'Switch'] = pathlist(u'NCH Swift Sound',u'Switch',u'switch.exe')
     tooldirs[u'Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
 
-def initDefaultSettings():
+def init_default_ini_settings():
     # *some* settings from the INI - note we get some ini settings (such as
     # sOblivionMods) via get_ini_option/get_path_from_ini we never store those
     # in bass.inisettings
@@ -3873,7 +3872,7 @@ __type_key_preffix = {  # Path is tooldirs only int does not appear in either!
     bolt.Path: u's', str: u's', list: u's', int: u'i', bool: u'b'}
 def initOptions(bashIni):
     initTooldirs()
-    initDefaultSettings()
+    init_default_ini_settings()
     # if bash.ini exists update the settings from there
     if bashIni:
         defaultOptions = {}

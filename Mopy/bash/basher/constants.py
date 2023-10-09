@@ -216,7 +216,7 @@ if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
     colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
         _('Tabs: Mods') + '\n\n' +
         _('This is the text color used for a mergeable plugin that is '
-          u"tagged 'NoMerge'."),
+          "tagged 'NoMerge'."),
     )
 
 #--Load config/defaults
@@ -487,8 +487,8 @@ settingDefaults = { # keep current naming format till refactored
     'BOSS.UseGUI': False,
     'LOOT.AutoSort': False,
     # No need to store defaults for all the xEdits for all games
-    bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing': False,
-    bush.game.Xe.xe_key_prefix + '.skip_bsas': False,
+    f'{bush.game.Xe.xe_key_prefix}.iKnowWhatImDoing': False,
+    f'{bush.game.Xe.xe_key_prefix}.skip_bsas': False,
 }
 
 # Enable Index columns by default for ESL and Overlay games

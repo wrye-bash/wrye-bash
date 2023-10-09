@@ -1197,13 +1197,13 @@ class Path(os.PathLike):
             shutil.rmtree(self._s,onerror=Path._onerror)
 
     #--start, move, copy
-    def start(self, exeArgs=None):
+    def start(self, exe_cli=None):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
-            if not exeArgs:
+            if not exe_cli:
                 subprocess.Popen([self._s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
+                subprocess.Popen(exe_cli, executable=self._s, close_fds=True)
         else:
             if sys.platform == 'darwin':
                 webbrowser.open(f'file://{self._s}')
@@ -1334,6 +1334,8 @@ class Path(os.PathLike):
 
     def __copy__(self):
         return self # immutable
+
+undefinedPath = GPath(r'C:\not\a\valid\path.exe')
 
 # We need to split every time we hit a new 'type' of component. So greedily
 # match as many of one type as possible (except dots and dashes, since those

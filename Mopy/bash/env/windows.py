@@ -51,7 +51,7 @@ from .common import _find_legendary_games, _get_language_paths, \
     _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import GPath as _GPath, top_level_files
+from ..bolt import GPath as _GPath, top_level_files, undefinedPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
@@ -216,7 +216,7 @@ def _get_default_app_icon(idex, target):
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
-            icon_path = filedata
+            icon_path = _GPath(filedata)
         else:
             icon_path, idex = filedata.split(',')
             icon_path = os.path.expandvars(icon_path)
@@ -225,11 +225,11 @@ def _get_default_app_icon(idex, target):
             for dir_ in os.environ[u'PATH'].split(u';'):
                 test = os.path.join(dir_, icon_path)
                 if os.path.exists(test):
-                    icon_path = test
+                    icon_path = _GPath(test)
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
         _deprint(f'Error finding icon for {target}:', traceback=True)
-        icon_path = r'not\a\path'
+        icon_path = undefinedPath
     return icon_path, idex
 
 def _should_ignore_ver(test_ver):
@@ -1112,11 +1112,10 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
                         # -1 queries num of icons embedded in the exe
                         win_icon_path = target
                     else: # generic exe icon, hardcoded and good to go
-                        win_icon_path, idex = os.path.expandvars(
-                            r'%SystemRoot%\System32\shell32.dll'), '2'
+                        win_icon_path, idex = _GPath(os.path.expandvars(
+                            r'%SystemRoot%\System32\shell32.dll')), '2'
                 else:
                     win_icon_path, idex = _get_default_app_icon(idex, target)
-            win_icon_path = _GPath(win_icon_path)
             if win_icon_path.exists():
                 g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
                 custom_icon_paths = [g_path] * 3

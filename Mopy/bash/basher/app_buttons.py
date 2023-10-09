@@ -165,8 +165,7 @@ class _App_Button(StatusBar_Button):
         self.wait = False
 
     def IsPresent(self):
-        return self.exePath not in bosh.undefinedPaths and \
-               self.exePath.exists()
+        return self.exePath != bolt.undefinedPath and self.exePath.exists()
 
     def SetBitmapButton(self, window):
         if not self.IsPresent(): return
@@ -309,21 +308,21 @@ def _parse_button_arguments(exePathArgs):
         use = exePathArgs[0]
         for item in exePathArgs:
             if isinstance(item, tuple):
-                exePath = item[0]
+                exe_Path = item[0]
             else:
-                exePath = item
-            if exePath.exists():
+                exe_Path = item
+            if exe_Path.exists():
                 # Use this one
                 use = item
                 break
         exePathArgs = use
     if isinstance(exePathArgs, tuple):
-        exePath = exePathArgs[0]
+        exe_Path = exePathArgs[0]
         exeArgs = exePathArgs[1:]
     else:
-        exePath = exePathArgs
+        exe_Path = exePathArgs
         exeArgs = tuple()
-    return exePath, exeArgs
+    return exe_Path, exeArgs
 
 def app_button_factory(exePathArgs, *args, **kwargs):
     exePath, exeArgs = _parse_button_arguments(exePathArgs)
@@ -391,7 +390,7 @@ class App_xEdit(_ExeButton):
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
         if not super().IsPresent():
             testPath = bass.tooldirs[u'Tes4ViewPath']
-            if testPath not in bosh.undefinedPaths and testPath.exists():
+            if testPath != bolt.undefinedPath and testPath.exists():
                 self.exePath = testPath
                 return True
             return False
@@ -403,10 +402,10 @@ class App_xEdit(_ExeButton):
     def launch_with_args(self, custom_args: tuple[str, ...]):
         """Computes arguments based on checked links and INI settings, then
         appends the specified custom arguments only for this launch."""
-        is_expert = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing']
-        skip_bsas = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + '.skip_bsas']
+        xe_prefix = bush.game.Xe.xe_key_prefix
+        is_expert = xe_prefix and bass.settings[
+            f'{xe_prefix}.iKnowWhatImDoing']
+        skip_bsas = xe_prefix and bass.settings[f'{xe_prefix}.skip_bsas']
         extraArgs = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
         if is_expert:
@@ -434,7 +433,7 @@ class _AApp_LOManager(_ExeButton):
 
     def Execute(self):
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
-        if bass.settings['BOSS.ClearLockTimes']:
+        if self.wait:
             # Clear the saved times from before
             with load_order.Unlock():
                 super().Execute()
@@ -695,8 +694,8 @@ class AutoQuit_Button(_StatefulButton):
     _default_state = False
 
     @property
-    def sb_button_tip(self): return (_(u'Auto-Quit Disabled'), _(u'Auto-Quit Enabled'))[
-        self.button_state]
+    def sb_button_tip(self): return (
+        _('Auto-Quit Disabled'), _('Auto-Quit Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
