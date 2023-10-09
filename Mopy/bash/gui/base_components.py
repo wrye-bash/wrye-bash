@@ -431,8 +431,9 @@ class WithMouseEvents(_AComponent):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        lb_hit_test = lambda event: ( # HitTest may return an int or a tuple...
-            self._native_widget.HitTest(event.GetPosition()),)
+        def lb_hit_test(event: _wx.MouseEvent) -> tuple[int]:
+            # HitTest may return an int or a tuple...
+            return (self._native_widget.HitTest(event.GetPosition()),)
         if self.__class__.bind_lclick_double:
             self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
                                                           lb_hit_test)
