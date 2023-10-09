@@ -258,7 +258,7 @@ class GameInfo(object):
         # indicates that this game's script extender does not have this feature
         se_args = ()
         # Image name template for the status bar, relative to images/tools
-        image_name = u''
+        image_name = ''
 
     class Se(object):
         """Information about the Script Extender for this game."""

@@ -61,7 +61,7 @@ class ASkyrimGameInfo(PatchGame):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        image_name = u'creationkit%s.png'
+        image_name = 'creationkit%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'SKSE'

@@ -60,7 +60,11 @@
 #  ExecuteRPN
 #==================================================
 import operator
+import os
+from collections import defaultdict
 from string import digits, whitespace
+
+from . import bolt # no other Bash imports!
 
 #--------------------------------------------------
 name_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
@@ -907,3 +911,581 @@ class Parser(object):
         if c in [u'"',u"'"]:
             error(_(u'Unexpected quotation %s following parenthesis.') % c)
         return self._stateSpace(c)
+
+UNEXPECTED = _("Unexpected '%s'.")
+
+class PreParser(Parser):
+    def __init__(self):
+        super().__init__()
+        #--Constants
+        self.SetConstant('SubPackages', 'SubPackages')
+        #--Operators
+        #Assignment
+        self.SetOperator('=' , self.Ass, OP.ASS, RIGHT)
+        self.SetOperator('+=', self.AssAdd, OP.ASS, RIGHT)
+        self.SetOperator('-=', self.AssMin, OP.ASS, RIGHT)
+        self.SetOperator('*=', self.AssMul, OP.ASS, RIGHT)
+        self.SetOperator('/=', self.AssDiv, OP.ASS, RIGHT)
+        self.SetOperator('%=', self.AssMod, OP.ASS, RIGHT)
+        self.SetOperator('^=', self.AssExp, OP.ASS, RIGHT)
+        #Comparison
+        self.SetOperator('==', self.opE, OP.CO2)
+        self.SetOperator('!=', self.opNE, OP.CO2)
+        self.SetOperator('>=', self.opGE, OP.CO1)
+        self.SetOperator('>' , self.opG, OP.CO1)
+        self.SetOperator('<=', self.opLE, OP.CO1)
+        self.SetOperator('<' , self.opL, OP.CO1)
+        self.SetOperator('==:', self.opEc, OP.CO2, passTokens=False)  # Case insensitive ==
+        self.SetOperator('!=:', self.opNEc, OP.CO2, passTokens=False) # Case insensitive !=
+        self.SetOperator('>=:', self.opGEc, OP.CO1, passTokens=False) # Case insensitive >=
+        self.SetOperator('>:', self.opGc, OP.CO1, passTokens=False)   # Case insensitive >
+        self.SetOperator('<=:', self.opLEc, OP.CO1, passTokens=False) # Case insensitive <=
+        self.SetOperator('<:', self.opLc, OP.CO1, passTokens=False)   # Case insensitive <
+        #Membership operators
+        self.SetOperator('in', self.opIn, OP.MEM, passTokens=False)
+        self.SetOperator('in:', self.opInCase, OP.MEM, passTokens=False) # Case insensitive in
+        #Boolean
+        self.SetOperator('&' , self.opAnd, OP.AND)
+        self.SetOperator('and', self.opAnd, OP.AND)
+        self.SetOperator('|', self.opOr, OP.OR)
+        self.SetOperator('or', self.opOr, OP.OR)
+        self.SetOperator('!', self.opNot, OP.NOT, RIGHT)
+        self.SetOperator('not', self.opNot, OP.NOT, RIGHT)
+        #Pre-increment/decrement
+        self.SetOperator('++', self.opInc, OP.UNA)
+        self.SetOperator('--', self.opDec, OP.UNA)
+        #Math
+        self.SetOperator('+', self.opAdd, OP.ADD)
+        self.SetOperator('-', self.opMin, OP.ADD)
+        self.SetOperator('*', self.opMul, OP.MUL)
+        self.SetOperator('/', self.opDiv, OP.MUL)
+        self.SetOperator('%', self.opMod, OP.MUL)
+        self.SetOperator('^', self.opExp, OP.EXP, RIGHT)
+        #--Functions
+        self.SetFunction('CompareObVersion', self.fnCompareGameVersion, 1) # Retained for compatibility
+        self.SetFunction('CompareGameVersion', self.fnCompareGameVersion, 1)
+        self.SetFunction('CompareOBSEVersion', self.fnCompareSEVersion, 1) # Retained for compatibility
+        self.SetFunction('CompareSEVersion', self.fnCompareSEVersion, 1)
+        self.SetFunction('CompareOBGEVersion', self.fnCompareGEVersion, 1) # Retained for compatibility
+        self.SetFunction('CompareGEVersion', self.fnCompareGEVersion, 1)
+        self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
+        self.SetFunction('DataFileExists', self.fnDataFileExists, 1, KEY.NO_MAX)
+        self.SetFunction('GetPluginLoadOrder', self.fn_get_plugin_lo, 1, 2)
+        self.SetFunction('GetEspmStatus', self.fn_get_plugin_status, 1) # Retained for compatibility
+        self.SetFunction('GetPluginStatus', self.fn_get_plugin_status, 1)
+        self.SetFunction('EditINI', self.fnEditINI, 4, 5)
+        self.SetFunction('DisableINILine',self.fnDisableINILine, 3)
+        self.SetFunction('Exec', self.fnExec, 1)
+        self.SetFunction('EndExec', self.fnEndExec, 1)
+        self.SetFunction('str', self.fnStr, 1)
+        self.SetFunction('int', self.fnInt, 1)
+        self.SetFunction('float', self.fnFloat, 1)
+        #--String functions
+        self.SetFunction('len', self.fnLen, 1, dotFunction=True)
+        self.SetFunction('endswith', self.fnEndsWith, 2, KEY.NO_MAX, dotFunction=True)
+        self.SetFunction('startswith', self.fnStartsWith, 2, KEY.NO_MAX, dotFunction=True)
+        self.SetFunction('lower', self.fnLower, 1, dotFunction=True)
+        self.SetFunction('find', self.fnFind, 2, 4, dotFunction=True)
+        self.SetFunction('rfind', self.fnRFind, 2, 4, dotFunction=True)
+        #--String pathname functions
+        self.SetFunction('GetFilename', self.fnGetFilename, 1)
+        self.SetFunction('GetFolder', self.fnGetFolder, 1)
+        #--Keywords
+        self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
+        self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
+        # The keyowrds with 'espm' in their name are retained for backwards
+        # compatibility only - use their 'plugin' equivalents instead
+        self.SetKeyword('SelectEspm', self.kwd_select_plugin, 1)
+        self.SetKeyword('SelectPlugin', self.kwd_select_plugin, 1)
+        self.SetKeyword('DeSelectEspm', self.kwd_de_select_plugin, 1)
+        self.SetKeyword('DeSelectPlugin', self.kwd_de_select_plugin, 1)
+        self.SetKeyword('SelectAll', self.kwdSelectAll)
+        self.SetKeyword('DeSelectAll', self.kwdDeSelectAll)
+        self.SetKeyword('SelectAllEspms', self.kwd_select_all_plugins)
+        self.SetKeyword('SelectAllPlugins', self.kwd_select_all_plugins)
+        self.SetKeyword('DeSelectAllEspms', self.kwd_de_select_all_plugins)
+        self.SetKeyword('DeSelectAllPlugins', self.kwd_de_select_all_plugins)
+        self.SetKeyword('RenameEspm', self.kwd_rename_plugin, 2)
+        self.SetKeyword('RenamePlugin', self.kwd_rename_plugin, 2)
+        self.SetKeyword('ResetEspmName', self.kwd_reset_plugin_name, 1)
+        self.SetKeyword('ResetPluginName', self.kwd_reset_plugin_name, 1)
+        self.SetKeyword('ResetAllEspmNames', self.kwd_reset_all_plugin_names)
+        self.SetKeyword('ResetAllPluginNames',self.kwd_reset_all_plugin_names)
+        self.SetKeyword('Note', self.kwdNote, 1)
+        self.SetKeyword('If', self.kwdIf, 1 )
+        self.SetKeyword('Elif', self.kwdElif, 1)
+        self.SetKeyword('Else', self.kwdElse)
+        self.SetKeyword('EndIf', self.kwdEndIf)
+        self.SetKeyword('While', self.kwdWhile, 1)
+        self.SetKeyword('Continue', self.kwdContinue)
+        self.SetKeyword('EndWhile', self.kwdEndWhile)
+        self.SetKeyword('For', self.kwdFor, 3, KEY.NO_MAX, passTokens=True, splitCommas=False)
+        self.SetKeyword('from', self.kwdDummy)
+        self.SetKeyword('to', self.kwdDummy)
+        self.SetKeyword('by', self.kwdDummy)
+        self.SetKeyword('EndFor', self.kwdEndFor)
+        self.SetKeyword('SelectOne', self.kwdSelectOne, 7, KEY.NO_MAX)
+        self.SetKeyword('SelectMany', self.kwdSelectMany, 4, KEY.NO_MAX)
+        self.SetKeyword('Case', self.kwdCase, 1)
+        self.SetKeyword('Default', self.kwdDefault)
+        self.SetKeyword('Break', self.kwdBreak)
+        self.SetKeyword('EndSelect', self.kwdEndSelect)
+        self.SetKeyword('Return', self.kwdReturn)
+        self.SetKeyword('Cancel', self.kwdCancel, 0, 1)
+        self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 4)
+
+    # Functions that depend on Bash internals (bass/bosh/bush/load_order)
+    def fnCompareGameVersion(self, other_ver): raise NotImplementedError
+    def fnCompareSEVersion(self, other_ver): raise NotImplementedError
+    def fnCompareGEVersion(self, other_ver): raise NotImplementedError
+    def fnCompareWBVersion(self, other_ver): raise NotImplementedError
+    def fnDataFileExists(self, *args): raise NotImplementedError
+    def fn_get_plugin_lo(self, fname, default_val=-1):raise NotImplementedError
+    def fn_get_plugin_status(self, filename): raise NotImplementedError
+
+    # keywords that depend on wizard Pages
+    def kwdFor(self): raise NotImplementedError
+    def kwdReturn(self): raise NotImplementedError
+    def kwdCancel(self, msg=_('No reason given')): raise NotImplementedError
+    def kwdRequireVersions(self, game, se='None', ge='None', wbWant='0.0'):
+        raise NotImplementedError
+
+    # Assignment operators
+    def Ass(self, l, r):
+        if l.type not in [VARIABLE,NAME]:
+            error(_('Cannot assign a value to %s, type is %s.') % (
+                l.text, Types[l.type]))
+        self.variables[l.text] = r.tkn
+        return r.tkn
+
+    def AssAdd(self, l, r): return self.Ass(l, l+r)
+    def AssMin(self, l, r): return self.Ass(l, l-r)
+    def AssMul(self, l, r): return self.Ass(l, l*r)
+    def AssDiv(self, l, r): return self.Ass(l, l/r)
+    def AssMod(self, l, r): return self.Ass(l, l%r)
+    def AssExp(self, l, r): return self.Ass(l, l**r)
+
+    # Comparison operators
+    def opE(self, l, r): return l == r
+
+    def opEc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() == r.lower()
+        else:
+            return l == r
+
+    def opNE(self, l, r): return l != r
+
+    def opNEc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() != r.lower()
+        else:
+            return l != r
+
+    def opGE(self, l, r): return l >= r
+
+    def opGEc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() >= r.lower()
+        else:
+            return l >= r
+
+    def opG(self, l, r): return l > r
+
+    def opGc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() > r.lower()
+        else:
+            return l > r
+
+    def opLE(self, l, r): return l <= r
+
+    def opLEc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() <= r.lower()
+        else:
+            return l <= r
+
+    def opL(self, l, r): return l < r
+
+    def opLc(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() < r.lower()
+        else:
+            return l < r
+
+    # Membership tests
+    def opIn(self, l, r): return l in r
+
+    def opInCase(self, l, r):
+        if isinstance(l, str) and isinstance(r, str):
+            return l.lower() in r.lower()
+        else:
+            return l in r
+
+    # Boolean operators
+    def opAnd(self, l, r): return l and r
+    def opOr(self, l, r): return l or r
+    def opNot(self, l): return not l
+
+    # Pre-increment/decrement
+    def opInc(self, l):
+        if l.type not in [VARIABLE,NAME]:
+            error(_('Cannot increment %s, type is %s.') % (l.text, Types[l.type]))
+        new_val = l.tkn + 1
+        self.variables[l.text] = new_val
+        return new_val
+    def opDec(self, l):
+        if l.type not in [VARIABLE,NAME]:
+            error(_('Cannot decrement %s, type is %s.') % (l.text, Types[l.type]))
+        new_val = l.tkn - 1
+        self.variables[l.text] = new_val
+        return new_val
+
+    # Math operators
+    def opAdd(self, l, r): return l + r
+    def opMin(self, l, r): return l - r
+    def opMul(self, l, r): return l * r
+    def opDiv(self, l, r): return l / r
+    def opMod(self, l, r): return l % r
+    def opExp(self, l, r): return l ** r
+
+    def fnEditINI(self, ini_name, section, setting, value, comment=''):
+        self._handleINIEdit(ini_name, section, setting, value, comment, False)
+
+    def fnDisableINILine(self, ini_name, section, setting):
+        self._handleINIEdit(ini_name, section, setting, '', '', True)
+
+    def _handleINIEdit(self, ini_name, section, setting, value, comment,
+                       disable):
+        raise NotImplementedError # needs ini_files.OBSEIniFile
+
+    def fnExec(self, strLines):
+        lines = strLines.split('\n')
+        # Manual EndExec calls are illegal - if we don't check here, a wizard
+        # could exploit this by doing something like this:
+        #   Exec("EndExec(1)\nAnythingHere\nReturn")
+        # ... which doesn't really cause harm, but is pretty strange and
+        # inconsistent
+        if any([l.strip().startswith('EndExec(') for l in lines]):
+            error(UNEXPECTED % 'EndExec')
+        lines.append(f'EndExec({len(lines) + 1:d})')
+        self.lines[self.cLine:self.cLine] = lines
+        self.ExecCount += 1
+
+    def fnEndExec(self, numLines):
+        if self.ExecCount == 0:
+            error(UNEXPECTED % 'EndExec')
+        del self.lines[self.cLine-numLines:self.cLine]
+        self.cLine -= numLines
+        self.ExecCount -= 1
+
+    def fnStr(self, data_): return str(data_)
+
+    def fnInt(self, data_):
+        try:
+            return int(data_)
+        except ValueError:
+            return 0
+
+    def fnFloat(self, data_):
+        try:
+            return float(data_)
+        except ValueError:
+            return 0.0
+
+    def fnLen(self, data_):
+        try:
+            return len(data_)
+        except TypeError:
+            return 0
+
+    def fnEndsWith(self, String, *args):
+        if not isinstance(String, str):
+            error(_("Function 'endswith' only operates on string types."))
+        return String.endswith(args)
+
+    def fnStartsWith(self, String, *args):
+        if not isinstance(String, str):
+            error(_("Function 'startswith' only operates on string types."))
+        return String.startswith(args)
+
+    def fnLower(self, String):
+        if not isinstance(String, str):
+            error(_("Function 'lower' only operates on string types."))
+        return String.lower()
+
+    def fnFind(self, String, sub, start=0, end=-1):
+        if not isinstance(String, str):
+            error(_("Function 'find' only operates on string types."))
+        if end < 0: end += len(String) + 1
+        return String.find(sub, start, end)
+
+    def fnRFind(self, String, sub, start=0, end=-1):
+        if not isinstance(String, str):
+            error(_("Function 'rfind' only operates on string types."))
+        if end < 0: end += len(String) + 1
+        return String.rfind(sub, start, end)
+
+    def fnGetFilename(self, String): return os.path.basename(String)
+    def fnGetFolder(self, String): return os.path.dirname(String)
+
+    # Dummy keyword, for reserving a keyword, but handled by other keywords
+    # (like from, to, and by)
+    def kwdDummy(self): pass
+
+    # Keywords, mostly for flow control (If, Select, etc)
+    def kwdIf(self, bActive):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'If' and not self.PeekFlow().active:
+            #Inactive portion of an If-Elif-Else-EndIf statement, but we hit an If, so we need
+            #To not count the next 'EndIf' towards THIS one
+            self.PushFlow('If', False, ['If', 'EndIf'])
+            return
+        self.PushFlow('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
+
+    def kwdElif(self, bActive):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
+            error(UNEXPECTED % 'Elif')
+        if self.PeekFlow().ifTrue:
+            self.PeekFlow().active = False
+        else:
+            self.PeekFlow().active = bActive
+            self.PeekFlow().ifTrue = self.PeekFlow().active or self.PeekFlow().ifTrue
+
+    def kwdElse(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
+            error(UNEXPECTED % 'Else')
+        if self.PeekFlow().ifTrue:
+            self.PeekFlow().active = False
+            self.PeekFlow().hitElse = True
+        else:
+            self.PeekFlow().active = True
+            self.PeekFlow().hitElse = True
+
+    def kwdEndIf(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
+            error(UNEXPECTED % 'EndIf')
+        self.PopFlow()
+
+    def kwdWhile(self, bActive):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'While' and not self.PeekFlow().active:
+            # Within an un-true while statement, but we hit a new While, so we
+            # need to ignore the next 'EndWhile' towards THIS one
+            self.PushFlow('While', False, ['While', 'EndWhile'])
+            return
+        self.PushFlow('While', bActive, ['While', 'EndWhile'],
+                      cLine=self.cLine - 1)
+
+    def kwdContinue(self):
+        #Find the next up While or For statement to continue from
+        index = self.LenFlow()-1
+        iType = None
+        while index >= 0:
+            iType = self.PeekFlow(index).type
+            if iType in ['While','For']:
+                break
+            index -= 1
+        if index < 0:
+            # No while statement was found
+            error(UNEXPECTED % 'Continue')
+        #Discard any flow control statments that happened after
+        #the While/For, since we're resetting either back to the
+        #the While/For', or the EndWhile/EndFor
+        while self.LenFlow() > index+1:
+            self.PopFlow()
+        flow = self.PeekFlow()
+        if iType == 'While':
+            # Continue a While loop
+            self.cLine = flow.cLine
+            self.PopFlow()
+        else:
+            # Continue a For loop
+            if flow.ForType == 0:
+                # Numeric loop
+                if self.variables[flow.varname] == flow.end:
+                    # For loop is done
+                    self.PeekFlow().active = False
+                else:
+                    # keep going
+                    self.cLine = flow.cLine
+                self.variables[flow.varname] += flow.by
+            elif flow.ForType == 1:
+                # Iterator type
+                flow.index += 1
+                if flow.index == len(flow.List):
+                    # Loop is done
+                    self.PeekFlow().active = False
+                else:
+                    # Re-loop
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] = flow.List[flow.index]
+
+    def kwdEndWhile(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
+            error(UNEXPECTED % 'EndWhile')
+        #Re-evaluate the while loop's expression, if needed
+        flow = self.PopFlow()
+        if flow.active:
+            self.cLine = flow.cLine
+
+    def kwdEndFor(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
+            error(UNEXPECTED % 'EndFor')
+        #Increment the variable, then test to see if we should end or keep going
+        flow = self.PeekFlow()
+        if flow.active:
+            if flow.ForType == 0:
+                # Numerical loop
+                if self.variables[flow.varname] == flow.end:
+                    #For loop is done
+                    self.PopFlow()
+                else:
+                    #Need to keep going
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] += flow.by
+            elif flow.ForType == 1:
+                # Iterator type
+                flow.index += 1
+                if flow.index == len(flow.List):
+                    self.PopFlow()
+                else:
+                    self.cLine = flow.cLine
+                    self.variables[flow.varname] = flow.List[flow.index]
+        else:
+            self.PopFlow()
+
+    def kwdSelectOne(self, *args):
+        self._KeywordSelect(False, 'SelectOne', *args)
+
+    def kwdSelectMany(self, *args):
+        self._KeywordSelect(True, 'SelectMany', *args)
+
+    def _KeywordSelect(self, param, param1, param2):
+        raise NotImplementedError # needs PageSelect
+
+    def kwdCase(self, value):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            error(UNEXPECTED % 'Case')
+        if value in self.PeekFlow().values or str(value) in self.PeekFlow().values:
+            self.PeekFlow().hitCase = True
+            self.PeekFlow().active = True
+
+    def kwdDefault(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            error(UNEXPECTED % 'Default')
+        if self.PeekFlow().hitCase:
+            return
+        self.PeekFlow().active = True
+        self.PeekFlow().hitCase = True
+
+    def kwdBreak(self):
+        if self.LenFlow() > 0 and self.PeekFlow().type == 'Select':
+            # Break for SelectOne/SelectMany
+            self.PeekFlow().active = False
+        else:
+            # Test for a While/For statement earlier
+            index = self.LenFlow() - 1
+            while index >= 0:
+                if self.PeekFlow(index).type in ('While', 'For'):
+                    break
+                index -= 1
+            if index < 0:
+                # No while or for statements found
+                error(UNEXPECTED % 'Break')
+            self.PeekFlow(index).active = False
+
+            # We're going to jump to the EndWhile/EndFor, so discard
+            # any flow control structs on top of the While/For one
+            while self.LenFlow() > index + 1:
+                self.PopFlow()
+            self.PeekFlow().active = False
+
+    def kwdEndSelect(self):
+        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
+            error(UNEXPECTED % 'EndSelect')
+        self.PopFlow()
+
+    # Package selection functions
+    def kwdSelectSubPackage(self, subpackage):
+        self._SelectSubPackage(True, subpackage)
+
+    def kwdDeSelectSubPackage(self, subpackage):
+        self._SelectSubPackage(False, subpackage)
+
+    def _SelectSubPackage(self, bSelect, subpackage):
+        raise NotImplementedError # needs self.sublist/installer
+
+    def kwdSelectAll(self): self._SelectAll(True)
+    def kwdDeSelectAll(self): self._SelectAll(False)
+
+    def _SelectAll(self, bSelect):
+       raise NotImplementedError # needs self.sublist/_plugin_enabled
+
+    @staticmethod
+    def _set_all_values(di, common_value):
+        for k in di:
+            di[k] = common_value
+
+    def kwd_select_plugin(self, plugin_name):
+        self._select_plugin(True, plugin_name)
+
+    def kwd_de_select_plugin(self, plugin_name):
+        self._select_plugin(False, plugin_name)
+
+    def _select_plugin(self, should_activate, plugin_name):
+        raise NotImplementedError # needs self._plugin_enabled
+
+    def kwd_select_all_plugins(self): self._select_all_plugins(True)
+    def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
+
+    def _select_all_plugins(self, should_activate):
+        raise NotImplementedError # needs self._plugin_enabled
+
+    def kwd_rename_plugin(self, plugin_name, new_plugin_name):
+        plugin_name = self._resolve_plugin_rename(plugin_name)
+        if plugin_name:
+            # Keep same extension
+            if plugin_name.fn_ext != new_plugin_name[-4:]:
+                raise ParserError(_('Cannot rename %s to %s: the extensions '
+                    'must match.') % (plugin_name, new_plugin_name))
+            self.plugin_renames[plugin_name] = new_plugin_name
+
+    def kwd_reset_plugin_name(self, plugin_name):
+        plugin_name = self._resolve_plugin_rename(plugin_name)
+        if plugin_name and plugin_name in self.plugin_renames:
+            del self.plugin_renames[plugin_name]
+
+    def _resolve_plugin_rename(self, plugin_name: str) -> bolt.FName | None:
+        raise NotImplementedError # needs self._plugin_enabled
+
+    def kwd_reset_all_plugin_names(self):
+        self.plugin_renames.clear()
+
+    def kwdNote(self, note):
+        self.notes.append(f'- {note}\n')
+
+    # instance vars defined outside init
+    def Begin(self, wizard_file, wizard_dir):
+        self._reset_vars()
+        self.cLine = 0
+        self.reversing = 0
+        self.ExecCount = 0
+        self._wizard_dir = wizard_dir
+        try:
+            with wizard_file.open('r', encoding='utf-8-sig') as wiz_script:
+                # Ensure \n line endings for the script parser
+                self.lines = [bolt.to_unix_newlines(x)
+                              for x in wiz_script.readlines()]
+            return None
+        except UnicodeError:
+            return _('Could not read the wizard file.  Please ensure it is '
+                     'encoded in UTF-8 format.')
+        except OSError:
+            return _('Could not open wizard file')
+
+    def _reset_vars(self):
+        self.variables.clear()
+        self.Flow = []
+        self.notes = []
+        self.plugin_renames = {}
+        self.iniedits = defaultdict(bolt.LowerDict)

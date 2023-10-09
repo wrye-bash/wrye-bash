@@ -66,7 +66,7 @@ class _AMorrowindGameInfo(PatchGame):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TES Construction Set.exe'
-        image_name = u'tescs%s.png'
+        image_name = 'tescs%s.png'
 
     # TODO(inf) MWSE and MGE are vastly different from the later game versions
 

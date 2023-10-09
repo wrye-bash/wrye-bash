@@ -60,6 +60,7 @@ _j = os.path.join
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar buttons."""
+    badIcons = [get_image('error_cross.16')] * 3 ##: 16, 24, 32?
     __fp = GuiImage.from_path
     def _png_list(template):
         return [__fp(template % i) for i in (16, 24, 32)]
@@ -71,7 +72,8 @@ def InitStatusBar():
         obse_button,
         AutoQuitButton('AutoQuit'),
         GameButton(_png_list(f'games/{bush.game.game_icon}')),
-        TESCSButton(_png_list(f'tools/{bush.game.Ck.image_name}'))
+        TESCSButton(_png_list(f'tools/{imn}') if (
+            imn := bush.game.Ck.image_name) else badIcons)
     ]
     all_xes = dict.fromkeys( # keep order to not reorder much
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
@@ -133,7 +135,6 @@ def InitStatusBar():
         'ShowAudioToolLaunchers']) for at in audio_tools.items())
     all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Apps
-    badIcons = [get_image('error_cross.16')] * 3
     for pth, img_path, shortcut_descr in init_app_links(
             bass.dirs['mopy'].join('Apps')):
         if img_path is None:

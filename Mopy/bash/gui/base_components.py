@@ -118,7 +118,7 @@ class _ACFrozen:
         self._wx_parent.Thaw()
 
 # Base Elements ---------------------------------------------------------------
-_no_parent = object() # signals that this native component has no parent
+_no_parent = _wx.Object() # signals that this native component has no parent
 class _AObject:
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over. We mimic wx hierarchy as we need to wrap
