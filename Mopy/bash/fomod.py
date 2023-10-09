@@ -43,6 +43,8 @@ xml attributes/text are available via instance attributes."""
 __author__ = u'Ganda'
 
 import functools
+import sys
+from collections import defaultdict
 from enum import Enum
 
 from . import bass, bosh, bush, env # for modInfos
@@ -477,31 +479,28 @@ class FomodInstaller(object):
                     if option in selected_options:
                         collected_files.extend(con_files)
         for cond_pattern in self.fomod_tree.findall(
-                u'conditionalFileInstalls/patterns/pattern'):
-            dep_conditions = cond_pattern.find(u'dependencies')
-            cond_files = cond_pattern.find(u'files')
+                'conditionalFileInstalls/patterns/pattern'):
+            try:
+                self.test_conditions(cond_pattern.find('dependencies'))
+            except FailedCondition:
+                continue
+            # Only include any files at all if the check passed
             # We do not have to worry about the con/req split here, the
             # conditions for this section are the only thing that matters
+            cond_files = cond_pattern.find('files')
             con_files, req_files = _FomodFileInfo.process_files(
                 cond_files, self.file_list, self.installer_root,
                 is_usable=True)
-            try:
-                self.test_conditions(dep_conditions)
-                # Only include any files at all if the check passed
-                collected_files.extend(req_files)
-                collected_files.extend(con_files)
-            except FailedCondition:
-                pass
-        file_dict = {}  # dst -> src
-        priority_dict = {}  # dst -> priority
+            collected_files.extend(req_files)
+            collected_files.extend(con_files)
+        file_dict = {} # dst -> src
+        # -sys.maxsize as default so any priority loses to this
+        priority_dict = defaultdict(lambda: -sys.maxsize) # dst -> priority
         for fm_info in collected_files:
             fm_info_dest = fm_info.file_destination
-            if (fm_info_dest in priority_dict
-                    and priority_dict[fm_info_dest] > fm_info.file_priority):
-                # Don't overwrite the higher-priority file
-                continue
-            file_dict[fm_info_dest] = fm_info.file_source
-            priority_dict[fm_info_dest] = fm_info.file_priority
+            if priority_dict[fm_info_dest] <= fm_info.file_priority:
+                file_dict[fm_info_dest] = fm_info.file_source
+                priority_dict[fm_info_dest] = fm_info.file_priority
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.items()}
 

@@ -31,6 +31,7 @@ import os
 import re
 import sys
 import winreg
+from collections.abc import Iterable
 from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
@@ -70,9 +71,9 @@ except ImportError:
 from .common import FileOperationType, _StrPath
 
 def file_operation(operation: FileOperationType,
-        sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
-        ask_confirm=None, rename_on_collision=False, silent=False,
-        parent=None) -> dict[str, str]:
+        sources_dests: dict[_StrPath, _StrPath | Iterable[_StrPath]],
+        allow_undo=True, ask_confirm=None, rename_on_collision=False,
+        silent=False, parent=None) -> dict[str, str]:
     """file_operation API. Performs a filesystem operation on the specified
     files using the Windows API.
 
@@ -84,7 +85,9 @@ def file_operation(operation: FileOperationType,
           anything.
         - For FileOperationType.COPY, MOVE: destinations should be the path
           to the full destination name (not the destination containing
-          directory).
+          directory). The destination may be an iterable, in which case the
+          file is copied to multiple targets (with the last copy being a move,
+          for MOVE).
         - For FileOperationType.RENAME: destinations should be file names only,
           without directories.
         Destinations may be anythin supporting the os.PathLike interface: str,
@@ -117,12 +120,21 @@ def file_operation(operation: FileOperationType,
                     except FileNotFoundError:
                         pass
             elif operation in (FileOperationType.MOVE, FileOperationType.COPY):
-                queue_it =  fo.move_file if operation == FileOperationType.MOVE else fo.copy_file
-                for source, target in sources_dests.items():
-                    # Need to get destination directory, name for these operations
-                    target_dir = os.path.dirname(target)
-                    target_name = os.path.basename(target)
-                    queue_it(source, target_dir, target_name)
+                is_move = operation is FileOperationType.MOVE
+                wanted_op = fo.move_file if is_move else fo.copy_file
+                for source, targets in sources_dests.items():
+                    if isinstance(targets, (str, os.PathLike)):
+                        targets = [targets]
+                    for i, target in enumerate(targets):
+                        queue_it = wanted_op
+                        if is_move and i + 1 < len(targets):
+                            # If we're moving, all but the last operation needs
+                            # to be a copy
+                            queue_it = fo.copy_file
+                        # Need to get destination directory, name for these
+                        # operations
+                        target_dir, target_name = os.path.split(target)
+                        queue_it(source, target_dir, target_name)
             elif operation == FileOperationType.RENAME:
                 for source, target in sources_dests.items():
                     fo.rename_file(source, os.fspath(target))

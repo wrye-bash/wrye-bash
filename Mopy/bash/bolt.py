@@ -364,11 +364,24 @@ def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
     return {**dict_a, **dict_b,
             **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
 
-def reverse_dict(target_dict: dict[K, V]) -> dict[V, K]:
+def reverse_dict(source_dict: dict[K, V]) -> dict[V, K]:
     """Create a dict that represents the reverse/inverse mapping of the
     specified dict. If a -> b in target_dict, then b -> a in the returned
-    dict."""
-    return {v: k for k, v in target_dict.items()}
+    dict.
+
+    Note that this is meant for 1-to-1 mappings - if you have two keys with the
+    same value, you'll lose the first key! See reverse_dict_multi for a method
+    that avoids this problem."""
+    return {v: k for k, v in source_dict.items()}
+
+def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
+    """Create a dict that represents the reverse/inverse mapping of the
+    specified dict, with support for duplicate values in the source dict. See
+    also reverse_dict for simple 1-to-1 mappings."""
+    ret = {}
+    for k, v in source_dict.items():
+        ret.setdefault(v, set()).add(k)
+    return ret
 
 def gen_enum_parser(enum_type: type[Enum]):
     """Create a dict that maps the values of the specified enum to the matching

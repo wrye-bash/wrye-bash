@@ -30,6 +30,7 @@ import os
 import re
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Iterable
 from functools import partial
 from itertools import chain, groupby
@@ -390,10 +391,18 @@ class Installer(ListInfo):
         for a, v in zip(self.persistent, values[1:]):
             setattr(self, a, v)
         rescan = False
+        ##: This is a whole load of backwards compat code - should be dropped
+        # at some point in the (more or less far, depending on when the code
+        # was added) future
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
+        if old_fm_dict := self.extras_dict.pop('fomod_dict', None):
+            # Convert older version of the FOMOD handling dict, which did not
+            # support multiple destinations for a single source file
+            self.extras_dict['fomod_dict_v2'] = bolt.LowerDict(
+                {k: {v} for k, v in old_fm_dict.items()})
         if isinstance(self.fn_key, bytes):
             deprint(f'{repr(self.fn_key)} in Installers.dat')
             self.fn_key = self.fn_key.decode('utf-8')
@@ -658,8 +667,8 @@ class Installer(ListInfo):
     @staticmethod
     def _init_executables_skips(ask_yes):
         if force_recalc := (Installer._goodDlls is Installer._badDlls is None):
-            Installer._goodDlls = collections.defaultdict(list)
-            Installer._badDlls = collections.defaultdict(list)
+            Installer._goodDlls = defaultdict(list)
+            Installer._badDlls = defaultdict(list)
         goodDlls = Installer.goodDlls(force_recalc)
         badDlls = Installer.badDlls(force_recalc)
         def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, dll_size,
@@ -809,130 +818,147 @@ class Installer(ListInfo):
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
         fm_active = self.extras_dict.get(u'fomod_active', False)
-        fm_dict = self.extras_dict.get(u'fomod_dict', {})
+        fm_dict = self.extras_dict.get('fomod_dict_v2', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
         for full, cached_size, crc in self.fileSizeCrcs:
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
-            file_relative = full[rootIdex:]
-            fileLower = file_relative.lower()
-            if fileLower.startswith( # skip top level '--', etc
-                    Installer._silentSkipsStart) or fileLower.endswith(
-                    Installer._silentSkipsEnd): continue
-            elif fileLower == module_config:
+            full_rel = full[rootIdex:]
+            full_rel_lower = full_rel.lower()
+            if (full_rel_lower.startswith(Installer._silentSkipsStart) or
+                    full_rel_lower.endswith(Installer._silentSkipsEnd)):
+                # Skip top level '--', etc.
+                continue
+            elif full_rel_lower == module_config:
                 self.has_fomod_conf = full
-                skipDirFilesDiscard(file_relative)
+                skipDirFilesDiscard(full_rel)
                 continue
             fm_present = full in fm_dict
             if fm_active and fm_present:
-                # Remap selected FOMOD files to usable paths
-                file_relative = fm_dict[full]
+                # Remap selected FOMOD files to usable paths - note fm_dict may
+                # map to >1 output file
+                files_to_process = fm_dict[full]
+            else:
+                files_to_process = [full_rel]
+            for file_relative in files_to_process:
                 fileLower = file_relative.lower()
-            sub = u''
-            # Complex archive; skip the logic if FOMOD mode is active (since
-            # sub-package selection doesn't (currently) work in FOMOD mode
-            # anyways)
-            if bain_type == 2 and not fm_active:
-                split = file_relative.split(os_sep, 1)
-                if len(split) > 1:
-                    # redefine file, excluding the sub-package directory
-                    sub,file_relative = split
-                    fileLower = file_relative.lower()
-                    if fileLower.startswith(Installer._silentSkipsStart):
-                        continue # skip sub-package level '--', etc
-                if sub not in activeSubs:
-                    if sub == u'':
-                        skipDirFilesAdd(file_relative)
-                    # Run a modified version of the normal checks, just
-                    # looking for esp's for the wizard espmMap, wizard.txt
-                    # and readme's
-                    rootLower,fileExt = splitExt(fileLower)
-                    rootLower = rootLower.split(os_sep, 1)
-                    if len(rootLower) == 1: rootLower = u''
-                    else: rootLower = rootLower[0]
-                    skip = True
-                    sub_esps = espmMap[sub] # add sub key to the espmMap
-                    if fileLower == u'wizard.txt':
-                        self.hasWizard = full
-                        skipDirFilesDiscard(file_relative)
-                        continue
-                    elif fileExt == defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
-                        self.hasBCF = full
-                        skipDirFilesDiscard(file_relative)
-                        continue
-                    elif fileExt in docExts and sub == u'':
-                        skipDirFilesDiscard(file_relative)
-                        skip = False
-                    elif fileLower in bethFiles:
-                        self.hasBethFiles = True
-                        skipDirFilesDiscard(file_relative)
-                        skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file_relative)
-                        continue
-                    elif not rootLower and fileExt in plugin_extensions:
-                        #--Remap espms as defined by the user
-                        if file_relative in self._remaps:
-                            file_relative = self._remaps[file_relative]
-                            # fileLower = file.lower() # not needed will skip
-                        if file_relative not in sub_esps: sub_esps.append(file_relative)
-                    if skip:
-                        continue
-            sub_esps = espmMap[sub] #add sub key to the espmMap, needed in belt
-            rootLower,fileExt = splitExt(fileLower)
-            rootLower = rootLower.split(os_sep, 1)
-            if len(rootLower) == 1: rootLower = u''
-            else: rootLower = rootLower[0]
-            #--Skips
-            for lam in skips:
-                if lam(fileLower):
-                    _out = True
-                    break
-            else: _out = False
-            if _out: continue
-            dest = None # destination of the file relative to the Data/ dir
-            # process attributes and define destination for docs and images
-            # (if not skipped globally)
-            if fileExt in Installer._extensions_to_process:
-                dest = Installer._attributes_process[fileExt](
-                    self, fileLower, full, fileExt, file_relative, sub)
-                if dest is None: continue
-            if fm_active and not fm_present:
-                # Pretend all unselected FOMOD files don't exist, but only
-                # after giving them a chance to process up above - that way
-                # packages that include both a wizard and an FOMOD installer
-                # will work (as well as BCFs)
-                continue
-            if fileExt in global_skip_ext: continue # docs treated above
-            elif fileExt in Installer._executables_process: # and handle execs
-                if Installer._executables_process[fileExt](checkOBSE,
-                        fileLower, full, archiveRoot, cached_size, crc):
+                sub = ''
+                # Complex archive; skip the logic if FOMOD mode is active
+                # (since sub-package selection doesn't (currently) work in
+                # FOMOD mode anyways)
+                if bain_type == 2 and not fm_active:
+                    split = file_relative.split(os_sep, 1)
+                    if len(split) > 1:
+                        # redefine file, excluding the sub-package directory
+                        sub,file_relative = split
+                        fileLower = file_relative.lower()
+                        if fileLower.startswith(Installer._silentSkipsStart):
+                            continue # skip sub-package level '--', etc
+                    if sub not in activeSubs:
+                        if sub == '':
+                            skipDirFilesAdd(file_relative)
+                        # Run a modified version of the normal checks, just
+                        # looking for esp's for the wizard espmMap, wizard.txt
+                        # and readme's
+                        rootLower,fileExt = splitExt(fileLower)
+                        rootLower = rootLower.split(os_sep, 1)
+                        if len(rootLower) == 1: rootLower = ''
+                        else: rootLower = rootLower[0]
+                        skip = True
+                        sub_esps = espmMap[sub] # add sub key to the espmMap
+                        if fileLower == 'wizard.txt':
+                            self.hasWizard = full
+                            skipDirFilesDiscard(file_relative)
+                            continue
+                        elif fileExt == defaultExt and (
+                                fileLower[-7:-3] == '-bcf' or
+                                '-bcf-' in fileLower):
+                            self.hasBCF = full
+                            skipDirFilesDiscard(file_relative)
+                            continue
+                        elif fileExt in docExts and sub == '':
+                            skipDirFilesDiscard(file_relative)
+                            skip = False
+                        elif fileLower in bethFiles:
+                            self.hasBethFiles = True
+                            skipDirFilesDiscard(file_relative)
+                            skipDirFilesAdd(_('[Bethesda Content]') + ' ' +
+                                            file_relative)
+                            continue
+                        elif not rootLower and fileExt in plugin_extensions:
+                            #--Remap espms as defined by the user
+                            if file_relative in self._remaps:
+                                file_relative = self._remaps[file_relative]
+                                # No need to update fileLower, will skip
+                            if file_relative not in sub_esps:
+                                sub_esps.append(file_relative)
+                        if skip:
+                            continue
+                # Add sub key to the espmMap, needed in belt
+                espmMap.setdefault(sub, [])
+                rootLower,fileExt = splitExt(fileLower)
+                rootLower = rootLower.split(os_sep, 1)
+                if len(rootLower) == 1:
+                    rootLower = ''
+                else:
+                    rootLower = rootLower[0]
+                #--Skips
+                for lam in skips:
+                    if lam(fileLower):
+                        _out = True
+                        break
+                else:
+                    _out = False
+                if _out:
                     continue
-            #--Noisy skips
-            if fileLower in bethFiles:
-                self.hasBethFiles = True
-                if bethFilesSkip:
-                    skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + full)
+                dest = None # destination of the file relative to the Data/ dir
+                # process attributes and define destination for docs and images
+                # (if not skipped globally)
+                if fileExt in Installer._extensions_to_process:
+                    dest = Installer._attributes_process[fileExt](
+                        self, fileLower, full, fileExt, file_relative, sub)
+                    if dest is None:
+                        continue
+                if fm_active and not fm_present:
+                    # Pretend all unselected FOMOD files don't exist, but only
+                    # after giving them a chance to process up above - that way
+                    # packages that include both a wizard and an FOMOD
+                    # installer will work (as well as BCFs)
                     continue
-            elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                skipDirFilesAdd(full)
-                continue
-            elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                skipDirFilesAdd(full)
-                continue
-            elif fileExt in __skip_exts:
-                skipExtFilesAdd(full)
-                continue
-            #--Remap docs, strings
-            if dest is None: dest = file_relative
-            dest = self._remap_files(
-                dest, fileLower, rootLower, fileExt, file_relative,
-                data_sizeCrc, archiveRoot, renameStrings, languageLower,
-                redirect_scripts)
-            if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
-                InstallersData.track(bass.dirs[u'mods'].join(dest))
-            #--Save
-            data_sizeCrc[dest] = (cached_size, crc)
-            dest_src[dest] = full
-            unSize += cached_size
+                if fileExt in global_skip_ext: continue # docs treated above
+                elif fileExt in Installer._executables_process: # and handle execs
+                    if Installer._executables_process[fileExt](checkOBSE,
+                            fileLower, full, archiveRoot, cached_size, crc):
+                        continue
+                #--Noisy skips
+                if fileLower in bethFiles:
+                    self.hasBethFiles = True
+                    if bethFilesSkip:
+                        skipDirFilesAdd(_('[Bethesda Content]') + ' ' + full)
+                        continue
+                elif (not hasExtraData and rootLower and
+                      rootLower not in dataDirsPlus):
+                    skipDirFilesAdd(full)
+                    continue
+                elif hasExtraData and rootLower and rootLower in dataDirsMinus:
+                    skipDirFilesAdd(full)
+                    continue
+                elif fileExt in __skip_exts:
+                    skipExtFilesAdd(full)
+                    continue
+                #--Remap docs, strings
+                if dest is None: dest = file_relative
+                dest = self._remap_files(
+                    dest, fileLower, rootLower, fileExt, file_relative,
+                    data_sizeCrc, archiveRoot, renameStrings, languageLower,
+                    redirect_scripts)
+                if fileExt in commonlyEditedExts:
+                    ##: will track all the txt files in Docs/
+                    InstallersData.track(bass.dirs['mods'].join(dest))
+                #--Save
+                data_sizeCrc[dest] = (cached_size, crc)
+                dest_src[dest] = full
+                unSize += cached_size
         self.unSize = unSize
         (self.ci_dest_sizeCrc, old_sizeCrc) = (data_sizeCrc, self.ci_dest_sizeCrc)
         #--Update dirty?
@@ -1206,7 +1232,7 @@ class _InstallerPackage(Installer, AFile):
         data_sizeCrc = self.ci_dest_sizeCrc
         from . import data_tracking_stores
         affected_stores = [(s, set()) for s in data_tracking_stores()]
-        sources_dests = {}
+        sources_dests = defaultdict(set)
         join_data_dir = bass.dirs[u'mods'].join
         for dest, src in dest_src.items():
             dest_size, crc = data_sizeCrc[dest]
@@ -1219,8 +1245,8 @@ class _InstallerPackage(Installer, AFile):
             data_sizeCrcDate_update[dest] = (dest_size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
-            sources_dests[srcDirJoin(src)] = join_data_dir(
-                norm_ghostGet(dest, dest))
+            sources_dests[srcDirJoin(src)].add(join_data_dir(
+                norm_ghostGet(dest, dest)))
             subprogressPlus()
         #--Now Move
         try:
@@ -2703,7 +2729,7 @@ class InstallersData(DataStore):
         removes = set()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        _cede_ownership = collections.defaultdict(set)
+        _cede_ownership = defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
             if installer in unArchives:
@@ -2780,7 +2806,7 @@ class InstallersData(DataStore):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        _cede_ownership = collections.defaultdict(set)
+        _cede_ownership = defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.

@@ -32,7 +32,7 @@ import json
 import os
 import shutil
 import stat
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
@@ -293,58 +293,68 @@ def _retry(operation: Callable[..., T], from_path: Path, to_path: Path) -> T:
         to_path.head.makedirs()
         return operation(from_path, to_path)
 
-def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
-                   ask_confirm, parent, move: bool) -> dict[str, str]:
+def __copy_or_move(sources_dests: dict[Path, Path | Iterable[Path]],
+        rename_on_collision: bool, ask_confirm, parent,
+        move: bool) -> dict[str, str]:
     """Copy files using shutil."""
     # NOTE 1: Using stdlib methods we can't support `allow_undo`
     # NOTE 2: progress dialogs: NOT IMPLEMENTED (so `silent` is ignored)
     # TODO(241): rename_on_collision NOT IMPLEMENTED
     operation_results: dict[str, str] = {}
-    for src_path, to_path in sources_dests.items():
-        if src_path.is_dir():
-            # Copying a directory: check for collision
-            if to_path.is_file():
-                raise NotADirectoryError(str(to_path))
-            elif to_path.is_dir():
-                # Collision: merge contents
-                sub_items = {
-                    src_path.join(sub_item): to_path.join(sub_item)
-                    for sub_item in os.listdir(src_path)
-                }
-                sub_results = __copy_or_move(sub_items, rename_on_collision,
-                                             ask_confirm, parent, move)
-                if sub_results:
-                    # At least some of the sub-items were copied
-                    operation_results[os.fspath(src_path)] = os.fspath(to_path)
-            else:
-                # No Collision, let shutil do the work
-                if move:
-                    # NOTE: shutil.move: if the destination is a directory, the
-                    # source is moved inside the directory. For moving a
-                    # directory, this is always the case
-                    shutil.move(src_path, to_path.head)
-                else:
-                    _retry(shutil.copytree, src_path, to_path)
-                operation_results[os.fspath(src_path)] = os.fspath(to_path)
-        elif src_path.is_file():
-            # Copying a file: check for collisions if the user wants prompts
-            if ask_confirm:
+    for src_path, to_paths in sources_dests.items():
+        if isinstance(to_paths, Path):
+            to_paths = [to_paths]
+        for i, to_path in enumerate(to_paths):
+            # If we're moving, all but the last operation needs to be a copy
+            should_move = move and i + 1 >= len(to_paths)
+            from_path_s = os.fspath(src_path)
+            to_path_s = os.fspath(to_path)
+            if src_path.is_dir():
+                # Copying a directory: check for collision
                 if to_path.is_file():
-                    msg = _('Overwrite %(destination)s with %(source)s?') % {
-                        'destination': os.fspath(to_path),
-                        'source': os.fspath(src_path)}
-                    if not ask_confirm(parent, msg, _('Overwrite file?')):
-                        continue
-            # Perform the copy/move
-            _retry(shutil.move if move else shutil.copy2, src_path, to_path)
-            operation_results[os.fspath(src_path)] = os.fspath(to_path)
-        else:
-            raise FileNotFoundError(os.fspath(src_path))
+                    raise NotADirectoryError(to_path_s)
+                elif to_path.is_dir():
+                    # Collision: merge contents
+                    sub_items = {
+                        src_path.join(sub_item): to_path.join(sub_item)
+                        for sub_item in os.listdir(src_path)
+                    }
+                    sub_results = __copy_or_move(sub_items,
+                        rename_on_collision, ask_confirm, parent, should_move)
+                    if sub_results:
+                        # At least some of the sub-items were copied
+                        operation_results[from_path_s] = to_path_s
+                else:
+                    # No Collision, let shutil do the work
+                    if should_move:
+                        # NOTE: shutil.move: if the destination is a directory,
+                        # the source is moved inside the directory. For moving
+                        # a directory, this is always the case
+                        shutil.move(src_path, to_path.head)
+                    else:
+                        _retry(shutil.copytree, src_path, to_path)
+                    operation_results[from_path_s] = to_path_s
+            elif src_path.is_file():
+                # Copying a file: check for collisions if the user wants
+                # prompts
+                if ask_confirm:
+                    if to_path.is_file():
+                        msg = _('Overwrite %(destination)s with '
+                                '%(source)s?') % {'destination': to_path_s,
+                                                  'source': from_path_s}
+                        if not ask_confirm(parent, msg, _('Overwrite file?')):
+                            continue
+                # Perform the copy/move
+                _retry(shutil.move if should_move else shutil.copy2,
+                       src_path, to_path)
+                operation_results[from_path_s] = to_path_s
+            else:
+                raise FileNotFoundError(from_path_s)
     return operation_results
 
-
 def file_operation(operation: FileOperationType,
-        sources_dests: dict[_StrPath, _StrPath], allow_undo=True,
+        sources_dests: dict[_StrPath, _StrPath | Iterable[_StrPath]],
+        allow_undo=True,
         ask_confirm: Callable[[Any, str, str], bool] | None = None,
         rename_on_collision=False, silent=False, parent=None
     ) -> dict[str, str]:
@@ -362,6 +372,8 @@ def file_operation(operation: FileOperationType,
           anything.
         - For FileOperationType.COPY, MOVE: destinations should be the path to
           the full destination name (not the destination containing directory).
+          For COPY, the destination may be an iterable, in which case the file
+          is copied to multiple targets.
         - For FileOperationType.RENAME: destinations should be file names only,
           without directories.
         Destinations may be anything supporting the os.PathLike interface: str,
@@ -420,12 +432,16 @@ def file_operation(operation: FileOperationType,
     if operation is FileOperationType.RENAME:
         # We use move for renames, so convert the new name to a full path
         srcs_dsts = {
-            (source_path := GPath(abspath(source))): source_path.head.join(target)
+            (src_path := GPath(abspath(source))): src_path.head.join(target)
             for source, target in sources_dests.items()
         }
     else:
         srcs_dsts = {
-            GPath(abspath(source)): GPath(abspath(target))
+            GPath(abspath(source)): (
+                GPath(abspath(target))
+                if isinstance(target, (str, os.PathLike)) else
+                {GPath(abspath(t)) for t in target}
+            )
             for source, target in sources_dests.items()
         }
     return __copy_or_move(srcs_dsts, rename_on_collision, ask_confirm, parent,
