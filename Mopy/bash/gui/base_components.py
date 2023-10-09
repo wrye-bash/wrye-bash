@@ -133,7 +133,7 @@ class _AComponent:
         self._native_widget = wx_widget_type(self._resolve(parent), *args,
                                              **kwargs)
 
-    def _evt_handler[T: _wx.Event, *Ts](self, evt: _wx.PyEventBinder, arg_proc: ArgProcessor[T, *Ts]=null_processor):
+    def _evt_handler[T: _wx.Event, *Ts](self, evt: _wx.PyEventBinder, arg_proc: ArgProcessor[T, *Ts]=null_processor, evt_type: type[T] | None=None):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)
 
@@ -439,17 +439,20 @@ class WithMouseEvents(_AComponent):
         if self.__class__.bind_lclick_down:
             self.on_mouse_left_down = self._evt_handler(_wx.EVT_LEFT_DOWN,
                 lambda event: (self._WrapMouseEvt(event),
-                               lb_hit_test(event)[0]))
+                               lb_hit_test(event)[0]),
+                _wx.MouseEvent)
         if self.__class__.bind_rclick_up:
             self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
                                                        lb_hit_test)
         if self.__class__.bind_rclick_down:
             self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-                lambda event: (event.GetPosition(),))
+                lambda event: (event.GetPosition(),),
+                _wx.MouseEvent)
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
                 lambda event: (self._WrapMouseEvt(event),
-                               lb_hit_test(event)[0]))
+                               lb_hit_test(event)[0]),
+                _wx.MouseEvent)
         if self.__class__.bind_mouse_leaving:
             self.on_mouse_leaving = self._evt_handler(_wx.EVT_LEAVE_WINDOW)
         if self.__class__.bind_middle_up:

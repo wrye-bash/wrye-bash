@@ -99,7 +99,8 @@ class CheckBox(_ACheckable):
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
-                                            lambda event: (event.IsChecked(),))
+                                            lambda event: (event.IsChecked(),),
+                                            _wx.CommandEvent)
 
     def block_user(self, block_user_func):
         super(CheckBox, self).block_user(block_user_func)
@@ -123,7 +124,8 @@ class RadioButton(_ACheckable):
         super().__init__(parent, label=self._escape(rb_label),
                          style=is_group and _wx.RB_GROUP)
         self.on_checked = self._evt_handler(_wx.EVT_RADIOBUTTON,
-                                            lambda event: (event.IsChecked(),))
+                                            lambda event: (event.IsChecked(),),
+                                            _wx.CommandEvent)
 
     def block_user(self, block_user_func):
         super(RadioButton, self).block_user(block_user_func)

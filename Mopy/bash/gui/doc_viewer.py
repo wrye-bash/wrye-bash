@@ -112,7 +112,8 @@ class WebViewer(_AComponent):
         self._reload_button.on_clicked.subscribe(self.reload)
         # Events - internal use only for now, expose if needed
         self._on_new_window = self._evt_handler(
-            _wx_html2.EVT_WEBVIEW_NEWWINDOW, lambda event: (event.GetURL(),))
+            _wx_html2.EVT_WEBVIEW_NEWWINDOW, lambda event: (event.GetURL(),),
+            _wx_html2.WebViewEvent)
         self._on_new_window.subscribe(self._handle_new_window_opened)
         self._on_loading = self._evt_handler(_wx_html2.EVT_WEBVIEW_NAVIGATED)
         self._on_loading.subscribe(self.update_buttons)

@@ -218,15 +218,18 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self.on_lst_col_end_drag = self._evt_handler(_wx.EVT_LIST_COL_END_DRAG,
                                                      evt_col)
         self.on_item_selected = self._evt_handler(_wx.EVT_LIST_ITEM_SELECTED,
-            lambda event: (self.FindItemAt(event.GetIndex()),))
+            lambda event: (self.FindItemAt(event.GetIndex()),),
+            _wx.ListEvent)
         if allow_edit:
             self.on_edit_label_begin = self._evt_handler(
                 _wx.EVT_LIST_BEGIN_LABEL_EDIT,
-                lambda event: (event.GetLabel(), self,))
+                lambda event: (event.GetLabel(), self,),
+                _wx.ListEvent)
             self.on_edit_label_end = self._evt_handler(
                 _wx.EVT_LIST_END_LABEL_EDIT,
                 lambda event: (event.IsEditCancelled(), event.GetLabel(),
-                    event.GetIndex(), self.FindItemAt(event.GetIndex())))
+                    event.GetIndex(), self.FindItemAt(event.GetIndex())),
+                _wx.ListEvent)
         #--Item/Id mapping
         self._item_itemId: dict[bolt.FName | str | int, int] = {}
         self._itemId_item: dict[int, bolt.FName | str | int] = {}
