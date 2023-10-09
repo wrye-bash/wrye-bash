@@ -48,7 +48,9 @@ from collections import defaultdict
 from enum import Enum
 
 from . import bass, bosh, bush, env # for modInfos
-from .bolt import FName, GPath, LooseVersion, Path, gen_enum_parser
+from .bolt import FName, GPath, LooseVersion, Path, gen_enum_parser, \
+    GPath_no_norm
+from .env import convert_separators
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active
@@ -270,22 +272,26 @@ class _FomodFileInfo(object):
         md_lower_slash = tuple(md_lower + s for s in (u'/', u'\\'))
         md_lower_strip = len(md_lower) + 1 # for the (back)slash
         for file_object in files_elem.findall(u'*'):
-            file_src = inst_root + file_object.get(u'source')
-            if file_src.endswith((u'/', u'\\')):
-                file_src = file_src[:-1] ##: Doesn't GPath already do this?
-            file_src = GPath(file_src)
-            file_dest = file_object.get(u'destination', None)
-            if file_dest is None: # omitted destination
+            # Note that we have to convert separators, since these are going to
+            # assume one OS-specific separator
+            file_src = GPath(inst_root + convert_separators(
+                file_object.get('source')))
+            file_dest = file_object.get('destination', None)
+            if file_dest is None:
+                # Omitted destination, means that the file goes in the same
+                # path in the Data folder as its source file in the package
                 file_dest = file_src
-            elif file_object.tag == u'file' and (
-                not file_dest or file_dest.endswith((u'/', u'\\'))):
-                # if empty or with a trailing slash then dest refers
-                # to a folder. Post-processing to add the filename to the
-                # end of the path.
-                file_dest = GPath(file_dest).join(file_src.tail)
             else:
-                # destination still needs normalizing
-                file_dest = GPath(file_dest)
+                file_dest = convert_separators(file_dest)
+                if file_object.tag == 'file' and (
+                    not file_dest or file_dest.endswith(('/', '\\'))):
+                    # If empty or with a trailing slash then dest refers
+                    # to a folder. Post-processing to add the filename to the
+                    # end of the path.
+                    file_dest = GPath(file_dest).join(file_src.stail)
+                else:
+                    # Destination still needs normalizing
+                    file_dest = GPath(file_dest)
             # Be forgiving of FOMODs that specify redundant 'Data' folders in
             # the destination
             file_dest_s = file_dest.s
@@ -297,7 +303,7 @@ class _FomodFileInfo(object):
                     file_dest_s = file_dest_s[md_lower_strip:]
                     dest_lower = file_dest_s.lower()
             if file_dest_s != file_dest.s:
-                file_dest = GPath(file_dest_s)
+                file_dest = GPath_no_norm(file_dest_s)
             file_prty = int(file_object.get(u'priority', u'0'))
             source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
@@ -318,9 +324,7 @@ class _FomodFileInfo(object):
                 if fsrc_lower == source_lower: # it's a file
                     fm_infos_target.append(cls(file_src, file_dest, file_prty))
                 elif fsrc_lower.startswith(source_starts): # it's a folder
-                    fdest = file_dest.s + fsrc[len(file_src):]
-                    if fdest.startswith((u'/', u'\\')):
-                        fdest = fdest[1:]
+                    fdest = (file_dest.s + fsrc[len(file_src):]).strip(r'\/')
                     fm_infos_target.append(cls(GPath(fsrc), GPath(fdest),
                                            file_prty))
         return fm_infos_con, fm_infos_req
