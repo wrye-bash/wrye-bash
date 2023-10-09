@@ -270,7 +270,7 @@ class Tree(_AComponent):
         super().__init__(parent, style=style)
         if image_list is not None:
             self._native_widget.SetImageList(image_list.GetImageList())
-        self._native_tree_id_to_child = {}
+        self._native_tree_id_to_child: dict[int, TreeNode] = {}
         on_node_activated = self._evt_handler(_wx.EVT_TREE_ITEM_ACTIVATED,
             self._evt_to_node_processor)
         on_node_activated.subscribe(self._handle_node_activated)
@@ -284,7 +284,7 @@ class Tree(_AComponent):
     def _evt_to_node_processor(self, tree_evt: _wx.TreeEvent):
         """Internal event processor, converts a tree event into the affected
         child node."""
-        return [self._native_tree_id_to_child[tree_evt.GetItem()]]
+        return self._native_tree_id_to_child[tree_evt.GetItem()],
 
     @staticmethod
     def _handle_node_activated(affected_node: TreeNode):

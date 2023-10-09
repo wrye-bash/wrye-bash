@@ -142,7 +142,7 @@ class WindowFrame(_TopLevelWin):
         super(WindowFrame, self).__init__(parent, sizes_dict, icon_bundle,
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
-                                             lambda event: [event.GetActive()])
+                                             lambda event: (event.GetActive(),))
         self.set_background_color(self._bkg_color())
 
     def show_frame(self, center=False):
@@ -357,7 +357,7 @@ class TabbedPanel(_APageComponent):
             parent, style=_wx.NB_MULTILINE if multiline else 0)
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
-            lambda event: [event.GetId(), event.GetSelection()])
+            lambda event: (event.GetId(), event.GetSelection()))
 
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different

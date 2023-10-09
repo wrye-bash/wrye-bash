@@ -23,6 +23,7 @@
 """List control wrapper - this is the main control that Bash uses to display
 mods, saves, inis, installers etc"""
 from __future__ import annotations
+from typing import Self
 
 __author__ = u'Lojack, Utumno'
 
@@ -208,7 +209,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
             ) | (is_border_sunken and _wx.BORDER_SUNKEN) | (
                 is_single_cell and _wx.LC_SINGLE_SEL)
         super(UIListCtrl, self).__init__(parent, *args, **kwargs)
-        evt_col = lambda event: [event.GetColumn()]
+        evt_col = lambda event: (event.GetColumn(),)
         self.on_lst_col_rclick = self._evt_handler(
             _wx.EVT_LIST_COL_RIGHT_CLICK, evt_col)
         self.on_context_menu = self._evt_handler(_wx.EVT_CONTEXT_MENU)
@@ -217,15 +218,15 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self.on_lst_col_end_drag = self._evt_handler(_wx.EVT_LIST_COL_END_DRAG,
                                                      evt_col)
         self.on_item_selected = self._evt_handler(_wx.EVT_LIST_ITEM_SELECTED,
-            lambda event: [self.FindItemAt(event.GetIndex())])
+            lambda event: (self.FindItemAt(event.GetIndex()),))
         if allow_edit:
             self.on_edit_label_begin = self._evt_handler(
                 _wx.EVT_LIST_BEGIN_LABEL_EDIT,
-                lambda event: [event.GetLabel(), self])
+                lambda event: (event.GetLabel(), self,))
             self.on_edit_label_end = self._evt_handler(
                 _wx.EVT_LIST_END_LABEL_EDIT,
-                lambda event: [event.IsEditCancelled(), event.GetLabel(),
-                    event.GetIndex(), self.FindItemAt(event.GetIndex())])
+                lambda event: (event.IsEditCancelled(), event.GetLabel(),
+                    event.GetIndex(), self.FindItemAt(event.GetIndex())))
         #--Item/Id mapping
         self._item_itemId: dict[bolt.FName | str | int, int] = {}
         self._itemId_item: dict[int, bolt.FName | str | int] = {}
@@ -302,9 +303,9 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return EventResult.FINISH when handling this event."""
         ec = self.__ec()
         if ec is None: return
-        on_char = EventHandler(ec, _wx.EVT_KEY_DOWN,
-                               lambda event: [event.GetKeyCode() == _wx.WXK_F2,
-                                              ec.GetValue(), self])
+        on_char = EventHandler[_wx.KeyEvent, bool, int, Self](ec, _wx.EVT_KEY_DOWN,
+                               lambda event: (event.GetKeyCode() == _wx.WXK_F2,
+                                              ec.GetValue(), self))
         on_char.subscribe(on_char_handler)
 
     def ec_rename_prompt_opened(self):

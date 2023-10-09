@@ -62,7 +62,7 @@ class DropDown(_AComponent):
             self.tooltip = dd_tooltip
         # Events
         self.on_combo_select = self._evt_handler(_wx.EVT_COMBOBOX,
-            lambda event: [event.GetString()])
+            lambda event: (event.GetString(),))
 
     def set_choices(self, dd_choices: list[str]):
         """Set the choices shown in this dropdown."""
@@ -131,7 +131,7 @@ class ListBox(WithMouseEvents):
         super().__init__(parent, **kwargs_)
         if onSelect:
             self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
-                lambda event: [event.GetSelection(), event.GetString()])
+                lambda event: (event.GetSelection(), event.GetString(),))
             self.on_list_box.subscribe(onSelect)
 
     def lb_select_index(self, lb_selection_dex: int | None):
@@ -230,9 +230,9 @@ class CheckListBox(ListBox, WithCharEvents):
         super().__init__(parent, choices, isSingle, isSort, isHScroll,
             isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
-            lambda event: [event.GetSelection()])
+            lambda event: (event.GetSelection(),))
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
-                                            lambda event: [self])
+                                            lambda event: (self,))
 
     def lb_check_at_index(self, lb_selection_dex: int, do_check: bool):
         self._native_widget.Check(lb_selection_dex, do_check)

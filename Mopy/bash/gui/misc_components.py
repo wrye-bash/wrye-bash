@@ -435,7 +435,7 @@ class GlobalMenu(_AComponent):
         # to be on Link.Frame, even if that looks weird.
         ##: de-wx! move links to gui
         from ..balt import Link
-        menu_processor = lambda event: [event.GetMenu()]
+        menu_processor = lambda event: (event.GetMenu(),)
         self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
         self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,

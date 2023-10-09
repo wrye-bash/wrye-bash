@@ -49,7 +49,7 @@ class _ACheckable(_AComponent):
         super(_ACheckable, self).__init__(*args, **kwargs)
         self.is_checked = checked
         self._block_user_func = None
-        self_proc = lambda _evt: [self]
+        self_proc = lambda _evt: (self,)
         self.on_hovered = self._evt_handler(_wx.EVT_ENTER_WINDOW, self_proc)
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU, self_proc)
         # on_checked needs to be done by subclasses, since the wx event differs
@@ -99,7 +99,7 @@ class CheckBox(_ACheckable):
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
         self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
-                                            lambda event: [event.IsChecked()])
+                                            lambda event: (event.IsChecked(),))
 
     def block_user(self, block_user_func):
         super(CheckBox, self).block_user(block_user_func)
@@ -123,7 +123,7 @@ class RadioButton(_ACheckable):
         super().__init__(parent, label=self._escape(rb_label),
                          style=is_group and _wx.RB_GROUP)
         self.on_checked = self._evt_handler(_wx.EVT_RADIOBUTTON,
-                                            lambda event: [event.IsChecked()])
+                                            lambda event: (event.IsChecked(),))
 
     def block_user(self, block_user_func):
         super(RadioButton, self).block_user(block_user_func)

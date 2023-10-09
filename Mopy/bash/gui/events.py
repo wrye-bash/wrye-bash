@@ -110,15 +110,20 @@ from __future__ import annotations
 
 __author__ = 'Infernio'
 
+from collections.abc import Callable
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import wx
 
 from ..exception import ListenerBound, UnknownListener
 
 # no other imports, everything else needs to be able to import this
 
-def null_processor(_event):
+def null_processor(_event: 'wx.Event'):
     """Argument processor that simply discards the event."""
-    return []
+    return ()
 
 class EventResult(Enum):
     """Implements the return values for EventHandler listeners."""
@@ -136,11 +141,15 @@ class EventResult(Enum):
     events that clearly state so in their documentation may be canceled, all
     others will raise a RuntimeError instead."""
 
-class _EHPauseSubscription:
+type ListenerResult = EventResult | None
+type Listener[*Ts] = Callable[[*Ts], ListenerResult]
+type ArgProcessor[T: 'wx.Event', *Ts] = Callable[[T], tuple[*Ts]]
+
+class _EHPauseSubscription[T: 'wx.Event', *Ts]:
     """Helper for EventHandler.pause_subscription. Can be used reliably for
     just **one** listener at a time."""
-    def __init__(self, event_handler, listener):
-        self._event_handler: EventHandler = event_handler
+    def __init__(self, event_handler: EventHandler[T, *Ts], listener: Listener[*Ts]):
+        self._event_handler = event_handler
         self._listener = listener
 
     def __enter__(self):
@@ -149,11 +158,11 @@ class _EHPauseSubscription:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._event_handler.subscribe(self._listener, _pos=self._listener_pos)
 
-class EventHandler(object):
+class EventHandler[T: 'wx.Event', *Ts]:
     """This class implements the actual event processing, catching native wx
     events, applying processors to them and posting the results to all relevant
     listeners."""
-    def __init__(self, wx_owner, wx_event_id, arg_processor):
+    def __init__(self, wx_owner: 'wx.EvtHandler', wx_event_id: 'wx.PyEventBinder', arg_processor: ArgProcessor[T, *Ts]):
         """Creates a new EventHandler wrapping the specified wx event.
 
         :param wx_owner: The wx object that the event is based on. This is what
@@ -163,12 +172,12 @@ class EventHandler(object):
         :param arg_processor: The processor that should be applied to the event
                               object before passing it on to the listeners."""
         self._arg_processor = arg_processor
-        self._listeners = []
+        self._listeners: list[Listener[*Ts]] = []
         self._wx_owner = wx_owner
         self._wx_event_id = wx_event_id
         self._is_bound = False
 
-    def _post(self, event):
+    def _post(self, event: T):
         """Catches a wx event, applies the argument processor and posts the
         result to all listeners that have subscribed to this event handler. The
         order in which the listeners are processed is guaranteed to be the same
@@ -197,7 +206,7 @@ class EventHandler(object):
         # Need to propagate it up the wx chain
         event.Skip()
 
-    def subscribe(self, listener, *, _pos=None):
+    def subscribe(self, listener: Listener[*Ts], *, _pos: int | None=None):
         """Subscribes the specified listener to this event handler. The order
         in which the listeners are processed is guaranteed to be the same as
         the order in which they subscribed.
@@ -212,7 +221,7 @@ class EventHandler(object):
             self._listeners.insert(_pos, listener)
         self._update_wx_binding()
 
-    def unsubscribe(self, listener):
+    def unsubscribe(self, listener: Listener[*Ts]):
         """Unsubscribes the specified listener from this event handler.
 
         :param listener: The listener to unsubscribe."""
@@ -225,7 +234,7 @@ class EventHandler(object):
         self._update_wx_binding()
         return pos
 
-    def pause_subscription(self, listener):
+    def pause_subscription(self, listener: Listener[*Ts]):
         """Unsubscribe to the specified listener for this event handler,
            for use with a context manager (with statement).
 

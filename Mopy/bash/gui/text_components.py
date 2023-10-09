@@ -107,7 +107,7 @@ class _ATextInput(_AComponent):
         self.on_focus_lost = self._evt_handler(_wx.EVT_KILL_FOCUS)
         self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
         self.on_text_changed = self._evt_handler(_wx.EVT_TEXT,
-                                            lambda event: [event.GetString()])
+                                            lambda event: (event.GetString(),))
         # Need to delay this until now since it uses the events from above
         if auto_tooltip:
             self._on_size_changed.subscribe(self._on_size_change)
@@ -404,7 +404,7 @@ class HyperlinkLabel(_ALabel):
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())
         self.on_link_clicked = self._evt_handler(_adv.EVT_HYPERLINK,
-            lambda event: [event.GetURL()])
+            lambda event: (event.GetURL(),))
 
     # No escaping needed for wx.adv.HyperlinkCtrl, doing this would just double
     # all ampersands
@@ -442,7 +442,7 @@ class Spinner(_AComponent):
         super().__init__(parent, style=_wx.SP_ARROW_KEYS, min=min_num,
             max=max_num, initial=initial_num)
         self.on_spun = self._evt_handler(_wx.EVT_SPINCTRL,
-            lambda event: [event.GetPosition()])
+            lambda event: (event.GetPosition(),))
         if spin_tip: self.tooltip = spin_tip
 
     @property

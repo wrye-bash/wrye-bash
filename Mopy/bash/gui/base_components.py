@@ -36,7 +36,7 @@ import wx as _wx
 import wx.lib.newevent as _newevent
 import wx.svg as _svg
 
-from .events import EventHandler, null_processor
+from .events import EventHandler, null_processor, ArgProcessor
 from ..bolt import deprint
 from ..exception import ArgumentError
 
@@ -133,7 +133,7 @@ class _AComponent:
         self._native_widget = wx_widget_type(self._resolve(parent), *args,
                                              **kwargs)
 
-    def _evt_handler(self, evt, arg_proc=null_processor):
+    def _evt_handler[T: _wx.Event, *Ts](self, evt: _wx.PyEventBinder, arg_proc: ArgProcessor[T, *Ts]=null_processor):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)
 
@@ -431,25 +431,25 @@ class WithMouseEvents(_AComponent):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        lb_hit_test = lambda event: [ # HitTest may return an int or a tuple...
-            self._native_widget.HitTest(event.GetPosition())]
+        lb_hit_test = lambda event: ( # HitTest may return an int or a tuple...
+            self._native_widget.HitTest(event.GetPosition()),)
         if self.__class__.bind_lclick_double:
             self.on_mouse_left_dclick = self._evt_handler(_wx.EVT_LEFT_DCLICK,
                                                           lb_hit_test)
         if self.__class__.bind_lclick_down:
             self.on_mouse_left_down = self._evt_handler(_wx.EVT_LEFT_DOWN,
-                lambda event: [self._WrapMouseEvt(event),
-                               lb_hit_test(event)[0]])
+                lambda event: (self._WrapMouseEvt(event),
+                               lb_hit_test(event)[0]))
         if self.__class__.bind_rclick_up:
             self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
                                                        lb_hit_test)
         if self.__class__.bind_rclick_down:
             self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-                lambda event: [event.GetPosition()])
+                lambda event: (event.GetPosition(),))
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
-                lambda event: [self._WrapMouseEvt(event),
-                               lb_hit_test(event)[0]])
+                lambda event: (self._WrapMouseEvt(event),
+                               lb_hit_test(event)[0]))
         if self.__class__.bind_mouse_leaving:
             self.on_mouse_leaving = self._evt_handler(_wx.EVT_LEAVE_WINDOW)
         if self.__class__.bind_middle_up:
@@ -490,7 +490,7 @@ class WithCharEvents(_AComponent):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        wrap_processor = lambda event: [self._WrapKeyEvt(event)]
+        wrap_processor = lambda event: (self._WrapKeyEvt(event),)
         self.on_key_down = self._evt_handler(_wx.EVT_KEY_DOWN, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
