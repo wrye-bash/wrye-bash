@@ -1075,7 +1075,17 @@ class UIList(PanelWin):
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
     def OnDClick(self, lb_dex_and_flags): pass
-    def _handle_key_down(self, wrapped_evt): pass
+    def _handle_key_down(self, wrapped_evt):
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == wx.WXK_TAB:
+            if wx.Platform == '__WXMSW__':
+                # Handled natively on MSW ##: what about macOS?
+                return EventResult.CONTINUE
+            # Ctrl+Tab - cycle tabs to the right
+            # Ctrl+Shift+Tab - cycle tabs to the left
+            Link.Frame.notebook.AdvanceSelection(not wrapped_evt.is_shift_down)
+        else:
+            return EventResult.CONTINUE
+        return EventResult.FINISH
     #--Edit labels - only registered if _editLabels != False
     def _check_rename_requirements(self):
         """Check if the renaming operation is allowed and return the item type
