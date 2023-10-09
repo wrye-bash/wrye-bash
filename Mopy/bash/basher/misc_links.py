@@ -28,7 +28,7 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bosh, bush
 from ..balt import AppendableLink, CheckLink, ChoiceMenuLink, EnabledLink, \
     ItemLink, Link, OneItemLink, RadioLink, SeparatorLink
-from ..bolt import GPath
+from ..bolt import GPath, FName
 from ..gui import AutoSize, BusyCursor, ImageWrapper
 
 __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
@@ -198,12 +198,19 @@ class Master_ChangeTo(_Master_EditList):
             self._showError(_(u'File must be selected from %s '
                               u'directory.') % bush.game.mods_dir)
             return
-        elif newName.s == master_name: # case insensitive, good
+        if (new_fname := FName(newName.s)) == master_name:
+            return
+        curr_master_names = {m.curr_name for m in
+                             self.window.data_store.values()}
+        if new_fname in curr_master_names:
+            self._showError(_('This plugin already has %(master_name)s as a '
+                              'master.') % {'master_name': new_fname})
             return
         #--Save Name
-        if masterInfo.rename_if_present(newName.s):
+        if masterInfo.rename_if_present(new_fname):
             ##: should be True but needs extra validation -> cycles?
-            bass.settings[u'bash.mods.renames'][master_name] = masterInfo.curr_name
+            bass.settings['bash.mods.renames'][
+                master_name] = masterInfo.curr_name
             self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
