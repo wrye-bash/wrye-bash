@@ -1411,8 +1411,9 @@ def clearReadOnly(dirPath):
     # elif platform.system() == u'Darwin':
     #     cmd = f'chflags -R nouchg {dirPath}'
     else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
-        cmds = (fr'find {dirPath} -not -executable -exec chmod a=rw {{}} \; &',
-                fr'find {dirPath} -executable -exec chmod a=rwx {{}} \; &')
+        cmds = (
+            fr'find "{dirPath}" -not -executable -exec chmod a=rw {{}} \; &',
+            fr'find "{dirPath}" -executable -exec chmod a=rwx {{}} \; &')
     for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
 
 # Util Constants --------------------------------------------------------------
@@ -2552,24 +2553,28 @@ class StringTable(dict):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
-            with open(path, u'rb') as ins:
+            # These may be extracted from a BSA, so their case may not match
+            # what we expect at all
+            from .env import canonize_ci_path
+            canon_path = canonize_ci_path(path)
+            with open(canon_path, u'rb') as ins:
                 ins.seek(0, os.SEEK_END)
                 eof = ins.tell()
                 ins.seek(0)
                 if eof < 8:
-                    deprint(f"Warning: Strings file '{path}' file size "
-                            f"({eof}) is less than 8 bytes.  8 bytes are "
-                            f"the minimum required by the expected format, "
-                            f"assuming the Strings file is empty.")
+                    deprint(f"Warning: Strings file '{canon_path}' file size "
+                            f"({canon_path}) is less than 8 bytes. 8 bytes "
+                            f"are the minimum required by the expected "
+                            f"format, assuming the Strings file is empty.")
                     return
                 numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(f"Warning: Strings file '{path}' dataSize element "
-                            f"({dataSize}) results in a string start location "
-                            f"of {eof - dataSize}, but the expected location "
-                            f"is {stringsStart}")
+                    deprint(f"Warning: Strings file '{canon_path}' dataSize "
+                            f"element ({dataSize}) results in a string start "
+                            f"location of {eof - dataSize}, but the expected "
+                            f"location is {stringsStart}")
                 id_ = -1
                 offset = -1
                 for x in range(numIds):
@@ -2583,7 +2588,8 @@ class StringTable(dict):
                             # seems needed, strings are null terminated
                             value = cstrip(value)
                         else:
-                            value = readCString(ins, path) #drops the null byte
+                            # drops the null byte
+                            value = readCString(ins, canon_path)
                         try:
                             value = value.decode('utf-8')
                         except UnicodeDecodeError:

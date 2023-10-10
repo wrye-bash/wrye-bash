@@ -30,7 +30,7 @@ from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import Link, Resources
 from ..bolt import FName, GPath
 from ..bosh import empty_path, mods_metadata, omods
-from ..env import normalize_ci_path
+from ..env import canonize_ci_path
 from ..exception import StateError, CancelError
 from ..gui import Button, CancelButton, CheckBox, DocumentViewer, DropDown, \
     FileOpen, FileSave, GridLayout, HLayout, Label, LayoutOptions, ListBox, \
@@ -335,7 +335,7 @@ class DocBrowser(WindowFrame):
                     # do is ignore it
                     self._load_data(uni_str='')
                     return
-                ported_path = normalize_ci_path(
+                ported_path = canonize_ci_path(
                     bass.dirs['mods'].join(wip_doc))
                 if ported_path and ported_path.is_file():
                     doc_path = ported_path

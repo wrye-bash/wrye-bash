@@ -29,8 +29,9 @@ MelStruct."""
 __author__ = 'Infernio'
 
 import copy
+from collections.abc import Callable
 from itertools import chain
-from typing import Any, BinaryIO, Callable
+from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct

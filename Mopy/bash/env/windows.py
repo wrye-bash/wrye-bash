@@ -1084,11 +1084,11 @@ def get_steam_game_paths(submod):
     return [_GPath_no_norm(p) for p in
             _parse_steam_manifests(submod, _get_steam_path())]
 
-def get_personal_path():
+def get_personal_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.Documents)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def get_local_app_data_path():
+def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
@@ -1239,7 +1239,7 @@ def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')
 
-def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     """Alter the case of a case-insensitive path to match directories and files
     actually present in the filesystem, if any. This is basically identical to
     what Wine does when emulating case insensitivity. If this returns None, the
@@ -1258,6 +1258,13 @@ def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
     else:
         new_attr_flags = curr_attr_flags & ~FILE_ATTRIBUTE_HIDDEN
     win32api.SetFileAttributes(path_to_hide, new_attr_flags)
+
+def get_case_sensitivity_advice():
+    """Retrieve information on how to make the Data folder case-insensitive."""
+    return _("On Windows, you can use fsutil.exe to mark the Data folder as "
+             "case-insensitive again. See Microsoft's 'Adjust case "
+             "sensitivity' page (https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity) "
+             "for more information.")
 
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section

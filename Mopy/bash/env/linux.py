@@ -26,7 +26,7 @@ import functools
 import os
 import subprocess
 import sys
-from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
+from collections import deque
 
 from .common import _find_legendary_games, _LegacyWinAppInfo, \
     _parse_steam_manifests
@@ -53,15 +53,73 @@ BTN_OK = BTN_CANCEL = BTN_YES = BTN_NO = None
 GOOD_EXITS = (BTN_OK, BTN_YES)
 
 # Internals ===================================================================
-def _getShellPath(folderKey): ##: mkdirs
-    home = os.path.expanduser('~')
-    return _GPath({
-        'Personal': f'{home}/Documents',
-        'Local AppData': f'{home}/.local/share',
-    }[folderKey])
+def _get_steamuser_path(submod, user_relative_path: str) -> str | None:
+    """Helper for retrieving a path relative to a Proton prefix's steamuser
+    directory. Also supports older Proton versions (which did not use
+    'steamuser', but the actual user's name instead)."""
+    if all_steam_ids := submod.St.steam_ids:
+        compatdata_path = os.path.realpath(os.path.join(
+            submod.gamePath, '..', '..', 'compatdata'))
+        for st_id in all_steam_ids:
+            # If this path does not exist, the game has not been launched yet
+            # and we don't have a Proton prefix to work with
+            users_path = os.path.join(compatdata_path, str(st_id), 'pfx',
+                'drive_c', 'users')
+            if not os.path.exists(users_path):
+                continue
+            # Newer Proton installations always create with the username
+            # 'steamuser', so if that exists we've got it for sure
+            candidate_path = os.path.join(users_path, 'steamuser',
+                user_relative_path)
+            if os.path.exists(candidate_path):
+                return candidate_path
+            # No good, it was created with some users' actual username. Filter
+            # out 'Public', which is always present and does not contain the
+            # files we're looking for
+            all_user_filenames = [u for u in os.listdir(users_path)
+                                  if u.lower() != 'public']
+            if len(all_user_filenames) == 1:
+                candidate_path = os.path.join(users_path,
+                    all_user_filenames[0], user_relative_path)
+                return candidate_path
+            # More than one username in a Proton prefix? And none of them are
+            # 'steamuser'? *Someone* should clean this up
+            _deprint(f"Found >1 username ({', '.join(all_user_filenames)}) in "
+                     f"a Proton prefix's users directory ({users_path}). You "
+                     f"should probably clean this up.")
+            for user_filename in all_user_filenames:
+                candidate_path = os.path.join(users_path, user_filename,
+                    user_relative_path)
+                if os.path.exists(candidate_path):
+                    # Use the first users' path that exists
+                    return candidate_path
+    return None
 
-def _get_error_info():
-    return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))
+def _get_xdg_path(xdg_var: str) -> _Path | None:
+    """Retrieve a path from an XDG environment variable. If no such variable is
+    set, fall back to the corresponding legacy path. If that *also* doesn't
+    exist, return None - user clearly has a weird, nonstandard Linux system and
+    will have to use CLI or bash.ini to set the path."""
+    if xdg_val := os.environ.get(xdg_var):
+        return _GPath_no_norm(xdg_val)
+    home_path = os.path.expanduser('~')
+    # For this mapping, see:
+    #  - https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+    #  - https://wiki.archlinux.org/title/XDG_user_directories
+    return _GPath({
+        'XDG_CACHE_HOME':      f'{home_path}/.cache',
+        'XDG_CONFIG_HOME':     f'{home_path}/.config',
+        'XDG_DATA_HOME':       f'{home_path}/.local/share',
+        'XDG_DESKTOP_DIR':     f'{home_path}/Desktop',
+        'XDG_DOCUMENTS_DIR':   f'{home_path}/Documents',
+        'XDG_DOWNLOAD_DIR':    f'{home_path}/Downloads',
+        'XDG_MUSIC_DIR':       f'{home_path}/Music',
+        'XDG_PICTURES_DIR':    f'{home_path}/Pictures',
+        'XDG_PUBLICSHARE_DIR': f'{home_path}/Public',
+        'XDG_STATE_HOME':      f'{home_path}/.local/state',
+        'XDG_TEMPLATES_DIR':   f'{home_path}/Templates',
+        'XDG_VIDEOS_DIR':      f'{home_path}/Videos',
+    }.get(xdg_var))
 
 @functools.cache
 def _get_steam_path() -> _Path | None:
@@ -108,11 +166,35 @@ def get_steam_game_paths(submod):
     return [_GPath_no_norm(p) for p in
             _parse_steam_manifests(submod, _get_steam_path())]
 
-def get_personal_path():
-    return _getShellPath(u'Personal'), _get_error_info()
+def get_personal_path(submod):
+    if sys.platform == 'darwin':
+        return _GPath(os.path.expanduser('~')), _('Fallback to home dir)')
+    if submod.St.steam_ids:
+        proton_personal_path = _get_steamuser_path(submod, 'My Documents')
+        # Let it blow if this is None - don't create random folders on Linux
+        # for Windows games installed via Proton
+        return (_GPath(proton_personal_path),
+                _('Folder path retrieved via Proton prefix. Launch the game '
+                  'through Steam to make sure its Proton prefix is created.'))
+    return (_get_xdg_path('XDG_DOCUMENTS_DIR'),
+            _('Folder path retrieved via $XDG_DOCUMENTS_DIR (or fallback to '
+              '~/Documents)'))
 
-def get_local_app_data_path():
-    return _getShellPath(u'Local AppData'), _get_error_info()
+def get_local_app_data_path(submod):
+    if sys.platform == 'darwin':
+        return _GPath(f'{os.path.expanduser("~")}/.local/share'), _(
+            'Fallback to ~/.local/share)')
+    if submod.St.steam_ids:
+        # Let it blow if this is None - don't create random folders on Linux
+        # for Windows games installed via Proton
+        proton_local_app_data_path = _get_steamuser_path(submod,
+            os.path.join('AppData', 'Local'))
+        return (_GPath(proton_local_app_data_path),
+                _('Folder path retrieved via Proton prefix. Launch the game '
+                  'through Steam to make sure its Proton prefix is created.'))
+    return (_get_xdg_path('XDG_DATA_HOME'),
+            _('Folder path retrieved via $XDG_DATA_HOME (or fallback to '
+              '~/.local/share)'))
 
 def init_app_links(_apps_dir, _badIcons, _iconList):
     ##: Rework launchers so that they can work for Linux too
@@ -253,14 +335,19 @@ def convert_separators(p):
 
 ##: A more performant implementation would maybe cache folder contents or
 # something similar, as it stands this is not usable for fixing BAIN on Linux
-def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     if os.path.exists(ci_path):
         # Fast path, but GPath it as we haven't normpathed it yet
         return _GPath(ci_path)
-    # The first part is root, which we can obviously skip (has no other case)
-    ci_parts = PPath(os.path.normpath(os.fspath(ci_path))).parts[1:]
-    constructed_path = '/'
-    for ci_part in ci_parts:
+    # Find the longest prefix that exists in the filesystem - *some* prefix
+    # must exist, even if it's only root
+    path_prefix, ci_rem_part = os.path.split(os.path.normpath(ci_path))
+    ci_remaining_parts = deque([ci_rem_part])
+    while not os.path.exists(path_prefix):
+        path_prefix, ci_rem_part = os.path.split(path_prefix)
+        ci_remaining_parts.appendleft(ci_rem_part)
+    constructed_path = path_prefix
+    for ci_part in ci_remaining_parts:
         new_ci_path = os.path.join(constructed_path, ci_part)
         if os.path.exists(new_ci_path):
             # If this part exists with the correct case, keep going
@@ -292,6 +379,17 @@ def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
         if fth_tail.startswith('.'):
             os.rename(file_to_hide, os.path.join(fth_head,
                 fth_tail.lstrip('.')))
+
+def get_case_sensitivity_advice():
+    return (_("On Linux, if your filesystem supports casefolding, you can "
+              "utilize that feature. An ext4 filesystem that was created with "
+              "the '-O casefold' option can use 'chattr +F' to mark the Data "
+              "folder as case-insensitive, for example. Please check if your "
+              "filesystem supports this and how to enable it.") + '\n\n' +
+            _('Otherwise, you can use ciopfs, which is a FUSE layer that '
+              'needs to be setup and added to your fstab file. See its '
+              'website (https://www.brain-dump.org/projects/ciopfs/) for more '
+              'information.'))
 
 # API - Classes ===============================================================
 class TaskDialog(object):

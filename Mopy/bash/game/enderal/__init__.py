@@ -47,7 +47,7 @@ class AEnderalGameInfo(ASkyrimGameInfo):
     nexusKey = u'bash.installers.openEnderalNexus.continue'
 
     class Ini(ASkyrimGameInfo.Ini):
-        default_ini_file = u'enderal_default.ini'
+        default_ini_file = 'Enderal_default.ini'
         dropdown_inis = [u'Enderal.ini', u'EnderalPrefs.ini']
         save_prefix = u'..\\Enderal\\Saves'
 

@@ -543,7 +543,7 @@ class SyncFromDataEditor(_ABainMLE):
                         'package.'),
             mlel_items=list(map(str, pkg_mismatched)))
         sync_desc = _('Update %(target_package)s according to '
-                      '%(data_folder)s directory?') % {
+                      '%(data_folder)s folder?') % {
             'target_package': pkg_name, 'data_folder': bush.game.mods_dir}
         sync_desc += '\n' + _('Uncheck any files you want to keep unchanged.')
         super().__init__(parent, data_desc=sync_desc,
