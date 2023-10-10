@@ -188,7 +188,7 @@ class AOblivionGameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
 
-    allTags = PatchGame.allTags | {'IIM', 'NoMerge'}
+    allTags = PatchGame.allTags | {'IIM'}
     patchers = {
         'AliasPluginNames', 'CoblCatalogs', 'CoblExhaustion',
         'ContentsChecker', 'ImportActors', 'ImportActorsAIPackages',
@@ -198,10 +198,10 @@ class AOblivionGameInfo(PatchGame):
         'ImportNames', 'ImportRaces', 'ImportRacesRelations',
         'ImportRacesSpells', 'ImportRelations', 'ImportRoads', 'ImportScripts',
         'ImportSounds', 'ImportSpellStats', 'ImportStats', 'ImportText',
-        'LeveledLists', 'MergePatches', 'MorphFactions', 'NpcChecker',
-        'RaceChecker', 'ReplaceFormIDs', 'SEWorldTests', 'TimescaleChecker',
-        'TweakActors', 'TweakAssorted', 'TweakClothes', 'TweakNames',
-        'TweakRaces', 'TweakSettings',
+        'LeveledLists', 'MorphFactions', 'NpcChecker', 'RaceChecker',
+        'ReplaceFormIDs', 'SEWorldTests', 'TimescaleChecker', 'TweakActors',
+        'TweakAssorted', 'TweakClothes', 'TweakNames', 'TweakRaces',
+        'TweakSettings',
     }
 
     weaponTypes = (

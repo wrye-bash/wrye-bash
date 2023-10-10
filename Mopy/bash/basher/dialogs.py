@@ -314,12 +314,23 @@ class CreateNewPlugin(DialogWindow):
                             u'a master, i.e. have the ESM flag.'))
         # Completely hide the ESL checkbox for non-ESL games, but check it by
         # default for ESL games, since one of the most common use cases for
-        # this command on those games is to create BSA-loading dummies.
+        # this command on those games is to create BSA-loading dummies. But for
+        # Overlay games, we want to disable it by default again since the ESL
+        # flag disables the Overlay flag and both flags are very valid use
+        # cases for this command.
         self._esl_flag = CheckBox(self, _(u'ESL Flag'),
             chkbx_tooltip=_(u'Whether or not the resulting plugin will be '
                             u'light, i.e have the ESL flag.'),
-            checked=bush.game.has_esl)
+            checked=bush.game.has_esl and not bush.game.has_overlay_plugins)
         self._esl_flag.visible = bush.game.has_esl
+        # Hide the Overlay checkbox for non-Overlay games
+        self._overlay_flag = CheckBox(self, _('Overlay Flag'),
+            chkbx_tooltip=_('Whether or not the resulting plugin will only be '
+                            'able to contain overrides (but not take up a '
+                            'load order slot), i.e. have the Overlay flag.'))
+        self._overlay_flag.visible = bush.game.has_overlay_plugins
+        for flag_chkbx in (self._esm_flag, self._esl_flag, self._overlay_flag):
+            flag_chkbx.on_checked.subscribe(self._handle_flag_checked)
         self._master_search = SearchBar(self, hint=_('Search Masters'))
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
@@ -344,13 +355,17 @@ class CreateNewPlugin(DialogWindow):
         self._too_many_masters = Label(self, u'')
         self._too_many_masters.set_foreground_color(colors[u'default.warn'])
         self._too_many_masters.visible = False
+        self._check_flag_states()
         VLayout(border=6, spacing=6, item_expand=True, items=[
             HLayout(spacing=4, items=[
                 (self._plugin_name, LayoutOptions(weight=1)),
                 self._plugin_ext,
             ]),
-            VBoxedLayout(self, title=_(u'Flags'), spacing=4, items=[
-                self._esm_flag, self._esl_flag,
+            VBoxedLayout(self, title=_('Flags'), items=[
+                self._esm_flag,
+                HLayout(spacing=4, items=[
+                    self._esl_flag, self._overlay_flag,
+                ]),
             ]),
             (HBoxedLayout(self, title=_(u'Masters'), spacing=4,
                 item_expand=True, items=[
@@ -372,14 +387,14 @@ class CreateNewPlugin(DialogWindow):
 
     @property
     def _chosen_masters(self):
-        """Returns a generator yielding all checked masters."""
-        return (k for k, v in self._masters_dict.items() if v)
+        """Returns a list containing all checked masters."""
+        return [k for k, v in self._masters_dict.items() if v]
 
     def _check_master_limit(self):
         """Checks if the current selection of masters exceeds the game's master
         limit and, if so, disables the OK button and shows a warning
         message."""
-        count_checked = len(list(self._chosen_masters))
+        count_checked = len(self._chosen_masters)
         count_limit = bush.game.Esp.master_limit
         limit_exceeded = count_checked > count_limit
         self._ok_btn.enabled = not limit_exceeded
@@ -392,11 +407,14 @@ class CreateNewPlugin(DialogWindow):
                 'count_checked': count_checked, 'count_limit': count_limit}
         self.update_layout()
 
-    def _handle_plugin_ext(self, new_p_ext):
-        """Internal callback to handle a change in extension."""
-        # Enable the flags by default, but don't mess with their checked state
-        p_is_esl = new_p_ext == '.esl'
-        p_is_master = p_is_esl or new_p_ext == '.esm'
+    def _check_flag_states(self):
+        """If the ESL flag is checked, the Overlay flag should be unchecked and
+        disabled and vice versa. If no masters are selected, the Overlay flag
+        should also be disabled. And ensure that the file extension forces the
+        right flags."""
+        curr_p_ext = self._plugin_ext.get_value()
+        p_is_esl = curr_p_ext == '.esl'
+        p_is_master = p_is_esl or curr_p_ext == '.esm'
         # For .esm and .esl files, force-check the ESM flag
         if p_is_master:
             self._esm_flag.is_checked = True
@@ -405,6 +423,28 @@ class CreateNewPlugin(DialogWindow):
         if p_is_esl:
             self._esl_flag.is_checked = True
         self._esl_flag.enabled = not p_is_esl
+        # Ensure that the ESL and Overlay flags are mutually exclusive
+        if self._esl_flag.is_checked:
+            self._overlay_flag.is_checked = False
+            self._overlay_flag.enabled = False
+        else:
+            # If no masters are selected, the Overlay flag isn't valid
+            if not self._chosen_masters:
+                self._overlay_flag.is_checked = False
+                self._overlay_flag.enabled = False
+            else:
+                self._overlay_flag.enabled = True
+                if self._overlay_flag.is_checked:
+                    self._esl_flag.is_checked = False
+                    self._esl_flag.enabled = False
+
+    def _handle_plugin_ext(self, _new_p_ext):
+        """Internal callback to handle a change in extension."""
+        self._check_flag_states()
+
+    def _handle_flag_checked(self, _new_flag_checked):
+        """Internal callback to handle a flag getting checked or unchecked."""
+        self._check_flag_states()
 
     def _handle_mass_select(self, mark_active):
         """Internal callback to handle the Select/Deselect All buttons."""
@@ -413,6 +453,7 @@ class CreateNewPlugin(DialogWindow):
             # Update only visible items!
             self._masters_dict[FName(m)] = mark_active
         self._check_master_limit()
+        self._check_flag_states()
 
     def _handle_master_checked(self, master_index):
         """Internal callback to update the dict we use to track state,
@@ -421,6 +462,7 @@ class CreateNewPlugin(DialogWindow):
         mast_checked = self._masters_box.lb_is_checked_at_index(master_index)
         self._masters_dict[FName(mast_name)] = mast_checked
         self._check_master_limit()
+        self._check_flag_states()
 
     def _handle_search(self, search_str):
         """Internal callback used to repopulate the masters box whenever the
@@ -446,6 +488,7 @@ class CreateNewPlugin(DialogWindow):
         pw.data_store.create_new_mod(chosen_name, windowSelected,
             with_esm_flag=self._esm_flag.is_checked,
             with_esl_flag=self._esl_flag.is_checked,
+            with_overlay_flag=self._overlay_flag.is_checked,
             wanted_masters=[*map(FName, self._chosen_masters)])
         if windowSelected:  # assign it the group of the first selected mod
             mod_group = pw.data_store.table.getColumn(u'group')

@@ -42,6 +42,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
+from ..game import MergeabilityCheck
 from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard, askText, \
     showError
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
@@ -53,7 +54,7 @@ from ..patcher.patch_files import PatchFile
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_Groups', u'Mod_Ratings', u'Mod_Details', u'Mod_ShowReadme',
            u'Mod_ListBashTags', u'Mod_CreateLOOTReport', u'Mod_CopyModInfo',
-           u'Mod_AllowGhosting', u'Mod_GhostUnghost', u'Mod_MarkMergeable',
+           'Mod_AllowGhosting', 'Mod_GhostUnghost', 'Mod_CheckQualifications',
            'Mod_RebuildPatch', 'Mod_ListPatchConfig', 'Mod_EditorIds_Export',
            u'Mod_FullNames_Export', u'Mod_Prices_Export', u'Mod_Stats_Export',
            u'Mod_Factions_Export', u'Mod_ActorLevels_Export', u'Mod_Redate',
@@ -70,7 +71,7 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_Move',
            'Mod_RecalcRecordCounts', 'Mod_Duplicate', 'Mod_DumpSubrecords',
-           'Mod_DumpRecordTypeNames']
+           'Mod_DumpRecordTypeNames', 'Mod_FlipOverlay']
 
 def _configIsCBash(patchConfigs):
     return any('CBash' in config_key for config_key in patchConfigs)
@@ -896,44 +897,78 @@ class Mod_AllowGhosting(TransLink):
 
 # BP Links --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_MarkMergeable(ItemLink):
-    """Returns true if can act as patch mod."""
-    def __init__(self):
-        Link.__init__(self)
-        if bush.game.check_esl:
-            self._text = _('Check ESL Qualifications')
-            self._help = _('Scans the selected plugin(s) to determine whether '
-                'or not they can be assigned the ESL flag, reporting also the '
-                'reason(s) if they cannot be ESL-flagged.')
+class Mod_CheckQualifications(ItemLink):
+    """Check various mergeability criteria - BP mergeability, ESL capability
+    and Overlay capability."""
+    _text = _('Check Qualifications...')
+
+    @property
+    def link_help(self):
+        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
+            if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+                if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+                    # Overlay + ESL + Merge
+                    return _('Scan the selected plugin(s) to determine '
+                             'whether or not they can be merged into the '
+                             'Bashed Patch, assigned the ESL flag or assigned '
+                             'the Overlay flag, reporting also the reason(s) '
+                             'if they cannot.')
+                # Overlay + ESL
+                return _('Scan the selected plugin(s) to determine whether or '
+                         'not they can be assigned the ESL flag or assigned '
+                         'the Overlay flag, reporting also the reason(s) if '
+                         'they cannot.')
+            elif MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+                # Overlay + Merge
+                return _('Scan the selected plugin(s) to determine whether or '
+                         'not they can be merged into the Bashed Patch or '
+                         'assigned the Overlay flag, reporting also the '
+                         'reason(s) if they cannot.')
+            # Overlay
+            return _('Scan the selected plugin(s) to determine whether or not '
+                     'they can be assigned the Overlay flag, reporting also '
+                     'the reason(s) if they cannot.')
         else:
-            self._text = _('Mark Mergeable...')
-            self._help = _('Scans the selected plugin(s) to determine if they '
-                'are mergeable into the Python Bashed Patch, reporting also '
-                'the reason(s) if they are unmergeable.')
+            if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+                if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+                    # ESL + Merge
+                    return _('Scan the selected plugin(s) to determine '
+                             'whether or not they can be merged into the '
+                             'Bashed Patch or assigned the ESL flag, '
+                             'reporting also the reason(s) if they cannot.')
+                # ESL
+                return _('Scan the selected plugin(s) to determine '
+                         'whether or not they can be assigned the ESL flag, '
+                         'reporting also the reason(s) if they cannot.')
+            # Merge
+            return _('Scan the selected plugin(s) to determine whether or not '
+                     'they can be merged into the Bashed Patch, reporting '
+                     'also the reason(s) if they cannot.')
 
     @balt.conversation
     def Execute(self):
         prog = balt.Progress(self._text + ' ' * 30)
         result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
             prog, return_results=True)
-        yes = [x for x in self.selected if
-               x not in tagged_no_merge and x in bosh.modInfos.mergeable]
-        no = set(self.selected) - set(yes)
-        no = [f'{x}:{y}' for x, y in result.items() if x in no]
-        if check_esl := bush.game.check_esl:
-            message = ['== %s' % _('Plugins that qualify for ESL flagging.')]
-        else:
-            message = ['== %s ' % _('Python Mergeability')]
-        if yes:
-            message.append('=== ' + (_('ESL Capable') if check_esl else _(
-                'Mergeable')) + '\n* ' + '\n\n* '.join(yes))
-        if yes and no:
-            message.append('') # will add a '\n\n'
-        if no:
-            message.append('=== ' + (_('ESL Incapable') if check_esl else _(
-                'Not Mergeable')) + '\n* ' + '\n\n* '.join(no))
+        mergeability_strs = {
+            MergeabilityCheck.MERGE: (_('Not Mergeable Into Bashed Patch'),
+                                      _('Mergeable Into Bashed Patch')),
+            MergeabilityCheck.ESL_CHECK: (_('Not ESL-Capable'),
+                                          _('ESL-Capable')),
+            MergeabilityCheck.OVERLAY_CHECK: (_('Not Overlay-Capable'),
+                                              _('Overlay-Capable')),
+        }
+        message = ['= ' + _('Qualification Check Results')]
+        for p in self.selected:
+            message.append('')
+            message.append(f'== {p}')
+            for chk_ty, (chk_result, chk_reason) in result[p].items():
+                message.append('')
+                message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
+                for r in chk_reason:
+                    message.append(f'.    {r}')
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
-        self._showWryeLog('\n\n'.join(message), title=self._text)
+        self._showWryeLog('\n'.join(message), title=self._text)
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(OneItemLink):
@@ -1023,7 +1058,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         merge, noMerge, deactivate = [], [], []
         for mod in bashed_patch.load_dict:
             tags = bosh.modInfos[mod].getBashTags()
-            if not bush.game.check_esl and mod in bosh.modInfos.mergeable:
+            if mod in bosh.modInfos.mergeable_plugins:
                 if 'MustBeActiveIfImported' in tags:
                     continue
                 elif 'NoMerge' in tags:
@@ -1438,7 +1473,9 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 self._showOk(m, fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
-class _Esm_Esl_Flip(EnabledLink):
+class _AFlipFlagLink(EnabledLink):
+    """Base class for links that enable or disable a flag in the plugin
+    header."""
     _add_flag: str
     _remove_flag: str
 
@@ -1471,74 +1508,87 @@ class _Esm_Esl_Flip(EnabledLink):
                 redraw=load_order.cached_higher_loading(lowest_selected),
                 refreshSaves=True)
 
-class Mod_FlipEsm(_Esm_Esl_Flip):
-    """Flip ESM flag. Extension must be .esp or .esu."""
-    _help = _(u'Flips the ESM flag on the selected plugin(s), turning a master'
-              u' into a regular plugin and vice versa.')
-    _add_flag, _remove_flag = _(u'Add ESM Flag'), _(u'Remove ESM Flag')
+class Mod_FlipEsm(_AFlipFlagLink):
+    """Add or remove the ESM flag. Extension must be .esp or .esu."""
+    _help = _('Flip the ESM flag on the selected plugin(s), turning a master '
+              'into a regular plugin and vice versa.')
+    _add_flag, _remove_flag = _('Add ESM Flag'), _('Remove ESM Flag')
 
     @property
     def _already_flagged(self):
         return self._first_selected().has_esm_flag()
 
     def _enable(self):
-        """For pre esl games check if all mods are of the same type (esm or
-        esp), based on the flag and if are all esp extension files. For esl
-        games the esp extension is even more important as .esm and .esl files
-        implicitly have the master flag set no matter what."""
+        """Allow if all selected mods have valid extensions and have the same
+        ESM flag state."""
         first_is_esm = self._already_flagged
-        return all(m.fn_ext in (u'.esp', u'.esu') and
+        return all(m.fn_ext in ('.esp', '.esu') and
                    minfo.has_esm_flag() == first_is_esm
                    for m, minfo in self.iselected_pairs())
 
     def _exec_flip(self):
-        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
-            _(u'This command flips an internal bit in the mod, converting an '
-              u'ESP to an ESM and vice versa. For older games (Skyrim and '
-              u'earlier), only this bit determines whether or not a plugin is '
-              u'loaded as a master. In newer games (FO4 and later), files '
-              u'with the ".esm" and ".esl" extension are always forced to '
-              u'load as masters. Therefore, we disallow selecting those '
-              u'plugins for ESP/ESM conversion on newer games.'))
-        if not self._askContinue(message, u'bash.flipToEsmp.continue',
-                                 _(u'Flip to ESM')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esm_flag(not modInfo.has_esm_flag())
 
-class Mod_FlipEsl(_Esm_Esl_Flip):
-    """Flip an esp(esl) to an esl(esp)."""
-    _help = _(u'Flips the ESL flag on the selected plugin(s), turning a light '
-              u'plugin into a regular one and vice versa.')
-    _add_flag, _remove_flag = _(u'Add ESL Flag'), _(u'Remove ESL Flag')
+#------------------------------------------------------------------------------
+class Mod_FlipEsl(_AFlipFlagLink):
+    """Add or remove the ESL flag. Extension must be .esm, .esp or .esu."""
+    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
+              'plugin into a regular one and vice versa.')
+    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
 
     @property
     def _already_flagged(self):
         return self._first_selected().has_esl_flag()
 
     def _enable(self):
-        """Allow if all selected mods have valid extensions, have same esl flag
-        and are esl capable if converting to esl."""
+        """Allow if all selected mods have valid extensions, have the same ESL
+        flag state and are ESL-capable if converting to ESL."""
         first_is_esl = self._already_flagged
-        return all(m.fn_ext in (u'.esm', u'.esp', u'.esu') and
+        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
                    minfo.has_esl_flag() == first_is_esl and
-                   (first_is_esl or m in bosh.modInfos.mergeable)
+                   (first_is_esl or m in bosh.modInfos.esl_capable_plugins)
                    for m, minfo in self.iselected_pairs())
 
     def _exec_flip(self):
-        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
-            _(u'This command flips an internal bit in the mod, converting an '
-              u'ESP to an ESL and vice versa.  Note that it is this bit OR '
-              u'the ".esl" file extension that turns a mod into a light '
-              u'plugin. We therefore disallow selecting files with the .esl '
-              u'extension for converting into a light plugin (as they '
-              u'implicitly are light plugins already).'))
-        if not self._askContinue(message, u'bash.flipToEslp.continue',
-                                 _(u'Flip to ESL')): return
         for modInfo in self.iselected_infos():
             modInfo.set_esl_flag(not modInfo.has_esl_flag())
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
+class Mod_FlipOverlay(_AFlipFlagLink):
+    """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
+    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
+              'plugin into a regular one and vice versa.')
+    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
+
+    @property
+    def _already_flagged(self):
+        return self._first_selected().has_overlay_flag()
+
+    def _enable(self):
+        """Allow if all selected mods have valid extensions, have the same
+        Overlay flag state and are Overlay-capable if converting to Overlay."""
+        first_is_overlay = self._already_flagged
+        return all(m.fn_ext in ('.esm', '.esp', '.esu') and
+                   minfo.has_esl_flag() == first_is_overlay and
+                   (first_is_overlay or
+                    m in bosh.modInfos.overlay_capable_plugins)
+                   for m, minfo in self.iselected_pairs())
+
+    def _exec_flip(self):
+        message = (_('WARNING! For advanced modders only!') + '\n\n' +
+            _('This command flips an internal bit in the mod, converting a '
+              'regular plugin to an overlay plugin and vice versa. The '
+              'Overlay flag is still new and our understanding of how it '
+              'works may be incomplete. Back up your plugins and saves '
+              'before using this!'))
+        if not self._askContinue(message, 'bash.flip_to_overlay.continue',
+                _('Flip to Overlay')): return
+        for modInfo in self.iselected_infos():
+            modInfo.set_overlay_flag(not modInfo.has_overlay_flag())
+
+#------------------------------------------------------------------------------
+class Mod_FlipMasters(OneItemLink, _AFlipFlagLink):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(ck_name)s.') % (

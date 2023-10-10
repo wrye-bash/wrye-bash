@@ -36,6 +36,22 @@ from ..bolt import FNDict, fast_cached_property
 # Files shared by versions of games that are published on the Windows Store
 WS_COMMON_FILES = {'appxmanifest.xml'}
 
+# The int values get stored in the settings files (mergeability cache), so they
+# should always remain the same just to be safe
+class MergeabilityCheck(Enum):
+    """The various mergeability checks that a game can have. See the comment
+    above each of them for more information."""
+    # If set for the game, the Merge Patches patcher will be enabled, the
+    # NoMerge tag will be available and WB will check plugins for their BP
+    # mergeability.
+    MERGE = 0
+    # If set for the game, the Add ESL Flag command will be available and WB
+    # will check plugins for their ESL capability.
+    ESL_CHECK = 1
+    # If set for the game, the Add Overlay Flag command will be available and
+    # WB will check plugins for their Overlay capability.
+    OVERLAY_CHECK = 2
+
 class ObjectIndexRange(Enum):
     """Valid values for object_index_range."""
     # FormIDs with object indices in the range 0x000-0x7FF are always
@@ -151,15 +167,23 @@ class GameInfo(object):
                      # settings.dat
 
     # Additional game info - override as needed -------------------------------
-    # plugin extensions
+    # All file extensions used by plugins for this game
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Load order info
     using_txt_file = True
-    # bethesda net export files
+    # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
-    # check if a plugin is convertible to a light master instead of checking
-    # mergeability
-    check_esl = False
+    # What mergeability checks to perform for this game. See MergeabilityCheck
+    # above for more information
+    mergeability_checks = {MergeabilityCheck.MERGE}
+    check_esl = False # FIXME TEMP DROP
+    # True if this game supports overlay plugins (i.e. its TES4 record's header
+    # flags feature an overlay_flag); these are plugins that don't take up a
+    # load order slot but can only contain overrides (any non-override records
+    # in it will become injected into either the first plugin in the master
+    # list or the first plugin in the whole LO - probably the former)
+    # TODO(SF) check which of those two is true
+    has_overlay_plugins = False
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this

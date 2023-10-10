@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import ObjectIndexRange
+from .. import MergeabilityCheck, ObjectIndexRange
 from ..fallout4 import AFallout4GameInfo
 from ..store_mixins import SteamMixin
 from ... import bolt
@@ -45,7 +45,7 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
     loot_game_name = 'Fallout4VR'
 
     espm_extensions = AFallout4GameInfo.espm_extensions - {'.esl'}
-    check_esl = False
+    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(AFallout4GameInfo.Se):
         se_abbrev = u'F4SEVR'
@@ -69,9 +69,6 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
         object_index_range = ObjectIndexRange.RESERVED
         master_limit = 255
         validHeaderVersions = (0.95,)
-
-    allTags = AFallout4GameInfo.allTags | {'NoMerge'}
-    patchers = AFallout4GameInfo.patchers | {'MergePatches'}
 
     bethDataFiles = AFallout4GameInfo.bethDataFiles | {
         'fallout4 - misc - beta.ba2',

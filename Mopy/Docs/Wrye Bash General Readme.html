@@ -197,6 +197,12 @@
     <li><strong>ESU</strong> (case-insensitive) refers to any file with a
         <code>.esu</code> extension. These are an unofficial type of plugin
         used by xEdit. It is an acronym for Elder Scrolls Update.</li>
+    <li><strong>Overlay</strong> refers to a flag introduced with Starfield. It
+        marks a plugin as an <strong>overlay plugin</strong>. Overlay plugins
+        do not take up a load order slot, allowing you to load an unlimited
+        number of them. However, they have some restrictions: such plugins may
+        not contain new records (only overrides) and must have at least one
+        master.</li>
     <li><strong>Plugin</strong> refers to any of the above file types.</li>
     <li><strong>Master</strong> refers to any plugins that another plugin is
         dependent on to function. (It can also refer to an ESM file, as it used
@@ -866,18 +872,70 @@ from other packages previously overridden by the uninstalled package's
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
 <p>Generally speaking, if you end up with an invalid load order of some kind, Wrye Bash will automatically fix it upon booting or refreshing,
     but a backup copy (with the <code>.bak</code> extension) will be made before doing so.</p>
-<p>With the advent of <strong>ESL files</strong>, the load order system was modified.
-The following list contains the most important facts you need to know about how Wrye Bash handles ESL files:</p>
+<h4 id="intro-esls">ESLs</h4>
+<p>With the advent of <strong>ESL files</strong>, the load order system was
+    modified. The following list contains the most important facts you need to
+    know about how Wrye Bash handles ESL files:</p>
 <ol>
-    <li>.esl files implicitly receive the ESM flag, so they load among masters in the order of the plugins txt.</li>
-    <li>.esl files implicitly recieve the ESL flag, so they are always treated as light plugins.</li>
+    <li><code>.esl</code> files implicitly receive the ESM flag, so they load
+        among masters in the order specified in <code>plugins.txt</code>.</li>
+    <li><code>.esl</code> files implicitly recieve the ESL flag, so they are
+        always treated as light plugins.</li>
     <li>ESPs with the ESL flag are also treated as light plugins.</li>
-    <li>ESLs can surpass the 255 mod limit - Wrye Bash allows up to 4096, the theoretical limit,
-        but your game will likely give up long before that number is reached.</li>
+    <li>ESLs can surpass the 255 mod limit - Wrye Bash allows up to 4096, the
+        theoretical limit, but your game will likely give up long before that
+        number is reached.</li>
+    <li>The ESL flag is mutually exclusive with the Overlay flag (see
+        below).</li>
 </ol>
-<p>Creation Club ESL files (of the form <code>cc*.esl</code>) are read from the game's <code>.ccc</code> file, if the game has Creation Club support.
-For example, Skyrim&colon; Special Edition uses <code>[GAME]\Skyrim.ccc</code>, while Fallout 4 uses <code>[GAME]\Fallout4.ccc</code>.
-Just like the game's masters, this load order is hardcoded, and so it cannot be changed - Wrye Bash will show an error message when an attempt is made.</p>
+<p>Creation Club files (of the form <code>cc*.esl</code> or
+    <code>cc*.esm</code>) are read from the game's <code>.ccc</code> file, if
+    the game has Creation Club support. For example, Skyrim&colon; Special
+    Edition uses <code>[GAME]\Skyrim.ccc</code>, while Fallout 4 uses
+    <code>[GAME]\Fallout4.ccc</code>. Just like the game's masters, this load
+    order is hardcoded, and so it cannot be changed - Wrye Bash will show an
+    error message when an attempt is made.</p>
+<h4 id="intro-overlays">Overlay Plugins</h4>
+<p>With Starfield and the advent of <strong>Overlay plugins</strong>, another
+    addition was made to the load order system. Here are the important facts
+    you need to know about Overlay plugins and Wrye Bash's handling of
+    them:</p>
+<ol>
+    <li>Overlay plugins do not take up a load order slot at all. This means you
+        can load an unlimited number of them, making them ideal for e.g.
+        conflict resolution patches.</li>
+    <li>Overlay plugins should not contain new records (i.e. records with
+        FormIDs like <code>XY012345</code>, where <code>XY</code> is greater
+        than or equal to the number of masters the plugin has). If they do,
+        those records will be injected into the first master of the overlay
+        plugin, which could cause all kinds of issues, from spurious overrides
+        to CTDs.
+        <ul>
+            <li>Wrye Bash does not let you flag plugins with new records as
+                Overlay plugins and xEdit will not let you save them. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+    <li>Overlay plugins must have at least one master. If they do not, the game
+        will ignore the Overlay flag and treat them as regular plugins.
+        <ul>
+            <li>Wrye Bash does not let you flag plugins with no masters as
+                Overlay plugins and xEdit will not let you save them. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+    <li>The Overlay flag is mutually exclusive with the ESL flag (see
+        above). If the game finds both, it will ignore the ESL flag.
+        <ul>
+            <li>Wrye Bash and xEdit both do not let you flag plugins with the
+                ESL flag as Overlay plugins and vice versa. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+</ol>
 
 <h3 id="load-set">Setting The Load Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as xEdit is required.
@@ -949,6 +1007,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 one that can be ESL-flagged <em>(for games with ESL
                     support)</em>.</td>
         </tr>
+        <tr>
+            <td class="load-symbols-orgtxt">Orange Text</td>
+            <td><em>Only for games with Overlay support.</em> An Overlay
+                plugin.</td>
+        </tr>
         <tr id="load-colors-esls">
             <td class="load-symbols-pnktxt">Pink Text</td>
             <td><em>Only for games with ESL support.</em> An ESL-flagged
@@ -959,6 +1022,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td><em>Only for games with ESL support.</em> An ESL-flagged plugin
                 that is also a master. The color is a combination of the blue
                 one for masters and the pink one for ESLs.</td>
+        </tr>
+        <tr>
+            <td class="load-symbols-redtxt">Red Text</td>
+            <td><em>Only for games with Overlay support.</em> An Overlay plugin
+                that is also a master. The color is a combination of the blue
+                one for masters and the orange one for Overlay plugins.</td>
         </tr>
         <tr>
             <td class="load-symbols-ylwtxt">Yellow Text</td>

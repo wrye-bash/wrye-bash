@@ -56,7 +56,7 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial, reduce
+from functools import partial
 from itertools import chain
 
 import wx
@@ -500,36 +500,42 @@ class MasterList(_ModsUIList):
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
-        # Text foreground
+        # Text foreground - prioritize BP color, then mergeable/NoMerge color
+        has_priority_text_color = False
+        def _try_color_text(text_key_val: str):
+            """Helper for correctly handling priority colors."""
+            nonlocal has_priority_text_color
+            if not has_priority_text_color:
+                has_priority_text_color = True
+                item_format.text_key = text_key_val
         if masters_name in bosh.modInfos.bashed_patches:
-            item_format.text_key = u'mods.text.bashedPatch'
+            _try_color_text('mods.text.bashedPatch')
             mouseText += _('Bashed Patch.') + ' '
-            if masterInfo.is_esl(): # ugh, copy-paste from below
-                mouseText += _('Light plugin.') + ' '
-        elif masters_name in bosh.modInfos.mergeable:
-            if u'NoMerge' in fileBashTags and not bush.game.check_esl:
-                item_format.text_key = u'mods.text.noMerge'
+        if masters_name in bosh.modInfos.mergeable_plugins:
+            if 'NoMerge' in fileBashTags:
+                _try_color_text('mods.text.noMerge')
                 mouseText += _('Technically mergeable, but has NoMerge '
                                'tag.') + ' '
             else:
-                item_format.text_key = u'mods.text.mergeable'
-                if bush.game.check_esl:
-                    mouseText += _('Can be ESL-flagged.') + ' '
-                else:
-                    # Merged plugins won't be in master lists
-                    mouseText += _('Can be merged into Bashed Patch.') + ' '
-        else:
-            # NoMerge / Mergeable should take priority over ESL/ESM color
-            final_text_key = u'mods.text.es'
-            if masterInfo.is_esl():
-                final_text_key += u'l'
-                mouseText += _('Light plugin.') + ' '
-            if masterInfo.in_master_block():
-                final_text_key += u'm'
-                mouseText += _('Master plugin.') + ' '
-            # Check if it's special, leave ESPs alone
-            if final_text_key != u'mods.text.es':
-                item_format.text_key = final_text_key
+                _try_color_text('mods.text.mergeable')
+                # Merged plugins won't be in master lists
+                mouseText += _('Can be merged into Bashed Patch.') + ' '
+        if masters_name in bosh.modInfos.esl_capable_plugins:
+            _try_color_text('mods.text.mergeable')
+            mouseText += _('Can be ESL-flagged.') + ' '
+        if masters_name in bosh.modInfos.overlay_capable_plugins:
+            _try_color_text('mods.text.mergeable')
+            mouseText += _('Can be Overlay-flagged.') + ' '
+        final_text_key = 'mods.text.es'
+        if masterInfo.is_esl():
+            final_text_key += 'l'
+            mouseText += _('Light plugin.') + ' '
+        if masterInfo.in_master_block():
+            final_text_key += 'm'
+            mouseText += _('Master plugin.') + ' '
+        # Check if it's special, leave ESPs alone
+        if final_text_key != 'mods.text.es':
+            _try_color_text(final_text_key)
         # Text background
         if masters_name in bosh.modInfos.activeBad: # if active, it's in LO
             item_format.back_key = u'mods.bkgd.doubleTime.load'
@@ -1047,7 +1053,6 @@ class ModList(_ModsUIList):
         #--Default message
         mouseText = u''
         fileBashTags = mod_info.getBashTags()
-        # Text foreground
         if mod_name in bosh.modInfos.activeBad:
             mouseText += _('Plugin name incompatible, will not load.') + ' '
         if mod_name in bosh.modInfos.bad_names:
@@ -1056,38 +1061,47 @@ class ModList(_ModsUIList):
         if mod_name in bosh.modInfos.missing_strings:
             mouseText += _('Plugin is missing string localization '
                            'files.') + ' '
+        # Text foreground - prioritize BP color, then mergeable/NoMerge color
+        has_priority_text_color = False
+        def _try_color_text(text_key_val: str):
+            """Helper for correctly handling priority colors."""
+            nonlocal has_priority_text_color
+            if not has_priority_text_color:
+                has_priority_text_color = True
+                item_format.text_key = text_key_val
         if mod_name in bosh.modInfos.bashed_patches:
-            item_format.text_key = u'mods.text.bashedPatch'
+            _try_color_text('mods.text.bashedPatch')
             mouseText += _('Bashed Patch.') + ' '
-            if mod_info.is_esl(): # ugh, copy-paste from below
-                mouseText += _('Light plugin.') + ' '
-        elif mod_name in bosh.modInfos.mergeable:
-            if u'NoMerge' in fileBashTags and not bush.game.check_esl:
-                item_format.text_key = u'mods.text.noMerge'
+        if mod_name in bosh.modInfos.mergeable_plugins:
+            if 'NoMerge' in fileBashTags:
+                _try_color_text('mods.text.noMerge')
                 mouseText += _('Technically mergeable, but has NoMerge '
                                'tag.') + ' '
             else:
-                item_format.text_key = u'mods.text.mergeable'
-                if bush.game.check_esl:
-                    mouseText += _('Can be ESL-flagged.') + ' '
+                _try_color_text('mods.text.mergeable')
+                if checkMark == 2:
+                    mouseText += _('Merged into Bashed Patch.') + ' '
                 else:
-                    if checkMark == 2:
-                        mouseText += _('Merged into Bashed Patch.') + ' '
-                    else:
-                        mouseText += _('Can be merged into Bashed '
-                                       'Patch.') + ' '
-        else:
-            # NoMerge / Mergeable should take priority over ESL/ESM color
-            final_text_key = u'mods.text.es'
-            if mod_info.is_esl():
-                final_text_key += u'l'
-                mouseText += _('Light plugin.') + ' '
-            if mod_info.in_master_block():
-                final_text_key += u'm'
-                mouseText += _('Master plugin.') + ' '
-            # Check if it's special, leave ESPs alone
-            if final_text_key != u'mods.text.es':
-                item_format.text_key = final_text_key
+                    mouseText += _('Can be merged into Bashed Patch.') + ' '
+        if mod_name in bosh.modInfos.esl_capable_plugins:
+            _try_color_text('mods.text.mergeable')
+            mouseText += _('Can be ESL-flagged.') + ' '
+        if mod_name in bosh.modInfos.overlay_capable_plugins:
+            _try_color_text('mods.text.mergeable')
+            mouseText += _('Can be Overlay-flagged.') + ' '
+        final_text_key = 'mods.text.es'
+        if mod_info.is_esl():
+            final_text_key += 'l'
+            mouseText += _('Light plugin.') + ' '
+        if mod_info.is_overlay():
+            final_text_key += 'o'
+            mouseText += _('Overlay plugin.') + ' '
+        if mod_info.in_master_block():
+            final_text_key += 'm'
+            mouseText += _('Master plugin.') + ' '
+        # Check if it's special, leave ESPs alone
+        if final_text_key != 'mods.text.es':
+            _try_color_text(final_text_key)
         # Mirror the checkbox color info in the status bar
         if status == 30:
             mouseText += _('One or more masters are missing.') + ' '
@@ -2240,19 +2254,34 @@ class ModPanel(BashTab):
 
     def _sbCount(self):
         all_mods = load_order.cached_active_tuple()
-        if not bush.game.has_esl:
-            return _('Mods: %(status_num)d/%(total_status_num)d') % {
-                'status_num': len(all_mods),
-                'total_status_num': len(bosh.modInfos)}
-        else:
-            regular_mods_count = reduce(lambda accum, mod_path: accum + 1 if
-            not bosh.modInfos[mod_path].is_esl() else accum, all_mods, 0)
-            return _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
-                     '%(status_num_espm)d, ESL: %(status_num_esl)d)') % {
-                'status_num': len(all_mods),
-                'total_status_num': len(bosh.modInfos),
-                'status_num_espm': regular_mods_count,
-                'status_num_esl': len(all_mods) - regular_mods_count}
+        esl_count = 0
+        overlay_count = 0
+        for m in all_mods:
+            if (mi := bosh.modInfos[m]).is_esl():
+                esl_count += 1
+            elif mi.is_overlay():
+                overlay_count += 1
+        regular_count = len(all_mods) - esl_count - overlay_count
+        sb_fmt = '' # Shut up, PyCharm
+        match bush.game.has_esl, bush.game.has_overlay_plugins:
+            case False, False: # No ESLs or overlays
+                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d')
+            case True, False:  # ESLs, but no overlays
+                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                           '%(status_num_espm)d, ESL: %(status_num_esl)d)')
+            case False, True:  # Overlays, but no ESLs
+                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                           '%(status_num_espm)d, Overlay: '
+                           '%(status_num_overlay)d)')
+            case True, True:   # ESLs and overlays
+                sb_fmt = _('Mods: %(status_num)d/%(total_status_num)d (ESP/M: '
+                           '%(status_num_espm)d, ESL: %(status_num_esl)d, '
+                           'Overlay: %(status_num_overlay)d)')
+        return sb_fmt %  {'status_num': len(all_mods),
+                          'total_status_num': len(bosh.modInfos),
+                          'status_num_espm': regular_count,
+                          'status_num_esl': esl_count,
+                          'status_num_overlay': overlay_count}
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()

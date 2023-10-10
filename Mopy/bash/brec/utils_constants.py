@@ -28,9 +28,9 @@ from collections.abc import Callable
 from contextlib import suppress
 from itertools import chain
 
-from .. import bolt
+from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
-    structs_cache
+    structs_cache, FName, fast_cached_property
 from ..exception import StateError
 
 # no local imports, imported everywhere in brec
@@ -49,8 +49,9 @@ class FormId:
         self.short_fid = int_val
 
     # factories
-    __master_formid_type: dict[bolt.FName, type] = {} # cache a formid type per mod
-    _form_id_classes: dict[tuple[bolt.FName], type] = {} # cache a formid type per masters list
+    __master_formid_type: dict[FName, type] = {} # cache a formid type per mod
+    # cache a formid type per masters list and Overlay flag state
+    _form_id_classes: dict[tuple[tuple[FName, ...], bool], type] = {}
     @classmethod
     def from_tuple(cls, fid_tuple):
         """Return a FormId (subclass) instance with a given long id - does not
@@ -60,7 +61,7 @@ class FormId:
             return cls.__master_formid_type[fid_tuple[0]](fid_tuple[1])
         except KeyError:
             class __FormId(cls):
-                @bolt.fast_cached_property
+                @fast_cached_property
                 def long_fid(self):
                     return fid_tuple[0], self.short_fid
                 @property
@@ -78,26 +79,44 @@ class FormId:
         return cls(objectIndex | (modIndex << 24))
 
     @staticmethod
-    def from_masters(augmented_masters):
+    def from_masters(augmented_masters: tuple[FName, ...],
+            in_overlay_plugin: bool):
         """Return a subclass of FormId using the specified masters for long fid
         conversions."""
         try:
-            form_id_type = FormId._form_id_classes[augmented_masters]
+            form_id_type = FormId._form_id_classes[(augmented_masters,
+                                                    in_overlay_plugin)]
         except KeyError:
-            class _FormID(FormId):
-                @bolt.fast_cached_property
-                def long_fid(self, *, __masters=augmented_masters):
-                    try:
-                        return __masters[self.mod_dex], \
-                               self.short_fid & 0xFFFFFF
-                    except IndexError:
-                        # Clamp HITMEs by using at most max_masters for master
-                        # index
-                        return __masters[-1], self.short_fid & 0xFFFFFF
+            if in_overlay_plugin:
+                overlay_threshold = len(augmented_masters) - 1
+                class _FormID(FormId):
+                    @fast_cached_property
+                    def long_fid(self, *, __masters=augmented_masters):
+                        try:
+                            if self.mod_dex >= overlay_threshold:
+                                # Overlay plugins can't have new records (or
+                                # HITMEs), those get injected into the first
+                                # master instead
+                                return __masters[0], self.short_fid & 0xFFFFFF
+                            return __masters[self.mod_dex], \
+                                   self.short_fid & 0xFFFFFF
+                        except IndexError:
+                            # Clamp HITMEs to the plugin's own address space
+                            return __masters[-1], self.short_fid & 0xFFFFFF
+            else:
+                class _FormID(FormId):
+                    @fast_cached_property
+                    def long_fid(self, *, __masters=augmented_masters):
+                        try:
+                            return __masters[self.mod_dex], \
+                                   self.short_fid & 0xFFFFFF
+                        except IndexError:
+                            # Clamp HITMEs to the plugin's own address space
+                            return __masters[-1], self.short_fid & 0xFFFFFF
             form_id_type = FormId._form_id_classes[augmented_masters] = _FormID
         return form_id_type
 
-    @bolt.fast_cached_property
+    @fast_cached_property
     def long_fid(self):
         """Don't map by default."""
         return self.short_fid
@@ -263,9 +282,8 @@ class _Tes4Fid(FormId):
     edge cases."""
     def dump(self): return 0
 
-    @bolt.fast_cached_property
+    @fast_cached_property
     def long_fid(self):
-        from .. import bush
         return bush.game.master_fid(0).long_fid
 
 # cache an instance of Tes4 and export that to the rest of Bash

@@ -43,6 +43,7 @@ from .. import bass, bush
 from ..balt import MenuLink, SeparatorLink, UIList_Delete, UIList_Hide, \
     UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
 from ..env import init_app_links
+from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
 
@@ -558,12 +559,14 @@ def InitModLinks():
         ModList.context_links.append(info_menu)
     if bush.game.Esp.canBash:
         ModList.context_links.append(SeparatorLink())
-        ModList.context_links.append(Mod_MarkMergeable())
+        ModList.context_links.append(Mod_CheckQualifications())
         ModList.context_links.append(Mod_RebuildPatch())
         ModList.context_links.append(SeparatorLink())
         ModList.context_links.append(Mod_FlipEsm())
-        if bush.game.has_esl:
+        if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
             ModList.context_links.append(Mod_FlipEsl())
+        if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
+            ModList.context_links.append(Mod_FlipOverlay())
         ModList.context_links.append(Mod_FlipMasters())
         ModList.context_links.append(Mod_CreateDummyMasters())
     ModList.context_links.append(SeparatorLink())

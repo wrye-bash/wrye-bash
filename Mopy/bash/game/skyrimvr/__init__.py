@@ -21,6 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
+from .. import MergeabilityCheck
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 
@@ -42,7 +43,7 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     loot_game_name = 'Skyrim VR'
 
     espm_extensions = ASkyrimSEGameInfo.espm_extensions - {'.esl'}
-    check_esl = False
+    mergeability_checks = {MergeabilityCheck.MERGE}
 
     class Se(ASkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
@@ -65,9 +66,6 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
 
     class Esp(ASkyrimSEGameInfo.Esp):
         master_limit = 255
-
-    allTags = ASkyrimSEGameInfo.allTags | {'NoMerge'}
-    patchers = ASkyrimSEGameInfo.patchers | {'MergePatches'}
 
     bethDataFiles = ASkyrimSEGameInfo.bethDataFiles | {
         'skyrimvr.esm',

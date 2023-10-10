@@ -213,7 +213,7 @@ class PatchFile(ModFile):
         # Set of all Bash Tags that don't trigger an import from some patcher
         non_import_bts = {'Deactivate', 'Filter', 'IIM',
                           'MustBeActiveIfImported', 'NoMerge'}
-        mi_mergeable = pfile_minfos.mergeable
+        mi_mergeable = pfile_minfos.mergeable_plugins
         for index, (modName, modInfo) in enumerate(self.all_plugins.items()):
             # Check some commonly needed properties of the current plugin
             bashTags = self.all_tags[modName]
@@ -443,6 +443,8 @@ class PatchFile(ModFile):
         self.tes4.description = (_('Updated: %(update_time)s') % {
             'update_time': format_date(time.time())} + '\n\n' + _(
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
+        ##: Consider flagging as Overlay instead if that flag is supported by
+        # the game and no new records have been included?
         # Flag as ESL if the game supports them and the option is enabled
         # Note that we can always safely mark as ESL as long as the number of
         # new records we created is smaller than 0xFFF, since the BP only ever

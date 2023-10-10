@@ -42,13 +42,17 @@ class PatchGame(GameInfo):
         if (wrld_block := modFile.tops.get(b'WRLD')) and wrld_block.orphansSkipped:
             patch_file.worldOrphanMods.append(modFile.fileInfo.fn_key)
 
-    # Bash Tags supported by this game. List only tags that aren't used by
+    # Bash Tags supported by this game. List *only* tags that aren't used by
     # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
-    # dynamically added in gui_patchers.
+    # dynamically added in gui_patchers. Similary, NoMerge should *not* be
+    # included here, it is dynamically added in gui_patchers based on the
+    # mergeability_checks for the game.
     allTags = {'Deactivate', 'Filter', 'MustBeActiveIfImported'}
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
-    # name, see gui_patchers.py for their definitions).
+    # name, see gui_patchers.py for their definitions). Note that MergePatches
+    # should *not* be included here, it is dynamically included in gui_patchers
+    # based on the mergeability_checks for the game.
     patchers = set()
 
     # Set in _dynamic_import_modules used in Mopy/bash/basher/gui_patchers.py

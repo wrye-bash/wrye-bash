@@ -203,7 +203,6 @@ class ASkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.94, 1.70)
 
-    allTags = PatchGame.allTags | {'NoMerge'}
     patchers = {
         'AliasPluginNames', 'ContentsChecker', 'ImportActors',
         'ImportActorsAIPackages', 'ImportActorsFactions', 'ImportActorsPerks',
@@ -213,8 +212,8 @@ class ASkyrimGameInfo(PatchGame):
         'ImportObjectBounds', 'ImportOutfits', 'ImportRaces',
         'ImportRacesSpells', 'ImportRelations', 'ImportSounds',
         'ImportSpellStats', 'ImportStats', 'ImportText', 'LeveledLists',
-        'MergePatches', 'TimescaleChecker', 'TweakActors', 'TweakAssorted',
-        'TweakNames', 'TweakRaces', 'TweakSettings',
+        'TimescaleChecker', 'TweakActors', 'TweakAssorted', 'TweakNames',
+        'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (

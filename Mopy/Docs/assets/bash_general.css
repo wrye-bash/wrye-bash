@@ -70,11 +70,17 @@ img.monkeygod {
 .load-symbols-grntxt {
   color: rgba(0, 128, 0, 1);
 }
+.load-symbols-orgtxt {
+  color: rgba(235, 119, 44, 1);
+}
 .load-symbols-pnktxt {
   color: rgba(226, 54, 197, 1);
 }
 .load-symbols-prptxt {
   color: rgba(123, 29, 223, 1);
+}
+.load-symbols-redtxt {
+  color: rgba(234, 49, 9, 1);
 }
 .load-symbols-ylwtxt {
   color: rgba(150, 130, 0, 1);

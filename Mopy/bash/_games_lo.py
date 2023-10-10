@@ -599,7 +599,17 @@ class LoGame(object):
         return False # no changes, not saved
 
     def check_active_limit(self, acti_filtered):
-        return set(acti_filtered[self.max_espms:]), set()
+        acti_filtered_regular = []
+        acti_filtered_esl = []
+        for m in acti_filtered:
+            mi = self.mod_infos[m]
+            if mi.is_esl():
+                acti_filtered_esl.append(m)
+            elif not mi.is_overlay():
+                # Overlay plugins take up no LO slot, so skip them entirely
+                acti_filtered_regular.append(m)
+        return (set(acti_filtered_regular[self.max_espms:]),
+                set(acti_filtered_esl[self.max_esls:]))
 
     def _fixed_order_plugins(self):
         """Returns a list of plugins that must have the order they have in this
@@ -1249,17 +1259,6 @@ class AsteriskGame(LoGame):
             self._persist_load_order(lord, active)
 
     # Validation overrides ----------------------------------------------------
-    def check_active_limit(self, acti_filtered):
-        acti_filtered_espm = []
-        append_espm = acti_filtered_espm.append
-        acti_filtered_esl = []
-        append_esl = acti_filtered_esl.append
-        cached_minfs = self.mod_infos
-        for x in acti_filtered:
-            (append_esl if cached_minfs[x].is_esl() else append_espm)(x)
-        return set(acti_filtered_espm[self.max_espms:]) , set(
-            acti_filtered_esl[self.max_esls:])
-
     def _clean_actives(self, active, lord):
         """Override since we need to worry about LO here as well."""
         rem_from_acti = self._active_entries_to_remove()

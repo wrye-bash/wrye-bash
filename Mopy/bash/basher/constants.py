@@ -23,6 +23,7 @@
 
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
+from ..game import MergeabilityCheck
 from ..gui import DEFAULT_POSITION, ImageWrapper
 
 # Color Descriptions ----------------------------------------------------------
@@ -42,7 +43,7 @@ colorInfo = {
     ),
     'mods.text.esm': (_('ESM'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESMs in the Mods Tab, and in the '
+        _('This is the text color used for ESMs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
     ),
     'mods.bkgd.ghosted': (_('Ghosted Plugin'),
@@ -144,30 +145,74 @@ if bush.game.Esp.canBash:
 if bush.game.has_esl:
     colorInfo['mods.text.esl'] = (_('ESL'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs in the Mods Tab, and in the '
+        _('This is the text color used for ESLs on the Mods Tab, and in the '
           'Masters info on both the Mods Tab and Saves Tab.'),
     )
     colorInfo['mods.text.eslm'] = (_('ESLM'),
         _('Tabs: Mods, Saves') + '\n\n' +
-        _('This is the text color used for ESLs with a master flag in the '
+        _('This is the text color used for ESLs with a master flag on the '
           'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
           'Tab.'),
     )
 
-# Do we check mergeability or ESL capability? ---------------------------------
-if bush.game.check_esl:
-    colorInfo['mods.text.mergeable'] = (_('ESL Capable plugin'),
+# Are Overlay plugins supported? ----------------------------------------------
+if bush.game.has_overlay_plugins:
+    colorInfo['mods.text.eso'] = (_('Overlay Plugin'),
         _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for ESL Capable plugins.'),
+        _('This is the text color used for Overlay plugins on the Mods Tab.'),
     )
-else:
-    colorInfo['mods.text.mergeable'] = (_('Mergeable Plugin'),
+    colorInfo['mods.text.esom'] = (_('Overlay Master'),
         _('Tabs: Mods') + '\n\n' +
-        _('This is the text color used for mergeable plugins.'),
+        _('This is the text color used for Overlay plugins with a master flag '
+          'on the Mods Tab.'),
+    )
+
+# What do we check w.r.t. mergeability? ---------------------------------------
+if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
+    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable, ESL-Capable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch, ESL-flagged or '
+                        'Overlay-flagged.')
+        else: # -> no mergeables
+            mc_title = _('ESL-Capable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be ESL-flagged or Overlay-flagged.')
+    else: # -> no ESLs
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable or Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch or Overlay-flagged.')
+        else: # -> no ESLs or mergeables
+            mc_title = _('Overlay-Capable Plugin')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be Overlay-flagged.')
+else: # -> no overlays
+    if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable or ESL-Capable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch or ESL-flagged.')
+        else: # -> no mergeables
+            mc_title = _('ESL-Capable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be ESL-flagged.')
+    else: # -> no ESLs
+        if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+            mc_title = _('Mergeable')
+            mc_desc = _('This is the text color used for plugins that could '
+                        'be merged into the Bashed Patch.')
+        else:
+            mc_title = mc_desc = None
+if mc_title is not None and mc_desc is not None:
+    colorInfo['mods.text.mergeable'] = (mc_title,
+        _('Tabs: Mods') + '\n\n' +
+        mc_desc,
     )
 
 # Does NoMerge exist? ---------------------------------------------------------
-if 'NoMerge' in bush.game.allTags:
+if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
     colorInfo['mods.text.noMerge'] = (_("'NoMerge' Plugin"),
         _('Tabs: Mods') + '\n\n' +
         _('This is the text color used for a mergeable plugin that is '
@@ -208,8 +253,10 @@ settingDefaults = { # keep current naming format till refactored
         'mods.bkgd.doubleTime.load':    (255, 149, 149),
         'mods.bkgd.ghosted':            (232, 232, 232),
         'mods.bkgd.size_mismatch':      (255, 238, 217),
-        'mods.text.eslm':               (123, 29,  223),
         'mods.text.esl':                (226, 54,  197),
+        'mods.text.eslm':               (123, 29,  223),
+        'mods.text.eso':                (235, 119, 44),
+        'mods.text.esom':               (234, 49, 9),
         'mods.text.bashedPatch':        (30,  157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (223, 223, 223),
@@ -444,7 +491,8 @@ settingDefaults = { # keep current naming format till refactored
     bush.game.Xe.xe_key_prefix + '.skip_bsas': False,
 }
 
-if bush.game.has_esl: # Enable Index columns by default for ESL games
+# Enable Index columns by default for ESL and Overlay games
+if bush.game.has_esl or bush.game.has_overlay_plugins:
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 

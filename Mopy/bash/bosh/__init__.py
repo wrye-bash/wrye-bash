@@ -38,7 +38,7 @@ from itertools import chain
 
 # bosh-local imports - maybe work towards dropping (some of) these?
 from . import bsa_files, converters, cosaves
-from ._mergeability import is_esl_capable, isPBashMergeable
+from ._mergeability import is_esl_capable, isPBashMergeable, is_overlay_capable
 from .converters import InstallerConverter
 from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
@@ -53,7 +53,8 @@ from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
     FailedIniInferError, FileError, ModError, PluginsFullError, \
     SaveFileError, SaveHeaderError, SkipError, SkippedMergeablePluginsError, \
-    StateError
+    StateError, InvalidPluginFlagsError
+from ..game import MergeabilityCheck
 from ..ini_files import AIniFile, DefaultIniFile, GameIni, IniFile, \
     OBSEIniFile, get_ini_type_and_encoding, supported_ini_exts
 from ..mod_files import ModFile, ModHeaderReader
@@ -349,7 +350,8 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
-    _has_esm_flag = _is_esl = False # Cached, since we need it so often
+    # Cached, since we need them so often
+    _has_esm_flag = _is_esl = _is_overlay = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
 
@@ -383,7 +385,10 @@ class ModInfo(FileInfo):
         # check if we have a cached crc for this file, use fresh mtime and size
         if kwargs['load_cache']:
             self.calculate_crc() # for added and hopefully updated
-            if bush.game.has_esl: self._recalc_esl()
+            if bush.game.has_esl:
+                self._recalc_esl()
+            if bush.game.has_overlay_plugins:
+                self._recalc_overlay()
             self._recalc_esm()
 
     @classmethod
@@ -393,11 +398,25 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.fn_key.fn_ext
 
+    # ESM flag ----------------------------------------------------------------
+    def has_esm_flag(self):
+        """Check if the mod info is a master file based on ESM flag alone -
+        header must be set. You generally want in_master_block() instead."""
+        return self._has_esm_flag
+
+    def set_esm_flag(self, new_esm_flag: bool):
+        """Changes this file's ESM flag to the specified value. Recalculates
+        ONAM info if necessary."""
+        self.header.flags1.esm_flag = new_esm_flag
+        self._recalc_esm()
+        self.update_onam()
+        self.writeHeader()
+
     def in_master_block(self, __master_exts=frozenset(('.esm', '.esl'))):
         """Return true for files that load in the masters' block."""
         ##: we should cache this and calculate in reset_cache and co
         mod_ext = self.get_extension()
-        if  bush.game.Esp.extension_forces_flags:
+        if bush.game.Esp.extension_forces_flags:
             # For games since FO4/SSE, .esm and .esl files set the master flag
             # in memory even if not set on the file on disk. For .esp files we
             # must check for the flag explicitly.
@@ -406,34 +425,38 @@ class ModInfo(FileInfo):
             ##: This is wrong, but works for now. We need game-specific
             # record headers to parse the ESM flag for MW correctly - #480!
             return mod_ext == '.esm'
-        else: return self.has_esm_flag()
-
-    def has_esm_flag(self):
-        """Check if the mod info is a master file based on master flag -
-        header must be set"""
-        return self._has_esm_flag
-
-    def set_esm_flag(self, new_esm_flag):
-        """Changes this file's ESM flag to the specified value. Recalculates
-        ONAM info if necessary."""
-        self.header.flags1.esm_flag = new_esm_flag
-        self._recalc_esm()
-        self.update_onam()
-        self.writeHeader()
+        else:
+            return self.has_esm_flag()
 
     def _recalc_esm(self):
         """Forcibly recalculates the cached ESM status."""
         self._has_esm_flag = self.header.flags1.esm_flag
 
+    def isInvertedMod(self):
+        """Extension indicates esp/esm, but byte setting indicates opposite."""
+        mod_ext = self.get_extension()
+        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
+            raise ArgumentError(
+                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
+        return (self.header and
+                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+
+    # ESL flag ----------------------------------------------------------------
     def has_esl_flag(self):
         """Check if the mod info is an ESL based on ESL flag alone - header
-        must be set."""
+        must be set. You generally want is_esl() instead."""
         return self.header.flags1.esl_flag
 
-    def set_esl_flag(self, new_esl_flag):
-        """Changes this file's ESL flag to the specified value."""
+    def set_esl_flag(self, new_esl_flag: bool):
+        """Change this file's ESL flag to the specified value. Disables the
+        Overlay flag if the ESL flag is set and the game supports the Overlay
+        flag."""
         if bush.game.has_esl:
             self.header.flags1.esl_flag = new_esl_flag
+            if new_esl_flag and bush.game.has_overlay_plugins:
+                # Can't have both, so unset the Overlay flag
+                self.header.flags1.overlay_flag = False
+                self._recalc_overlay()
             self._recalc_esl()
             self.writeHeader()
 
@@ -446,15 +469,34 @@ class ModInfo(FileInfo):
         """Forcibly recalculates the cached ESL status."""
         self._is_esl = self.has_esl_flag() or self.get_extension() == u'.esl'
 
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        mod_ext = self.get_extension()
-        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
-            raise ArgumentError(
-                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
-        return (self.header and
-                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+    # Overlay flag ------------------------------------------------------------
+    def has_overlay_flag(self):
+        """Check if the mod info is an Overlay plugin based on Overlay flag
+        alone - header must be set. You generally want is_overlay() instead."""
+        return self.header.flags1.overlay_flag
 
+    def set_overlay_flag(self, new_overlay_flag: bool):
+        """Change this file's Overlay flag to the specified value. Disables the
+        ESL flag if the Overlay flag is set and the game supports the ESL
+        flag."""
+        if bush.game.has_overlay_plugins:
+            self.header.flags1.overlay_flag = new_overlay_flag
+            if new_overlay_flag and bush.game.has_esl:
+                # Can't have both, so unset the ESL flag
+                self.header.flags1.esl_flag = False
+                self._recalc_esl()
+            self._recalc_overlay()
+            self.writeHeader()
+
+    def is_overlay(self):
+        """Check if this is an overlay plugin."""
+        return self._is_overlay
+
+    def _recalc_overlay(self):
+        """Forcibly recalculate the cached overlay status."""
+        self._is_overlay = self.has_overlay_flag()
+
+    # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
         cached_crc = self.get_table_prop(u'crc')
         if not recalculate:
@@ -483,7 +525,7 @@ class ModInfo(FileInfo):
     def real_index(self):
         """Returns the 'real index' for this plugin, which is the one the game
         will assign it. ESLs will land in the 0xFE spot, while inactive plugins
-        don't get any - so we sort them last."""
+        and overlay plugins don't get any - so we sort them last."""
         return modInfos.real_indices[self.fn_key]
 
     def real_index_string(self):
@@ -670,9 +712,9 @@ class ModInfo(FileInfo):
             self.abs_path.replace_with_temp(tmp_plugin)
         self.setmtime(crc_changed=True)
         #--Merge info
-        merge_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
+        merge_size, canMerge = self.get_table_prop('mergeInfo', (None, {}))
         if merge_size is not None:
-            self.set_table_prop(u'mergeInfo', (self.abs_path.psize, canMerge))
+            self.set_table_prop('mergeInfo', (self.abs_path.psize, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -2035,7 +2077,10 @@ class ModInfos(FileInfos):
         self.real_index_strings = collections.defaultdict(lambda: '')
         # Maps each plugin to a set of all plugins that have it as a master
         self.dependents = collections.defaultdict(set)
-        self.mergeable = set() #--Set of all mods which can be merged.
+        # Map each mergeability type to a set of plugins that can be handled
+        # via that type
+        self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
+        self._mergeable_parser = bolt.gen_enum_parser(MergeabilityCheck)
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
@@ -2080,6 +2125,29 @@ class ModInfos(FileInfos):
             self._bashed_patches = {mname for mname, modinf in self.items()
                                     if modinf.isBP()}
         return self._bashed_patches
+
+    ##: Do we need fast_cached_property here?
+    @property
+    def mergeable_plugins(self) -> set[FName]:
+        """All plugins that can be merged into the Bashed Patch (they may
+        already *be* merged - see ModInfos.merged)."""
+        return self._mergeable_by_type[MergeabilityCheck.MERGE]
+
+    @property
+    def esl_capable_plugins(self) -> set[FName]:
+        """All plugins that could receive an ESL flag, but don't have one
+        yet."""
+        return self._mergeable_by_type[MergeabilityCheck.ESL_CHECK]
+
+    @property
+    def overlay_capable_plugins(self) -> set[FName]:
+        """All plugins that could receive al Overlay flag, but don't have one
+        yet."""
+        return self._mergeable_by_type[MergeabilityCheck.OVERLAY_CHECK]
+
+    def all_merg_type_plugins(self) -> set[FName]: ##: Ugh, better name pls
+        """All plugins that could be merged, ESL-flagged or Overlay-flagged."""
+        return set(chain.from_iterable(self._mergeable_by_type.values()))
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2260,9 +2328,10 @@ class ModInfos(FileInfos):
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
         self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        oldMergeable = set(self.mergeable)
+        oldMergeable = self.all_merg_type_plugins()
         scanList = self._refreshMergeable()
-        difMergeable = (oldMergeable ^ self.mergeable) & set(self)
+        difMergeable = (oldMergeable ^
+                        self.all_merg_type_plugins()) & set(self)
         if scanList:
             self.rescanMergeable(scanList) ##: maybe re-add progress?
         change |= bool(scanList or difMergeable)
@@ -2370,21 +2439,61 @@ class ModInfos(FileInfos):
         """Refreshes set of mergeable mods."""
         #--Mods that need to be rescanned - call rescanMergeable !
         newMods = []
-        self.mergeable.clear()
-        name_mergeInfo = self.table.getColumn(u'mergeInfo')
+        for m in self._mergeable_by_type.values():
+            m.clear()
+        name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
+        merg_checks = bush.game.mergeability_checks
+        # We store ints in the settings files, so use those for comparing
+        merg_checks_ints = {c.value for c in merg_checks}
+        quick_checks = {
+            MergeabilityCheck.ESL_CHECK: ModInfo.is_esl,
+            MergeabilityCheck.OVERLAY_CHECK: ModInfo.is_overlay,
+        }
+        # No need to do quick checks that aren't actually required for this
+        # game
+        quick_checks = {k: v for k, v in quick_checks.items()
+                        if k in merg_checks}
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
-            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
-            # if ESL bit was flipped size won't change, so check this first
-            if modInfo.is_esl():
-                # Don't mark ESLs as ESL-capable (duh) - modInfo must have its
-                # header set
-                name_mergeInfo[fn_mod] = (modInfo.fsize, False)
-            elif cached_size == modInfo.fsize:
-                if canMerge: self.mergeable.add(fn_mod)
+            cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
+            if not isinstance(canMerge, dict):
+                canMerge = {} # Convert older settings (had a bool here)
+            # Quickly check if some mergeability types are impossible for this
+            # plugin (because it already has the target type)
+            covered_checks = set()
+            for m, m_check in quick_checks.items():
+                if m_check(modInfo):
+                    canMerge[m.value] = False
+                    covered_checks.add(m)
+            # Clean up cached mergeability info - this can get out of sync if
+            # we add or remove a mergeability type from a game or change a
+            # mergeability type's int key in the enum
+            for m in list(canMerge):
+                if m not in merg_checks_ints:
+                    del canMerge[m]
+            name_mergeInfo[fn_mod] = (cached_size, canMerge)
+            if not (merg_checks - covered_checks):
+                # We've already covered all required checks with those checks
+                # above (e.g. an ESL-flagged plugin in a game with only ESL
+                # support -> not ESL-flaggable), so move on
+                continue
+            elif (cached_size == modInfo.fsize and
+                  set(canMerge) == merg_checks_ints):
+                # The cached size matches what we have on disk and we have data
+                # for all required mergeability checks, so use the cached info
+                for m, m_merg in canMerge.items():
+                    merg_set = self._mergeable_by_type[
+                        self._mergeable_parser[m]]
+                    if m_merg:
+                        merg_set.add(fn_mod)
+                    else:
+                        merg_set.discard(fn_mod)
             else:
+                # We have to rescan mergeability - either the plugin's size
+                # changed or there is at least one required mergeability check
+                # we have not yet run for this plugin
                 newMods.append(fn_mod)
         return newMods
 
@@ -2396,47 +2505,60 @@ class ModInfos(FileInfos):
             return self._rescanMergeable(names, prog, return_results)
 
     def _rescanMergeable(self, names, progress, return_results):
-        reasons = None if not return_results else []
-        if bush.game.check_esl:
-            is_mergeable = is_esl_capable
-        else:
-            is_mergeable = isPBashMergeable
-        mod_mergeInfo = self.table.getColumn(u'mergeInfo')
+        all_known_checks = {
+            MergeabilityCheck.MERGE: isPBashMergeable,
+            MergeabilityCheck.ESL_CHECK: is_esl_capable,
+            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
+        }
+        # The checks that are actually required for this game
+        required_checks = {m: c for m, c in all_known_checks.items()
+                           if m in bush.game.mergeability_checks}
+        mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
-        result, tagged_no_merge = OrderedDict(), set()
-        for i,fileName in enumerate(names):
-            progress(i,fileName)
+        result, tagged_no_merge = {}, set()
+        for i, fileName in enumerate(names):
+            all_reasons = (None if not return_results else
+                           {m: [] for m in bush.game.mergeability_checks})
+            progress(i, fileName)
             fileInfo = self[fileName]
             cs_name = fileName.lower()
-            if cs_name in bush.game.bethDataFiles:
-                if return_results: reasons.append(_(u'Is Vanilla Plugin.'))
-                canMerge = False
-            elif fileInfo.is_esl():
-                # Do not mark esls as esl capable
-                if return_results: reasons.append(_(u'Already ESL-flagged.'))
-                canMerge = False
-            elif not bush.game.Esp.canBash:
-                canMerge = False
-            else:
-                try:
-                    canMerge = is_mergeable(fileInfo, self, reasons)
-                except Exception as e:
-                    # deprint(f'Error scanning mod {fileName} ({e})')
-                    # canMerge = False #presume non-mergeable.
-                    raise
-            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
+            check_results = {}
+            for merg_type, merg_check in required_checks.items():
+                reasons = (None if not return_results else
+                           all_reasons[merg_type])
+                if cs_name in bush.game.bethDataFiles:
+                    # Fail all mergeability checks for vanilla plugins
+                    if return_results: reasons.append(_('Is Vanilla Plugin.'))
+                    check_results[merg_type] = False
+                else:
+                    try:
+                        check_results[merg_type] = merg_check(
+                            fileInfo, self, reasons)
+                    except Exception: # as e
+                        # deprint(f'Error scanning mod {fileName} ({e})')
+                        # # Assume it's not mergeable
+                        # check_results[merg_type] = False
+                        raise
+            # Special handling for MERGE: NoMerge-tagged plugins
+            if (fileName in self.mergeable_plugins and
+                    'NoMerge' in fileInfo.getBashTags()):
                 tagged_no_merge.add(fileName)
-                if return_results: reasons.append(_(u'Technically mergeable '
-                                                    u'but has NoMerge tag.'))
-            result[fileName] = reasons is not None and (
-                    u'\n.    ' + u'\n.    '.join(reasons))
-            if canMerge:
-                self.mergeable.add(fileName)
-                mod_mergeInfo[fileName] = (fileInfo.fsize, True)
-            else:
-                mod_mergeInfo[fileName] = (fileInfo.fsize, False)
-                self.mergeable.discard(fileName)
-            reasons = reasons if reasons is None else []
+                if return_results:
+                    all_reasons[MergeabilityCheck.MERGE].append(_(
+                        'Technically mergeable, but has NoMerge tag.'))
+            result[fileName] = all_reasons is not None and {
+                m: (check_results[m], r) for m, r in all_reasons.items()}
+            for m, m_mergeable in check_results.items():
+                merg_set = self._mergeable_by_type[m]
+                if m_mergeable:
+                    merg_set.add(fileName)
+                else:
+                    merg_set.discard(fileName)
+            # Only store the enum values (i.e. the ints) in our settings files,
+            # that way we can move the enum itself around etc.
+            mod_mergeInfo[fileName] = (fileInfo.fsize, {
+                k.value: v for k, v in check_results.items()
+            })
         return result, tagged_no_merge
 
     def _refresh_bash_tags(self):
@@ -2656,8 +2778,10 @@ class ModInfos(FileInfos):
             if espms_extra or esls_extra:
                 msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
-                    msg += f'{load_order.max_espms():d} espms'
-                else:
+                    msg += f'{load_order.max_espms():d} regular plugins'
+                if esls_extra:
+                    if espms_extra:
+                        msg += ' and '
                     msg += f'{load_order.max_esls():d} light plugins'
                 raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
@@ -2732,14 +2856,14 @@ class ModInfos(FileInfos):
             try:
                 # First, activate non-mergeable plugins not tagged Deactivate
                 for p in s_plugins:
-                    if p not in self.mergeable: _add_to_actives(p)
+                    if p not in self.mergeable_plugins: _add_to_actives(p)
             except PluginsFullError:
                 raise
             if activate_mergeable:
                 try:
                     # Then activate as many of the mergeable plugins as we can
                     for p in s_plugins:
-                        if p in self.mergeable: _add_to_actives(p)
+                        if p in self.mergeable_plugins: _add_to_actives(p)
                 except PluginsFullError as e:
                     raise SkippedMergeablePluginsError() from e
         except (BoltError, NotImplementedError):
@@ -2850,9 +2974,38 @@ class ModInfos(FileInfos):
         # values in active order, later loading inis override previous settings
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
-    def create_new_mod(self, newName, selected=(), wanted_masters=None,
-            dir_path=empty_path, is_bashed_patch=False, with_esm_flag=False,
-            with_esl_flag=False):
+    ##: This honestly does way too much. Look at the jumble of parameters and
+    # the giant docstring for evidence
+    def create_new_mod(self, newName: str | FName,
+            selected: tuple[FName, ...] = (),
+            wanted_masters: list[FName] | None = None, dir_path=empty_path,
+            is_bashed_patch=False, with_esm_flag=False, with_esl_flag=False,
+            with_overlay_flag=False):
+        """Create a new plugin.
+
+        :param newName: The name the created plugin will have.
+        :param selected: The currently selected after which the plugin will be
+            created in the load order. If empty, the new plugin will be placed
+            last in the load order. Only relevant if dir_path is unset or
+            matches the Data folder.
+        :param wanted_masters: The masters the created plugin will have.
+        :param dir_path: The directory in which the plugin will be created. If
+            empty, defaults to the Data folder.
+        :param is_bashed_patch: If True, mark the created plugin as a Bashed
+            Patch.
+        :param with_esm_flag: If True, set the created plugin's ESM flag.
+        :param with_esl_flag: If True, set the created plugin's ESL flag. Only
+            set this to True if the game actually supports ESLs, otherwise an
+            InvalidPluginFlagsError will be raised. Mutually exclusive with
+            with_overlay_flag, setting both to True raises an
+            InvalidPluginFlagsError as well.
+        :param with_esl_flag: If True, set the created plugin's Overlay flag.
+            Only set this to True if the game actually supports overlay
+            plugins, otherwise an InvalidPluginFlagsError will be raised.
+            Mutually exclusive with with_esl_flag, setting both to True raises
+            an InvalidPluginFlagsError as well."""
+        if with_esl_flag and with_overlay_flag:
+            raise InvalidPluginFlagsError('both ESL and Overlay flags set.')
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -2864,7 +3017,16 @@ class ModInfos(FileInfos):
         if with_esm_flag:
             newFile.tes4.flags1.esm_flag = True
         if with_esl_flag:
+            if not bush.game.has_esl:
+                raise InvalidPluginFlagsError('an ESL flag, but the game does '
+                                              'not support ESLs.')
             newFile.tes4.flags1.esl_flag = True
+        elif with_overlay_flag:
+            if not bush.game.has_overlay_plugins:
+                raise InvalidPluginFlagsError('an Overlay flag, but the game '
+                                              'does not support Overlay '
+                                              'plugins.')
+            newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:
             self.new_info(newName, notify_bain=True)  # notify just in case...
@@ -3164,12 +3326,13 @@ class ModInfos(FileInfos):
         self.real_indices.clear()
         self.real_index_strings.clear()
         for p in load_order.cached_active_tuple():
-            if self[p].is_esl():
+            if (pi := self[p]).is_esl():
                 # sort ESLs after all regular plugins
                 self.real_indices[p] = esl_offset + esl_index
                 self.real_index_strings[p] = f'FE {esl_index:03X}'
                 esl_index += 1
-            else:
+            elif not pi.is_overlay():
+                # Skip overlay plugins as they get no active index at runtime
                 self.real_indices[p] = regular_index
                 self.real_index_strings[p] = f'{regular_index:02X}'
                 regular_index += 1

@@ -2167,15 +2167,15 @@ tab. The directories skipped are:
         <tr>
             <td id="mods-col-index">Index</td>
             <td>Display or hide a column showing each plugin's index that it
-                will be assigned by the game at runtime. Inactive plugins will
-                not receive any index and in games with ESL support,
-                ESL-flagged plugins will all receive an index like
-                <code>FE xyz</code>. This column is useful e.g. if you have an
-                index from using the console to inspect an object while playing
-                the game, and want to identify what plugin the object comes
-                from. For games with ESL support, this column will be enabled
-                by default, for games without ESL support it will be disabled
-                by default.</td>
+                will be assigned by the game at runtime. Inactive plugins and
+                overlay plugins (in games with Overlay support) will not
+                receive any index and in games with ESL support, ESL-flagged
+                plugins will all receive an index like <code>FE xyz</code>.
+                This column is useful e.g. if you have an index from using the
+                console to inspect an object while playing the game, and want
+                to identify what plugin the object comes from. For games with
+                ESL and/or Overlay support, this column will be enabled by
+                default, for other games it will be disabled by default.</td>
         </tr>
         <tr>
             <td>Rating</td>
@@ -2634,23 +2634,40 @@ tab. The directories skipped are:
                 to the Details view in the Construction Set/Creation Kit.</td>
         </tr>
         <tr>
-            <td colspan="4" id="modsMarkMergeable">Mark Mergeable...</td>
-            <td><em>Not available for games with ESL support.</em> Scan the
-                selected plugins to determine if they are mergeable or not.
-                Wrye Bash does this automatically, but this command lists the
-                reasons why a plugin is unmergeable. This is useful if you
-                think some plugins should be mergeable, but the Bashed Patch is
-                refusing to merge them.</td>
-        </tr>
-        <tr>
-            <td colspan="4" id="mods-check-esl">Check ESL Qualifications</td>
-            <td><em>Games with ESL support only.</em> Check if the selected
-                plugins can be ESL-flagged using
-                <a href="#modsEslifySelf">Add ESL Flag</a>. Wrye Bash does this
-                automatically, but this command reports why plugins can't be
-                ESL-flagged. This is useful if you think some plugins are
-                ESL-capable and Wrye Bash is refusing to mark them as
-                such.</td>
+            <td colspan="4" id="mods-check-qualifications">Check
+                Qualifications...</td>
+            <td>Scan the selected plugins to check their qualifications for
+                various actions, depending on the game:
+                <ul>
+                    <!-- TODO We should document the exact requirements for
+                          merging a plugin into the BP and link them here -->
+                    <li>For games that have the <q>Merge Patches</q> patcher
+                        available in the Bashed Patch (currently all games that
+                        <em>don't</em> have ESL support), this will check if
+                        the plugin could be merged into the Bashed Patch.</li>
+                    <li>For games with ESL support, this will check if the
+                        plugin could receive an ESL flag, which can then be
+                        added via
+                        <a href="modsEslifySelf">Add ESL Flag</a>. See
+                        <a href="Wrye%20Bash%20General%20Readme.html#intro-esls">the ESLs section</a>
+                        for details about requirements.</li>
+                    <li>For games with Overlay plugin support, this will check
+                        if the plugin could receive an Overlay flag, which can
+                        then be added via <a href="mods-add-overlay-flag">Add
+                            Overlay Flag</a>. See
+                        <a href="Wrye%20Bash%20General%20Readme.html#intro-overlays">the Overlay Plugins section</a>
+                        for details about the .</li>
+                </ul>
+                If a game falls into multiple of the categories, this command
+                will check all the appropriate categories. For example,
+                Starfield supports both ESLs and Overlay plugins, so this
+                command checks both of them.<br>
+                <br>
+                Wrye Bash does these checks automatically, but this command
+                lists the reasons why a plugin may not qualify for one of these
+                actions. This is useful if you think some plugins should be
+                mergeable/ESL-capable/etc., but Wrye Bash seems to
+                disagree.</td>
         </tr>
         <tr>
             <td colspan="4">Rebuild Patch...</td>
@@ -2679,8 +2696,18 @@ tab. The directories skipped are:
                 <a href="#modsEsmifySelf">Add/Remove ESM Flag</a>, but targets
                 the ESL flag instead of the ESM flag. This command is only
                 enabled if the plugin is ESL-capable. See
-                <a href="#mods-check-esl">Check ESL Qualifications</a> for more
-                information.</td>
+                <a href="#mods-check-qualifications">Check Qualifications...</a>
+                for more information.</td>
+        </tr>
+        <tr>
+            <td colspan="4" id="mods-add-overlay-flag">Add/Remove Overlay
+                Flag</td>
+            <td><em>Games with Overlay plugin support only.</em> Similar to
+                <a href="#modsEslifySelf">Add/Remove ESL Flag</a>, but targets
+                the Overlay flag instead of the ESL flag. This command is only
+                enabled if the plugin is Overlay-capable. See
+                <a href="#mods-check-qualifications">Check Qualifications...</a>
+                for more information.</td>
         </tr>
         <tr>
             <td colspan="4" id="modsEsmifyMasters">Add/Remove ESM Flag to/From
@@ -12314,37 +12341,120 @@ iScreenShotIndex=0</code></td>
 <p>The Plugin Checker checks your active and merged plugins for errors, and
     provides warnings for any found, as well as configuration recaps and
     suggestions. It can be opened by clicking the
+    <img alt="" src="../bash/images/checklist.svg" width="16" height="16">
     <a href="Wrye%20Bash%20General%20Readme.html#launchersPluginChecker">Plugin
-        Checker button</a> in the status bar or by using the
-    <a href="#modsPluginChecker">Plugin Checker menu option</a>.
+        Checker button</a> in the
+    status bar or by using the
+    <a href="#modsPluginChecker">Plugin Checker menu option</a>.</p>
 <p>At the top of the report is the Active Plugins section, which lists your
     load order if you enabled it using the
     <a href="#pluginCheckerPluginList">Plugin List</a> toggle. After that comes
     a report of all problems that were detected. A full list of problems
     detected by the Plugin Checker follows:</p>
-<ul>
-    <li>Corrupted plugins</li>
-    <li>ESL-capable plugins</li>
-    <li>Incorrectly ESL-flagged plugins</li>
-    <li>Mergeable plugins</li>
-    <li>Deactivate-tagged plugins that are active</li>
-    <li>MustBeActiveIfImported-tagged plugins that are imported, but
-        inactive</li>
-    <li>Plugins with missing masters</li>
-    <li>Plugins with delinquent masters, i.e. masters that load after their
-        dependent plugins</li>
-    <li>Plugins with unknown header versions</li>
-    <li>For SSE and games based on it, plugins with Form Version &lt;44</li>
-    <li>For SSE and games based on it, weapon records with Form Version &lt;44</li>
-    <li>Cleaning information retrieved from LOOT</li>
-    <li>Deleted references</li>
-    <li>Deleted navmeshes</li>
-    <li>Deleted base records</li>
-    <li>HITMEs</li>
-    <li>Record type collisions</li>
-    <li>Probable injected collisions</li>
-    <li>Duplicate FormIDs</li>
-</ul>
+<table>
+    <thead>
+        <tr>
+            <th>Problem</th>
+            <th>Games</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Corrupted plugins</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins that could be ESL-flagged</td>
+            <td>Skyrim&colon; Special Edition, Fallout 4 &amp; Starfield</td>
+        </tr>
+        <tr>
+            <td>Incorrectly ESL-flagged plugins</td>
+            <td>Skyrim&colon; Special Edition, Fallout 4 &amp; Starfield</td>
+        </tr>
+        <tr>
+            <td>Mergeable plugins</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Deactivate-tagged plugins that are active</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>MustBeActiveIfImported-tagged plugins that are imported, but
+                inactive</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins with missing masters</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins with delinquent masters, i.e. masters that load after
+                their dependent plugins</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins with unknown header versions</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins with form version &lt;44</td>
+            <td>Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>(WEAP) Weapon records with form version &lt;44</td>
+            <td>Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Cleaning information retrieved from LOOT</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Deleted references</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Deleted navmeshes</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Deleted base records</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>HITMEs</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Record type collisions</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Probable injected collisions</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Duplicate FormIDs</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td>Plugins that could be Overlay-flagged</td>
+            <td>Starfield</td>
+        </tr>
+        <tr>
+            <td>Overlay plugins with new records</td>
+            <td>Starfield</td>
+        </tr>
+        <tr>
+            <td>Overlay plugins with no masters</td>
+            <td>Starfield</td>
+        </tr>
+        <tr>
+            <td>Overlay plugins that also have the ESL flag set</td>
+            <td>Starfield</td>
+        </tr>
+    </tbody>
+</table>
 <div class="prlflex clearf">
     <figure class="slideshow" style="width: 576px; min-height: 596px">
     <img alt="" src="../bash/images/readme/plugin-checker-1.png">

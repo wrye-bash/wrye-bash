@@ -31,6 +31,7 @@ from .. import bass, bolt, bosh, bush, load_order
 from ..balt import CheckLink, Links, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
+from ..game import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
     ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout, \
@@ -1369,7 +1370,13 @@ for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
 def initPatchers():
     group_order = {p_grp: i for i, p_grp in enumerate(
         ('General', 'Importers', 'Tweakers', 'Special'))}
-    patcher_classes = [globals()[p] for p in bush.game.patchers]
+    # If we want to merge patches into the BP, we need the patch merger
+    final_patchers = bush.game.patchers.copy()
+    if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        final_patchers.add('MergePatches')
+        # And the NoMerge tag needs to get added too
+        bush.game.allTags.add('NoMerge')
+    patcher_classes = [globals()[p] for p in final_patchers]
     # Sort alphabetically first for aesthetic reasons
     patcher_classes.sort(key=lambda a: a.patcher_name)
     # After that, sort by group to make patchers instantiate in the right order
