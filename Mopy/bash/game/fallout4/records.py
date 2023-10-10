@@ -413,6 +413,7 @@ class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
+    next_object_default = 0x001
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         optimized_file: bool = flag(4)
@@ -421,7 +422,7 @@ class MreTes4(AMreHeader):
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
-                  ('nextObject', 0x001), is_required=True),
+                  ('nextObject', next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),

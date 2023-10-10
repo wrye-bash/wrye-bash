@@ -22,15 +22,17 @@
 # =============================================================================
 from __future__ import annotations
 
+import re
 import time
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from itertools import chain, count
 from operator import attrgetter
+from typing import Self
 
 from .. import bass, load_order
 from .. import bolt # for type hints
 from .. import bush # for game etc
-from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url
+from ..bolt import Progress, SubProgress, deprint, dict_sort, readme_url, FName
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import LoadFactory, ModFile
@@ -435,9 +437,10 @@ class PatchFile(ModFile):
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
         progress(0.95, _('Completing') + '\n' + _('Converting FormIDs...'))
-        # Convert masters to short fids
-        self.tes4.masters = self.getMastersUsed()
-        progress(1.0, _('Compiled.'))
+
+    def set_attributes(self, *, was_split=False, split_part=0):
+        """Create the description, set appropriate flags, etc."""
+        self.tes4.masters = load_order.get_ordered(self.used_masters())
         # Build the description
         num_records = sum(x.get_num_records() for x in self.tops.values())
         self.tes4.description = (_('Updated: %(update_time)s') % {
@@ -445,15 +448,98 @@ class PatchFile(ModFile):
             'Records Changed: %(num_recs)d') % {'num_recs': num_records})
         ##: Consider flagging as Overlay instead if that flag is supported by
         # the game and no new records have been included?
-        # Flag as ESL if the game supports them and the option is enabled
-        # Note that we can always safely mark as ESL as long as the number of
-        # new records we created is smaller than 0xFFF, since the BP only ever
-        # copies overrides into itself, no new records. The only new records it
-        # can contain come from Tweak Settings, which creates them through
-        # getNextObject and so properly increments nextObject.
+        # Flag as ESL if the game supports them, the option is enabled and the
+        # BP has <= 0xFFF new records
+        num_new_recs = self.count_new_records()
         if (bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl'] and
-                self.tes4.nextObject <= 0xFFF):
+            num_new_recs <= 0xFFF):
             self.tes4.flags1.esl_flag = True
-            msg = '\n' + _('This patch has been automatically ESL-flagged to '
-                           'save a load order slot.')
+            msg = '\n\n' + _('This patch has been automatically ESL-flagged '
+                             'to save a load order slot.')
             self.tes4.description += msg
+        if was_split:
+            msg = '\n\n' + _(
+                'This patch had to be split due to it having more than '
+                '%(max_num_masters)d masters. This is part %(bp_part)d.') % {
+                'max_num_masters': bush.game.Esp.master_limit,
+                'bp_part': split_part + 1,
+            }
+            self.tes4.description += msg
+
+    def split_patch(self) -> list[Self] | None:
+        """Split this patch to fit within the game's master limit. Must not be
+        called on BPs that contain a top group with more masters than the game
+        allows, otherwise a RuntimeError will be raised.
+
+        :return: A list of the created Bashed Patch files, or None if splitting
+            was not possible."""
+        bp_part_counter = 1
+        def new_bp_part():
+            """Helper to create a new BP part in the Data folder and add it to
+            ModInfos."""
+            nonlocal bp_part_counter
+            new_part_name = (f'{self.fileInfo.fn_key.fn_body}-'
+                             f'{bp_part_counter}.esp')
+            bp_part_counter += 1
+            if not (new_part := self.p_file_minfos.get(new_part_name)):
+                self.p_file_minfos.create_new_mod(new_part_name,
+                    selected=[latest_sel], is_bashed_patch=True)
+                new_part = self.p_file_minfos.new_info(new_part_name)
+            return self.__class__(new_part, self.p_file_minfos)
+        # Find the top groups with the highest number
+        master_dict = self.used_masters_by_top()
+        max_masters = bush.game.Esp.master_limit
+        if any(len(m) > max_masters for m in master_dict.values()):
+            # Let's be defensive here, the check is cheap and will prevent an
+            # endless loop down below if someone messes up
+            raise RuntimeError(f'Do not call split_patch on BPs with top '
+                               f'groups that have >{max_masters} masters!')
+        largest_groups = deque(sorted(master_dict,
+                    key=lambda k: len(master_dict[k]), reverse=True))
+        source_bp_file = self
+        latest_sel = source_bp_file
+        latest_sel = target_bp_file = new_bp_part()
+        all_bp_parts = [source_bp_file, target_bp_file]
+        while True:
+            while True:
+                if not source_bp_file.tops:
+                    # These being empty means we ended up just moving
+                    # everything from the source to the target, which can't fix
+                    # the problem. Fixing this would need record-level
+                    # splitting, so just abort here
+                    return None
+                # Move the top group with the largest number of masters into
+                # the target file
+                t_sig = largest_groups.popleft()
+                target_bp_file.tops[t_sig] = source_bp_file.tops.pop(t_sig)
+                all_target_masters = target_bp_file.used_masters()
+                if len(all_target_masters) > max_masters:
+                    # The most recent move was too much, undo it and move on to
+                    # the next file
+                    source_bp_file.tops[t_sig] = target_bp_file.tops.pop(t_sig)
+                    largest_groups.appendleft(t_sig)
+                    break
+            all_source_masters = source_bp_file.used_masters()
+            if len(all_source_masters) <= max_masters:
+                # We're done for good, all BP parts are within the master limit
+                break
+            # Wow, this source is big. We need another part to move more of the
+            # source's top groups into
+            latest_sel = target_bp_file = new_bp_part()
+            all_bp_parts.append(target_bp_file)
+        return all_bp_parts
+
+    def find_unneded_parts(self, valid_parts: list[Self]) -> list[FName]:
+        """Find a list of all ModInfo keys that belong to ModInfos which
+        represent previously created parts of this split Bashed Patch which are
+        no longer needed. This is relevant if a reduction in the number of
+        masters left the BP with more parts in the Data folder that are
+        actually needed now."""
+        re_bp_parts = re.compile(re.escape(self.fileInfo.fn_key.fn_body) +
+                                 r'-\d+\.esp')
+        valid_part_fnames = {p.fileInfo.fn_key for p in valid_parts}
+        unneded_parts = []
+        for p_fname in list(self.p_file_minfos):
+            if re_bp_parts.match(p_fname) and p_fname not in valid_part_fnames:
+                unneded_parts.append(p_fname)
+        return unneded_parts

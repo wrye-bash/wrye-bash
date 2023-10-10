@@ -3183,6 +3183,11 @@ class ModInfos(FileInfos):
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
+        # Update linked BP parts if the parent BP got renamed
+        for bp_part in self.table.getColumn('bp_split_parent'):
+            table_entry = self.table[bp_part]
+            if table_entry['bp_split_parent'] == old_key:
+                table_entry['bp_split_parent'] = newName
         return old_key
 
     #--Delete

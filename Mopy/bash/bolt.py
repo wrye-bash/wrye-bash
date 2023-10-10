@@ -1627,6 +1627,7 @@ class TrimmedFlags(Flags):
         return super().dump()
 
 #------------------------------------------------------------------------------
+##: This seems highly unnecessary now, can we get rid of it?
 class MasterSet(set):
     """Set of master names."""
     __slots__ = ()

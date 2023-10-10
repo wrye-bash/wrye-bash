@@ -179,6 +179,8 @@ class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
     _post_masters_sigs: set[bytes]
+    # Set per game, the value that nextObject defaults to
+    next_object_default: int
 
     class HeaderFlags(MelRecord.HeaderFlags):
         esm_flag: bool = flag(0)

@@ -27,6 +27,7 @@ import re
 import time
 from datetime import timedelta
 
+from .dialogs import DeleteBPPartsEditor
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bass import Store
@@ -39,6 +40,7 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
     showWarning
 from ..patcher import exportConfig
+from ..patcher.patch_files import PatchFile
 from ..wbtemp import TempDir
 
 # Final lists of gui patcher classes instances, initialized in
@@ -53,7 +55,8 @@ class PatchDialog(DialogWindow):
     _def_size = (600, 600)
     _min_size = (400, 300)
 
-    def __init__(self, parent, bashed_patch, mods_to_reselect, patchConfigs):
+    def __init__(self, parent, bashed_patch: PatchFile, mods_to_reselect,
+            patchConfigs):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
         self.bashed_patch = bashed_patch
@@ -171,20 +174,62 @@ class PatchDialog(DialogWindow):
             patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
             patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
             patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
-            if patchFile.tes4.num_masters > bush.game.Esp.master_limit:
-                showError(self, _(
-                    'The resulting Bashed Patch contains too many masters '
-                    '(%(curr_num_masters)d, limit is %(max_num_masters)d). '
-                    'You can try to disable some patchers, create a second '
-                    'Bashed Patch and rebuild that one with only the patchers '
-                    'you disabled in this one active.') % {
-                    'curr_num_masters': patchFile.tes4.num_masters,
-                    'max_num_masters': bush.game.Esp.master_limit})
-                return # Abort, we'll just blow up on saving it
+            progress(1.0, _('Compiled.'))
+            # Convert masters to short fids
+            master_dict = patchFile.used_masters_by_top()
+            all_bp_masters = set()
+            for t_sig, t_masters in master_dict.items():
+                if len(t_masters) > bush.game.Esp.master_limit:
+                    showError(self, _(
+                        'Congratulations on managing to get a single top '
+                        'group to >%(max_num_masters)d masters (you got '
+                        '%(curr_num_masters)d in top grup %(top_group_sig)s)! '
+                        'Please post to the Wrye Bash Discord (including your '
+                        'BashBugDump), we seriously did not think anyone '
+                        'would manage this. This error is fatal by the way, '
+                        'Wrye Bash currently does not support splitting the '
+                        'Bashed Patch within a top group.') % {
+                        'max_num_masters': bush.game.Esp.master_limit,
+                        'curr_num_masters': len(t_masters),
+                        'top_group_sig': bolt.sig_to_str(t_sig)},
+                        title=_('Achievement Unlocked: Modaholic!'))
+                    return # Abort, we can't fix this right now
+                all_bp_masters |= t_masters
+            if len(all_bp_masters) <= bush.game.Esp.master_limit:
+                # Everything is OK, just need to set masters and attributes
+                patchFile.set_attributes()
+                bp_files_to_save = [patchFile]
+            else:
+                # We have to split the BP, then clean up the unneeded parts
+                bp_files_to_save = patchFile.split_patch()
+                if bp_files_to_save is None:
+                    showError(self, _(
+                        'Failed to split the Bashed Patch. The simple '
+                        'algorithm used for splitting it right now cannot '
+                        'handle the situation we have encountered here. '
+                        'Please post to the Wrye Bash Discord (including your '
+                        'BashBugDump).'))
+                    return # Abort, we can't fix this right now
+                for i, bp_file in enumerate(bp_files_to_save):
+                    bp_file.set_attributes(was_split=True, split_part=i)
+                    # No need to link the parent to itself, of course
+                    if i > 0:
+                        # Store a raw string here so we avoid the
+                        # FName.__reduce__ stuff - this is a new format, so no
+                        # backwards compat concerns
+                        bp_file.fileInfo.set_table_prop('bp_split_parent',
+                            str(patch_name))
+            parts_to_del = patchFile.find_unneded_parts(bp_files_to_save)
+            if parts_to_del:
+                ed_ok, ed_parts = DeleteBPPartsEditor.display_dialog(
+                    self, unneeded_parts=parts_to_del)
+                if ed_ok and ed_parts:
+                    patchFile.p_file_minfos.delete(ed_parts)
             #--Save
             progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
             progress(0.9)
-            self._save_pbash(patchFile, patch_name)
+            for bp_file in bp_files_to_save:
+                self._save_pbash(bp_file, patch_name)
             #--Done
             progress.Destroy()
             progress = None
@@ -225,43 +270,46 @@ class PatchDialog(DialogWindow):
                     env.shellMove(readme_moves, parent=self)
                     readme = bass.dirs['saveBase'].join(readme.stail)
             readme = readme.root + u'.html'
-            self.patchInfo.set_table_prop(u'doc', readme)
+            for bp_file in bp_files_to_save:
+                bp_file.fileInfo.set_table_prop('doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
             balt.show_log(self.parent, readme, patch_name, wrye_log=True,
                           asDialog=True)
-            # We have to parse the new info first, since the masters may
-            # differ. Most people probably don't keep BAIN packages of BPs, but
-            # *I* do, so...
-            info = bosh.modInfos.new_info(patch_name, notify_bain=True)
+            for bp_file in bp_files_to_save:
+                bp_fname = bp_file.fileInfo.fn_key
+                # We have to parse the new infos first, since the masters may
+                # differ. Most people probably don't keep BAIN packages of BPs,
+                # but *I* do, so...
+                info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
+                message = _('Activate %(bp_name)s?') % {'bp_name': bp_fname}
+                count = 0
+                if load_order.cached_is_active(bp_fname) or (
+                        bass.inisettings['PromptActivateBashedPatch'] and
+                        askYes(self.parent, message, bp_fname)):
+                    try:
+                        count = len(bosh.modInfos.lo_activate(bp_fname,
+                            doSave=True))
+                        if count > 1:
+                            Link.Frame.set_status_info(
+                                _('Masters Activated: %(num_activated)d') % {
+                                    'num_activated': count - 1})
+                    except PluginsFullError:
+                        showError(self, _(
+                            'Unable to activate plugin %(bp_name)s because the '
+                            'load order is full.') % {'bp_name': bp_fname})
+                if bp_fname == patch_name and info.fsize == patch_size:
+                    # Needed if size remains the same - mtime is set in
+                    # ModFile.safeSave which can't use setmtime(crc_changed),
+                    # as no info is there. In this case _reset_cache >
+                    # calculate_crc() would not detect the crc change. That's a
+                    # general problem with crc cache - API limits
+                    info.calculate_crc(recalculate=True)
             #--Select?
             if self.mods_to_reselect:
                 for mod in self.mods_to_reselect:
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 self.mods_to_reselect.clear()
                 bosh.modInfos.cached_lo_save_active() ##: also done below duh
-            message = _('Activate %(bp_name)s?') % {'bp_name': patch_name}
-            count = 0
-            if load_order.cached_is_active(patch_name) or (
-                    bass.inisettings['PromptActivateBashedPatch'] and
-                    askYes(self.parent, message, patch_name)):
-                try:
-                    count = len(bosh.modInfos.lo_activate(patch_name,
-                        doSave=True))
-                    if count > 1:
-                        Link.Frame.set_status_info(
-                            _('Masters Activated: %(num_activated)d') % {
-                                'num_activated': count - 1})
-                except PluginsFullError:
-                    showError(self, _(
-                        'Unable to activate plugin %(bp_name)s because the '
-                        'load order is full.') % {'bp_name': patch_name})
-            if info.fsize == patch_size:
-                # Needed if size remains the same - mtime is set in
-                # ModFile.safeSave which can't use setmtime(crc_changed), as no
-                # info is there. In this case _reset_cache > calculate_crc()
-                # would not detect the crc change. That's a general problem
-                # with crc cache - API limits
-                info.calculate_crc(recalculate=True)
             self.parent.RefreshUI(refresh_others=Store.SAVES.IF(count))
         except CancelError:
             pass

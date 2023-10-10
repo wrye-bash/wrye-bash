@@ -979,6 +979,26 @@ class _Mod_BP_Link(OneItemLink):
         return super(_Mod_BP_Link, self)._enable() \
                and self._selected_info.isBP()
 
+    def _find_parent_bp(self):
+        """Find the correct Bashed Patch to use for working on this BP file.
+        Handles both regular BPs and BP parts correctly."""
+        bp_parent_str = self._selected_info.get_table_prop('bp_split_parent')
+        if bp_parent_str is None:
+            return self._selected_info # Not a part
+        if bp_parent := bosh.modInfos.get(bp_parent_str):
+            return bp_parent # Is a part, found parent
+        return None # Is a part, did not find parent
+
+    def _error_no_parent_bp(self):
+        """Show an error message for when a BP part could not find its
+        parent."""
+        self._showError(
+            _('This is part of a split Bashed Patch, but Wrye Bash failed '
+              'to determine its parent. If you renamed or deleted the '
+              'parent, this part may have become detached. In that case, '
+              'just delete it and use the main BP to rebuild.'),
+            title=_('Detached Bashed Patch Part'))
+
 class Mod_RebuildPatch(_Mod_BP_Link):
     """Updates a Bashed Patch."""
     _text = _(u'Rebuild Patch...')
@@ -989,7 +1009,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         """Handle activation event."""
         self.mods_to_reselect = set()
         try:
-            if not self._execute_bp(self._selected_info, bosh.modInfos):
+            if not self._execute_bp(self._find_parent_bp(), bosh.modInfos):
                 return # prevent settings save
         except CancelError:
             return # prevent settings save
@@ -1004,16 +1024,20 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         Link.Frame.SaveSettings() ##: just modInfos ?
 
     def _execute_bp(self, patch_info, mod_infos):
+        if patch_info is None:
+            self._error_no_parent_bp()
+            return False
         # Clean up some memory
         bolt.GPathPurge()
         # We need active mods
         if not load_order.cached_active_tuple():
             self._showWarning(
                 _('That which does not exist cannot be patched.') + '\n' +
-                _('Load some mods and try again.'), _('Existential Error'))
+                _('Load some plugins and try again.'),
+                title=_('Existential Error'))
             return False
         # Read the config
-        bp_config = self._selected_info.get_table_prop('bash.patch.configs',{})
+        bp_config = patch_info.get_table_prop('bash.patch.configs',{})
         if _configIsCBash(bp_config):
             if not self._askYes(
                     _('This patch was built in CBash mode. This is no longer '
@@ -1088,7 +1112,11 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 
     def Execute(self):
         #--Config
-        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
+        bp_parent_info = self._find_parent_bp()
+        if bp_parent_info is None:
+            self._error_no_parent_bp()
+            return
+        config = bp_parent_info.get_table_prop('bash.patch.configs', {})
         # Detect and warn about patch mode
         if _configIsCBash(config):
             self._showError(_(u'The selected patch was built in CBash mode, '
@@ -1099,17 +1127,19 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
         #--Log & Clipboard text
         log = bolt.LogFile(io.StringIO())
-        log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
+        log.setHeader('= %s %s' % (bp_parent_info.fn_key, _('Config')))
         log(_(u'This is the current configuration of this Bashed Patch.  This '
               u'report has also been copied into your clipboard.')+u'\n')
         clip = io.StringIO()
-        clip.write(u'%s %s:\n' % (self._selected_item, _(u'Config')))
+        clip.write('%s %s:\n' % (bp_parent_info.fn_key, _('Config')))
         clip.write(u'[spoiler]\n')
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         log(u'Python')
         clip.write(u' ** Python\n')
+        temp_bp = PatchFile(bp_parent_info, bosh.modInfos)
         for patcher in _gui_patchers:
+            patcher._bp = temp_bp
             patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/spoiler]')

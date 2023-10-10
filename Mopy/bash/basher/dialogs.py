@@ -642,7 +642,8 @@ class MonitorExternalInstallationEditor(_ABainMLE):
                         'modification time altered. These files were most '
                         'likely included in the external installation, but '
                         'were identical to the ones that already existed in '
-                        'the %(data_folder)s folder.') % mdir_fmt,
+                        'the %(data_folder)s folder. Uncheck any that you '
+                        'want to skip.') % mdir_fmt,
             mlel_items=list(map(str, touched_files)))
         deletedf_data = MLEList(
             mlel_title=_('Deleted Files (%(del_file_cnt)d):') % {
@@ -677,7 +678,8 @@ class DeactivateBeforePatchEditor(_AWBMLE):
                 'plgn_cnt': len(plugins_mergeable)},
             mlel_desc=_('These plugins are mergeable. It is suggested that '
                         'they be deactivated and merged into the patch. This '
-                        'helps avoid the maximum plugin limit.'),
+                        'helps avoid the maximum plugin limit. Uncheck any '
+                        'that you want to keep active.'),
             mlel_items=list(map(str, plugins_mergeable)))
         pn_data = MLEList(
             mlel_title=_("Mergeable, but Tagged 'NoMerge' (%(plgn_cnt)d):") % {
@@ -685,14 +687,16 @@ class DeactivateBeforePatchEditor(_AWBMLE):
             mlel_desc=_("These plugins are mergeable, but have been tagged "
                         "with 'NoMerge'. They should be deactivated before "
                         "building the patch, imported into it and reactivated "
-                        "afterwards."),
+                        "afterwards. Uncheck any that you want to keep "
+                        "active."),
             mlel_items=list(map(str, plugins_nomerge)))
         pd_data = MLEList(
             mlel_title=_("Tagged 'Deactivate' (%(plgn_cnt)d):") % {
                 'plgn_cnt': len(plugins_deactivate)},
             mlel_desc=_("These mods have been tagged with 'Deactivate'. They "
                         "should be deactivated and merged or imported into "
-                        "the Bashed Patch."),
+                        "the Bashed Patch. Uncheck any that you want to keep "
+                        "active."),
             mlel_items=list(map(str, plugins_deactivate)))
         dbp_desc = _('The following plugins should be deactivated prior to '
                      'building the Bashed Patch.')
@@ -704,6 +708,27 @@ class DeactivateBeforePatchEditor(_AWBMLE):
         result = super().show_modal()
         final_lists = [list(map(FName, l)) for l in result[1:]]
         return result[0], *final_lists
+
+#------------------------------------------------------------------------------
+class DeleteBPPartsEditor(_AWBMLE):
+    """Template for a multi-list-editor for post-BP deletion of unneeded BP
+    parts."""
+    title = _('Unneeded Bashed Patch Parts')
+    _def_size = (450, 300)
+
+    def __init__(self, parent, *, unneeded_parts: list[FName]):
+        up_data = MLEList(
+            mlel_title=_('Unneeded (%(unneeded_part_cnt)d):') % {
+                'unneeded_part_cnt': len(unneeded_parts)},
+            mlel_desc=_('These plugins appear to be old parts of this Bashed '
+                        'Patch that are no longer needed due to a reduction '
+                        'in the number of necessary splits. It is suggested '
+                        'that they be deleted. Uncheck any that you want to '
+                        'keep.'),
+            mlel_items=list(map(str, unneeded_parts)))
+        dbp_desc = _('The following Bashed Patch parts should be deleted.')
+        super().__init__(parent, data_desc=dbp_desc, list_data=[up_data],
+            cancel_label=None)
 
 #------------------------------------------------------------------------------
 _uc_css = """body {

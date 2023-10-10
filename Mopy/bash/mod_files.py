@@ -30,14 +30,13 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error, GPath_no_norm
+    struct_error, GPath_no_norm, FName
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
     RecordHeader, RecordType, Subrecord, TopGrup, int_unpacker, null1, \
     unpack_header, FormId, SubrecordBlob
 from .exception import MasterMapError, ModError, ModReadError, StateError
-from .load_order import get_ordered
 from .wbtemp import TempFile
 
 class MasterMap(object):
@@ -290,14 +289,37 @@ class ModFile(object):
         return ((top_sig, t) for top_sig, t in self.tops.items() if
                 top_sig in top_sigs)
 
-    def getMastersUsed(self):
-        """Updates set of master names according to masters actually used."""
+    def used_masters(self) -> set[FName]:
+        """Get a set of all masters that this file actually depends on."""
         masters_set = MasterSet([bush.game.master_file])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
-        # The file itself is always implicitly available, so discard it here
+        # The file itself is always implicitly available, so discard it
         masters_set.discard(self.fileInfo.fn_key)
-        return get_ordered(masters_set)
+        return masters_set
+
+    def used_masters_by_top(self) -> dict[bytes, set[FName]]:
+        """Get a dict mapping top group signatures to sets that indicate what
+        masters those top groups depend on."""
+        ret = {}
+        for block_sig, block in self.tops.items():
+            masters_set = MasterSet([bush.game.master_file])
+            block.updateMasters(masters_set.add)
+            # The file itself is always implicitly available, so discard it
+            masters_set.discard(self.fileInfo.fn_key)
+            ret[block_sig] = set(masters_set) ##: drop once MasterSet is gone
+        return ret
+
+    def count_new_records(self):
+        """Count the number of new records in this file. self.tes4.masters must
+        be set correctly. Also updates self.tes4.nextObject to match."""
+        new_rec_count = 0
+        own_name = self.fileInfo.fn_key
+        for t_block in self.tops.values():
+            new_rec_count += len([r for r in t_block.iter_records()
+                                  if r.fid.mod_fn == own_name])
+        self.tes4.nextObject = self.tes4.next_object_default + new_rec_count
+        return new_rec_count
 
     def _index_mgefs(self):
         """Indexes and cache all MGEF properties and stores them for retrieval

@@ -372,13 +372,14 @@ class MreTes4(MelRecord, AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN'}
+    next_object_default = 0x800
 
     class HeaderFlags(MelRecord.HeaderFlags, AMreHeader.HeaderFlags):
         pass
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 0.94), 'numRecords',
-                  ('nextObject', 0x800), is_required=True),
+                  ('nextObject', next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
