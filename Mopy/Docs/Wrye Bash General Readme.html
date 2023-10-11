@@ -521,19 +521,58 @@ All these directories (either in the Global or Extra and Bonus Game directories)
 will be skipped (and their content listed in Skipped tab). There are also some directories and files that will be always skipped (for all the gory details see
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-skipped">Skipped Files</a>).
 
-<p>There are, loosely speaking, three types of BAIN-compatible package structures:
-
+<p>There are, loosely speaking, four types of BAIN-compatible package
+    structures:</p>
 <table>
-    <thead><tr><th>Structure<th>Description
+    <thead>
+        <tr>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
-        <tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level
-            subdirectories (known as sub-packages) <strong>must NOT have the same name as any of the standard game directories for this game</strong>
-            (like docs, or meshes). Otherwise BAIN thinks this is a simple package and will skip sub-packages.<br>
-            Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
-        <tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
-            top level subdirectory. Examples include mods packaged with a top-level Data directory.
+        <tr>
+            <td>Simple</td>
+            <td>The package has .esp, .esm, .esl and/or .bsa files, and/or any
+                of the standard game subdirectories at the root level.</td>
+        </tr>
+        <tr>
+            <td>Complex</td>
+            <td>The package has top-level subdirectories that each have a
+                simple structure (as defined above). The top level
+                subdirectories (known as sub-packages) <strong>must NOT have
+                    the same name as any of the standard game directories for
+                    this game</strong> (like <q>docs</q>, or <q>meshes</q>).
+                Otherwise BAIN will think that this is a simple package and
+                will treat it as such.<br>
+                Each top-level subdirectory will be treated as a sub-package,
+                and can be independently activated or deactivated as
+                desired.</td>
+        </tr>
+        <tr>
+            <td>Complex/Simple</td>
+            <td>A complex package with only one top-level subdirectory. It is
+                treated as a simple package, starting at this top-level
+                subdirectory. Examples include mods packaged with a top-level
+                Data directory.</td>
+        </tr>
+        <tr>
+            <td>Scattered</td>
+            <td>A package with no recognizable structure, that can nonetheless
+                be handled by BAIN because it contains information that lets
+                BAIN make sense of the scattered files in the package. The only
+                currently supported type of scattered package is an
+                FOMOD-guided scattered package, shown as <q>Scattered
+                    (FOMOD)</q> on the Installers tab.</td>
+        </tr>
+    </tbody>
 </table>
+
+<p><strong>Note for mod authors:</strong> it is strongly recommended that you
+    use either a simple or complex structure, not a scattered one! This will
+    make it easier for users to inspect your package and will even allow them
+    to perform the installation by manually checking the sub-packages. All
+    major mod managers support these types of packages.</p>
 
 <h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
@@ -560,6 +599,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     which will automatically use wizards and FOMODs if they are present, and fall back to manual configuration
     if they are not. If you want to learn more about each type of package and how to install and configure
     their options manually, read on.</p>
+<!-- TODO: This should probably go into the advanced readme instead -->
 <p>If a package contains a BAIN wizard (i.e. there is
     <img src="../bash/images/readme/wand-icon.png" alt="a magic wand icon">
     overlaid on its checkbox):</p>
@@ -608,7 +648,9 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     <li>Right-click the package and select
         <a href="#bainInstall">Install...</a>.</li>
 </ol>
-<p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
+<p>If a package has a Scattered structure, you must use a guided installation
+    type (see the instructions for FOMOD installation above).</p>
+<p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complicated mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (e.g. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
 <p>To uninstall any package from the Installers tab select the package and
     right click on it, then select <a href="#bainUninstall">Uninstall</a>.
@@ -677,15 +719,54 @@ from other packages previously overridden by the uninstalled package's
         <tr><td><img alt="square" src="../bash/images/checkbox_white_off.png" width="16" height="16"><td>The package is an archive.
 </table>
 <table>
-    <thead><tr><th>Checkbox Colour<th>Meaning
+    <thead>
+        <tr>
+            <th>Checkbox Color</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"><td>All the files in the package are installed as configured.
-        <tr><td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"><td>Some or all of the files in the package are not installed as configured.
-        <tr><td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"><td>All the package files are installed, but the .esp/.esm plugins are not identical (e.g. another package has overwritten them with another version of the plugins).
-        <tr><td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"><td>All the package files are installed, but some resource (i.e. non-plugin) files are not identical (e.g. another package has overwritten them with another version of the files)
-        <tr><td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
-        <tr><td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"><td>BAIN does not recognise the structure of this package so cannot install it.
-        <tr><td><img alt="no checkbox, just a red X" src="../bash/images/red_x.svg" width="16" height="16" role="img"></td><td>The package is corrupt or can not be read by BAIN for some reason.</td></tr>
+        <tr>
+            <td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"></td>
+            <td>All the files in the package are installed as configured.</td>
+        </tr>
+        <tr>
+            <td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"></td>
+            <td>Some or all of the files in the package are not installed as
+                configured.</td>
+        </tr>
+        <tr>
+            <td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"></td>
+            <td>All the package files are installed, but the plugins are not
+                identical (e.g. one package installed <code>mymod.esp</code>,
+                another package installed a cleaned version of that
+                plugin).</td>
+        </tr>
+        <tr>
+            <td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"></td>
+            <td>All the package files are installed, but some resource files
+                (i.e. anything but plugins) are not identical (e.g. one
+                package installed <code>textures/mytexture.dds</code>, another
+                package installed a higher-resolution version of that
+                texture).</td>
+        </tr>
+        <tr>
+            <td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"></td>
+            <td>The package, as configured, has no files to install. This can
+                happen for complex packages where none of the sub-packages are
+                selected for installation. Will also happen for scattered
+                packages that need to have their guided installation run.</td>
+        </tr>
+        <tr>
+            <td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"></td>
+            <td>BAIN does not recognise the structure of this package and so
+                cannot install it.</td>
+        <tr>
+            <td><img alt="no checkbox, just a red X" src="../bash/images/red_x.svg" width="16" height="16" role="img"></td>
+            <td>The package is corrupt or can not be read by BAIN for some
+                reason.</td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
@@ -694,7 +775,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td class="bain-symbols-grytxt">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
         <tr><td class="bain-symbols-orgbg">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td class="bain-symbols-ylwbg">Yellow Background<td>The package has "underrides" i.e. some of its installed files <em>should</em> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
+        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complicated structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>

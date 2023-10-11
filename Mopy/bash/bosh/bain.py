@@ -264,7 +264,7 @@ class Installer(ListInfo):
         #--Set by _reset_cache
         self.fileRootIdex = 0 # len of the root path including the final separator
         # Package type: -1 -> corrupt; 0 -> unset/unrecognized; 1 -> simple;
-        # 2 -> complex
+        # 2 -> complex; 3 -> scattered
         self.bain_type = 0
         self.subNames = []
         self.subActives = []
@@ -323,11 +323,11 @@ class Installer(ListInfo):
     def has_recognized_structure(self):
         """Return True if this package has a recognized BAIN type (i.e. is not
         a corrupt or unrecognized package)."""
-        return self.bain_type in (1, 2)
+        return self.bain_type not in (-1, 0)
 
     @property
     def is_corrupt_package(self):
-        """Return True if this package is corrupt, i.e. its data faile to
+        """Return True if this package is corrupt, i.e. its data failed to
         load."""
         return self.bain_type == -1
 
@@ -344,6 +344,13 @@ class Installer(ListInfo):
         sub-packages that each behave like a simple package."""
         return self.bain_type == 2
 
+    @property
+    def is_scattered_package(self):
+        """Return True if this package is scattered, i.e. it has no
+        recognizable structure, but does include some kind of information to
+        make sense of the chaos."""
+        return self.bain_type == 3
+
     def structure_string(self):
         if self.is_simple_package:
             return _(u'Structure: Simple')
@@ -352,6 +359,9 @@ class Installer(ListInfo):
                 return _(u'Structure: Complex/Simple')
             else:
                 return _(u'Structure: Complex')
+        elif self.is_scattered_package:
+            # Currently the only type of scattered package we support
+            return _('Structure: Scattered (FOMOD)')
         elif self.is_corrupt_package:
             return _(u'Structure: Corrupt/Incomplete')
         else:
@@ -1015,6 +1025,9 @@ class Installer(ListInfo):
                 break
             else:
                 dirName = frags[0]
+                if dirName.lower() == 'fomod':
+                    # Special case: fomod dir is the root -> scattered
+                    break
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
                     break
@@ -1037,10 +1050,13 @@ class Installer(ListInfo):
                 rootDirs = root[u'dirs']
                 if len(rootDirs) == 1:
                     # Only one subfolder, see if it's either the data folder,
-                    # or an accepted Data sub-folder
+                    # an accepted Data sub-folder, or an fomod folder (in which
+                    # case this is a scattered package)
                     rootDirKey = list(rootDirs)[0]
                     rootDirKeyL = rootDirKey.lower()
-                    if rootDirKeyL in dataDirsPlus or rootDirKeyL == data_dir:
+                    if (rootDirKeyL in dataDirsPlus or
+                            rootDirKeyL == data_dir or
+                            rootDirKeyL == 'fomod'):
                         # Found suitable starting point
                         break
                     # Keep looking deeper
@@ -1190,12 +1206,17 @@ class _InstallerPackage(Installer, AFile):
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
         root_path = self.extras_dict.get('root_path', '')
+        module_config = os.path.join('fomod', 'moduleconfig.xml')
+        found_module_config = False
         # break if type is 1 else churn on
         for full, _cached_size, crc in self.fileSizeCrcs:
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
                 full = full[self.fileRootIdex:]
-            if full.lower().startswith(__skips_start): continue
+            if (full_lower := full.lower()).startswith(__skips_start):
+                continue
+            if full_lower.endswith(module_config):
+                found_module_config = True
             frags = full.split(__os_sep)
             nfrags = len(frags)
             f0_lower = frags[0].lower()
@@ -1214,6 +1235,9 @@ class _InstallerPackage(Installer, AFile):
                 # keep looking for a type 1 package - having a loose file or a
                 # top directory with name in dataDirsPlus will turn this into a
                 # type 1 package
+        if found_bain_type == 0 and found_module_config:
+            # Type 3 - scattered, but we've got an FOMOD to guide us
+            found_bain_type = 3
         self.bain_type = found_bain_type
         #--SubNames, SubActives
         if self.is_complex_package:
