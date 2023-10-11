@@ -202,7 +202,7 @@ class ImageButton(Button):
 
         :param gui_bitmap: The bitmap shown on this button."""
         super(ImageButton, self).__init__(parent, **kwargs)
-        self._set_button_image(gui_bitmap)
+        if gui_bitmap is not None: self._set_button_image(gui_bitmap)
 
     def _set_button_image(self, gui_image):
         self._native_widget.SetBitmap(self._resolve(gui_image))
@@ -215,7 +215,7 @@ class PureImageButton(ImageButton):
     See Button for documentation on button events.
 
     See also ClickableImage."""
-    def __init__(self, parent, gui_bitmap, *, btn_tooltip: str):
+    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -233,7 +233,7 @@ class ClickableImage(ImageButton):
     See Button for documentation on button events.
 
     See also PureImageButton."""
-    def __init__(self, parent, gui_bitmap, *, btn_tooltip: str):
+    def __init__(self, parent, gui_bitmap=None, *, btn_tooltip: str = ''):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx

@@ -62,8 +62,6 @@ class _StatusBar_Hide(ItemLink):
 class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
     """Launch an application."""
     _tip = u''
-    @property
-    def sb_button_tip(self): return self._tip
 
     def __init__(self, uid=None, canHide=True, button_tip=u''):
         """uid: Unique identifier, used for saving the order of status bar
@@ -74,6 +72,9 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
         self.mainMenu = self._init_menu(Links())
         self._tip = button_tip or self.__class__._tip # must be set see below
         self.uid = (self.__class__.__name__, self._tip) if uid is None else uid
+
+    @property
+    def sb_button_tip(self): return self._tip
 
     def _init_menu(self, bt_links):
         if self.canHide:
@@ -86,14 +87,22 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
                       on_drag_end=None, on_drag_end_forced=None, on_drag=None):
         """Create and return gui button."""
         created = super().create_widget(recreate=recreate, parent=parent,
-            gui_bitmap=self._btn_bmp(), btn_tooltip=self.sb_button_tip,
             on_drag_start=on_drag_start, on_drag_end=on_drag_end,
             on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
         if created:
+            self._set_img_and_tip()
             # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
             # self.on_clicked.subscribe(self.sb_click)
             self.on_right_clicked.subscribe(self.DoPopupMenu)
+        elif self._is_created(): # we are called from UnhideButton
+            self.tooltip = self.sb_button_tip # reset the tooltip just in case
         return created
+
+    def _set_img_and_tip(self):
+        # make sure allow_create is True when using this (for instance
+        # exePath must exist to query version)
+        self.tooltip = self.sb_button_tip
+        self._set_button_image(self._btn_bmp())
 
     @_AComponent.tooltip.setter
     def tooltip(self, new_tooltip: str):
@@ -132,13 +141,12 @@ class _App_Button(StatusBar_Button):
     """Launch an application."""
 
     @property
-    def version(self):
+    def _app_version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
-        if self.allow_create():
-            version = self.exePath.strippedVersion
-            if version != (0,):
-                version = '.'.join([f'{x}' for x in version])
-                return version
+        version = self.exePath.strippedVersion
+        if version != (0,):
+            version = '.'.join([f'{x}' for x in version])
+            return version
         return u''
 
     @property
@@ -147,12 +155,12 @@ class _App_Button(StatusBar_Button):
             return self.obseTip
         if not bass.settings[u'bash.statusbar.showversion']: return self._tip
         else:
-            return f'{self._tip} {self.version}'
+            return f'{self._tip} {self._app_version}'
 
     @property
     def obseTip(self):
         if self._obseTip is None: return None
-        return self._obseTip % {'app_version': self.version}
+        return self._obseTip % {'app_version': self._app_version}
 
     def __init__(self, exePath, exeArgs, images, tip, obse_tip=None, uid=None,
                  canHide=True):
@@ -190,13 +198,6 @@ class _App_Button(StatusBar_Button):
                              'command line arguments failed to encode.'))
 
     def sb_click(self):
-        if not self.allow_create():
-            msg = _('Application missing: %(launched_exe_path)s')
-            self.ShowError(msg=msg % {'launched_exe_path': self.exePath})
-            return
-        self._app_button_execute()
-
-    def _app_button_execute(self):
         dir_ = os.getcwd()
         args = f'"{self.exePath}"'
         args += u' '.join([f'{arg}' for arg in self.exeArgs])
@@ -230,7 +231,7 @@ class _App_Button(StatusBar_Button):
 
 class _ExeButton(_App_Button):
 
-    def _app_button_execute(self):
+    def sb_click(self):
         self._run_exe(self.exePath, [self.exePath.s])
 
     def _run_exe(self, exe_path, exe_args):
@@ -271,12 +272,12 @@ class _JavaButton(_App_Button):
     _java = getJava()
 
     @property
-    def version(self): return u''
+    def _app_version(self): return u''
 
     def allow_create(self):
         return self._java.exists() and super().allow_create()
 
-    def _app_button_execute(self):
+    def sb_click(self):
         cwd = bolt.Path.getcwd()
         self.exePath.head.setcwd()
         try:
@@ -292,7 +293,7 @@ class _JavaButton(_App_Button):
 
 class _LnkOrDirButton(_App_Button):
 
-    def _app_button_execute(self): webbrowser.open(self.exePath.s)
+    def sb_click(self): webbrowser.open(self.exePath.s)
 
 def _parse_button_arguments(exePathArgs):
     """Expected formats:
@@ -523,18 +524,18 @@ class Game_Button(_ExeButton):
     def sb_button_tip(self):
         if BashStatusBar.obseButton.button_state:
             return self.obseTip
-        return f'{self._tip} {self.version}' if self.version else self._tip
+        return f'{self._tip} {self._app_version}' if self._app_version else self._tip
 
     @property
     def obseTip(self):
         # Oblivion (version)
         tip_ = self._obseTip % {'game_name': bush.game.display_name,
-                                'app_version': self.version}
+                                'app_version': self._app_version}
         # + OBSE
         tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
         return tip_
 
-    def _app_button_execute(self):
+    def sb_click(self):
         if bush.ws_info.installed:
             version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
@@ -556,7 +557,7 @@ class Game_Button(_ExeButton):
             Link.Frame.exit_wb()
 
     @property
-    def version(self):
+    def _app_version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
         try:
             version = self._version_path.strippedVersion
@@ -589,7 +590,7 @@ class TESCS_Button(_ExeButton):
     def obseTip(self):
         # CS/CK (version)
         tip_ = self._obseTip % {'ck_name': bush.game.Ck.long_name,
-                                'app_version': self.version}
+                                'app_version': self._app_version}
         if not self.xse_args: return tip_
         # + OBSE
         tip_ += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
@@ -605,7 +606,7 @@ class TESCS_Button(_ExeButton):
             tip_ += f' + CSE{cse_version}'
         return tip_
 
-    def _app_button_execute(self):
+    def sb_click(self):
         exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
         if (self.xse_args and BashStatusBar.obseButton.button_state
                 and exe_xse.is_file()):
@@ -615,7 +616,7 @@ class TESCS_Button(_ExeButton):
             self._run_exe(exe_xse, [exe_xse.s] + list(self.xse_args))
         else:
             # Fall back to the standard CK executable, with no arguments
-            super(TESCS_Button, self)._app_button_execute()
+            super().sb_click()
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBar_Button):
@@ -641,8 +642,7 @@ class _StatefulButton(StatusBar_Button):
         """Invert state."""
         self.button_state = True ^ self.button_state
         # reset image and tooltip for the flipped state
-        self.tooltip = self.sb_button_tip
-        self._set_button_image(self._btn_bmp())
+        self._set_img_and_tip()
 
 class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
