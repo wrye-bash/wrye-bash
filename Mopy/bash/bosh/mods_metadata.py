@@ -625,8 +625,9 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log(_("The following plugins have an Overlay flag, but do not "
               "qualify because they also have an ESL flag. These flags are "
               "mutually exclusive. %(game_name)s will not treat these as "
-              "ESLs. Either remove the Overlay flag with 'Remove Overlay "
-              "Flag', or remove the ESL flag with 'Remove ESL Flag'.") % {
+              "overlay plugins. Either remove the Overlay flag with "
+              "'Remove Overlay Flag', or remove the ESL flag with 'Remove "
+              "ESL Flag'.") % {
             'game_name': bush.game.display_name})
         log_plugins(conflicting_esl_overlay_flags)
     if can_merge:

@@ -227,6 +227,9 @@ class LoGame(object):
         self.plugins_txt_path = _resolve_case_ambiguity(plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
+        if self.master_path in self.must_be_active_if_present:
+            raise SyntaxError("Don't include the game master in "
+                              "must_be_active_if_present!")
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
@@ -1588,8 +1591,7 @@ class EnderalSE(SkyrimSE):
 
 class Starfield(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
-        'Starfield.esm', 'Constellation.esm', 'OldMars.esm',
-        'BlueprintShips-Starfield.esm',
+        'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
     )))
     # The game tries to read a Starfield.ccc already, but it's not present yet
     # _ccc_filename = 'Starfield.ccc'

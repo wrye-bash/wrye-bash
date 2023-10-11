@@ -3027,8 +3027,8 @@ class ModInfos(FileInfos):
             InvalidPluginFlagsError will be raised. Mutually exclusive with
             with_overlay_flag, setting both to True raises an
             InvalidPluginFlagsError as well.
-        :param with_esl_flag: If True, set the created plugin's Overlay flag.
-            Only set this to True if the game actually supports overlay
+        :param with_overlay_flag: If True, set the created plugin's Overlay
+            flag. Only set this to True if the game actually supports overlay
             plugins, otherwise an InvalidPluginFlagsError will be raised.
             Mutually exclusive with with_esl_flag, setting both to True raises
             an InvalidPluginFlagsError as well."""
