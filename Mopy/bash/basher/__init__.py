@@ -2613,7 +2613,7 @@ class InstallersList(UIList):
     #--Special sorters
     def _sortStructure(self, items):
         if settings[u'bash.installers.sortStructure']:
-            items.sort(key=lambda x: self.data_store[x].type)
+            items.sort(key=lambda x: self.data_store[x].bain_type)
     def _sortActive(self, items):
         if settings[u'bash.installers.sortActive']:
             items.sort(key=lambda x: not self.data_store[x].is_active)
@@ -2635,18 +2635,17 @@ class InstallersList(UIList):
     #--GUI
     _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
                      20: u'yellow', 30: u'green'}
-    _type_textKey = {1: u'default.text', 2: u'installers.text.complex'}
 
     #--Item Info
     def set_item_format(self, item, item_format, target_ini_setts):
         inst = self.data_store[item] # type: bosh.bain.Installer
         #--Text
-        if inst.type == 2 and len(inst.subNames) == 2:
-            item_format.text_key = self._type_textKey[1]
-        elif inst.is_marker:
-            item_format.text_key = u'installers.text.marker'
-        else: item_format.text_key = self._type_textKey.get(inst.type,
-                                             u'installers.text.invalid')
+        item_format.text_key = 'default.text'
+        if inst.is_marker:
+            item_format.text_key = 'installers.text.marker'
+        elif inst.is_complex_package and len(inst.subNames) != 2:
+            # 2 subNames would be a Complex/Simple package
+            item_format.text_key = 'installers.text.complex'
         #--Background
         if inst.skipDirFiles:
             item_format.back_key = u'installers.bkgd.skipped'
@@ -2660,7 +2659,7 @@ class InstallersList(UIList):
         #--Icon
         item_format.icon_key = u'on' if inst.is_active else u'off'
         item_format.icon_key += u'.' + self._status_color[inst.status]
-        if inst.type < 0: item_format.icon_key = u'corrupt'
+        if inst.is_corrupt_package: item_format.icon_key = 'corrupt'
         else:
             if inst.is_project: item_format.icon_key += u'.dir'
             if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:

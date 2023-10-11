@@ -600,8 +600,8 @@ class Installer_Install(_NoMarkerLink):
         # Note also we have to skip active FOMODs, otherwise install commands
         # will break on them since they often have sub-packages but will pretty
         # much never have any active ones.
-        unconf_packages = [p for p in inst_packages
-                           if p.type == 2 and not any(p.subActives[1:]) and
+        unconf_packages = [p for p in inst_packages if p.is_complex_package and
+                           not any(p.subActives[1:]) and
                            not p.extras_dict.get('fomod_active', False)]
         if unconf_packages:
             up_title = _('Installed unconfigured packages')

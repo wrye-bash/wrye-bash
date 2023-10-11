@@ -3174,7 +3174,7 @@ class ModInfos(FileInfos):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.fn_key)
         if isSelected:
-            self.lo_deactivate(member_info, doSave=False) # will save later
+            self.lo_deactivate(member_info.fn_key, doSave=False)
         old_key = super(ModInfos, self).rename_operation(member_info, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(old_key)

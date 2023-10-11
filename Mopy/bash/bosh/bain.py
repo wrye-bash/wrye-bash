@@ -134,7 +134,7 @@ class Installer(ListInfo):
     its installation state."""
     #--Member data - do *not* add 'fn_key' in persistent
     persistent = ('order', 'group', 'file_mod_time', 'fsize', 'crc',
-        'fileSizeCrcs', 'type', 'is_active', 'subNames', 'subActives',
+        'fileSizeCrcs', 'bain_type', 'is_active', 'subNames', 'subActives',
         'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', '_remaps', 'skipRefresh', 'fileRootIdex')
@@ -263,7 +263,9 @@ class Installer(ListInfo):
         self.src_sizeCrcDate = bolt.LowerDict() # also used to cache crc's.
         #--Set by _reset_cache
         self.fileRootIdex = 0 # len of the root path including the final separator
-        self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
+        # Package type: -1 -> corrupt; 0 -> unset/unrecognized; 1 -> simple;
+        # 2 -> complex
+        self.bain_type = 0
         self.subNames = []
         self.subActives = []
         self.extras_dict = {} # hack to add more persistent attributes
@@ -316,15 +318,41 @@ class Installer(ListInfo):
 
     def size_info_str(self): return _('Size:') + f' {self.size_string()}'
 
+    # Accessors for encapsulating the semantic meaning of bain_type
+    @property
+    def has_recognized_structure(self):
+        """Return True if this package has a recognized BAIN type (i.e. is not
+        a corrupt or unrecognized package)."""
+        return self.bain_type in (1, 2)
+
+    @property
+    def is_corrupt_package(self):
+        """Return True if this package is corrupt, i.e. its data faile to
+        load."""
+        return self.bain_type == -1
+
+    @property
+    def is_simple_package(self):
+        """Return True if this package is simple, i.e. it only contains some
+        files and/or folders that should get directly placed into the Data
+        folder."""
+        return self.bain_type == 1
+
+    @property
+    def is_complex_package(self):
+        """Return True if this package is complex, i.e. it contains a number of
+        sub-packages that each behave like a simple package."""
+        return self.bain_type == 2
+
     def structure_string(self):
-        if self.type == 1:
+        if self.is_simple_package:
             return _(u'Structure: Simple')
-        elif self.type == 2:
+        elif self.is_complex_package:
             if len(self.subNames) == 2:
                 return _(u'Structure: Complex/Simple')
             else:
                 return _(u'Structure: Complex')
-        elif self.type < 0:
+        elif self.is_corrupt_package:
             return _(u'Structure: Corrupt/Incomplete')
         else:
             return _(u'Structure: Unrecognized')
@@ -750,7 +778,6 @@ class Installer(ListInfo):
          - in _RefreshingLink (override skips, HasExtraData, skip voices)
          - in Installer_CopyConflicts
         """
-        bain_type    = self.type
         # Init to empty - this has to reset everything that this method might
         # touch so that the early return from bad archives works correctly
         self.has_fomod_conf = self.hasBethFiles = False
@@ -761,8 +788,7 @@ class Installer(ListInfo):
             ##: is the object. necessary?
             object.__getattribute__(self, inst_attr).clear()
         dest_src = bolt.LowerDict()
-        # If this is a bad (i.e. unrecognized) archive, abort early
-        if bain_type not in (1, 2):
+        if not self.has_recognized_structure:
             # If an archive became unrecognized, mark everything that was in it
             # as dirty and clear the destination dict
             if self.is_active:
@@ -804,7 +830,7 @@ class Installer(ListInfo):
         # exclude '' from active sub-packages
         activeSubs = (
             {x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y}
-            if bain_type == 2 else set())
+            if self.is_complex_package else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
@@ -846,7 +872,7 @@ class Installer(ListInfo):
                 # Complex archive; skip the logic if FOMOD mode is active
                 # (since sub-package selection doesn't (currently) work in
                 # FOMOD mode anyways)
-                if bain_type == 2 and not fm_active:
+                if self.is_complex_package and not fm_active:
                     split = file_relative.split(os_sep, 1)
                     if len(split) > 1:
                         # redefine file, excluding the sub-package directory
@@ -1084,7 +1110,7 @@ class Installer(ListInfo):
         missing.clear()
         mismatched.clear()
         misEspmed.clear()
-        if self.type == 0:
+        if not self.has_recognized_structure:
             status = -20
         elif data_sizeCrc:
             for filename,sizeCrc in data_sizeCrc.items():
@@ -1150,12 +1176,13 @@ class _InstallerPackage(Installer, AFile):
             self._fs_refresh(kwargs.pop('progress', bolt.Progress()),
                              stat_tuple or self._stat_tuple(), **kwargs)
         except InstallerArchiveError:
-            self.type = -1 # size, modified and some of fileSizeCrcs may be set
+            # size, modified and some of fileSizeCrcs may be set
+            self.bain_type = -1
             return bolt.LowerDict()
         self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
-        bain_type = 0
+        found_bain_type = 0
         subNameSet = {''}
         valid_top_ext = self.__class__._re_top_extensions.search
         valid_sub_top_ext = self.__class__._re_top_plus_docs.search
@@ -1163,7 +1190,8 @@ class _InstallerPackage(Installer, AFile):
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
         root_path = self.extras_dict.get('root_path', '')
-        for full, _cached_size, crc in self.fileSizeCrcs:#break if type=1 else churn on
+        # break if type is 1 else churn on
+        for full, _cached_size, crc in self.fileSizeCrcs:
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
                 full = full[self.fileRootIdex:]
@@ -1171,10 +1199,10 @@ class _InstallerPackage(Installer, AFile):
             frags = full.split(__os_sep)
             nfrags = len(frags)
             f0_lower = frags[0].lower()
-            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
+            #--Type 1? break! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and valid_top_ext(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
-                bain_type = 1
+                found_bain_type = 1
                 break
             #--Else churn on to see if we have a Type 2 package
             elif not frags[0] in subNameSet and not \
@@ -1182,13 +1210,13 @@ class _InstallerPackage(Installer, AFile):
                     (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
                     (nfrags == 2 and valid_sub_top_ext(frags[1]))):
                 subNameSet.add(frags[0])
-                bain_type = 2
-                # keep looking for a type one package - having a loose file or
-                # a top directory with name in dataDirsPlus will turn this into
-                # a type one package
-        self.type = bain_type
+                found_bain_type = 2
+                # keep looking for a type 1 package - having a loose file or a
+                # top directory with name in dataDirsPlus will turn this into a
+                # type 1 package
+        self.bain_type = found_bain_type
         #--SubNames, SubActives
-        if bain_type == 2:
+        if self.is_complex_package:
             self.subNames = sorted(subNameSet,key=str.lower)
             actives = {x for x, y in zip(self.subNames, self.subActives)
                        if (y or x == u'')}
@@ -3106,9 +3134,8 @@ class InstallersData(DataStore):
         installerKeys must be in data or a KeyError is raised.
 
         :return: A list of installable packages/projects"""
-        # type -> 0: unset/invalid; 1: simple; 2: complex
         return [k for k in self.ipackages(installerKeys) if
-                self[k].type in (1, 2)]
+                self[k].has_recognized_structure]
 
     def ipackages(self, installerKeys: Iterable[FName]) -> Iterable[FName]:
         """Remove markers from installerKeys."""
