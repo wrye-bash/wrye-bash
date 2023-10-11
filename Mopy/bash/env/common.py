@@ -339,7 +339,7 @@ def __copy_or_move(sources_dests: dict[_Path, _Path | Iterable[_Path]],
                         # NOTE: shutil.move: if the destination is a directory,
                         # the source is moved inside the directory. For moving
                         # a directory, this is always the case
-                        shutil.move(src_path, to_path.head)
+                        shutil.move(src_path, to_path)
                     else:
                         copy_op = partial(shutil.copytree,
                             copy_function=bolt.copy_or_reflink2)
