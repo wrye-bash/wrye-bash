@@ -30,7 +30,7 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
-from ..env import get_game_version_fallback, getJava
+from ..env import get_game_version_fallback, getJava, get_file_version
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
@@ -58,6 +58,19 @@ class _StatusBar_Hide(ItemLink):
             'status_btn_name': self.window.tooltip}
 
     def Execute(self): Link.Frame.statusBar.HideButton(self.window.uid)
+
+def _strip_version(exe_path=None, ver_tuple=()):
+    """File_version with leading and trailing zeros stripped."""
+    if not bass.settings['bash.statusbar.showversion']: return ''
+    try:
+        version = list(ver_tuple or get_file_version(exe_path.s))
+        while version and version[0] == 0:
+            version.pop(0)
+        while version and version[-1] == 0:
+            version.pop()
+        return '.'.join([f'{x}' for x in version])
+    except OSError:
+        return ''
 
 class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
     """Launch an application."""
@@ -121,14 +134,11 @@ class StatusBar_Button(Lazy, WithDragEvents, ClickableImage):
     # Helper function to get OBSE version
     @property
     def obseVersion(self):
-        if not bass.settings[u'bash.statusbar.showversion']: return u''
         for ver_file in bush.game.Se.ver_files:
             ver_path = bass.dirs[u'app'].join(ver_file)
-            if ver_path.exists():
-                return ' ' + '.'.join([f'{x}' for x
-                                       in ver_path.strippedVersion])
-        else:
-            return u''
+            if ver := _strip_version(ver_path):
+                return f' {ver}'
+        return ''
 
     def sb_click(self):
         """Execute an action when clicking the button."""
@@ -142,12 +152,7 @@ class _App_Button(StatusBar_Button):
 
     @property
     def _app_version(self):
-        if not bass.settings[u'bash.statusbar.showversion']: return u''
-        version = self.exePath.strippedVersion
-        if version != (0,):
-            version = '.'.join([f'{x}' for x in version])
-            return version
-        return u''
+        return _strip_version(self.exePath)
 
     @property
     def sb_button_tip(self):
@@ -484,7 +489,7 @@ class App_BOSS(_AApp_LOManager):
             curr_args.append('-s') # Silent Mode - BOSS version 1.6+
         if get_key_down('C'): # Print crc calculations in BOSS log.
             curr_args.append('-c')
-        if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
+        if get_file_version(self.boss_path.s) >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             curr_args.append(f'-g{bush.game.boss_game_name}')
         self.extraArgs = tuple(curr_args)
@@ -558,19 +563,10 @@ class Game_Button(_ExeButton):
 
     @property
     def _app_version(self):
-        if not bass.settings[u'bash.statusbar.showversion']: return u''
-        try:
-            version = self._version_path.strippedVersion
-            if version == (0,) and bush.ws_info.installed:
-                version = get_game_version_fallback(self._version_path,
-                                                    bush.ws_info)
-        except OSError:
-            version = get_game_version_fallback(
-                self._version_path, bush.ws_info)
-        if version != (0,):
-            version = '.'.join([f'{x}' for x in version])
-            return version
-        return u''
+        if gversion := _strip_version(self._version_path):
+            return gversion
+        return _strip_version(ver_tuple=get_game_version_fallback(
+            self._version_path, bush.ws_info))
 
     def allow_create(self):
         # Always possible to run, even if the EXE is missing/inaccessible
@@ -597,13 +593,9 @@ class TESCS_Button(_ExeButton):
         # + CSE
         cse_path = bass.dirs['mods'].join('obse', 'plugins',
             'Construction Set Extender.dll')
-        if cse_path.exists():
-            cse_version = ''
-            if bass.settings['bash.statusbar.showversion']:
-                cse_ver = cse_path.strippedVersion
-                if cse_ver != (0,):
-                    cse_version = ' ' + '.'.join([f'{x}' for x in cse_ver])
-            tip_ += f' + CSE{cse_version}'
+        cse_version = f' {cse_ver}' if (
+            cse_ver := _strip_version(cse_path)) else ''
+        tip_ += f' + CSE{cse_version}'
         return tip_
 
     def sb_click(self):

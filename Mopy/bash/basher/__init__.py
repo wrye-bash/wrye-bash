@@ -1601,7 +1601,7 @@ class ModDetails(_ModsSavesDetails):
         #--Data
         self.modInfo = None
         #--Version
-        self.version = Label(top, u'v0.00')
+        self._version = Label(top, 'v0.00')
         #--Author
         self._max_author_len = bush.game.Esp.max_author_length
         # Note: max_length here is not enough - unicode characters may take up
@@ -1644,7 +1644,7 @@ class ModDetails(_ModsSavesDetails):
         self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
-            HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
+            HLayout(items=[Label(top, _('File:')), Stretch(), self._version]),
             self._fname_ctrl,
             self._author_label,
             self.gAuthor,
@@ -1697,7 +1697,7 @@ class ModDetails(_ModsSavesDetails):
         self.gAuthor.text_content = self.authorStr
         self.modified_txt.text_content = self.modifiedStr
         self._desc_area.text_content = self.descriptionStr
-        self.version.label_text = self.versionStr
+        self._version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.lb_set_items(minf_tags)
         if self.modInfo and not self.modInfo.is_auto_tagged():

@@ -1083,22 +1083,6 @@ class Path(os.PathLike):
         """File stats"""
         return os.stat(self._s)
 
-    @property
-    def version(self):
-        """File version (exe/dll) embedded in the file properties."""
-        from .env import get_file_version
-        return get_file_version(self._s)
-
-    @property
-    def strippedVersion(self):
-        """.version with leading and trailing zeros stripped."""
-        version = list(self.version)
-        while len(version) > 1 and version[0] == 0:
-            version.pop(0)
-        while len(version) > 1 and version[-1] == 0:
-            version.pop()
-        return tuple(version)
-
     #--crc
     @property
     def crc(self):

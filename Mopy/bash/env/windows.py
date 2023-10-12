@@ -244,16 +244,6 @@ def _get_default_app_icon(idex, target):
         icon_path = undefinedPath
     return icon_path, idex
 
-def _should_ignore_ver(test_ver):
-    """
-    Small helper method to determine whether or not a version should be
-    ignored. Versions are ignored if they are 1.0.0.0 or 0.0.0.0.
-
-    :param test_ver: The version to test. A tuple containing 4 integers.
-    :return: True if the specified versiom should be ignored.
-    """
-    return test_ver == (1, 0, 0, 0) or test_ver == (0, 0, 0, 0)
-
 def _query_string_field_version(file_name, version_prefix):
     """
     Retrieves the version with the specified prefix from the specified file via
@@ -1136,17 +1126,16 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
-def get_file_version(filename):
-    """
-    Return the version of a dll/exe, using the native win32 functions
+def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
+    """Return the version of a dll/exe, using the native win32 functions
     if available and otherwise a pure python implementation that works
     on Linux.
 
     :param filename: The file from which the version should be read.
-    :return A 4-int tuple, for example (1, 9, 32, 0).
-    """
+    :param __ignored: versions in __ignored wil be ignored
+    :return A 4-int tuple, for example (1, 9, 32, 0)."""
     # If it's a symbolic link (i.e. a user-added app), resolve it first
-    if filename.endswith(u'.lnk'):
+    if filename.lower().endswith('.lnk'):
         sh = win32client.Dispatch(u'WScript.Shell')
         shortcut = sh.CreateShortCut(filename)
         filename = shortcut.TargetPath
@@ -1155,13 +1144,13 @@ def get_file_version(filename):
     # string fields with ProductVersion, so that's the second one. After
     # that, we prefer the fixed one since it's faster.
     curr_ver = _query_fixed_field_version(filename, u'FileVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_string_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_fixed_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     return _query_string_field_version(filename, u'FileVersion')
 
