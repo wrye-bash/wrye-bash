@@ -329,14 +329,59 @@ def dump_environment(wxver=None):
     bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))
     return msg
 
-def _bash_ini_parser(bash_ini_path):
-    bash_ini_parser = None
-    if bash_ini_path is not None and os.path.exists(bash_ini_path):
-        bash_ini_parser = ConfigParser()
-        # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
-        # English INI is ASCII)
-        bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    return bash_ini_parser
+def _parse_bash_ini(bash_ini_path):
+    """Set default values for all valid INI settings then update from ini."""
+    ini_set = { # sections are case-sensitive
+        'General': dict.fromkeys(
+            ['BashModData', 'InstallersData', 'LocalAppDataPath',
+             'OblivionMods', 'OblivionPath', 'PersonalPath', 'UserPath'], ''),
+        'Settings': {
+            'OblivionTexturesBSAName': 'Oblivion - Textures - Compressed.bsa',
+            'Command7z': '7z', 'ScriptFileExt': '.txt',
+            **dict.fromkeys(['AutoItemCheck', 'EnableSplashScreen',
+                'EnsurePatchExists', 'PromptActivateBashedPatch',
+                'ResetBSATimestamps', 'WarnTooManyFiles'], True),
+            **dict.fromkeys(['ShowDevTools', 'SkipHideConfirmation',
+                'SkipResetTimeNotifications', 'SkipWSDetection'], False),
+            **dict.fromkeys(['7zExtraCompressionArguments',
+                'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
+                'xEditCommandLineArguments'], '')
+        },
+        'Tool Options': {
+            'OblivionBookCreatorJavaArg': '-Xmx1024m',
+            'Tes4GeckoJavaArg': '-Xmx1024m', 'ShowTextureToolLaunchers': True,
+            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True
+        }
+    }
+    bass.inisettings.clear() #ini might be reinitialized due to restore failing
+    for v in ini_set.values():
+        bass.inisettings.update(v)
+    # if bash.ini exists update those settings from there
+    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+        return
+    bash_ini_parser = ConfigParser()
+    # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
+    # English INI is ASCII)
+    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
+    for section in bash_ini_parser.sections():
+        section_defaults = ini_set.get(section, {})
+        section_defaults = {k.lower(): (k, v) for k, v in
+                            section_defaults.items()}
+        # retrieving ini settings is case-insensitive - key: lowercase
+        for ini_key_lower, value in bash_ini_parser.items(section):
+            if not value or value == '.': continue
+            if default := section_defaults.get(ini_key_lower[1:]):
+                ini_settings_key, default_value = default
+                if type(default_value) is bool:
+                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                else:
+                    value = value.strip()
+                bass.inisettings[ini_settings_key] = value
+            elif section == 'Tool Options':
+                ##:(570) provisional - we want to stop specifying tool paths
+                # in the ini but we need some UI for that
+                # stash all settings in here in case they match tool path keys
+                bass.inisettings[ini_key_lower[1:]] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -444,7 +489,7 @@ def _main(opts, wx_locale, wxver):
             restore_ = None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
+        bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
         if restore_:
             try:
@@ -461,11 +506,9 @@ def _main(opts, wx_locale, wxver):
                 # _detect_game -> _import_bush_and_set_game
                 from . import bush
                 bush.reset_bush_globals()
-                bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
-        ##: Break bosh-balt/gui coupling, though this doesn't actually cause
-        # init problems (since we init those in main)
+                bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
-        bosh.initBosh(bashIni, game_ini_path)
+        bosh.initBosh(game_ini_path)
         from . import env
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
@@ -480,7 +523,7 @@ def _main(opts, wx_locale, wxver):
     basher.InitSettings()
     # Status bar buttons (initialized in InitStatusBar) use images
     basher.InitImages()
-    basher.links_init.InitStatusBar(bashIni)
+    basher.links_init.InitStatusBar()
     basher.InitLinks()
     #--Start application
     bapp = basher.BashApp(bash_app)
@@ -546,39 +589,35 @@ def _main(opts, wx_locale, wxver):
 
 def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
-    bashIni = _bash_ini_parser(backup_bash_ini)
+    _parse_bash_ini(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file
-    user_path = opts.userPath or None  ##: not sure why this must be set first
-    if user_path is None:
-        ini_user_path = bass.get_ini_option(bashIni, u'sUserPath')
-        if ini_user_path and not ini_user_path == u'.':
-            user_path = ini_user_path
+    ##: not sure why this must be set first
+    user_path = opts.userPath or bass.inisettings['UserPath']
     if user_path:
         homedrive, homepath = os.path.splitdrive(user_path)
         os.environ[u'HOMEDRIVE'] = homedrive
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
-    bush_game = _import_bush_and_set_game(opts, bashIni)
+    bush_game = _import_bush_and_set_game(opts)
     if not bush_game:
         return None, None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     from . import initialization
     game_ini_path, init_warnings = initialization.init_dirs(
-        bashIni, opts.personalPath, opts.localAppDataPath, bush_game)
+        opts.personalPath, opts.localAppDataPath, bush_game)
     if init_warnings:
         warning_msg = _('The following (non-critical) warnings were found '
                         'during initialization:')
         warning_msg += '\n\n'
         warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
-    return bashIni, bush_game, game_ini_path
+    return bush_game, game_ini_path
 
-def _import_bush_and_set_game(opts, bashIni):
+def _import_bush_and_set_game(opts):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(cli_game_dir=opts.oblivionPath,
-        bash_ini_=bashIni)
+    game_infos = bush.detect_and_set_game(opts.oblivionPath)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(
@@ -596,7 +635,7 @@ def _import_bush_and_set_game(opts, bashIni):
         # Add the game to the command line, so we use it if we restart
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
+        bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):

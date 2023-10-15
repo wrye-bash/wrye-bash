@@ -32,7 +32,6 @@ import re
 import sys
 from collections import defaultdict, OrderedDict
 from collections.abc import Iterable
-from configparser import ConfigParser
 from functools import wraps
 from itertools import chain
 
@@ -3729,55 +3728,7 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initOptions(bashIni: ConfigParser):
-    # *some* settings from the INI - note we get some ini settings (such as
-    # sOblivionMods) via get_ini_option/get_path_from_ini we never store those
-    # in bass.inisettings
-    inisettings['ScriptFileExt'] = '.txt'
-    inisettings['ResetBSATimestamps'] = True
-    inisettings['EnsurePatchExists'] = True
-    inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'
-    inisettings['ShowDevTools'] = False
-    inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
-    inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
-    inisettings['ShowTextureToolLaunchers'] = True
-    inisettings['ShowModelingToolLaunchers'] = True
-    inisettings['ShowAudioToolLaunchers'] = True
-    inisettings['7zExtraCompressionArguments'] = ''
-    inisettings['xEditCommandLineArguments'] = ''
-    inisettings['AutoItemCheck'] = True
-    inisettings['SkipHideConfirmation'] = False
-    inisettings['SkipResetTimeNotifications'] = False
-    inisettings['SoundSuccess'] = ''
-    inisettings['SoundError'] = ''
-    inisettings['EnableSplashScreen'] = True
-    inisettings['PromptActivateBashedPatch'] = True
-    inisettings['WarnTooManyFiles'] = True
-    inisettings['SkippedBashInstallersDirs'] = ''
-    inisettings['Command7z'] = '7z'
-    # if bash.ini exists update those settings from there
-    if bashIni:
-        defaultOptions = {}
-        for ini_settings_key, defaultValue in inisettings.items():
-            valueType = type(defaultValue)
-            ini_key = ('b' if valueType is bool else 's') + ini_settings_key
-            defaultOptions[ini_key.lower()] = (ini_settings_key, valueType)
-        for section in bashIni.sections():
-            # retrieving ini settings is case insensitive - key: lowecase
-            for ini_key_lower, value in bashIni.items(section):
-                if ini_settings_key := defaultOptions.get(ini_key_lower):
-                    if value == '.': continue
-                    ini_settings_key, value_type = ini_settings_key
-                    if value_type is bool:
-                        value = bashIni.getboolean(section, ini_key_lower)
-                    elif ini_settings_key[:5] == 'Sound':
-                        value = bass.dirs['app'].join(value).s if not (
-                            value := GPath(value)).is_absolute() else value.s
-                    inisettings[ini_settings_key] = value
-    if os_name != 'nt':
-        archives.exe7z = inisettings[u'Command7z']
-
-def initBosh(bashIni, game_ini_path):
+def initBosh(game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
@@ -3789,7 +3740,8 @@ def initBosh(bashIni, game_ini_path):
     gameInis.extend(IniFile(dirs[u'saveBase'].join(x), 'cp1252') for x in
                     bush.game.Ini.dropdown_inis[1:])
     load_order.initialize_load_order_files()
-    initOptions(bashIni)
+    if os_name != 'nt':
+        archives.exe7z = bass.inisettings['Command7z']
     Installer.init_bain_dirs()
 
 def initSettings(ask_yes, readOnly=False, _dat='BashSettings.dat',

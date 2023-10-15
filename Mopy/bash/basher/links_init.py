@@ -58,7 +58,7 @@ _is_skyrim = bush.game.fsName == 'Skyrim'
 _j = os.path.join
 
 #------------------------------------------------------------------------------
-def InitStatusBar(bashIni):
+def InitStatusBar():
     """Initialize status bar buttons."""
     __fp = GuiImage.from_path
     def _png_list(template):
@@ -88,7 +88,7 @@ def InitStatusBar(bashIni):
         if cli_args:
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-            bashIni, list_img, tooltip_str, **kwargs)
+            list_img, tooltip_str, **kwargs)
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())

@@ -203,11 +203,11 @@ class AppButton(AppLauncher, StatusBarButton):
         showError(Link.Frame, msg, title=error_title)
 
     @classmethod
-    def app_button_factory(cls, app_key, app_launcher, path_kwargs, bash_ini,
-                           *args, **kwargs):
+    def app_button_factory(cls, app_key, app_launcher, path_kwargs, *args,
+                           **kwargs):
         if kwargs.setdefault('display_launcher', True):
             exe_path, is_present = cls.find_launcher(app_launcher, app_key,
-                                                     bash_ini, **path_kwargs)
+                                                     **path_kwargs)
             # App_Button is initialized once on boot, if the path doesn't exist
             # at this time then it will be detected on next launch of Bash
             kwargs['display_launcher'] &= is_present

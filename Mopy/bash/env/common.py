@@ -489,26 +489,20 @@ class _AppLauncher:
     def allow_create(self): return False ##: for linux - flesh out!
 
     @classmethod
-    def find_launcher(cls, app_exe, app_key, bash_ini, subfolders=(),
-            root_dirs: tuple | str = tuple(map(GPath, (
-                    r'C:\Program Files', r'C:\Program Files (x86)')))):
+    def find_launcher(cls, app_exe, app_key, *, root_dirs: tuple | str = tuple(
+            map(GPath, (r'C:\Program Files', r'C:\Program Files (x86)'))),
+            subfolders=()):
         """Check a list of paths to locate the app launcher - syscalls, so
         avoid.
         :param app_exe: the (currently exe) app launcher
         :param app_key: the ini key whose value is the path to the exe
-        :param bash_ini: the bashIni ConfigParser
         :param root_dirs: the root directories of the exe path
-        :param subfolders: subdir of root_dirs where app is located
+        :param subfolders: subdirs of root_dirs where app is located
         :return: a path to the exe and whether it exists."""
-        if app_key is not None and bash_ini is not None:
-            ini_tool_path = bash_ini.get('Tool Options', f's{app_key}',
-                                         fallback='.')
-            if ini_tool_path and ini_tool_path != '.': # we ignore empty
-                ini_tool_path = GPath(ini_tool_path)
-                if not ini_tool_path.is_absolute():
-                    ini_tool_path = bass.dirs['app'].join(ini_tool_path)
-                # override with the ini path *even* if it does not exist
-                return ini_tool_path, ini_tool_path.exists()
+        if app_key is not None and (
+                ini_tool_path := bass.get_path_from_ini(app_key.lower())):
+            # override with the ini path *even* if it does not exist
+            return ini_tool_path, ini_tool_path.exists()
         if app_exe is None:
             return undefinedPath, False
         if isinstance(root_dirs, str):
