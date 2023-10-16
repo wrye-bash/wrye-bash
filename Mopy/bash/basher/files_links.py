@@ -140,8 +140,7 @@ class File_Duplicate(ItemLink):
             ##: refresh_infos=True for saves - would love to specify something
             # like refresh_only=dests - #353
             fileInfos.refresh()
-            self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
-                                  refreshSaves=False) #(dup) saves not affected
+            self.window.RefreshUI(redraw=dests, detail_item=dests[-1])
             self.window.SelectItemsNoCallback(dests)
 
     def _disallow_copy(self, fileInfo):
@@ -258,7 +257,7 @@ class File_RevertToSnapshot(OneItemLink):
                     destPath.replace_with_temp(known_good_copy)
                     self._data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
+        self.window.RefreshUI(redraw=[fileName])
 
 #------------------------------------------------------------------------------
 class File_Backup(ItemLink):
@@ -321,7 +320,7 @@ class _RevertBackup(OneItemLink):
                     info_path.replace_with_temp(known_good_copy)
                     self._data_store.new_info(sel_file, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
+        self.window.RefreshUI(redraw=[sel_file])
 
 class File_RevertToBackup(MultiLink):
     """Revert to last or first backup."""

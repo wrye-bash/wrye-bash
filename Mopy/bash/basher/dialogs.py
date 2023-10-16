@@ -494,7 +494,7 @@ class CreateNewPlugin(DialogWindow):
             mod_group = pw.data_store.table.getColumn(u'group')
             mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
         pw.ClearSelected(clear_details=True)
-        pw.RefreshUI(redraw=[chosen_name], refreshSaves=False)
+        pw.RefreshUI(redraw=[chosen_name])
 
 #------------------------------------------------------------------------------
 class ExportScriptsDialog(DialogWindow):

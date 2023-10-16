@@ -3733,7 +3733,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 class ScreensPanel(BashTab):
     """Screenshots tab."""
     keyPrefix = u'bash.screens'
-    _status_str = _('Screens: %(status_num)d')
+    _status_str = _('Screenshots: %(status_num)d')
     _ui_list_type = ScreensList
     _details_panel_type = ScreensDetails
 

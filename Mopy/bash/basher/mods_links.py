@@ -375,8 +375,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()
-        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True),
-                              refreshSaves=False)
+        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True))
 
 class Mods_AutoESLFlagBP(BoolLink):
     """Automatically flags built Bashed Patches as ESLs. This is safe, since
@@ -393,7 +392,7 @@ class _AMods_DirtyUpdateLink(BoolLink):
     def Execute(self):
         super().Execute()
         # Update static help text & underlined plugins
-        self.window.RefreshUI(refreshSaves=False)
+        self.window.RefreshUI()
 
 class Mods_ScanDirty(_AMods_DirtyUpdateLink):
     """Read mod CRC's to check for dirty mods."""
@@ -457,7 +456,7 @@ class Mods_CrcRefresh(ItemLink):
                               'cached_crc_val': f'{v[1]:08X}',
                               'real_crc_val': f'{v[0]:08X}'}
                  for k, v in mismatched.items()])
-            self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
+            self.window.RefreshUI(redraw=mismatched)
         else: message += _('No stale cached CRC values detected.')
         self._showWryeLog(message)
 
@@ -529,7 +528,7 @@ class Mods_ImportBashTags(_AMods_BashTags):
                               'bash tags CSV export.'),
                 title=_('Import Bash Tags - Invalid CSV'))
             return
-        self.window.RefreshUI(redraw=self.plugins_imported, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.plugins_imported)
         self._showInfo(_('Imported tags for %(total_imported)d plugin(s).') % {
             'total_imported': len(self.plugins_imported)},
             title=_('Import Bash Tags - Done'))
@@ -572,7 +571,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)
                 p.reloadBashTags()
-        self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
+        self.window.RefreshUI(redraw=pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugin(s).') % {
             'total_cleared': len(pl_reset)},
             title=_('Clear Manual Bash Tags - Done'))

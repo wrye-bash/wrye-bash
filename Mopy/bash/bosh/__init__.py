@@ -25,13 +25,12 @@ are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 from __future__ import annotations
 
-import collections
 import io
 import os
 import pickle
 import re
 import sys
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from collections.abc import Iterable
 from functools import wraps
 from itertools import chain
@@ -1887,7 +1886,7 @@ class INIInfos(TableFileInfos):
         len_inis = len(game_inis)
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
-        bass.settings[u'bash.ini.choices'] = collections.OrderedDict(
+        bass.settings[u'bash.ini.choices'] = OrderedDict(
             # convert stray Path instances back to unicode
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
@@ -2073,10 +2072,10 @@ class ModInfos(FileInfos):
             raise FileError(bush.game.master_file,
                             u'File is required, but could not be found')
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
-        self.real_indices = collections.defaultdict(lambda: sys.maxsize)
-        self.real_index_strings = collections.defaultdict(lambda: '')
+        self.real_indices = defaultdict(lambda: sys.maxsize)
+        self.real_index_strings = defaultdict(lambda: '')
         # Maps each plugin to a set of all plugins that have it as a master
-        self.dependents = collections.defaultdict(set)
+        self.dependents = defaultdict(set)
         # Map each mergeability type to a set of plugins that can be handled
         # via that type
         self._mergeable_by_type = {m: set() for m in MergeabilityCheck}
@@ -3534,7 +3533,7 @@ class BSAInfos(FileInfos):
     # BSAs that have versions other than the one expected for the current game
     mismatched_versions = set()
     # Maps BA2 hashes to BA2 names, used to detect collisions
-    _ba2_hashes = collections.defaultdict(set)
+    _ba2_hashes = defaultdict(set)
     ba2_collisions = set()
 
     def __init__(self):
@@ -3610,7 +3609,8 @@ class BSAInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class ScreenInfos(FileInfos):
-    """Collection of screenshot. This is the backend of the Screens tab."""
+    """Collection of screenshots. This is the backend of the Screenshots
+    tab."""
     _bain_notify = False # BAIN can't install to game dir
     # Files that go in the main game folder (aka default screenshots folder)
     # and have screenshot extensions, but aren't screenshots and therefore
@@ -3627,6 +3627,7 @@ class ScreenInfos(FileInfos):
         super(ScreenInfos, self).__init__(self._orig_store_dir,
                                           factory=ScreenInfo)
 
+    @classmethod
     def rightFileType(cls, fileName: bolt.FName | str):
         if fileName in cls._ss_skips:
             # Some non-screenshot file, skip it

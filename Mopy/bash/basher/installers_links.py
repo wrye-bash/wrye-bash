@@ -32,7 +32,6 @@ from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
 from ..gui import copy_text_to_clipboard, askYes
-from ..parsers import CsvParser
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            u'Installers_RefreshData', u'Installers_AddMarker',
