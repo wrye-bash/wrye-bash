@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import os
 import shlex
 import subprocess
 import webbrowser
@@ -32,7 +31,7 @@ from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
 from ..bolt import GPath
 from ..env import get_game_version_fallback, getJava, get_file_version, \
-    AppLauncher, get_registry_path
+    AppLauncher, get_registry_path, ExeLauncher, LnkLauncher, set_cwd
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
@@ -41,7 +40,7 @@ from ..gui.base_components import _AComponent
 __all__ = ['Obse_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
            'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
-           'App_Restart', 'App_Button', "LnkOrDirButton"]
+           'App_Restart', 'App_Button', "LnkButton"]
 
 #------------------------------------------------------------------------------
 # StatusBar Buttons -----------------------------------------------------------
@@ -180,51 +179,23 @@ class App_Button(AppLauncher, StatusBar_Button):
     def _app_version(self):
         return _strip_version(self.exePath)
 
-    def ShowError(self, error=None, *, msg=None):
-        if error is not None:
+    def sb_click(self):
+        exeargs = shlex.join([*self._exe_args, *self.extraArgs])
+        Link.Frame.set_status_info(shlex.join([self.exePath.s, *exeargs]))
+        try:
+            self.launch_app(self.exePath, exeargs)
+            return
+        except UnicodeError:
+            msg = _('Execution failed because one or more of the '
+                    'command line arguments failed to encode.')
+        except Exception as error:
             msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
                 'launched_exe_path': self.exePath} + '\n' + _(
                 'Used Arguments: %(launched_exe_args)s') % {
-                       'launched_exe_args': self.exeArgs})
+                       'launched_exe_args': exeargs})
         error_title = _("Could Not Launch '%(launched_exe_name)s'") % {
             'launched_exe_name': self.exePath.stail}
         showError(Link.Frame, msg, title=error_title)
-
-    def _showUnicodeError(self):
-        self.ShowError(msg=_('Execution failed because one or more of the '
-                             'command line arguments failed to encode.'))
-
-    def sb_click(self):
-        dir_ = os.getcwd()
-        args = f'"{self.exePath}"'
-        args += u' '.join([f'{arg}' for arg in self.exeArgs])
-        try:
-            import win32api
-            r, executable = win32api.FindExecutable(self.exePath.s)
-            executable = win32api.GetLongPathName(executable)
-            win32api.ShellExecute(0,u"open",executable,args,dir_,1)
-        except Exception as error:
-            if isinstance(error,WindowsError) and error.winerror == 740:
-                # Requires elevated permissions
-                try:
-                    import win32api
-                    win32api.ShellExecute(0,'runas',executable,args,dir_,1)
-                except Exception as error:
-                    self.ShowError(error)
-            else:
-                # Most likely we're here because FindExecutable failed (no file association)
-                # Or because win32api import failed.  Try doing it using os.startfile
-                # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                cwd = bolt.Path.getcwd()
-                self.exePath.head.setcwd()
-                try:
-                    webbrowser.open(self.exePath.s)
-                except UnicodeError:
-                    self._showUnicodeError()
-                except Exception as error:
-                    self.ShowError(error)
-                finally:
-                    cwd.setcwd()
 
     @classmethod
     def app_button_factory(cls, app_key, app_launcher, path_kwargs, bash_ini,
@@ -237,43 +208,25 @@ class App_Button(AppLauncher, StatusBar_Button):
             return _ExeButton(exe_path, *args, **kwargs)
         if exe_path.cext == '.jar':
             return _JavaButton(exe_path, *args, **kwargs)
-        if exe_path.cext == '.lnk' or exe_path.is_dir():
-            return LnkOrDirButton(exe_path, *args, **kwargs)
+        if exe_path.cext == '.lnk':
+            return LnkButton(exe_path, *args, **kwargs)
+        if exe_path.is_dir():
+            return _DirButton(exe_path, *args, **kwargs)
         return cls(exe_path, *args, **kwargs)
 
-class _ExeButton(App_Button):
+class _ExeButton(ExeLauncher, App_Button):
 
-    def sb_click(self):
-        exe_args = [self.exePath.s, *self.exeArgs, *self.extraArgs]
-        Link.Frame.set_status_info(u' '.join(exe_args[1:]))
-        cwd = bolt.Path.getcwd()
-        self.exePath.head.setcwd()
-        try:
-            popen = subprocess.Popen(exe_args, close_fds=True)
-            if self.wait:
-                with balt.Progress(_('Waiting for %(other_process)s...') % {
-                        'other_process': self.exePath.stail}) as progress:
-                    progress(0, bolt.text_wrap(
-                        _('Wrye Bash will be paused until you have completed '
-                          'your work in %(other_process)s and closed '
-                          'it.') % {'other_process': self.exePath.stail}, 50))
-                    progress.setFull(1)
-                    popen.wait()
-        except UnicodeError:
-            self._showUnicodeError()
-        except WindowsError as werr:
-            if werr.winerror != 740:
-                self.ShowError(werr)
-            try:
-                import win32api
-                win32api.ShellExecute(0, 'runas', self.exePath.s,
-                    shlex.join(exe_args[1:]), self.exePath.head.s, 1)
-            except:
-                self.ShowError(werr)
-        except Exception as error:
-            self.ShowError(error)
-        finally:
-            cwd.setcwd()
+    def _run_exe(self, exe_path, exe_args):
+        popen = subprocess.Popen([exe_path.s, *exe_args], close_fds=True)
+        if self.wait:
+            with balt.Progress(_('Waiting for %(other_process)s...') % {
+                    'other_process': exe_path.stail}) as progress:
+                progress(0, bolt.text_wrap(
+                    _('Wrye Bash will be paused until you have completed '
+                      'your work in %(other_process)s and closed '
+                      'it.') % {'other_process': exe_path.stail}, 50))
+                progress.setFull(1)
+                popen.wait()
 
 class _JavaButton(App_Button):
     """_App_Button pointing to a .jar file."""
@@ -285,21 +238,14 @@ class _JavaButton(App_Button):
     def allow_create(self):
         return self._java.exists() and super().allow_create()
 
-    def sb_click(self):
-        cwd = bolt.Path.getcwd()
-        self.exePath.head.setcwd()
-        try:
-            subprocess.Popen((self._java.stail, '-jar', self.exePath.stail,
-                              ''.join(self.exeArgs)), executable=self._java.s,
-                             close_fds=True)
-        except UnicodeError:
-            self._showUnicodeError()
-        except Exception as error:
-            self.ShowError(error)
-        finally:
-            cwd.setcwd()
+    @set_cwd
+    def launch_app(self, exe_path, exe_args):
+        subprocess.Popen((self._java.stail, '-jar', exe_path.stail,
+            shlex.join(exe_args)), executable=self._java.s, close_fds=True)
 
-class LnkOrDirButton(App_Button):
+class LnkButton(LnkLauncher, App_Button): pass
+
+class _DirButton(App_Button):
 
     def sb_click(self): webbrowser.open(self.exePath.s)
 
@@ -363,10 +309,9 @@ class App_xEdit(_ExeButton):
         is_expert = xe_prefix and bass.settings[
             f'{xe_prefix}.iKnowWhatImDoing']
         skip_bsas = xe_prefix and bass.settings[f'{xe_prefix}.skip_bsas']
-        extra_args = bass.inisettings[
-            'xEditCommandLineArguments'].split() if is_expert else []
-        if is_expert:
-            extra_args.append('-IKnowWhatImDoing')
+        extra_args = [*shlex.split(bass.inisettings[
+            'xEditCommandLineArguments'], posix=False), '-IKnowWhatImDoing'] \
+            if is_expert else []
         if skip_bsas:
             extra_args.append('-skipbsa')
         self.extraArgs = (*extra_args, *custom_args)
@@ -475,12 +420,19 @@ class App_LOOT(_AApp_LOManager):
         bt_links.append_link(_Mods_LOOTAutoSort())
         return super()._init_menu(bt_links)
 
+    # Run LOOT on linux - if we get more launchers like this we'll need a class
     def sb_click(self):
         curr_args = [f'--game={bush.game.loot_game_name}']
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
         self.extraArgs = tuple(curr_args)
-        super().sb_click()
+        if bolt.os_name == 'nt':
+            super().sb_click()
+        else: ##: test
+            webbrowser.open(self.exePath.s)
+
+    def  allow_create(self): # runs on linux too
+        return self._display_launcher and self.exePath.exists()
 
     @classmethod
     def find_launcher(cls, *args, **kwargs):
@@ -552,7 +504,7 @@ class TESCS_Button(_ExeButton):
         self._obseTip = _('Launch %(ck_name)s %(app_version)s') % {
             'ck_name': bush.game.Ck.long_name, 'app_version': self._app_version
         }
-        if self.exeArgs: # + OBSE
+        if self._exe_args: # + OBSE
             self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
             # + CSE
             cse_path = bass.dirs['mods'].join('obse', 'plugins',
@@ -563,7 +515,7 @@ class TESCS_Button(_ExeButton):
 
     def sb_click(self):
         old = self.exePath
-        if (self.exeArgs and BashStatusBar.obseButton.button_state and (
+        if (self._exe_args and BashStatusBar.obseButton.button_state and (
                 exe_xse := bass.dirs['app'].join(bush.game.Se.exe)).is_file()):
             # If the script extender for this game has CK support, the xSE
             # loader is present and xSE is enabled, use that executable and

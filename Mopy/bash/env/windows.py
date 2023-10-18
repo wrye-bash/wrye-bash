@@ -29,7 +29,9 @@ import functools
 import json
 import os
 import re
+import shlex
 import sys
+import webbrowser
 import winreg
 from collections.abc import Iterable
 from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
@@ -49,7 +51,8 @@ import win32gui
 from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
-    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests, \
+    _AppLauncher, set_cwd
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath, top_level_files, undefinedPath
@@ -1640,3 +1643,42 @@ class TaskDialog(object):
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
+class AppLauncher(_AppLauncher):
+
+    def allow_create(self):
+        return self._display_launcher and self.exePath.exists()
+
+    def launch_app(self, exe_path, exe_args):
+        args = shlex.join(exe_args)
+        try:
+            os.startfile(exe_path.s, arguments=args)
+        except WindowsError as e:
+            if e.winerror != 740: raise
+            # Requires elevated permissions
+            os.startfile(exe_path.s, 'runas', args)
+        except NotImplementedError:
+            self._webbrowser(exe_path)
+
+    @set_cwd
+    def _webbrowser(self, exe_path):
+        webbrowser.open(exe_path.s)
+
+# Exe and shortcut launchers --------------------------------------------------
+class ExeLauncher(AppLauncher):
+
+    @set_cwd
+    def launch_app(self, exe_path, exe_args):
+        try:
+            self._run_exe(exe_path, exe_args)
+        except WindowsError as werr:
+            if werr.winerror != 740: raise
+            os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
+                         exe_path.head.s, 1)
+
+    def _run_exe(self, exe_path, exe_args):
+        raise NotImplementedError # needs balt
+
+class LnkLauncher(AppLauncher):
+
+    def launch_app(self, exe_path, exe_args):
+        webbrowser.open(exe_path.s)

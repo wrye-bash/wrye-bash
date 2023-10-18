@@ -30,12 +30,13 @@ from collections import deque
 
 from .common import _find_legendary_games, _LegacyWinAppInfo, \
     _parse_steam_manifests
+from .common import _AppLauncher as AppLauncher
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..bolt import dict_sort, structs_cache
+from ..bolt import structs_cache
 from ..exception import EnvError
 
 # API - Constants =============================================================
@@ -396,3 +397,8 @@ class TaskDialog(object):
     def __init__(self, title, heading, content, tsk_buttons=(),
                  main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')
+
+# Linux versions - disallow create
+class ExeLauncher(AppLauncher): pass
+
+class LnkLauncher(AppLauncher): pass

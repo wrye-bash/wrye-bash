@@ -461,21 +461,32 @@ def is_case_sensitive(test_path):
         return len(list(ci_test_path.iterdir())) == 2
 
 # App launchers ---------------------------------------------------------------
-class AppLauncher:
+def set_cwd(func):
+    """Function decorator to switch current working dir."""
+    @functools.wraps(func)
+    def _switch_dir(self, exe_path, *args):
+        cwd = os.getcwd()
+        os.chdir(exe_path.head.s)
+        try:
+            func(self, exe_path, *args)
+        finally:
+            os.chdir(cwd)
+    return _switch_dir
+
+class _AppLauncher:
     """Info on launching an App - currently windows only."""
     exePath: _Path # the path to the app launcher (currently exe)
-    exeArgs: tuple # cli for the application
+    _exe_args: tuple # cli for the application
     display_launcher: bool # whether to display the launcher
 
-    def __init__(self, exePath: _Path, exe_args=(), display_launcher=True,
+    def __init__(self, exePath: _Path, exeArgs=(), display_launcher=True,
                  *args):
         super().__init__(*args)
         self.exePath = exePath
         self._display_launcher = display_launcher
-        self.exeArgs = exe_args
+        self._exe_args = exeArgs
 
-    def allow_create(self):
-        return self._display_launcher and self.exePath.exists()
+    def allow_create(self): return False ##: for linux - flesh out!
 
     @classmethod
     def find_launcher(cls, app_exe, app_key, bash_ini, subfolders=(),
@@ -517,3 +528,6 @@ class AppLauncher:
                     return launcher, True
         # the last one tested, should not matter because it does not exist
         return launcher, False
+
+    def launch_app(self, exe_path, exe_args):
+        raise NotImplementedError

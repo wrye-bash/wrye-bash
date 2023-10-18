@@ -25,6 +25,7 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 import os
+import shlex
 
 from . import BSAList, INIList, InstallersList, \
     InstallersPanel, MasterList, ModList, SaveList, ScreensList
@@ -46,6 +47,7 @@ from .saves_links import *
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
     UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
+from ..bolt import os_name
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
@@ -90,9 +92,9 @@ def InitStatusBar(bashIni):
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
-    all_links.extend(_tool_args(k, (*v, bass.inisettings[
-        f'{(u := k[:-4])}JavaArg']), uid=u, display_launcher=_is_oblivion)
-                  for k, v in oblivion_java_tools.items())
+    all_links.extend(_tool_args(k, (*v, *shlex.split(bass.inisettings[
+        f'{(u := k[:-4])}JavaArg'], posix=os_name != 'nt')), uid=u,
+        display_launcher=_is_oblivion) for k, v in oblivion_java_tools.items())
     all_links.extend(_tool_args(*tool, display_launcher=_is_skyrim,
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
@@ -106,11 +108,11 @@ def InitStatusBar(bashIni):
     # not specified in the ini - we bypass app_button_factory - avoid!
     all_links.append(App_xEdit(tes4_edit_dir.join('TES4View.exe'),
         _png_list(_j('tools', f'{"TES4ViewPath".lower()}%s.png')),
-        _('Launch TES4View'), 'TES4View', exeArgs=('-TES4 -view',),
+        _('Launch TES4View'), 'TES4View', exeArgs=('-TES4', '-view'),
         display_launcher=_is_oblivion))
     all_links.append(App_xEdit(tes4_edit_dir.join('TES4Trans.exe'),
         _png_list(_j('tools', f'{"TES4TransPath".lower()}%s.png')),
-        _('Launch TES4Trans'), 'TES4Trans', exeArgs=('-TES4 -translate',),
+        _('Launch TES4Trans'), 'TES4Trans', exeArgs=('-TES4', '-translate'),
         display_launcher=_is_oblivion))
     all_links.append(  #Tes4LODGen
         _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
@@ -141,8 +143,8 @@ def InitStatusBar(bashIni):
                     zip((16, 24, 32), img_path)]
         #target.stail would keep the id on renaming the .lnk but this is unique
         app_key = pth.stail.lower()
-        all_links.append(LnkOrDirButton(pth, imgs, shortcut_descr, app_key,
-                                        canHide=False))
+        all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
+                                   canHide=False))
     #--Final couple
     all_links.append(App_DocBrowser('DocBrowser'))
     all_links.append(App_PluginChecker('ModChecker'))

@@ -878,10 +878,6 @@ class Path(os.PathLike):
     def getcwd():
         return Path(os.getcwd())
 
-    def setcwd(self):
-        """Set cwd."""
-        os.chdir(self._s)
-
     @staticmethod
     def has_invalid_chars(path_str):
         ma_invalid_chars = Path.invalid_chars_re.match(path_str)
