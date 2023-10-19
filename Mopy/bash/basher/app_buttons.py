@@ -29,7 +29,7 @@ from .settings_dialog import SettingsDialog
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
-from ..bolt import GPath
+from ..bolt import GPath, undefinedPath
 from ..env import get_game_version_fallback, getJava, get_file_version, \
     AppLauncher, get_registry_path, ExeLauncher, LnkLauncher, set_cwd
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
@@ -200,8 +200,13 @@ class App_Button(AppLauncher, StatusBar_Button):
     @classmethod
     def app_button_factory(cls, app_key, app_launcher, path_kwargs, bash_ini,
                            *args, **kwargs):
-        exe_path, is_present = cls.find_launcher(app_launcher, app_key,
-                                                 bash_ini, **path_kwargs)
+        if kwargs.setdefault('display_launcher', True):
+            exe_path, is_present = cls.find_launcher(app_launcher, app_key,
+                                                     bash_ini, **path_kwargs)
+            # App_Button is initialized once on boot, if the path doesn't exist
+            # at this time then it will be detected on next launch of Bash
+            kwargs['display_launcher'] &= is_present
+        else: exe_path = undefinedPath # don't bother figuring that out
         if cls is not App_Button:
             return cls(exe_path, *args, **kwargs)
         if exe_path.cext == '.exe':
@@ -431,8 +436,8 @@ class App_LOOT(_AApp_LOManager):
         else: ##: test
             webbrowser.open(self.exePath.s)
 
-    def  allow_create(self): # runs on linux too
-        return self._display_launcher and self.exePath.exists()
+    def allow_create(self): # runs on linux too
+        return self._display_launcher
 
     @classmethod
     def find_launcher(cls, *args, **kwargs):

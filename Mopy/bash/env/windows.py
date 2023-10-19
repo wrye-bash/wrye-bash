@@ -1645,8 +1645,8 @@ class TaskDialog(object):
 # END TASKDIALOG PART =========================================================
 class AppLauncher(_AppLauncher):
 
-    def allow_create(self):
-        return self._display_launcher and self.exePath.exists()
+    def allow_create(self): # if self.exePath does not exist this must be False
+        return self._display_launcher
 
     def launch_app(self, exe_path, exe_args):
         args = shlex.join(exe_args)
