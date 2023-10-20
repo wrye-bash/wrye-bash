@@ -407,7 +407,7 @@ def main(opts):
         if opts.genHtml is not None: ##: we should do this before localization and wx import
             print(_(f"Generating HTML file from '%(gen_target)s'") % {
                 'gen_target': opts.genHtml})
-            wrye_text.WryeText.genHtml(opts.genHtml)
+            wrye_text.genHtml(opts.genHtml)
             print(_('Done'))
             return
         # Both of these must come early, before we begin showing wx-based GUI

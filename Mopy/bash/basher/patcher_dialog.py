@@ -265,7 +265,7 @@ class PatchDialog(DialogWindow):
                 with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
-                wrye_text.WryeText.genHtml(temp_readme, None, docsDir)
+                wrye_text.genHtml(temp_readme, None, docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
                     env.shellMove({temp_readme_dir: data_docs_dir},

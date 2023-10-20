@@ -270,8 +270,8 @@ class DocBrowser(WindowFrame):
         with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
-            wrye_text.WryeText.genHtml(doc_path, None,
-                                       bosh.modInfos.store_dir.join('Docs'))
+            wrye_text.genHtml(doc_path, None,
+                              bosh.modInfos.store_dir.join('Docs'))
 
     def _load_data(self, doc_path=None, uni_str=None, editing=False,
                    __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
@@ -374,8 +374,8 @@ class DocBrowser(WindowFrame):
             if is_wtxt:  # Update generated html
                 html_path = doc_path.root + '.html'
                 if not html_path.is_file() or doc_path.mtime > html_path.mtime:
-                    wrye_text.WryeText.genHtml(doc_path, None,
-                        bosh.modInfos.store_dir.join('Docs'))
+                    wrye_text.genHtml(doc_path, None,
+                                      bosh.modInfos.store_dir.join('Docs'))
         self._load_data(doc_path=doc_path, editing=editing)
 
     def on_closing(self, destroy=True):
