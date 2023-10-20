@@ -59,10 +59,8 @@ def _early_setup():
     sys.unraisablehook = unraisable_hook
     # ensure we are in the correct directory so relative paths will work
     # properly
-    if bass.is_standalone:
-        pathToProg = os.path.dirname(sys.executable)
-    else:
-        pathToProg = os.path.dirname(sys.argv[0])
+    pathToProg = os.path.dirname(
+        sys.executable if bass.is_standalone else sys.argv[0])
     if pathToProg:
         os.chdir(pathToProg)
     global _bugdump_handle

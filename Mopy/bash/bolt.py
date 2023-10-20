@@ -1847,74 +1847,6 @@ class ListInfo:
         return f'{self.__class__.__name__}<{self.fn_key}>'
 
 #------------------------------------------------------------------------------
-class MainFunctions(object):
-    """Encapsulates a set of functions and/or object instances so that they can
-    be called from the command line with normal command line syntax.
-
-    Functions are called with their arguments. Object instances are called
-    with their method and method arguments. E.g.:
-    * bish bar arg1 arg2 arg3
-    * bish foo.bar arg1 arg2 arg3"""
-
-    def __init__(self):
-        """Initialization."""
-        self.funcs = {}
-
-    def add(self, func, func_key=None):
-        """Add a callable object.
-        func - A function or class instance.
-        func_key - Command line invocation for object (defaults to name of
-        func).
-        """
-        func_key = func_key or func.__name__
-        self.funcs[func_key] = func
-        return func
-
-    def main(self):
-        """Main function. Call this in __main__ handler."""
-        #--Get func
-        args = sys.argv[1:]
-        attrs_ = args.pop(0).split(u'.')
-        func_key = attrs_.pop(0)
-        func = self.funcs.get(func_key)
-        if not func:
-            msg = _('Unknown function/object: %(func_key)s') % {
-                'func_key': func_key}
-            try: print(msg)
-            except UnicodeError: print(msg.encode(u'mbcs'))
-            return
-        for attr in attrs_:
-            func = getattr(func,attr)
-        #--Separate out keywords args
-        keywords = {}
-        argDex = 0
-        reKeyArg  = re.compile(r'^-(\D\w+)', re.U)
-        reKeyBool = re.compile(r'^\+(\D\w+)', re.U)
-        while argDex < len(args):
-            arg = args[argDex]
-            if reKeyArg.match(arg):
-                keyword = reKeyArg.match(arg).group(1)
-                value   = args[argDex+1]
-                keywords[keyword] = value
-                del args[argDex:argDex+2]
-            elif reKeyBool.match(arg):
-                keyword = reKeyBool.match(arg).group(1)
-                keywords[keyword] = True
-                del args[argDex]
-            else:
-                argDex += 1
-        #--Apply
-        func(*args, **keywords)
-
-#--Commands Singleton
-_mainFunctions = MainFunctions()
-def mainfunc(func):
-    """A function for adding funcs to _mainFunctions.
-    Used as a function decorator ("@mainfunc")."""
-    _mainFunctions.add(func)
-    return func
-
-#------------------------------------------------------------------------------
 class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
@@ -3280,16 +3212,3 @@ def convert_wtext_to_html(logPath, logText, *css_dirs):
     ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
     with logPath.open(u'w', encoding=u'utf-8-sig') as out:
         WryeText.genHtml(ins, out, *css_dirs)
-
-# Main ------------------------------------------------------------------------
-if __name__ == u'__main__' and len(sys.argv) > 1:
-    #--Commands----------------------------------------------------------------
-    @mainfunc
-    def genHtml(*args,**keywords):
-        """Wtxt to html. Just pass through to WryeText.genHtml."""
-        if not len(args):
-            args = [u'..\\Wrye Bash.txt']
-        WryeText.genHtml(*args,**keywords)
-
-    #--Command Handler --------------------------------------------------------
-    _mainFunctions.main()
