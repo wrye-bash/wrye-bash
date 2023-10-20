@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from __future__ import annotations
 
 # Parser.py =======================================
 #  A generic class for handling parsing of
@@ -165,7 +166,7 @@ Types = {UNKNOWN:u'UNKNOWN',
          OPEN_BRACKET:u'OPEN_BRACKET',
          CLOSE_BRACKET:u'CLOSE_BRACKET',
          COLON:u'COLON',
-         }
+}
 
 # FlowControl -------------------------------------
 #  Flow control object, to hold info about a flow
@@ -190,10 +191,11 @@ class FlowControl(object):
 #--------------------------------------------------
 ##: Refactor to use exception.ParserError instead?
 class ParserError(SyntaxError): pass
-gParser = None
+gParser: 'Parser' = None
 def error(msg):
     if gParser:
-        raise ParserError(u'(Line %s, Column %s): %s' % (gParser.cLine, gParser.cCol, msg))
+        raise ParserError(
+            f'(Line {gParser.cLine}, Column {gParser.cCol}): {msg}')
     else:
         raise ParserError(msg)
 
@@ -208,9 +210,6 @@ def _get_type_basic(token_or_num):
     return UNKNOWN
 
 class Parser(object):
-    class ParserType(object):
-        @property
-        def Type(self): return self.__class__.__name__
 
     def getType(self, token_or_num):
         """Determine a token's type in self's type system."""
@@ -235,7 +234,7 @@ class Parser(object):
             return WHITESPACE
         return _get_type_basic(token_or_num)
 
-    class Callable(ParserType):
+    class Callable:
         def __init__(self, callable_name, function, min_args=0,
                      max_args=KEY.NA, passTokens=False, passCommas=False):
             self.callable_name = callable_name
@@ -246,6 +245,9 @@ class Parser(object):
             if min_args > max_args >= 0: max_args = min_args
             self.minArgs = min_args
             self.maxArgs = max_args
+
+        @property
+        def Type(self): return self.__class__.__name__
 
         def __call__(self, *args):
             # Remove commas if necessary, pass values if necessary
@@ -414,7 +416,7 @@ class Parser(object):
         def __float__(self): return float(self.tkn)
         def __str__(self): return str(self.tkn)
 
-        def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
+        def __repr__(self): return f'<Token-{Types[self.type]}:{self.text}>'
 
         # Fall through to function/keyword
         def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
@@ -612,7 +614,6 @@ class Parser(object):
             if not state: return None
             self.cCol += 1
         self._emit()
-
         return self.tokens
 
     # Run a list of tokens
@@ -764,7 +765,7 @@ class Parser(object):
         error(_(u'Too many values left at the end of evaluation.'))
 
     def error(self, msg):
-        raise ParserError(u'(Line %s, Column %s): %s' % (self.cLine, self.cCol, msg))
+        raise ParserError(f'(Line {self.cLine}, Column {self.cCol}): {msg}')
 
     #Functions for parsing a line into tokens
     def _grow(self, c):

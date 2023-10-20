@@ -39,6 +39,7 @@ from functools import wraps
 from itertools import chain
 
 from . import BashFrame, INIList, Installers_Link, InstallersDetails
+from .belt import InstallerWizard, generateTweakLines
 from .dialogs import SyncFromDataEditor
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
@@ -46,7 +47,6 @@ from .. import archives, balt, bass, bolt, bosh, bush, env
 from ..balt import AppendableLink, CheckLink, EnabledLink, OneItemLink, \
     UIList_Hide
 from ..bass import Store
-from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import FName, LogFile, SubProgress, deprint, round_size
 from ..bosh import InstallerConverter, converters
 from ..exception import CancelError, SkipError, StateError, XMLParsingError
