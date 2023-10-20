@@ -24,7 +24,8 @@ import webbrowser
 from dataclasses import dataclass
 from typing import Iterable
 
-from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
+from .. import balt, bass, bolt, bosh, bush, env, exception, load_order, \
+    wrye_text
 from ..balt import DecoratedTreeDict, colors, Link
 from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
@@ -762,9 +763,9 @@ class UpdateNotification(DialogWindow):
         self._temp_html = new_temp_file(temp_prefix='wb_changes',
             temp_suffix='.html')
         with open(self._temp_html, 'w', encoding='utf-8') as out:
-            out.write(bolt.html_start % (self.title, _uc_css))
+            out.write(wrye_text.html_start % (self.title, _uc_css))
             out.write(new_version.wb_changes)
-            out.write(bolt.html_end)
+            out.write(wrye_text.html_end)
         self._changes_viewer = DocumentViewer(self, balt.get_dv_bitmaps())
         self._changes_viewer.try_load_html(self._temp_html)
         back_btn, forward_btn, reload_btn = self._changes_viewer.get_buttons()

@@ -33,7 +33,7 @@ import sys
 import traceback
 from configparser import ConfigParser
 
-from . import bass, bolt, exception, wbtemp
+from . import bass, bolt, exception, wbtemp, wrye_text
 
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
@@ -403,6 +403,13 @@ def main(opts):
         wx_locale = localize.setup_locale(opts.language, _wx)
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
                                        not _rightPythonVersion()): return
+        # if HTML file generation was requested, just do it and quit
+        if opts.genHtml is not None: ##: we should do this before localization and wx import
+            print(_(f"Generating HTML file from '%(gen_target)s'") % {
+                'gen_target': opts.genHtml})
+            wrye_text.WryeText.genHtml(opts.genHtml)
+            print(_('Done'))
+            return
         # Both of these must come early, before we begin showing wx-based GUI
         from . import env
         env.mark_high_dpi_aware()
@@ -456,18 +463,6 @@ def _main(opts, wx_locale, wxver):
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
-    # if HTML file generation was requested, just do it and quit
-    if opts.genHtml is not None:
-        ##: See if the encodes are actually necessary
-        msg1 = _(f"Generating HTML file from '%(gen_target)s'") % {
-            'gen_target': opts.genHtml}
-        msg2 = _('Done')
-        try: print(msg1)
-        except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
-        bolt.WryeText.genHtml(opts.genHtml)
-        try: print(msg2)
-        except UnicodeError: print(msg2.encode(bolt.Path.sys_fs_enc))
-        return
     # We need the Mopy dirs to initialize restore settings instance
     bash_ini_path, restore_ = u'bash.ini', None
     # import barb, which does not import from bosh/bush

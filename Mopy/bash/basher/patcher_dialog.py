@@ -28,7 +28,7 @@ import time
 from datetime import timedelta
 
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bosh, bush, env, load_order
+from .. import balt, bass, bolt, bosh, bush, env, load_order, wrye_text
 from ..balt import Link, Resources
 from ..bass import Store
 from ..bolt import GPath_no_norm, SubProgress
@@ -265,7 +265,7 @@ class PatchDialog(DialogWindow):
                 with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
-                bolt.WryeText.genHtml(temp_readme, None, docsDir)
+                wrye_text.WryeText.genHtml(temp_readme, None, docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
                     env.shellMove({temp_readme_dir: data_docs_dir},
