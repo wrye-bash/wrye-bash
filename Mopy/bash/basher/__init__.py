@@ -3182,8 +3182,8 @@ class InstallersDetails(_SashDetailsPanel):
             else:
                 fns = self.espm_checklist_fns = sorted(installer.espms, key=lambda x: (
                     x.fn_ext != u'.esm', x)) # esms first then alphabetically
-                espm_acti = {['', '*'][installer.isEspmRenamed(
-                    x)] + x: x not in installer.espmNots for x in fns}
+                espm_acti = {[x, f'*{x}'][installer.isEspmRenamed(
+                    x)]: x not in installer.espmNots for x in fns}
                 self.gEspmList.set_all_items_keep_pos(espm_acti)
             #--Comments
             self.gComments.text_content = installer.comments

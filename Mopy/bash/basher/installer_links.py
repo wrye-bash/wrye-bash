@@ -1010,7 +1010,7 @@ class Installer_Espm_Rename(_Installer_Details_Link):
         newName = self._askText(_(u'Enter new name (without the extension):'),
                                 title=_(u'Rename Plugin'), default=curName.fn_body)
         if not newName: return
-        if (newName := newName + curName.fn_ext) in \
+        if (newName := FName(newName + curName.fn_ext)) in \
                 self.window.espm_checklist_fns:
             return
         self._installer.setEspmName(curName, newName)

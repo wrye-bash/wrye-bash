@@ -66,6 +66,7 @@ from collections import defaultdict
 from string import digits, whitespace
 
 from . import bolt # no other Bash imports!
+from .bolt import FName
 
 #--------------------------------------------------
 name_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
@@ -1449,14 +1450,14 @@ class PreParser(Parser):
             if plugin_name.fn_ext != new_plugin_name[-4:]:
                 raise ParserError(_('Cannot rename %s to %s: the extensions '
                     'must match.') % (plugin_name, new_plugin_name))
-            self.plugin_renames[plugin_name] = new_plugin_name
+            self.plugin_renames[plugin_name] = FName(new_plugin_name)
 
     def kwd_reset_plugin_name(self, plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name and plugin_name in self.plugin_renames:
             del self.plugin_renames[plugin_name]
 
-    def _resolve_plugin_rename(self, plugin_name: str) -> bolt.FName | None:
+    def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
         raise NotImplementedError # needs self._plugin_enabled
 
     def kwd_reset_all_plugin_names(self):
@@ -1488,7 +1489,7 @@ class PreParser(Parser):
         self.variables.clear()
         self.Flow = []
         self.notes = []
-        self.plugin_renames = {}
+        self.plugin_renames: bolt.FNDict[FName, FName] = bolt.FNDict()
         self.iniedits = defaultdict(bolt.LowerDict)
 
     # codebox stuff

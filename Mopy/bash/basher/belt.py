@@ -64,8 +64,8 @@ class WizInstallInfo(object):
     def __init__(self):
         self.canceled = False
         self.select_plugins = []
-        self.rename_plugins = {}
-        self.select_sub_packages = []
+        self.rename_plugins: FNDict[FName, FName] = FNDict()
+        self.select_sub_packages = {}
         self.ini_edits = bolt.LowerDict()
         self.should_install = False
 
@@ -332,13 +332,14 @@ class PageFinish(PageInstaller):
     """Page displayed at the end of a wizard, showing which sub-packages and
     which plugins will be selected. Also displays some notes for the user."""
 
-    def __init__(self, parent, sublist, plugin_enabled, plugin_renames, bAuto,
+    def __init__(self, parent, sublist, plugin_enabled, plugin_renames_, bAuto,
                  notes, iniedits):
         PageInstaller.__init__(self, parent)
         subs = sorted(sublist)
         #--make the list that will be displayed
-        displayed_plugins = [f'{x} -> {plugin_renames[x]}'
-            if x in plugin_renames else x for x in plugin_enabled]
+        displayed_plugins = [f'{x} -> {plugin_renames_[x]}'
+            if x in plugin_renames_ else x for x in plugin_enabled]
+        self._wiz_parent.ret.rename_plugins = plugin_renames_
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _('The installer script has finished, and '
                                   'will apply the following settings:'))
@@ -346,17 +347,16 @@ class PageFinish(PageInstaller):
         # Sub-packages
         self.listSubs = CheckListBox(self, choices=subs)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
-        for index,key in enumerate(subs):
-            if sublist[key]:
+        for index, fn_key in enumerate(subs):
+            if sublist[fn_key]:
                 self.listSubs.lb_check_at_index(index, True)
-                self._wiz_parent.ret.select_sub_packages.append(key)
+                self._wiz_parent.ret.select_sub_packages.add(str(fn_key))
         self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index, (key, do_enable) in enumerate(plugin_enabled.items()):
             if do_enable:
                 self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.append(key)
-        self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
         self.listInis = ListBox(self, onSelect=self._on_select_ini,
                                 choices=list(iniedits))
@@ -486,8 +486,7 @@ class WryeParser(PreParser):
         self.parser_finished = False
         ##: Figure out why BAIN insists on including an empty sub-package
         # everywhere. Broke this part of the code, hence the 'if s' below.
-        self.sublist = bolt.LowerDict.fromkeys(  # FIXME FNDict??
-            (s for s in installer.subNames if s), False)
+        self.sublist = bolt.FNDict.fromkeys([*installer.subNames][:1], False)
         # all plugins mapped to their must-install state - initially False
         self._plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
             sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
@@ -540,22 +539,6 @@ class WryeParser(PreParser):
         self.reversing = self.choiceIdex-1
         self.choiceIdex = -1
         return self.Continue()
-
-    def _is_plugin_in_package(self, plugin_name, package):
-        if package not in self.installer.espmMap: return False
-        plugin_name = plugin_name.lower()
-        v = self.installer.espmMap[package]
-        for j in v:
-            if plugin_name == j.lower():
-                return True
-        return False
-
-    def _plugin_in_active_package(self, plugin_name):
-        for i in self.sublist:
-            if self._is_plugin_in_package(plugin_name, i):
-                if self.sublist[i]:
-                    return True
-        return False
 
     def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
         return fn if (fn := FName(plugin_name)) in self._plugin_enabled \
@@ -788,9 +771,11 @@ class WryeParser(PreParser):
         for fn_espm in self.installer.espmMap[subpackage]:
             if bSelect:
                 self._select_plugin(True, fn_espm)
-            else:
-                if not self._plugin_in_active_package(fn_espm):
-                    self._select_plugin(False, fn_espm)
+            else: # check if some other active subpackage includes fn_espm
+                for fn_sub, is_act in self.sublist.items():
+                    if is_act and fn_espm in self.installer.espmMap[fn_sub]:
+                        return
+                self._select_plugin(False, fn_espm)
 
     def _SelectAll(self, bSelect):
         self._set_all_values(self.sublist, bSelect)

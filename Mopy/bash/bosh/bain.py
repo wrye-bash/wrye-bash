@@ -44,7 +44,7 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
     readExts
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, round_size, top_level_items
+    forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict
 from ..bass import Store
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
@@ -281,7 +281,7 @@ class Installer(ListInfo):
         self.group = u'' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
         self.is_active = False
-        self.espmNots = set() #--Plugin FNames that user has decided not to install.
+        self.espmNots: set[FName] = set() #--Plugin FNames that user has decided not to install.
         self._remaps = bolt.FNDict() # Pickles to dict, equivalent to previous
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
@@ -293,7 +293,7 @@ class Installer(ListInfo):
         self.has_fomod_conf = False
         self.hasWizard = False
         self.hasBCF = False
-        self.espmMap = bolt.DefaultFNDict(list)
+        self.espmMap: DefaultFNDict[FName, list[FName]] = DefaultFNDict(list)
         self.hasReadme = False
         self.hasBethFiles = False
         self.skipExtFiles = set()
@@ -394,8 +394,7 @@ class Installer(ListInfo):
                 return old
         return currentName
 
-    def setEspmName(self,currentName,newName):
-        currentName, newName = map(FName, (currentName, newName)) ##: needed? setEspmName used in belt
+    def setEspmName(self, currentName: FName, newName: FName):
         oldName = self.getEspmName(currentName)
         self._remaps[oldName] = newName
         if currentName in self.espmNots:
@@ -446,12 +445,11 @@ class Installer(ListInfo):
             self.fn_key = self.fn_key.decode('utf-8')
         if not isinstance(self.fn_key, FName):
             self.fn_key = FName(u'%s' % self.fn_key)
-        if self.espmNots and not isinstance(next(iter(self.espmNots)), FName):
+        if self.espmNots:
             self.espmNots = forward_compat_path_to_fn_list(self.espmNots,
                                                            ret_type=set)
-        if self._remaps and not isinstance(next(iter(self._remaps)), FName):
-            self._remaps = forward_compat_path_to_fn(self._remaps,
-                value_type=lambda v: FName('%s' % v)) # Path -> FName
+        self._remaps = forward_compat_path_to_fn(self._remaps,
+            value_type=lambda v: FName('%s' % v))  # Path -> FName
         if isinstance(self, _InstallerPackage):
             self._file_key = bass.dirs['installers'].join(self.fn_key)
             if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
@@ -505,7 +503,6 @@ class Installer(ListInfo):
         return Installer._badDlls
     # while checking for skips process some installer attributes
     _attributes_process = {}
-    _extensions_to_process = set()
 
     @staticmethod
     def init_global_skips(ask_yes):
@@ -637,28 +634,29 @@ class Installer(ListInfo):
                         # Move top-level docs to the Docs folder
                         dest = docs_ + dest
             return dest
+        attr_process = Installer._attributes_process
         for ext in Installer.docExts:
-            Installer._attributes_process[ext] = _process_docs
+            attr_process [ext] = _process_docs
         def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: ##: DOCS!
                 self.hasBCF = full
                 return None # skip
             return file_relative
-        Installer._attributes_process[defaultExt] = _process_BCF # .7z
+        attr_process[defaultExt] = _process_BCF # .7z
         def _process_txt(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower == u'wizard.txt': # first check if it's the wizard.txt
                 self.hasWizard = full
                 return None # skip
             return _process_docs(self, fileLower, full, fileExt, file_relative,
                                  sub)
-        Installer._attributes_process[u'.txt'] = _process_txt
+        attr_process['.txt'] = _process_txt
         def _process_csv(self, fileLower, full, fileExt, file_relative, sub):
             parent_dir, split_fn = _split_fr(file_relative)
             if (not parent_dir and
                     bass.settings['bash.installers.redirect_csvs']):
                 return f'Bash Patches{os_sep}{split_fn}'
             return file_relative
-        Installer._attributes_process['.csv'] = _process_csv
+        attr_process['.csv'] = _process_csv
         def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
             rootLower = file_relative.split(os_sep, 1)
             if len(rootLower) > 1:
@@ -668,19 +666,17 @@ class Installer(ListInfo):
                 self.hasBethFiles = True
                 if not self.overrideSkips and not bass.settings[
                     u'bash.installers.autoRefreshBethsoft']:
-                    self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
-                                          full)
+                    self.skipDirFiles.add(_('[Bethesda Content]') + f' {full}')
                     return None # FIXME - after renames ?
             fn_mod = FName(file_relative)
             fn_mod = self._remaps.get(fn_mod, fn_mod)
-            if fn_mod not in self.espmMap[sub]:
+            if fn_mod not in self.espmMap[sub]: ##: why this check/ - renames?
                 self.espmMap[sub].append(fn_mod)
             self.espms.add(fn_mod)
             if fn_mod in self.espmNots: return None # skip
             return str(fn_mod) # will end up in a LowerDict - so str
         for extension in bush.game.espm_extensions:
-            Installer._attributes_process[extension] = _remap_espms
-        Installer._extensions_to_process = set(Installer._attributes_process)
+            attr_process[extension] = _remap_espms
 
     def _init_skips(self):
         voice_dir = os_sep.join(('sound', 'voice'))
@@ -847,7 +843,7 @@ class Installer(ListInfo):
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = self.skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        espmMap = self.espmMap = bolt.DefaultLowerDict(list)
+        espmMap = self.espmMap = bolt.DefaultFNDict(list)
         plugin_extensions = bush.game.espm_extensions
         # FIXME DROP: reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
@@ -856,6 +852,7 @@ class Installer(ListInfo):
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get('fomod_dict_v2', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
+        iprocess = Installer._attributes_process
         for full, cached_size, crc in self.fileSizeCrcs:
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
@@ -926,8 +923,12 @@ class Installer(ListInfo):
                             if file_relative in self._remaps:
                                 file_relative = self._remaps[file_relative]
                                 # No need to update fileLower, will skip
+                            else:
+                                file_relative = FName(file_relative)
+                            ##: do we need this test? see also _remap_espms
                             if file_relative not in sub_esps:
                                 sub_esps.append(file_relative)
+                            ##: _remap_espms adds also to self.espms - should we do this here too?
                         if skip:
                             continue
                 # Add sub key to the espmMap, needed in belt
@@ -950,8 +951,9 @@ class Installer(ListInfo):
                 dest = None # destination of the file relative to the Data/ dir
                 # process attributes and define destination for docs and images
                 # (if not skipped globally)
-                if fileExt in Installer._extensions_to_process:
-                    dest = Installer._attributes_process[fileExt](
+                if fileExt in iprocess:
+                    # we don't use EAFP in case a KeyError is raised in callee
+                    dest = iprocess[fileExt](
                         self, fileLower, full, fileExt, file_relative, sub)
                     if dest is None:
                         continue
