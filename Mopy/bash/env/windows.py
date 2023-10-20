@@ -1090,8 +1090,8 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         try:
             sh = win32client.Dispatch('WScript.Shell')
             for lnk in top_level_files(apps_dir):
-                lnk = apps_dir.join(lnk)
-                if lnk.cext == '.lnk':
+                if lnk.fn_ext == '.lnk':
+                    lnk = apps_dir.join(lnk)
                     shortcut = sh.CreateShortCut(lnk.s)
                     descr = shortcut.Description
                     if not descr:

@@ -293,9 +293,9 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     Will update plugins.txt too if using the textfile method to reorder it
     as loadorder.txt, and of course rewrite it completely for fallout 4 (
     asterisk method)."""
-    acti_list = list(acti) if acti is not None else None
-    load_list = list(lord) if lord is not None else None
-    fix_lo = _games_lo.FixInfo() if not quiet else None
+    acti_list = None if acti is None else list(acti)
+    load_list = None if lord is None else list(lord)
+    fix_lo = None if quiet else _games_lo.FixInfo()
     lord, acti = _game_handle.set_load_order(load_list, acti_list,
                                              list(cached_lord.loadOrder),
                                              list(cached_lord.activeOrdered),
@@ -352,8 +352,8 @@ def refresh_lo(cached=False, cached_active=True):
             list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
         fixed = LoadOrder(lord, acti)
         if fixed != saved:
-            bolt.deprint(u'Saved load order is no longer valid: %s'
-                         u'\nCorrected to %s' % (saved, fixed))
+            bolt.deprint(f'Saved load order is no longer valid: {saved}\n'
+                         f'Corrected to {fixed}')
         saved = fixed
     else: saved = __empty
     if cached_lord is not __empty:

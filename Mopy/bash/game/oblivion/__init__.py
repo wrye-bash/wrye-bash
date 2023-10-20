@@ -135,8 +135,8 @@ class AOblivionGameInfo(PatchGame):
         valid_versions = {0x67}
 
     class Xe(GameInfo.Xe):
-        full_name = u'TES4Edit'
-        xe_key_prefix = u'tes4View'
+        full_name = 'TES4Edit'
+        xe_key_prefix = 'tes4View'
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {

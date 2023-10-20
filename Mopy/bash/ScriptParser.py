@@ -63,8 +63,8 @@ import operator
 from string import digits, whitespace
 
 #--------------------------------------------------
-name_start = u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
-name_chars = name_start + u'0123456789'
+name_start = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
+name_chars = f'{name_start}0123456789'
 
 # validName ---------------------------------------
 #  Test if a string can be used as a valid name
@@ -84,7 +84,7 @@ def validName(string):
 def validNumber(string):
     try:
         float(string)
-        if u'.' in string and string == u'.': return False
+        if string == '.': return False
         return True
     except ValueError:
         return False
@@ -279,22 +279,20 @@ class Parser(object):
                 min_args = 1
             else:
                 min_args = 2
-            super(Parser.Operator,self).__init__(operator_name, function,
-                                                 min_args,
-                                                 passTokens=passTokens)
+            super().__init__(operator_name, function, min_args,
+                             passTokens=passTokens)
 
     class Keyword(Callable):
         def __init__(self, keyword_name, function, min_args=0, max_args=KEY.NA,
                      passTokens=False, splitCommas=True, passCommas=False):
             self.splitCommas = splitCommas
-            super(Parser.Keyword,self).__init__(keyword_name, function,
-                                                min_args, max_args,
-                                                passTokens, passCommas)
+            super().__init__(keyword_name, function, min_args, max_args,
+                             passTokens, passCommas)
 
         def __call__(self, *args):
             gParser.StripOuterParens(args)
             if not self.splitCommas:
-                return super(Parser.Keyword,self).__call__(*args)
+                return super().__call__(*args)
             args = gParser.SplitAtCommas(args)
             if not self.passTokens:
                 if len(args) == 1:
@@ -318,9 +316,8 @@ class Parser(object):
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            super(Parser.Function,self).__init__(function_name, function,
-                                                 min_args, max_args,
-                                                 passTokens)
+            super().__init__(function_name, function, min_args, max_args,
+                             passTokens)
             self.dotFunction = dotFunction
 
     class Token(object):

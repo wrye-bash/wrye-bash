@@ -1765,8 +1765,8 @@ class InstallersData(DataStore):
     _miscTrackedFiles = {}
     # we only scan Data dir on first refresh - therefore we need be informed
     # for updates/deletions that happen outside our control - mods/inis/bsas
-    _externally_deleted = set()
-    _externally_updated = set()
+    _externally_deleted: set[Path] = set()
+    _externally_updated: set[Path] = set()
     # cache with paths in Data/ that would be skipped but are not, due to
     # an installer having the override skip etc flag on - when turning the skip
     # off leave the files here - will be cleaned on restart (files will show
@@ -1874,13 +1874,13 @@ class InstallersData(DataStore):
                     # if deleted or pending we are passed existing installers
                     refresh_info = self._RefreshInfo(deleted, pending,
                                                      projects)
-                if pending: # call update_installers to update those
-                    pe, pr = refresh_info.pending, refresh_info.projects
-                    dirs_files = (pe & pr, pe - pr)
-                elif refresh_info is None: # we really need to scan installers
+                    if pending: # call update_installers to update those
+                        pe, pr = refresh_info.pending, refresh_info.projects
+                        dirs_files = (pe & pr, pe - pr)
+                    else:
+                        dirs_files = None # we are only passed deleted in
+                else: # we really need to scan installers
                     dirs_files = top_level_items(bass.dirs['installers'])
-                else:
-                    dirs_files = None # we are only passed deleted in
                 if dirs_files:
                     progress(0, _('Scanning Packages...'))
                     refresh_info = self.update_installers(*dirs_files,
@@ -1972,13 +1972,13 @@ class InstallersData(DataStore):
         for m in markers: del self[m]
         super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, deleted, markers, check_existence):
-        if any(isinstance(p, FName) for p in deleted): # UIList.hide path
-            deleted = [self.store_dir.join(p) for p in deleted]
-        deleted = {FName(item.stail) for item in deleted
-                   if not check_existence or not item.exists()}
-        if deleted:
-            self.irefresh(what='I', deleted=deleted)
+    def delete_refresh(self, del_paths, markers, check_existence):
+        if any(isinstance(p, FName) for p in del_paths): # UIList.hide path
+            del_paths = [self.store_dir.join(p) for p in del_paths]
+        del_paths = {FName(item.stail) for item in del_paths
+                     if not check_existence or not item.exists()}
+        if del_paths:
+            self.irefresh(what='I', deleted=del_paths)
         elif markers:
             self.refreshOrder()
 
@@ -2447,13 +2447,13 @@ class InstallersData(DataStore):
 
     @staticmethod
     def notify_external(altered: set[Path] = frozenset(),
-                        deleted: set[Path] = frozenset(),
+                        del_set: set[Path] = frozenset(),
                         renamed: dict[Path, Path] = None):
         """Notifies BAIN of changes in the Data folder done by something other
         than BAIN.
 
         :param altered: A set of file paths that have changed.
-        :param deleted: A set of file paths that have been deleted.
+        :param del_set: A set of file paths that have been deleted.
         :param renamed: A dict of file paths that were renamed. Maps old file
             paths to new ones. Currently, only updates tracked changed/deleted
             paths."""
@@ -2461,7 +2461,7 @@ class InstallersData(DataStore):
         ext_updated = InstallersData._externally_updated
         ext_deleted = InstallersData._externally_deleted
         ext_updated.update(altered)
-        ext_deleted.update(deleted)
+        ext_deleted.update(del_set)
         for renamed_old, renamed_new in renamed.items():
             for ext_tracker in (ext_updated, ext_deleted):
                 if renamed_old in ext_tracker:
@@ -2469,7 +2469,7 @@ class InstallersData(DataStore):
                     ext_tracker.add(renamed_new)
 
     def refreshTracked(self):
-        deleted, altered = set(InstallersData._externally_deleted), set(
+        del_paths, altered = set(InstallersData._externally_deleted), set(
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
@@ -2479,16 +2479,16 @@ class InstallersData(DataStore):
                     altered.add(abspath)
             except OSError: # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
-                deleted.add(abspath)
+                del_paths.add(abspath)
         do_refresh = False
-        for apath in altered | deleted:
+        for apath in altered | del_paths:
             # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs[u'mods'])
             # ghosts...
             path_key = (relpath.root.s if relpath.cs[-6:] == u'.ghost'
                         else relpath.s)
-            if apath in deleted:
+            if apath in del_paths:
                 do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
             else:
                 s, m = apath.size_mtime()
@@ -2560,7 +2560,7 @@ class InstallersData(DataStore):
             currSection = None
             lines = []
             for (line_text, section, setting, value, status, lineNo,
-                 deleted) in data_ini.analyse_tweak(tweak_ini):
+                 _deleted) in data_ini.analyse_tweak(tweak_ini):
                 if not line_text.rstrip():
                     continue # possible empty lines at the start
                 if status in (10, -10):

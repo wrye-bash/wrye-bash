@@ -914,9 +914,9 @@ class UIList(PanelWin):
         if focus_list: self.Focus()
         if refresh_others:
             if refresh_others[self.data_store_key]:
-                deprint("A tab's own data store key got passed to "
-                        "refresh_others, this will cause an unnecessary "
-                        "refresh - fix it!", traceback=True)
+                deprint(f"A tab's {self.data_store_key=} got passed to "
+                        f"refresh_others")
+                del refresh_others[self.data_store_key]
             Link.Frame.distribute_ui_refresh(refresh_others)
 
     def issue_warnings(self,

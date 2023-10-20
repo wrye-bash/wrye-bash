@@ -165,10 +165,10 @@ class FixInfo(object):
             self.selectedExtra)
 
     def lo_deprint(self):
-        self.warn_lo()
-        self.warn_active()
+        self._warn_lo()
+        self._warn_active()
 
-    def warn_lo(self):
+    def _warn_lo(self):
         if not self.lo_changed(): return
         added = _pl(self.lo_added) or u'None'
         removed = _pl(self.lo_removed) or u'None'
@@ -177,10 +177,10 @@ class FixInfo(object):
         reordered = u'(No)' if not any(self.lo_reordered) else _pl(
             self.lo_reordered[0], u'from:\n', joint=u'\n') + _pl(
             self.lo_reordered[1], u'\nto:\n', joint=u'\n')
-        bolt.deprint(f'Fixed Load Order: added({added}), removed({removed}), '
-                     f'{duplicates}reordered {reordered}')
+        bolt.deprint(f'Fixed Load Order: {added=}, {removed=}, '
+                     f'{duplicates=}, reordered {reordered}')
 
-    def warn_active(self):
+    def _warn_active(self):
         if not self.act_header: return
         msg = self.act_header
         if self.act_removed:
@@ -503,8 +503,7 @@ class LoGame(object):
 
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
-        rethinking as save load and active should be an atomic operation -
-        leads to hacks (like the _selected parameter)."""
+        rethinking as save load and active should be an atomic operation."""
         quiet = fix_lo is None
         if quiet: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
@@ -550,8 +549,7 @@ class LoGame(object):
                         lord.insert(index_first_esp, mod)
                     else:
                         lord.insert(0, master_name)
-                        bolt.deprint(u'%s inserted to Load order' %
-                                     master_name)
+                        bolt.deprint(f'{master_name} inserted to Load order')
                     index_first_esp += 1
                 else: lord.append(mod)
         # end textfile get

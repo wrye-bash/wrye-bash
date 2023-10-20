@@ -1318,12 +1318,10 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
     """Apply a BAIN Conversion File."""
     _dialog_title = _(u'Apply BCF...')
 
-    def __init__(self,converter,selected):
-        super(InstallerConverter_Apply, self).__init__()
+    def __init__(self, converter):
+        super().__init__()
         self.converter = converter
-        #--Add asterisks to indicate the number of unselected archives that the BCF uses
         self.dispName = self.converter.fullPath.sbody
-        self._selected = selected
 
     @property
     def link_text(self):
@@ -1510,11 +1508,9 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
             return False
-        #--Otherwise add each link in alphabetical order, and
-        #--indicate the number of additional, unselected archives
-        #--that the converter requires
+        #--Otherwise add each link in alphabetical order
         for converter in sorted(linkSet, key=lambda x: x.fullPath.tail):
-            self.links.append(InstallerConverter_Apply(converter, selected))
+            self.links.append(InstallerConverter_Apply(converter))
         return True
 
 class _Installer_TypeOnlyMenu(AppendableLink, balt.MenuLink):

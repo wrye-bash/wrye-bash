@@ -75,7 +75,8 @@ screen_infos: ScreenInfos | None = None
 def data_tracking_stores() -> Iterable[FileInfos]:
     """Return an iterable containing all data stores that keep track of the
     Data folder and which files in it are owned by which BAIN package."""
-    return modInfos, iniInfos, bsaInfos, screen_infos
+    return (s for s in (modInfos, iniInfos, bsaInfos, screen_infos) if
+            s is not None)
 
 #--Header tags
 # re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
@@ -1492,7 +1493,7 @@ class DataStore(DataDict):
         deleted/hidden."""
         return fn_items
 
-    def delete_refresh(self, deleted, deleted2, check_existence):
+    def delete_refresh(self, del_paths, deleted2, check_existence):
         raise NotImplementedError
 
     def refresh(self): raise NotImplementedError
@@ -1629,22 +1630,22 @@ class TableFileInfos(DataStore):
             for filePath in list(paths_to_keys):
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
-        self._notify_bain(deleted=paths_to_keys)
+        self._notify_bain(del_set=paths_to_keys)
         return list(paths_to_keys.values())
 
-    def _notify_bain(self, deleted: set[Path] = frozenset(),
+    def _notify_bain(self, del_set: set[Path] = frozenset(),
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
         """Note that all of these parameters need to be absolute paths!"""
         if self._bain_notify:
-            InstallersData.notify_external(deleted=deleted, altered=altered,
+            InstallersData.notify_external(del_set=del_set, altered=altered,
                                            renamed=renamed)
 
     def _additional_deletes(self, fileInfo, toDelete): pass
 
     def save(self):
         # items deleted outside Bash
-        for deleted in set(self.table) - set(self):
-            del self.table[deleted]
+        for del_key in set(self.table) - set(self):
+            del self.table[del_key]
         self.table.save()
 
     def rename_operation(self, member_info, newName):
@@ -1748,14 +1749,14 @@ class FileInfos(TableFileInfos):
         :param paths_to_keys: a dict mapping full paths to the keys
         """
         #--Table
-        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                             check_existence)
-        if not deleted: return deleted
-        for del_fn in deleted:
+        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
+                                                  check_existence)
+        if not deleted_keys: return deleted_keys
+        for del_fn in deleted_keys:
             self.pop(del_fn, None)
             self.corrupted.pop(del_fn, None)
             self.table.pop(del_fn, None)
-        return deleted
+        return deleted_keys
 
     def _additional_deletes(self, fileInfo, toDelete):
         #--Backups
@@ -1976,17 +1977,17 @@ class INIInfos(TableFileInfos):
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
-        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                             check_existence)
-        if not deleted: return deleted
-        for del_fn in deleted:
+        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
+                                                  check_existence)
+        if not deleted_keys: return deleted_keys
+        for del_fn in deleted_keys:
             self.pop(del_fn, None)
             self.table.delRow(del_fn)
         if not _in_refresh: # re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
                 default_info.reset_status()
-        return deleted
+        return deleted_keys
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
@@ -3196,15 +3197,15 @@ class ModInfos(FileInfos):
         self.lo_deactivate(filenames, doSave=False) ##: do this *after* deletion?
         return super(ModInfos, self).files_to_delete(filenames)
 
-    def delete_refresh(self, deleted, paths_to_keys, check_existence,
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = super(ModInfos, self).delete_refresh(deleted, paths_to_keys,
-                                                       check_existence)
-        if not deleted: return
+        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
+                                              check_existence)
+        if not deleted_keys: return
         # temporarily track deleted mods so BAIN can update its UI
         if _in_refresh: return
-        self._lo_caches_remove_mods(deleted)
+        self._lo_caches_remove_mods(deleted_keys)
         self.cached_lo_save_all()
         self._refreshBadNames()
         self._reset_info_sets()

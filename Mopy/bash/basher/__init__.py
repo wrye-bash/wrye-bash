@@ -887,11 +887,11 @@ class INITweakLineCtrl(INIListCtrl):
             #--Line
             self.InsertItem(i, line[0])
             #--Line color
-            status, deleted = line[4], line[6]
+            status, is_deleted = line[4], line[6]
             if status == -10: color = colors[u'tweak.bkgd.invalid']
             elif status == 10: color = colors[u'tweak.bkgd.mismatched']
             elif status == 20: color = colors[u'tweak.bkgd.matched']
-            elif deleted: color = colors[u'tweak.bkgd.mismatched']
+            elif is_deleted: color = colors[u'tweak.bkgd.mismatched']
             else: color = Color.from_wx(self.GetBackgroundColour())
             color = color.to_rgba_tuple()
             self.SetItemBackgroundColour(i, color)
@@ -3455,7 +3455,8 @@ class InstallersPanel(BashTab):
             if settings.get('bash.installers.updatedCRCs', True): # only checked here
                 settings['bash.installers.updatedCRCs'] = False
                 self._data_dir_scanned = False
-            do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
+            do_refresh = scan_data_dir = scan_data_dir or not \
+                self._data_dir_scanned
             refresh_info = None
             if self.frameActivated: # otherwise we are called directly
                 folders, files = map(list,
@@ -3873,8 +3874,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         newTabs = set(tabInfo) - set(newOrder)
         for n in newTabs: newOrder[n] = tabs_enabled_ordered[n]
         # delete any removed tabs
-        deleted = set(newOrder) - set(tabInfo)
-        for d in deleted: del newOrder[d]
+        removed_tabs = set(newOrder) - set(tabInfo)
+        for d in removed_tabs: del newOrder[d]
         # Ensure the 'Mods' tab is always shown
         newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
@@ -4288,7 +4289,7 @@ class BashFrame(WindowFrame):
                              'may be active at the same time.')
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
                 warn_msg % {'max_regular_plugins': load_order.max_espms(),
-                            'max_esl_plugins': load_order.max_esls(), },
+                            'max_esl_plugins': load_order.max_esls()},
                 bosh.modInfos.selectedExtra))
             bosh.modInfos.selectedExtra = set()
         ##: Disable this message for now, until we're done testing if we can

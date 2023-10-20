@@ -190,7 +190,7 @@ class AIniFile(ListInfo):
             maDeletedSetting = reDeleted.match(line)
             maSection = reSection.match(line)
             maSetting = reSetting.match(line)
-            deleted = False
+            is_deleted = False
             setting = None
             value = u''
             status = 0
@@ -221,12 +221,12 @@ class AIniFile(ListInfo):
                     status = 10
                 elif section in ci_deletedSettings and setting in ci_deletedSettings[section]:
                     lineNo = ci_deletedSettings[section][setting]
-                deleted = True
+                is_deleted = True
             else:
                 if reComment.sub('', line).strip():
                     status = -10
             lines.append((line, section, setting, value, status, lineNo,
-                          deleted))
+                          is_deleted))
         return lines
 
 class IniFile(AIniFile, AFile):
