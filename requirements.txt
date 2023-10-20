@@ -13,6 +13,8 @@ lxml==4.9.3
 packaging==23.2
 # For PDF support in the doc browser
 PyMuPDF==1.23.5
+# For reflink copies (does not support Windows/ReFS yet)
+reflink==0.2.2; sys_platform != 'win32'
 # For various Internet-based functionality
 requests==2.31.0
 # For sending files to the recycle bin on non-Windows platforms

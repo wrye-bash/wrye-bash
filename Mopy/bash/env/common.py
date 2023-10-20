@@ -35,6 +35,7 @@ import stat
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import partial
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 from typing import TypeVar, Any
 
@@ -286,10 +287,11 @@ class FileOperationType(Enum):
     DELETE = 'DELETE'
 
 def _retry(operation: Callable[..., T], from_path: Path, to_path: Path) -> T:
-    """Helper to auto-retry an operation if it fails due to a missing folder."""
+    """Helper to auto-retry an operation if it fails due to a missing
+    folder."""
     try:
         return operation(from_path, to_path)
-    except FileNotFoundError:
+    except OSError: # reflink may raise OSError instead of FileNotFoundError
         to_path.head.makedirs()
         return operation(from_path, to_path)
 
@@ -332,7 +334,9 @@ def __copy_or_move(sources_dests: dict[Path, Path | Iterable[Path]],
                         # a directory, this is always the case
                         shutil.move(src_path, to_path.head)
                     else:
-                        _retry(shutil.copytree, src_path, to_path)
+                        copy_op = partial(shutil.copytree,
+                            copy_function=bolt.copy_or_reflink2)
+                        _retry(copy_op, src_path, to_path)
                     operation_results[from_path_s] = to_path_s
             elif src_path.is_file():
                 # Copying a file: check for collisions if the user wants
@@ -345,7 +349,7 @@ def __copy_or_move(sources_dests: dict[Path, Path | Iterable[Path]],
                         if not ask_confirm(parent, msg, _('Overwrite file?')):
                             continue
                 # Perform the copy/move
-                _retry(shutil.move if should_move else shutil.copy2,
+                _retry(shutil.move if should_move else bolt.copy_or_reflink2,
                        src_path, to_path)
                 operation_results[from_path_s] = to_path_s
             else:

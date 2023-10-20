@@ -56,6 +56,12 @@ try:
 except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
+try:
+    from reflink import reflink, ReflinkImpossibleError
+except ImportError:
+    # Optional, no reflink copies will be possible if missing
+    reflink = ReflinkImpossibleError = None
+
 from . import exception
 from .wbtemp import TempFile
 
@@ -1228,16 +1234,18 @@ class Path(os.PathLike):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
         if self.is_dir():
-            shutil.copytree(self._s,destName._s)
+            ##: Does not preserve mtimes - is that a problem?
+            shutil.copytree(self._s, destName._s,
+                copy_function=copy_or_reflink2)
             return
         try:
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
         except FileNotFoundError:
             if not (dest_par := destName.shead) or os.path.exists(dest_par):
                 raise
             os.makedirs(dest_par)
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
     def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
@@ -2869,6 +2877,42 @@ def readme_url(mopy, advanced=False, skip_local=False):
         # Fallback to hosted version
         readme = f'http://wrye-bash.github.io/docs/{readme_name}'
     return readme.replace(u' ', u'%20')
+
+# Reflinks --------------------------------------------------------------------
+if reflink is not None:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            reflink(a, b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            # Don't alter b itself in case we need to fall back to copy2
+            if os.path.isdir(final_b := b):
+                final_b = os.path.join(final_b, os.path.basename(a))
+            reflink(a, final_b)
+            shutil.copystat(a, final_b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copy2(a, b)
+else:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copy2(a, b)
 
 # WryeText --------------------------------------------------------------------
 html_start = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
