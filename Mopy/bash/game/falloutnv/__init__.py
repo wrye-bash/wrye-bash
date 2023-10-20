@@ -536,7 +536,10 @@ class GOGFalloutNVGameInfo(GOGMixin, _AFalloutNVGameInfo):
 class SteamFalloutNVGameInfo(SteamMixin, _AFalloutNVGameInfo):
     """GameInfo override for the Steam version of Fallout New Vegas."""
     class St(_AFalloutNVGameInfo.St):
-        steam_ids = [22380]
+        steam_ids = [
+            22380, # Fallout: New Vegas
+            22490, # Fallout: New Vegas PCR
+        ]
 
 class WSFalloutNVGameInfo(WindowsStoreMixin, _AFalloutNVGameInfo):
     """GameInfo override for the Windows Store version of Fallout New Vegas."""

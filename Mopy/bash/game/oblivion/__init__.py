@@ -1235,7 +1235,10 @@ class GOGOblivionGameInfo(GOGMixin, AOblivionGameInfo):
 class SteamOblivionGameInfo(SteamMixin, AOblivionGameInfo):
     """GameInfo override for the Steam version of Oblivion."""
     class St(AOblivionGameInfo.St):
-        steam_ids = [22330]
+        steam_ids = [
+            22330,  # Oblivion - Game of the Year Edition
+            900883, # Oblivion - Game of the Year Edition Deluxe
+        ]
 
 class WSOblivionGameInfo(WindowsStoreMixin, AOblivionGameInfo):
     """GameInfo override for the Windows Store version of Oblivion."""

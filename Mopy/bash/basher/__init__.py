@@ -2685,6 +2685,9 @@ class InstallersList(UIList):
         """Renamed some installers"""
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
         selected = self.get_selected_infos_filtered()
+        if not selected:
+            # Sometimes seems to happen on wxGTK, simply abort
+            return EventResult.CANCEL
         # all selected have common type! enforced in OnBeginEditLabel
         newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)

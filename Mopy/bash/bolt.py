@@ -3217,6 +3217,10 @@ class WryeText:
                             anchor += str(count)
                         else:
                             anchor = anchor[:-1] + str(count)
+                    # Clean out double underscores from the final anchor,
+                    # otherwise we'd turn those into <b> tags down below
+                    while '__' in anchor:
+                        anchor = anchor.replace('__', '_')
                     anchorlist.append(anchor)
                     line = (headFormatNA,headFormat)[anchorHeaders] % (level_,anchor,text,level_)
                     if addContents: contents.append((level_,anchor,text))

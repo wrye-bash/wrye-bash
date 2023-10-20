@@ -130,6 +130,10 @@ _object_template_distributor = {
     b'OBTE': {
         b'FULL': 'ot_combinations',
     },
+    # For NPC_, which has its main FULL after the object template
+    b'STOP': {
+        b'FULL': 'full',
+    }
 }
 
 #------------------------------------------------------------------------------
