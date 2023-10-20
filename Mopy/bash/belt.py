@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import os
 import traceback
-from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
 from .ScriptParser import error, PreParser
@@ -470,182 +469,29 @@ class PageVersions(PageInstaller):
 
 class WryeParser(PreParser):
     """A derived class of Parser, for handling BAIN install wizards."""
-    codeboxRemaps = {
-        u'Link': {
-            # These are links that have different names than their text
-            u'SelectOne':u'SelectOne1',
-            u'SelectMany':u'SelectMany1',
-            u'=':u'Assignment',
-            u'+=':u'CompountAssignmentetc',
-            u'-=':u'CompountAssignmentetc',
-            u'*=':u'CompountAssignmentetc',
-            u'/=':u'CompountAssignmentetc',
-            u'^=':u'CompountAssignmentetc',
-            u'+':u'Addition',
-            u'-':u'Subtraction',
-            u'*':u'Multiplication',
-            u'/':u'Division',
-            u'^':u'Exponentiation',
-            u'and':u'Andampand',
-            u'&':u'Andampand',
-            u'or':u'Oror',
-            u'|':u'Oror',
-            u'not':u'Notnot',
-            u'!':u'Notnot',
-            u'in':u'Inin',
-            u'in:':u'CaseInsensitiveInin',
-            u'==':u'Equal',
-            u'==:':u'CaseinsensitiveEqual',
-            u'!=':u'NotEqual',
-            u'!=:':u'CaseinsensitiveNotEqual',
-            u'>=':u'GreaterThanorEqualgt',
-            u'>=:':u'CaseInsensitiveGreaterThanorEqualgt',
-            u'>':u'GreaterThangt',
-            u'>:':u'CaseInsensitiveGreaterThangt',
-            u'<=':u'LessThanorEquallt',
-            u'<=:':u'CaseInsensitiveLessThanorEquallt',
-            u'<':u'LessThanlt',
-            u'<:':u'CaseInsensitiveLessThanlt',
-            u'.':u'DotOperator',
-            u'SubPackages':u'ForContinueBreakEndFor',
-        },
-        u'Text': {
-            # These are symbols that need to be replaced to be xhtml compliant
-            u'&':u'&amp;',
-            u'<':u'&lt;',
-            u'<:':u'&lt;:',
-            u'<=':u'&lt;=',
-            u'<=:':u'&lt;=:',
-            u'>':u'&gt;',
-            u'>:':u'&gt;:',
-            u'>=':u'&gt;=',
-            u'>=:':u'&gt;=:',
-        },
-        u'Color': {
-            # These are items that we want colored differently
-            u'in':u'blue',
-            u'in:':u'blue',
-            u'and':u'blue',
-            u'or':u'blue',
-            u'not':u'blue',
-        },
-    }
 
-    @staticmethod
-    def codebox(lines,pre=True,br=True):
-        self = WryeParser(None, None, None, codebox=True) ##: drop this !
-        def colorize(text_, color=u'black', link=True):
-            href = text_
-            text_ = WryeParser.codeboxRemaps[u'Text'].get(text_, text_)
-            if color != u'black' or link:
-                color = WryeParser.codeboxRemaps[u'Color'].get(text_, color)
-                text_ = u'<span style="color:%s;">%s</span>' % (color, text_)
-            if link:
-                href = WryeParser.codeboxRemaps[u'Link'].get(href,href)
-                text_ = u'<a href="#%s">%s</a>' % (href, text_)
-            return text_
-        self.cLine = 0
-        outLines = []
-        lastBlank = 0
-        while self.cLine < len(lines):
-            line = lines[self.cLine]
-            self.cLine += 1
-            self.tokens = []
-            self.TokenizeLine(line)
-            tokens = self.tokens
-            line = line.strip(u'\r\n')
-            lastEnd = 0
-            dotCount = 0
-            outLine = u''
-            for i in tokens:
-                start,stop = i.pos
-                if start is not None and stop is not None:
-                    # Not an inserted token from the parser
-                    if i.type == ScriptParser.STRING:
-                        start -= 1
-                        stop  += 1
-                    # Padding
-                    padding = line[lastEnd:start]
-                    outLine += padding
-                    lastEnd = stop
-                    # The token
-                    token_txt = line[start:stop]
-                    # Check for ellipses
-                    if i.text == u'.':
-                        dotCount += 1
-                        if dotCount == 3:
-                            dotCount = 0
-                            outLine += u'...'
-                        continue
-                    else:
-                        while dotCount > 0:
-                            outLine += colorize(u'.')
-                            dotCount -= 1
-                    if i.type == ScriptParser.KEYWORD:
-                        outLine += colorize(token_txt,u'blue')
-                    elif i.type == ScriptParser.FUNCTION:
-                        outLine += colorize(token_txt,u'purple')
-                    elif i.type in (ScriptParser.INTEGER, ScriptParser.DECIMAL):
-                        outLine += colorize(token_txt,u'cyan',False)
-                    elif i.type == ScriptParser.STRING:
-                        outLine += colorize(token_txt,u'brown',False)
-                    elif i.type == ScriptParser.OPERATOR:
-                        outLine += colorize(i.text)
-                    elif i.type == ScriptParser.CONSTANT:
-                        outLine += colorize(token_txt,u'cyan')
-                    elif i.type == ScriptParser.NAME:
-                        outLine += f'<i>{token_txt}</i>'
-                    else:
-                        outLine += token_txt
-            if self.runon:
-                outLine += u' \\'
-            if lastEnd < len(line):
-                comments = line[lastEnd:]
-                if u';' in comments:
-                    outLine += colorize(comments,u'green',False)
-            if outLine == u'':
-                if len(outLines) != 0:
-                    lastBlank = len(outLines)
-                else:
-                    continue
-            else:
-                lastBlank = 0
-            if pre:
-                outLine = f'<span class="code-n" style="display: inline;">' \
-                          f'{outLine}</span>\n'
-            else:
-                if br:
-                    outLine = f'<span class="code-n">{outLine}</span><br>\n'
-                else:
-                    outLine = f'<span class="code-n">{outLine}</span>'
-            outLines.append(outLine)
-        if lastBlank:
-            outLines = outLines[:lastBlank]
-        return outLines
-
-    def __init__(self, wiz_parent, installer, bAuto, codebox=False):
+    def __init__(self, wiz_parent, installer, bAuto):
         super().__init__()
-        if not codebox:
-            self._wiz_parent = wiz_parent
-            self.installer = installer
-            self.bArchive = installer.is_archive
-            self._path = installer.fn_key if installer else None
-            if installer and installer.fileRootIdex:
-                root_path = installer.extras_dict.get(u'root_path', u'')
-                self._path = os.path.join(self._path, root_path)
-            self.bAuto = bAuto
-            self.page = None
-            self.choices = []
-            self.choiceIdex = -1
-            self.parser_finished = False
-            ##: Figure out why BAIN insists on including an empty sub-package
-            # everywhere. Broke this part of the code, hence the 'if s' below.
-            self.sublist = bolt.LowerDict.fromkeys( # FIXME FNDict??
-                (s for s in installer.subNames if s), False)
-            # all plugins mapped to their must-install state - initially False
-            self._plugin_enabled = FNDict.fromkeys( # type:FNDict[(f:=FName),f]
-                sorted(fn_ for sub_plugins in installer.espmMap.values()
-                       for fn_ in sub_plugins), False)
+        self._wiz_parent = wiz_parent
+        self.installer = installer
+        self.bArchive = installer.is_archive
+        self._path = installer.fn_key if installer else None
+        if installer and installer.fileRootIdex:
+            root_path = installer.extras_dict.get('root_path', '')
+            self._path = os.path.join(self._path, root_path)
+        self.bAuto = bAuto
+        self.page = None
+        self.choices = []
+        self.choiceIdex = -1
+        self.parser_finished = False
+        ##: Figure out why BAIN insists on including an empty sub-package
+        # everywhere. Broke this part of the code, hence the 'if s' below.
+        self.sublist = bolt.LowerDict.fromkeys(  # FIXME FNDict??
+            (s for s in installer.subNames if s), False)
+        # all plugins mapped to their must-install state - initially False
+        self._plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
+            sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
+                   sub_plugins), False)
 
     def Continue(self):
         self.page = None
@@ -885,7 +731,7 @@ class WryeParser(PreParser):
         if len(args) % 3:
             error(MISSING_ARGS % name_)
         images_ = []
-        titles = OrderedDict()
+        titles = {}
         descs = []
         image_paths = []
         while len(args):
@@ -1052,5 +898,3 @@ class WryeParser(PreParser):
 
     def kwdCancel(self, msg=_(u'No reason given')):
         self.page = PageError(self._wiz_parent, _(u'The installer wizard was canceled:'), msg)
-
-bolt.codebox = WryeParser.codebox

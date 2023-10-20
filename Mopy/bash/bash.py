@@ -466,9 +466,6 @@ def _main(opts, wx_locale, wxver):
         msg2 = _('Done')
         try: print(msg1)
         except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
-        ##: belt does bolt.codebox = WryeParser.codebox - FIXME decouple!
-        # noinspection PyUnresolvedReferences
-        from . import belt
         bolt.WryeText.genHtml(opts.genHtml)
         try: print(msg2)
         except UnicodeError: print(msg2.encode(bolt.Path.sys_fs_enc))

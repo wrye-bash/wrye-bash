@@ -2612,7 +2612,7 @@ class StringTable(dict):
 #------------------------------------------------------------------------------
 _esub_component = re.compile(r'\$(\d+)\(([^)]+)\)')
 _rsub_component = re.compile(r'\\(\d+)')
-_plain_component = re.compile(r'[^\\\$]+', re.U)
+_plain_component = re.compile(r'[^\\\$]+')
 
 def build_esub(esub_str):
     r"""Builds an esub (enhanced substitution) callable and returns it. These
@@ -2930,7 +2930,6 @@ td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; f
 body { background-color: #ffffcc; }
 """
 
-codebox = None
 class WryeText:
     """This class provides a function for converting wtxt text files to html
     files.
@@ -2988,7 +2987,6 @@ class WryeText:
             srcPath = outPath = None
         # Setup
         outWrite = out.write
-
         css_dirs = (GPath(d) for d in css_dirs)
         # Setup ---------------------------------------------------------
         #--Headers
@@ -3006,6 +3004,8 @@ class WryeText:
         reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
         codeLines = None
         codeboxLines = None
+        from .ScriptParser import PreParser
+        codebox = PreParser().codebox
         def subCode(ma_code):
             try:
                 return ' '.join(codebox([ma_code.group(1)], False, False))
@@ -3099,56 +3099,55 @@ class WryeText:
         for line in ins:
             line = html.escape(to_unix_newlines(line))
             #--Codebox -----------------------------------
-            if codebox:
-                if codeboxLines is not None:
-                    maCodeBoxEnd = reCodeBoxEnd.match(line)
-                    if maCodeBoxEnd:
-                        codeboxLines.append(maCodeBoxEnd.group(1))
-                        outLinesAppend(u'<pre style="width:850px;">')
-                        try:
-                            codeboxLines = codebox(codeboxLines)
-                        except:
-                            pass
-                        outLinesExtend(codeboxLines)
-                        outLinesAppend(u'</pre>\n')
-                        codeboxLines = None
-                        continue
-                    else:
-                        codeboxLines.append(line)
-                        continue
-                maCodeBox = reCodeBox.match(line)
-                if maCodeBox:
-                    outLines.append(u'<pre style="width:850px;">')
+            if codeboxLines is not None:
+                maCodeBoxEnd = reCodeBoxEnd.match(line)
+                if maCodeBoxEnd:
+                    codeboxLines.append(maCodeBoxEnd.group(1))
+                    outLinesAppend('<pre style="width:850px;">')
                     try:
-                        outLinesExtend(codebox([maCodeBox.group(1)]))
+                        codeboxLines = codebox(codeboxLines)
                     except:
-                        outLinesAppend(maCodeBox.group(1))
-                    outLinesAppend(u'</pre>\n')
+                        pass
+                    outLinesExtend(codeboxLines)
+                    outLinesAppend('</pre>\n')
+                    codeboxLines = None
                     continue
-                maCodeBoxStart = reCodeBoxStart.match(line)
-                if maCodeBoxStart:
-                    codeboxLines = [maCodeBoxStart.group(1)]
+                else:
+                    codeboxLines.append(line)
                     continue
+            maCodeBox = reCodeBox.match(line)
+            if maCodeBox:
+                outLines.append('<pre style="width:850px;">')
+                try:
+                    outLinesExtend(codebox([maCodeBox.group(1)]))
+                except:
+                    outLinesAppend(maCodeBox.group(1))
+                outLinesAppend('</pre>\n')
+                continue
+            maCodeBoxStart = reCodeBoxStart.match(line)
+            if maCodeBoxStart:
+                codeboxLines = [maCodeBoxStart.group(1)]
+                continue
             #--Code --------------------------------------
-                if codeLines is not None:
-                    maCodeEnd = reCodeEnd.match(line)
-                    if maCodeEnd:
-                        codeLines.append(maCodeEnd.group(1))
-                        try:
-                            codeLines = codebox(codeLines,False)
-                        except:
-                            pass
-                        outLinesExtend(codeLines)
-                        codeLines = None
-                        line = maCodeEnd.group(2)
-                    else:
-                        codeLines.append(line)
-                        continue
-                line = reCode.sub(subCode,line)
-                maCodeStart = reCodeStart.match(line)
-                if maCodeStart:
-                    line = maCodeStart.group(1)
-                    codeLines = [maCodeStart.group(2)]
+            if codeLines is not None:
+                maCodeEnd = reCodeEnd.match(line)
+                if maCodeEnd:
+                    codeLines.append(maCodeEnd.group(1))
+                    try:
+                        codeLines = codebox(codeLines, False)
+                    except:
+                        pass
+                    outLinesExtend(codeLines)
+                    codeLines = None
+                    line = maCodeEnd.group(2)
+                else:
+                    codeLines.append(line)
+                    continue
+            line = reCode.sub(subCode, line)
+            maCodeStart = reCodeStart.match(line)
+            if maCodeStart:
+                line = maCodeStart.group(1)
+                codeLines = [maCodeStart.group(2)]
             #--Preformatted? -----------------------------
             maPreBegin = rePreBegin.search(line)
             maPreEnd = rePreEnd.search(line)

@@ -1489,3 +1489,155 @@ class PreParser(Parser):
         self.notes = []
         self.plugin_renames = {}
         self.iniedits = defaultdict(bolt.LowerDict)
+
+    # codebox stuff
+    codeboxRemaps = {
+        'Link': {
+            # These are links that have different names than their text
+            'SelectOne': 'SelectOne1',
+            'SelectMany': 'SelectMany1',
+            '=': 'Assignment',
+            '+=': 'CompountAssignmentetc',
+            '-=': 'CompountAssignmentetc',
+            '*=': 'CompountAssignmentetc',
+            '/=': 'CompountAssignmentetc',
+            '^=': 'CompountAssignmentetc',
+            '+': 'Addition',
+            '-': 'Subtraction',
+            '*': 'Multiplication',
+            '/': 'Division',
+            '^': 'Exponentiation',
+            'and': 'Andampand',
+            '&': 'Andampand',
+            'or': 'Oror',
+            '|': 'Oror',
+            'not': 'Notnot',
+            '!': 'Notnot',
+            'in': 'Inin',
+            'in:': 'CaseInsensitiveInin',
+            '==': 'Equal',
+            '==:': 'CaseinsensitiveEqual',
+            '!=': 'NotEqual',
+            '!=:': 'CaseinsensitiveNotEqual',
+            '>=': 'GreaterThanorEqualgt',
+            '>=:': 'CaseInsensitiveGreaterThanorEqualgt',
+            '>': 'GreaterThangt',
+            '>:': 'CaseInsensitiveGreaterThangt',
+            '<=': 'LessThanorEquallt',
+            '<=:': 'CaseInsensitiveLessThanorEquallt',
+            '<': 'LessThanlt',
+            '<:': 'CaseInsensitiveLessThanlt',
+            '.': 'DotOperator',
+            'SubPackages': 'ForContinueBreakEndFor',
+        },
+        'Text': {
+            # These are symbols that need to be replaced to be xhtml compliant
+            '&': '&amp;',
+            '<': '&lt;',
+            '<:': '&lt;:',
+            '<=': '&lt;=',
+            '<=:': '&lt;=:',
+            '>': '&gt;',
+            '>:': '&gt;:',
+            '>=': '&gt;=',
+            '>=:': '&gt;=:',
+        },
+        'Color': {
+            # These are items that we want colored differently
+            'in': 'blue',
+            'in:': 'blue',
+            'and': 'blue',
+            'or': 'blue',
+            'not': 'blue',
+        },
+    }
+
+    def codebox(self, lines, pre=True, br=True):
+        def colorize(text_, color='black', link=True):
+            href = text_
+            text_ = self.codeboxRemaps['Text'].get(text_, text_)
+            if color != 'black' or link:
+                color = self.codeboxRemaps['Color'].get(text_, color)
+                text_ = '<span style="color:%s;">%s</span>' % (color, text_)
+            if link:
+                href = self.codeboxRemaps['Link'].get(href,href)
+                text_ = f'<a href="#{href}">{text_}</a>'
+            return text_
+        self.cLine = 0
+        outLines = []
+        lastBlank = 0
+        while self.cLine < len(lines):
+            line = lines[self.cLine]
+            self.cLine += 1
+            self.tokens = []
+            self.TokenizeLine(line)
+            tokens = self.tokens
+            line = line.strip('\r\n')
+            lastEnd = 0
+            dotCount = 0
+            outLine = ''
+            for i in tokens:
+                start,stop = i.pos
+                if start is not None and stop is not None:
+                    # Not an inserted token from the parser
+                    if i.type == STRING:
+                        start -= 1
+                        stop  += 1
+                    # Padding
+                    padding = line[lastEnd:start]
+                    outLine += padding
+                    lastEnd = stop
+                    # The token
+                    token_txt = line[start:stop]
+                    # Check for ellipses
+                    if i.text == '.':
+                        dotCount += 1
+                        if dotCount == 3:
+                            dotCount = 0
+                            outLine += '...'
+                        continue
+                    else:
+                        while dotCount > 0:
+                            outLine += colorize('.')
+                            dotCount -= 1
+                    if i.type == KEYWORD:
+                        outLine += colorize(token_txt,'blue')
+                    elif i.type == FUNCTION:
+                        outLine += colorize(token_txt,'purple')
+                    elif i.type in (INTEGER, DECIMAL):
+                        outLine += colorize(token_txt,'cyan',False)
+                    elif i.type == STRING:
+                        outLine += colorize(token_txt,'brown',False)
+                    elif i.type == OPERATOR:
+                        outLine += colorize(i.text)
+                    elif i.type == CONSTANT:
+                        outLine += colorize(token_txt,'cyan')
+                    elif i.type == NAME:
+                        outLine += f'<i>{token_txt}</i>'
+                    else:
+                        outLine += token_txt
+            if self.runon:
+                outLine += ' \\'
+            if lastEnd < len(line):
+                comments = line[lastEnd:]
+                if ';' in comments:
+                    outLine += colorize(comments, 'green', False)
+            if outLine == '':
+                if len(outLines) != 0:
+                    lastBlank = len(outLines)
+                else:
+                    continue
+            else:
+                lastBlank = 0
+            if pre:
+                outLine = f'<span class="code-n" style="display: inline;">' \
+                          f'{outLine}</span>\n'
+            else:
+                if br:
+                    outLine = f'<span class="code-n">{outLine}</span><br>\n'
+                else:
+                    outLine = f'<span class="code-n">{outLine}</span>'
+            outLines.append(outLine)
+        if lastBlank:
+            outLines = outLines[:lastBlank]
+        return outLines
