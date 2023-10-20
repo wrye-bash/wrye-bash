@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """Menu items for the _item_ menu of the BSAs tab - their window attribute
-points to BashFrame.bsaList singleton."""
+points to BsaList singleton."""
 
 from .. import archives, bass
 from ..balt import ItemLink, Progress

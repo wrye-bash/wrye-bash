@@ -24,6 +24,7 @@ import re
 
 from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
+from ..bass import Store
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
 from ..wbtemp import TempFile
@@ -78,7 +79,7 @@ class Files_Unhide(ItemLink):
             self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
-                detail_item=next(iter(moved)), refreshSaves=True)
+                detail_item=next(iter(moved)), refresh_others=Store.SAVES.DO())
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -140,8 +141,7 @@ class File_Duplicate(ItemLink):
             ##: refresh_infos=True for saves - would love to specify something
             # like refresh_only=dests - #353
             fileInfos.refresh()
-            self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
-                                  refreshSaves=False) #(dup) saves not affected
+            self.window.RefreshUI(redraw=dests, detail_item=dests[-1])
             self.window.SelectItemsNoCallback(dests)
 
     def _disallow_copy(self, fileInfo):
@@ -258,7 +258,7 @@ class File_RevertToSnapshot(OneItemLink):
                     destPath.replace_with_temp(known_good_copy)
                     self._data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
+        self.window.RefreshUI(redraw=[fileName])
 
 #------------------------------------------------------------------------------
 class File_Backup(ItemLink):
@@ -321,7 +321,7 @@ class _RevertBackup(OneItemLink):
                     info_path.replace_with_temp(known_good_copy)
                     self._data_store.new_info(sel_file, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
+        self.window.RefreshUI(redraw=[sel_file])
 
 class File_RevertToBackup(MultiLink):
     """Revert to last or first backup."""
@@ -347,7 +347,7 @@ class File_Redate(ItemLink):
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
         self._perform_refresh()
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):

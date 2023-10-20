@@ -22,17 +22,17 @@
 # =============================================================================
 
 """Menu items for the main and item menus of the saves tab - their window
-attribute points to BashFrame.saveList singleton."""
+attribute points to SaveList singleton."""
 
 import io
 import re
 import shutil
 
-from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
+from ..bass import Store
 from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
@@ -64,7 +64,8 @@ class Saves_ProfilesData(balt.ListEditorData):
         """Initialize."""
         self.baseSaves = bass.dirs[u'saveBase'].join(u'Saves')
         #--GUI
-        balt.ListEditorData.__init__(self,parent)
+        super().__init__(parent)
+        self._parent_list = parent
         self.showAdd    = True
         self.showRename = True
         self.showRemove = True
@@ -107,7 +108,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=True)
+            self._parent_list.set_local_save(newSaves, refreshSaveInfos=True)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -183,13 +184,12 @@ class Saves_Profiles(ChoiceLink):
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
             with BusyCursor():
-                Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
+                self.window.set_local_save(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
-                Link.Frame.modList.RefreshUI(refreshSaves=False,
-                                             focus_list=False)
                 bosh.saveInfos.refresh()
                 self.window.DeleteAll() # let call below repopulate
-                self.window.RefreshUI(detail_item=None)
+                self.window.RefreshUI(detail_item=None,
+                                      refresh_others=Store.MODS.DO())
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_saves=True)
 
@@ -224,7 +224,7 @@ class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
         lo_warn_msg = self._lo_operation()
-        BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
+        self.window.RefreshUI(focus_list=False, refresh_others=Store.MODS.DO())
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)

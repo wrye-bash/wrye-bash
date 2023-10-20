@@ -23,6 +23,7 @@
 
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
+from collections import defaultdict
 from itertools import chain
 
 from . import Installers_Link
@@ -32,7 +33,6 @@ from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
 from ..gui import copy_text_to_clipboard, askYes
-from ..parsers import CsvParser
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            u'Installers_RefreshData', u'Installers_AddMarker',
@@ -93,11 +93,18 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
-        bosh.bsaInfos.refresh() # TODO: add bsas to BAIN refresh
+        ui_refresh = defaultdict(bool)
         with load_order.Unlock():
-            mods_changed = bosh.modInfos.refresh()
-        inis_changed = bosh.iniInfos.refresh()
-        ui_refresh = [bool(mods_changed), bool(inis_changed)]
+            for store in bosh.data_tracking_stores():
+                refresh_result = store.refresh()
+                ##: This is really ugly - refresh() should pick one type and
+                # return that consistently, not sometimes tuple[set, set, set]
+                # and sometimes bool - plus this is *duplicated in RefreshData
+                # now*!
+                if isinstance(refresh_result, tuple):
+                    refresh_result = any(refresh_result)
+                # May be an int etc.
+                ui_refresh[store.unique_store_key] = bool(refresh_result)
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -139,7 +146,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
@@ -173,12 +180,13 @@ class Installers_AnnealAll(Installers_Link):
     @balt.conversation
     def Execute(self):
         """Anneal all packages."""
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Annealing...')) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.issue_warnings(warn_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class Installers_UninstallAllPackages(Installers_Link):
@@ -190,12 +198,12 @@ class Installers_UninstallAllPackages(Installers_Link):
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_('Really uninstall all packages?')): return
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Uninstalling...')) as progress:
                 self.idata.bain_uninstall_all(ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -264,13 +272,13 @@ class Installers_CleanData(Installers_Link):
             unknown_files=all_unknown_files)
         if not ed_ok or not ed_unknown:
             return # Aborted by user or nothing left to clean, cancel
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Cleaning %(data_folder)s '
                                  'contents...') % mdir_fmt, f'\n{" " * 65}'):
                 self.idata.clean_data_dir(ed_unknown, ui_refresh)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):

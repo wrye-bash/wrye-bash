@@ -24,6 +24,8 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
+from collections import defaultdict
+from enum import Enum
 from typing import TYPE_CHECKING, NewType
 
 if TYPE_CHECKING:
@@ -72,3 +74,25 @@ def get_ini_option(ini_parser, option_key, section_key=u'General'):
     # fallback=default). section is case sensitive - key is not - return type
     # is str in py3
     return ini_parser.get(section_key, option_key, fallback=None)
+
+class Store(Enum):
+    """Inter panel communication - member values are the tab keys in tabInfo
+    and default enabled state, members order is the default tabs order."""
+    INSTALLERS = ('Installers', True)
+    MODS = ('Mods', True)
+    SAVES = ('Saves', True)
+    BSAS = ('BSAs', False)
+    INIS = ('INI Edits', True)
+    SCREENSHOTS = ('Screenshots', True)
+
+    def IF(self, is_changed):
+        """Decide IF a refresh of the respective UIList is needed -
+        bool(is_changed) is used to decide."""
+        return defaultdict(bool, {self: bool(is_changed)})
+
+    def DO(self):
+        """Unconditionally refresh the respective UIList."""
+        return self.IF(True)
+
+    def __repr__(self):
+        return self.name

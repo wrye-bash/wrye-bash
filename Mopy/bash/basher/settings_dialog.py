@@ -220,12 +220,12 @@ class _AFixedPage(_ASettingsPage, PanelWin): pass
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     """Color configuration page."""
     _keys_to_tabs = {
-        u'mods': _(u'[Mods] %s'),
-        u'screens': _(u'[Saves, Screens] %s'),
-        u'installers': _(u'[Installers] %s'),
-        u'ini': _(u'[INI Edits] %s'),
-        u'tweak': _(u'[INI Edits] %s'),
-        u'default': _(u'[All] %s'),
+        'mods': _('[Mods] %s'),
+        'screens': _('[Saves, Screenshots] %s'),
+        'installers': _('[Installers] %s'),
+        'ini': _('[INI Edits] %s'),
+        'tweak': _('[INI Edits] %s'),
+        'default': _('[All] %s'),
     }
 
     def __init__(self, parent, page_desc):

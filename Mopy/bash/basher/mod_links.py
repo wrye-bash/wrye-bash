@@ -21,13 +21,12 @@
 #
 # =============================================================================
 """Menu items for the _item_ menu of the mods tab - their window attribute
-points to BashFrame.modList singleton."""
+points to ModList singleton."""
 
 import copy
 import io
 import traceback
 from collections import defaultdict
-from collections.abc import Iterable
 from itertools import chain
 
 from .constants import settingDefaults
@@ -39,6 +38,7 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, MenuLink, OneItemLink, SeparatorLink, TransLink
+from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
@@ -225,7 +225,8 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
         bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(refreshSaves=True, detail_item=to_select[-1])
+        self.window.RefreshUI(detail_item=to_select[-1],
+                              refresh_others=Store.SAVES.DO())
         self.window.SelectItemsNoCallback(to_select)
 
 #------------------------------------------------------------------------------
@@ -261,7 +262,7 @@ class Mod_OrderByName(EnabledLink):
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
@@ -305,7 +306,8 @@ class Mod_Move(EnabledLink):
                                           self.selected)
         # Reorder the actives too to avoid bogus LO warnings
         bosh.modInfos.cached_lo_save_all()
-        self.window.RefreshUI(refreshSaves=True, detail_item=self.selected[0])
+        self.window.RefreshUI(detail_item=self.selected[0],
+                              refresh_others=Store.SAVES.DO())
 
 #------------------------------------------------------------------------------
 class Mod_Redate(File_Redate):
@@ -356,7 +358,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         return newName
 
     def _refresh(self, redraw): # editing mod labels should not affect saves
-        self.parent.RefreshUI(redraw=redraw, refreshSaves=False)
+        self.parent.RefreshUI(redraw=redraw)
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -416,7 +418,7 @@ class _Mod_Labels(ChoiceLink):
     addPrompt  = _(u'Add group:')
 
     def _refresh(self): # editing mod labels should not affect saves
-        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected)
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
@@ -572,7 +574,7 @@ class _Mod_Groups_Import(ItemLink):
         modGroups.read_csv(textPath)
         changed_count = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
-        self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
+        self.window.RefreshUI()
         self._showOk(_(u'Imported %d mod/groups (%d changed).') % (
             len(modGroups.mod_group), changed_count), _(u'Import Groups'))
 
@@ -828,7 +830,7 @@ class _GhostLink(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(to_ghost(fileName)) != oldGhost:
                 ghost_changed.append(fileName)
-        self.window.RefreshUI(redraw=ghost_changed, refreshSaves=False)
+        self.window.RefreshUI(redraw=ghost_changed)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, _help = _(u'Allow Ghosting'), _(u'Allow Ghosting for selected mods')
@@ -967,7 +969,7 @@ class Mod_CheckQualifications(ItemLink):
                 message.append(f'=== {mergeability_strs[chk_ty][chk_result]}')
                 for r in chk_reason:
                     message.append(f'.    {r}')
-        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected)
         self._showWryeLog('\n'.join(message), title=self._text)
 
 #------------------------------------------------------------------------------
@@ -996,7 +998,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
                 for mod in self.mods_to_reselect:
                     bosh.modInfos.lo_activate(mod, doSave=False)
                 bosh.modInfos.cached_lo_save_active()
-                self.window.RefreshUI(refreshSaves=True)
+                self.window.RefreshUI(refresh_others=Store.SAVES.DO())
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
@@ -1029,19 +1031,14 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             # we might have de-activated plugins so recalculate active sets
             bashed_patch.set_active_arrays(bosh.modInfos)
         missing, delinquent = bashed_patch.active_mm, bashed_patch.delinquent
-        def mk_error(warn_msg: str, warning_items: Iterable[FName]):
-            return MasterErrorsDialog.make_change_entry(
-                mods_list_images=self.window._icons, mods_change_desc=warn_msg,
-                decorated_plugins=self.window.decorate_tree_dict(
-                    {i: [] for i in sorted(warning_items)}))
         bp_master_errors = []
         if missing:
-            bp_master_errors.append(mk_error(_(
+            bp_master_errors.append(MasterErrorsDialog.make_change_entry(_(
                 'The following plugins have missing masters and are active. '
                 'This will cause the game to crash. Please disable them.'),
                 missing))
         if delinquent:
-            bp_master_errors.append(mk_error(_(
+            bp_master_errors.append(MasterErrorsDialog.make_change_entry(_(
                 'These mods have delinquent masters, which means they load '
                 'before their masters. This is undefined behavior. Please '
                 'adjust your load order to fix this.'), delinquent))
@@ -1079,7 +1076,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         self.mods_to_reselect = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
-            self.window.RefreshUI(refreshSaves=True)
+            self.window.RefreshUI(refresh_others=Store.SAVES.DO())
         return True
 
 #------------------------------------------------------------------------------
@@ -1129,7 +1126,7 @@ class _DirtyLink(ItemLink):
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'ignoreDirty',
                                     self._ignoreDirty(fileName))
-        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected)
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     _help = _("Set whether to check or not the selected plugins against "
@@ -1399,7 +1396,7 @@ class _CopyToLink(EnabledLink):
         if added:
             if do_save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=True, # just in case
+            self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
                                   detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
 
@@ -1504,9 +1501,8 @@ class _AFlipFlagLink(EnabledLink):
             # plugin that was affected to update the Indices column
             lowest_selected = min(self.selected,
                                   key=load_order.cached_lo_index_or_max)
-            self.window.RefreshUI(
-                redraw=load_order.cached_higher_loading(lowest_selected),
-                refreshSaves=True)
+            self.window.RefreshUI(refresh_others=Store.SAVES.DO(),
+                redraw=load_order.cached_higher_loading(lowest_selected))
 
 class Mod_FlipEsm(_AFlipFlagLink):
     """Add or remove the ESM flag. Extension must be .esp or .esu."""
@@ -1654,9 +1650,7 @@ class Mod_SetVersion(OneItemLink):
         self._selected_info.header.version = 0.8
         self._selected_info.header.setChanged()
         self._selected_info.writeHeader()
-        #--Repopulate
-        self.window.RefreshUI(redraw=[self._selected_item],
-                              refreshSaves=False) # version: why affect saves ?
+        self.window.RefreshUI(redraw=[self._selected_item])
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
@@ -1733,7 +1727,7 @@ class Mod_Face_Import(OneItemLink):
                 *srcInfo.header.image_parameters).ConvertToImage()
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
-        self.window.RefreshUI(refreshSaves=False) # import save to esp
+        self.window.RefreshUI()
         self._showOk(_(u'Imported face to: %s') % npc.eid, self._selected_item)
 
 #--Common

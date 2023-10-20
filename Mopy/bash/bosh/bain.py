@@ -44,6 +44,7 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, round_size, top_level_items
+from ..bass import Store
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -1203,22 +1204,18 @@ class _InstallerPackage(Installer, AFile):
         norm_ghostGet = Installer.getGhosted().get
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.ci_dest_sizeCrc
-        mods, inis, bsas = set(), set(), set()
+        from . import data_tracking_stores
+        affected_stores = [(s, set()) for s in data_tracking_stores()]
         sources_dests = {}
-        installer_plugins = self.espms
-        is_ini_tweak = InstallersData._is_ini_tweak
         join_data_dir = bass.dirs[u'mods'].join
-        bsa_ext = bush.game.Bsa.bsa_extension
         for dest, src in dest_src.items():
             dest_size, crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
-            if (dest_fname := FName('%s' % dest)) in installer_plugins:
-                mods.add(dest_fname)
-            elif ini_name := is_ini_tweak(dest_fname):
-                inis.add(FName(ini_name))
-            elif dest_fname.fn_ext == bsa_ext:
-                bsas.add(dest_fname)
+            for store, file_tracker in affected_stores:
+                ##: Is the str() needed here? need to type some tough APIs like refreshDataSizeCrc
+                if fname_key := store.data_path_to_key(str(dest)):
+                    file_tracker.add(fname_key)
             data_sizeCrcDate_update[dest] = (dest_size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             # Append the ghost extension JIT since the FS operation below will
             # need the exact path to copy to
@@ -1235,7 +1232,7 @@ class _InstallerPackage(Installer, AFile):
             if unpackDir:
                 cleanup_temp_dir(unpackDir)
         #--Update Installers data
-        return data_sizeCrcDate_update, mods, inis, bsas
+        return data_sizeCrcDate_update, affected_stores
 
     def listSource(self):
         """Return package structure as text."""
@@ -1702,6 +1699,7 @@ class InstallersData(DataStore):
     installers_dir_skips = set()
     file_pattern = re.compile(
         fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
+    unique_store_key = Store.INSTALLERS
 
     def __init__(self):
         super().__init__()
@@ -1871,17 +1869,17 @@ class InstallersData(DataStore):
             return True, False, False
         old_key = super().rename_operation(member_info, name_new)
         member_info.abs_path = self.store_dir.join(name_new)
-        #--Update the iniInfos & modInfos for 'installer'
-        from . import iniInfos, modInfos
-        mods_inis = []
-        for store in (modInfos, iniInfos):
+        # Update the ownership information for relevant data stores
+        from . import data_tracking_stores
+        owned_per_store = []
+        for store in data_tracking_stores():
             storet = store.table
             owned = [x for x in storet.getColumn('installer') if str(
                 storet[x]['installer']) == old_key]  # str due to Paths
-            mods_inis.append(owned)
+            owned_per_store.append(owned)
             for i in owned:
                 storet[i]['installer'] = '%s' % name_new
-        return True, *map(bool, mods_inis)
+        return True, *map(bool, owned_per_store)
 
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):
@@ -2304,8 +2302,8 @@ class InstallersData(DataStore):
         _pjoin = os.path.join
         inst_dir = bass.dirs['mods'].s # should be normalized
         root_files = []
-        for data_path in dest_paths:
-            sp = data_path.rsplit(os_sep, 1) # split into ['rel_path, 'file']
+        for data_dest in dest_paths:
+            sp = data_dest.rsplit(os_sep, 1) # split into ['rel_path, 'file']
             root_files.append((inst_dir if len(sp) == 1  # top level file
                                else _pjoin(inst_dir, sp[0]), sp[-1]))
         root_files.sort(key=itemgetter(0)) # must sort on same key as groupby
@@ -2522,25 +2520,20 @@ class InstallersData(DataStore):
     def __installer_install(self, installer, destFiles, index, progress,
                             refresh_ui):
         sub_progress = SubProgress(progress, index, index + 1)
-        data_sizeCrcDate_update, mods, inis, bsas = installer.install(
+        data_sizeCrcDate_update, affected_stores = installer.install(
             destFiles, sub_progress)
-        refresh_ui[0] |= bool(mods)
-        refresh_ui[1] |= bool(inis)
-        # refresh modInfos, iniInfos adding new/modified mods
-        from . import bsaInfos, iniInfos, modInfos
-        for mod in mods.copy(): # size may change during iteration
-            try:
-                modInfos.new_info(mod, owner=installer.fn_key)
-            except FileError:
-                mods.discard(mod)
-        # Notify the bsaInfos cache of any new BSAs, since we may have
-        # installed a localized plugin and the LO syncs below will check for
-        # missing strings ##: Identical to mods loop above!
-        for bsa in bsas:
-            try:
-                bsaInfos.new_info(bsa, owner=installer.fn_key)
-            except FileError:
-                pass # corrupt, but we won't need the bsas set again, so ignore
+        # Update relevant data stores, adding new/modified files
+        from . import modInfos
+        mods = []
+        for store, owned_files in affected_stores:
+            for owned_file in owned_files.copy(): # size may change
+                try:
+                    store.new_info(owned_file, owner=installer.fn_key)
+                except FileError:
+                    owned_files.discard(owned_file)
+            refresh_ui[store.unique_store_key] |= bool(owned_files)
+            if store is modInfos:
+                mods = owned_files
         modInfos.cached_lo_append_if_missing(mods)
         modInfos.refreshLoadOrder(unlock_lo=True)
         # now that we saved load order update missing mtimes for mods:
@@ -2551,8 +2544,6 @@ class InstallersData(DataStore):
         self.data_sizeCrcDate.update((dest, (
             s, c, (d != -1 and d) or bass.dirs[u'mods'].join(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.items())
-        for ini_path in inis:
-            iniInfos.new_info(ini_path, owner=installer.fn_key)
 
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
@@ -2588,7 +2579,7 @@ class InstallersData(DataStore):
                 if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
             if tweaksCreated:
                 self._editTweaks(tweaksCreated)
-                refresh_ui[1] |= bool(tweaksCreated)
+                refresh_ui |= Store.INIS.IF(tweaksCreated)
             return tweaksCreated
         finally:
             self.refresh_ns()
@@ -2619,66 +2610,51 @@ class InstallersData(DataStore):
             emptyDirs -= exclude
         return removedFiles
 
-    @staticmethod
-    def _is_ini_tweak(ci_relPath):
-        parts = ci_relPath.lower().split(os_sep)
-        # 1. Must have a single parent folder
-        # 2. That folder must be named 'ini tweaks'
-        # 3. The extension must be a valid INI-like extension
-        # If all that is true, return the filename as an FName
-        return (len(parts) == 2 and
-                parts[0] == 'ini tweaks' and
-                parts[1].rsplit('.', 1)[1] in supported_ini_exts and
-                FName(parts[1]))
-
     def _removeFiles(self, ci_removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data,
            used by 'bain_uninstall' and 'bain_anneal'."""
         if not ci_removes: return
-        modsDirJoin = bass.dirs[u'mods'].join
-        emptyDirs = set()
-        emptyDirsAdd = emptyDirs.add
-        nonPlugins = set()
-        from . import modInfos
-        reModExtSearch = modInfos.rightFileType
-        removedPlugins = set()
-        removedInis = set()
+        mods_dir_join = bass.dirs[u'mods'].join
+        empty_dir_candidates = set()
+        from . import data_tracking_stores
+        removed_tracked = [(s, set()) for s in data_tracking_stores()]
+        removed_untracked = set()
         #--Construct list of files to delete
         norm_ghost_get = Installer.getGhosted().get
-        for ci_relPath in ci_removes:
-            path = modsDirJoin(norm_ghost_get(ci_relPath, ci_relPath))
+        for ci_rel_path in ci_removes:
+            path = mods_dir_join(norm_ghost_get(ci_rel_path, ci_rel_path))
             if path.exists():
-                if reModExtSearch(ci_relPath): # don't mind the FName(str) they are few
-                    removedPlugins.add(FName(str(ci_relPath)))
-                elif ini_name := self._is_ini_tweak(ci_relPath):
-                    removedInis.add(ini_name)
+                for store, removed_files in removed_tracked:
+                    if fname_key := store.data_path_to_key(path):
+                        removed_files.add(fname_key)
                 else:
-                    nonPlugins.add(path)
-                    emptyDirsAdd(path.head)
+                    removed_untracked.add(path)
+                    empty_dir_candidates.add(path.head)
         #--Now determine which directories will be empty, replacing subsets of
         # removedFiles by their parent dir if the latter will be emptied
-        nonPlugins = self._determineEmptyDirs(emptyDirs, nonPlugins)
+        removed_untracked = self._determineEmptyDirs(
+            empty_dir_candidates, removed_untracked)
         ex = None # if an exception is raised we must again check removes
-        try: #--Do the deletion
-            if nonPlugins:
+        try:
+            # Delete files that no data store cares about
+            if removed_untracked:
                 parent = progress.getParent() if progress else None
-                env.shellDelete(nonPlugins, parent=parent)
-            #--Delete mods and remove them from load order
-            if removedPlugins:
-                refresh_ui[0] = True
-                modInfos.delete(removedPlugins, recycle=False)
-            if removedInis:
-                from . import iniInfos
-                refresh_ui[1] = True
-                iniInfos.delete(removedInis, recycle=False)
+                env.shellDelete(removed_untracked, parent=parent)
+            # Delegate deletion of files that data stores care about to those
+            # data stores
+            for store, removed_files in removed_tracked:
+                refresh_ui[store.unique_store_key] = True
+                store.delete(removed_files, recycle=False)
         except (CancelError, SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
             raise
         finally:
             if ex:
-                ci_removes = [f for f in ci_removes if
-                              not modsDirJoin(norm_ghost_get(f, f)).exists()]
+                ci_removes = [
+                    f for f in ci_removes
+                    if not mods_dir_join(norm_ghost_get(f, f)).exists()
+                ]
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
             for ci_relPath in ci_removes:
@@ -2756,16 +2732,18 @@ class InstallersData(DataStore):
             #--Restore files
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
-            # Set the 'installer' column in mod and ini tables
-            from . import iniInfos, modInfos
+            # Set the 'installer' column for files that track their owner
+            from . import data_tracking_stores
             for ikey, owned_files in cede_ownership.items():
-                for fn_key in owned_files:
-                    if modInfos.rightFileType(fn_key):
-                        refresh_ui[0] = True
-                        modInfos[fn_key].set_table_prop('installer', '%s' % ikey)
-                    elif ini_name := InstallersData._is_ini_tweak(fn_key):
-                        refresh_ui[1] = True
-                        iniInfos[ini_name].set_table_prop('installer', '%s' % ikey)
+                for owned_path in owned_files:
+                    for store in data_tracking_stores():
+                        if fname_key := store.data_path_to_key(owned_path):
+                            store[fname_key].set_table_prop(
+                                'installer', '%s' % ikey)
+                            refresh_ui[store.unique_store_key] = True
+                            # Each file can only belong to one data store (at
+                            # least at the moment), so exit early
+                            break
         finally:
             self.refresh_ns()
 
@@ -2844,7 +2822,7 @@ class InstallersData(DataStore):
         skipPrefixes = tuple(skipPrefixes)
         return [f for f in removes if not f.lower().startswith(skipPrefixes)]
 
-    def clean_data_dir(self, removes,  refresh_ui):
+    def clean_data_dir(self, removes, refresh_ui):
         destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' % (
             bush.game.mods_dir, bolt.timestamp()))
         try:
@@ -2858,7 +2836,7 @@ class InstallersData(DataStore):
                     full_path.moveTo(destDir.join(filename)) # will drop .ghost
                     if modInfos.rightFileType(full_path.stail):
                         mods.add(FName(str(filename)))
-                        refresh_ui[0] = True
+                        refresh_ui |= Store.MODS.DO()
                     self.data_sizeCrcDate.pop(filename, None)
                     emptyDirs.add(full_path.head)
                 except (StateError, OSError):
