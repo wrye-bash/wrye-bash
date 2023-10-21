@@ -43,7 +43,7 @@ is_standalone = False # whether or not we're on standalone
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
 dirs: dict[str, Path] = {}
-# settings read from the Mopy/bash.ini file in initDefaultSettings()
+# settings read from the Mopy/bash.ini file in init_default_ini_settings()
 inisettings = {}
 # dirs where various apps may be located - populated in initTooldirs()
 tooldirs = None # type: dict | None

@@ -1208,8 +1208,9 @@ class Mod_ScanDirty(ItemLink):
                     ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                                 mod_progress)
                     all_extracted_data[fn] = ext_data
-                scan_progress = SubProgress(progress, 0.7, 0.9)
-                scan_progress.setFull(len(all_extracted_data))
+                if all_extracted_data:
+                    scan_progress = SubProgress(progress, 0.7, 0.9)
+                    scan_progress.setFull(len(all_extracted_data))
                 all_ref_types = RecordType.sig_to_class[b'CELL'].ref_types
                 for i, (plugin_fn, ext_data) in enumerate(
                         all_extracted_data.items()):

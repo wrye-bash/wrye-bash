@@ -412,7 +412,7 @@ class FormIdWriteContext:
 
     def _get_short_mapper(self, skip_engine=False):
         # Set utils_constants.short_mapper based on this mod's masters
-        indices = self._get_indices()
+        index_di = self._get_indices()
         oi_range = bush.game.Esp.object_index_range
         if skip_engine or (len(self._augmented_masters) > 1 and
                            (oi_range is ObjectIndexRange.EXPANDED_ALWAYS or
@@ -421,11 +421,11 @@ class FormIdWriteContext:
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x7FF) range (or we want to skip the check)
             def _short_mapper(formid):
-                return (indices[formid.mod_fn] << 24) | formid.object_dex
+                return (index_di[formid.mod_fn] << 24) | formid.object_dex
         else:
             # 0x000-0x7FF are reserved for hardcoded (engine) records
             def _short_mapper(formid):
-                return ((object_id := formid.object_dex) >= 0x800 and indices[
+                return ((object_id := formid.object_dex) >= 0x800 and index_di[
                     formid.mod_fn] << 24) | object_id
         return _short_mapper
 
@@ -457,8 +457,8 @@ class RemapWriteContext(FormIdWriteContext):
         # Allow FormIDs to resolve both the new and the old masters - remapped
         # masters will resolve to the same index this way because the order
         # doesn't change when remapping
-        indices = super()._get_indices()
-        return indices | {mname: i for i, mname
+        index_di = super()._get_indices()
+        return index_di | {mname: i for i, mname
                           in enumerate(self._prev_masters)}
 
 class ShortFidWriteContext(FormIdWriteContext):

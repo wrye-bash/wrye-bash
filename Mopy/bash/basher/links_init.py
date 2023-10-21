@@ -163,12 +163,14 @@ def InitStatusBar():
     #--Custom Apps
     dirApps = bass.dirs[u'mopy'].join(u'Apps')
     badIcons = [images['error_cross.16'].get_bitmap()] * 3
-    def iconList(fileName):
-        return [ImageWrapper(fileName, ImageWrapper.img_types['.ico'], x) for x
-                in (16, 24, 32)]
-    for pth, icon, shortcut_descr in init_app_links(dirApps, badIcons, iconList):
-            all_links.append(
-                app_button_factory((pth,()), icon, shortcut_descr, canHide=False))
+    for pth, img_path, shortcut_descr in init_app_links(dirApps):
+        if img_path is None:
+            imgs = badIcons # use the 'x' icon
+        else:
+            imgs = [ImageWrapper(img_path, ImageWrapper.img_types['.ico'], x)
+                    for x in (16, 24, 32)]
+        all_links.append(app_button_factory(
+            (pth, ()), imgs, shortcut_descr, canHide=False))
     #--Final couple
     all_links.append(App_DocBrowser(uid='DocBrowser'))
     all_links.append(App_PluginChecker(uid='ModChecker'))

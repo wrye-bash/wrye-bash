@@ -196,7 +196,7 @@ def get_local_app_data_path(submod):
             _('Folder path retrieved via $XDG_DATA_HOME (or fallback to '
               '~/.local/share)'))
 
-def init_app_links(_apps_dir, _badIcons, _iconList):
+def init_app_links(_apps_dir):
     ##: Rework launchers so that they can work for Linux too
     # The 'shortcuts' concept is hard for users to grasp anyways (remember how
     # many people have trouble setting up a shortcut for QACing using xEdit!),

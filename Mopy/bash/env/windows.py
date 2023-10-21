@@ -51,7 +51,7 @@ from .common import _find_legendary_games, _get_language_paths, \
     _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import GPath as _GPath
+from ..bolt import GPath as _GPath, top_level_files, undefinedPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
@@ -216,46 +216,21 @@ def _get_default_app_icon(idex, target):
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
-            icon = filedata
+            icon_path = _GPath(filedata)
         else:
-            icon, idex = filedata.split(u',')
-            icon = os.path.expandvars(icon)
-        if not os.path.isabs(icon):
+            icon_path, idex = filedata.split(',')
+            icon_path = os.path.expandvars(icon_path)
+        if not os.path.isabs(icon_path):
             # Get the correct path to the dll
             for dir_ in os.environ[u'PATH'].split(u';'):
-                test = os.path.join(dir_, icon)
+                test = os.path.join(dir_, icon_path)
                 if os.path.exists(test):
-                    icon = test
+                    icon_path = _GPath(test)
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
         _deprint(f'Error finding icon for {target}:', traceback=True)
-        icon = u'not\\a\\path'
-    return icon, idex
-
-def _get_app_links(apps_dir):
-    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
-
-    :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a dictionary of shortcut properties tuples keyed by the
-    absolute Path of the Apps/.lnk shortcut
-    """
-    if win32client is None: return {}
-    links = {}
-    try:
-        sh = win32client.Dispatch(u'WScript.Shell')
-        for lnk in apps_dir.ilist():
-            lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.is_file():
-                shortcut = sh.CreateShortCut(lnk.s)
-                shortcut_descr = shortcut.Description
-                if not shortcut_descr:
-                    shortcut_descr = u' '.join((_(u'Launch'), lnk.sbody))
-                links[lnk] = (shortcut.TargetPath, shortcut.IconLocation,
-                              # shortcut.WorkingDirectory, shortcut.Arguments,
-                              shortcut_descr)
-    except:
-        _deprint(u'Error initializing links:', traceback=True)
-    return links
+        icon_path = undefinedPath
+    return icon_path, idex
 
 def _should_ignore_ver(test_ver):
     """
@@ -1092,10 +1067,31 @@ def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def init_app_links(apps_dir, badIcons, iconList):
+def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
+    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
+
+    :param apps_dir: the absolute Path to Mopy/Apps folder
+    :return: a list of shortcut properties (exe_path, icon_path, descr)."""
     init_params = []
-    for path, (target, icon, shortcut_descr) in _get_app_links(
-            apps_dir).items():
+    shortcuts = {}
+    try:
+        try:
+            sh = win32client.Dispatch('WScript.Shell')
+            for lnk in top_level_files(apps_dir):
+                lnk = apps_dir.join(lnk)
+                if lnk.cext == '.lnk':
+                    shortcut = sh.CreateShortCut(lnk.s)
+                    descr = shortcut.Description
+                    if not descr:
+                        descr = ' '.join((_('Launch'), lnk.sbody))
+                    shortcuts[lnk] = (shortcut.TargetPath,
+                        # shortcut.WorkingDirectory, shortcut.Arguments,
+                        shortcut.IconLocation, descr)
+        except:
+            _deprint('Error initializing shortcuts:', traceback=True)
+    except AttributeError:
+        pass  # win32client is None
+    for path, (target, win_icon_location, shortcut_descr) in shortcuts.items():
         # msi shortcuts: dc0c8de
         if target.lower().find(r'installer\{') != -1:
             target = path
@@ -1103,32 +1099,29 @@ def init_app_links(apps_dir, badIcons, iconList):
             target = _GPath(target)
         if not target.exists(): continue
         # Target exists - extract path, icon and shortcut_descr
-        # First try a custom icon #TODO(ut) docs - also comments methods here!
-        fileName = f'{path.sbody}%i.png'
-        customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
-        if customIcons[0].exists():
-            icon = customIcons
-        # Next try the shortcut specified icon
-        else:
-            icon, idex = icon.split(u',')
-            if icon == u'':
+        # First try a custom icon - undocumented! let it stay so as we will
+        # eventually nuke the Apps folder - we can always allow pointing to
+        # a custom icon once we have a "Launchers" page in settings
+        custom_icon_paths = [apps_dir.join(f'{path.sbody}{x}.png') for x in
+                             (16, 24, 32)]
+        if not custom_icon_paths[0].exists(): # try the shortcut specified icon
+            win_icon_path, idex = win_icon_location.split(',')
+            if win_icon_path == '':
                 if target.cext == u'.exe':
                     if win32gui and win32gui.ExtractIconEx(target.s, -1):
                         # -1 queries num of icons embedded in the exe
-                        icon = target
+                        win_icon_path = target
                     else: # generic exe icon, hardcoded and good to go
-                        icon, idex = os.path.expandvars(
-                            u'%SystemRoot%\\System32\\shell32.dll'), u'2'
+                        win_icon_path, idex = _GPath(os.path.expandvars(
+                            r'%SystemRoot%\System32\shell32.dll')), '2'
                 else:
-                    icon, idex = _get_default_app_icon(idex, target)
-            icon = _GPath(icon)
-            if icon.exists():
-                fileName = u';'.join((icon.s, idex))
-                icon = iconList(_GPath(fileName))
-                # Last, use the 'x' icon
+                    win_icon_path, idex = _get_default_app_icon(idex, target)
+            if win_icon_path.exists():
+                g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
+                custom_icon_paths = [g_path] * 3
             else:
-                icon = badIcons
-        init_params.append((path, icon, shortcut_descr))
+                custom_icon_paths = None
+        init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
 def get_file_version(filename):
@@ -1379,11 +1372,11 @@ class TaskDialog(object):
         self._default_radio = default
         return self
 
-    def set_footer_icon(self, icon):
+    def set_footer_icon(self, footer_icon: str):
         """Set the icon that appears in the footer of the dialog."""
-        self._footer_is_stock = icon in self.stock_icons
+        self._footer_is_stock = footer_icon in self.stock_icons
         self._footer_icon = self.stock_icons[
-            icon] if self._footer_is_stock else icon
+            footer_icon] if self._footer_is_stock else footer_icon
         return self
 
     def set_expander(self, expander_data, expanded=False, at_footer=False):

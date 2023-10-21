@@ -300,46 +300,46 @@ def __copy_or_move(sources_dests: dict[Path, Path], rename_on_collision: bool,
     # NOTE 2: progress dialogs: NOT IMPLEMENTED (so `silent` is ignored)
     # TODO(241): rename_on_collision NOT IMPLEMENTED
     operation_results: dict[str, str] = {}
-    for from_path, to_path in sources_dests.items():
-        if from_path.is_dir():
+    for src_path, to_path in sources_dests.items():
+        if src_path.is_dir():
             # Copying a directory: check for collision
             if to_path.is_file():
                 raise NotADirectoryError(str(to_path))
             elif to_path.is_dir():
                 # Collision: merge contents
                 sub_items = {
-                    from_path.join(sub_item): to_path.join(sub_item)
-                    for sub_item in os.listdir(from_path)
+                    src_path.join(sub_item): to_path.join(sub_item)
+                    for sub_item in os.listdir(src_path)
                 }
                 sub_results = __copy_or_move(sub_items, rename_on_collision,
                                              ask_confirm, parent, move)
                 if sub_results:
                     # At least some of the sub-items were copied
-                    operation_results[os.fspath(from_path)] = os.fspath(to_path)
+                    operation_results[os.fspath(src_path)] = os.fspath(to_path)
             else:
                 # No Collision, let shutil do the work
                 if move:
                     # NOTE: shutil.move: if the destination is a directory, the
                     # source is moved inside the directory. For moving a
                     # directory, this is always the case
-                    shutil.move(from_path, to_path.head)
+                    shutil.move(src_path, to_path.head)
                 else:
-                    _retry(shutil.copytree, from_path, to_path)
-                operation_results[os.fspath(from_path)] = os.fspath(to_path)
-        elif from_path.is_file():
+                    _retry(shutil.copytree, src_path, to_path)
+                operation_results[os.fspath(src_path)] = os.fspath(to_path)
+        elif src_path.is_file():
             # Copying a file: check for collisions if the user wants prompts
             if ask_confirm:
                 if to_path.is_file():
                     msg = _('Overwrite %(destination)s with %(source)s?') % {
                         'destination': os.fspath(to_path),
-                        'source': os.fspath(from_path)}
+                        'source': os.fspath(src_path)}
                     if not ask_confirm(parent, msg, _('Overwrite file?')):
                         continue
             # Perform the copy/move
-            _retry(shutil.move if move else shutil.copy2, from_path, to_path)
-            operation_results[os.fspath(from_path)] = os.fspath(to_path)
+            _retry(shutil.move if move else shutil.copy2, src_path, to_path)
+            operation_results[os.fspath(src_path)] = os.fspath(to_path)
         else:
-            raise FileNotFoundError(os.fspath(from_path))
+            raise FileNotFoundError(os.fspath(src_path))
     return operation_results
 
 

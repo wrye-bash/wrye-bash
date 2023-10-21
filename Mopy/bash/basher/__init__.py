@@ -332,6 +332,9 @@ class _ModsUIList(UIList):
 class MasterList(_ModsUIList):
     column_links = Links()
     context_links = Links()
+    # Since there is no global menu for master lists, bypass the global menu
+    # setting (otherwise the user would never be able to access these links)
+    _bypass_gm_setting = True
     keyPrefix = u'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
     #--Sorting
@@ -611,13 +614,8 @@ class MasterList(_ModsUIList):
         self.detailsPanel.SetEdited() # inform the details panel
 
     #--Column Menu
-    def DoColumnMenu(self, evt_col: int, bypass_gm_setting=False):
-        if self.fileInfo:
-            # Since there is no global menu for master lists, bypass the global
-            # menu setting (otherwise the user would never be able to access
-            # these links)
-            super().DoColumnMenu(evt_col, bypass_gm_setting=True)
-        return EventResult.FINISH
+    def _pop_menu(self):
+        return self.fileInfo and super()._pop_menu()
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         if self.allowEdit: self.InitEdit()
@@ -3489,10 +3487,10 @@ class InstallersPanel(BashTab):
                         self._data_dir_scanned = True
             elif self.frameActivated:
                 try:
-                    with balt.Progress(
-                            _('Refreshing Converters...')) as progress:
-                        refreshui |= self.listData.irefresh(progress, what='C',
-                            fullRefresh=fullRefresh)
+                    # with balt.Progress(
+                    #         _('Refreshing Converters...')) as progress:
+                    refreshui |= self.listData.irefresh(what='C',
+                        fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -3860,9 +3858,12 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
-    @staticmethod
-    def _tabOrder():
-        """Return dict containing saved tab order and enabled state of tabs."""
+    def __init__(self, parent):
+        wx.Notebook.__init__(self, parent)
+        balt.TabDragMixin.__init__(self)
+        #--Pages
+        iInstallers = iMods = -1
+        self._tab_menu = Links()
         # default tabs order and default enabled state, keys as in tabInfo
         tabs_enabled_ordered = dict(e.value for e in Store)
         newOrder = settings.get('bash.tabs.order', tabs_enabled_ordered)
@@ -3875,17 +3876,11 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         # Ensure the 'Mods' tab is always shown
         newOrder['Mods'] = True # would insert last
         settings[u'bash.tabs.order'] = newOrder
-        return newOrder
-
-    def __init__(self, parent):
-        wx.Notebook.__init__(self, parent)
-        balt.TabDragMixin.__init__(self)
-        #--Pages
-        iInstallers = iMods = -1
-        tab_info = tabInfo
-        for page, enabled in self._tabOrder().items():
+        tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
+        for page, (enabled, className, title) in tabs.items():
+            self._tab_menu.append(
+                _Tab_Link(title, page, canDisable=page != 'Mods'))
             if not enabled: continue
-            className, title, _item = tab_info[page]
             panel = globals().get(className,None)
             if panel is None: continue
             deprint(f"Constructing panel '{title}'")
@@ -3896,7 +3891,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             try:
                 item = panel(self)
                 self.AddPage(item._native_widget, title)
-                tab_info[page][2] = item
+                tabInfo[page][2] = item
                 deprint(f"Panel '{title}' constructed successfully")
             except:
                 if page == 'Mods':
@@ -3919,15 +3914,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         return tabInfo[_title_to_tab[
             self.GetPageText(self.GetSelection())]][2]
 
-    @staticmethod
-    def tabLinks(menu):
-        # use tabOrder here - it is used in InitLinks which runs *before*
-        # settings['bash.tabs.order'] is set!
-        for key, (__cls, tab_title, __panel) in BashNotebook._tabOrder():
-            menu.append(
-                _Tab_Link(tab_title, key, canDisable=bool(key != 'Mods')))
-        return menu
-
     def SelectPage(self, page_title, item):
         """Jumps to the specified item on the specified tab.
 
@@ -3949,8 +3935,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         pos = self.ScreenToClient(pos)
         tabId = self.HitTest(pos)
         if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
-            menu = self.tabLinks(Links())
-            menu.popup_menu(self, None)
+            self._tab_menu.popup_menu(self, None)
         else:
             event.Skip()
 
@@ -4027,7 +4012,7 @@ class BashStatusBar(DnDStatusBar):
                     self.refresh_status_bar()
                 return
 
-    def UnhideButton(self, link, skip_refresh=False):
+    def UnhideButton(self, link):
         uid = link.uid
         settings[u'bash.statusbar.hide'].discard(uid)
         # Find the position to insert it at
@@ -4038,8 +4023,6 @@ class BashStatusBar(DnDStatusBar):
             order.append(uid)
         else:
             self._sort_buttons(order)
-        if not skip_refresh:
-            self.refresh_status_bar()
 
     def refresh_status_bar(self, refresh_icon_size=False):
         """Updates status widths and the icon sizes, if refresh_icon_size is
