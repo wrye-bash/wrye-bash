@@ -37,12 +37,19 @@ for root, _, filenames in os.walk(GAME_PATH):
         import_path = os.path.relpath(path, start=MOPY_PATH)
         hiddenimports.append(import_path.replace(os.sep, '.'))
 
-# See sys.modules hack above - we don't need Tkinter, just bloats the EXE
-# Same story regarding cryptography (transitive from our compile-time
-# dependency PyGithub)
 excluded_modules = [
-    '_tkinter',
+    # requests pulls in charset_normalizer, though it can use chardet (and we
+    # don't even use the feature it needs charset detection for). Next major
+    # requests version should drop this entirely anyways.
+    'charset_normalizer',
+    # Same story regarding cryptography (transitive from our compile-time
+    # dependency PyGithub)
     'cryptography',
+    # wxPython optionally depends on PIL/pillow (for a couple agw classes),
+    # none of which we use so it's just 2MB+ of bloat
+    'PIL',
+    # See sys.modules hack above - we don't need Tkinter, just bloats the EXE
+    '_tkinter',
     'FixTk',
     'tcl',
     'tk',
