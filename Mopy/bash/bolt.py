@@ -56,6 +56,12 @@ try:
 except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
+try:
+    from reflink import reflink, ReflinkImpossibleError
+except ImportError:
+    # Optional, no reflink copies will be possible if missing
+    reflink = ReflinkImpossibleError = None
+
 from . import exception
 from .wbtemp import TempFile
 
@@ -364,11 +370,24 @@ def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
     return {**dict_a, **dict_b,
             **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
 
-def reverse_dict(target_dict: dict[K, V]) -> dict[V, K]:
+def reverse_dict(source_dict: dict[K, V]) -> dict[V, K]:
     """Create a dict that represents the reverse/inverse mapping of the
     specified dict. If a -> b in target_dict, then b -> a in the returned
-    dict."""
-    return {v: k for k, v in target_dict.items()}
+    dict.
+
+    Note that this is meant for 1-to-1 mappings - if you have two keys with the
+    same value, you'll lose the first key! See reverse_dict_multi for a method
+    that avoids this problem."""
+    return {v: k for k, v in source_dict.items()}
+
+def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
+    """Create a dict that represents the reverse/inverse mapping of the
+    specified dict, with support for duplicate values in the source dict. See
+    also reverse_dict for simple 1-to-1 mappings."""
+    ret = {}
+    for k, v in source_dict.items():
+        ret.setdefault(v, set()).add(k)
+    return ret
 
 def gen_enum_parser(enum_type: type[Enum]):
     """Create a dict that maps the values of the specified enum to the matching
@@ -1215,16 +1234,18 @@ class Path(os.PathLike):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
         if self.is_dir():
-            shutil.copytree(self._s,destName._s)
+            ##: Does not preserve mtimes - is that a problem?
+            shutil.copytree(self._s, destName._s,
+                copy_function=copy_or_reflink2)
             return
         try:
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
         except FileNotFoundError:
             if not (dest_par := destName.shead) or os.path.exists(dest_par):
                 raise
             os.makedirs(dest_par)
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
     def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
@@ -2856,6 +2877,42 @@ def readme_url(mopy, advanced=False, skip_local=False):
         # Fallback to hosted version
         readme = f'http://wrye-bash.github.io/docs/{readme_name}'
     return readme.replace(u' ', u'%20')
+
+# Reflinks --------------------------------------------------------------------
+if reflink is not None:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            reflink(a, b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            # Don't alter b itself in case we need to fall back to copy2
+            if os.path.isdir(final_b := b):
+                final_b = os.path.join(final_b, os.path.basename(a))
+            reflink(a, final_b)
+            shutil.copystat(a, final_b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copy2(a, b)
+else:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copy2(a, b)
 
 # WryeText --------------------------------------------------------------------
 html_start = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">

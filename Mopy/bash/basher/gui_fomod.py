@@ -27,7 +27,7 @@ from collections import defaultdict
 
 from .. import balt, bass, bush
 from ..balt import EnabledLink, Links, colors
-from ..bolt import LowerDict, dict_sort, reverse_dict
+from ..bolt import LowerDict, dict_sort, reverse_dict_multi
 from ..env import get_file_version, get_game_version_fallback, to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
@@ -186,7 +186,7 @@ class InstallerFomod(WizardDialog):
             self._run_wizard()
             # Invert keys and values ahead of time here, so that BAIN doesn't
             # have to do it just in time
-            self.fm_ret.install_files = LowerDict(reverse_dict(
+            self.fm_ret.install_files = LowerDict(reverse_dict_multi(
                 self.fomod_parser.get_fomod_files()))
         if self._is_arch:
             cleanup_temp_dir(self._fomod_dir)

@@ -101,12 +101,12 @@ def _get_xdg_path(xdg_var: str) -> _Path | None:
     exist, return None - user clearly has a weird, nonstandard Linux system and
     will have to use CLI or bash.ini to set the path."""
     if xdg_val := os.environ.get(xdg_var):
-        return _GPath_no_norm(xdg_val)
+        return _GPath(xdg_val)
     home_path = os.path.expanduser('~')
     # For this mapping, see:
     #  - https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     #  - https://wiki.archlinux.org/title/XDG_user_directories
-    return _GPath({
+    return _GPath_no_norm({
         'XDG_CACHE_HOME':      f'{home_path}/.cache',
         'XDG_CONFIG_HOME':     f'{home_path}/.config',
         'XDG_DATA_HOME':       f'{home_path}/.local/share',

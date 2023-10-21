@@ -43,10 +43,14 @@ xml attributes/text are available via instance attributes."""
 __author__ = u'Ganda'
 
 import functools
+import sys
+from collections import defaultdict
 from enum import Enum
 
 from . import bass, bosh, bush, env # for modInfos
-from .bolt import FName, GPath, LooseVersion, Path, gen_enum_parser
+from .bolt import FName, GPath, LooseVersion, Path, gen_enum_parser, \
+    GPath_no_norm
+from .env import convert_separators
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active
@@ -268,22 +272,26 @@ class _FomodFileInfo(object):
         md_lower_slash = tuple(md_lower + s for s in (u'/', u'\\'))
         md_lower_strip = len(md_lower) + 1 # for the (back)slash
         for file_object in files_elem.findall(u'*'):
-            file_src = inst_root + file_object.get(u'source')
-            if file_src.endswith((u'/', u'\\')):
-                file_src = file_src[:-1] ##: Doesn't GPath already do this?
-            file_src = GPath(file_src)
-            file_dest = file_object.get(u'destination', None)
-            if file_dest is None: # omitted destination
+            # Note that we have to convert separators, since these are going to
+            # assume one OS-specific separator
+            file_src = GPath(inst_root + convert_separators(
+                file_object.get('source')))
+            file_dest = file_object.get('destination', None)
+            if file_dest is None:
+                # Omitted destination, means that the file goes in the same
+                # path in the Data folder as its source file in the package
                 file_dest = file_src
-            elif file_object.tag == u'file' and (
-                not file_dest or file_dest.endswith((u'/', u'\\'))):
-                # if empty or with a trailing slash then dest refers
-                # to a folder. Post-processing to add the filename to the
-                # end of the path.
-                file_dest = GPath(file_dest).join(file_src.tail)
             else:
-                # destination still needs normalizing
-                file_dest = GPath(file_dest)
+                file_dest = convert_separators(file_dest)
+                if file_object.tag == 'file' and (
+                    not file_dest or file_dest.endswith(('/', '\\'))):
+                    # If empty or with a trailing slash then dest refers
+                    # to a folder. Post-processing to add the filename to the
+                    # end of the path.
+                    file_dest = GPath(file_dest).join(file_src.stail)
+                else:
+                    # Destination still needs normalizing
+                    file_dest = GPath(file_dest)
             # Be forgiving of FOMODs that specify redundant 'Data' folders in
             # the destination
             file_dest_s = file_dest.s
@@ -295,7 +303,7 @@ class _FomodFileInfo(object):
                     file_dest_s = file_dest_s[md_lower_strip:]
                     dest_lower = file_dest_s.lower()
             if file_dest_s != file_dest.s:
-                file_dest = GPath(file_dest_s)
+                file_dest = GPath_no_norm(file_dest_s)
             file_prty = int(file_object.get(u'priority', u'0'))
             source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
@@ -316,9 +324,7 @@ class _FomodFileInfo(object):
                 if fsrc_lower == source_lower: # it's a file
                     fm_infos_target.append(cls(file_src, file_dest, file_prty))
                 elif fsrc_lower.startswith(source_starts): # it's a folder
-                    fdest = file_dest.s + fsrc[len(file_src):]
-                    if fdest.startswith((u'/', u'\\')):
-                        fdest = fdest[1:]
+                    fdest = (file_dest.s + fsrc[len(file_src):]).strip(r'\/')
                     fm_infos_target.append(cls(GPath(fsrc), GPath(fdest),
                                            file_prty))
         return fm_infos_con, fm_infos_req
@@ -477,31 +483,28 @@ class FomodInstaller(object):
                     if option in selected_options:
                         collected_files.extend(con_files)
         for cond_pattern in self.fomod_tree.findall(
-                u'conditionalFileInstalls/patterns/pattern'):
-            dep_conditions = cond_pattern.find(u'dependencies')
-            cond_files = cond_pattern.find(u'files')
+                'conditionalFileInstalls/patterns/pattern'):
+            try:
+                self.test_conditions(cond_pattern.find('dependencies'))
+            except FailedCondition:
+                continue
+            # Only include any files at all if the check passed
             # We do not have to worry about the con/req split here, the
             # conditions for this section are the only thing that matters
+            cond_files = cond_pattern.find('files')
             con_files, req_files = _FomodFileInfo.process_files(
                 cond_files, self.file_list, self.installer_root,
                 is_usable=True)
-            try:
-                self.test_conditions(dep_conditions)
-                # Only include any files at all if the check passed
-                collected_files.extend(req_files)
-                collected_files.extend(con_files)
-            except FailedCondition:
-                pass
-        file_dict = {}  # dst -> src
-        priority_dict = {}  # dst -> priority
+            collected_files.extend(req_files)
+            collected_files.extend(con_files)
+        file_dict = {} # dst -> src
+        # -sys.maxsize as default so any priority loses to this
+        priority_dict = defaultdict(lambda: -sys.maxsize) # dst -> priority
         for fm_info in collected_files:
             fm_info_dest = fm_info.file_destination
-            if (fm_info_dest in priority_dict
-                    and priority_dict[fm_info_dest] > fm_info.file_priority):
-                # Don't overwrite the higher-priority file
-                continue
-            file_dict[fm_info_dest] = fm_info.file_source
-            priority_dict[fm_info_dest] = fm_info.file_priority
+            if priority_dict[fm_info_dest] <= fm_info.file_priority:
+                file_dict[fm_info_dest] = fm_info.file_source
+                priority_dict[fm_info_dest] = fm_info.file_priority
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.items()}
 

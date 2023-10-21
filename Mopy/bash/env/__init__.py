@@ -80,17 +80,17 @@ def shellDeletePass(node: Path, parent: _TShellWindow = None, *, __shell=True):
         try: shellDelete([node], parent, __shell=__shell)
         except OSError: deprint(f'Error deleting {node}:', traceback=True)
 
-def shellMove(sources_dests: dict[Path, Path], parent: _TShellWindow = None, *,
-        ask_confirm: _ConfirmationPrompt=None, allow_undo=False,
-        auto_rename=False, silent=False, __shell=True):
+def shellMove(sources_dests: dict[Path, Path | Iterable[Path]],
+        parent: _TShellWindow = None, *, ask_confirm: _ConfirmationPrompt=None,
+        allow_undo=False, auto_rename=False, silent=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.MOVE, sources_dests,
         parent=_resolve(parent), ask_confirm=ask_confirm, allow_undo=allow_undo,
         rename_on_collision=auto_rename, silent=silent)
 
-def shellCopy(sources_dests: dict[Path, Path], parent: _TShellWindow = None, *,
-        ask_confirm: _ConfirmationPrompt=None, allow_undo=False,
-        auto_rename=False, __shell=True):
+def shellCopy(sources_dests: dict[Path, Path | Iterable[Path]],
+        parent: _TShellWindow = None, *, ask_confirm: _ConfirmationPrompt=None,
+        allow_undo=False, auto_rename=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.COPY, sources_dests,
         allow_undo=allow_undo, ask_confirm=ask_confirm,

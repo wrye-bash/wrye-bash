@@ -63,8 +63,8 @@ def __write_plugins(out, lord, active, _star):
             out.write(asterisk() + bolt.encode(mod, firstEncoding=u'cp1252'))
             out.write(b'\r\n')
         except UnicodeEncodeError:
-            bolt.deprint(u'%s failed to properly encode and was not '
-                         u'included in plugins.txt' % mod)
+            bolt.deprint(f'{mod} failed to properly encode and was skipped '
+                         f'for inclusion in load order file')
 
 _re_plugins_txt_comment = re.compile(b'^#.*')
 def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> _ParsedLo:
@@ -111,6 +111,29 @@ def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> _ParsedLo:
             modnames.append(mod_g_path)
             if is_active_: active.append(mod_g_path)
     return active, modnames
+
+def _resolve_case_ambiguity(lo_file_path: Path):
+    """Third-party tools like LOOT do not all use the same case for plugins.txt
+    and loadorder.txt. This method returns the canonical path for the specified
+    load order file path and cleans up multiple load order files in the same
+    dir by using the one with the newest mtime and deleting the older ones."""
+    lo_dir, lo_fname = lo_file_path.head, lo_file_path.stail
+    matching_names = [t_fname for t_fname in lo_dir.ilist()
+                      if t_fname == lo_fname]
+    if len(matching_names) > 1:
+        matching_paths = [lo_dir.join(t_fname) for t_fname in matching_names]
+        matching_paths.sort(key=lambda tp: tp.mtime, reverse=True)
+        bolt.deprint(f'Resolving ambiguous {lo_fname} case (found '
+                     f'[{", ".join(map(str, matching_names))}]) to newest file '
+                     f'({matching_paths[0].stail})')
+        for p in matching_paths[1:]:
+            try:
+                p.remove()
+            except OSError:
+                bolt.deprint(f'Failed to resolve ambiguous {lo_fname} case',
+                    traceback=True)
+        return matching_paths[0]
+    return lo_dir.join(matching_names[0]) if matching_names else lo_file_path
 
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
@@ -201,7 +224,7 @@ class LoGame(object):
     def __init__(self, mod_infos, plugins_txt_path: Path):
         """:type mod_infos: bosh.ModInfos"""
         super().__init__()
-        self.plugins_txt_path = plugins_txt_path
+        self.plugins_txt_path = _resolve_case_ambiguity(plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
         self.mtime_plugins_txt = 0.0
@@ -359,9 +382,11 @@ class LoGame(object):
         if not self.__class__.has_plugins_txt: return False
         # Save plugins.txt inside the old (saves) directory
         if self.plugins_txt_path.exists():
-            self.plugins_txt_path.copyTo(old_dir.join(u'plugins.txt'))
+            self.plugins_txt_path.copyTo(_resolve_case_ambiguity(old_dir.join(
+                self.plugins_txt_path.stail)))
         # Move the new plugins.txt here for use
-        move = new_dir.join(u'plugins.txt')
+        move = _resolve_case_ambiguity(new_dir.join(
+            self.plugins_txt_path.stail))
         if move.exists():
             move.copyTo(self.plugins_txt_path)
             self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
@@ -466,16 +491,6 @@ class LoGame(object):
         """Returns the path of the file used by this game for storing load
         order."""
         return None # base case
-
-    def _set_acti_file(self, new_acti_file: Path):
-        """Sets the path of the file used by this game for storing active
-        plugins."""
-        pass # base case
-
-    def _set_lo_file(self, new_lo_file: Path):
-        """Sets the path of the file used by this game for storing load
-        order."""
-        pass # base case
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: list[FName], fix_lo):
@@ -852,11 +867,11 @@ class INIGame(LoGame):
     def swap(self, old_dir, new_dir):
         def _do_swap(cached_ini, ini_key):
             # If there's no INI inside the old (saves) directory, copy it
-            old_ini = old_dir.join(ini_key[0])
+            old_ini = _resolve_case_ambiguity(old_dir.join(ini_key[0]))
             if not old_ini.is_file():
                 cached_ini.abs_path.copyTo(old_ini)
             # Read from the new INI if it exists and write to our main INI
-            move_ini = new_dir.join(ini_key[0])
+            move_ini = _resolve_case_ambiguity(new_dir.join(ini_key[0]))
             if move_ini.is_file():
                 self._write_ini(cached_ini, ini_key, self._read_ini(
                     self._mk_ini(move_ini), ini_key))
@@ -878,14 +893,6 @@ class INIGame(LoGame):
         if self._handles_lo:
             return self._cached_ini_lo.abs_path
         return super().get_lo_file()
-
-    def _set_acti_file(self, new_acti_file):
-        raise NotImplementedError('INIGame does not support'
-                                  '_set_acti_file right now')
-
-    def _set_lo_file(self, new_lo_file):
-        raise NotImplementedError('INIGame does not support _set_lo_file '
-                                  'right now')
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
@@ -921,9 +928,6 @@ class TimestampGame(LoGame):
 
     def get_acti_file(self):
         return self.plugins_txt_path
-
-    def _set_acti_file(self, new_acti_file):
-        self.plugins_txt_path = new_acti_file
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
@@ -1011,7 +1015,7 @@ class TextfileGame(LoGame):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path):
         super().__init__(mod_infos, plugins_txt_path)
-        self.loadorder_txt_path = loadorder_txt_path
+        self.loadorder_txt_path = _resolve_case_ambiguity(loadorder_txt_path)
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
 
@@ -1036,9 +1040,11 @@ class TextfileGame(LoGame):
         super().swap(old_dir, new_dir)
         # Save loadorder.txt inside the old (saves) directory
         if self.loadorder_txt_path.exists():
-            self.loadorder_txt_path.copyTo(old_dir.join(u'loadorder.txt'))
+            self.loadorder_txt_path.copyTo(_resolve_case_ambiguity(
+                old_dir.join(self.loadorder_txt_path.stail)))
         # Move the new loadorder.txt here for use
-        move = new_dir.join(u'loadorder.txt')
+        move = _resolve_case_ambiguity(new_dir.join(
+            self.loadorder_txt_path.stail))
         if move.exists():
             move.copyTo(self.loadorder_txt_path)
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
@@ -1050,12 +1056,6 @@ class TextfileGame(LoGame):
 
     def get_lo_file(self):
         return self.loadorder_txt_path
-
-    def _set_acti_file(self, new_acti_file):
-        self.plugins_txt_path = new_acti_file
-
-    def _set_lo_file(self, new_lo_file):
-        self.loadorder_txt_path = new_lo_file
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
@@ -1200,12 +1200,6 @@ class AsteriskGame(LoGame):
 
     def get_lo_file(self):
         return self.plugins_txt_path
-
-    def _set_acti_file(self, new_acti_file):
-        self.plugins_txt_path = new_acti_file
-
-    def _set_lo_file(self, new_lo_file):
-        self.plugins_txt_path = new_lo_file
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):

@@ -307,10 +307,8 @@ def dump_environment(wxver=None):
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet_ver}',
-    ]
-    if bolt.os_name == 'nt': # Hide on non-Windows platforms
-        msg.append(f' - ifileoperation: {ifileoperation_ver}')
-    msg.extend([
+        (f' - ifileoperation: {ifileoperation_ver}'
+         if bolt.os_name == 'nt' else None),
         f' - lxml: {lxml_ver}',
         f' - packaging: {packaging_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
@@ -327,8 +325,8 @@ def dump_environment(wxver=None):
         f'Filesystem encoding: {fse}'
         f'{f" - using {bolt.Path.sys_fs_enc}" if not fse else ""}',
         f'Command line: {sys.argv}',
-    ])
-    bolt.deprint(msg := '\n\t'.join(msg))
+    ]
+    bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))
     return msg
 
 def _bash_ini_parser(bash_ini_path):

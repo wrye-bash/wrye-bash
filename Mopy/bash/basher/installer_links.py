@@ -233,7 +233,7 @@ class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
         # Switch the GUI to FOMOD mode and pass selected files to BAIN
         idetails = self.iPanel.detailsPanel
         idetails.set_fomod_mode(fomod_enabled=True)
-        sel_package.extras_dict['fomod_dict'] = ret.install_files
+        sel_package.extras_dict['fomod_dict_v2'] = ret.install_files
         idetails.refreshCurrent(sel_package)
         if ret.should_install:
             self._perform_install(sel_package, ui_refresh)
@@ -267,8 +267,8 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
         dst_folder = bass.dirs['installers'].join(pr_path)
         dst_folder.makedirs()
         srcs_dsts = {
-            src_folder.join(s): dst_folder.join(d)
-            for s, d in ret.install_files.items()
+            src_folder.join(s): dst_folder.join(df)
+            for s, d in ret.install_files.items() for df in d
         }
         env.shellCopy(srcs_dsts, parent=self.window)
         if working_on_archive:
