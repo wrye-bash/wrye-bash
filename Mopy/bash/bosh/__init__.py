@@ -32,6 +32,7 @@ import re
 import sys
 from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable, Callable
+from dataclasses import dataclass, field
 from functools import wraps
 from itertools import chain
 
@@ -1756,6 +1757,16 @@ class TableFileInfos(DataStore):
         # Will set the destination's mtime to the source's mtime
         cp_file_info.abs_path.copyTo(cp_dest_path)
 
+@dataclass(slots=True)
+class RefrData:
+    """Encapsulate info the backend needs to pass on to the UI for refresh."""
+    to_del: set[FName] = field(default_factory=set)
+    to_add: set[FName] = field(default_factory=set)
+    redraw: set[FName] = field(default_factory=set)
+
+    def __bool__(self):
+        return bool(self.to_add or self.to_del or self.redraw)
+
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
 
@@ -1781,19 +1792,18 @@ class FileInfos(TableFileInfos):
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
         oldNames = set(self) | set(self.corrupted)
-        _added = set()
-        _updated = set()
+        rdata = RefrData()
         newNames = self._list_store_dir()
         for new, itsa_ghost in newNames.items(): #--Might have '.ghost' lopped off
             oldInfo = self.get(new) # None if new was in corrupted or new one
             try:
                 if oldInfo is not None:
                     if oldInfo.do_update(itsa_ghost=itsa_ghost): # will reread the header
-                        _updated.add(new)
+                        rdata.redraw.add(new)
                 else: # added or known corrupted, get a new info
                     self.new_info(new, _in_refresh=True,
                         notify_bain=not booting, itsa_ghost=itsa_ghost)
-                    _added.add(new)
+                    rdata.to_add.add(new)
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not new in self.corrupted \
                         or self.corrupted[new] != e.message:
@@ -1801,14 +1811,12 @@ class FileInfos(TableFileInfos):
                         traceback=True)
                     self.corrupted[new] = e.message
                 self.pop(new, None)
-        _deleted_ = oldNames - set(newNames)
-        self.delete_refresh(_deleted_, None, check_existence=False,
+        rdata.to_del = oldNames - set(newNames)
+        self.delete_refresh(rdata.to_del, None, check_existence=False,
                             _in_refresh=True)
-        if _updated:
-            self._notify_bain(altered={self[n].abs_path for n in _updated})
-        change = bool(_added) or bool(_updated) or bool(_deleted_)
-        if not change: return change
-        return _added, _updated, _deleted_
+        if rdata.redraw:
+            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
+        return rdata
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
@@ -1907,6 +1915,13 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
     ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
                      else INIInfo)
     return ini_info_type(fullpath, detected_encoding)
+
+@dataclass(slots=True)
+class _RDIni(RefrData):
+    ini_changed: bool = False
+
+    def __bool__(self): #  # _RDIni is needed below
+        return super(_RDIni, self).__bool__() or self.ini_changed
 
 class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
@@ -2015,13 +2030,12 @@ class INIInfos(TableFileInfos):
     def _refresh_ini_tweaks(self):
         """Refresh from file directory."""
         oldNames = {n for n, v in self.items() if not v.is_default_tweak}
-        _added = set()
-        _updated = set()
+        rdata = _RDIni()
         newNames = self._list_store_dir()
         for new_tweak in newNames:
             oldInfo = self.get(new_tweak) # None if new_tweak was added
             if oldInfo is not None and not oldInfo.is_default_tweak:
-                if oldInfo.do_update(): _updated.add(new_tweak)
+                if oldInfo.do_update(): rdata.redraw.add(new_tweak)
             else: # added
                 tweak_path = self.store_dir.join(new_tweak)
                 try:
@@ -2032,38 +2046,37 @@ class INIInfos(TableFileInfos):
                 except (BoltError, NotImplementedError) as e:
                     deprint(e.message)
                     continue
-                _added.add(new_tweak)
+                rdata.to_add.add(new_tweak)
             self[new_tweak] = oldInfo
-        _deleted_ = oldNames - set(newNames)
-        self.delete_refresh(_deleted_, None, check_existence=False,
+        rdata.to_del = oldNames - set(newNames)
+        self.delete_refresh(rdata.to_del, None, check_existence=False,
                             _in_refresh=True)
         # re-add default tweaks
         for k in list(self):
             if k not in newNames: del self[k]
         for k, default_info in self._missing_default_inis():
             self[k] = default_info # type: DefaultIniInfo
-            if k in _deleted_: # we restore default over copy
-                _updated.add(k)
+            if k in rdata.to_del: # we restore default over copy
+                rdata.redraw.add(k)
                 default_info.reset_status()
-        if _updated:
-            self._notify_bain(altered={self[n].abs_path for n in _updated})
-        return _added, _deleted_, _updated
+        if rdata.redraw:
+            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
+        return rdata
 
     def _missing_default_inis(self):
         return ((k, v) for k, v in self._default_tweaks.items() if
                 k not in self)
 
     def refresh(self, refresh_infos=True, refresh_target=True):
-        _added = _deleted_ = _updated = set()
         if refresh_infos:
-            _added, _deleted_, _updated = self._refresh_ini_tweaks()
-        change = refresh_target and (self.ini.updated or self.ini.do_update())
-        if change: # reset the status of all infos and let RefreshUI set it
+            rdata = self._refresh_ini_tweaks()
+        else: rdata = _RDIni()
+        rdata.ini_changed = refresh_target and (
+                    self.ini.updated or self.ini.do_update())
+        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.values(): ini_info.reset_status()
-        change = bool(_added) or bool(_updated) or bool(_deleted_) or change
-        if not change: return change
-        return _added, _updated, _deleted_, change
+        return rdata
 
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
@@ -2179,6 +2192,14 @@ def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
     return (available_bsas[b] for b in r_bsas if b in available_bsas)
 
 #------------------------------------------------------------------------------
+@dataclass(slots=True)
+class _RDMods(RefrData):
+    lo_changed: bool = False
+
+    def __bool__(self):
+        return super(_RDMods, self).__bool__( # _RDMods is needed here
+            ) or bool(self.lo_changed)
+
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
     unique_store_key = Store.MODS
@@ -2404,35 +2425,38 @@ class ModInfos(FileInfos):
         See usages for how to use the refresh_infos and unlock_lo params.
         NB: if an operation *we* performed changed the load order we do not
         want lock load order to revert our own operation. So either call
-        some of the set_load_order methods, or pass unlock_lo=True (refresh
-        only *gets* load order)."""
-        change = deleted = False
+        some of the set_load_order methods, or pass unlock_lo=True
+        (refreshLoadOrder only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
+        rdata = _RDMods()
         if refresh_infos:
-            change = FileInfos.refresh(self, booting=booting)
-            if change:
-                _added, _updated, deleted = change
-            change = bool(change)
+            fi_rdata = FileInfos.refresh(self, booting=booting)
+            if fi_rdata:
+                rdata.to_add, rdata.to_del, rdata.redraw = fi_rdata.to_add, \
+                    fi_rdata.to_del, fi_rdata.redraw
+        mods_changes = bool(rdata)
         self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
-        lo_changed = self.refreshLoadOrder(forceRefresh=change or unlock_lo,
-            forceActive=deleted, unlock_lo=unlock_lo)
+        rdata.lo_changed = self.refreshLoadOrder(forceRefresh=mods_changes or
+            unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
         self._refresh_bash_tags()
         # if active did not change, we must perform the refreshes below
-        if lo_changed < 2: # in case ini files were deleted or modified
+        if rdata.lo_changed < 2: # in case ini files were deleted or modified
             self._refresh_mod_inis()
-        if lo_changed < 2 and change:
-            # If any plugins have been added, updated or deleted, we need
-            # to recalculate dependents
-            self._recalc_dependents()
-            self._refresh_active_no_cp1252()
-            self._update_info_sets()
-        elif lo_changed < 2: # maybe string files were deleted...
-            #we need a load order below: in skyrim we read inis in active order
-            change |= self._refreshMissingStrings()
+            if mods_changes:
+                # If any plugins have been added, updated or deleted, we need
+                # to recalculate dependents
+                self._recalc_dependents()
+                rdata.redraw |= (self._refresh_active_no_cp1252() |
+                                 self._update_info_sets())
+            else: # maybe string files were deleted...
+                # we need a load order below: in skyrim we read inis in
+                # active order - we then need to redraw what changed status
+                rdata.redraw |= self._refreshMissingStrings()
         self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        scanList = self._refreshMergeable()
-        return bool(change) or bool(scanList) or lo_changed
+        rdata.redraw.update(self._refreshMergeable())
+        rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
+        return rdata
 
     def _refresh_mod_inis(self):
         if not bush.game.Ini.supports_mod_inis: return
@@ -2468,18 +2492,18 @@ class ModInfos(FileInfos):
         refresh. It seems that Skyrim and Oblivion read plugins.txt as a
         cp1252 encoded file, and any filename that doesn't decode to cp1252
         will be skipped."""
-        bad = self.bad_names = set()
-        activeBad = self.activeBad = set()
+        old_bad, self.bad_names = self.bad_names, set()
+        old_ab, self.activeBad = self.activeBad, set()
         for fileName in self:
             if self.isBadFileName(fileName):
                 if load_order.cached_is_active(fileName):
                     ##: For now, we'll leave them active, until we finish
                     # testing what the game will support
                     #self.lo_deactivate(fileName)
-                    activeBad.add(fileName)
+                    self.activeBad.add(fileName)
                 else:
-                    bad.add(fileName)
-        return bool(activeBad)
+                    self.bad_names.add(fileName)
+        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
 
     def _refreshMissingStrings(self):
         """Refreshes which mods are supposed to have strings files, but are
@@ -2491,8 +2515,7 @@ class ModInfos(FileInfos):
         # non-existent strings files hundreds of times
         try:
             strings_files = os.listdir(bass.dirs['mods'].join('strings'))
-            strings_prefix = f'strings{os.path.sep}'
-            ci_cached_strings_paths = {strings_prefix + s.lower()
+            ci_cached_strings_paths = {f'strings{os.path.sep}{s.lower()}'
                                        for s in strings_files}
         except FileNotFoundError:
             # No loose strings folder -> all strings are in BSAs
@@ -2502,7 +2525,7 @@ class ModInfos(FileInfos):
                 cached_ini_info=cached_ini_info,
                 ci_cached_strings_paths=ci_cached_strings_paths)}
         self.new_missing_strings = self.missing_strings - oldBad
-        return bool(self.new_missing_strings)
+        return self.new_missing_strings ^ oldBad
 
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
@@ -3540,7 +3563,8 @@ class SaveInfos(FileInfos):
 
     def refresh(self, refresh_infos=True, booting=False):
         if not booting: self._refreshLocalSave() # otherwise we just did this
-        return refresh_infos and FileInfos.refresh(self, booting=booting)
+        return FileInfos.refresh(self, booting=booting) if refresh_infos \
+            else RefrData()
 
     def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName, update also cosave

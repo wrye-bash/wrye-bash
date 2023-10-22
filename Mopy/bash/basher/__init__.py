@@ -2125,10 +2125,10 @@ class INIPanel(BashTab):
         target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        target_ch |= changes and changes[3]
-        super(INIPanel, self).ShowPanel(target_changed=target_ch,
-                                        clean_targets=clean_targets)
-        if changes or target_ch: # we need this to be more granular
+        changes.ini_changed |= target_ch
+        super().ShowPanel(target_changed=changes.ini_changed,
+                          clean_targets=clean_targets)
+        if changes: # we need this to be more granular
             if detail_item is not self._ini_same_item:
                 self.uiList.RefreshUI(focus_list=focus_list,
                                       detail_item=detail_item)
@@ -4074,13 +4074,8 @@ class BashFrame(WindowFrame):
         # refresh the backend - order matters, bsas must come first for strings
         # inis and screens call refresh in ShowPanel
         ##: maybe we need to refresh inis and *not* refresh saves but on ShowPanel?
-        def try_refresh(store):
-            refresh_result = store.refresh()
-            if isinstance(refresh_result, tuple):
-                return any(refresh_result)
-            return bool(refresh_result) # May be an int etc.
         ui_refresh: defaultdict[Store, bool] = defaultdict(bool, {
-            store.unique_store_key: not booting and try_refresh(store)
+            store.unique_store_key: not booting and bool(store.refresh())
             for store in (bosh.bsaInfos, bosh.modInfos, bosh.saveInfos)})
         ui_refresh[Store.SAVES] |= ui_refresh[Store.MODS] # for save masters
         #--Repopulate, focus will be set in ShowPanel

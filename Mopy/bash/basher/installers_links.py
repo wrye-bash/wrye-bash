@@ -96,15 +96,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         ui_refresh = defaultdict(bool)
         with load_order.Unlock(): ##: single use outside refreshLoadOrder
             for store in bosh.data_tracking_stores():
-                refresh_result = store.refresh()
-                ##: This is really ugly - refresh() should pick one type and
-                # return that consistently, not sometimes tuple[set, set, set]
-                # and sometimes bool - plus this is *duplicated in RefreshData
-                # now*!
-                if isinstance(refresh_result, tuple):
-                    refresh_result = any(refresh_result)
-                # May be an int etc.
-                ui_refresh[store.unique_store_key] = bool(refresh_result)
+                ui_refresh[store.unique_store_key] = bool(store.refresh())
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
