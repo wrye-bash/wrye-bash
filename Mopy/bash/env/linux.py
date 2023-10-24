@@ -414,3 +414,6 @@ class ExeLauncher(AppLauncher):
         raise NotImplementedError # needs balt
 
 class LnkLauncher(AppLauncher): pass
+
+def in_mo2_vfs() -> bool:
+    return False # No native MO2 version

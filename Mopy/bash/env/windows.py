@@ -24,6 +24,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import datetime
 import functools
 import json
@@ -1682,3 +1683,13 @@ class LnkLauncher(AppLauncher):
 
     def launch_app(self, exe_path, exe_args):
         webbrowser.open(exe_path.s)
+
+@functools.cache
+def in_mo2_vfs() -> bool:
+    """Test if Wrye Bash appears be running with MO2's virtual filesystem
+    hooked in."""
+    for dll in ('hook.dll', 'usvfs_x64.dll'):
+        dll_handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
+        if dll_handle:
+            return True
+    return False

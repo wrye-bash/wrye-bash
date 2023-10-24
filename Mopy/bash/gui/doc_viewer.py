@@ -38,6 +38,7 @@ from .buttons import PureImageButton
 from .images import GuiImage
 from .layouts import VLayout
 from .text_components import TextArea
+from .. import env
 from ..bolt import decoder, deprint, redirect_stdout_to_deprint
 from ..exception import StateError
 
@@ -63,7 +64,7 @@ def web_viewer_available():
     can render HTML.
 
     :return: True if we can render HTML."""
-    return bool(_wx_html2)
+    return bool(_wx_html2) and not env.in_mo2_vfs()
 
 def pdf_viewer_available():
     """Checks if pdfViewer is available, meaning that we can display PDFs.
