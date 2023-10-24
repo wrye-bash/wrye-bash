@@ -1595,7 +1595,7 @@ class DataStore(DataDict):
         return self.bash_dir.join(u'Hidden')
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # hasty hack for Files_Unhide, must absorb move_info
+        """Hasty hack for Files_Unhide - only use on files, not folders!"""
         try:
             env.shellMove(dict(zip(sources, destinations)), parent=window)
         except (CancelError, SkipError):
@@ -2486,25 +2486,6 @@ class ModInfos(FileInfos):
         self.plugin_inis = FNDict((k.abs_path.stail, k) for k in
                                   (*reversed(inis_active), oblivionIni))
 
-    def _refresh_active_no_cp1252(self):
-        """Refresh which filenames cannot be saved to plugins.txt - active
-        state changes and/or removal/addition of plugins should trigger a
-        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
-        cp1252 encoded file, and any filename that doesn't decode to cp1252
-        will be skipped."""
-        old_bad, self.bad_names = self.bad_names, set()
-        old_ab, self.activeBad = self.activeBad, set()
-        for fileName in self:
-            if self.isBadFileName(fileName):
-                if load_order.cached_is_active(fileName):
-                    ##: For now, we'll leave them active, until we finish
-                    # testing what the game will support
-                    #self.lo_deactivate(fileName)
-                    self.activeBad.add(fileName)
-                else:
-                    self.bad_names.add(fileName)
-        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
-
     def _refreshMissingStrings(self):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
@@ -2549,6 +2530,25 @@ class ModInfos(FileInfos):
                 if modInfo.setGhost(modGhost):
                     flipped.append(mod)
         return flipped
+
+    def _refresh_active_no_cp1252(self):
+        """Refresh which filenames cannot be saved to plugins.txt - active
+        state changes and/or removal/addition of plugins should trigger a
+        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
+        cp1252 encoded file, and any filename that doesn't decode to cp1252
+        will be skipped."""
+        old_bad, self.bad_names = self.bad_names, set()
+        old_ab, self.activeBad = self.activeBad, set()
+        for fileName in self:
+            if self.isBadFileName(fileName):
+                if load_order.cached_is_active(fileName):
+                    ##: For now, we'll leave them active, until we finish
+                    # testing what the game will support
+                    #self.lo_deactivate(fileName)
+                    self.activeBad.add(fileName)
+                else:
+                    self.bad_names.add(fileName)
+        return (self.activeBad ^ old_ab) | (self.bad_names ^ old_bad)
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""

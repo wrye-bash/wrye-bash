@@ -77,7 +77,7 @@ from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
     to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
     fast_cached_property
-from ..bosh import ModInfo, omods
+from ..bosh import ModInfo, omods, RefrData
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
@@ -3394,16 +3394,16 @@ class InstallersPanel(BashTab):
                     #with balt.Progress(_('Scanning Packages...')) as progress:
                     refresh_info = self.listData.update_installers(folders,
                         files, fullRefresh, progress=bolt.Progress())
-                    do_refresh = refresh_info.refresh_needed()
-            refreshui = False
+                    do_refresh = bool(refresh_info)
+            refreshui = refresh_info or RefrData()
             if do_refresh:
                 with balt.Progress(_('Refreshing Installers…'),
                                    abort=canCancel) as progress:
                     try:
                         what = 'DISC' if scan_data_dir else 'IC'
-                        refreshui |= self.listData.irefresh(progress, what,
-                                                            fullRefresh,
-                                                            refresh_info)
+                        refreshui = self.listData.irefresh(progress, what,
+                                                           fullRefresh,
+                                                           refresh_info)
                         self.frameActivated = False
                     except CancelError:
                         self._user_cancelled = True # User canceled the refresh
@@ -3413,13 +3413,14 @@ class InstallersPanel(BashTab):
                 try:
                     # with balt.Progress(
                     #         _('Refreshing Converters...')) as progress:
-                    refreshui |= self.listData.irefresh(what='C',
+                    refreshui = self.listData.irefresh(what='C',
                         fullRefresh=fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-            do_refresh = self.listData.refreshTracked()
-            refreshui |= do_refresh and self.listData.refreshInstallersStatus()
+            if self.listData.refreshTracked():
+                refreshui.redraw.update(
+                    self.listData.refreshInstallersStatus())
             if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
