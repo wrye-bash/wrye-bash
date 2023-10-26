@@ -292,11 +292,10 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     acti_list = None if acti is None else list(acti)
     load_list = None if lord is None else list(lord)
     fix_lo = None if quiet else _games_lo.FixInfo()
-    lord, acti = _game_handle.set_load_order(load_list, acti_list,
-                                             list(cached_lord.loadOrder),
-                                             list(cached_lord.activeOrdered),
-                                             fix_lo=fix_lo)
-    if fix_lo: fix_lo.lo_deprint()
+    lord, acti = _game_handle.set_load_order(load_list, acti_list, # pass lists
+        [*cached_lord.loadOrder], [*cached_lord.activeOrdered], fix_lo=fix_lo)
+    if not quiet:
+        fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
 
 def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
@@ -343,12 +342,14 @@ def refresh_lo(cached=False, cached_active=True):
         if cached_lord is not __lo_unset:
             if cached_lord != saved: # sanity check, should not happen
                 bolt.deprint(f'Bug: {cached_lord=} is different from {saved=}')
-        lord, acti = _game_handle.set_load_order( # validate saved lo
+        # validate saved lo (remove/add deleted/added mods - new mods should
+        # be appended - note fix_lo is None)
+        lord, acti = _game_handle.set_load_order(
             list(saved.loadOrder), list(saved.activeOrdered))
         fixed = LoadOrder(lord, acti)
         if fixed != saved:
-            bolt.deprint(f'Saved load order is no longer valid: {saved}\n'
-                         f'Corrected to {fixed}')
+            bolt.deprint(f'*** Saved load order is no longer valid: {saved}\n'
+                         f'*** Corrected to {fixed}')
         saved = fixed
     else: saved = __lo_unset
     if cached_lord is not __lo_unset:
@@ -415,7 +416,7 @@ def _restore_lo(index_move):
     # fix previous
     lord, acti = _game_handle.set_load_order(list(previous.loadOrder),
                                              list(previous.activeOrdered))
-    previous = LoadOrder(lord, acti) # possibly fixed
+    previous = LoadOrder(lord, acti) # possibly fixed with new mods appended
     if previous == cached_lord:
         index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
         return _restore_lo(index_move)

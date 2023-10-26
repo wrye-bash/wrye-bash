@@ -4192,13 +4192,13 @@ class BashFrame(WindowFrame):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
         if bosh.modInfos.warn_missing_lo_act:
+            bosh.modInfos.warn_missing_lo_act.clear()
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
                     'data_folder': bush.game.mods_dir,
                 }, bosh.modInfos.warn_missing_lo_act))
-            bosh.modInfos.warn_missing_lo_act = set()
         if bosh.modInfos.selectedExtra:
             if bush.game.has_esl:
                 warn_msg = _('The following plugins have been deactivated '
