@@ -185,6 +185,9 @@ class ImgFromPath(GuiImage):
             native.SetOption(_wx.IMAGE_OPTION_QUALITY, self._quality)
         return native
 
+    def save_bmp(self, imagePath, exten='.jpg'):
+        return self._native_widget.SaveFile(imagePath, self.img_types[exten])
+
 class _BmpFromPath(GuiImage):
     _native_widget: _wx.Bitmap
 

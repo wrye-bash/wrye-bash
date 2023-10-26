@@ -2126,7 +2126,7 @@ class ModInfos(FileInfos):
         self.voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
         # used in RefreshData
-        self.selectedBad = set()
+        self.warn_missing_lo_act = set()
         self.selectedExtra = []
         load_order.initialize_load_order_handle(self, bush.game.fsName)
         # Load order caches to manipulate, then call our save methods - avoid !
@@ -3221,7 +3221,7 @@ class ModInfos(FileInfos):
         # Add ghosts - the file may exist in both states (bug, or user mistake)
         # if both versions exist file should be marked as normal
         if not fileInfo.isGhost: # add ghost if not added
-            ghost_version = self.store_dir.join(fileInfo.fn_key + u'.ghost')
+            ghost_version = self.store_dir.join(f'{fileInfo.fn_key}.ghost')
             if ghost_version.exists(): toDelete.append(ghost_version)
 
     def filter_essential(self, fn_items: Iterable[FName]):

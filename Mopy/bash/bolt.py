@@ -1678,7 +1678,7 @@ class AFile(object):
         True, whereupon raise the OSError we got in stat(). If raise_on_error
         is False user must check if file exists.
 
-        :param raise_on_error: If True, rase on errors instead of just
+        :param raise_on_error: If True, raise on errors instead of just
             resetting the cache and returning.
         :param **kwargs: various:
             - itsa_ghost: In ModInfos, if we have the ghosting info available,

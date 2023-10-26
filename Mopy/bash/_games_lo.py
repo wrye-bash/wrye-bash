@@ -39,7 +39,9 @@ from .bolt import FName, Path, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
-_LoTuple = tuple[FName, ...]
+LoTuple = tuple[FName, ...]
+LoList = LoTuple | list[FName] | None
+
 _ParsedLo = tuple[list[FName], list[FName]]
 
 def _write_plugins_txt_(path, lord, active, _star):
@@ -190,8 +192,8 @@ class FixInfo(object):
         if self.master_not_active:
             msg += f'{self.master_not_active} not present in active mods\n'
         for path in self.missing_must_be_active:
-            msg += (u'%s not present in active list while present in Data '
-                    u'folder' % path) + u'\n'
+            msg += f'{path} not present in active list while present in ' \
+                   f'Data folder' + u'\n'
         msg += self.act_order_differs_from_load_order
         if self.selectedExtra:
             msg += u'Active list contains more plugins than allowed' \
@@ -210,7 +212,7 @@ class LoGame(object):
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     allow_deactivate_master = False
-    must_be_active_if_present: _LoTuple = ()
+    must_be_active_if_present: LoTuple = ()
     max_espms = 255
     max_esls = 0
     # If set to False, indicates that this game has no plugins.txt. Currently
@@ -240,9 +242,8 @@ class LoGame(object):
                            self.plugins_txt_path.size_mtime())
 
     # API ---------------------------------------------------------------------
-    def get_load_order(self, cached_load_order: _LoTuple,
-            cached_active_ordered: _LoTuple,
-            fix_lo=None) -> tuple[_LoTuple, _LoTuple]:
+    def get_load_order(self, cached_load_order: LoList,
+            cached_active_ordered: LoList, fix_lo) -> tuple[LoTuple, LoTuple]:
         """Get and validate current load order and active plugins information.
 
         Meant to fetch at once both load order and active plugins
@@ -264,7 +265,7 @@ class LoGame(object):
             self._fix_load_order(lo, fix_lo=fix_lo)
         # having a valid load order we may fix active too if we fetched them
         fixed_active = cached_active_ordered is None and \
-          self._fix_active_plugins(active, lo, on_disc=True, fix_active=fix_lo)
+            self._fix_active_plugins(active, lo, fix_lo, on_disc=True)
         self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
         return tuple(lo), tuple(active)
 
@@ -317,7 +318,7 @@ class LoGame(object):
         setting_lo = lord is not None
         if setting_lo:
             # fix the load order - lord is modified in place, hence test below
-            self._fix_load_order(lord, fix_lo=fix_lo)
+            self._fix_load_order(lord, fix_lo)
             setting_lo = previous_lord != lord
         setting_active = active is not None
         if setting_lo and not setting_active:
@@ -342,16 +343,15 @@ class LoGame(object):
                     u'You need to pass a load order in to set active plugins')
             # a load order is needed for all games to validate active against
             test = lord if setting_lo else previous_lord
-            self._fix_active_plugins(active, test, on_disc=False,
-                                     fix_active=fix_lo)
+            self._fix_active_plugins(active, test, fix_lo, on_disc=False)
         lord = lord if setting_lo else previous_lord
         active = active if setting_active else previous_active
         if lord is None or active is None: # sanity check
-            raise Exception(u'Returned load order and active must be not None')
+            raise Exception('Returned load order and active must be not None')
         if not dry_run: # else just return the (possibly fixed) lists
             self._persist_if_changed(active, lord, previous_active,
                                      previous_lord)
-        return lord, active # return what was set or was previously set
+        return lord, active # return what we set or was previously set
 
     def _active_entries_to_remove(self):
         """Returns a set of plugin names that should not be written into the LO
@@ -408,8 +408,8 @@ class LoGame(object):
         load order plugins list."""
         raise NotImplementedError
 
-    def _fetch_load_order(self, cached_load_order: _LoTuple | None,
-            cached_active: _LoTuple):
+    def _fetch_load_order(self, cached_load_order: LoTuple | None,
+                          cached_active: LoTuple):
         raise NotImplementedError
 
     def _fetch_active_plugins(self) -> list[FName]:
@@ -532,7 +532,7 @@ class LoGame(object):
         mods_set = set(cached_minfs)
         fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
         if not quiet and fix_lo.lo_removed:
-            cached_minfs.selectedBad |= fix_lo.lo_removed
+            cached_minfs.warn_missing_lo_act |= fix_lo.lo_removed
         # present in text file, we are supposed to take care of that
         fix_lo.lo_added |= mods_set - loadorder_set
         # Remove non existent plugins from load order
@@ -559,7 +559,7 @@ class LoGame(object):
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
 
-    def _fix_active_plugins(self, acti, lord, on_disc, fix_active):
+    def _fix_active_plugins(self, acti, lord, fix_active, on_disc):
         # filter plugins not present in modInfos - this will disable
         # corrupted too! Preserve acti order
         quiet = fix_active is None
@@ -575,7 +575,7 @@ class LoGame(object):
         fix_active.act_removed = set(acti) - acti_filtered_set
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt
-            cached_minfs.selectedBad |= fix_active.act_removed
+            cached_minfs.warn_missing_lo_act |= fix_active.act_removed
         if not self.allow_deactivate_master:
             if self.master_path not in acti_filtered_set:
                 acti_filtered.insert(0, self.master_path)

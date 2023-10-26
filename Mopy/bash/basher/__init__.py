@@ -283,6 +283,27 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 class _ModsUIList(UIList):
     _masters_first_cols = UIList.nonReversibleCols
 
+    def _sort_masters_first(self, items):
+        """Conditional sort, performs the actual 'masters-first' sorting if
+        needed."""
+        if self.masters_first:
+            items.sort(key=lambda a: not self.data_store[a].in_master_block())
+
+    def _activeModsFirst(self, items):
+        if self.selectedFirst:
+            set_active = set(load_order.cached_active_tuple())
+            set_merged = set(bosh.modInfos.merged)
+            set_imported = set(bosh.modInfos.imported)
+            def _sel_sort_key(x):
+                # First active, then merged, then imported, then inactive
+                x = self._item_name(x)
+                if x in set_active: return 0
+                elif x in set_merged: return 1
+                elif x in set_imported: return 2
+                else: return 3
+            items.sort(key=_sel_sort_key)
+    _extra_sortings = [_sort_masters_first, _activeModsFirst]
+
     @property
     def masters_first(self):
         """Whether or not masters should be sorted before non-masters for the
@@ -302,30 +323,14 @@ class _ModsUIList(UIList):
     def selectedFirst(self, val):
         settings[f'{self.keyPrefix}.selectedFirst'] = val
 
-    def _sort_masters_first(self, items):
-        """Conditional sort, performs the actual 'masters-first' sorting if
-        needed."""
-        if self.masters_first:
-            items.sort(key=lambda a: not self.data_store[a].in_master_block())
-
-    def _activeModsFirst(self, items):
-        if self.selectedFirst:
-            set_active = set(load_order.cached_active_tuple())
-            set_merged = set(bosh.modInfos.merged)
-            set_imported = set(bosh.modInfos.imported)
-            def _sel_sort_key(x):
-                # First active, then merged, then imported, then inactive
-                if x in set_active: return 0
-                elif x in set_merged: return 1
-                elif x in set_imported: return 2
-                else: return 3
-            items.sort(key=_sel_sort_key)
-
     @property
     def masters_first_required(self):
         """Return True if sorting by master status is required for the current
         sort column."""
         return self.sort_column in self._masters_first_cols
+
+    def _item_name(self, x): # hack to centralize some nasty modInfos accesses
+        return x
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -350,32 +355,20 @@ class MasterList(_ModsUIList):
         'Current Index': lambda self, a: self._curr_real_index[
             self.data_store[a].curr_name],
     }
-    def _activeModsFirst(self, items):
-        if self.selectedFirst:
-            set_active = set(load_order.cached_active_tuple())
-            set_merged = set(bosh.modInfos.merged)
-            set_imported = set(bosh.modInfos.imported)
-            def _sel_sort_key(x):
-                # First active, then merged, then imported, then inactive
-                x_curr_name = self.data_store[x].curr_name
-                if x_curr_name in set_active: return 0
-                elif x_curr_name in set_merged: return 1
-                elif x_curr_name in set_imported: return 2
-                else: return 3
-            items.sort(key=_sel_sort_key)
-    _extra_sortings = [_ModsUIList._sort_masters_first, _activeModsFirst]
+    def _item_name(self, x):
+       return self.data_store[x].curr_name
     _sunkenBorder, _singleCell = False, True
     #--Labels
     labels = {
         'File': lambda self, mi: bosh.modInfos.masterWithVersion(
-            self.data_store[mi].curr_name),
+            self._item_name(mi)),
         'Num': lambda self, mi: f'{mi:02X}',
         'Current Order': lambda self, mi: bosh.modInfos.hexIndexString(
-            self.data_store[mi].curr_name),
+            self._item_name(mi)),
         'Indices': lambda self, mi: self._save_lo_hex_string[
-            self.data_store[mi].curr_name],
+            self._item_name(mi)],
         'Current Index': lambda self, mi: bosh.modInfos.real_index_strings[
-            self.data_store[mi].curr_name],
+            self._item_name(mi)],
     }
     # True if we should highlight masters whose stored size does not match the
     # size of the plugin on disk
@@ -967,8 +960,6 @@ class ModList(_ModsUIList):
         u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
         u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
     }
-    _extra_sortings = [_ModsUIList._sort_masters_first,
-                       _ModsUIList._activeModsFirst]
     _dndList, _dndColumns = True, [u'Load Order']
     _sunkenBorder = False
     #--Labels
@@ -4199,14 +4190,14 @@ class BashFrame(WindowFrame):
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
-        if bosh.modInfos.selectedBad:
+        if bosh.modInfos.warn_missing_lo_act:
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
                     'data_folder': bush.game.mods_dir,
-                }, bosh.modInfos.selectedBad))
-            bosh.modInfos.selectedBad = set()
+                }, bosh.modInfos.warn_missing_lo_act))
+            bosh.modInfos.warn_missing_lo_act = set()
         if bosh.modInfos.selectedExtra:
             if bush.game.has_esl:
                 warn_msg = _('The following plugins have been deactivated '

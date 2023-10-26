@@ -1368,9 +1368,8 @@ class _InstallerPackage(Installer, AFile):
         progress.setFull(len(delta_files))
         for rel_src, rel_dest in self.refreshDataSizeCrc().items():
             if rel_src not in delta_files: continue
-            progress(del_numb + upt_numb,
-                     _(u'Syncing from %s folder...') % bush.game.mods_dir +
-                     u'\n' + rel_src)
+            progress(del_numb + upt_numb, (_('Syncing from %s folder...'
+                ) % bush.game.mods_dir) + f'\n{rel_src}')
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -2878,10 +2877,10 @@ class InstallersData(DataStore):
             installer.ci_dest_sizeCrc for installer in # relative to Data/
             self.sorted_values(reverse=True) if installer.is_active))
         # Collect all files that we definitely want to keep
+        bain = bush.game.Bain
         ci_keep_files.update(map(CIstr, chain(bush.game.vanilla_files,
-            bush.game.bethDataFiles,
-            bush.game.Bain.keep_data_files,
-            bush.game.Bain.wrye_bash_data_files)))
+            bush.game.bethDataFiles, bain.keep_data_files,
+            bain.wrye_bash_data_files)))
         from . import modInfos
         for bpatch in modInfos.bashed_patches: # type: FName
             ci_keep_files.add(CIstr(bpatch))
@@ -2897,18 +2896,15 @@ class InstallersData(DataStore):
                 ci_keep_files.add(CIstr(u'%s' % bp_doc))
                 ci_keep_files.add(CIstr(bp_doc.root.s + (
                     u'.txt' if bp_doc.cext == u'.html' else u'.html')))
-        removes = set(self.data_sizeCrcDate) - ci_keep_files
+        ci_removes = self.data_sizeCrcDate.keys() - ci_keep_files
         # Don't remove files in Wrye Bash-related directories or INI Tweaks
-        skipPrefixes = [skipDir + os_sep for skipDir in
-                        bush.game.Bain.wrye_bash_data_dirs |
-                        bush.game.Bain.keep_data_dirs]
-        skipPrefixes.extend(bush.game.Bain.keep_data_file_prefixes)
-        skipPrefixes = tuple(skipPrefixes)
-        return [f for f in removes if not f.lower().startswith(skipPrefixes)]
+        skip_start = (*bain.keep_data_file_prefixes, *(f'{skipDir}{os_sep}' for
+            skipDir in bain.wrye_bash_data_dirs | bain.keep_data_dirs))
+        return [f for f in ci_removes if not f.lower().startswith(skip_start)]
 
     def clean_data_dir(self, removes, refresh_ui):
-        destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' % (
-            bush.game.mods_dir, bolt.timestamp()))
+        destDir = bass.dirs['bainData'].join(
+            f'{bush.game.mods_dir} Folder Contents ({bolt.timestamp()})')
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()

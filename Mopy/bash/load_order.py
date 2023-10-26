@@ -48,7 +48,7 @@ from collections.abc import Iterable
 
 from . import _games_lo # LoGame instance providing load order operations API
 from . import bass, bolt, exception
-from ._games_lo import _LoTuple # for typing
+from ._games_lo import LoTuple, LoList  # for typing
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 
 _game_handle: _games_lo.LoGame | None = None
@@ -124,7 +124,7 @@ class LoadOrder(object):
     def __hash__(self): return hash((self._loadOrder, self._active))
 
     def lindex(self, mname): return self.__mod_loIndex[mname] # KeyError
-    def lorder(self, paths: Iterable[FName]) -> _LoTuple:
+    def lorder(self, paths: Iterable[FName]) -> LoTuple:
         """Return a tuple containing the given paths in their load order.
 
         :param paths: iterable of paths that must all have a load order"""
@@ -191,11 +191,11 @@ def _keep_max(max_to_keep, length):
     return x, y
 
 # cached_lord getters - make sure the cache is valid when using them ----------
-def cached_active_tuple() -> _LoTuple:
+def cached_active_tuple() -> LoTuple:
     """Return the currently cached active mods in load order as a tuple."""
     return cached_lord.activeOrdered
 
-def cached_lo_tuple() -> _LoTuple:
+def cached_lo_tuple() -> LoTuple:
     """Return the currently cached load order (including inactive mods) as a
     tuple."""
     return cached_lord.loadOrder
@@ -300,11 +300,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
 
-def _update_cache(lord: _LoTuple=None, acti_sorted=None, __index_move=0):
-    """
-    :type lord: tuple[FName, ...] | list[FName]
-    :type acti_sorted: tuple[FName, ...] | list[FName]
-    """
+def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
     global cached_lord
     try:
         fix_lo = _games_lo.FixInfo()
