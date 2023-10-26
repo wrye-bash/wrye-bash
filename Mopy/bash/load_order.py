@@ -297,8 +297,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
                                              list(cached_lord.activeOrdered),
                                              fix_lo=fix_lo)
     if fix_lo: fix_lo.lo_deprint()
-    _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
-    return cached_lord
+    return _update_cache(lord, acti, __index_move=__index_move)
 
 def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
     global cached_lord
@@ -307,7 +306,8 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
         lord, acti_sorted = _game_handle.get_load_order(lord, acti_sorted,
                                                         fix_lo)
         fix_lo.lo_deprint()
-        cached_lord = LoadOrder(lord, acti_sorted)
+        # noinspection PyRedundantParentheses
+        return (cached_lord := LoadOrder(lord, acti_sorted))
     except Exception:
         bolt.deprint(u'Error updating load_order cache')
         cached_lord = __lo_unset
@@ -357,14 +357,15 @@ def refresh_lo(cached=False, cached_active=True):
         active = cached_lord.activeOrdered if (
             cached_active and not _game_handle.active_changed()) else None
     else: active = lo = None
-    _update_cache(lo, active)
+    new_cache = _update_cache(lo, active)
     if locked and saved is not __lo_unset:
-        if cached_lord.loadOrder != saved.loadOrder or (
-           cached_lord.active != saved.active and # active order doesn't matter
+        if new_cache.loadOrder != saved.loadOrder or (
+           new_cache.active != saved.active and # active order doesn't matter
            bass.settings[u'bash.load_order.lock_active_plugins']):
-            save_lo(saved.loadOrder, saved.activeOrdered)
             global warn_locked
             warn_locked = True
+            return save_lo(saved.loadOrder, saved.activeOrdered)
+    return new_cache
 
 def __load_pickled_load_orders():
     global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
@@ -465,12 +466,15 @@ def toggle_lock_load_order(user_warning_callback):
         lock = user_warning_callback()
     bass.settings[u'bosh.modInfos.resetMTimes'] = locked = lock
 
-class Unlock(object):
+class Unlock:
+
+    def  __init__(self, do_unlock=True):
+        self._do_unlock = do_unlock
 
     def __enter__(self):
         global locked
         self.__locked = locked
-        locked = False
+        locked = False if self._do_unlock else locked
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         global locked

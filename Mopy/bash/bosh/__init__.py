@@ -2075,9 +2075,8 @@ def _lo_cache(lord_func):
         try:
             old_lo, old_active = load_order.cached_lo_tuple(), \
                                  load_order.cached_active_tuple()
-            lord_func(self, *args, **kwargs)
-            lo, active = load_order.cached_lo_tuple(), \
-                         load_order.cached_active_tuple()
+            cached_lord = lord_func(self, *args, **kwargs)
+            lo, active = cached_lord.loadOrder, cached_lord.activeOrdered
             lo_changed = lo != old_lo
             active_changed = active != old_active
             active_set = set(active)
@@ -2208,13 +2207,10 @@ class ModInfos(FileInfos):
     @_lo_cache
     def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
                          unlock_lo=False):
-        def _do_lo_refresh():
-            load_order.refresh_lo(cached=not forceRefresh,
-                                  cached_active=not forceActive)
         # Needed for BAIN, which may have to reorder installed plugins
-        if unlock_lo:
-            with load_order.Unlock(): _do_lo_refresh()
-        else: _do_lo_refresh()
+        with load_order.Unlock(unlock_lo):
+            return load_order.refresh_lo(cached=not forceRefresh,
+                                         cached_active=not forceActive)
 
     @_lo_cache
     def cached_lo_save_active(self, active=None):
@@ -2222,13 +2218,13 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.save_lo(None, load_order.cached_lord.lorder(
+        return load_order.save_lo(None, load_order.cached_lord.lorder(
             self._active_wip if active is None else active))
 
     @_lo_cache
     def cached_lo_save_lo(self):
         """Save load order when active did not change."""
-        load_order.save_lo(self._lo_wip)
+        return load_order.save_lo(self._lo_wip)
 
     @_lo_cache
     def cached_lo_save_all(self):
@@ -2237,7 +2233,7 @@ class ModInfos(FileInfos):
         dex = {x: i for i, x in enumerate(self._lo_wip) if
                x in active_wip_set}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        load_order.save_lo(self._lo_wip, acti=self._active_wip)
+        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
     def undo_load_order(self): return load_order.undo_load_order()
