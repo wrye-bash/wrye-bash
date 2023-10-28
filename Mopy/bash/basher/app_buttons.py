@@ -30,8 +30,8 @@ from .. import balt, bass, bolt, bosh, bush, load_order
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
 from ..bolt import GPath, undefinedPath
-from ..env import get_game_version_fallback, getJava, get_file_version, \
-    AppLauncher, get_registry_path, ExeLauncher, LnkLauncher, set_cwd
+from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
+    ExeLauncher, LnkLauncher, set_cwd
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
     Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
@@ -486,11 +486,9 @@ class GameButton(_ExeButton):
 
     @property
     def _app_version(self):
-        ver_path = bass.dirs['app'].join(bush.game.version_detect_file)
-        if gversion := _strip_version(ver_path):
-            return gversion
-        return _strip_version(ver_tuple=get_game_version_fallback(
-            ver_path, bush.ws_info))
+        if not bass.settings['bash.statusbar.showversion']:
+            return '' # check first to avoid the syscall
+        return _strip_version(ver_tuple=(bush.game_version()))
 
     def allow_create(self):
         # Always possible to run, even if the EXE is missing/inaccessible

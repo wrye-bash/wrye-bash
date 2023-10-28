@@ -231,23 +231,23 @@ def clear_read_only(filepath): # copied from bolt
 
 def get_game_version_fallback(test_path, ws_info):
     """A fallback method of determining the game version for Windows Store
-       games.  The version returned by this method is not consistent with the
-       usual executable version, so this should only be used in the even that
-       a permission error prevents parsing the game file for version
-       information.  This may happen at a developer's whim: Bethesda's games
-       originally could not be parsed, but were later updated so they could be
-       parsed."""
+    games. The version returned by this method is not consistent with the
+    usual executable version, so this should only be used in the event that
+    a permission error prevents parsing the game file for version
+    information. This may happen at a developer's whim: Bethesda's games
+    originally could not be parsed, but were later updated so they could be
+    parsed. Single use in bush.game_version."""
     warn_msg = _(u'Warning: %(game_file)s could not be parsed for version '
                  u'information.') % {'game_file': test_path}
     if ws_info.installed:
-        deprint(warn_msg + u' ' +
-            _(u'A fallback has been used, but may not be accurate.'))
+        deprint(f'{warn_msg} ' + _(
+            'A fallback has been used, but may not be accurate.'))
         return ws_info.get_installed_version()._version
     else:
-        deprint(warn_msg + u' ' +
-            _('This is not a legacy Windows Store game, your system likely '
-              'needs to be configured for file permissions. See the Wrye Bash '
-              'General Readme for more information.'))
+        deprint(f'{warn_msg} ' + _(
+            'This is not a legacy Windows Store game, your system likely '
+            'needs to be configured for file permissions. See the Wrye Bash '
+            'General Readme for more information.'))
         return 0, 0, 0, 0
 
 def get_legacy_ws_game_paths(submod):

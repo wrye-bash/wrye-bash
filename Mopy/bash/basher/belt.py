@@ -30,7 +30,7 @@ from .. import ScriptParser, bass, bolt, bosh, bush, load_order
 from ..ScriptParser import error, PreParser
 from ..balt import ItemLink
 from ..bolt import FName, FNDict, LooseVersion
-from ..env import get_file_version, get_game_version_fallback, to_os_path
+from ..env import get_file_version, to_os_path
 from ..gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
     HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
     ListBox, PictureWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
@@ -467,6 +467,19 @@ class PageVersions(PageInstaller):
         parent.enable_forward(False)
         self.update_layout()
 
+def _need_have(need, have):
+    have_fmt = '.'.join(map(str, have))
+    if need == 'None':
+        return [1, have_fmt]
+    need_ver = LooseVersion('.'.join(map(str, need)))
+    have_ver = LooseVersion(have_fmt)
+    if have_ver > need_ver:
+        return [1, have_fmt]
+    elif have_ver < need_ver:
+        return [-1, have_fmt]
+    else:
+        return [0, have_fmt]
+
 class WryeParser(PreParser):
     """A derived class of Parser, for handling BAIN install wizards."""
 
@@ -547,15 +560,7 @@ class WryeParser(PreParser):
     # Functions...
     def fnCompareGameVersion(self, obWant):
         want_version = self._TestVersion_Want(obWant)
-        test_file = bass.dirs['app'].join(bush.game.version_detect_file)
-        try:
-            game_have = get_file_version(test_file.s)
-            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
-                game_have = get_game_version_fallback(test_file, bush.ws_info)
-            ret = self._TestVersion(want_version, test_file, game_have)
-        except OSError:
-            game_have = get_game_version_fallback(test_file, bush.ws_info)
-            ret = self._TestVersion(want_version, test_file, game_have)
+        ret = _need_have(want_version, bush.game_version())
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
@@ -802,16 +807,7 @@ class WryeParser(PreParser):
         if geWant == 'None': ge = 'None'
         if not wbWant: wbWant = '0.0'
         wbHave = bass.AppVersion
-        # Get the game version - be careful about Windows Store versions
-        test_path = bass.dirs['app'].join(bush.game.version_detect_file)
-        try:
-            game_have = get_file_version(test_path.s)
-            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
-                game_have = get_game_version_fallback(test_path, bush.ws_info)
-            ret = self._TestVersion(gameWant, test_path, game_have)
-        except OSError:
-            game_have = get_game_version_fallback(test_path, bush.ws_info)
-            ret = self._TestVersion(gameWant, test_path, game_have)
+        ret = _need_have(gameWant, bush.game_version())
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.Se.se_abbrev:
@@ -850,28 +846,20 @@ class WryeParser(PreParser):
                 return ret
         return ret
 
-    def _TestVersion_Want(self, want):
+    @staticmethod
+    def _TestVersion_Want(want):
         try:
             need = tuple(int(i) for i in want.split('.'))
         except ValueError:
             need = 'None'
         return need
 
-    def _TestVersion(self, need, file_, have=None):
+    @staticmethod
+    def _TestVersion(need, file_, have=None):
         if not have and file_ and file_.exists():
             have = get_file_version(file_.s)
         if have:
-            have_fmt = '.'.join([str(i) for i in have])
-            if need == 'None':
-                return [1, have_fmt]
-            need_ver = LooseVersion('.'.join([str(i) for i in need]))
-            have_ver = LooseVersion(have_fmt)
-            if have_ver > need_ver:
-                return [1, have_fmt]
-            elif have_ver < need_ver:
-                return [-1, have_fmt]
-            else:
-                return [0, have_fmt]
+            return _need_have(need, have)
         elif need == 'None':
             return [0, 'None']
         return [-1, 'None']
