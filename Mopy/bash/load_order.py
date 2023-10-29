@@ -104,11 +104,10 @@ class LoadOrder(object):
                 f'Active mods with no load order: {", ".join(missing)}')
         self._loadOrder = tuple(loadOrder)
         self._active = set_act
-        self.__mod_loIndex = {a: i for i, a in enumerate(loadOrder)}
+        self.mod_lo_index = {a: i for i, a in enumerate(loadOrder)}
         # below would raise key error if active have no loadOrder
-        self._activeOrdered = tuple(
-            sorted(active, key=self.__mod_loIndex.__getitem__))
-        self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
+        self._activeOrdered = self.lorder(active)
+        self.mod_act_index = {a: i for i, a in enumerate(self._activeOrdered)}
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
@@ -123,13 +122,11 @@ class LoadOrder(object):
     def __ne__(self, other): return not (self == other)
     def __hash__(self): return hash((self._loadOrder, self._active))
 
-    def lindex(self, mname): return self.__mod_loIndex[mname] # KeyError
     def lorder(self, paths: Iterable[FName]) -> LoTuple:
         """Return a tuple containing the given paths in their load order.
 
         :param paths: iterable of paths that must all have a load order"""
-        return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
-    def activeIndex(self, mname): return self.__mod_actIndex[mname]
+        return tuple(sorted(paths, key=self.mod_lo_index.__getitem__))
 
     def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
         return {u'_activeOrdered': self._activeOrdered,
@@ -144,8 +141,8 @@ class LoadOrder(object):
                 dct[k] = tuple()
         self.__dict__.update(dct)   # update attributes # __dict__ prints empty
         self._active = frozenset(self._activeOrdered)
-        self.__mod_loIndex = {a: i for i, a in enumerate(self._loadOrder)}
-        self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
+        self.mod_lo_index = {a: i for i, a in enumerate(self._loadOrder)}
+        self.mod_act_index = {a: i for i, a in enumerate(self._activeOrdered)}
 
     def __str__(self):
         return ', '.join([(f'*{x}' if x in self._active else x) for x in
@@ -205,21 +202,21 @@ def cached_is_active(mod):
     return mod in cached_lord.active
 
 # Load order and active indexes
-def cached_lo_index(mod): return cached_lord.lindex(mod)
+def cached_lo_index(mod): return cached_lord.mod_lo_index[mod]
 
 def cached_lo_index_or_max(mod):
     try:
-        return cached_lo_index(mod)
+        return cached_lord.mod_lo_index[mod]
     except KeyError:
         return sys.maxsize # sort mods that do not have a load order LAST
 
-def cached_active_index(mod): return cached_lord.activeIndex(mod)
+def cached_active_index(mod): return cached_lord.mod_act_index[mod]
 
 def cached_lower_loading(mod):
-    return cached_lord.loadOrder[:cached_lo_index(mod)]
+    return cached_lord.loadOrder[:cached_lord.mod_lo_index[mod]]
 
-def cached_higher_loading(mod):
-    return cached_lord.loadOrder[cached_lo_index(mod):]
+def cached_higher_loading(mod): # includes mod
+    return cached_lord.loadOrder[cached_lord.mod_lo_index[mod]:]
 
 def get_ordered(mod_paths: Iterable[FName]) -> list[FName]:
     """Return a list containing mod_paths' elements sorted into load order.
