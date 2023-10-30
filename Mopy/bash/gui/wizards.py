@@ -87,7 +87,7 @@ class WizardDialog(DialogWindow):
 
         :type new_page: WizardPage"""
         self._wiz_layout.replace_component(self._curr_page, new_page)
-        self._curr_page.destroy_component()
+        self._curr_page.native_destroy()
         self._curr_page = new_page
 
     def _move_next(self):

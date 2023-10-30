@@ -40,7 +40,7 @@ class Links(Lazy):
 
     def popup_menu(self, parent, selection):
         """Pops up a new menu from these links."""
-        self.create_widget()
+        self.native_init()
         to_popup = self._native_widget
         for link in self._link_list:
             link.AppendToMenu(to_popup, parent, selection)
@@ -50,7 +50,7 @@ class Links(Lazy):
         else:
             # TODO de-wx! Only use in BashNotebook
             parent.PopupMenu(to_popup)
-        self.destroy_component()
+        self.native_destroy()
         Links.Popup = None # do not leak the menu reference
 
     # self._link_list accessors

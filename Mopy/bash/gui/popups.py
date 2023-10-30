@@ -193,16 +193,16 @@ class _FileDialog(_AComponent):
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
     def __init__(self, parent, title='', defaultDir='', defaultFile='',
-                 wildcard='', allow_create=False):
+                 wildcard='', allow_create_file=False):
         defaultDir, defaultFile = map(str, (defaultDir, defaultFile))
         style_ = self.__class__._dialog_style
-        if allow_create and style_ & _wx.FD_FILE_MUST_EXIST:
+        if allow_create_file and style_ & _wx.FD_FILE_MUST_EXIST:
             style_ ^= _wx.FD_FILE_MUST_EXIST
         super().__init__(parent, title, defaultDir, defaultFile, wildcard,
                          style=style_)
 
     def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb): self.destroy_component()
+    def __exit__(self, exc_type, exc_val, exc_tb): self.native_destroy()
 
     @classmethod
     def display_dialog(cls, *args, **kwargs):

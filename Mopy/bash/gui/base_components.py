@@ -173,7 +173,7 @@ class _AObject:
             raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
                                f"object.")
 
-    def destroy_component(self):
+    def native_destroy(self):
         """Destroys this component - non-internal usage is a smell, avoid if at
         all possible."""
         self._native_widget.Destroy()
@@ -213,35 +213,35 @@ class Lazy(_AObject):
     _AObject needs to know about us - think of Lazy on the same level as it."""
     # allow creating the native widget by directly accessing the _native_widget
     # if False you can *only* access _native_widget after successfully calling
-    # create_widget
-    _bypass_create_widget = False
+    # native_init
+    _bypass_native_init = False
 
     # noinspection PyMissingConstructor
     def __init__(self, *args, **kwargs):
         """Postpone calling super.__init__ till the widget is accessed."""
-        # passed from create_widget for classes that have a parent
+        # passed from native_init for classes that have a parent
         self._parent = _no_parent
         self._cached_args = args
         self._cached_kwargs = kwargs
         self._cached_widget = None
-        self.__create_widget_called = self._bypass_create_widget
+        self.__native_init_called = self._bypass_native_init
 
     @property
     def _native_widget(self):
         if not self._is_created():
-            if not self.__create_widget_called:
+            if not self.__native_init_called:
                 raise GuiError(f'{self!r} accessing the native widget without '
-                               f'calling create_widget first')
+                               f'calling native_init first')
             super(Lazy, self).__init__(self._parent, *self._cached_args,
                                        **self._cached_kwargs)
         return self._cached_widget
 
-    def destroy_component(self):
+    def native_destroy(self):
         if self._is_created():
             self._cached_widget.Destroy()
             self._cached_widget = None
             self._parent = _no_parent
-            self.__create_widget_called = self._bypass_create_widget
+            self.__native_init_called = self._bypass_native_init
 
     # Lazy API - probe into the internals of the class - special occasions only
     def _is_created(self):
@@ -252,19 +252,18 @@ class Lazy(_AObject):
         """Check if the required resources to create the widget exist."""
         return True
 
-    def create_widget(self, parent=_no_parent, recreate=True, **kwargs):
-        """Create the widget - if the widget was freshly created return
-        True."""
+    def native_init(self, parent=_no_parent, recreate=True, **kwargs):
+        """Create the native Object - if freshly created return True."""
         if not self.allow_create(): return False
         if recreate:
-            self.destroy_component()
+            self.native_destroy()
         elif self._is_created():
             return False
         self._parent = parent
         self._cached_kwargs.update(kwargs)
-        self.__create_widget_called = True
+        self.__native_init_called = True
         # will call super init and create the widget
-        return bool(self._native_widget)
+        return bool(self._native_widget) # True
 
 class _AComponent(_AEvtHandler):
     """Wrap an inheritor of wx.Window. Wraps methods present in wx.Window."""

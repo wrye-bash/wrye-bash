@@ -22,13 +22,14 @@
 #
 # =============================================================================
 """Encapsulate wx images."""
+from __future__ import annotations
+
 import os
 
 import wx as _wx
 import wx.svg as _svg
 
-from . import get_image
-from ._gui_globals import get_image_dir
+from ._gui_globals import get_image, get_image_dir
 from .base_components import Lazy, scaled
 from ..bolt import deprint, Path
 from ..exception import ArgumentError
@@ -36,7 +37,7 @@ from ..exception import ArgumentError
 class GuiImage(Lazy):
     """Wrapper around various native image classes."""
     # allow to directly access the _native_window (force via _resolve?)
-    _bypass_create_widget = True
+    _bypass_native_init = True
 
     img_types = {
         '.bmp': _wx.BITMAP_TYPE_BMP,
@@ -141,7 +142,7 @@ class _IcoFromPath(GuiImage):
         # better way (and/or any leaks)?
         if not all(self.get_img_size()):
             self._cached_args = self._img_path, _wx.BITMAP_TYPE_ICO
-            self.destroy_component()
+            self.native_destroy()
             return super()._native_widget
         return widget
 
@@ -229,3 +230,34 @@ class StaticBmp(GuiImage):
         super(GuiImage, self).__init__( # bypass GuiImage.__init__
             bitmap=self._resolve(gui_image or get_image('warning.32')))
         self._parent = parent
+
+#------------------------------------------------------------------------------
+class ImageList(Lazy):
+    """Wrapper for wx.ImageList. Allows ImageList to be specified before
+    wx.App is initialized."""
+    _native_widget: _wx.ImageList
+
+    def __init__(self, il_width, il_height):
+        super().__init__()
+        self.width = il_width
+        self.height = il_height
+        self._images = []
+        self._indices = None
+
+    @property
+    def _native_widget(self):
+        if self._is_created(): return self._cached_widget
+        # scaling crashes if done before the wx.App is initialized
+        self._cached_args = scaled(self.width), scaled(self.height)
+        return super()._native_widget
+
+    def native_init(self, *args, **kwargs):
+        kwargs.setdefault('recreate', False)
+        freshly_created = super().native_init(*args, **kwargs)
+        if freshly_created: # ONCE! we don't support adding more images
+            self._indices = {k: self._native_widget.Add(self._resolve(im)) for
+                             k, im in self._images}
+
+    def img_dex(self, *args) -> int | None:
+        """Return the index of the specified image in the native control."""
+        return None if (a := args[0]) is None else self._indices[a]

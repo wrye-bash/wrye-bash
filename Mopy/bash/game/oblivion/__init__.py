@@ -98,6 +98,15 @@ class AOblivionGameInfo(PatchGame):
         url_tip = u'http://obse.silverlock.org/'
         limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
 
+        @classmethod
+        def exe_path_sc(cls):
+            from ... import bass
+            # OBSE refuses to start when its EXE is launched on a Steam
+            # installation
+            if 'steam' in bass.dirs['app'].cs:
+                return None
+            return super().exe_path_sc()
+
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'
         long_name = u'Oblivion Graphics Extender'

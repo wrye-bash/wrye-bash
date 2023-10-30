@@ -257,7 +257,7 @@ class Tree(_AComponent):
 
         :param parent: The object that this tree belongs to. May be a wx object
             or a component.
-        :param image_list: A balt.ImageList instance, or None if the tree items
+        :param image_list: An ImageList instance, or None if the tree items
             do not have any images.
         :param root_text: The text to use for the root element. If set to None,
             the root element will be hidden. That is useful if you want to

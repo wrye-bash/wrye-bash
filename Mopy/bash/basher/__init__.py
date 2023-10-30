@@ -4335,7 +4335,7 @@ class BashFrame(WindowFrame):
                 deprint(u'An error occurred while trying to save settings:',
                         traceback=True)
         finally:
-            self.destroy_component()
+            self.native_destroy()
 
     def SaveSettings(self, destroy=False):
         """Save application data."""

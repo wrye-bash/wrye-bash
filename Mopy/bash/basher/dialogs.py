@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
-from ..balt import DecoratedTreeDict, ImageList, colors, Link
+from ..balt import DecoratedTreeDict, colors, Link
 from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
@@ -38,7 +38,7 @@ from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
     MLEList, MaybeModalDialogWindow, OkButton, Picture, RadioButton, \
     SearchBar, SelectAllButton, Spacer, Stretch, TextAlignment, TextField, \
     Tree, TreeNode, VBoxedLayout, VLayout, WrappingLabel, bell, get_image, \
-    showError, showOk
+    showError, showOk, ImageList
 from ..parsers import CsvParser
 from ..update_checker import LatestVersion
 from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file

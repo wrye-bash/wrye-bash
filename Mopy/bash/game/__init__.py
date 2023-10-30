@@ -292,6 +292,12 @@ class GameInfo(object):
         # if that does not apply to this game.
         limit_fixer_plugins = []
 
+        @classmethod
+        def exe_path_sc(cls):
+            from .. import bass
+            exe_xse = bass.dirs['app'].join(cls.exe)
+            return exe_xse if exe_xse.is_file() else None
+
     class Sd(object):
         """Information about Script Dragon for this game."""
         # Abbreviated name. If this is empty, it signals that no Script Dragon

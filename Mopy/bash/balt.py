@@ -46,11 +46,11 @@ from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
     GlobalMenu, HLayout, LayoutOptions, ListBox, Links, LogDialog, LogFrame, \
     PanelWin, TextArea, UIListCtrl, VLayout, bell, copy_files_to_clipboard, \
-    scaled, DeletionDialog, web_viewer_available, AutoSize, get_shift_down, \
+    DeletionDialog, web_viewer_available, AutoSize, get_shift_down, \
     ContinueDialog, askText, askNumber, askYes, askWarning, showOk, showError, \
     showWarning, showInfo, TreeNodeFormat, DnDStatusBar, get_image, \
-    get_color_checks
-from .gui.base_components import _AComponent, Lazy
+    get_color_checks, ImageList
+from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -78,37 +78,6 @@ _settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
 # Colors ----------------------------------------------------------------------
 colors: dict[str, Color] = {}
 
-#------------------------------------------------------------------------------
-class ImageList(Lazy):
-    """Wrapper for wx.ImageList. Allows ImageList to be specified before
-    wx.App is initialized."""
-    _native_widget: wx.ImageList
-
-    def __init__(self, il_width, il_height):
-        super().__init__()
-        self.width = il_width
-        self.height = il_height
-        self._images = []
-        self._indices = None
-
-    @property
-    def _native_widget(self):
-        if self._is_created(): return self._cached_widget
-        # scaling crashes if done before the wx.App is initialized
-        self._cached_args = scaled(self.width), scaled(self.height)
-        return super()._native_widget
-
-    def create_widget(self, *args, **kwargs):
-        kwargs.setdefault('recreate', False)
-        freshly_created = super().create_widget(*args, **kwargs)
-        if freshly_created: # ONCE! we don't support adding more images
-            self._indices = {k: self._native_widget.Add(self._resolve(im)) for
-                             k, im in self._images}
-
-    def img_dex(self, *args):
-        """Return the index of the specified image in the native control."""
-        return self._indices[args[0]]
-
 # Images ----------------------------------------------------------------------
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
@@ -121,7 +90,7 @@ class ColorChecks(ImageList):
 
     def img_dex(self, *args):
         if len(args) == 1:
-            return super().img_dex(*args)
+            return super().img_dex(args[0])
         status, on = args
         if status <= -20: color_key = 'purple'
         elif status <= -10: color_key = 'blue'
@@ -554,7 +523,7 @@ def conversation(func):
 #------------------------------------------------------------------------------
 @dataclass(slots=True)
 class _ListItemFormat:
-    icon_key: str | None = None
+    icon_key: tuple[str | None, ...] = (None,)
     back_key: str = 'default.bkgd'
     text_key: str = 'default.text'
     bold: bool = False
@@ -565,7 +534,7 @@ class _ListItemFormat:
         """Convert this list item format to an equivalent tree node format,
         relative to the specified parent UIList."""
         return TreeNodeFormat(
-            icon_idx=parent_uil.lookup_icon_index(self.icon_key),
+            icon_idx=parent_uil.icons.img_dex(*self.icon_key),
             back_color=parent_uil.lookup_back_key(self.back_key),
             text_color=parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
@@ -631,7 +600,7 @@ class UIList(PanelWin):
                                   fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
-        self.icons.create_widget(recreate=False)
+        self.icons.native_init(recreate=False)
         self.sm_up = self.icons.img_dex('arrow.up.16')
         self.sm_dn = self.icons.img_dex('arrow.down.16')
         self.__gList.set_image_list(self.icons)
@@ -862,7 +831,7 @@ class UIList(PanelWin):
         """Set font, status icon, background text etc."""
         df = _ListItemFormat()
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        icon_index = self.lookup_icon_index(df.icon_key)
+        icon_index = self.icons.img_dex(*df.icon_key)
         if icon_index is not None:
             gItem.SetImage(icon_index)
         gItem.SetTextColour(self.lookup_text_key(df.text_key).to_rgba_tuple())
@@ -870,12 +839,6 @@ class UIList(PanelWin):
             self.lookup_back_key(df.back_key).to_rgba_tuple())
         gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
                                  slant=df.italics, underline=df.underline))
-
-    def lookup_icon_index(self, target_icon_key: None | tuple) -> int | None:
-        """Helper method to look up an icon from a list item format and return
-        it as an index into the image list."""
-        return None if target_icon_key is None else self.icons.img_dex(
-            *target_icon_key)
 
     def lookup_text_key(self, target_text_color: str):
         """Helper method to look up a text color from a list item format."""
@@ -2202,7 +2165,7 @@ class BashStatusBar(DnDStatusBar):
             # Hidden?
             if link_uid in hide: continue
             # Add it, if allow_create allows it
-            if link.create_widget(self, on_drag_start=self._on_drag_start,
+            if link.native_init(self, on_drag_start=self._on_drag_start,
                     on_drag_end=self._on_drag_end, on_drag=self._on_drag,
                     on_drag_end_forced=self._on_drag_end_forced):
                 self.buttons[link.uid] = link
@@ -2221,7 +2184,7 @@ class BashStatusBar(DnDStatusBar):
     def UnhideButton(self, link_uid):
         _settings['bash.statusbar.hide'].discard(link_uid)
         link = self.all_sb_links[link_uid]
-        if not link.create_widget(self, recreate=False,
+        if not link.native_init(self, recreate=False,
                 on_drag_start=self._on_drag_start,
                 on_drag_end=self._on_drag_end, on_drag=self._on_drag,
                 on_drag_end_forced=self._on_drag_end_forced):

@@ -479,12 +479,12 @@ class _AppLauncher:
     _exe_args: tuple # cli for the application
     display_launcher: bool # whether to display the launcher
 
-    def __init__(self, exePath: _Path, exeArgs=(), display_launcher=True,
+    def __init__(self, exePath: _Path, cli_args=(), display_launcher=True,
                  *args):
         super().__init__(*args)
         self.exePath = exePath
         self._display_launcher = display_launcher
-        self._exe_args = exeArgs
+        self._exe_args = cli_args
 
     def allow_create(self): return False ##: for linux - flesh out!
 

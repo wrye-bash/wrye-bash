@@ -66,18 +66,18 @@ def InitStatusBar(bashIni):
     def _svg_list(svg_fname):
         return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar
-    BashStatusBar.obseButton = obse_button = Obse_Button('OBSE')
+    BashStatusBar.obseButton = obse_button = ObseButton('OBSE')
     all_links = [
         obse_button,
-        AutoQuit_Button('AutoQuit'),
-        Game_Button(_png_list(f'games/{bush.game.game_icon}')),
-        TESCS_Button(_png_list(f'tools/{bush.game.Ck.image_name}'))
+        AutoQuitButton('AutoQuit'),
+        GameButton(_png_list(f'games/{bush.game.game_icon}')),
+        TESCSButton(_png_list(f'tools/{bush.game.Ck.image_name}'))
     ]
     all_xes = dict.fromkeys( # keep order to not reorder much
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
-    def _tool_args(app_key, app_path_data, clazz=App_Button, **kwargs):
-        app_launcher, tooltip_str, path_kwargs, *exe_args = app_path_data
+    def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
+        app_launcher, tooltip_str, path_kwargs, *cli_args = app_path_data
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
         elif app_key[:-4] in all_xes: # chop off 'Path'
@@ -85,8 +85,8 @@ def InitStatusBar(bashIni):
         else:
             list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
         kwargs.setdefault('uid', app_key)
-        if exe_args:
-            kwargs['exeArgs'] = (*kwargs.get('exeArgs', ()), *exe_args)
+        if cli_args:
+            kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
             bashIni, list_img, tooltip_str, **kwargs)
     # Launchers of tools ------------------------------------------------------
@@ -101,25 +101,25 @@ def InitStatusBar(bashIni):
     for xe_name in all_xes:
         args = (f'{xe_name}.exe', _('Launch %s') % xe_name, {
             'root_dirs': 'app'}, f'-{xe_name[:-4]} -edit')
-        all_links.append(_tool_args(f'{xe_name}Path', args, clazz=App_xEdit,
+        all_links.append(_tool_args(f'{xe_name}Path', args, clazz=AppXEdit,
             uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name))
         if xe_name == 'TES4Edit': # set the paths for TES4Trans/TES4View
             tes4_edit_dir= all_links[-1].exePath.head
     # not specified in the ini - we bypass app_button_factory - avoid!
-    all_links.append(App_xEdit(tes4_edit_dir.join('TES4View.exe'),
+    all_links.append(AppXEdit(tes4_edit_dir.join('TES4View.exe'),
         _png_list(_j('tools', f'{"TES4ViewPath".lower()}%s.png')),
-        _('Launch TES4View'), 'TES4View', exeArgs=('-TES4', '-view'),
+        _('Launch TES4View'), 'TES4View', cli_args=('-TES4', '-view'),
         display_launcher=_is_oblivion))
-    all_links.append(App_xEdit(tes4_edit_dir.join('TES4Trans.exe'),
+    all_links.append(AppXEdit(tes4_edit_dir.join('TES4Trans.exe'),
         _png_list(_j('tools', f'{"TES4TransPath".lower()}%s.png')),
-        _('Launch TES4Trans'), 'TES4Trans', exeArgs=('-TES4', '-translate'),
+        _('Launch TES4Trans'), 'TES4Trans', cli_args=('-TES4', '-translate'),
         display_launcher=_is_oblivion))
     all_links.append(  #Tes4LODGen
         _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
-            {'root_dirs': 'app'}, '-TES4 -lodgen'), clazz=App_xEdit,
+            {'root_dirs': 'app'}, '-TES4 -lodgen'), clazz=AppXEdit,
             uid='TES4LODGen', display_launcher=_is_oblivion))
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
-        for tool, cls, dipl in zip(loot_bosh.items(), (App_LOOT, App_BOSS), (
+        for tool, cls, dipl in zip(loot_bosh.items(), (AppLOOT, AppBOSS), (
             bush.game.loot_game_name, bush.game.boss_game_name)))
     show_model = bass.inisettings['ShowModelingToolLaunchers']
     all_links.extend(_tool_args(*mt, display_launcher=show_model) for mt in
@@ -146,11 +146,11 @@ def InitStatusBar(bashIni):
         all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
                                    canHide=False))
     #--Final couple
-    all_links.append(App_DocBrowser('DocBrowser'))
-    all_links.append(App_PluginChecker('ModChecker'))
-    all_links.append(App_Settings('Settings', canHide=False))
-    all_links.append(App_Help('Help', canHide=False))
-    all_links.append(App_Restart('Restart'))
+    all_links.append(DocBrowserButton('DocBrowser'))
+    all_links.append(PluginCheckerButton('ModChecker'))
+    all_links.append(SettingsButton('Settings', canHide=False))
+    all_links.append(HelpButton('Help', canHide=False))
+    all_links.append(RestartButton('Restart'))
     BashStatusBar.all_sb_links = {li.uid: li for li in all_links}
 
 #------------------------------------------------------------------------------
