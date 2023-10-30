@@ -121,7 +121,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_plugins = set(full_lo)
-    all_present_minfs = {x: modInfos[x] for x in full_lo}
+    all_present_minfs = {x: modInfos[x] for x in full_lo} #ascending load order
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
@@ -552,7 +552,7 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             (e.g. 211000800 is perfectly fine in a load order with ESLs), so
             that xEdit (and the game) can understand it."""
             orig_minf = modInfos[fid_orig_plugin]
-            proper_index = orig_minf.real_index()
+            proper_index = modInfos.real_indices[fid_orig_plugin][0]
             if orig_minf.is_esl():
                 return (f'FE{proper_index - sort_offset:03X}'
                         f'{whole_lo_fid & 0x00000FFF:03X}')
