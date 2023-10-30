@@ -826,8 +826,7 @@ class _GhostLink(ItemLink):
         to_ghost = self.__class__.toGhost
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(to_ghost(fileName)) != oldGhost:
+            if fileInfo.setGhost(to_ghost(fileName)):
                 ghost_changed.append(fileName)
         self.window.RefreshUI(redraw=ghost_changed)
 
@@ -850,7 +849,7 @@ class _DirectGhostLink(_GhostLink, EnabledLink):
     def _enable(self):
         # Enable only if at least one plugin's ghost status would be changed
         ghost_minfs = self._data_store
-        return any(self.__class__.toGhost(p) != ghost_minfs[p].isGhost
+        return any(self.__class__.toGhost(p) != ghost_minfs[p].is_ghost
                    for p in self.selected)
 
 class _Mod_Ghost(_DirectGhostLink):
@@ -868,7 +867,7 @@ class Mod_GhostUnghost(TransLink):
     def _decide(self, window, selection):
         # If any of the selected plugins can be ghosted, return the ghosting
         # link - otherwise, default to unghost
-        if any(_Mod_Ghost.toGhost(p) != window.data_store[p].isGhost
+        if any(_Mod_Ghost.toGhost(p) != window.data_store[p].is_ghost
                for p in selection):
             return _Mod_Ghost()
         return _Mod_Unghost()

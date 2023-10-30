@@ -127,7 +127,7 @@ class MasterInfo:
         mod_info = modInfos.get(str_or_fn, None)
         if mod_info is not None:
             self.curr_name = FName(str_or_fn)
-            self.is_ghost = mod_info.isGhost
+            self.is_ghost = mod_info.is_ghost
         return mod_info
 
     def disable_master(self):
@@ -363,7 +363,7 @@ class ModInfo(FileInfo):
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         if itsa_ghost is None and (fullpath.cs[-6:] == u'.ghost'):
             fullpath = fullpath.s[:-6]
-            self.isGhost = True
+            self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(regular_path=fullpath,
                                       itsa_ghost=itsa_ghost)
@@ -591,55 +591,48 @@ class ModInfo(FileInfo):
 
     # Ghosting and ghosting related overrides ---------------------------------
     def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
-        """Refreshes the isGhost state by checking existence on disk."""
+        """Refreshes the is_ghost state by checking existence on disk."""
         if itsa_ghost is not None:
-            self.isGhost = itsa_ghost
+            self.is_ghost = itsa_ghost
             return
         if regular_path is None: regular_path = self._file_key
-        self.isGhost = not regular_path.is_file() and os.path.isfile(
+        self.is_ghost = not regular_path.is_file() and os.path.isfile(
             f'{regular_path}.ghost')
 
     def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
-        old_ghost = self.isGhost
+        old_ghost = self.is_ghost
         self._refresh_ghost_state(itsa_ghost=itsa_ghost)
         # mark updated if ghost state changed but only reread header if needed
         did_change = super(ModInfo, self).do_update(raise_on_error)
-        return did_change or self.isGhost != old_ghost
+        return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._file_key + '.ghost' # Path.__add__
-                ) if self.isGhost else self._file_key
+                ) if self.is_ghost else self._file_key
 
-    def setGhost(self, isGhost):
-        """Sets file to/from ghost mode. Returns ghost status at end."""
-        if isGhost == self.isGhost:
-            # Current status is already what we want it to be
-            return isGhost
-        if self.fn_key == bush.game.master_file:
-            # Don't allow the master ESM to be ghosted, we need that one
-            return self.isGhost
-        normal = self._file_key
-        ghost = normal + '.ghost' # Path.__add__ !
+    def setGhost(self, ghostify):
+        """Set file to/from ghost mode. Return True if ghost status changed."""
+        # Current status is already what we want it to be
+        if (ghostify == self.is_ghost or # Don't allow ghosting the master ESM
+            self.fn_key == bush.game.master_file):
+            return False
         # Current status != what we want, so change it
+        ghost = (normal := self._file_key) + '.ghost' # Path.__add__ !
+        # Determine source and target, then perform the move
+        ghost_source = normal if ghostify else ghost
+        ghost_target = ghost if ghostify else normal
         try:
-            if not normal.editable() or not ghost.editable():
-                return self.isGhost
-            # Determine source and target, then perform the move
-            ghost_source = normal if isGhost else ghost
-            ghost_target = ghost if isGhost else normal
             ghost_source.moveTo(ghost_target)
-            self.isGhost = isGhost
-            # reset cache info as un/ghosting should not make do_update return
-            # True
-            self._mark_unchanged()
-            # Notify BAIN, as this is basically a rename operation
-            modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
-            deprint(f'Failed to {"" if isGhost else "un"}ghost file '
-                    f'{normal if isGhost else ghost}', traceback=True)
-        return self.isGhost
+            deprint(f'Failed to {"" if ghostify else "un"}ghost file '
+                    f'{normal if ghostify else ghost}', traceback=True)
+            return False
+        self.is_ghost = ghostify
+        # reset cache info as un/ghosting should not make do_update return True
+        self._mark_unchanged()
+        return True
 
     #--Bash Tags --------------------------------------------------------------
     def setBashTags(self,keys):
@@ -1015,7 +1008,7 @@ class ModInfo(FileInfo):
 
     def get_rename_paths(self, newName):
         old_new_paths = super(ModInfo, self).get_rename_paths(newName)
-        if self.isGhost:
+        if self.is_ghost:
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
         return old_new_paths
 
@@ -2467,9 +2460,7 @@ class ModInfos(FileInfos):
             for mod, modInfo in self.items():
                 modGhost = toGhost and not load_order.cached_is_active(mod) \
                            and allowGhosting.get(mod, True)
-                oldGhost = modInfo.isGhost
-                newGhost = modInfo.setGhost(modGhost)
-                if newGhost != oldGhost:
+                if modInfo.setGhost(modGhost):
                     flipped.append(mod)
         return flipped
 
@@ -3226,7 +3217,7 @@ class ModInfos(FileInfos):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
         # Add ghosts - the file may exist in both states (bug, or user mistake)
         # if both versions exist file should be marked as normal
-        if not fileInfo.isGhost: # add ghost if not added
+        if not fileInfo.is_ghost: # add ghost if not added
             ghost_version = self.store_dir.join(f'{fileInfo.fn_key}.ghost')
             if ghost_version.exists(): toDelete.append(ghost_version)
 

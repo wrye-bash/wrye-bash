@@ -652,11 +652,9 @@ class Installer_InstallSmart(_NoMarkerLink):
     _help = _(u'Installs selected installer(s), preferring a visual method if '
               u'available.')
 
-    def _try_installer(self, sel_package, link_instance):
+    def _try_installer(self, sel_package, link_instance: EnabledLink):
         """Checks if the specified installer link is enabled and, if so, runs
-        it.
-
-        :type link_instance: EnabledLink"""
+        it."""
         link_instance._initData(self.window, [sel_package.fn_key])
         if link_instance._enable():
             link_instance.Execute()

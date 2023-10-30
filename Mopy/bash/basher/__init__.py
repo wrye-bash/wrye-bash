@@ -1128,7 +1128,7 @@ class ModList(_ModsUIList):
         elif minf.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif minf.isGhost:
+        elif minf.is_ghost:
             item_format.back_key = u'mods.bkgd.ghosted'
             mouseText += _('Plugin is ghosted.') + ' '
         elif (bush.game.Esp.check_master_sizes
