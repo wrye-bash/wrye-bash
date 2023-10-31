@@ -39,7 +39,7 @@ from .loot_parser import LOOTParser
 
 mopy_dirs_initialized = bash_dirs_initialized = False
 #--Config Helper files (LOOT Master List, etc.)
-lootDb = None # type: LOOTParser | None
+lootDb: LOOTParser | None = None
 
 def _get_ini_option(ini_parser, option_key) -> str | None:
     if not ini_parser:
@@ -48,88 +48,33 @@ def _get_ini_option(ini_parser, option_key) -> str | None:
     # fallback=default). section is case sensitive - key is not
     return ini_parser.get('General', option_key, fallback=None)
 
-def getPersonalPath(my_docs_path, game_info):
-    # Determine the user's personal (i.e. My Documents) folder. Attempt to pull
-    # from, in order:
-    #  - CLI
-    #  - bash.ini
-    #  - Windows only:
-    #    - SHGetKnownFolderPath
-    #  - Linux only:
-    #    - Proton prefix (For Windows games installed via Steam's Proton)
-    #    - XDG_DOCUMENTS_DIR
-    #    - ~/Documents
+def _get_cli_ini_path(my_docs_path, cli_switch, ini_path_key, game_info,
+                      fallback, fail_msg, not_exists_msg):
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
         sErrorInfo = _('Folder path specified on command line '
-                       '(%(cli_switch)s)') % {'cli_switch': '-p'}
+                       '(%(cli_switch)s)') % {'cli_switch': cli_switch}
     else:
-        my_docs_path = get_path_from_ini('PersonalPath')
+        my_docs_path = get_path_from_ini(ini_path_key)
         if my_docs_path:
             sErrorInfo = _('Folder path specified in bash.ini '
                            '(%(bash_ini_setting)s)') % {
-                'bash_ini_setting': 'sPersonalPath'}
+                             'bash_ini_setting': f's{ini_path_key}'}
         else:
-            my_docs_path, sErrorInfo = get_personal_path(game_info)
+            my_docs_path, sErrorInfo = fallback(game_info)
     if my_docs_path is None:
-        raise BoltError('\n'.join([
-            _('Failed to determine personal folder.'),
+        raise BoltError('\n'.join([fail_msg,
             _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
         ]))
-    #  If path is relative, make absolute
+    #  If path is relative, make absolute ##: only do that in the cli_switch case
     if not my_docs_path.is_absolute():
         my_docs_path = dirs['app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
-        raise BoltError('\n'.join([
-            _('Personal folder does not exist.'),
-            _('Personal folder: %(pers_folder)s') % {
-                'pers_folder': my_docs_path},
+        raise BoltError('\n'.join([not_exists_msg % {'folder': my_docs_path},
             _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
         ]))
     return my_docs_path
-
-def getLocalAppDataPath(app_data_local_path, game_info):
-    # Determine the user's AppData\Local (i.e. %LOCALAPPDATA%) folder. Attempt
-    # to pull from, in order:
-    #  - CLI
-    #  - bash.ini
-    #  - Windows only:
-    #    - SHGetKnownFolderPath
-    #  - Linux only:
-    #    - Proton prefix (For Windows games installed via Steam's Proton)
-    #    - XDG_DATA_HOME
-    #    - ~/.local/share
-    if app_data_local_path:
-        app_data_local_path = GPath(app_data_local_path)
-        sErrorInfo = _('Folder path specified on command line '
-                       '(%(cli_switch)s)') % {'cli_switch': '-l'}
-    else:
-        app_data_local_path = get_path_from_ini('LocalAppDataPath')
-        if app_data_local_path:
-            sErrorInfo = _('Folder path specified in bash.ini '
-                           '(%(bash_ini_setting)s)') % {
-                'bash_ini_setting': 'sLocalAppDataPath'}
-        else:
-            app_data_local_path, sErrorInfo = get_local_app_data_path(
-                game_info)
-    if app_data_local_path is None:
-        raise BoltError('\n'.join([
-            _('Failed to determine LocalAppData folder.'),
-            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
-        ]))
-    #  If path is relative, make absolute
-    if not app_data_local_path.is_absolute():
-        app_data_local_path = dirs[u'app'].join(app_data_local_path)
-    #  Error check
-    if not app_data_local_path.exists():
-        raise BoltError('\n'.join([
-            _('LocalAppData folder does not exist.'),
-            _('LocalAppData folder: %(lad_folder)s') % {
-                'lad_folder': app_data_local_path},
-            _('Additional info: %(error_info)s') % {'error_info': sErrorInfo},
-        ]))
-    return app_data_local_path
 
 def getOblivionModsPath(game_info):
     ob_mods_path = get_path_from_ini('OblivionMods')
@@ -150,32 +95,14 @@ def getOblivionModsPath(game_info):
         src = u'My Documents'
     return ob_mods_path, src
 
-def getBainDataPath():
-    idata_path = get_path_from_ini('InstallersData')
+def _get_ini_path(ini_key, dir_key, *args):
+    idata_path = get_path_from_ini(ini_key)
     if idata_path:
-        src = [u'[General]', u'sInstallersData']
+        src = ['[General]', f's{ini_key}']
     else:
-        idata_path = dirs[u'installers'].join(u'Bash')
-        src = u'Relative Path'
+        idata_path = dirs[dir_key].join(*args)
+        src = 'Relative Path'
     return idata_path, src
-
-def getBashModDataPath():
-    mod_data_path = get_path_from_ini('BashModData')
-    if mod_data_path:
-        src = [u'[General]', u'sBashModData']
-    else:
-        mod_data_path = dirs[u'bash_root'].join(u'Bash Mod Data')
-        src = u'Relative Path'
-    return mod_data_path, src
-
-def getLegacyPath(newPath, oldPath):
-    return (oldPath,newPath)[newPath.is_dir() or not oldPath.is_dir()]
-
-def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
-    if newPath.is_dir() or not oldPath.is_dir():
-        return newPath, newSrc
-    else:
-        return oldPath, oldSrc
 
 def init_dirs(personal, localAppData, game_info):
     """Initialize bass.dirs dictionary. We need the bash.ini and the game
@@ -193,16 +120,39 @@ def init_dirs(personal, localAppData, game_info):
         dirs[u'mopy'].join(u'Bash Patches', game_info.bash_patches_dir)
         if game_info.bash_patches_dir else u'')
     dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
-    #  Personal
-    dirs['personal'] = personal = getPersonalPath(personal, game_info)
+    # Determine the user's personal (i.e. My Documents) folder. Attempt to pull
+    # from, in order:
+    #  - CLI
+    #  - bash.ini
+    #  - Windows only:
+    #    - SHGetKnownFolderPath
+    #  - Linux only:
+    #    - Proton prefix (For Windows games installed via Steam's Proton)
+    #    - XDG_DOCUMENTS_DIR
+    #    - ~/Documents
+    dirs['personal'] = personal = _get_cli_ini_path(personal, '-p',
+        'PersonalPath', game_info, get_personal_path,
+        _('Failed to determine personal folder.'), _(
+            'Personal folder does not exist: %(folder)s'))
     if game_info.uses_personal_folders:
         dirs[u'saveBase'] = personal.join(u'My Games', game_info.my_games_name)
     else:
         dirs[u'saveBase'] = dirs[u'app']
     deprint(f'My Games location set to {dirs[u"saveBase"]}')
-    #  Local Application Data
-    dirs['local_appdata'] = localAppData = getLocalAppDataPath(localAppData,
-                                                               game_info)
+    # Determine the user's AppData\Local (i.e. %LOCALAPPDATA%) folder. Attempt
+    # to pull from, in order:
+    #  - CLI
+    #  - bash.ini
+    #  - Windows only:
+    #    - SHGetKnownFolderPath
+    #  - Linux only:
+    #    - Proton prefix (For Windows games installed via Steam's Proton)
+    #    - XDG_DATA_HOME
+    #    - ~/.local/share
+    dirs['local_appdata'] = localAppData = _get_cli_ini_path(localAppData,
+        '-l', 'LocalAppDataPath', game_info, get_local_app_data_path,
+        _('Failed to determine LocalAppData folder.'),
+        _('LocalAppData folder does not exist: %(folder)s'))
     # AppData for the game, depends on if it's a WS game or not.
     ws_info = get_legacy_ws_game_info(game_info)
     if ws_info.installed:
@@ -271,18 +221,23 @@ def init_dirs(personal, localAppData, game_info):
     oblivionMods, oblivionModsSrc = getOblivionModsPath(game_info)
     dirs[u'bash_root'] = oblivionMods
     deprint(f'Game Mods location set to {oblivionMods}')
-    dirs[u'modsBash'], modsBashSrc = getBashModDataPath()
+    dirs['modsBash'], modsBashSrc = _get_ini_path('BashModData', 'bash_root',
+                                                  'Bash Mod Data')
     if game_info.check_legacy_paths:
-        dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
-            dirs['modsBash'], dirs['app'].join(game_info.mods_dir, 'Bash'),
-            modsBashSrc, 'Relative Path')
+        mpath = dirs['modsBash']
+        old_path = dirs['app'].join(game_info.mods_dir, 'Bash')
+        if not mpath.is_dir() and old_path.is_dir():
+            dirs['modsBash'], modsBashSrc = old_path, 'Relative path'
     deprint(f'Bash Mod Data location set to {dirs[u"modsBash"]}')
     dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
     if game_info.check_legacy_paths:
-        dirs['installers'] = getLegacyPath(dirs['installers'],
-                                           dirs['app'].join('Installers'))
+        ipath = dirs['installers']
+        old_path = dirs['app'].join('Installers')
+        dirs['installers'] = (old_path, ipath)[
+            ipath.is_dir() or not old_path.is_dir()]
     deprint(f'Installers location set to {dirs[u"installers"]}')
-    dirs[u'bainData'], bainDataSrc = getBainDataPath()
+    dirs['bainData'], bainDataSrc = _get_ini_path('InstallersData',
+                                                  'installers', 'Bash')
     deprint(f'Installers bash data location set to {dirs[u"bainData"]}')
     dirs[u'bsaCache'] = dirs[u'bainData'].join(u'BSA Cache')
     dirs[u'converters'] = dirs[u'installers'].join(u'Bain Converters')
