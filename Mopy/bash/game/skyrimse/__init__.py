@@ -63,7 +63,7 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
 
-    espm_extensions = ASkyrimGameInfo.espm_extensions | {'.esl'}
+    espm_extensions = {*ASkyrimGameInfo.espm_extensions, '.esl'}
     has_achlist = True
     mergeability_checks = {MergeabilityCheck.ESL_CHECK}
 

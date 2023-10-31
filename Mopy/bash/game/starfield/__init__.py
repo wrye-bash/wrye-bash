@@ -48,7 +48,7 @@ class _AStarfieldGameInfo(PatchGame):
     nexusName = 'Starfield Nexus'
     nexusKey = 'bash.installers.openStarfieldNexus.continue'
 
-    espm_extensions = GameInfo.espm_extensions | {'.esl'}
+    espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = False # TODO(SF) check once CK is out
     mergeability_checks = {MergeabilityCheck.ESL_CHECK,
                            MergeabilityCheck.OVERLAY_CHECK}

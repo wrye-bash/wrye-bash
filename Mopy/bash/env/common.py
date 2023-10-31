@@ -26,6 +26,10 @@ with an underscore so they don't get exposed to the rest of the codebase."""
 
 from __future__ import annotations
 
+__all__ = ['FileOperationType', 'clear_read_only', 'file_operation',
+           'get_egs_game_paths', 'get_game_version_fallback',
+           'get_legacy_ws_game_paths', 'is_case_sensitive', 'set_cwd']
+
 import datetime
 import functools
 import json
@@ -40,8 +44,9 @@ from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 from typing import TypeVar, Any
 
 from .. import bolt, bass
-from ..bolt import GPath, deprint, undefinedPath
+from ..bolt import deprint, undefinedPath
 from ..bolt import Path as _Path
+from ..bolt import GPath as _GPath
 from ..wbtemp import TempDir
 
 try:
@@ -78,7 +83,7 @@ def _find_legendary_games():
         with open(lgd_installed_path, 'r', encoding='utf-8') as ins:
             lgd_installed_data = json.load(ins)
         for lgd_game in lgd_installed_data.values():
-            found_lgd_games[lgd_game['app_name']] = GPath(
+            found_lgd_games[lgd_game['app_name']] = _GPath(
                 lgd_game['install_path'])
     except FileNotFoundError:
         pass # Legendary is not installed or no games are installed
@@ -279,7 +284,7 @@ def get_egs_game_paths(submod):
     return []
 
 # API - Filesystem methods ====================================================
-T = TypeVar('T')
+_T = TypeVar('T')
 
 class FileOperationType(Enum):
     MOVE = 'MOVE'
@@ -287,7 +292,7 @@ class FileOperationType(Enum):
     RENAME = 'RENAME'
     DELETE = 'DELETE'
 
-def _retry(operation: Callable[..., T], from_path: _Path, to_path: _Path) -> T:
+def _retry(operation: Callable[..., _T], from_path: _Path, to_path: _Path) -> _T:
     """Helper to auto-retry an operation if it fails due to a missing
     folder."""
     try:
@@ -400,21 +405,21 @@ def file_operation(operation: FileOperationType,
     """
     if not sources_dests: # Nothing to operate on
         return {}
-    abspath = os.path.abspath
+    gpath_abs = lambda x: _GPath(os.path.abspath(x))
+    sources_dests = {gpath_abs(k): v for k, v in sources_dests.items()}
     if operation is FileOperationType.DELETE:
         # allow_undo: use send2trash if present, otherwise we can't do anything
         #             about this with only stdlib
         # rename_on_collision: NOT IMPLEMENTED
         # silent: no real effect (no progress dialog in the implementation)
-        source_paths = [GPath(abspath(x)) for x in sources_dests]
         if ask_confirm:
             message = _('Are you sure you want to permanently delete '
                         'these %(item_cnt)d items?') % {
-                'item_cnt': len(source_paths)}
-            message += u'\n\n' + u'\n'.join([f' * {x}' for x in source_paths])
+                'item_cnt': len(sources_dests)}
+            message += '\n\n' + '\n'.join([f' * {x}' for x in sources_dests])
             if not ask_confirm(parent, message, _('Delete Multiple Items')):
                 return {}
-        for to_delete in source_paths:
+        for to_delete in sources_dests:
             if not to_delete.exists(): continue
             # Check if we can even do this (send2trash may not be installed)
             if allow_undo and send2trash:
@@ -436,19 +441,12 @@ def file_operation(operation: FileOperationType,
         return {}
     if operation is FileOperationType.RENAME:
         # We use move for renames, so convert the new name to a full path
-        srcs_dsts = {
-            (src_path := GPath(abspath(source))): src_path.head.join(target)
-            for source, target in sources_dests.items()
-        }
+        srcs_dsts = {src_path: src_path.head.join(target) for src_path, target
+                     in sources_dests.items()}
     else:
-        srcs_dsts = {
-            GPath(abspath(source)): (
-                GPath(abspath(target))
-                if isinstance(target, (str, os.PathLike)) else
-                {GPath(abspath(t)) for t in target}
-            )
-            for source, target in sources_dests.items()
-        }
+        srcs_dsts = {src_path: gpath_abs(target) if isinstance(target, (
+            str, os.PathLike)) else {*map(gpath_abs, target)} for
+                     src_path, target in sources_dests.items()}
     return __copy_or_move(srcs_dsts, rename_on_collision, ask_confirm, parent,
                           move=(operation is FileOperationType.MOVE))
 
@@ -490,7 +488,7 @@ class _AppLauncher:
 
     @classmethod
     def find_launcher(cls, app_exe, app_key, *, root_dirs: tuple | str = tuple(
-            map(GPath, (r'C:\Program Files', r'C:\Program Files (x86)'))),
+            map(_GPath, (r'C:\Program Files', r'C:\Program Files (x86)'))),
             subfolders=()):
         """Check a list of paths to locate the app launcher - syscalls, so
         avoid.
@@ -515,7 +513,7 @@ class _AppLauncher:
             subfolders = [(subfolders,)]
         elif isinstance(subfolders, tuple):
             subfolders = [subfolders]
-        launcher = GPath(app_exe)
+        launcher = _GPath(app_exe)
         for rt in root_dirs:
             for subs in subfolders:
                 if (launcher := rt.join(*subs, app_exe)).exists():

@@ -56,7 +56,7 @@ class AFallout4GameInfo(PatchGame):
     nexusName = u'Fallout 4 Nexus'
     nexusKey = u'bash.installers.openFallout4Nexus.continue'
 
-    espm_extensions = GameInfo.espm_extensions | {u'.esl'}
+    espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
     mergeability_checks = {MergeabilityCheck.ESL_CHECK}
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
