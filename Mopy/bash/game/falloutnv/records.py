@@ -363,22 +363,22 @@ class MreRcpe(MelRecord):
         MelEdid(),
         MelFull(),
         MelConditionsFo3(),
-        MelStruct(b'DATA', ['4I'], 'skill', 'level', (FID, 'category'),
-                  (FID, 'subCategory')),
-        MelGroups('ingredients',
-            MelFid(b'RCIL','item'),
-            MelUInt32(b'RCQY', 'quantity'),
+        MelStruct(b'DATA', ['4I'], 'recipe_skill', 'recipe_level',
+            (FID, 'recipe_category'), (FID, 'recipe_subcategory')),
+        MelGroups('recipe_ingredients',
+            MelFid(b'RCIL', 'r_ingr_item'),
+            MelUInt32(b'RCQY', 'r_ingr_quantity'),
         ),
-        MelGroups('outputs',
-            MelFid(b'RCOD','item'),
-            MelUInt32(b'RCQY', 'quantity'),
+        MelGroups('recipe_outputs',
+            MelFid(b'RCOD', 'r_ingr_item'),
+            MelUInt32(b'RCQY', 'r_ingr_quantity'),
         ),
     ).with_distributor({
         b'RCIL': {
-            b'RCQY': 'ingredients',
+            b'RCQY': 'recipe_ingredients',
         },
         b'RCOD': {
-            b'RCQY': 'outputs',
+            b'RCQY': 'recipe_outputs',
         },
     })
 

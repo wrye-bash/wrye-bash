@@ -54,7 +54,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelUnion, MelUnorderedGroups, \
     MelValueWeight, MelWaterType, MelWeight, MelWorldBounds, MelWthrColors, \
     MelXlod, PartialLoadDecider, PerkEpdfDecider, SizeDecider, AMreGlob, \
-    SpellFlags, color_attrs, color3_attrs, null2, perk_distributor, \
+    MelSpitOld, color_attrs, color3_attrs, null2, perk_distributor, \
     perk_effect_key, MelLinkColors, MelNpcClass, TemplateFlags, MelTemplate, \
     MelAIPackages, MelNpcHeadParts, MelInheritsSoundsFrom, MelSoundLevel, \
     MelIdleAnimFlags, PackGeneralOldFlags, MelPackScheduleOld, MelMgefData, \
@@ -2829,8 +2829,7 @@ class MreSpel(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (SpellFlags, 'spell_flags'), 'unused1'),
+        MelSpitOld(),
         MelEffectsFo3(),
     )
 

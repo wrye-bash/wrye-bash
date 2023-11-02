@@ -141,7 +141,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         return int(csv_fields[3])
 
     def _add_to_patch(self, rid, record, top_sig):
-        return record.spellType == 2
+        return record.spell_type == 2
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -151,7 +151,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
         id_info = self.id_stored_data[b'FACT']
         for rid, record in self.patchFile.tops[b'SPEL'].id_records.items():
             ##: Skips OBME records - rework to support them
-            if record.obme_record_version is not None or record.spellType != 2:
+            if (record.obme_record_version is not None or
+                    record.spell_type != 2):
                 continue
             #--Skip this one?
             if not (duration := id_info.get(rid)): continue
@@ -162,7 +163,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
                 continue
             #--Okay, do it
             record.full = f'+{record.full}'
-            record.spellType = 3 #--Lesser power
+            record.spell_type = 3 #--Lesser power
             effect = record.getDefault(u'effects')
             effect.effect_sig = b'SEFF'
             effect.duration = duration

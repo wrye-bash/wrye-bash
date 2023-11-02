@@ -47,7 +47,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
+    MelSpitOld, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
     AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
     PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
@@ -488,9 +488,8 @@ class MreHasEffects(MelRecord):
           1: Apprentice
           2: Journeyman
           3: Expert
-          4: Master
-        """
-        return self.level
+          4: Master"""
+        return self.spell_level
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -2186,17 +2185,16 @@ class MreSpel(MreHasEffects, MelRecord):
          'Master': 4})
     _level_type_num_name = {y: x for x, y in _level_type_name_num.items()}
     _level_type_num_name[None] = 'NONE'
-    attr_csv_struct['level'][2] = \
+    attr_csv_struct['spell_level'][2] = \
         lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
-    attr_csv_struct['spellType'][2] = \
+    attr_csv_struct['spell_type'][2] = \
         lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
-        MelStruct(b'SPIT', ['3I', 'B', '3s'], 'spellType', 'cost', 'level',
-                  (SpellFlags, 'spell_flags'), 'unused1'),
+        MelSpitOld(),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -2205,16 +2203,16 @@ class MreSpel(MreHasEffects, MelRecord):
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
         attr_dict = super().parse_csv_line(csv_fields, index_dict, reuse)
         try:
-            lvl = attr_dict['level'] # KeyError on 'detailed' pass
-            attr_dict['level'] = cls._level_type_name_num.get(lvl,
+            lvl = attr_dict['spell_level'] # KeyError on 'detailed' pass
+            attr_dict['spell_level'] = cls._level_type_name_num.get(lvl,
                 int_or_zero(lvl))
-            stype = attr_dict['spellType']
-            attr_dict['spellType'] = cls._spell_type_name_num.get(stype,
+            stype = attr_dict['spell_type']
+            attr_dict['spell_type'] = cls._spell_type_name_num.get(stype,
                 int_or_zero(stype))
-            attr_dict['spell_flags'] = SpellFlags(
+            attr_dict['spell_flags'] = MelSpitOld.SpellFlagsOld(
                 attr_dict.get('spell_flags', 0))
         except KeyError:
-            """We are called for reading the 'detailed' attributes"""
+            pass # We are called for reading the 'detailed' attributes
         return attr_dict
 
 #------------------------------------------------------------------------------

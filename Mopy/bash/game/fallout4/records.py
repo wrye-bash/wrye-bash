@@ -76,7 +76,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
-    MelSInt16, MelSopmOutputValues, MelSounSdsc
+    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1356,9 +1356,10 @@ class MreEnch(MelRecord):
         MelBounds(),
         MelFull(),
         MelStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
-            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
-            'enchantment_amount', 'enchantment_target_type',
-            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            'enchantment_cost', (_enit_flags, 'enit_flags'),
+            'enchantment_cast_type', 'enchantment_amount',
+            'enchantment_target_type', 'enchantment_type',
+            'enchantment_charge_time', (FID, 'base_enchantment'),
             (FID, 'worn_restrictions')),
         MelEffects(),
     )
@@ -3121,6 +3122,22 @@ class MreSoun(MelRecord):
         MelSounSdsc(),
         MelTruncatedStruct(b'REPT', ['2f', 'B'], 'repeat_min_time',
             'repeat_max_time', 'repeat_stackable', old_versions={'2f'}),
+    )
+
+#------------------------------------------------------------------------------
+class MreSpel(AMreWithKeywords):
+    """Spell."""
+    rec_sig = b'SPEL'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelKeywords(),
+        MelEquipmentType(),
+        MelDescription(),
+        MelSpit(),
+        MelEffects(),
     )
 
 #------------------------------------------------------------------------------

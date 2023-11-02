@@ -815,9 +815,10 @@ class AFallout4GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
-    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
-                        'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time')
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags',
+                        'enchantment_cast_type', 'enchantment_amount',
+                        'enchantment_target_type', 'enchantment_type',
+                        'enchantment_charge_time')
     ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
@@ -831,7 +832,7 @@ class AFallout4GameInfo(PatchGame):
     keywords_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
         b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MGEF',
-        b'MISC', b'MSTT', b'NPC_',
+        b'MISC', b'MSTT', b'NPC_', b'SPEL',
     }
 
     #--------------------------------------------------------------------------
@@ -842,7 +843,7 @@ class AFallout4GameInfo(PatchGame):
         b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
         b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
         b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
-        b'PROJ', b'SCOL', b'SNCT',
+        b'PROJ', b'SCOL', b'SNCT', b'SPEL',
     }
 
     #--------------------------------------------------------------------------
@@ -853,7 +854,7 @@ class AFallout4GameInfo(PatchGame):
         b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
         b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
         b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN', b'PROJ', b'SCOL',
-        b'SOUN',
+        b'SOUN', b'SPEL',
     }
 
     #--------------------------------------------------------------------------
@@ -951,7 +952,7 @@ class AFallout4GameInfo(PatchGame):
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
             b'CELL', b'NAVI', b'NOCM', b'QUST', b'SCEN',
             b'RACE', # later :(
-            b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
+            b'SPGD', b'STAG', b'STAT', b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs

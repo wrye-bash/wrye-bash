@@ -2261,6 +2261,47 @@ class MelSpells(MelSorted):
         super().__init__(MelSimpleGroups('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
+class MelSpit(MelStruct):
+    """Handles the SPIT subrecord since Skyrim."""
+    class _SpitFlags(Flags):
+        manual_cost_calc: bool = flag(0)
+        pc_start_spell: bool = flag(17)
+        area_effect_ignores_los: bool = flag(19)
+        ignore_resistance: bool = flag(20)
+        no_absorb_reflect: bool = flag(21)
+        no_dual_cast_modification: bool = flag(23)
+
+    def __init__(self):
+        super().__init__(b'SPIT', ['3I', 'f', '2I', '2f', 'I'], 'spell_cost',
+            (self._SpitFlags, 'spell_flags'), 'spell_type',
+            'spell_charge_time', 'spell_cast_type', 'spell_target_type',
+            'spell_cast_duration', 'spell_range', (FID, 'casting_perk'))
+
+#------------------------------------------------------------------------------
+class MelSpitOld(MelStruct):
+    """Handles the SPIT subrecord pre-Skyrim."""
+    class SpellFlagsOld(Flags):
+        """Implements the SPEL flags for pre-Skyrim games."""
+        manual_cost_calc: bool = flag(0)
+        immune_to_silence: bool = flag(1)
+        pc_start_spell: bool = flag(2)
+        area_effect_ignores_los: bool = flag(4)
+        script_effect_always_applies: bool = flag(5)
+        no_absorb_reflect: bool = flag(6)
+        touch_spell_explodes_without_target: bool = flag(7)
+
+        def __setitem__(self, index, value):
+            # immune_to_silence activates bits 1 and 3
+            Flags.__setitem__(self, index, value)
+            if index == 1:
+                Flags.__setitem__(self, 3, value)
+
+    def __init__(self):
+        super().__init__(b'SPIT', ['3I', 'B', '3s'], 'spell_type',
+            'spell_cost', 'spell_level', (self.SpellFlagsOld, 'spell_flags'),
+            'unused1')
+
+#------------------------------------------------------------------------------
 class MelTemplate(MelFid):
     """Handles the CREA/NPC_ subrecord TPLT (Template). Has become "Default
     Template" in FO4."""
@@ -2375,23 +2416,3 @@ class MelXlod(MelStruct):
     """Distant LOD Data."""
     def __init__(self):
         super().__init__(b'XLOD', ['3f'], 'lod1', 'lod2', 'lod3')
-
-#------------------------------------------------------------------------------
-class _SpellFlags(Flags):
-    """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-    __slots__ = ()
-
-    def __setitem__(self, index, value):
-        setter = Flags.__setitem__
-        setter(self, index, value)
-        if index == 1:
-            setter(self, 3, value)
-
-class SpellFlags(_SpellFlags):
-    noAutoCalc: bool
-    immuneToSilence: bool
-    startSpell: bool
-    ignoreLOS: bool = flag(4)
-    scriptEffectAlwaysApplies: bool = flag(5)
-    disallowAbsorbReflect: bool = flag(6)
-    touchExplodesWOTarget: bool = flag(7)

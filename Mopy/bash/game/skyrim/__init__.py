@@ -1154,15 +1154,17 @@ class ASkyrimGameInfo(PatchGame):
     # Import Spell Stats
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
-    spell_stats_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                         'cast_type', 'spell_target_type', 'castDuration',
-                         'range', 'dataFlags')
-    spell_stats_fid_attrs = ('halfCostPerk',)
-    # halfCostPerk at the end since it's a FormID, to mirror how APreserver
+    spell_stats_attrs = ('eid', 'spell_cost', 'spell_type',
+                         'spell_charge_time', 'spell_cast_type',
+                         'spell_target_type', 'spell_cast_duration',
+                         'spell_range', 'spell_flags')
+    spell_stats_fid_attrs = ('casting_perk',)
+    # casting_perk at the end since it's a FormID, to mirror how APreserver
     # will join the tuples
-    spell_stats_csv_attrs = ('eid', 'cost', 'spellType', 'charge_time',
-                             'cast_type', 'spell_target_type', 'castDuration',
-                             'range', 'dataFlags', 'halfCostPerk')
+    spell_stats_csv_attrs = ('eid', 'spell_cost', 'spell_type',
+                             'spell_charge_time', 'spell_cast_type',
+                             'spell_target_type', 'spell_cast_duration',
+                             'spell_range', 'spell_flags', 'casting_perk')
     spell_stats_types = {b'SCRL', b'SPEL'}
 
     #--------------------------------------------------------------------------
@@ -1383,9 +1385,10 @@ class ASkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
     #--------------------------------------------------------------------------
-    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
-                        'enchantment_amount', 'enchantment_target_type',
-                        'enchantment_type', 'charge_time')
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags',
+                        'enchantment_cast_type', 'enchantment_amount',
+                        'enchantment_target_type', 'enchantment_type',
+                        'enchantment_charge_time')
     ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------

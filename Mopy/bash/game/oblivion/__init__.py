@@ -884,7 +884,7 @@ class AOblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
     spell_stats_attrs = spell_stats_csv_attrs = (
-        'eid', 'cost', 'level', 'spellType', 'spell_flags')
+        'eid', 'spell_cost', 'spell_level', 'spell_type', 'spell_flags')
 
     #--------------------------------------------------------------------------
     # Tweak Actors

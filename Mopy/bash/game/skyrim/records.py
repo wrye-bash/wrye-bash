@@ -82,7 +82,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
-    MelSopmOutputValues, MelSounSdsc
+    MelSopmOutputValues, MelSounSdsc, MelSpit
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -287,15 +287,14 @@ class MreHasEffects(MelRecord):
 
     def get_spell_level(self):
         """Return the level for this spell as an integer:
-          0: Novice (level 0)
-          1: Apprentice (level 25)
-          2: Adept (level 50)
-          3: Expert (level 75)
-          4: Master (level 100)
-        """
-        hc_perk = self.halfCostPerk
-        if hc_perk:
-            return _perk_to_level[hc_perk.object_dex]
+          0: Novice (skill level 0)
+          1: Apprentice (skill level 25)
+          2: Adept (skill level 50)
+          3: Expert (skill level 75)
+          4: Master (skill level 100)"""
+        half_cost_perk = self.casting_perk
+        if half_cost_perk:
+            return _perk_to_level[half_cost_perk.object_dex]
         return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
@@ -376,23 +375,6 @@ class MelNvnm(AMelNvnm):
         nvnm_has_waypoints = False
 
     _nvnm_context_class = _NvnmContextTes5
-
-#------------------------------------------------------------------------------
-class MelSpit(MelStruct):
-    """Handles the SPIT subrecord shared between SCRL and SPEL."""
-    class spit_flags(Flags):
-        manualCostCalc: bool = flag(0)
-        pcStartSpell: bool = flag(17)
-        areaEffectIgnoresLOS: bool = flag(19)
-        ignoreResistance: bool = flag(20)
-        noAbsorbReflect: bool = flag(21)
-        noDualCastModification: bool = flag(23)
-
-    def __init__(self):
-        super().__init__(b'SPIT', ['3I', 'f', '2I', '2f', 'I'], 'cost',
-            (self.spit_flags, 'dataFlags'), 'spellType', 'charge_time',
-            'cast_type', 'spell_target_type', 'castDuration', 'range',
-            (FID, 'halfCostPerk'))
 
 #------------------------------------------------------------------------------
 class MelVmad(AMelVmad):
@@ -1301,9 +1283,10 @@ class MreEnch(MreHasEffects, MelRecord):
         MelBounds(),
         MelFull(),
         MelTruncatedStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
-            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
-            'enchantment_amount', 'enchantment_target_type',
-            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            'enchantment_cost', (_enit_flags, 'enit_flags'),
+            'enchantment_cast_type', 'enchantment_amount',
+            'enchantment_target_type', 'enchantment_type',
+            'enchantment_charge_time', (FID, 'base_enchantment'),
             (FID, 'worn_restrictions'), old_versions={'i2Ii2IfI'}),
         MelEffects(),
     )
