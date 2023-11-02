@@ -7782,8 +7782,34 @@ C.Location, -C.LockList
                         <ul>
                             <li>(NAM1) Reverb Send &percnt;</li>
                             <li>(MNAM) Type</li>
-                            <li>(ONAM) Output Values</li>
-                            <li>(ANAM) Attenuation Values</li>
+                            <li>(ONAM) Output Values
+                                <ul>
+                                    <li>Channel 0</li>
+                                    <li>Channel 1</li>
+                                    <li>Channel 2</li>
+                                </ul>
+                                <strong>Note:</strong> Each channel is imported
+                                in one go.<br>
+                                If one attribute is changed, all of them are
+                                carried forward.
+                            </li>
+                            <li>(ANAM) Attenuation Values
+                                <ul>
+                                    <li>Curve
+                                        <ul>
+                                            <li>Value #1</li>
+                                            <li>Value #2</li>
+                                            <li>Value #3</li>
+                                            <li>Value #4</li>
+                                            <li>Value #5</li>
+                                        </ul>
+                                    </li>
+                                    <strong>Note:</strong> The curve is
+                                    imported in one go.<br>
+                                    If one value is changed, all of them are
+                                    carried forward.
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(SOUN) Sound Marker:
