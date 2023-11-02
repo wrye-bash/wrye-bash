@@ -2128,7 +2128,7 @@ class MelSndrBnam(MelStruct):
     def __init__(self):
         super().__init__(b'BNAM', ['2b', '2B', 'H'], 'pct_frequency_shift',
             'pct_frequency_variance', 'descriptor_priority', 'db_variance',
-            'staticAtten')
+            'static_attenuation')
 
 #------------------------------------------------------------------------------
 class MelSndrCategory(MelFid):
@@ -2164,6 +2164,42 @@ class MelSndrType(MelUInt32):
     """Handles the SNDR subrecord CNAM (Descriptor Type)."""
     def __init__(self):
         super().__init__(b'CNAM', 'descriptor_type')
+
+#------------------------------------------------------------------------------
+class MelSopmData(MelStruct):
+    """Handles the SOPM subrecord NAM1 (Data)."""
+    class _SopmFlags(Flags):
+        attenuates_with_distance: bool
+        allows_rumble: bool
+        applies_doppler: bool # since FO4
+        applies_distance_delay: bool # since FO4
+        player_output_model: bool # since FO4
+        try_play_on_controller: bool # since FO4
+        causes_ducking: bool # since FO4
+        avoids_ducking: bool # since FO4
+
+    def __init__(self):
+        super().__init__(b'NAM1', ['B', '2s', 'B'],
+            (self._SopmFlags, 'sopm_flags'), 'sopm_nam1_unknown',
+            'reverb_send_pct')
+
+#------------------------------------------------------------------------------
+class MelSopmType(MelUInt32):
+    """Handles the SOPM subrecord MNAM (Type)."""
+    def __init__(self):
+        super().__init__(b'MNAM', 'sopm_type')
+
+#------------------------------------------------------------------------------
+def _channel_attrs(channel_index: int) -> list[str]:
+    """Helper method for generating SOPM channel attributes."""
+    return [f'ch{channel_index}_{x}' for x in ('fl', 'fr', 'c', 'lfe', 'rl',
+                                               'rr', 'sl', 'sr')]
+
+class MelSopmOutputValues(MelStruct):
+    """Handles the SOPM subrecord ONAM (Output Values)."""
+    def __init__(self):
+        super().__init__(b'ONAM', ['24B'], *_channel_attrs(0),
+            *_channel_attrs(1), *_channel_attrs(2))
 
 #------------------------------------------------------------------------------
 class MelSound(MelFid):

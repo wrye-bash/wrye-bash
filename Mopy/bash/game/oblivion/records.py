@@ -2168,7 +2168,7 @@ class MreSoun(MelRecord):
         ),
         MelStruct(b'SNDX', ['2B', 'b', 's', 'H', '2s', 'H', '2B'],
             'minDistance', 'maxDistance', 'freqAdjustment', 'unused1',
-            (_SounFlags, 'flags'), 'unused2', 'staticAtten', 'stopTime',
+            (_SounFlags, 'flags'), 'unused2', 'static_attenuation', 'stopTime',
             'startTime'),
     )
 

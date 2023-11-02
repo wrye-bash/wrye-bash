@@ -75,7 +75,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelRegnEntryGrasses, MelRevbData, MelScolParts, MelSmbnShared, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
-    MelSndrLnam, MelSndrBnam, MelSimpleGroups
+    MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
+    MelSInt16, MelSopmOutputValues
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -3086,6 +3087,27 @@ class MreSndr(MelRecord):
             MelString(b'FNAM', 'rof_file'),
             MelBase(b'ITME', 'rof_marker_end'), # marker, but not(?) required
         ), sort_by_attrs='rof_rpm'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSopm(MelRecord):
+    """Sound Output Model."""
+    rec_sig = b'SOPM'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSopmData(),
+        MelSopmType(),
+        MelSInt16(b'VNAM', 'sopm_static_attenuation'),
+        MelSopmOutputValues(),
+        # dav = 'Dynamic Attenuation Values'
+        MelStruct(b'ATTN', ['4f', '8B'], 'dav_fade_in_distance_start',
+            'dav_fade_in_distance_end', 'dav_fade_out_distance_start',
+            'dav_fade_out_distance_end', 'dav_fade_in_curve1',
+            'dav_fade_in_curve2', 'dav_fade_in_curve3', 'dav_fade_in_curve4',
+            'dav_fade_out_curve1', 'dav_fade_out_curve2',
+            'dav_fade_out_curve3', 'dav_fade_out_curve4'),
+        MelFid(b'ENAM', 'effect_chain'),
     )
 
 #------------------------------------------------------------------------------

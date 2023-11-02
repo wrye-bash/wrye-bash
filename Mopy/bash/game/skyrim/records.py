@@ -81,7 +81,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSmbnShared, MelSmenShared, MelSmqnShared, MelSnctFlags, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
-    MelSndrOutputModel, MelSndrLnam, MelSndrBnam
+    MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
+    MelSopmOutputValues
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3292,26 +3293,18 @@ class MreSopm(MelRecord):
     """Sound Output Model."""
     rec_sig = b'SOPM'
 
-    class _sopm_flags(Flags):
-        attenuates_with_distance: bool
-        allows_rumble: bool
-
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'NAM1', [u'B', u'2s', u'B'], (_sopm_flags, u'flags'),
-            u'unknown1', u'reverbSendpct'),
-        MelBase(b'FNAM', u'unused_fnam'),
-        MelUInt32(b'MNAM', u'outputType'),
-        MelBase(b'CNAM', u'unused_cnam'),
-        MelBase(b'SNAM', u'unused_snam'),
-        MelStruct(b'ONAM', [u'24B'], u'ch0_l', u'ch0_r', u'ch0_c', u'ch0_lFE',
-            u'ch0_rL', u'ch0_rR', u'ch0_bL', u'ch0_bR', u'ch1_l', u'ch1_r',
-            u'ch1_c', u'ch1_lFE', u'ch1_rL', u'ch1_rR', u'ch1_bL', u'ch1_bR',
-            u'ch2_l', u'ch2_r', u'ch2_c', u'ch2_lFE', u'ch2_rL', u'ch2_rR',
-            u'ch2_bL', u'ch2_bR'),
-        MelStruct(b'ANAM', [u'4s', u'2f', u'5B', u'3s'], u'unknown2',
-            u'minDistance', u'maxDistance', u'curve1', u'curve2', u'curve3',
-            u'curve4', u'curve5', u'unknown3'),
+        MelSopmData(),
+        MelBase(b'FNAM', 'unused_fnam'), # leftover
+        MelSopmType(),
+        MelBase(b'CNAM', 'unused_cnam'), # leftover
+        MelBase(b'SNAM', 'unused_snam'), # leftover
+        MelSopmOutputValues(),
+        # av = 'Attenuation Values'
+        MelStruct(b'ANAM', ['4s', '2f', '5B', '3s'], 'sopm_anam_unknown1',
+            'av_min_distance', 'av_max_distance', 'av_curve1', 'av_curve2',
+            'av_curve3', 'av_curve4', 'av_curve5', 'sopm_anam_unknown2'),
     )
 
 #------------------------------------------------------------------------------

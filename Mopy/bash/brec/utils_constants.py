@@ -560,6 +560,8 @@ def ambient_lighting_attrs(attr_prefix: str) -> list[str]:
     ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
     return ambient_lighting + [f'{attr_prefix}_ac_scale']
 
+##: Maybe we should find a way to use these in the game/__init__.py files as
+# well to reduce duplication a bit further?
 def color_attrs(color_attr_pfx: str, *,
         rename_alpha: bool = False) -> list[str]:
     """Helper method for generating red/green/blue/alpha color attributes. Note

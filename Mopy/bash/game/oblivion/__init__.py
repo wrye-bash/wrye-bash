@@ -591,7 +591,7 @@ class AOblivionGameInfo(PatchGame):
         # without any sounds would be valid or not. Leaving as is for now
         b'CREA': ('foot_weight', 'actor_sounds'),
         b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
-                  'staticAtten', 'stopTime', 'startTime'),
+                  'static_attenuation', 'stopTime', 'startTime'),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
     }
