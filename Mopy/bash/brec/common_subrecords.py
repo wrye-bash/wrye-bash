@@ -2242,6 +2242,12 @@ class MelSoundPickupDrop(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelSounSdsc(MelFid):
+    """Handles the SOUN subrecord SDSC (Sound Descriptor)."""
+    def __init__(self):
+        super().__init__(b'SDSC', 'sound_descriptor')
+
+#------------------------------------------------------------------------------
 class MelSpellCounter(MelCounter):
     """Handles the SPCT (Spell Counter) subrecord. To be used in combination
     with MelSpells."""

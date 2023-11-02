@@ -826,7 +826,7 @@ class ASkyrimGameInfo(PatchGame):
         b'SLGM': ('sound_pickup', 'sound_drop'),
         b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
-        b'SOUN': ('soundDescriptor',),
+        b'SOUN': ('sound_descriptor',),
         b'TACT': ('sound',),
         b'TREE': ('sound',),
         b'WATR': ('sound',),

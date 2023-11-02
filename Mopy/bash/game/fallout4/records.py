@@ -76,7 +76,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
-    MelSInt16, MelSopmOutputValues
+    MelSInt16, MelSopmOutputValues, MelSounSdsc
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -3108,6 +3108,19 @@ class MreSopm(MelRecord):
             'dav_fade_out_curve1', 'dav_fade_out_curve2',
             'dav_fade_out_curve3', 'dav_fade_out_curve4'),
         MelFid(b'ENAM', 'effect_chain'),
+    )
+
+#------------------------------------------------------------------------------
+class MreSoun(MelRecord):
+    """Sound Marker."""
+    rec_sig = b'SOUN'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelSounSdsc(),
+        MelTruncatedStruct(b'REPT', ['2f', 'B'], 'repeat_min_time',
+            'repeat_max_time', 'repeat_stackable', old_versions={'2f'}),
     )
 
 #------------------------------------------------------------------------------

@@ -82,7 +82,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
-    MelSopmOutputValues
+    MelSopmOutputValues, MelSounSdsc
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -3315,9 +3315,9 @@ class MreSoun(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelString(b'FNAM','soundFileUnused'), # leftover
-        MelBase(b'SNDD','soundDataUnused'), # leftover
-        MelFid(b'SDSC','soundDescriptor'),
+        MelBase(b'FNAM', 'unused_fnam'), # leftover
+        MelBase(b'SNDD', 'unused_sndd'), # leftover
+        MelSounSdsc(),
     )
 
 #------------------------------------------------------------------------------
