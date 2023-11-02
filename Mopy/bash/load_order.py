@@ -30,7 +30,7 @@ times. Should be updated on tabbing out and back in to Bash and on setting
 lo/active from inside Bash.
 - active mods must always be manipulated having a valid load order at hand:
  - all active mods must be present and have a load order and
- - especially for skyrim the relative order of entries in plugin.txt must be
+ - especially for skyrim the relative order of entries in plugins.txt must be
  the same as their relative load order in loadorder.txt
 - corrupted files do not have a load order.
 - modInfos singleton must be up to date when calling the API methods that
@@ -101,7 +101,7 @@ class LoadOrder(object):
         set_act = frozenset(active)
         if missing := (set_act - set(loadOrder)):
             raise exception.BoltError(
-                u'Active mods with no load order: ' + u', '.join(missing))
+                f'Active mods with no load order: {", ".join(missing)}')
         self._loadOrder = tuple(loadOrder)
         self._active = set_act
         self.__mod_loIndex = {a: i for i, a in enumerate(loadOrder)}
@@ -148,14 +148,14 @@ class LoadOrder(object):
         self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
 
     def __str__(self):
-        return u', '.join([((u'*%s' if x in self._active else u'%s') % x)
-                           for x in self.loadOrder])
+        return ', '.join([(f'*{x}' if x in self._active else x) for x in
+                          self.loadOrder])
 
-# Module level cache
-__empty = LoadOrder()
-cached_lord = __empty # must always be valid (or __empty)
+# Module level cache ----------------------------------------------------------
+__lo_unset = LoadOrder() # load order is not yet set or we failed to set it
+cached_lord = __lo_unset # must always be valid (or __lo_unset)
 
-# Saved load orders
+# Saved load orders -----------------------------------------------------------
 lo_entry = collections.namedtuple(u'lo_entry', [u'date', u'lord'])
 _saved_load_orders: list[lo_entry] = []
 _current_list_index = -1
@@ -190,7 +190,7 @@ def _keep_max(max_to_keep, length):
             x, y = _current_list_index, max_to_keep - _current_list_index
     return x, y
 
-# Load Order utility methods - make sure the cache is valid when using them
+# cached_lord getters - make sure the cache is valid when using them ----------
 def cached_active_tuple() -> _LoTuple:
     """Return the currently cached active mods in load order as a tuple."""
     return cached_lord.activeOrdered
@@ -227,10 +227,7 @@ def get_ordered(mod_paths: Iterable[FName]) -> list[FName]:
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts)."""
-    # resolve time conflicts or no load order
-    mod_paths = sorted(mod_paths)
-    mod_paths.sort(key=cached_lo_index_or_max)
-    return mod_paths
+    return sorted(mod_paths, key=lambda fn: (cached_lo_index_or_max(fn), fn))
 
 def filter_pinned(imods):
     pinn = _game_handle.pinned_mods()
@@ -294,9 +291,8 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     as loadorder.txt, and of course rewrite it completely for fallout 4 (
     asterisk method)."""
     acti_list = None if acti is None else list(acti)
-    load_list = None if lord is None else list(lord)
     fix_lo = None if quiet else _games_lo.FixInfo()
-    lord, acti = _game_handle.set_load_order(load_list, acti_list,
+    lord, acti = _game_handle.set_load_order(list(lord), acti_list,
                                              list(cached_lord.loadOrder),
                                              list(cached_lord.activeOrdered),
                                              fix_lo=fix_lo)
@@ -318,10 +314,10 @@ def _update_cache(lord: _LoTuple=None, acti_sorted=None, __index_move=0):
         cached_lord = LoadOrder(lord, acti_sorted)
     except Exception:
         bolt.deprint(u'Error updating load_order cache')
-        cached_lord = __empty
+        cached_lord = __lo_unset
         raise
     finally:
-        if cached_lord is not __empty:
+        if cached_lord is not __lo_unset:
             global _current_list_index
             if _current_list_index < 0 or (not __index_move and
                 cached_lord != _saved_load_orders[_current_list_index].lord):
@@ -348,6 +344,9 @@ def refresh_lo(cached=False, cached_active=True):
     **must be up to date** for correct load order/active validation."""
     if locked and _saved_load_orders:
         saved: LoadOrder = _saved_load_orders[_current_list_index].lord
+        if cached_lord is not __lo_unset:
+            if cached_lord != saved: # sanity check, should not happen
+                bolt.deprint(f'Bug: {cached_lord=} is different from {saved=}')
         lord, acti = _game_handle.set_load_order( # make sure saved lo is valid
             list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
         fixed = LoadOrder(lord, acti)
@@ -355,15 +354,15 @@ def refresh_lo(cached=False, cached_active=True):
             bolt.deprint(f'Saved load order is no longer valid: {saved}\n'
                          f'Corrected to {fixed}')
         saved = fixed
-    else: saved = __empty
-    if cached_lord is not __empty:
+    else: saved = __lo_unset
+    if cached_lord is not __lo_unset:
         lo = cached_lord.loadOrder if (
             cached and not _game_handle.load_order_changed()) else None
         active = cached_lord.activeOrdered if (
             cached_active and not _game_handle.active_changed()) else None
     else: active = lo = None
     _update_cache(lo, active)
-    if locked and saved is not __empty:
+    if locked and saved is not __lo_unset:
         if cached_lord.loadOrder != saved.loadOrder or (
            cached_lord.active != saved.active and # active order doesn't matter
            bass.settings[u'bash.load_order.lock_active_plugins']):

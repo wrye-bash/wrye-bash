@@ -503,7 +503,7 @@ class LoGame(object):
 
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
-        rethinking as save load and active should be an atomic operation."""
+        rethinking as saving load and active should be an atomic operation."""
         quiet = fix_lo is None
         if quiet: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]

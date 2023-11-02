@@ -60,7 +60,7 @@ def parse():
     # userPath #
     h = ('Specify the user profile path. May help if HOMEDRIVE and/or '
          u"HOMEPATH are missing from the user's environment.")
-    arg(userPathGroup, '-', '--userPath', dest='userPath')
+    arg(userPathGroup, '-u', '--userPath', dest='userPath')
     # localAppDataPath #
     h = ("Specify the user's local application data directory. If you need "
          'to set this then you probably need to set -p too.')
