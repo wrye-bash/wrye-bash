@@ -32,6 +32,7 @@ import re
 import sys
 from collections import defaultdict, OrderedDict
 from collections.abc import Iterable
+from configparser import ConfigParser
 from functools import wraps
 from itertools import chain
 
@@ -46,8 +47,7 @@ from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    undefinedPath
+    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -3729,193 +3729,53 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 # Initialization --------------------------------------------------------------
-def initTooldirs():
-    #-- Other tool directories
-    #   First to default path
-    pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
-    def pathlist(*args): return [x.join(*args) for x in pf]
-    def multi_path(*paths):
-        return list(chain.from_iterable(pathlist(*p) for p in paths))
-    tooldirs = bass.tooldirs = bolt.LowerDict() ##: Yak! needed for case insensitive keys
-    def _get_boss_loot(registry_key, game_folder, exe_name):
-        """Helper for determing correct BOSS/LOOT path."""
-        # Check game folder for a copy first
-        if dirs['app'].join(game_folder, exe_name).is_file():
-            ret_path = dirs['app'].join(game_folder, exe_name)
-        else:
-            ret_path = GPath('C:\\**DNE**')
-            # Detect globally installed program (into Program Files)
-            path_in_registry = env.get_registry_path(*registry_key,
-                lambda p: p.join(exe_name).is_file())
-            if path_in_registry:
-                ret_path = path_in_registry.join(exe_name)
-        return ret_path
-    tooldirs['boss'] = _get_boss_loot(
-        ('Boss', 'Installed Path'), 'BOSS', 'BOSS.exe')
-    if bolt.os_name == 'nt':
-        tooldirs['LOOT'] = _get_boss_loot(
-            ('LOOT', 'Installed Path'), 'LOOT', 'LOOT.exe')
-    else:
-        tooldirs['LOOT'] = GPath('/opt/loot/LOOT')
-    tooldirs[u'TES3EditPath'] = dirs[u'app'].join(u'TES3Edit.exe')
-    tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
-    tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')
-    tooldirs[u'Tes5EditPath'] = dirs[u'app'].join(u'TES5Edit.exe')
-    tooldirs[u'TES5VREditPath'] = dirs[u'app'].join(u'TES5VREdit.exe')
-    tooldirs[u'EnderalEditPath'] = dirs[u'app'].join(u'EnderalEdit.exe')
-    tooldirs[u'SSEEditPath'] = dirs[u'app'].join(u'SSEEdit.exe')
-    tooldirs[u'Fo4EditPath'] = dirs[u'app'].join(u'FO4Edit.exe')
-    tooldirs[u'Fo3EditPath'] = dirs[u'app'].join(u'FO3Edit.exe')
-    tooldirs[u'FnvEditPath'] = dirs[u'app'].join(u'FNVEdit.exe')
-    tooldirs[u'FO4VREditPath'] = dirs[u'app'].join(u'FO4VREdit.exe')
-    tooldirs['SF1EditPath'] = dirs['app'].join('SF1Edit.exe')
-    tooldirs[u'Tes4LodGenPath'] = dirs[u'app'].join(u'TES4LodGen.exe')
-    tooldirs[u'Tes4GeckoPath'] = dirs[u'app'].join(u'Tes4Gecko.jar')
-    tooldirs[u'Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')
-    tooldirs[u'OblivionBookCreatorPath'] = dirs[u'mods'].join(u'OblivionBookCreator.jar')
-    tooldirs[u'NifskopePath'] = pathlist(u'NifTools',u'NifSkope',u'Nifskope.exe')
-    tooldirs[u'BlenderPath'] = pathlist(u'Blender Foundation',u'Blender',u'blender.exe')
-    tooldirs[u'GmaxPath'] = GPath(u'C:\\GMAX').join(u'gmax.exe')
-    tooldirs[u'MaxPath'] = pathlist(u'Autodesk',u'3ds Max 2010',u'3dsmax.exe')
-    tooldirs[u'MayaPath'] = undefinedPath
-    tooldirs['PhotoshopPath'] = multi_path( ##: CC path
-        ['Adobe', 'Adobe Photoshop CS6 (64 Bit)', 'Photoshop.exe'],
-        ['Adobe', 'Adobe Photoshop CS3', 'Photoshop.exe'])
-    tooldirs[u'GIMP'] = pathlist(u'GIMP-2.0',u'bin',u'gimp-2.6.exe')
-    tooldirs[u'ISOBL'] = dirs[u'app'].join(u'ISOBL.exe')
-    tooldirs[u'ISRMG'] = dirs[u'app'].join(u'Insanitys ReadMe Generator.exe')
-    tooldirs[u'ISRNG'] = dirs[u'app'].join(u'Random Name Generator.exe')
-    tooldirs[u'ISRNPCG'] = dirs[u'app'].join(u'Random NPC.exe')
-    tooldirs[u'NPP'] = pathlist(u'Notepad++',u'notepad++.exe')
-    tooldirs[u'Fraps'] = GPath(u'C:\\Fraps').join(u'Fraps.exe')
-    tooldirs[u'Audacity'] = pathlist(u'Audacity',u'Audacity.exe')
-    tooldirs[u'Artweaver'] = pathlist(u'Artweaver 1.0',u'Artweaver.exe')
-    tooldirs[u'DDSConverter'] = pathlist(u'DDS Converter 2',u'DDS Converter 2.exe')
-    tooldirs[u'PaintNET'] = pathlist(u'Paint.NET',u'PaintDotNet.exe')
-    tooldirs[u'Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
-    tooldirs[u'Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
-    tooldirs[u'BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
-    tooldirs[u'MAP'] = dirs[u'app'].join(u'Modding Tools', u'Interactive Map of Cyrodiil and Shivering Isles 3.52', u'Mapa v 3.52.exe')
-    tooldirs[u'OBMLG'] = dirs[u'app'].join(u'Modding Tools', u'Oblivion Mod List Generator', u'Oblivion Mod List Generator.exe')
-    tooldirs[u'OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
-    tooldirs[u'ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
-    tooldirs[u'ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
-    tooldirs[u'Krita'] = pathlist(u'Krita (x86)',u'bin',u'krita.exe')
-    tooldirs[u'PixelStudio'] = pathlist(u'Pixel',u'Pixel.exe')
-    tooldirs[u'TwistedBrush'] = pathlist(u'Pixarra',u'TwistedBrush Open Studio',u'tbrush_open_studio.exe')
-    tooldirs[u'PhotoScape'] = pathlist(u'PhotoScape',u'PhotoScape.exe')
-    tooldirs[u'Photobie'] = pathlist(u'Photobie',u'Photobie.exe')
-    tooldirs[u'PhotoFiltre'] = pathlist(u'PhotoFiltre',u'PhotoFiltre.exe')
-    tooldirs[u'PaintShopPhotoPro'] = pathlist(u'Corel',u'Corel PaintShop Photo Pro',u'X3',u'PSPClassic',u'Corel Paint Shop Pro Photo.exe')
-    tooldirs[u'Dogwaffle'] = pathlist(u'project dogwaffle',u'dogwaffle.exe')
-    tooldirs[u'GeneticaViewer'] = pathlist(u'Spiral Graphics',u'Genetica Viewer 3',u'Genetica Viewer 3.exe')
-    tooldirs[u'LogitechKeyboard'] = pathlist(u'Logitech',u'GamePanel Software',u'G-series Software',u'LGDCore.exe')
-    tooldirs[u'AutoCad'] = pathlist(u'Autodesk Architectural Desktop 3',u'acad.exe')
-    tooldirs[u'Genetica'] = pathlist(u'Spiral Graphics',u'Genetica 3.5',u'Genetica.exe')
-    tooldirs[u'IrfanView'] = pathlist(u'IrfanView',u'i_view32.exe')
-    tooldirs[u'XnView'] = pathlist(u'XnView',u'xnview.exe')
-    tooldirs[u'FastStone'] = pathlist(u'FastStone Image Viewer',u'FSViewer.exe')
-    tooldirs[u'Steam'] = pathlist(u'Steam',u'steam.exe')
-    tooldirs[u'EVGAPrecision'] = pathlist(u'EVGA Precision',u'EVGAPrecision.exe')
-    tooldirs[u'IcoFX'] = pathlist(u'IcoFX 1.6',u'IcoFX.exe')
-    tooldirs[u'AniFX'] = pathlist(u'AniFX 1.0',u'AniFX.exe')
-    tooldirs[u'WinMerge'] = pathlist(u'WinMerge',u'WinMergeU.exe')
-    tooldirs[u'FreeMind'] = pathlist(u'FreeMind',u'Freemind.exe')
-    tooldirs[u'MediaMonkey'] = pathlist(u'MediaMonkey',u'MediaMonkey.exe')
-    tooldirs['Inkscape'] = multi_path(['Inkscape', 'bin', 'inkscape.exe'],
-                                      ['Inkscape', 'inkscape.exe']) # older ver
-    tooldirs[u'FileZilla'] = pathlist(u'FileZilla FTP Client',u'filezilla.exe')
-    tooldirs[u'RADVideo'] = pathlist(u'RADVideo',u'radvideo.exe')
-    tooldirs[u'EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
-    tooldirs[u'Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
-    tooldirs[u'Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
-    tooldirs[u'Tabula'] = dirs[u'app'].join(u'Modding Tools', u'Tabula', u'Tabula.exe')
-    tooldirs[u'MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
-    tooldirs[u'Pixia'] = pathlist(u'Pixia',u'pixia.exe')
-    tooldirs[u'DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')
-    tooldirs[u'CrazyBump'] = pathlist(u'Crazybump',u'CrazyBump.exe')
-    tooldirs[u'xNormal'] = pathlist(u'Santiago Orgaz',u'xNormal',u'3.17.3',u'x86',u'xNormal.exe')
-    tooldirs[u'SoftimageModTool'] = GPath(u'C:\\Softimage').join(u'Softimage_Mod_Tool_7.5',u'Application',u'bin',u'XSI.bat')
-    tooldirs[u'SpeedTree'] = undefinedPath
-    tooldirs[u'Treed'] = pathlist(u'gile[s]',u'plugins',u'tree[d]',u'tree[d].exe')
-    tooldirs[u'WinSnap'] = pathlist(u'WinSnap',u'WinSnap.exe')
-    tooldirs[u'PhotoSEAM'] = pathlist(u'PhotoSEAM',u'PhotoSEAM.exe')
-    tooldirs[u'TextureMaker'] = pathlist(u'Texture Maker',u'texturemaker.exe')
-    tooldirs[u'MaPZone'] = pathlist(u'Allegorithmic',u'MaPZone 2.6',u'MaPZone2.exe')
-    tooldirs[u'NVIDIAMelody'] = pathlist(u'NVIDIA Corporation',u'Melody',u'Melody.exe')
-    tooldirs[u'WTV'] = pathlist(u'WindowsTextureViewer',u'WTV.exe')
-    tooldirs[u'Switch'] = pathlist(u'NCH Swift Sound',u'Switch',u'switch.exe')
-    tooldirs[u'Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
-
-def init_default_ini_settings():
+def initOptions(bashIni: ConfigParser):
     # *some* settings from the INI - note we get some ini settings (such as
     # sOblivionMods) via get_ini_option/get_path_from_ini we never store those
     # in bass.inisettings
-    inisettings[u'ScriptFileExt'] = u'.txt'
-    inisettings[u'ResetBSATimestamps'] = True
-    inisettings[u'EnsurePatchExists'] = True
-    inisettings[u'OblivionTexturesBSAName'] = u'Oblivion - Textures - Compressed.bsa'
-    inisettings[u'ShowDevTools'] = False
-    inisettings[u'Tes4GeckoJavaArg'] = u'-Xmx1024m'
-    inisettings[u'OblivionBookCreatorJavaArg'] = u'-Xmx1024m'
-    inisettings[u'ShowTextureToolLaunchers'] = True
-    inisettings[u'ShowModelingToolLaunchers'] = True
-    inisettings[u'ShowAudioToolLaunchers'] = True
-    inisettings[u'7zExtraCompressionArguments'] = u''
-    inisettings[u'xEditCommandLineArguments'] = u''
-    inisettings[u'AutoItemCheck'] = True
-    inisettings[u'SkipHideConfirmation'] = False
-    inisettings[u'SkipResetTimeNotifications'] = False
-    inisettings[u'SoundSuccess'] = u''
-    inisettings[u'SoundError'] = u''
-    inisettings[u'EnableSplashScreen'] = True
-    inisettings[u'PromptActivateBashedPatch'] = True
-    inisettings[u'WarnTooManyFiles'] = True
-    inisettings[u'SkippedBashInstallersDirs'] = u''
-    inisettings[u'Command7z'] = '7z'
-
-__type_key_preffix = {  # Path is tooldirs only int does not appear in either!
-    bolt.Path: u's', str: u's', list: u's', int: u'i', bool: u'b'}
-def initOptions(bashIni):
-    initTooldirs()
-    init_default_ini_settings()
-    # if bash.ini exists update the settings from there
+    inisettings['ScriptFileExt'] = '.txt'
+    inisettings['ResetBSATimestamps'] = True
+    inisettings['EnsurePatchExists'] = True
+    inisettings['OblivionTexturesBSAName'] = 'Oblivion - Textures - Compressed.bsa'
+    inisettings['ShowDevTools'] = False
+    inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
+    inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
+    inisettings['ShowTextureToolLaunchers'] = True
+    inisettings['ShowModelingToolLaunchers'] = True
+    inisettings['ShowAudioToolLaunchers'] = True
+    inisettings['7zExtraCompressionArguments'] = ''
+    inisettings['xEditCommandLineArguments'] = ''
+    inisettings['AutoItemCheck'] = True
+    inisettings['SkipHideConfirmation'] = False
+    inisettings['SkipResetTimeNotifications'] = False
+    inisettings['SoundSuccess'] = ''
+    inisettings['SoundError'] = ''
+    inisettings['EnableSplashScreen'] = True
+    inisettings['PromptActivateBashedPatch'] = True
+    inisettings['WarnTooManyFiles'] = True
+    inisettings['SkippedBashInstallersDirs'] = ''
+    inisettings['Command7z'] = '7z'
+    # if bash.ini exists update those settings from there
     if bashIni:
         defaultOptions = {}
-        for settingsDict in [bass.tooldirs, inisettings]:
-            for defaultKey, defaultValue in settingsDict.items():
-                valueType = type(defaultValue)
-                readKey = __type_key_preffix[valueType] + defaultKey
-                defaultOptions[readKey.lower()] = (defaultKey, settingsDict, valueType)
-        unknownSettings = {} ##: print those
+        for ini_settings_key, defaultValue in inisettings.items():
+            valueType = type(defaultValue)
+            ini_key = ('b' if valueType is bool else 's') + ini_settings_key
+            defaultOptions[ini_key.lower()] = (ini_settings_key, valueType)
         for section in bashIni.sections():
             # retrieving ini settings is case insensitive - key: lowecase
-            for key, value in bashIni.items(section):
-                usedKey, usedSettings, settingType = defaultOptions.get(
-                    key, (key[1:], unknownSettings, str))
-                compDefaultValue = usedSettings.get(usedKey, u'')
-                if settingType in (bolt.Path,list):
-                    if value == u'.': continue
-                    value = GPath(value)
-                    if not value.is_absolute():
-                        value = dirs[u'app'].join(value)
-                elif settingType is bool:
-                    if value == u'.': continue
-                    value = bashIni.getboolean(section,key)
-                else:
-                    value = settingType(value)
-                comp_val = value
-                if settingType is str:
-                    compDefaultValue = compDefaultValue.lower()
-                    comp_val = comp_val.lower()
-                elif settingType is list:
-                    compDefaultValue = compDefaultValue[0]
-                if comp_val != compDefaultValue:
-                    usedSettings[usedKey] = value
+            for ini_key_lower, value in bashIni.items(section):
+                if ini_settings_key := defaultOptions.get(ini_key_lower):
+                    if value == '.': continue
+                    ini_settings_key, value_type = ini_settings_key
+                    if value_type is bool:
+                        value = bashIni.getboolean(section, ini_key_lower)
+                    elif ini_settings_key[:5] == 'Sound':
+                        value = bass.dirs['app'].join(value).s if not (
+                            value := GPath(value)).is_absolute() else value.s
+                    inisettings[ini_settings_key] = value
     if os_name != 'nt':
         archives.exe7z = inisettings[u'Command7z']
-    bass.tooldirs[u'Tes4ViewPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
-    bass.tooldirs[u'Tes4TransPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized

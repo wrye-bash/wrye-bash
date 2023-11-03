@@ -45,8 +45,6 @@ is_standalone = False # whether or not we're on standalone
 dirs: dict[str, Path] = {}
 # settings read from the Mopy/bash.ini file in init_default_ini_settings()
 inisettings = {}
-# dirs where various apps may be located - populated in initTooldirs()
-tooldirs = None # type: dict | None
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !

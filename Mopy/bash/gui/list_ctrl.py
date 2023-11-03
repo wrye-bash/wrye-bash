@@ -371,7 +371,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     # Images
     def set_image_list(self, image_list, *, __which=_wx.IMAGE_LIST_SMALL):
-        self._native_widget.SetImageList(image_list, __which)
+        self._native_widget.SetImageList(self._resolve(image_list), __which)
 
     def clear_col_image(self, col_dex):
         self._native_widget.ClearColumnImage(col_dex)

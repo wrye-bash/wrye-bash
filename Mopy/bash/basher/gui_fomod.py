@@ -25,7 +25,7 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bush
+from .. import bass, bush
 from ..balt import EnabledLink, colors
 from ..bolt import LowerDict, dict_sort, reverse_dict_multi
 from ..env import get_file_version, get_game_version_fallback, to_os_path
@@ -35,7 +35,7 @@ from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
     DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, Links, \
     OkButton, PictureWithCursor, RadioButton, ScrollableWindow, Stretch, \
     Table, TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
-    copy_text_to_clipboard, showWarning
+    copy_text_to_clipboard, showWarning, StaticBmp
 from ..wbtemp import cleanup_temp_dir
 
 class FomodInstallInfo(object):
@@ -81,7 +81,7 @@ class ValidatorPopup(DialogWindow):
             'package or have to make guesses as to what was intended.')
         VLayout(item_expand=True, border=10, spacing=6, items=[
             (HLayout(spacing=10, items=[
-                (balt.staticBitmap(self), LayoutOptions(v_align=TOP)),
+                (StaticBmp(self), LayoutOptions(v_align=TOP)),
                 (self._error_log, LayoutOptions(expand=True, weight=1)),
             ]), LayoutOptions(weight=1)),
             HLayout(items=[

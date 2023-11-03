@@ -24,12 +24,17 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
+import os
+import shlex
 
 from . import BSAList, INIList, InstallersList, \
     InstallersPanel, MasterList, ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
+from .constants import oblivion_tools, oblivion_java_tools, loot_bosh, \
+    skyrim_tools, modeling_tools_buttons, texture_tool_buttons, audio_tools, \
+    misc_tools, nifskope
 from .files_links import *
 from .ini_links import *
 from .installer_links import *
@@ -41,143 +46,111 @@ from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
-    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
+    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
+from ..bolt import os_name
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
-from ..gui import ImageWrapper
+from ..gui import GuiImage, get_image
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
+_is_skyrim = bush.game.fsName == 'Skyrim'
+_j = os.path.join
 
 #------------------------------------------------------------------------------
-def InitStatusBar():
-    """Initialize status bar links."""
+def InitStatusBar(bashIni):
+    """Initialize status bar buttons."""
+    __fp = GuiImage.from_path
     def _png_list(template):
-        return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
-                (16, 24, 32)]
+        return [__fp(template % i) for i in (16, 24, 32)]
     def _svg_list(svg_fname):
-        return [ImageWrapper(bass.dirs['images'].join(svg_fname), iconSize=i)
-                for i in (16, 24, 32)]
-    def _init_tool_buttons(): # tooldirs must have been initialized
-        return (((bass.tooldirs[u'OblivionBookCreatorPath'],
-                  bass.inisettings[u'OblivionBookCreatorJavaArg']),
-                 _png_list('tools/oblivionbookcreator%s.png'),
-                 _(u'Launch Oblivion Book Creator'),
-                 {'uid': u'OblivionBookCreator'}),
-                ((bass.tooldirs[u'Tes4GeckoPath'],
-                  bass.inisettings[u'Tes4GeckoJavaArg']),
-                 _png_list('tools/tes4gecko%s.png'),
-                 _(u'Launch Tes4Gecko'), {'uid': u'Tes4Gecko'}),
-                ((bass.tooldirs[u'Tes5GeckoPath']),
-                _png_list('tools/tesvgecko%s.png'),
-                _(u'Launch TesVGecko'), {'uid': u'TesVGecko'}),
-        )
+        return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar
-    BashStatusBar.obseButton = obse_button = Obse_Button(uid='OBSE')
+    BashStatusBar.obseButton = obse_button = Obse_Button('OBSE')
     all_links = [
         obse_button,
-        AutoQuit_Button(uid='AutoQuit'),
-        Game_Button(
-            bass.dirs['app'].join(bush.game.launch_exe),
-            bass.dirs['app'].join(bush.game.version_detect_file),
-            _png_list(f'games/{bush.game.game_icon}'),
-            _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
-            _('Launch %(game_name)s %(app_version)s')),
+        AutoQuit_Button('AutoQuit'),
+        Game_Button(_png_list(f'games/{bush.game.game_icon}')),
+        TESCS_Button(_png_list(f'tools/{bush.game.Ck.image_name}'))
     ]
-    if bush.game.Ck.ck_abbrev:
-        all_links.append(TESCS_Button( # Construction Set / Creation Kit
-            bass.dirs['app'].join(bush.game.Ck.exe),
-            _png_list(f'tools/{bush.game.Ck.image_name}'),
-            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
-            _('Launch %(ck_name)s %(app_version)s'),
-            bush.game.Ck.se_args))
-    # OBMM
-    all_links.append(app_button_factory(
-        bass.dirs['app'].join('OblivionModManager.exe'),
-        _png_list('tools/obmm%s.png'), _('Launch OBMM'),
-        uid='OBMM'))
-    # Just an _App_Button whose path is in bass.tooldirs
-    Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
-                                                      *args[1:])
-    from .constants import toolbar_buttons
-    for tb in toolbar_buttons:
-        all_links.append(Tooldir_Button(*tb))
-    for tb2 in _init_tool_buttons():
-        all_links.append(app_button_factory(*tb2[:-1], **tb2[-1]))
-    all_links.append( #Tes4View
-        App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
-            _png_list('tools/tes4view%s.png'), _('Launch TES4View'),
-            uid='TES4View'))
-    all_xes = set()
-    for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
-        all_xes.add(game_class.Xe.full_name)
+    all_xes = dict.fromkeys( # keep order to not reorder much
+        game_class.Xe.full_name for game_class in PatchGame.supported_games())
+    xe_images = _png_list('tools/tes4edit%s.png')
+    def _tool_args(app_key, app_path_data, clazz=App_Button, **kwargs):
+        app_launcher, tooltip_str, path_kwargs, *exe_args = app_path_data
+        if app_key in {'Steam', 'LOOT'}:
+            list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
+        elif app_key[:-4] in all_xes: # chop off 'Path'
+            list_img = xe_images
+        else:
+            list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
+        kwargs.setdefault('uid', app_key)
+        if exe_args:
+            kwargs['exeArgs'] = (*kwargs.get('exeArgs', ()), *exe_args)
+        return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
+            bashIni, list_img, tooltip_str, **kwargs)
+    # Launchers of tools ------------------------------------------------------
+    all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
+                     in oblivion_tools.items())
+    all_links.extend(_tool_args(k, (*v, *shlex.split(bass.inisettings[
+        f'{(u := k[:-4])}JavaArg'], posix=os_name != 'nt')), uid=u,
+        display_launcher=_is_oblivion) for k, v in oblivion_java_tools.items())
+    all_links.extend(_tool_args(*tool, display_launcher=_is_skyrim,
+        uid=tool[0][:-4]) for tool in skyrim_tools.items())
+    # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        all_links.append(App_xEdit((bass.tooldirs[f'{xe_name}Path'],
-             '-%s -edit' % xe_name[:-4]), # chop off edit
-            _png_list('tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
-            uid=xe_name))
-    all_links.append(  #TesVGecko
-        app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
-                           _png_list('tools/tesvgecko%s.png'),
-                           _(u"Launch TesVGecko"), uid=u'TesVGecko'))
-    all_links.append(  #Tes4Trans
-        App_xEdit((bass.tooldirs['Tes4TransPath'], '-TES4 -translate'),
-            _png_list('tools/tes4trans%s.png'), _('Launch TES4Trans'),
-            uid='TES4Trans'))
+        args = (f'{xe_name}.exe', _('Launch %s') % xe_name, {
+            'root_dirs': 'app'}, f'-{xe_name[:-4]} -edit')
+        all_links.append(_tool_args(f'{xe_name}Path', args, clazz=App_xEdit,
+            uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name))
+        if xe_name == 'TES4Edit': # set the paths for TES4Trans/TES4View
+            tes4_edit_dir= all_links[-1].exePath.head
+    # not specified in the ini - we bypass app_button_factory - avoid!
+    all_links.append(App_xEdit(tes4_edit_dir.join('TES4View.exe'),
+        _png_list(_j('tools', f'{"TES4ViewPath".lower()}%s.png')),
+        _('Launch TES4View'), 'TES4View', exeArgs=('-TES4', '-view'),
+        display_launcher=_is_oblivion))
+    all_links.append(App_xEdit(tes4_edit_dir.join('TES4Trans.exe'),
+        _png_list(_j('tools', f'{"TES4TransPath".lower()}%s.png')),
+        _('Launch TES4Trans'), 'TES4Trans', exeArgs=('-TES4', '-translate'),
+        display_launcher=_is_oblivion))
     all_links.append(  #Tes4LODGen
-        App_xEdit((bass.tooldirs['Tes4LodGenPath'], '-TES4 -lodgen'),
-            _png_list('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
-            uid='TES4LODGen'))
-    if bush.game.boss_game_name:
-        all_links.append( #BOSS
-            App_BOSS(bass.tooldirs['boss'], _png_list('tools/boss%s.png'),
-                _('Launch BOSS'), uid='BOSS'))
-    if bush.game.loot_game_name:
-        all_links.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], _svg_list('tools/loot.svg'),
-                _('Launch LOOT'), uid='LOOT'))
-    if bass.inisettings[u'ShowModelingToolLaunchers']:
-        from .constants import modeling_tools_buttons
-        for mb in modeling_tools_buttons:
-            all_links.append(Tooldir_Button(*mb))
-        all_links.append( #Softimage Mod Tool
-            app_button_factory((bass.tooldirs[u'SoftimageModTool'], u'-mod'),
-                               _png_list('tools/softimagemodtool%s.png'),
-                               _(u"Launch Softimage Mod Tool"),
-                               uid=u'SoftimageModTool'))
-    if bass.inisettings[u'ShowModelingToolLaunchers'] \
-            or bass.inisettings[u'ShowTextureToolLaunchers']:
-        all_links.append( #Nifskope
-            Tooldir_Button(u'NifskopePath', _png_list('tools/nifskope%s.png'),
-                _(u'Launch Nifskope')))
-    if bass.inisettings[u'ShowTextureToolLaunchers']:
-        from .constants import texture_tool_buttons
-        for tt in texture_tool_buttons:
-            all_links.append(Tooldir_Button(*tt))
-    if bass.inisettings[u'ShowAudioToolLaunchers']:
-        from .constants import audio_tools
-        for at in audio_tools:
-            all_links.append(Tooldir_Button(*at))
-    from .constants import misc_tools
-    for mt in misc_tools: all_links.append(Tooldir_Button(*mt))
+        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
+            {'root_dirs': 'app'}, '-TES4 -lodgen'), clazz=App_xEdit,
+            uid='TES4LODGen', display_launcher=_is_oblivion))
+    all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
+        for tool, cls, dipl in zip(loot_bosh.items(), (App_LOOT, App_BOSS), (
+            bush.game.loot_game_name, bush.game.boss_game_name)))
+    show_model = bass.inisettings['ShowModelingToolLaunchers']
+    all_links.extend(_tool_args(*mt, display_launcher=show_model) for mt in
+                     modeling_tools_buttons.items())
+    show_texture = bass.inisettings['ShowTextureToolLaunchers']
+    all_links.append(_tool_args(*nifskope, # Nifskope
+                                display_launcher=show_model or show_texture))
+    all_links.extend(_tool_args(*tt, display_launcher=show_texture) for tt in
+                     texture_tool_buttons.items())
+    all_links.extend(_tool_args(*at, display_launcher=bass.inisettings[
+        'ShowAudioToolLaunchers']) for at in audio_tools.items())
+    all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Apps
-    dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [images['error_cross.16'].get_bitmap()] * 3
-    for pth, img_path, shortcut_descr in init_app_links(dirApps):
+    badIcons = [get_image('error_cross.16')] * 3
+    for pth, img_path, shortcut_descr in init_app_links(
+            bass.dirs['mopy'].join('Apps')):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
         else:
-            imgs = [ImageWrapper(img_path, ImageWrapper.img_types['.ico'], x)
-                    for x in (16, 24, 32)]
-        all_links.append(app_button_factory(
-            (pth, ()), imgs, shortcut_descr, canHide=False))
+            imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
+                    zip((16, 24, 32), img_path)]
+        #target.stail would keep the id on renaming the .lnk but this is unique
+        app_key = pth.stail.lower()
+        all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
+                                   canHide=False))
     #--Final couple
-    all_links.append(App_DocBrowser(uid='DocBrowser'))
-    all_links.append(App_PluginChecker(uid='ModChecker'))
-    all_links.append(App_Settings(uid='Settings', canHide=False))
-    all_links.append(App_Help(uid='Help', canHide=False))
-    if bass.inisettings['ShowDevTools']:
-        all_links.append(App_Restart(uid='Restart'))
+    all_links.append(App_DocBrowser('DocBrowser'))
+    all_links.append(App_PluginChecker('ModChecker'))
+    all_links.append(App_Settings('Settings', canHide=False))
+    all_links.append(App_Help('Help', canHide=False))
+    all_links.append(App_Restart('Restart'))
     BashStatusBar.all_sb_links = {li.uid: li for li in all_links}
 
 #------------------------------------------------------------------------------
@@ -921,7 +894,6 @@ def InitScreenLinks():
 #------------------------------------------------------------------------------
 def InitLinks():
     """Call other link initializers."""
-    InitStatusBar()
     InitMasterLinks()
     InitInstallerLinks()
     InitINILinks()

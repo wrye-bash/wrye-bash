@@ -92,10 +92,10 @@ class _TopLevelWin(_AComponent):
         """IsIconized(self) -> bool"""
         return self._native_widget.IsIconized()
 
-    # TODO(inf) de-wx! Image API - these use wx.Icon and wx.IconBundle
-    def set_icon(self, wx_icon):
+    # TODO(inf) de-wx! Image API - these use wx.IconBundle
+    def set_icon(self, gui_icon):
         """SetIcon(self, Icon icon)"""
-        return self._native_widget.SetIcon(wx_icon)
+        return self._native_widget.SetIcon(self._resolve(gui_icon))
 
     def set_icons(self, wx_icon_bundle):
         """SetIcons(self, wxIconBundle icons)"""

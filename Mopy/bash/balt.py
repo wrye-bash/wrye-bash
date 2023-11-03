@@ -29,7 +29,7 @@ import time
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import partial, wraps
+from functools import partial, wraps, cached_property
 from itertools import islice
 from typing import final
 
@@ -44,13 +44,13 @@ from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
     DirOpen, EventResult, FileOpen, FileOpenMultiple, FileSave, Font, \
-    GlobalMenu, HLayout, ImageWrapper, LayoutOptions, ListBox, Links, \
-    LogDialog, LogFrame, PanelWin, TextArea, UIListCtrl, VLayout, bell, \
-    copy_files_to_clipboard, scaled, DeletionDialog, web_viewer_available, \
-    AutoSize, get_shift_down, ContinueDialog, askText, askNumber, askYes, \
-    askWarning, showOk, showError, showWarning, showInfo, TreeNodeFormat, \
-    DnDStatusBar
-from .gui.base_components import _AComponent
+    GlobalMenu, HLayout, LayoutOptions, ListBox, Links, LogDialog, LogFrame, \
+    PanelWin, TextArea, UIListCtrl, VLayout, bell, copy_files_to_clipboard, \
+    scaled, DeletionDialog, web_viewer_available, AutoSize, get_shift_down, \
+    ContinueDialog, askText, askNumber, askYes, askWarning, showOk, showError, \
+    showWarning, showInfo, TreeNodeFormat, DnDStatusBar, get_image, \
+    get_color_checks
+from .gui.base_components import _AComponent, Lazy
 
 # Print a notice if wx.html2 is missing
 if not web_viewer_available():
@@ -66,8 +66,8 @@ def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
     def _get_bundle(img_path):
         bundle = wx.IconBundle()
-        bundle.AddIcon(bass.dirs['images'].join(img_path).s,
-                       ImageWrapper.img_types['.ico'])
+        # early boot get_image_dir not ready
+        bundle.AddIcon(bass.dirs['images'].join(img_path).s)
         return bundle
     Resources.bashRed = _get_bundle('bash_icons_red.ico')
     Resources.bashBlue = _get_bundle('bash_icons_blue.ico')
@@ -78,157 +78,62 @@ _settings: bolt.Settings = None # must be bound to bass.settings - smelly, #178
 # Colors ----------------------------------------------------------------------
 colors: dict[str, Color] = {}
 
-# Images ----------------------------------------------------------------------
-images = {} #--Singleton for collection of images.
-
 #------------------------------------------------------------------------------
-class ImageList(object):
-    """Wrapper for wx.ImageList.
+class ImageList(Lazy):
+    """Wrapper for wx.ImageList. Allows ImageList to be specified before
+    wx.App is initialized."""
+    _native_widget: wx.ImageList
 
-    Allows ImageList to be specified before wx.App is initialized.
-    Provides access to ImageList integers through imageList[key]."""
     def __init__(self, il_width, il_height):
-        self.width = scaled(il_width)
-        self.height = scaled(il_height)
+        super().__init__()
+        self.width = il_width
+        self.height = il_height
         self._images = []
-        self.indices = {}
-        self.imageList = None
+        self._indices = None
 
-    def GetImageList(self):
-        if not self.imageList:
-            imageList = self.imageList = wx.ImageList(self.width, self.height)
-            self.indices = {k: imageList.Add(im.get_bitmap()) for k, im in
-                            self._images}
-        return self.imageList
+    @property
+    def _native_widget(self):
+        if self._is_created(): return self._cached_widget
+        # scaling crashes if done before the wx.App is initialized
+        self._cached_args = scaled(self.width), scaled(self.height)
+        return super()._native_widget
 
-    def __getitem__(self,key):
-        self.GetImageList()
-        return self.indices[key]
+    def create_widget(self, *args, **kwargs):
+        kwargs.setdefault('recreate', False)
+        freshly_created = super().create_widget(*args, **kwargs)
+        if freshly_created: # ONCE! we don't support adding more images
+            self._indices = {k: self._native_widget.Add(self._resolve(im)) for
+                             k, im in self._images}
+
+    def img_dex(self, *args):
+        """Return the index of the specified image in the native control."""
+        return self._indices[args[0]]
 
 # Images ----------------------------------------------------------------------
 class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
-    def __init__(self):
-        super().__init__(16, 16)
-        if not (im_dir := Path.getcwd().join('bash', 'images')).exists(): ##: CI Hack
-            im_dir = Path.getcwd().join('Mopy', 'bash', 'images')
-        for state in (u'on', u'off', u'inc', u'imp'):
-            for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
-                           u'red'):
-                shortKey = f'{status}.{state}'
-                image_key = f'checkbox.{shortKey}'
-                img = im_dir.join(f'checkbox_{status}_{state}.png')
-                image = images[image_key] = ImageWrapper(img, iconSize=16)
-                self._images.append((shortKey, image))
+    _int_to_state = {0: 'off', 1: 'on', 2: 'inc', 3: 'imp'}
+    _statuses = ('purple', 'blue', 'green', 'orange', 'yellow', 'red')
 
-    def Get(self,status,on):
-        self.GetImageList()
-        if on == 3:
-            if status <= -20: shortKey = u'purple.imp'
-            elif status <= -10: shortKey = u'blue.imp'
-            elif status <= 0: shortKey = u'green.imp'
-            elif status <=10: shortKey = u'yellow.imp'
-            elif status <=20: shortKey = u'orange.imp'
-            else: shortKey = u'red.imp'
-        elif on == 2:
-            if status <= -20: shortKey = u'purple.inc'
-            elif status <= -10: shortKey = u'blue.inc'
-            elif status <= 0: shortKey = u'green.inc'
-            elif status <=10: shortKey = u'yellow.inc'
-            elif status <=20: shortKey = u'orange.inc'
-            else: shortKey = u'red.inc'
-        elif on:
-            if status <= -20: shortKey = u'purple.on'
-            elif status <= -10: shortKey = u'blue.on'
-            elif status <= 0: shortKey = u'green.on'
-            elif status <=10: shortKey = u'yellow.on'
-            elif status <=20: shortKey = u'orange.on'
-            else: shortKey = u'red.on'
-        else:
-            if status <= -20: shortKey = u'purple.off'
-            elif status <= -10: shortKey = u'blue.off'
-            elif status == 0: shortKey = u'green.off'
-            elif status <=10: shortKey = u'yellow.off'
-            elif status <=20: shortKey = u'orange.off'
-            else: shortKey = u'red.off'
-        return self.indices[shortKey]
-
-class InstallerColorChecks(ImageList):
-    def __init__(self):
+    def __init__(self, icons_dict):
         super().__init__(16, 16)
-        imDirJn = bass.dirs['images'].join
-        def _icc(fname): return ImageWrapper(imDirJn(fname), iconSize=16)
-        self._images.extend({
-            #--Off/Archive
-            'off.green':  _icc('checkbox_green_off.png'),
-            'off.grey':   _icc('checkbox_grey_off.png'),
-            'off.red':    _icc('checkbox_red_off.png'),
-            'off.white':  _icc('checkbox_white_off.png'),
-            'off.orange': _icc('checkbox_orange_off.png'),
-            'off.yellow': _icc('checkbox_yellow_off.png'),
-            #--Off/Archive - Wizard
-            'off.green.wiz':    _icc('checkbox_green_off_wiz.png'),
-            #grey
-            'off.red.wiz':      _icc('checkbox_red_off_wiz.png'),
-            'off.white.wiz':    _icc('checkbox_white_off_wiz.png'),
-            'off.orange.wiz':   _icc('checkbox_orange_off_wiz.png'),
-            'off.yellow.wiz':   _icc('checkbox_yellow_off_wiz.png'),
-            #--On/Archive
-            'on.green':  _icc('checkbox_green_inc.png'),
-            'on.grey':   _icc('checkbox_grey_inc.png'),
-            'on.red':    _icc('checkbox_red_inc.png'),
-            'on.white':  _icc('checkbox_white_inc.png'),
-            'on.orange': _icc('checkbox_orange_inc.png'),
-            'on.yellow': _icc('checkbox_yellow_inc.png'),
-            #--On/Archive - Wizard
-            'on.green.wiz':  _icc('checkbox_green_inc_wiz.png'),
-            #grey
-            'on.red.wiz':    _icc('checkbox_red_inc_wiz.png'),
-            'on.white.wiz':  _icc('checkbox_white_inc_wiz.png'),
-            'on.orange.wiz': _icc('checkbox_orange_inc_wiz.png'),
-            'on.yellow.wiz': _icc('checkbox_yellow_inc_wiz.png'),
-            #--Off/Directory
-            'off.green.dir':  _icc('diamond_green_off.png'),
-            'off.grey.dir':   _icc('diamond_grey_off.png'),
-            'off.red.dir':    _icc('diamond_red_off.png'),
-            'off.white.dir':  _icc('diamond_white_off.png'),
-            'off.orange.dir': _icc('diamond_orange_off.png'),
-            'off.yellow.dir': _icc('diamond_yellow_off.png'),
-            #--Off/Directory - Wizard
-            'off.green.dir.wiz':  _icc('diamond_green_off_wiz.png'),
-            #grey
-            'off.red.dir.wiz':    _icc('diamond_red_off_wiz.png'),
-            'off.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
-            'off.orange.dir.wiz': _icc('diamond_orange_off_wiz.png'),
-            'off.yellow.dir.wiz': _icc('diamond_yellow_off_wiz.png'),
-            #--On/Directory
-            'on.green.dir':  _icc('diamond_green_inc.png'),
-            'on.grey.dir':   _icc('diamond_grey_inc.png'),
-            'on.red.dir':    _icc('diamond_red_inc.png'),
-            'on.white.dir':  _icc('diamond_white_inc.png'),
-            'on.orange.dir': _icc('diamond_orange_inc.png'),
-            'on.yellow.dir': _icc('diamond_yellow_inc.png'),
-            #--On/Directory - Wizard
-            'on.green.dir.wiz':  _icc('diamond_green_inc_wiz.png'),
-            #grey
-            'on.red.dir.wiz':    _icc('diamond_red_inc_wiz.png'),
-            'on.white.dir.wiz':  _icc('diamond_white_off_wiz.png'),
-            'on.orange.dir.wiz': _icc('diamond_orange_inc_wiz.png'),
-            'on.yellow.dir.wiz': _icc('diamond_yellow_inc_wiz.png'),
-            #--Broken
-            'corrupt': _icc('red_x.svg'),
-        }.items())
+        self._images = list(icons_dict.items())
+
+    def img_dex(self, *args):
+        if len(args) == 1:
+            return super().img_dex(*args)
+        status, on = args
+        if status <= -20: color_key = 'purple'
+        elif status <= -10: color_key = 'blue'
+        elif status <= 0: color_key = 'green'
+        elif status <= 10: color_key = 'yellow'
+        elif status <= 20: color_key = 'orange'
+        else: color_key = 'red'
+        return self._indices[f'{self._int_to_state[on]}.{color_key}']
 
 def get_dv_bitmaps():
     """Returns the bitmaps needed for DocumentViewer."""
-    return tuple(images[i].get_bitmap() for i in (
-        'back.16', 'forward.16', 'reload.16'))
-
-# TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bmp=None):
-    """Tailored to current usages - IAW: do not use."""
-    return wx.StaticBitmap(_AComponent._resolve(parent),
-        bitmap=images['warning.32'].get_bitmap() if bmp is None else bmp)
+    return tuple(map(get_image, ('back.16', 'forward.16', 'reload.16')))
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -680,8 +585,6 @@ class UIList(PanelWin):
     # If set to True, ignore the bash.global_menu setting when determining
     # whether to show a column menu or not
     _bypass_gm_setting = False
-    #--gList image collection
-    _icons = ColorChecks()
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -728,10 +631,10 @@ class UIList(PanelWin):
                                   fnDropIndexes=self.OnDropIndexes)
         # Image List: Column sorting order indicators
         # explorer style ^ == ascending
-        checkboxesIL = self._icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(images['arrow.up.16'].get_bitmap())
-        self.sm_dn = checkboxesIL.Add(images['arrow.down.16'].get_bitmap())
-        self.__gList.set_image_list(checkboxesIL)
+        self.icons.create_widget(recreate=False)
+        self.sm_up = self.icons.img_dex('arrow.up.16')
+        self.sm_dn = self.icons.img_dex('arrow.down.16')
+        self.__gList.set_image_list(self.icons)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
             self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
@@ -763,6 +666,10 @@ class UIList(PanelWin):
         self._defaultTextBackground = Color.from_wx(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
+
+    @cached_property
+    def icons(self):
+        return ColorChecks(get_color_checks())
 
     # Column properties
     @property
@@ -964,15 +871,11 @@ class UIList(PanelWin):
         gItem.SetFont(Font.Style(gItem.GetFont(), strong=df.bold,
                                  slant=df.italics, underline=df.underline))
 
-    def lookup_icon_index(self, target_icon_key: str | tuple) -> int | None:
+    def lookup_icon_index(self, target_icon_key: None | tuple) -> int | None:
         """Helper method to look up an icon from a list item format and return
         it as an index into the image list."""
-        if isinstance(target_icon_key, tuple):
-            return self._icons.Get(*target_icon_key)
-        elif target_icon_key is not None:
-            return self._icons[target_icon_key]
-        else:
-            return None # keep None as None
+        return None if target_icon_key is None else self.icons.img_dex(
+            *target_icon_key)
 
     def lookup_text_key(self, target_text_color: str):
         """Helper method to look up a text color from a list item format."""
@@ -1483,7 +1386,7 @@ class UIList(PanelWin):
         dd_ok, dd_items, dd_recycle = DeletionDialog.display_dialog(self,
             title=dialogTitle, items_to_delete=items, default_recycle=recycle,
             sizes_dict=_settings, icon_bundle=Resources.bashBlue,
-            trash_icon=images['trash_can.32'].get_bitmap())
+            trash_icon=get_image('trash_can.32'))
         if not dd_ok or not dd_items: return
         try:
             self.data_store.delete(dd_items, recycle=dd_recycle)
@@ -2298,14 +2201,11 @@ class BashStatusBar(DnDStatusBar):
         for link_uid, link in self.all_sb_links.items():
             # Hidden?
             if link_uid in hide: continue
-            # Add it, if allow_create allows us
-            try:
-                if link.create_widget(self, on_drag_start=self._on_drag_start,
-                          on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                          on_drag_end_forced=self._on_drag_end_forced):
-                    self.buttons[link.uid] = link
-            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {link_uid!r}', traceback=True)
+            # Add it, if allow_create allows it
+            if link.create_widget(self, on_drag_start=self._on_drag_start,
+                    on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                    on_drag_end_forced=self._on_drag_end_forced):
+                self.buttons[link.uid] = link
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 

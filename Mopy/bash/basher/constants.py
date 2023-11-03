@@ -22,9 +22,10 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
-from .. import bass, bush
+from .. import bush
+from ..bolt import GPath
 from ..game import MergeabilityCheck
-from ..gui import DEFAULT_POSITION, ImageWrapper
+from ..gui import DEFAULT_POSITION
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -496,128 +497,192 @@ if bush.game.has_esl or bush.game.has_overlay_plugins:
     settingDefaults['bash.mods.cols'].insert(2, 'Indices')
     settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 
-# Images ----------------------------------------------------------------------
-#------------------------------------------------------------------------------
-imDirJn = bass.dirs['images'].join
-def _png(fname): return ImageWrapper(imDirJn(fname))
-def _svg(fname, bm_px_size):
-    return ImageWrapper(imDirJn(fname), iconSize=bm_px_size)
+# Specify various launchers in the format (tool_key: tool) - each one has a
+# (3) matching image file(s) in `images/tools` - image filename starts with
+# tool_key.lower() and ends in '.svg' (or '[16|24|32].png')
 
-#--Buttons
-def _png_list(template):
-    return [_png(template % x) for x in (16, 24, 32)]
-def _svg_list(svg_fname):
-    return [_svg(svg_fname, p) for p in (16, 24, 32)]
+oblivion_tools = {
+    'OBMM': ('OblivionModManager.exe', _('Launch OBMM'), {
+        'root_dirs': 'app'}),
+    'ISOBL': ('ISOBL.exe', _("Launch InsanitySorrow's Oblivion Launcher"), {
+        'root_dirs': 'app'}),
+    'ISRMG': ('Insanitys ReadMe Generator.exe', _("Launch InsanitySorrow's Readme Generator"), {
+        'root_dirs': 'app'}),
+    'ISRNG': ('Random Name Generator.exe', _("Launch InsanitySorrow's Random Name Generator"), {
+        'root_dirs': 'app'}),
+    'ISRNPCG': ('Random NPC.exe', _("Launch InsanitySorrow's Random NPC Generator"), {
+        'root_dirs': 'app'}),
+    'OBFEL': ('OblivionFaceExchangeLite.exe', _('Oblivion Face Exchange Lite'), {
+        'subfolders': 'Oblivion Face Exchange Lite'}),
+    'OBMLG': ('Oblivion Mod List Generator.exe', _('Oblivion Mod List Generator'), {
+        'root_dirs': 'app', 'subfolders': ('Modding Tools', 'Oblivion Mod List Generator')}),
+    'BSACMD': ('bsacmd.exe', _('Launch BSA Commander'), {
+        'subfolders': 'BSACommander'}),
+    'Tabula': ('Tabula.exe', _('Launch Tabula'), {
+        'root_dirs': 'app', 'subfolders': ('Modding Tools', 'Tabula')}),
+    'Tes4FilesPath': ('TES4Files.exe', _('Launch TES4Files'), {
+        'root_dirs': 'app', 'subfolders': 'Tools'})
+}
 
-# TODO(65): game handling refactoring - some of the buttons are game specific
-toolbar_buttons = (
-    ('ISOBL', _png_list('tools/isobl%s.png'),
-    _(u"Launch InsanitySorrow's Oblivion Launcher")),
-    ('ISRMG', _png_list("tools/insanity'sreadmegenerator%s.png"),
-    _(u"Launch InsanitySorrow's Readme Generator")),
-    ('ISRNG', _png_list("tools/insanity'srng%s.png"),
-    _(u"Launch InsanitySorrow's Random Name Generator")),
-    ('ISRNPCG', _png_list('tools/randomnpc%s.png'),
-    _(u"Launch InsanitySorrow's Random NPC Generator")),
-    ('OBFEL', _png_list('tools/oblivionfaceexchangerlite%s.png'),
-    _('Oblivion Face Exchange Lite')),
-    ('OBMLG', _png_list('tools/modlistgenerator%s.png'),
-    _('Oblivion Mod List Generator')),
-    ('BSACMD', _png_list('tools/bsacommander%s.png'),
-    _('Launch BSA Commander')),
-    ('Tabula', _png_list('tools/tabula%s.png'), _('Launch Tabula')),
-    ('Tes4FilesPath', _png_list('tools/tes4files%s.png'),
-    _('Launch TES4Files')),
-)
+oblivion_java_tools = {
+    'Tes4GeckoPath': ('Tes4Gecko.jar', _('Launch Tes4Gecko'), {
+        'root_dirs': 'app'}),
+    'OblivionBookCreatorPath': ('OblivionBookCreator.jar', _(
+        'Launch Oblivion Book Creator'), {'root_dirs': 'mods'})
+}
 
-modeling_tools_buttons = (
-    ('AutoCad', _png_list('tools/autocad%s.png'), _('Launch AutoCad')),
-    ('BlenderPath', _png_list('tools/blender%s.png'), _('Launch Blender')),
-    ('Dogwaffle', _png_list('tools/dogwaffle%s.png'), _('Launch Dogwaffle')),
-    ('GmaxPath', _png_list('tools/gmax%s.png'), _('Launch Gmax')),
-    ('MayaPath', _png_list('tools/maya%s.png'), _('Launch Maya')),
-    ('MaxPath', _png_list('tools/3dsmax%s.png'), _('Launch 3dsMax')),
-    ('Milkshape3D', _png_list('tools/milkshape3d%s.png'),
-     _('Launch Milkshape 3D')),
-    ('Mudbox', _png_list('tools/mudbox%s.png'), _('Launch Mudbox')),
-    ('Sculptris', _png_list('tools/sculptris%s.png'), _('Launch Sculptris')),
-    ('SpeedTree', _png_list('tools/speedtree%s.png'), _('Launch SpeedTree')),
-    ('Treed', _png_list('tools/treed%s.png'), _('Launch Tree\[d\]')),
-    ('Wings3D', _png_list('tools/wings3d%s.png'), _('Launch Wings 3D')),
-)
+skyrim_tools = {
+    'Tes5GeckoPath': ('TESVGecko.exe', _('Launch TesVGecko'), {
+        'subfolders': ('Dark Creations', 'TESVGecko')})
+}
 
-texture_tool_buttons = (
-    ('AniFX', _png_list('tools/anifx%s.png'), _('Launch AniFX')),
-    ('ArtOfIllusion', _png_list('tools/artofillusion%s.png'),
-     _('Launch Art Of Illusion')),
-    ('Artweaver', _png_list('tools/artweaver%s.png'), _('Launch Artweaver')),
-    ('CrazyBump', _png_list('tools/crazybump%s.png'), _('Launch CrazyBump')),
-    ('DDSConverter', _png_list('tools/ddsconverter%s.png'),
-     _('Launch DDSConverter')),
-    ('DeepPaint', _png_list('tools/deeppaint%s.png'), _('Launch DeepPaint')),
-    ('FastStone', _png_list('tools/faststoneimageviewer%s.png'),
-     _('Launch FastStone Image Viewer')),
-    ('Genetica', _png_list('tools/genetica%s.png'), _('Launch Genetica')),
-    ('GeneticaViewer', _png_list('tools/geneticaviewer%s.png'),
-     _('Launch Genetica Viewer')),
-    ('GIMP', _png_list('tools/gimp%s.png'), _('Launch GIMP')),
-    ('IcoFX', _png_list('tools/icofx%s.png'), _('Launch IcoFX')),
-    ('Inkscape', _png_list('tools/inkscape%s.png'), _('Launch Inkscape')),
-    ('IrfanView', _png_list('tools/irfanview%s.png'), _('Launch IrfanView')),
-    ('Krita', _png_list('tools/krita%s.png'), _('Launch Krita')),
-    ('MaPZone', _png_list('tools/mapzone%s.png'), _('Launch MaPZone')),
-    ('MyPaint', _png_list('tools/mypaint%s.png'), _('Launch MyPaint')),
-    ('NVIDIAMelody', _png_list('tools/nvidiamelody%s.png'),
-     _('Launch Nvidia Melody')),
-    ('PaintNET', _png_list('tools/paint.net%s.png'), _('Launch Paint.NET')),
-    ('PaintShopPhotoPro', _png_list('tools/paintshopprox3%s.png'),
-     _('Launch PaintShop Photo Pro')),
-    ('PhotoshopPath', _png_list('tools/photoshop%s.png'),
-     _('Launch Photoshop')),
-    ('PhotoScape', _png_list('tools/photoscape%s.png'),
-     _('Launch PhotoScape')),
-    ('PhotoSEAM', _png_list('tools/photoseam%s.png'), _('Launch PhotoSEAM')),
-    ('Photobie', _png_list('tools/photobie%s.png'), _('Launch Photobie')),
-    ('PhotoFiltre', _png_list('tools/photofiltre%s.png'),
-     _('Launch PhotoFiltre')),
-    ('PixelStudio', _png_list('tools/pixelstudiopro%s.png'),
-     _('Launch Pixel Studio Pro')),
-    ('Pixia', _png_list('tools/pixia%s.png'), _('Launch Pixia')),
-    ('TextureMaker', _png_list('tools/texturemaker%s.png'),
-     _('Launch TextureMaker')),
-    ('TwistedBrush', _png_list('tools/twistedbrush%s.png'),
-     _('Launch TwistedBrush')),
-    ('WTV', _png_list('tools/wtv%s.png'), _('Launch Windows Texture Viewer')),
-    ('xNormal', _png_list('tools/xnormal%s.png'), _('Launch xNormal')),
-    ('XnView', _png_list('tools/xnview%s.png'), _('Launch XnView')),
-)
+modeling_tools_buttons = {
+    'AutoCad': ('acad.exe', _('Launch AutoCad'), {
+        'subfolders': 'Autodesk Architectural Desktop 3'}),
+    'BlenderPath': ('blender.exe', _('Launch Blender'), {
+        'subfolders': ('Blender Foundation', 'Blender')}),
+    'Dogwaffle': ('dogwaffle.exe', _('Launch Dogwaffle'), {
+        'subfolders': 'project dogwaffle'}),
+    'GmaxPath': ('gmax.exe', _('Launch Gmax'), {
+        'root_dirs': [GPath(r'C:\GMAX')]}),
+    'MayaPath': (None, _('Launch Maya'), {}),
+    'MaxPath': ('3dsmax.exe', _('Launch 3dsMax'), {
+        'subfolders': ('Autodesk', '3ds Max 2010')}),
+    'Milkshape3D': ('ms3d.exe', _('Launch Milkshape 3D'), {
+        'subfolders': 'MilkShape 3D 1.8.4'}),
+    'Mudbox': ('mudbox.exe', _('Launch Mudbox'), {
+        'subfolders': ('Autodesk', 'Mudbox2011')}),
+    'Sculptris': ('Sculptris.exe', _('Launch Sculptris'), {
+        'subfolders': 'sculptris'}),
+    'SpeedTree': (None, _('Launch SpeedTree'), {}),
+    'Treed': ('tree[d].exe', _(r'Launch Tree\[d\]'), {
+        'subfolders': ('gile[s]', 'plugins', 'tree[d]')}),
+    'Wings3D': ('Wings3D.exe', _('Launch Wings 3D'), {
+        'subfolders': 'wings3d_1.2'}),
+    'SoftimageModTool': ('XSI.bat', _('Launch Softimage Mod Tool'), {
+            'root_dirs': [GPath(r'C:\Softimage')],
+            'subfolders': ('Softimage_Mod_Tool_7.5', 'Application', 'bin')
+        }, '-mod')
+}
 
-audio_tools = (
-    ('Audacity', _png_list('tools/audacity%s.png'), _('Launch Audacity')),
-    ('ABCAmberAudioConverter', _png_list('tools/abcamberaudioconverter%s.png'),
-    _('Launch ABC Amber Audio Converter')),
-    ('Switch', _png_list('tools/switch%s.png'), _('Launch Switch')),
-)
+texture_tool_buttons = {
+    'AniFX': ('AniFX.exe', _('Launch AniFX'), {
+        'subfolders': 'AniFX 1.0'}),
+    'ArtOfIllusion': ('Art of Illusion.exe', _('Launch Art Of Illusion'), {
+        'subfolders': 'ArtOfIllusion'}),
+    'Artweaver': ('Artweaver.exe', _('Launch Artweaver'), {
+        'subfolders': 'Artweaver 1.0'}),
+    'CrazyBump': ('CrazyBump.exe', _('Launch CrazyBump'), {
+        'subfolders': 'Crazybump'}),
+    'DDSConverter': ('DDS Converter 2.exe', _('Launch DDSConverter'), {
+        'subfolders': 'DDS Converter 2'}),
+    'DeepPaint': ('DeepPaint.exe', _('Launch DeepPaint'), {
+        'subfolders': ('Right Hemisphere', 'Deep Paint')}),
+    'FastStone': ('FSViewer.exe', _('Launch FastStone Image Viewer'), {
+        'subfolders': 'FastStone Image Viewer'}),
+    'Genetica': ('Genetica.exe', _('Launch Genetica'), {
+        'subfolders': ('Spiral Graphics', 'Genetica 3.5')}),
+    'GeneticaViewer': ('Genetica Viewer 3.exe', _('Launch Genetica Viewer'), {
+        'subfolders': ('Spiral Graphics', 'Genetica Viewer 3')}),
+    'GIMP': ('gimp-2.6.exe', _('Launch GIMP'), {
+        'subfolders': ('GIMP-2.0', 'bin')}),
+    'IcoFX': ('IcoFX.exe', _('Launch IcoFX'), {
+        'subfolders': 'IcoFX 1.6'}),
+    'Inkscape': ('inkscape.exe', _('Launch Inkscape'), {
+        'subfolders': [('Inkscape', 'bin'), ('Inkscape',)]}),
+    'IrfanView': ('i_view32.exe', _('Launch IrfanView'), {
+        'subfolders': 'IrfanView'}),
+    'Krita': ('krita.exe', _('Launch Krita'), {
+        'subfolders': ('Krita (x86)', 'bin')}),
+    'MaPZone': ('MaPZone2.exe', _('Launch MaPZone'), {
+        'subfolders': ('Allegorithmic', 'MaPZone 2.6')}),
+    'MyPaint': ('mypaint.exe', _('Launch MyPaint'), {
+        'subfolders': 'MyPaint'}),
+    'NVIDIAMelody': ('Melody.exe', _('Launch Nvidia Melody'), {
+        'subfolders': ('NVIDIA Corporation', 'Melody')}),
+    'PaintNET': ('PaintDotNet.exe', _('Launch Paint.NET'), {
+        'subfolders': 'Paint.NET'}),
+    'PaintShopPhotoPro': ('Corel Paint Shop Pro Photo.exe',
+                          _('Launch PaintShop Photo Pro'), {
+        'subfolders': (
+            'Corel', 'Corel PaintShop Photo Pro', 'X3', 'PSPClassic')
+    }),
+    'PhotoshopPath': ('Photoshop.exe', _('Launch Photoshop'), {
+        'subfolders': [('Adobe', 'Adobe Photoshop CS6 (64 Bit)'),
+                       ('Adobe', 'Adobe Photoshop CS3')]
+    }),
+    'PhotoScape': ('PhotoScape.exe', _('Launch PhotoScape'), {
+        'subfolders': 'PhotoScape'}),
+    'PhotoSEAM': ('PhotoSEAM.exe', _('Launch PhotoSEAM'), {
+        'subfolders': 'PhotoSEAM'}),
+    'Photobie': ('Photobie.exe', _('Launch Photobie'), {
+        'subfolders': 'Photobie'}),
+    'PhotoFiltre': ('PhotoFiltre.exe', _('Launch PhotoFiltre'), {
+        'subfolders': 'PhotoFiltre'}),
+    'PixelStudio': ('Pixel.exe', _('Launch Pixel Studio Pro'), {
+        'subfolders': 'Pixel'}),
+    'Pixia': ('pixia.exe', _('Launch Pixia'), {
+        'subfolders': 'Pixia'}),
+    'TextureMaker': ('texturemaker.exe', _('Launch TextureMaker'), {
+        'subfolders': 'Texture Maker'}),
+    'TwistedBrush': ('tbrush_open_studio.exe', _('Launch TwistedBrush'), {
+        'subfolders': ('Pixarra', 'TwistedBrush Open Studio')}),
+    'WTV': ('WTV.exe', _('Launch Windows Texture Viewer'), {
+        'subfolders': 'WindowsTextureViewer'}),
+    'xNormal': ('xNormal.exe', _('Launch xNormal'), {
+        'subfolders': ('Santiago Orgaz', 'xNormal', '3.17.3', 'x86')}),
+    'XnView': ('xnview.exe', _('Launch XnView'), {
+        'subfolders': 'XnView'})
+}
 
-misc_tools = (
-    ('Fraps', _png_list('tools/fraps%s.png'), _('Launch Fraps')),
-    ('MAP', _png_list('tools/interactivemapofcyrodiil%s.png'),
-     _('Interactive Map of Cyrodiil and Shivering Isles')),
-    ('LogitechKeyboard', _png_list('tools/logitechkeyboard%s.png'),
-     _('Launch LogitechKeyboard')),
-    ('MediaMonkey', _png_list('tools/mediamonkey%s.png'),
-     _('Launch MediaMonkey')),
-    ('NPP', _png_list('tools/notepad++%s.png'), _('Launch Notepad++')),
-    ('Steam', _svg_list('tools/steam.svg'), _('Launch Steam')),
-    ('EVGAPrecision', _png_list('tools/evgaprecision%s.png'),
-     _('Launch EVGA Precision')),
-    ('WinMerge', _png_list('tools/winmerge%s.png'), _('Launch WinMerge')),
-    ('FreeMind', _png_list('tools/freemind%s.png'), _('Launch FreeMind')),
-    ('Freeplane', _png_list('tools/freeplane%s.png'), _('Launch Freeplane')),
-    ('FileZilla', _png_list('tools/filezilla%s.png'), _('Launch FileZilla')),
-    ('EggTranslator', _png_list('tools/eggtranslator%s.png'),
-     _('Launch Egg Translator')),
-    ('RADVideo', _png_list('tools/radvideotools%s.png'),
-     _('Launch RAD Video Tools')),
-    ('WinSnap', _png_list('tools/winsnap%s.png'), _('Launch WinSnap')),
-)
+nifskope = ('NifskopePath', ('Nifskope.exe', _('Launch Nifskope'), {
+    'subfolders': ('NifTools', 'NifSkope')}))
+
+audio_tools = {
+    'Audacity': ('Audacity.exe', _('Launch Audacity'), {
+        'subfolders': 'Audacity'}),
+    'ABCAmberAudioConverter': ('abcaudio.exe',
+        _('Launch ABC Amber Audio Converter'), {
+        'subfolders': 'ABC Amber Audio Converter'}),
+    'Switch': ('switch.exe', _('Launch Switch'), {
+        'subfolders': ('NCH Swift Sound', 'Switch')})
+}
+
+misc_tools = {
+    'Fraps': ('Fraps.exe', _('Launch Fraps'), {
+        'root_dirs': [GPath(r'C:\Fraps')]}),
+    'MAP': ('Mapa v 3.52.exe',
+            _('Interactive Map of Cyrodiil and Shivering Isles'), {
+                'root_dirs': 'app', 'subfolders': ('Modding Tools',
+                    'Interactive Map of Cyrodiil and Shivering Isles 3.52')}),
+    'LogitechKeyboard': ('LGDCore.exe', _('Launch LogitechKeyboard'), {
+        'subfolders': ('Logitech', 'GamePanel Software', 'G-series Software')}
+                         ),
+    'MediaMonkey': ('MediaMonkey.exe', _('Launch MediaMonkey'), {
+        'subfolders': 'MediaMonkey'}),
+    'NPP': ('notepad++.exe', _('Launch Notepad++'), {
+        'subfolders': ('Notepad++',)}),
+    'Steam': ('steam.exe', _('Launch Steam'), {
+        'subfolders': 'Steam'}),
+    'EVGAPrecision': ('EVGAPrecision.exe', _('Launch EVGA Precision'), {
+        'subfolders': 'EVGA Precision'}),
+    'WinMerge': ('WinMergeU.exe', _('Launch WinMerge'), {
+        'subfolders': 'WinMerge'}),
+    'FreeMind': ('Freemind.exe', _('Launch FreeMind'), {
+        'subfolders': 'FreeMind'}),
+    'Freeplane': ('freeplane.exe', _('Launch Freeplane'), {
+        'subfolders': 'Freeplane'}),
+    'FileZilla': ('filezilla.exe', _('Launch FileZilla'), {
+        'subfolders': 'FileZilla FTP Client'}),
+    'EggTranslator': ('EggTranslator.exe', _('Launch Egg Translator'), {
+        'subfolders': 'Egg Translator'}),
+    'RADVideo': ('radvideo.exe', _('Launch RAD Video Tools'), {
+        'subfolders': 'RADVideo'}),
+    'WinSnap': ('WinSnap.exe', _('Launch WinSnap'), {
+        'subfolders': 'WinSnap'})
+}
+
+loot_bosh = {
+    'LOOT': ('LOOT.exe', _('Launch LOOT'), {'subfolders': 'LOOT'}),
+    'BOSS': ('BOSS.exe', _('Launch BOSS'), {'subfolders': 'BOSS'})
+}

@@ -25,20 +25,20 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from .. import balt, bass, bolt, bosh, bush, env, exception, load_order
-from ..balt import DecoratedTreeDict, ImageList, ImageWrapper, colors, Link
+from ..balt import DecoratedTreeDict, ImageList, colors, Link
 from ..bass import Store
 from ..bolt import CIstr, FName, GPath_no_norm, text_wrap, top_level_dirs, \
     reverse_dict
 from ..bosh import ModInfo, faces
 from ..fomod_schema import default_moduleconfig
-from ..gui import BOTTOM, CENTER, RIGHT, CancelButton, CheckBox, \
-    CheckListBox, DeselectAllButton, DialogWindow, DropDown, EventResult, \
-    GridLayout, HBoxedLayout, HLayout, Label, LayoutOptions, ListBox, \
-    OkButton, Picture, SearchBar, SelectAllButton, Spacer, Stretch, \
-    TextAlignment, TextField, VBoxedLayout, VLayout, bell, AMultiListEditor, \
-    MLEList, DocumentViewer, RadioButton, showOk, showError, WrappingLabel, \
-    MaybeModalDialogWindow, Tree, HorizontalLine, TreeNode, ImageButton, \
-    FileOpen
+from ..gui import BOTTOM, CENTER, RIGHT, AMultiListEditor, CancelButton, \
+    CheckBox, CheckListBox, DeselectAllButton, DialogWindow, DocumentViewer, \
+    DropDown, EventResult, FileOpen, GridLayout, HBoxedLayout, HLayout, \
+    HorizontalLine, IcoFromPng, ImageButton, Label, LayoutOptions, ListBox, \
+    MLEList, MaybeModalDialogWindow, OkButton, Picture, RadioButton, \
+    SearchBar, SelectAllButton, Spacer, Stretch, TextAlignment, TextField, \
+    Tree, TreeNode, VBoxedLayout, VLayout, WrappingLabel, bell, get_image, \
+    showError, showOk
 from ..parsers import CsvParser
 from ..update_checker import LatestVersion
 from ..wbtemp import TempDir, cleanup_temp_file, new_temp_file
@@ -191,8 +191,7 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(ImageWrapper(bass.dirs['images'].join(
-            'diamond_red_off.png')).GetIcon())
+        self.set_icon(IcoFromPng(get_image('off.red.dir')))
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self._project_name.text_content)
 
@@ -211,12 +210,11 @@ class CreateNewProject(DialogWindow):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
         if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
-            img_fname = ('diamond_red_off' +
-                         ('_wiz' if self._check_wizard.is_checked else ''))
+            img_key = 'off.red.dir' + (
+                '.wiz' if self._check_wizard.is_checked else '')
         else:
-            img_fname = 'diamond_grey_off'
-        self.set_icon(ImageWrapper(bass.dirs['images'].join(
-            img_fname + '.png')).GetIcon())
+            img_key = 'off.grey.dir'
+        self.set_icon(IcoFromPng(get_image(img_key)))
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
@@ -551,8 +549,8 @@ class _AWBMLE(AMultiListEditor):
     depend on balt automatically."""
     def __init__(self, parent, *, data_desc: str, list_data: list[MLEList],
             **kwargs):
-        cu_bitmaps = tuple(balt.images[x].get_bitmap() for x in (
-            'square_check.16', 'square_empty.16'))
+        cu_bitmaps = tuple(map(get_image,
+                               ('square_check.16', 'square_empty.16')))
         super().__init__(parent, data_desc=data_desc, list_data=list_data,
             check_uncheck_bitmaps=cu_bitmaps, sizes_dict=bass.settings,
             icon_bundle=balt.Resources.bashBlue, **kwargs)
@@ -929,7 +927,7 @@ class _AChangeHighlightDialog(MaybeModalDialogWindow):
             tree_dict = warning_items if isinstance(warning_items, dict) else {
                 i: [] for i in sorted(warning_items)}
             warning_dec_items = target_uil.decorate_tree_dict(tree_dict)
-            uil_images = target_uil._icons
+            uil_images = target_uil.icons
         else:
             # Tab is not enabled, no way to decorate with it
             warning_dec_items = {
@@ -1011,8 +1009,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
         super().__init__(parent, icon_bundle=balt.Resources.bashBlue)
         self._bain_parent = parent
         self._import_target_field = TextField(self, hint=_('CSV to import'))
-        browse_file_btn = ImageButton(self,
-            balt.images['folder.16'].get_bitmap(),
+        browse_file_btn = ImageButton(self, get_image('folder.16'),
             btn_tooltip=_('Open a file dialog to interactively choose the '
                           'saved package order to import.'))
         browse_file_btn.on_clicked.subscribe(self._handle_browse)
