@@ -52,7 +52,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
     MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
     MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
-    MelRegnEntryMapName
+    MelRegnEntryMapName, AMreEyes, MelEyesFlags
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -789,7 +789,7 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8Flags(b'DATA', 'flags', _CellFlags, is_required=True),
+        MelUInt8Flags(b'DATA', 'flags', _CellFlags, set_default=0),
         MelSkipInterior(MelStruct(b'XCLC', ['2i'], 'posX', 'posY')),
         MelStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '2f'],
             'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
@@ -1103,6 +1103,16 @@ class MreEnch(MreHasEffects, MelRecord):
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
+
+#------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelIcon(is_required=True),
+        MelEyesFlags(),
+    )
 
 #------------------------------------------------------------------------------
 class MreFact(MelRecord):

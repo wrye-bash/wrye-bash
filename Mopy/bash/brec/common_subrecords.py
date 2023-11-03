@@ -450,8 +450,9 @@ class MelDoorFlags(MelUInt8Flags):
 #------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
-    def __init__(self):
-        super().__init__(b'EDID', 'eid')
+    def __init__(self, is_required=False):
+        super().__init__(b'EDID', 'eid',
+            set_default='' if is_required else None)
 
 #------------------------------------------------------------------------------
 class MelEnableParent(MelStruct):
@@ -477,6 +478,17 @@ class MelEqupPnam(MelSimpleArray):
     """Handles the EQUP subrecord PNAM (Slot Parents)."""
     def __init__(self):
         super().__init__('slot_parents', MelParent())
+
+#------------------------------------------------------------------------------
+class MelEyesFlags(MelUInt8Flags): # required
+    """Handles the EYES subrecord DATA (Flags)."""
+    class _EyesFlags(Flags):
+        playable: bool
+        not_male: bool # since FO3
+        not_female: bool # since FO3
+
+    def __init__(self):
+        super().__init__(b'DATA', 'flags', self._EyesFlags, set_default=0)
 
 #------------------------------------------------------------------------------
 class MelFactFlags(MelUInt32Flags):
@@ -568,8 +580,9 @@ class MelFlstFids(MelSimpleGroups):
 #------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
-    def __init__(self):
-        super().__init__(b'FULL', 'full')
+    def __init__(self, *, is_required=False):
+        super().__init__(b'FULL', 'full',
+            set_default='' if is_required else None)
 
 #------------------------------------------------------------------------------
 class MelFurnMarkerData(MelSequential):
@@ -658,8 +671,8 @@ class MelHdptShared(MelSequential):
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
-    def __init__(self, icon_attr='iconPath', mico_attr='smallIconPath',
-            icon_sig=b'ICON', mico_sig=b'MICO'):
+    def __init__(self, icon_attr='iconPath', mico_attr='smallIconPath', *,
+            icon_sig=b'ICON', mico_sig=b'MICO', is_required=False):
         """Creates a new MelIcons with the specified attributes.
 
         :param icon_attr: The attribute to use for the ICON subrecord. If
@@ -667,8 +680,15 @@ class MelIcons(MelSequential):
         :param mico_attr: The attribute to use for the MICO subrecord. If
             falsy, this means 'do not include a MICO subrecord'."""
         final_elements = []
-        if icon_attr: final_elements.append(MelString(icon_sig, icon_attr))
-        if mico_attr: final_elements.append(MelString(mico_sig, mico_attr))
+        if icon_attr:
+            final_elements.append(MelString(icon_sig, icon_attr,
+                set_default='' if is_required else None))
+        if mico_attr:
+            final_elements.append(MelString(mico_sig, mico_attr,
+                set_default='' if is_required else None))
+        if not final_elements:
+            raise SyntaxError('MelIcons: At least one of icon_attr or '
+                              'mico_attr must be specified')
         super().__init__(*final_elements)
 
 class MelIcons2(MelIcons):
@@ -681,8 +701,9 @@ class MelIcons2(MelIcons):
 
 class MelIcon(MelIcons):
     """Handles a standalone ICON subrecord, i.e. without any MICO subrecord."""
-    def __init__(self, icon_attr='iconPath'):
-        super().__init__(icon_attr=icon_attr, mico_attr='')
+    def __init__(self, icon_attr='iconPath', *, is_required=False):
+        super().__init__(icon_attr=icon_attr, mico_attr='',
+            is_required=is_required)
 
 class MelIco2(MelIcons2):
     """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
@@ -1061,12 +1082,12 @@ class MelLinkedOcclusionReferences(MelStruct):
             (FID, 'linked_occlusion_reference_top'))
 
 #------------------------------------------------------------------------------
-class MelLLChanceNone(MelUInt8):
+class MelLLChanceNone(MelUInt8): # required
     """Handles the leveled list subrecord LVLD (Chance None)."""
     _cn_sig = b'LVLD'
 
     def __init__(self):
-        super().__init__(self._cn_sig, 'lvl_chance_none')
+        super().__init__(self._cn_sig, 'lvl_chance_none', set_default=0)
 
 class MelLLChanceNoneTes3(MelLLChanceNone):
     """Morrowind version - different subrecord signature."""

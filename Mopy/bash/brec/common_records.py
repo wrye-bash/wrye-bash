@@ -104,8 +104,16 @@ class AMreCell(MelRecord):
         return {*cls.ref_types, *cls.interior_temp_extra}
 
 #------------------------------------------------------------------------------
+class AMreEyes(MelRecord):
+    """Base class for EYES records."""
+    rec_sig = b'EYES'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2) # since Skyrim
+
+#------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
-    """Base class for FormID List."""
+    """Base class for FLST records."""
     rec_sig = b'FLST'
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
@@ -162,7 +170,7 @@ class AMreFlst(MelRecord):
 
 #------------------------------------------------------------------------------
 class AMreGlob(MelRecord):
-    """Base class for globals."""
+    """Base class for GLOB records."""
     rec_sig = b'GLOB'
 
     melSet = MelSet(
@@ -704,26 +712,6 @@ class MreDual(MelRecord):
             (FID, 'dual_explosion'), (FID, 'effect_shader'),
             (FID, 'dual_hit_effect_art'), (FID, 'dual_impact_dataset'),
             (_inherit_scale_flags, 'inherit_scale_flags')),
-    )
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        not_playable: bool = flag(2) # since FO3
-
-    class _eyes_flags(Flags):
-        playable: bool
-        not_male: bool # since FO3
-        not_female: bool # since FO3
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelUInt8Flags(b'DATA', 'flags', _eyes_flags),
     )
 
 #------------------------------------------------------------------------------

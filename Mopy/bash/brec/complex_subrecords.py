@@ -33,7 +33,7 @@ from typing import BinaryIO
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
     MelTruncatedStruct, MelUnion, PartialLoadDecider, SignatureDecider, \
-    MelSorted
+    MelSorted, MelDependentSequential
 from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
     MelObject, MelReadOnly, MelSequential, MelString, MelStruct, MelUInt32, \
     MelUnorderedGroups, MelUInt8
@@ -137,26 +137,20 @@ class _MelCs2kCs2d(MelGroups):
         record.actor_sounds = sounds_none + sorted(sounds_kw,
             key=attrgetter_cache['actor_sound_keyword'])
 
-class MelActorSounds2(MelSequential):
+class MelActorSounds2(MelDependentSequential):
     """Bethesda redesigned actor sounds for FO4. This handles the new
     CS2H/CS2K/CS2D/CS2E/CS2F subrecord complex used by NPC_ records."""
     def __init__(self):
-        self._cond_required = [
+        super().__init__(
+            MelCounter(MelUInt32(b'CS2H', 'actor_sounds_count', set_default=0),
+                counts='actor_sounds', is_required=True),
+            _MelCs2kCs2d(),
             MelBaseR(b'CS2E', 'actor_sound_end_marker'), # empty marker
             MelBaseR(b'CS2F', 'actor_sound_finalize', set_default=b'\x00'),
-        ]
-        super().__init__(
-            MelCounter(MelUInt32(b'CS2H', 'actor_sounds_count'),
-                counts='actor_sounds'),
-            _MelCs2kCs2d(),
-            *self._cond_required,
+            dependencies={
+                (0, 2, 3): ['actor_sounds'],
+            },
         )
-
-    def dumpData(self, record, out):
-        for element in self.elements:
-            # CS2E and CS2F are required iff there are any actor sounds present
-            if record.actor_sounds or element not in self._cond_required:
-                element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # CTDA - Conditions
@@ -412,10 +406,11 @@ class MelConditionList(MelGroups):
 class MelConditions(MelSequential):
     """Wraps MelSequential to define a condition list with an associated
     counter."""
-    def __init__(self):
+    def __init__(self, is_required=False):
         super().__init__(
-            MelCounter(MelUInt32(b'CITC', 'conditionCount'),
-                counts='conditions'),
+            MelCounter(MelUInt32(b'CITC', 'conditionCount',
+                set_default=0 if is_required else None), counts='conditions',
+                is_required=is_required),
             MelConditionList(),
         )
 
@@ -1301,7 +1296,7 @@ class _MelObts(MelPartialCounter):
             ['2I', 'B', 's', 'B', 's', 'h', '2B'], 'obts_include_count',
             'obts_property_count', 'obts_level_min', 'obts_unused1',
             'obts_level_max', 'obts_unused2', 'obts_addon_index',
-            'obts_default', 'obts_keyword_count'),
+            'obts_default', 'obts_keyword_count', is_required=True),
             counters={'obts_include_count': 'obts_includes',
                       'obts_property_count': 'obts_properties',
                       'obts_keyword_count': 'obts_keywords'})
@@ -1358,12 +1353,11 @@ class _MelObts(MelPartialCounter):
             obts_property.map_property_fids(function, save_fids)
 
 # API -------------------------------------------------------------------------
-class MelObjectTemplate(MelSequential):
+class MelObjectTemplate(MelDependentSequential):
     """Handles an object template, which is a complex subrecord structure
     containing the OBTS subrecord. Note that this also contains a FULL
     subrecord, so you will probably have to use a distributor."""
     def __init__(self):
-        self._ot_end_marker = MelBaseR(b'STOP', 'ot_combinations_end_marker')
         super().__init__(
             MelCounter(MelUInt32(b'OBTE', 'ot_combination_count'),
                 counts='ot_combinations'),
@@ -1372,16 +1366,12 @@ class MelObjectTemplate(MelSequential):
                 MelFull(),
                 _MelObts(),
             ),
-            self._ot_end_marker,
+            MelBaseR(b'STOP', 'ot_combinations_end_marker'),
+            dependencies={
+                # STOP is required iff there are any combinations present
+                2: ['ot_combinations'],
+            },
         )
-
-    ##: I already wrote code like this for CS2E and CS2F up above, this is
-    # screaming for a new building block
-    def dumpData(self, record, out):
-        for element in self.elements:
-            # STOP is required iff there are any combinations present
-            if record.ot_combinations or element is not self._ot_end_marker:
-                element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # STAG's TNAM

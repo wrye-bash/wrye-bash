@@ -34,9 +34,10 @@ from itertools import chain
 from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
-    MelSequential, MelStruct
+    MelSequential, MelStruct, MelGroups
 from .. import bush
-from ..bolt import attrgetter_cache, deprint, structs_cache
+from ..bolt import attrgetter_cache, deprint, structs_cache, \
+    flatten_multikey_dict
 from ..exception import ArgumentError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -794,7 +795,7 @@ class MelUnion(MelBase):
     # unique attributes on the records
     _union_index = 0
 
-    def __init__(self, element_mapping: dict[object, MelBase],
+    def __init__(self, element_mapping: dict[Any, MelBase],
                  decider: ADecider = SignatureDecider(),
                  fallback: MelBase | None = None):
         """Creates a new MelUnion with the specified element mapping and
@@ -810,17 +811,7 @@ class MelUnion(MelBase):
         if not isinstance(decider, ADecider):
             raise ArgumentError('decider must be an ADecider')
         self.decider = decider
-        # Preprocess the element mapping to split tuples
-        processed_mapping = {}
-        for decider_val, element in element_mapping.items():
-            if not isinstance(decider_val, tuple):
-                decider_val = (decider_val,)
-            for split_val in decider_val:
-                if split_val in processed_mapping:
-                    raise SyntaxError(f"Invalid union mapping: Duplicate key "
-                                      f"'{repr(split_val)}'")
-                processed_mapping[split_val] = element
-        self.element_mapping = processed_mapping
+        self.element_mapping = flatten_multikey_dict(element_mapping)
         self.fid_elements = set()
         self._sort_elements = set()
         # Create a unique attribute name to dynamically cache decider result
@@ -1029,21 +1020,21 @@ class MelCounter(_MelWrapper):
     Additionally, dumping is skipped if the counter is falsy after updating.
 
     See also MelPartialCounter, which targets mixed structs."""
-    def __init__(self, counter_mel, /, *, counts):
+    def __init__(self, counter_mel: MelBase, /, *, counts: str,
+            is_required=False):
         """Creates a new MelCounter.
 
         :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: _MelField
-        :param counts: The attribute name that this counter counts.
-        :type counts: str"""
+        :param counts: The attribute name that this counter counts."""
         super(MelCounter, self).__init__(counter_mel)
-        self.counted_attr = counts
+        self._counted_attr = counts
+        self._is_required = is_required
 
     def dumpData(self, record, out):
         # Count the counted type first, then check if we should even dump
-        val_len = len(getattr(record, self.counted_attr, []))
+        val_len = len(getattr(record, self._counted_attr, []))
         setattr(record, self._wrapped_mel.attr, val_len)
-        if val_len:
+        if val_len or self._is_required:
             super().dumpData(record, out)
 
 # NoDD for _MelObts and MelOmodData
@@ -1157,3 +1148,35 @@ class MelSorted(_MelWrapper):
         to_sort_val = getattr(record, self._wrapped_mel.attr)
         if to_sort_val:
             to_sort_val.sort(key=self._attr_key_func)
+
+#------------------------------------------------------------------------------
+class MelDependentSequential(MelSequential):
+    """A MelSequential where some elements will only be dumped if other
+    elements are present. Especially useful for elements that are required iff
+    another element is present. See also MelDependentGroups."""
+    def __init__(self, *elements,
+            dependencies: dict[int | tuple[int, ...], list[str]]):
+        """Create a new MelDependentSequential with the specified parameters.
+
+        :param dependencies: A dict (or multikey dict) mapping element indices
+            to a list of attributes that must be truthy, most notably not None,
+            in order for the element at that index to be dumped out."""
+        super().__init__(*elements)
+        self._group_dependencies = flatten_multikey_dict(dependencies)
+
+    def dumpData(self, record, out):
+        for i, element in enumerate(self.elements):
+            dependent_attrs = self._group_dependencies.get(i)
+            if (dependent_attrs is None or
+                    all(getattr(record, a) for a in dependent_attrs)):
+                element.dumpData(record, out)
+
+#------------------------------------------------------------------------------
+class MelDependentGroups(MelDependentSequential, MelGroups):
+    """A MelGroups version of MelDependentSequential, see there for docs."""
+    def __init__(self, attr: str, *elements,
+            dependencies: dict[int, list[str]]):
+        # Skip MelDependentSequential's initializer, we need MelGroups' for the
+        # attribute name
+        super(MelDependentSequential, self).__init__(attr, *elements)
+        self._group_dependencies = dependencies

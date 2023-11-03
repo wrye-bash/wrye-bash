@@ -82,7 +82,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSnctVnamUnam, velocity_attrs, MelLinkedOcclusionReferences, \
     MelOcclusionPlane, MelSndrCategory, MelSndrType, MelSndrSounds, \
     MelSndrOutputModel, MelSndrLnam, MelSndrBnam, MelSopmData, MelSopmType, \
-    MelSopmOutputValues, MelSounSdsc, MelSpit
+    MelSopmOutputValues, MelSounSdsc, MelSpit, AMreEyes, MelEyesFlags
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition')
@@ -1334,6 +1334,16 @@ class MreExpl(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(is_required=True),
+        MelIcon(is_required=True),
+        MelEyesFlags(),
+    )
+
+#------------------------------------------------------------------------------
 class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
@@ -2244,7 +2254,7 @@ class MrePack(MelRecord):
         ),
         MelPackDataInputs('data_inputs1'),
         MelBaseR(b'XNAM', 'xnam_marker'),
-        MelPackProcedureTree(MelConditions()),
+        MelPackProcedureTree(MelConditions(is_required=True)),
         MelPackDataInputs('data_inputs2'),
         MelPackIdleHandler('on_begin', ck_leftovers=_leftovers),
         MelPackIdleHandler('on_end', ck_leftovers=_leftovers),
@@ -3219,7 +3229,7 @@ class MreSmbn(MelRecord):
     rec_sig = b'SMBN'
 
     melSet = MelSet(
-        MelSmbnShared(MelConditions()),
+        MelSmbnShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3228,7 +3238,7 @@ class MreSmen(MelRecord):
     rec_sig = b'SMEN'
 
     melSet = MelSet(
-        MelSmenShared(MelConditions()),
+        MelSmenShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3237,7 +3247,7 @@ class MreSmqn(MelRecord):
     rec_sig = b'SMQN'
 
     melSet = MelSet(
-        MelSmqnShared(MelConditions()),
+        MelSmqnShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------

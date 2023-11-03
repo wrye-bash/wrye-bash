@@ -76,7 +76,8 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
-    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam
+    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam, \
+    AMreEyes, MelEyesFlags
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1428,6 +1429,16 @@ class MreExpl(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(is_required=True),
+        MelIcon(is_required=True),
+        MelEyesFlags(),
+    )
+
+#------------------------------------------------------------------------------
 class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
@@ -2715,7 +2726,7 @@ class MrePack(MelRecord):
         ),
         MelPackDataInputs('data_inputs1'),
         MelBaseR(b'XNAM', 'xnam_marker'),
-        MelPackProcedureTree(MelConditions()),
+        MelPackProcedureTree(MelConditions(is_required=True)),
         MelPackDataInputs('data_inputs2'),
         MelPackIdleHandler('on_begin'),
         MelPackIdleHandler('on_end'),
@@ -3023,7 +3034,7 @@ class MreSmbn(MelRecord):
     rec_sig = b'SMBN'
 
     melSet = MelSet(
-        MelSmbnShared(MelConditions()),
+        MelSmbnShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3032,7 +3043,7 @@ class MreSmen(MelRecord):
     rec_sig = b'SMEN'
 
     melSet = MelSet(
-        MelSmenShared(MelConditions()),
+        MelSmenShared(MelConditions(is_required=True)),
     )
 
 #------------------------------------------------------------------------------
@@ -3041,7 +3052,8 @@ class MreSmqn(MelRecord):
     rec_sig = b'SMQN'
 
     melSet = MelSet(
-        MelSmqnShared(MelConditions(), with_extra_hours_until_reset=True),
+        MelSmqnShared(MelConditions(is_required=True),
+            with_extra_hours_until_reset=True),
     )
 
 #------------------------------------------------------------------------------

@@ -250,9 +250,8 @@ class MelBaseR(MelBase):
     """A required subrecord whose contents are unknown/unused/unimportant.
     Often used for markers, which the game engine uses when parsing to keep
     track of where it is."""
-
-    def setDefault(self, record):
-        setattr(record, self.attr, b'')
+    def __init__(self, mel_sig: bytes, attr: str, *, set_default=b''):
+        super().__init__(mel_sig, attr, set_default=set_default)
 
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
@@ -428,9 +427,9 @@ class MelGroup(MelSequential):
 class MelGroups(MelGroup):
     """Represents an array of group record."""
 
-    def __init__(self,attr,*elements):
+    def __init__(self, attr: str, *elements):
         """Initialize. Must have at least one element."""
-        super(MelGroups, self).__init__(attr, *elements)
+        super().__init__(attr, *elements)
         self._init_sigs = self.elements[0].signatures
 
     def setDefault(self,record):
@@ -825,9 +824,8 @@ class _MelFlags(MelNum):
     """Integer flag field."""
     __slots__ = (u'_flag_type', u'_flag_default')
 
-    def __init__(self, mel_sig, attr, flags_type, is_required=False):
-        super().__init__(mel_sig, attr,
-            set_default=None if not is_required else flags_type(0))
+    def __init__(self, mel_sig, attr, flags_type, *, set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
         self._flag_type = flags_type
         self._flag_default = self._flag_type(self.set_default or 0)
 

@@ -63,7 +63,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     MelRegnEntryMusic, MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, \
     MelRegnEntryGrasses, MelRegnEntryMapName, MelRegnEntryMusicType, \
     MelScolParts, MelLinkedOcclusionReferences, MelOcclusionPlane, \
-    MelSimpleGroups
+    MelSimpleGroups, AMreEyes, MelEyesFlags
 from ...brec import MelRecord as _AMelRecord
 from ...exception import ModSizeError
 
@@ -556,7 +556,7 @@ class MreAmmo(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcons(),
         fnv_only(MelScript()),
@@ -883,7 +883,7 @@ class MreClas(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelDescription(),
         MelIcon(),
         MelStruct(b'DATA', ['4i', '2I', 'b', 'B', '2s'],
@@ -1286,6 +1286,16 @@ class MreExpl(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreEyes(AMreEyes):
+    """Eyes."""
+    melSet = MelSet(
+        MelEdid(is_required=True),
+        MelFull(is_required=True),
+        MelIcon(),
+        MelEyesFlags(),
+    )
+
+#------------------------------------------------------------------------------
 class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
@@ -1367,7 +1377,7 @@ class MreHair(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcon(),
         MelHairFlags(),
@@ -1383,7 +1393,7 @@ class MreHdpt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelUInt8Flags(b'DATA', 'flags', _hdpt_flags),
         MelSorted(MelSimpleGroups('extra_parts', MelFid(b'HNAM'))),
@@ -1544,7 +1554,7 @@ class MreIngr(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcon(),
         MelScript(),
@@ -1595,7 +1605,7 @@ class MreKeym(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFull(),
+        MelFull(is_required=True),
         MelModel(),
         MelIcons(),
         MelScript(),
@@ -2474,7 +2484,7 @@ class MreRace(MelRecord, AMreRace):
 
     melSet = MelSet(
         MelEdid(),
-        MelFull(),
+        MelFull(is_required=True),
         MelDescription(),
         MelRelations(),
         MelRaceData(b'DATA', ['14b', '2s', '4f', 'I'], ('skills', [0] * 14),
