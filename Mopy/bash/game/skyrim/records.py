@@ -3325,19 +3325,14 @@ class MreSpgd(MelRecord):
     """Shader Particle Geometry."""
     rec_sig = b'SPGD'
 
-    class _SpgdDataFlags(Flags):
-        rain: bool
-        snow: bool
-
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'DATA',
-            [u'7f', u'4I', u'f'], 'gravityVelocity', 'rotationVelocity',
-            'particleSizeX', 'particleSizeY', 'centerOffsetMin',
-            'centerOffsetMax', 'initialRotationRange', 'numSubtexturesX',
-            'numSubtexturesY', (_SpgdDataFlags, u'typeFlags'),
-            'boxSize', 'particleDensity', old_versions={'7f3I'}),
-        MelIcon(),
+        MelTruncatedStruct(b'DATA', ['7f', '4I', 'f'], 'gravity_velocity',
+            'rotation_velocity', 'particle_size_x', 'particle_size_y',
+            'center_offset_min', 'center_offset_max', 'initial_rotation_range',
+            'num_subtextures_x', 'num_subtextures_y', 'spgd_type',
+            'spgd_box_size', 'particle_density', old_versions={'7f3I'}),
+        MelIcon('spgd_particle_texture'),
     )
 
 #------------------------------------------------------------------------------

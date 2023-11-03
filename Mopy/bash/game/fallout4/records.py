@@ -3141,6 +3141,28 @@ class MreSpel(AMreWithKeywords):
     )
 
 #------------------------------------------------------------------------------
+class MreSpgd(MelRecord):
+    """Shader Particle Geometry."""
+    rec_sig = b'SPGD'
+
+    melSet = MelSet(
+        MelEdid(),
+        # What on earth did you do to this struct, Bethesda? It was so nice and
+        # normal in Skyrim...
+        MelExtra(MelStruct(b'DATA',
+            ['f', '4s', 'f', '4s', '3f', '4s', 'f', '4s', 'f', '4s', 'f', '4s',
+             'I', '4s', 'I', '4s', 'I', '4s', 'I', '4s', 'f'],
+            'gravity_velocity', 'unknown1', 'rotation_velocity', 'unknown2',
+            'particle_size_x', 'center_offset_min1', 'particle_size_y',
+            'unknown3', 'center_offset_min2', 'unknown4', 'center_offset_max',
+            'unknown5', 'initial_rotation', 'unknown6', 'num_subtextures_x',
+            'unknown7', 'num_subtextures_y', 'unknown8', 'spgd_type',
+            'unknown9', 'spgd_box_size', 'unknown10', 'particle_density'),
+            extra_attr='unknown11'),
+        MelString(b'MNAM', 'spgd_particle_texture'),
+    )
+
+#------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done
     """Worldspace."""
     ref_types = MreCell.ref_types
