@@ -3175,6 +3175,48 @@ class MreStag(MelRecord):
     )
 
 #------------------------------------------------------------------------------
+class MreStat(MelRecord):
+    """Static."""
+    rec_sig = b'STAT'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        heading_marker: bool = flag(2)
+        non_occluder: bool = flag(4)
+        has_tree_lod: bool = flag(6)
+        addon_lod_object: bool = flag(7)
+        hidden_from_local_map: bool = flag(9)
+        headtrack_marker: bool = flag(10)
+        used_as_platform: bool = flag(11)
+        packin_use_only: bool = flag(13)
+        has_distant_lod: bool = flag(15)
+        uses_hd_lod_texture: bool = flag(17)
+        has_currents: bool = flag(19)
+        is_marker: bool = flag(23)
+        obstacle: bool = flag(25)
+        navmesh_filter: bool = flag(26)
+        navmesh_bounding_box: bool = flag(27)
+        show_in_world_map: bool = flag(28)
+        navmesh_ground: bool = flag(30)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFtyp(),
+        MelModel(),
+        MelProperties(),
+        MelFull(),
+        MelTruncatedStruct(b'DNAM', ['f', 'I', '2f'], 'max_angle',
+            (FID, 'stat_material'), ('leaf_amplitude', 1.0),
+            ('leaf_frequency', 1.0), is_required=True, old_versions={'fI'}),
+        MelNvnm(),
+        # Contains null-terminated mesh filename followed by random data
+        # up to 260 bytes and repeats 4 times
+        MelBase(b'MNAM', 'distant_lod'),
+    )
+
+#------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done
     """Worldspace."""
     ref_types = MreCell.ref_types

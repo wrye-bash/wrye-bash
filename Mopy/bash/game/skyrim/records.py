@@ -3348,7 +3348,7 @@ class MreStat(MelRecord):
         unknown_11: bool = flag(11) # Present in Skyrim.esm, but can't be set
         has_distant_lod: bool = flag(15)
         unknown_16: bool = flag(16) # Present in Skyrim.esm, but can't be set
-        use_hd_lod_texture: bool = flag(17)
+        uses_hd_lod_texture: bool = flag(17)
         has_currents: bool = flag(19)
         is_marker: bool = flag(23)
         obstacle: bool = flag(25)
@@ -3362,17 +3362,17 @@ class MreStat(MelRecord):
         MelBounds(),
         MelModel(),
         if_sse(
-            le_version=MelStruct(b'DNAM', [u'f', u'I'], 'maxAngle30to120',
-                                 (FID, 'material')),
+            le_version=MelStruct(b'DNAM', ['f', 'I'], 'max_angle',
+                (FID, 'stat_material')),
             se_version=MelTruncatedStruct(
-                b'DNAM', [u'f', u'I', u'B', u'3s'], 'maxAngle30to120',
-                (FID, 'material'), 'is_considered_snow', 'unused1',
+                b'DNAM', ['f', 'I', 'B', '3s'], 'max_angle',
+                (FID, 'stat_material'), 'is_considered_snow', 'unused1',
                 old_versions={'fI'}),
         ),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
-        MelBase(b'MNAM', 'distantLOD'),
-        MelBase(b'ENAM', 'unknownENAM'),
+        MelBase(b'MNAM', 'distant_lod'),
+        MelBase(b'ENAM', 'unknown_enam'),
     )
 
 #------------------------------------------------------------------------------
