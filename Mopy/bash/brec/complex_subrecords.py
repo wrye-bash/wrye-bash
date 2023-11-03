@@ -28,6 +28,7 @@ from collections import defaultdict
 from copy import deepcopy
 from io import BytesIO
 from itertools import chain
+from typing import BinaryIO
 
 from . import utils_constants
 from .advanced_elements import AttrValDecider, MelCounter, MelPartialCounter, \
@@ -40,29 +41,20 @@ from .common_subrecords import MelFull
 from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
 from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
-    pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
+    pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16, \
+    unpack_byte, unpack_float, unpack_int, unpack_short, unpack_int_signed
 from ..exception import ArgumentError, ModError
 
 # Shared helpers --------------------------------------------------------------
 ##: These should probably go somewhere else
-def _mk_unpacker(struct_fmt, only_one=False):
+def _mk_unpacker(struct_fmt):
     """Helper method that creates a method for unpacking values from an input
-    stream. Accepts debug strings as well.
-
-    :param only_one: If set, return only the first element of the unpacked
-        tuple."""
+    stream. Accepts debug strings as well."""
     s_unpack, _s_pack, s_size = get_structs(f'={struct_fmt}')
-    if only_one:
-        def _unpacker(ins, *debug_strs):
-            return ins.unpack(s_unpack, s_size, *debug_strs)[0]
-    else:
-        def _unpacker(ins, *debug_strs):
-            return ins.unpack(s_unpack, s_size, *debug_strs)
+    def _unpacker(ins, *debug_strs):
+        return ins.unpack(s_unpack, s_size, *debug_strs)
     return _unpacker
 
-_unpack_byte = _mk_unpacker('B', only_one=True)
-_unpack_int = _mk_unpacker('I', only_one=True)
-_unpack_float = _mk_unpacker('f', only_one=True)
 _unpack_2shorts_signed = _mk_unpacker('2h')
 
 def _mk_packer(struct_fmt):
@@ -472,28 +464,28 @@ class _MelOmodProperty(MelObject):
         # We're now ready to load the first value...
         op_val_ty = self.op_value_type
         if op_val_ty == 0: # uint32
-            self.op_value_1 = _unpack_int(ins, *debug_strs)
+            self.op_value_1 = unpack_int(ins)
         elif op_val_ty == 1: # float
-            self.op_value_1 = _unpack_float(ins, *debug_strs)
+            self.op_value_1 = unpack_float(ins)
         elif op_val_ty == 2: # bool (stored as uint32)
-            self.op_value_1 = _unpack_int(ins, *debug_strs) != 0
+            self.op_value_1 = unpack_int(ins) != 0
         elif op_val_ty in (4, 6): # fid
-            self.op_value_1 = FID(_unpack_int(ins, *debug_strs))
+            self.op_value_1 = FID(unpack_int(ins))
         elif op_val_ty == 5: # enum (stored as uint32)
-            self.op_value_1 = _unpack_int(ins, *debug_strs)
+            self.op_value_1 = unpack_int(ins)
         else: # unknown
             self.op_value_1 = ins.read(4, *debug_strs)
         # ...and the second value
         if op_val_ty in (0, 4): # uint32
-            self.op_value_2 = _unpack_int(ins, *debug_strs)
+            self.op_value_2 = unpack_int(ins)
         elif op_val_ty in (1, 6): # float
-            self.op_value_2 = _unpack_float(ins, *debug_strs)
+            self.op_value_2 = unpack_float(ins)
         elif op_val_ty == 2: # bool (stored as uint32)
-            self.op_value_2 = _unpack_int(ins, *debug_strs) != 0
+            self.op_value_2 = unpack_int(ins) != 0
         else: # unused
             self.op_value_2 = ins.read(4, *debug_strs)
         # Can't forget the final float
-        self.op_step = _unpack_float(ins, *debug_strs)
+        self.op_step = unpack_float(ins)
 
     def dump_property(self, out):
         """Dump this property to the specified output stream."""
@@ -558,11 +550,11 @@ class MelOmodData(MelPartialCounter):
         super().load_mel(record, ins, sub_type, self.static_size, *debug_strs)
         # Load the attach parent slots - The count was read just now by super
         record.od_attach_parent_slots = [
-            FID(_unpack_int(ins, *debug_strs))
+            FID(unpack_int(ins))
             for _x in range(record.od_attach_parent_slot_count)]
         # Load the items. These are probably unused leftovers since there does
         # not seem to be a way to change them in the CK
-        record.od_items = ins.read(8 * _unpack_int(ins, *debug_strs))
+        record.od_items = ins.read(8 * unpack_int(ins))
         # Load the includes - The include count was loaded way back at the
         # start of the struct
         record.od_includes = []
@@ -973,7 +965,7 @@ class _AMelNvnmListComponent(_AMelNvnmComponent):
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
         child_list = []
         setattr(self, self.__slots__[0], child_list)
-        for _x in range(_unpack_int(ins, *debug_strs)):
+        for _x in range(unpack_int(ins)):
             new_child = self._child_class()
             new_child.load_comp(ins, nvnm_ctx, *debug_strs)
             child_list.append(new_child)
@@ -1029,7 +1021,7 @@ class _NvnmCrc(_AMelNvnmComponent):
     __slots__ = ('crc_val',)
 
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
-        self.crc_val = _unpack_int(ins, *debug_strs)
+        self.crc_val = unpack_int(ins)
 
     def dump_comp(self, out, nvnm_ctx: ANvnmContext):
         pack_int(out, self.crc_val)
@@ -1041,14 +1033,14 @@ class _NvnmPathingCell(_AMelNvnmComponent):
                  'cell_coord_y')
 
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
-        self.parent_worldspace = FID(_unpack_int(ins, *debug_strs))
+        self.parent_worldspace = FID(unpack_int(ins))
         if self.parent_worldspace != ZERO_FID:
             self.parent_cell = None
             # The Y coordinate comes first!
             self.cell_coord_y, self.cell_coord_x = _unpack_2shorts_signed(
                 ins, *debug_strs)
         else:
-            self.parent_cell = FID(_unpack_int(ins, *debug_strs))
+            self.parent_cell = FID(unpack_int(ins))
             self.cell_coord_y = None
             self.cell_coord_x = None
 
@@ -1074,7 +1066,7 @@ class _NvnmVertices(_AMelNvnmComponent):
     __slots__ = ('vertices_data',)
 
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
-        num_vertices = _unpack_int(ins, *debug_strs)
+        num_vertices = unpack_int(ins)
         # 3 floats per vertex
         self.vertices_data = ins.read(num_vertices * 12, *debug_strs)
 
@@ -1135,7 +1127,7 @@ class _NvnmEdgeLinks(_AMelNvnmListComponentFids):
             self.edge_link_mesh = FID(self.edge_link_mesh)
             # Form version 127 (introduced in FO4) added another byte
             if nvnm_ctx.form_ver > 127:
-                self.edge_index = _unpack_byte(ins, *debug_strs)
+                self.edge_index = unpack_byte(ins)
             else:
                 self.edge_index = 0
 
@@ -1194,7 +1186,7 @@ class _NvnmCoverArray(_AMelNvnmComponent):
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
         # Doesn't exist on NVNM version 12 and lower
         if nvnm_ctx.nvnm_ver > 12:
-            num_covers = _unpack_int(ins, *debug_strs)
+            num_covers = unpack_int(ins)
             # 2 shorts & 4 bytes per cover
             self.cover_array_data = ins.read(num_covers * 8, *debug_strs)
         else:
@@ -1217,7 +1209,7 @@ class _NvnmCoverTriangleMap(_AMelNvnmComponent):
         # Before FO4, this was just a list of cover triangles. Since FO4, it
         # maps covers to triangles
         cover_tris_size = 4 if nvnm_ctx.cover_tri_mapping_has_covers else 2
-        num_cover_tris = _unpack_int(ins, *debug_strs)
+        num_cover_tris = unpack_int(ins)
         self.cover_triangle_map_data = ins.read(
             num_cover_tris * cover_tris_size, *debug_strs)
 
@@ -1235,7 +1227,7 @@ class _NvnmWaypoints(_AMelNvnmComponent):
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
         # Only since FO4 and not available on NVNM version 11 and lower
         if nvnm_ctx.nvnm_has_waypoints and nvnm_ctx.nvnm_ver > 11:
-            num_waypoints = _unpack_int(ins, *debug_strs)
+            num_waypoints = unpack_int(ins)
             # 3 floats + 1 short + 1 int per waypoint
             self.waypoints_data = ins.read(num_waypoints * 18, *debug_strs)
         else:
@@ -1266,7 +1258,7 @@ class AMelNvnm(MelBase):
         ins.seek(-size_, 1, *debug_strs)
         # Load the header, verify version
         record.navmesh_geometry = nvnm = _NvnmMain()
-        nvnm_ver = _unpack_int(ins, *debug_strs)
+        nvnm_ver = unpack_int(ins)
         nvnm_max_ver = self._nvnm_context_class.max_nvnm_ver
         if nvnm_ver > nvnm_max_ver:
             raise ModError(ins.inName, f'NVNM version {nvnm_ver} is too new '
@@ -1323,10 +1315,10 @@ class _MelObts(MelPartialCounter):
         # Unpack the static portion using MelStruct
         super().load_mel(record, ins, sub_type, self.static_size, *debug_strs)
         # Load the keywords - the counter was loaded just now by the struct
-        record.obts_keywords = [FID(_unpack_int(ins, *debug_strs))
+        record.obts_keywords = [FID(unpack_int(ins))
                                 for _x in range(record.obts_keyword_count)]
-        record.obts_min_level_for_ranks = _unpack_byte(ins, *debug_strs)
-        record.obts_alt_levels_per_tier = _unpack_byte(ins, *debug_strs)
+        record.obts_min_level_for_ranks = unpack_byte(ins)
+        record.obts_alt_levels_per_tier = unpack_byte(ins)
         # Load the includes - The include count was loaded way back at the
         # start of the struct
         record.obts_includes = []
@@ -1392,6 +1384,43 @@ class MelObjectTemplate(MelSequential):
                 element.dumpData(record, out)
 
 #------------------------------------------------------------------------------
+# STAG's TNAM
+#------------------------------------------------------------------------------
+class MelStagTnam(MelString):
+    """Handles the STAG subrecord TNAM (Sound). The complication here is that
+    it has a FormID before a variable-length string. If this becomes more
+    common, we should come up with a similar solution to MelArray that lets us
+    place an arbitrary prelude element before a string."""
+    def __init__(self):
+        super().__init__(b'TNAM', 'stag_sound_action')
+
+    def getSlotsUsed(self):
+        return 'stag_sound_fid', *super().getSlotsUsed()
+
+    def hasFids(self,formElements):
+        formElements.add(self)
+
+    def mapFids(self, record, function, save_fids=False):
+        result = function(record.stag_sound_fid)
+        if save_fids:
+            record.stag_sound_fid = result
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        record.stag_sound_fid = FID(unpack_int(ins))
+        super().load_mel(record, ins, sub_type, size_ - 4, *debug_strs)
+
+    def pack_subrecord_data(self, record):
+        return (record.stag_sound_fid.dump(),
+                super().pack_subrecord_data(record))
+
+    def packSub(self, out: BinaryIO, stag_sr_data: tuple[int, str]):
+        byte_string = struct_pack('I', stag_sr_data[0])
+        byte_string += bolt.encode_complex_string(stag_sr_data[1],
+            self.maxSize, self.minSize, self.encoding)
+        # Skip MelString's packSub, we already encoded the string
+        super(MelString, self).packSub(out, byte_string)
+
+#------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter
 #------------------------------------------------------------------------------
 # Helpers ---------------------------------------------------------------------
@@ -1402,9 +1431,6 @@ _vmad_key_qust_fragments = attrgetter_cache[('quest_stage',
                                             'quest_stage_index')]
 _vmad_key_script = attrgetter_cache['script_name']
 
-_vmad_unpack_byte_signed = _mk_unpacker('b', only_one=True)
-_vmad_unpack_short = _mk_unpacker('H', only_one=True)
-_vmad_unpack_int_signed = _mk_unpacker('i', only_one=True)
 _vmad_unpack_objref_v1 = _mk_unpacker('IhH')
 _vmad_unpack_objref_v2 = _mk_unpacker('HhI')
 
@@ -1654,7 +1680,7 @@ class _ObjectRef(object):
         stream. Needs the current VMAD context as well."""
         make_ref = cls.from_file
         return [make_ref(ins, vmad_ctx, *debug_strs)
-                for _x in range(_unpack_int(ins, *debug_strs))]
+                for _x in range(unpack_int(ins))]
 
     @staticmethod
     def dump_array(out, target_list: list[_ObjectRef]):
@@ -1885,7 +1911,7 @@ class _VmadHandlerQUST(_AVariableContainer):
         new_alias = self._alias_loader.make_new
         load_alias = self._alias_loader.load_frag
         append_alias = record.qust_aliases.append
-        for _x in range(_vmad_unpack_short(ins, *debug_strs)):
+        for _x in range(unpack_short(ins)):
             q_alias = new_alias()
             load_alias(q_alias, ins, vmad_ctx, *debug_strs)
             append_alias(q_alias)
@@ -1949,7 +1975,7 @@ class _VmadHandlerSCEN(_AVmadHandlerV6Mixin, _AFixedContainer):
         new_fragment = self._phase_loader.make_new
         load_fragment = self._phase_loader.load_frag
         append_fragment = record.phase_fragments.append
-        for _x in range(_vmad_unpack_short(ins, *debug_strs)):
+        for _x in range(unpack_short(ins)):
             phase_fragment = new_fragment()
             load_fragment(phase_fragment, ins, vmad_ctx, *debug_strs)
             append_fragment(phase_fragment)
@@ -2080,12 +2106,12 @@ class _AValueComponent(_AVmadComponent):
         elif val_ty == 2: # string
             record.val_data = _read_vmad_str16(ins)
         elif val_ty == 3: # sint32
-            record.val_data = _vmad_unpack_int_signed(ins, *debug_strs)
+            record.val_data = unpack_int_signed(ins)
         elif val_ty == 4: # float
-            record.val_data = _unpack_float(ins, *debug_strs)
+            record.val_data = unpack_float(ins)
         elif val_ty == 5: # bool (stored as uint8)
             # Faster than bool() and other, similar checks
-            record.val_data = _unpack_byte(ins, *debug_strs) != 0
+            record.val_data = unpack_byte(ins) != 0
         elif val_ty in (6, 7): # 6 = variable, 7 = struct
             # xEdit uses the same definition for these two
             struct_ld = self._struct_loader
@@ -2095,22 +2121,22 @@ class _AValueComponent(_AVmadComponent):
             record.val_data = _ObjectRef.array_from_file(ins, vmad_ctx,
                 *debug_strs)
         elif val_ty == 12: # string array
-            array_len = _unpack_int(ins, *debug_strs)
+            array_len = unpack_int(ins)
             record.val_data = [_read_vmad_str16(ins)
                                 for _x in range(array_len)]
         elif val_ty == 13: # sint32 array
-            array_len = _unpack_int(ins, *debug_strs)
+            array_len = unpack_int(ins)
             # list() is faster than [x for x in ...] on py3 and the f-string
             # is faster in this situation than old-style formatting
             record.val_data = list(struct_unpack(f'{array_len}i',
                 ins.read(array_len * 4, *debug_strs)))
         elif val_ty == 14: # float array
-            array_len = _unpack_int(ins, *debug_strs)
+            array_len = unpack_int(ins)
             # See comment for sint32 case above
             record.val_data = list(struct_unpack(f'{array_len}f',
                 ins.read(array_len * 4, *debug_strs)))
         elif val_ty == 15: # bool array (stored as uint8 array)
-            array_len = _unpack_int(ins, *debug_strs)
+            array_len = unpack_int(ins)
             # Can't use list(), but see comments for sint32 and bool cases
             # regardless for f-string and '!= 0'
             record.val_data = [x != 0 for x in struct_unpack(f'{array_len}B',
@@ -2120,7 +2146,7 @@ class _AValueComponent(_AVmadComponent):
             new_struct = self._struct_loader.make_new
             load_struct = self._struct_loader.load_frag
             append_struct = struct_list.append
-            array_len = _unpack_int(ins, *debug_strs)
+            array_len = unpack_int(ins)
             for _x in range(array_len):
                 val_struct = new_struct()
                 load_struct(val_struct, ins, vmad_ctx, *debug_strs)
@@ -2272,7 +2298,7 @@ class _Alias(_AVariableContainer):
         alias_ver, alias_obj = _unpack_2shorts_signed(ins, *debug_strs)
         record.alias_vmad_ver = alias_ver
         record.alias_obj_format = alias_obj
-        record.script_count = _vmad_unpack_short(ins, *debug_strs)
+        record.script_count = unpack_short(ins)
         # Change our active VMAD version and object format to the ones we
         # read from this alias
         vmad_ctx = vmad_ctx.from_alias(alias_ver, alias_obj)
@@ -2395,7 +2421,7 @@ class AMelVmad(MelBase):
         new_script = self._script_loader.make_new
         load_script = self._script_loader.load_frag
         append_script = vmad.scripts.append
-        for i in range(_vmad_unpack_short(ins, *debug_strs)):
+        for i in range(unpack_short(ins)):
             vm_script = new_script()
             load_script(vm_script, ins, vmad_ctx, *debug_strs)
             append_script(vm_script)

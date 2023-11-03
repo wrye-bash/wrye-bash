@@ -76,7 +76,7 @@ from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
     MelSmenShared, MelSmqnShared, MelSnctFlags, MelParent, MelSnctVnamUnam, \
     MelSndrCategory, MelSndrType, MelSndrSounds, MelSndrOutputModel, \
     MelSndrLnam, MelSndrBnam, MelSimpleGroups, MelSopmData, MelSopmType, \
-    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit
+    MelSInt16, MelSopmOutputValues, MelSounSdsc, MelSpit, MelStagTnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -3160,6 +3160,18 @@ class MreSpgd(MelRecord):
             'unknown9', 'spgd_box_size', 'unknown10', 'particle_density'),
             extra_attr='unknown11'),
         MelString(b'MNAM', 'spgd_particle_texture'),
+    )
+
+#------------------------------------------------------------------------------
+class MreStag(MelRecord):
+    """Animation Sound Tag Set."""
+    rec_sig = b'STAG'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('stag_sounds',
+            MelStagTnam(),
+        ),
     )
 
 #------------------------------------------------------------------------------

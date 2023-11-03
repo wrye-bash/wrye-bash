@@ -224,6 +224,7 @@ _rt_names = {
     b'SOUN': 'Sound Marker',
     b'SPEL': 'Spell',
     b'SPGD': 'Shader Particle Geometry',
+    b'STAG': 'Animation Sound Tag Set',
     b'STAT': 'Static',
     b'TACT': 'Talking Activator',
     b'TERM': 'Terminal',

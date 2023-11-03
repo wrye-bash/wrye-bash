@@ -559,9 +559,11 @@ class MelString(MelBase):
     """Represents a mod record string element."""
     encoding: str | None = None # None -> default to bolt.pluginEncoding
 
-    def __init__(self, mel_sig, attr, maxSize: int | None = None, *,
-                 minSize: int | None = None, set_default=None):
-        super(MelString, self).__init__(mel_sig, attr, set_default=set_default)
+    ##: minSize seems unused
+    def __init__(self, mel_sig: bytes, attr: str, *,
+            maxSize: int | None = None, minSize: int | None = None,
+            set_default=None):
+        super().__init__(mel_sig, attr, set_default=set_default)
         self.maxSize = maxSize
         self.minSize = minSize
 
@@ -569,29 +571,26 @@ class MelString(MelBase):
         return ins.readString(size_, *debug_strs)
 
     def packSub(self, out: BinaryIO, string_val: str):
-        """Writes out a string subrecord, properly encoding it beforehand and
-        respecting max_size, min_size and preferred_encoding if they are
-        set."""
+        """Write out a string subrecord, properly encoding it beforehand and
+        respecting maxSize, minSize and encoding if they are set."""
         byte_string = bolt.encode_complex_string(string_val, self.maxSize,
             self.minSize, self.encoding)
-        # len of data will be recalculated in MelString._dump_bytes
-        super(MelString, self).packSub(out, byte_string)
+        # Null terminator is accounted for in _dump_bytes
+        super().packSub(out, byte_string)
 
     def _dump_bytes(self, out, byte_string, lenData):
-        """Write a properly encoded string with a null terminator."""
-        super(MelString, self)._dump_bytes(out, byte_string,
-            lenData + 1) # add the len of null terminator
-        out.write(null1) # then write it out
+        # Add the null terminator to the encoded string
+        super()._dump_bytes(out, byte_string + null1, lenData + 1)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
 
-    def __init__(self, mel_sig, attr, maxSize=None, *, encoding=None,
-                 set_default=None):
-        super(MelUnicode, self).__init__(mel_sig, attr, maxSize,
-                                         set_default=set_default)
+    def __init__(self, mel_sig: bytes, attr: str, maxSize=None, *,
+            encoding=None, set_default=None):
+        super().__init__(mel_sig, attr, maxSize=maxSize,
+            set_default=set_default)
         self.encoding = encoding # None == automatic detection
 
     def load_bytes(self, ins, size_, *debug_strs):
@@ -874,10 +873,5 @@ class MelFid(MelUInt32):
         formElements.add(self)
 
     def mapFids(self, record, function, save_fids=False):
-        attr = self.attr
-        try:
-            fid = getattr(record, attr)
-        except AttributeError:
-            fid = None
-        result = function(fid)
-        if save_fids: setattr(record, attr, result)
+        result = function(getattr(record, self.attr, None))
+        if save_fids: setattr(record, self.attr, result)
