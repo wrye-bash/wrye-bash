@@ -50,13 +50,12 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 from __future__ import annotations
 
-import collections
 import os
 import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial
+from functools import partial, cached_property
 from itertools import chain
 
 import wx
@@ -70,9 +69,9 @@ from .frames import DocBrowser
 from .gui_patchers import initPatchers
 from .. import archives, balt, bass, bolt, bosh, bush, env, initialization, \
     load_order
-from ..balt import AppendableLink, CheckLink, DnDStatusBar, EnabledLink, \
-    INIListCtrl, InstallerColorChecks, ItemLink, Link, Links, NotebookPanel, \
-    Resources, SeparatorLink, colors, images, UIList
+from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
+    EnabledLink, INIListCtrl, ItemLink, Link, NotebookPanel, Resources, \
+    SeparatorLink, UIList, colors
 from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
@@ -82,12 +81,12 @@ from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
-    EventResult, FileOpen, GlobalMenu, HLayout, ImageWrapper, Label, \
-    LayoutOptions, ListBox, MultiChoicePopup, PanelWin, Picture, \
-    PureImageButton, RadioButton, SaveButton, Splitter, Stretch, TabbedPanel, \
-    TextArea, TextField, VLayout, WindowFrame, WithMouseEvents, \
-    get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
-    showWarning, askWarning, showOk
+    EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, ListBox, \
+    Links, MultiChoicePopup, PanelWin, Picture, PureImageButton, RadioButton, \
+    SaveButton, Splitter, Stretch, TabbedPanel, TextArea, TextField, VLayout, \
+    WindowFrame, WithMouseEvents, get_shift_down, read_files_from_clipboard_cb, \
+    showError, askYes, showWarning, askWarning, showOk, BmpFromStream, \
+    init_image_resources, get_image, get_installer_color_checks, get_image_dir
 from ..localize import format_date
 from ..update_checker import LatestVersion, UCThread
 
@@ -714,7 +713,7 @@ class INIList(UIList):
         status = iniInfo.tweak_status(target_ini_setts)
         #--Image
         checkMark = 0
-        icon = 0    # Ok tweak, not applied
+        icon_ = 0    # Ok tweak, not applied
         mousetext = ''
         if status == 20:
             # Valid tweak, applied
@@ -728,16 +727,16 @@ class INIList(UIList):
                           'by another tweak from the same installer.')
         elif status == 10:
             # Ok tweak, some parts are applied, others not
-            icon = 10
+            icon_ = 10
             checkMark = 3
             mousetext = _('Some settings are changed.')
         elif status < 0:
             # Bad tweak
             if not iniInfo.is_applicable(status):
-                icon = 20
+                icon_ = 20
                 mousetext = _('Tweak is invalid.')
             else:
-                icon = 0
+                icon_ = 0
                 mousetext = _('Tweak adds new settings.')
         if iniInfo.is_default_tweak:
             def_tweak_text = _('Default Wrye Bash tweak.')
@@ -745,7 +744,7 @@ class INIList(UIList):
                          if mousetext else def_tweak_text)
             item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
-        item_format.icon_key = icon, checkMark
+        item_format.icon_key = icon_, checkMark
         #--Font/BG Color
         if status < 0:
             item_format.back_key = u'ini.bkgd.invalid'
@@ -1602,7 +1601,7 @@ class ModDetails(_ModsSavesDetails):
         #--Data
         self.modInfo = None
         #--Version
-        self.version = Label(top, u'v0.00')
+        self._version = Label(top, 'v0.00')
         #--Author
         self._max_author_len = bush.game.Esp.max_author_length
         # Note: max_length here is not enough - unicode characters may take up
@@ -1616,8 +1615,7 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt = TextField(top, max_length=32)
         self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
         self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
-        calendar_button = PureImageButton(top,
-            balt.images['calendar.16'].get_bitmap(),
+        calendar_button = PureImageButton(top, get_image('calendar.16'),
             btn_tooltip=_('Change this value using an interactive dialog.'))
         calendar_button.on_clicked.subscribe(self._on_calendar_clicked)
         #--Description
@@ -1634,11 +1632,11 @@ class ModDetails(_ModsSavesDetails):
         class _ExPureImageButton(WithMouseEvents, PureImageButton):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
-            balt.images['plus.16'].get_bitmap(),
+            get_image('plus.16'),
             btn_tooltip=_('Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
-            balt.images['minus.16'].get_bitmap(),
+            get_image('minus.16'),
             btn_tooltip=_('Remove the selected tags from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
@@ -1646,7 +1644,7 @@ class ModDetails(_ModsSavesDetails):
         self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
-            HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
+            HLayout(items=[Label(top, _('File:')), Stretch(), self._version]),
             self._fname_ctrl,
             self._author_label,
             self.gAuthor,
@@ -1699,7 +1697,7 @@ class ModDetails(_ModsSavesDetails):
         self.gAuthor.text_content = self.authorStr
         self.modified_txt.text_content = self.modifiedStr
         self._desc_area.text_content = self.descriptionStr
-        self.version.label_text = self.versionStr
+        self._version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.lb_set_items(minf_tags)
         if self.modInfo and not self.modInfo.is_auto_tagged():
@@ -2021,13 +2019,13 @@ class ModDetails(_ModsSavesDetails):
             def Execute(self):
                 self.window.lb_select_none()
         tag_links = Links()
-        tag_links.append(Tags_Automatic())
-        tag_links.append(SeparatorLink())
-        tag_links.append(Tags_CopyToBashTags())
-        tag_links.append(Tags_CopyToDescription())
-        tag_links.append(SeparatorLink())
-        tag_links.append(Tags_SelectAll())
-        tag_links.append(Tags_DeselectAll())
+        tag_links.append_link(Tags_Automatic())
+        tag_links.append_link(SeparatorLink())
+        tag_links.append_link(Tags_CopyToBashTags())
+        tag_links.append_link(Tags_CopyToDescription())
+        tag_links.append_link(SeparatorLink())
+        tag_links.append_link(Tags_SelectAll())
+        tag_links.append_link(Tags_DeselectAll())
         tag_links.popup_menu(self.gTags, None)
 
 #------------------------------------------------------------------------------
@@ -2488,7 +2486,7 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo and bush.game.Ess.has_screenshots:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = ImageWrapper.bmp_from_bitstream(
+            new_save_screen = BmpFromStream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
@@ -2599,7 +2597,6 @@ class InstallersList(UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
-    _icons = InstallerColorChecks()
     _sunkenBorder = False
     _editLabels = _copy_paths = True
     _default_sort_col = u'Package'
@@ -2636,6 +2633,10 @@ class InstallersList(UIList):
     _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
                      20: u'yellow', 30: u'green'}
 
+    @cached_property
+    def icons(self):
+        return ColorChecks(get_installer_color_checks())
+
     #--Item Info
     def set_item_format(self, item, item_format, target_ini_setts):
         inst = self.data_store[item] # type: bosh.bain.Installer
@@ -2657,16 +2658,18 @@ class InstallersList(UIList):
             item_format.back_key = u'installers.bkgd.outOfOrder'
             mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
-        item_format.icon_key = u'on' if inst.is_active else u'off'
-        item_format.icon_key += u'.' + self._status_color[inst.status]
-        if inst.is_corrupt_package: item_format.icon_key = 'corrupt'
+        if inst.is_corrupt_package:
+            iconkey = 'corrupt'
         else:
-            if inst.is_project: item_format.icon_key += u'.dir'
+            iconkey = 'on' if inst.is_active else 'off'
+            iconkey += f'.{self._status_color[inst.status]}'
+            if inst.is_project: iconkey += '.dir'
             if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
-                item_format.icon_key += u'.wiz'
+                iconkey += '.wiz'
+        item_format.icon_key = iconkey, # the image keys are passed as a tuple
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
-        #--TODO: add mouse  mouse tips
+        #--TODO: add more mouse tips
         self.mouseTexts[item] = mouse_text
 
     def _check_rename_requirements(self):
@@ -3881,7 +3884,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         settings[u'bash.tabs.order'] = newOrder
         tabs = {k: (v, *tabInfo[k][:2]) for k, v in newOrder.items()}
         for page, (enabled, className, title) in tabs.items():
-            self._tab_menu.append(
+            self._tab_menu.append_link(
                 _Tab_Link(title, page, canDisable=page != 'Mods'))
             if not enabled: continue
             panel = globals().get(className,None)
@@ -3973,77 +3976,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
-class BashStatusBar(DnDStatusBar):
-    #--Class Data
-    obseButton = None
-
-    def UpdateIconSizes(self, skip_refresh=False):
-        self.buttons = {} # populated with SBLinks whose gButtons is not None
-        # when bash is run for the first time those are empty - set here
-        order = settings[u'bash.statusbar.order']
-        hide = settings[u'bash.statusbar.hide']
-        # filter for non-existent ids and reorder the dict according to order
-        hidden = {lid for lid in hide if lid in BashStatusBar.all_sb_links}
-        hide.clear()
-        hide.update(hidden)
-        saved_order = {lid: li for lid in order if
-                       (li := BashStatusBar.all_sb_links.get(lid))}
-        # append new buttons and reorder BashStatusBar.all_sb_links
-        BashStatusBar.all_sb_links = saved_order | BashStatusBar.all_sb_links
-        order[:] = list(BashStatusBar.all_sb_links) # set bash.statusbar.order
-        # Add buttons in order that is saved
-        for link_uid, link in BashStatusBar.all_sb_links.items():
-            # Hidden?
-            if link_uid in hide: continue
-            # Not present ?
-            if not link.IsPresent(): continue
-            # Add it
-            try:
-                self._addButton(link)
-            except AttributeError: # '_App_Button' object has no attribute 'imageKey'
-                deprint(f'Failed to load button {link_uid!r}', traceback=True)
-        if not skip_refresh:
-            self.refresh_status_bar(refresh_icon_size=True)
-
-    def HideButton(self, button, skip_refresh=False):
-        for link_uid, link in self.buttons.items():
-            if link.gButton is button:
-                button.visible = False
-                del self.buttons[link_uid]
-                settings['bash.statusbar.hide'].add(link_uid)
-                if not skip_refresh:
-                    self.refresh_status_bar()
-                return
-
-    def UnhideButton(self, link):
-        uid = link.uid
-        settings[u'bash.statusbar.hide'].discard(uid)
-        # Find the position to insert it at
-        order = settings[u'bash.statusbar.order']
-        self._addButton(link)
-        if uid not in order:
-            # Not specified, put it at the end
-            order.append(uid)
-        else:
-            self._sort_buttons(order)
-
-    def refresh_status_bar(self, refresh_icon_size=False):
-        """Updates status widths and the icon sizes, if refresh_icon_size is
-        True. Also propagates resizing events.
-
-        :param refresh_icon_size: Whether or not to update icon sizes too."""
-        txt_len = 280 if bush.game.has_esl else 130
-        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, txt_len])
-        if refresh_icon_size:
-            ##: Why - 12? I just tried values until it looked good, why does
-            # this one work best?
-            self.SetMinHeight(self.iconsSize - 12)
-        # Causes the status bar to fill half the screen on wxGTK
-        ##: See if removing this call entirely causes problems on Windows
-        if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent()
-        self.OnSize()
-
-#------------------------------------------------------------------------------
 class BashFrame(WindowFrame):
     """Main application frame."""
     ##:ex basher globals - hunt their use down - replace with methods - see #63
@@ -4059,9 +3991,6 @@ class BashFrame(WindowFrame):
     _def_size = (1024, 512)
     _size_hints = (512, 512)
 
-    @property
-    def statusBar(self): return self._native_widget.GetStatusBar()
-
     def __init__(self, parent=None):
         #--Singleton
         balt.Link.Frame = self
@@ -4071,7 +4000,8 @@ class BashFrame(WindowFrame):
                                         sizes_dict=bass.settings)
         self.set_bash_frame_title()
         # Status Bar & Global Menu
-        self._native_widget.SetStatusBar(BashStatusBar(self._native_widget))
+        status_bar = self.statusBar = BashStatusBar(self)
+        self._native_widget.SetStatusBar(self._resolve(status_bar))
         self.global_menu = None
         self.set_global_menu(GlobalMenu())
         #--Notebook panel
@@ -4208,11 +4138,11 @@ class BashFrame(WindowFrame):
         # requesting Panel is currently shown because Refresh UI path may call
         # Refresh UI of other tabs too - this results for instance in mods
         # count flickering when deleting a save in saves tab - ##: hunt down
-            self.statusBar.SetStatusText(countTxt, 2)
+            self.statusBar.set_sb_text(countTxt, 2)
 
     def set_status_info(self, infoTxt):
         """Sets status bar info field."""
-        self.statusBar.SetStatusText(infoTxt, 1)
+        self.statusBar.set_sb_text(infoTxt, 1)
 
     # Events ------------------------------------------------------------------
     @balt.conversation
@@ -4405,7 +4335,7 @@ class BashFrame(WindowFrame):
                 deprint(u'An error occurred while trying to save settings:',
                         traceback=True)
         finally:
-            self.destroy_component()
+            self.native_destroy()
 
     def SaveSettings(self, destroy=False):
         """Save application data."""
@@ -4497,8 +4427,8 @@ class BashApp(object):
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
             if bass.inisettings[u'EnableSplashScreen']:
-                if (splash := bass.dirs['images'].join(
-                    'wryesplash.png')).is_file():
+                if (splash := GPath(os.path.join(get_image_dir(),
+                                                 'wryesplash.png'))).is_file():
                     splash_screen = CenteredSplash(splash.s)
             #--Init Data
             progress(0.2, _(u'Initializing Data'))
@@ -4609,80 +4539,7 @@ def InitImages():
             settings[u'bash.colors'][color_key] = color_val
         colors[color_key] = Color(*color_val)
     #--Images
-    imgDirJn = bass.dirs[u'images'].join
-    def _png(fname): return ImageWrapper(imgDirJn(fname))
-    def _svg(fname, bm_px_size):
-        """Creates an SVG wrapper.
-
-        :param fname: The SVG's filename, relative to bash/images.
-        :param bm_px_size: The size of the resulting bitmap, in
-            device-independent pixels (DIP)."""
-        return ImageWrapper(imgDirJn(fname), iconSize=bm_px_size)
-    # PNGs --------------------------------------------------------------------
-    # Checkboxes
-    images['checkbox.red.on.16'] = _png('checkbox_red_on.png')
-    images['checkbox.red.on.24'] = _png('checkbox_red_on_24.png')
-    images['checkbox.red.on.32'] = _png('checkbox_red_on_32.png')
-    images[u'checkbox.red.off.16'] = _png(u'checkbox_red_off.png')
-    images[u'checkbox.red.off.24'] = _png(u'checkbox_red_off_24.png')
-    images[u'checkbox.red.off.32'] = _png(u'checkbox_red_off_32.png')
-    images[u'checkbox.green.on.16'] = _png(u'checkbox_green_on.png')
-    images[u'checkbox.green.off.16'] = _png(u'checkbox_green_off.png')
-    images[u'checkbox.green.on.24'] = _png(u'checkbox_green_on_24.png')
-    images[u'checkbox.green.off.24'] = _png(u'checkbox_green_off_24.png')
-    images[u'checkbox.green.on.32'] = _png(u'checkbox_green_on_32.png')
-    images[u'checkbox.green.off.32'] = _png(u'checkbox_green_off_32.png')
-    images[u'checkbox.blue.on.16'] = _png(u'checkbox_blue_on.png')
-    images[u'checkbox.blue.on.24'] = _png(u'checkbox_blue_on_24.png')
-    images[u'checkbox.blue.on.32'] = _png(u'checkbox_blue_on_32.png')
-    images[u'checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
-    images[u'checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
-    images[u'checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    # SVGs --------------------------------------------------------------------
-    # Up/Down arrows for UIList columns
-    images['arrow.up.16'] = _svg('arrow_up.svg', 16)
-    images['arrow.down.16'] = _svg('arrow_down.svg', 16)
-    # Modification time button
-    images['calendar.16'] = _svg('calendar.svg', 16)
-    # DocumentViewer
-    images['back.16'] = _svg('back.svg', 16)
-    images['forward.16'] = _svg('forward.svg', 16)
-    # Browse and Reset buttons
-    images['folder.16'] = _svg('folder.svg', 16)
-    images['reset.16'] = _svg('reset.svg', 16)
-    # DocumentViewer and Restart
-    images['reload.16'] = _svg('reload.svg', 16)
-    images['reload.24'] = _svg('reload.svg', 24)
-    images['reload.32'] = _svg('reload.svg', 32)
-    # Checkmark/Cross
-    images['checkmark.16'] = _svg('checkmark.svg', 16)
-    images['error_cross.16'] = _svg('error_cross.svg', 16)
-    # Minus/Plus for the Bash Tags popup
-    images['minus.16'] = _svg('minus.svg', 16)
-    images['plus.16'] = _svg('plus.svg', 16)
-    # Warning icon in various GUIs
-    images['warning.32'] = _svg('warning.svg', 32)
-    # Settings button
-    images['settings_button.16'] = _svg('gear.svg', 16)
-    images['settings_button.24'] = _svg('gear.svg', 24)
-    images['settings_button.32'] = _svg('gear.svg', 32)
-    # Help button(s)
-    images['help.16'] = _svg('help.svg', 16)
-    images['help.24'] = _svg('help.svg', 24)
-    images['help.32'] = _svg('help.svg', 32)
-    # Plugin Checker
-    images['plugin_checker.16'] = _svg('checklist.svg', 16)
-    images['plugin_checker.24'] = _svg('checklist.svg', 24)
-    images['plugin_checker.32'] = _svg('checklist.svg', 32)
-    # Doc Browser
-    images['doc_browser.16'] = _svg('book.svg', 16)
-    images['doc_browser.24'] = _svg('book.svg', 24)
-    images['doc_browser.32'] = _svg('book.svg', 32)
-    # Check/Uncheck All buttons
-    images['square_empty.16'] = _svg('square_empty.svg', 16)
-    images['square_check.16'] = _svg('square_checked.svg', 16)
-    # Deletion dialog button
-    images['trash_can.32'] = _svg('trash_can.svg', 32)
+    init_image_resources(bass.dirs['images'].s)
 
 ##: This hides a circular dependency (__init__ -> links_init -> __init__)
 from .links_init import InitLinks

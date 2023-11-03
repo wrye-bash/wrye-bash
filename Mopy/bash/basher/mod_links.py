@@ -43,7 +43,7 @@ from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
 from ..exception import BoltError, CancelError
 from ..game import MergeabilityCheck
-from ..gui import BusyCursor, ImageWrapper, copy_text_to_clipboard, askText, \
+from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import ActorFactions, ActorLevels, CsvParser, EditorIds, \
@@ -892,9 +892,9 @@ class Mod_AllowGhosting(TransLink):
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_('Ghosting..'))
-            subMenu.links.append(_Mod_AllowGhosting_All())
-            subMenu.links.append(_Mod_DisallowGhosting_All())
-            subMenu.links.append(_Mod_AllowGhostingInvert_All())
+            subMenu.links.append_link(_Mod_AllowGhosting_All())
+            subMenu.links.append_link(_Mod_DisallowGhosting_All())
+            subMenu.links.append_link(_Mod_AllowGhostingInvert_All())
             return subMenu
 
 # BP Links --------------------------------------------------------------------
@@ -1199,9 +1199,9 @@ class Mod_SkipDirtyCheck(TransLink):
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_('Dirty Edit Scanning..'))
-            subMenu.links.append(_Mod_SkipDirtyCheckAll(True))
-            subMenu.links.append(_Mod_SkipDirtyCheckAll(False))
-            subMenu.links.append(_Mod_SkipDirtyCheckInvert())
+            subMenu.links.append_link(_Mod_SkipDirtyCheckAll(True))
+            subMenu.links.append_link(_Mod_SkipDirtyCheckAll(False))
+            subMenu.links.append_link(_Mod_SkipDirtyCheckInvert())
             return subMenu
 
 #------------------------------------------------------------------------------
@@ -1753,11 +1753,9 @@ class Mod_Face_Import(OneItemLink):
         imagePath = bosh.modInfos.store_dir.join(u'Docs', u'Images', npc.eid + u'.jpg')
         if not imagePath.exists():
             srcInfo.header.read_save_header(load_image=True)
-            # TODO(inf) de-wx! Again, image/bitmap stuff
-            image = ImageWrapper.bmp_from_bitstream(
-                *srcInfo.header.image_parameters).ConvertToImage()
+            image = BmpFromStream(*srcInfo.header.image_parameters)
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
+            image.save_bmp(imagePath.s)
         self.window.RefreshUI()
         self._showOk(_(u'Imported face to: %s') % npc.eid, self._selected_item)
 

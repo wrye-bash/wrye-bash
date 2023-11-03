@@ -28,18 +28,15 @@ Bash to use, so must be imported and run high up in the booting sequence.
 from __future__ import annotations
 
 import pkgutil
-import textwrap
 from collections import defaultdict
-from configparser import ConfigParser
 
-from . import game as game_init
+from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_egs_game_paths, get_legacy_ws_game_info, \
-    get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths,\
+    get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths, \
     get_steam_game_paths
 from .exception import BoltError
 from .game import GameInfo, patch_game
-from .initialization import get_path_from_ini
 
 # Game detection --------------------------------------------------------------
 game: 'patch_game.PatchGame' | None = None
@@ -195,8 +192,8 @@ def _supportedGames(skip_ws_games=False):
     merge_games(_egs_games)
     return all_found_games
 
-def _detectGames(cli_path: str = '', bash_ini_: ConfigParser | None = None
-) -> tuple[dict[str, list[Path]], str | None, Path | None]:
+def _detectGames(cli_path: str = '') -> tuple[
+        dict[str, list[Path]], str | None, Path | None]:
     """Detect which supported games are installed.
 
     - If Bash supports no games raise.
@@ -213,8 +210,7 @@ def _detectGames(cli_path: str = '', bash_ini_: ConfigParser | None = None
       - test_path: Path to the game directory that was tested for `gamename`.
     """
     #--Find all supported games and all games installed via various sources
-    skip_new_ws = bool(bash_ini_) and bash_ini_.getboolean(
-        'Settings', 'bSkipWSDetection', fallback=False)
+    skip_new_ws = bass.inisettings['SkipWSDetection']
     # _supportedGames sets _allGames if not set
     foundGames_ = _supportedGames(skip_new_ws)
     if not _allGames: # if allGames is empty something goes badly wrong
@@ -230,10 +226,7 @@ def _detectGames(cli_path: str = '', bash_ini_: ConfigParser | None = None
             u'Set game mode to %(gamename)s specified via -o argument: ',
             u'No known game in the path specified via -o argument: %(path)s')
     #--Second: check if sOblivionPath is specified in the ini
-    ini_game_path = get_path_from_ini(bash_ini_, u'sOblivionPath')
-    if ini_game_path:
-        if not ini_game_path.is_absolute():
-            ini_game_path = Path.getcwd().join(ini_game_path)
+    if ini_game_path := bass.get_path_from_ini('OblivionPath', 'mopy'):
         installPaths[u'ini'] = (ini_game_path,
             u'Set game mode to %(gamename)s based on sOblivionPath setting in '
             u'bash.ini: ',
@@ -277,10 +270,9 @@ def __setGame(gamename, gamePath, msg):
     _allGames.clear()
     game.init()
 
-def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None,
-                        gm_path=None):
+def detect_and_set_game(cli_game_dir, gname=None, gm_path=None):
     if gname is None: # detect available games
-        foundGames_, gname, gm_path = _detectGames(cli_game_dir, bash_ini_)
+        foundGames_, gname, gm_path = _detectGames(cli_game_dir)
         foundGames.update(foundGames_) # set the global name -> game path dict
     # Try the game returned by detectGames() or specified
     if gname is not None and gm_path is not None:

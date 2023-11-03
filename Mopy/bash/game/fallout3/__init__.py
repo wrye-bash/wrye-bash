@@ -64,7 +64,7 @@ class AFallout3GameInfo(PatchGame):
         ck_abbrev = u'GECK'
         long_name = u'Garden of Eden Creation Kit'
         exe = u'GECK.exe'
-        se_args = u'-editor'
+        se_args = ('-editor',)
         image_name = u'geck%s.png'
 
     class Se(GameInfo.Se):

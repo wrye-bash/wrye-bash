@@ -37,8 +37,8 @@ from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
-from ..gui import BusyCursor, FileSave, ImageWrapper, askText, showError, \
-    askYes, showOk
+from ..gui import BusyCursor, FileSave, askText, showError, askYes, showOk, \
+    BmpFromStream
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
@@ -321,10 +321,8 @@ class Save_ExportScreenshot(OneItemLink):
             _(u'Save Screenshot as:'), bass.dirs[u'patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
-        # TODO(inf) de-wx! All the image stuff is still way too close to wx
-        image = ImageWrapper.bmp_from_bitstream(
-            *self._selected_info.header.image_parameters).ConvertToImage()
-        image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
+        image = BmpFromStream(*self._selected_info.header.image_parameters)
+        image.save_bmp(imagePath.s)
 
 #------------------------------------------------------------------------------
 ##: Split in two, one OneItemLink diffing against active plugins and one link

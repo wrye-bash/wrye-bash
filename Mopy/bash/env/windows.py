@@ -29,7 +29,9 @@ import functools
 import json
 import os
 import re
+import shlex
 import sys
+import webbrowser
 import winreg
 from collections.abc import Iterable
 from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
@@ -49,7 +51,8 @@ import win32gui
 from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
-    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests, \
+    _AppLauncher, set_cwd
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath, top_level_files, undefinedPath
@@ -243,16 +246,6 @@ def _get_default_app_icon(idex, target):
         _deprint(f'Error finding icon for {target}:', traceback=True)
         icon_path = undefinedPath
     return icon_path, idex
-
-def _should_ignore_ver(test_ver):
-    """
-    Small helper method to determine whether or not a version should be
-    ignored. Versions are ignored if they are 1.0.0.0 or 0.0.0.0.
-
-    :param test_ver: The version to test. A tuple containing 4 integers.
-    :return: True if the specified versiom should be ignored.
-    """
-    return test_ver == (1, 0, 0, 0) or test_ver == (0, 0, 0, 0)
 
 def _query_string_field_version(file_name, version_prefix):
     """
@@ -1136,17 +1129,16 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
-def get_file_version(filename):
-    """
-    Return the version of a dll/exe, using the native win32 functions
+def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
+    """Return the version of a dll/exe, using the native win32 functions
     if available and otherwise a pure python implementation that works
     on Linux.
 
     :param filename: The file from which the version should be read.
-    :return A 4-int tuple, for example (1, 9, 32, 0).
-    """
+    :param __ignored: versions in __ignored wil be ignored
+    :return A 4-int tuple, for example (1, 9, 32, 0)."""
     # If it's a symbolic link (i.e. a user-added app), resolve it first
-    if filename.endswith(u'.lnk'):
+    if filename.lower().endswith('.lnk'):
         sh = win32client.Dispatch(u'WScript.Shell')
         shortcut = sh.CreateShortCut(filename)
         filename = shortcut.TargetPath
@@ -1155,13 +1147,13 @@ def get_file_version(filename):
     # string fields with ProductVersion, so that's the second one. After
     # that, we prefer the fixed one since it's faster.
     curr_ver = _query_fixed_field_version(filename, u'FileVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_string_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_fixed_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     return _query_string_field_version(filename, u'FileVersion')
 
@@ -1651,3 +1643,42 @@ class TaskDialog(object):
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
+class AppLauncher(_AppLauncher):
+
+    def allow_create(self): # if self.exePath does not exist this must be False
+        return self._display_launcher
+
+    def launch_app(self, exe_path, exe_args):
+        args = shlex.join(exe_args)
+        try:
+            os.startfile(exe_path.s, arguments=args)
+        except WindowsError as e:
+            if e.winerror != 740: raise
+            # Requires elevated permissions
+            os.startfile(exe_path.s, 'runas', args)
+        except NotImplementedError:
+            self._webbrowser(exe_path)
+
+    @set_cwd
+    def _webbrowser(self, exe_path):
+        webbrowser.open(exe_path.s)
+
+# Exe and shortcut launchers --------------------------------------------------
+class ExeLauncher(AppLauncher):
+
+    @set_cwd
+    def launch_app(self, exe_path, exe_args):
+        try:
+            self._run_exe(exe_path, exe_args)
+        except WindowsError as werr:
+            if werr.winerror != 740: raise
+            os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
+                         exe_path.head.s, 1)
+
+    def _run_exe(self, exe_path, exe_args):
+        raise NotImplementedError # needs balt
+
+class LnkLauncher(AppLauncher):
+
+    def launch_app(self, exe_path, exe_args):
+        webbrowser.open(exe_path.s)

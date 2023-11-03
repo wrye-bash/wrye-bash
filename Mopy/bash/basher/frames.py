@@ -223,7 +223,7 @@ class DocBrowser(WindowFrame):
         doc_path = FileOpen.display_dialog(self, _('Select document for '
                                                    '%(target_file_name)s:') % {
             'target_file_name': mod_name}, docs_dir, file_name, '*.*',
-            allow_create=True)
+            allow_create_file=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:

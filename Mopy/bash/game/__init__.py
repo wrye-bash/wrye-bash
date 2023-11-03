@@ -256,7 +256,7 @@ class GameInfo(object):
         exe = u'*DNE*'
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
-        se_args = None
+        se_args = ()
         # Image name template for the status bar, relative to images/tools
         image_name = u''
 
@@ -291,6 +291,12 @@ class GameInfo(object):
         # A list of xSE plugins that fix the plugin/BSA handle problem. Empty
         # if that does not apply to this game.
         limit_fixer_plugins = []
+
+        @classmethod
+        def exe_path_sc(cls):
+            from .. import bass
+            exe_xse = bass.dirs['app'].join(cls.exe)
+            return exe_xse if exe_xse.is_file() else None
 
     class Sd(object):
         """Information about Script Dragon for this game."""

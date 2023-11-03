@@ -250,14 +250,14 @@ class Tree(_AComponent):
     VirtualTree as well."""
     _native_widget: _wx.TreeCtrl
 
-    def __init__(self, parent, image_list = None, *,
+    def __init__(self, parent, image_list=None, *,
             root_text: str | None = None,
             root_node_type: type[TreeNode] = TreeNode):
         """Create a new Tree with the specified root text.
 
         :param parent: The object that this tree belongs to. May be a wx object
             or a component.
-        :param image_list: A balt.ImageList instance, or None if the tree items
+        :param image_list: An ImageList instance, or None if the tree items
             do not have any images.
         :param root_text: The text to use for the root element. If set to None,
             the root element will be hidden. That is useful if you want to
@@ -269,7 +269,7 @@ class Tree(_AComponent):
             style |= _wx.TR_HIDE_ROOT
         super().__init__(parent, style=style)
         if image_list is not None:
-            self._native_widget.SetImageList(image_list.GetImageList())
+            self._native_widget.SetImageList(self._resolve(image_list))
         self._native_tree_id_to_child = {}
         on_node_activated = self._evt_handler(_wx.EVT_TREE_ITEM_ACTIVATED,
             self._evt_to_node_processor)

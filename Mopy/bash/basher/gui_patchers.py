@@ -28,14 +28,14 @@ from itertools import chain
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bolt, bosh, bush, load_order
-from ..balt import CheckLink, Links, SeparatorLink
+from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
 from ..game import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
-    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout, \
-    askText, showError, askNumber
+    ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
+    VLayout, askText, showError, askNumber
 from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
@@ -721,12 +721,12 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             elif itm_txt == tweak.custom_choice:
                 itm_txt = _custom_label(itm_txt, tweak.choiceValues[index][0])
-                links.append(_ValueLinkCustom(itm_txt, index))
+                links.append_link(_ValueLinkCustom(itm_txt, index))
             else:
-                links.append(_ValueLink(itm_txt, index))
+                links.append_link(_ValueLink(itm_txt, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
@@ -959,9 +959,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         links = Links()
         for index, item_label in enumerate(self.choiceMenu):
             if item_label == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             else:
-                links.append(_OnItemChoice(item_label, index))
+                links.append_link(_OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gList, None)
 

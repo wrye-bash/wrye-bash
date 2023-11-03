@@ -26,11 +26,11 @@ import subprocess
 import webbrowser
 from collections import defaultdict
 
-from . import BashStatusBar, tabInfo
+from . import tabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import Link, Resources, colors
+from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
     reverse_dict
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
@@ -40,7 +40,8 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
-    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton
+    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
+    get_image
 from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
@@ -80,7 +81,7 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, balt.images[u'help.24'].get_bitmap(),
+        help_btn = ClickableImage(self, get_image('help.24'),
             btn_tooltip=_(u'View the readme section for the currently active '
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
@@ -423,8 +424,7 @@ class ConfigureEditorDialog(DialogWindow):
             sizes_dict=bass.settings)
         self._editor_location = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.path'])
-        browse_editor_btn = ImageButton(self,
-            balt.images['folder.16'].get_bitmap(),
+        browse_editor_btn = ImageButton(self, get_image('folder.16'),
             btn_tooltip=_('Open a file dialog to interactively choose the '
                           'editor binary.'))
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
@@ -772,23 +772,13 @@ class StatusBarPage(_AScrollablePage):
         self._mark_setting_changed(u'icon_size',
             int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
 
-    def _link_by_uid(self, link_uid):
-        """Returns the status bar Link with the specified UID."""
-        for link_candidate in self._tip_to_links.values():
-            if link_candidate.uid == link_uid:
-                return link_candidate
-        return None
-
     def on_apply(self):
         # Note we skip_refresh all status bar changes in order to do them all
         # at once at the end
         # Show App Version
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
-            for button in BashStatusBar.all_sb_links.values():
-                button.set_sb_button_tooltip()
-            if BashStatusBar.obseButton.button_state:
-                BashStatusBar.obseButton.UpdateToolTips()
+            BashStatusBar.set_tooltips()
             # Will change tooltips, so need to repopulate these
             self._populate_icon_lists()
         # Icon Size
@@ -806,11 +796,10 @@ class StatusBarPage(_AScrollablePage):
             new_hidden = self._get_chosen_hidden_icons()
             hidden_added = new_hidden - old_hidden
             hidden_removed = old_hidden - new_hidden
-            for to_hide in hidden_added:
-                Link.Frame.statusBar.HideButton(
-                    self._link_by_uid(to_hide).gButton, skip_refresh=True)
-            for to_unhide in hidden_removed:
-                Link.Frame.statusBar.UnhideButton(self._link_by_uid(to_unhide))
+            for to_hide_uid in hidden_added:
+                Link.Frame.statusBar.HideButton(to_hide_uid, skip_refresh=True)
+            for to_unhide_uid in hidden_removed:
+                Link.Frame.statusBar.UnhideButton(to_unhide_uid)
         # Perform a single update of the status bar if needed
         if hidden_icons_changed or icon_size_changed:
             Link.Frame.statusBar.refresh_status_bar(
@@ -826,28 +815,15 @@ class StatusBarPage(_AScrollablePage):
 
     def _populate_icon_lists(self):
         """Clears and repopulates the two icon lists."""
-        ##: Here be dragons, of the tooltip-related kind
         self._tip_to_links.clear()
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
         visible = []
         for link_uid, link in BashStatusBar.all_sb_links.items():
-            if not link.IsPresent() or not link.canHide: continue
-            button = link.gButton
+            if not link.allow_create() or not link.canHide: continue
             # Get a title for the hidden button
-            if button:
-                # If the wx.Button object exists (it was hidden this
-                # session), use the tooltip from it
-                tip_ = button.tooltip
-            else:
-                # If the link is an _App_Button, it will have a
-                # 'sb_button_tip' attribute
-                tip_ = getattr(link, u'sb_button_tip', None) # YAK YAK YAK
-            if tip_ is None:
-                # No good, use its uid as a last resort
-                tip_ = link_uid
             target_link_list = hidden if link_uid in hide else visible
-            target_link_list.append(tip_)
+            target_link_list.append(tip_ := link.sb_button_tip)
             self._tip_to_links[tip_] = link
         self._icon_lists.left_items = visible
         self._icon_lists.right_items = hidden
@@ -1353,15 +1329,13 @@ class GeneralPage(_AScrollablePage):
             init_text=bass.settings['bash.temp_dir'])
         self._temp_folder_path.on_text_changed.subscribe(
             self._on_temp_folder_change)
-        browse_temp_folder_btn = ImageButton(self,
-            balt.images['folder.16'].get_bitmap(),
+        browse_temp_folder_btn = ImageButton(self, get_image('folder.16'),
             btn_tooltip=_('Open a file dialog to interactively choose the '
                           'path at which Wrye Bash will store temporary '
                           'files.'))
         browse_temp_folder_btn.on_clicked.subscribe(
             self._on_temp_folder_browse)
-        reset_temp_folder_btn = ImageButton(self,
-            balt.images['reset.16'].get_bitmap(),
+        reset_temp_folder_btn = ImageButton(self, get_image('reset.16'),
             btn_tooltip=_('Reset the path at which Wrye Bash will store '
                           'temporary files back to its default value.'))
         reset_temp_folder_btn.on_clicked.subscribe(self._on_temp_folder_reset)

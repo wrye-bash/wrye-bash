@@ -92,10 +92,10 @@ class _TopLevelWin(_AComponent):
         """IsIconized(self) -> bool"""
         return self._native_widget.IsIconized()
 
-    # TODO(inf) de-wx! Image API - these use wx.Icon and wx.IconBundle
-    def set_icon(self, wx_icon):
+    # TODO(inf) de-wx! Image API - these use wx.IconBundle
+    def set_icon(self, gui_icon):
         """SetIcon(self, Icon icon)"""
-        return self._native_widget.SetIcon(wx_icon)
+        return self._native_widget.SetIcon(self._resolve(gui_icon))
 
     def set_icons(self, wx_icon_bundle):
         """SetIcons(self, wxIconBundle icons)"""
@@ -113,7 +113,7 @@ class _TopLevelWin(_AComponent):
         if self._sizes_dict and not self.is_iconized and not self.is_maximized:
             if self._pos_key: self._sizes_dict[self._pos_key] = self.component_position
             if self._size_key: self._sizes_dict[self._size_key] = self.component_size
-        if destroy: self.destroy_component()
+        if destroy: self.native_destroy()
 
     def ensureDisplayed(self, x=100, y=100): ##: revisit uses
         """Ensure that frame is displayed."""
@@ -183,7 +183,7 @@ class DialogWindow(_TopLevelWin):
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.destroy_component()
+        self.native_destroy()
 
     def on_closing(self, destroy=False): # flip destroy to False
         # dialogs are shown via the context manager above, if we destroy
@@ -403,6 +403,6 @@ class CenteredSplash(_AComponent):
 
     def stop_splash(self):
         """Hides and terminates the splash screen."""
-        self.destroy_component()
+        self.native_destroy()
         ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
         self.visible = False

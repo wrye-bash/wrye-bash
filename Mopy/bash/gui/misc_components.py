@@ -35,10 +35,12 @@ import wx as _wx
 import wx.adv as _adv
 from wx.grid import Grid
 
-from .base_components import Color, ImageWrapper, WithCharEvents, \
-    WithMouseEvents, _AComponent
+from .base_components import Color, WithCharEvents, WithMouseEvents, \
+    _AComponent, _AEvtHandler
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
+from .images import GuiImage
+from .menus import Links
 from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
@@ -60,7 +62,7 @@ class Picture(_AComponent):
         super(Picture, self).__init__(parent, size=(width, height),
                                       style=style)
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
-        self.bitmap = None
+        self._gui_bitmap = None
         self.background = self._get_brush(
             background or self._native_widget.GetBackgroundColour())
         #self.SetSizeHints(width,height,width,height)
@@ -89,10 +91,10 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.is_file() and ImageWrapper(bmp).get_bitmap()) or None
-        self.bitmap = bmp
+            bmp = (bmp.is_file() and GuiImage.from_path(bmp)) or None
+        self._gui_bitmap = bmp
         self._handle_resize()
-        return self.bitmap
+        return self._gui_bitmap
 
     def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
         x, y = self.scaled_size()
@@ -103,14 +105,15 @@ class Picture(_AComponent):
         # Draw
         dc.SetBackground(self.background)
         dc.Clear()
-        if self.bitmap:
-            old_x,old_y = self.bitmap.GetSize()
+        if self._gui_bitmap is not None:
+            ##: wrap _native_widget calls below - a better way?
+            old_x,old_y = self._gui_bitmap._native_widget.GetSize()
             scale = min(float(x)/old_x, float(y)/old_y)
             new_x = old_x * scale
             new_y = old_y * scale
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
-            image = self.bitmap.ConvertToImage()
+            image = self._gui_bitmap._native_widget.ConvertToImage()
             image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
             dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
@@ -414,7 +417,7 @@ class TimePicker(_AComponent):
             new_time.second)
 
 # Other -----------------------------------------------------------------------
-class GlobalMenu(_AComponent):
+class GlobalMenu(_AEvtHandler):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
@@ -424,11 +427,11 @@ class GlobalMenu(_AComponent):
         """wx-derived class used to differentiate between events on regular
         menus and categories and to provide the category label at runtime."""
         def __init__(self, cat_lbl):
-            super(GlobalMenu._GMCategory, self).__init__()
+            super().__init__()
             self.category_label = cat_lbl
 
     def __init__(self):
-        self._native_widget = _wx.MenuBar() # no parent
+        super().__init__() # no parent
         self._category_handlers = {}
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*
@@ -473,7 +476,7 @@ class GlobalMenu(_AComponent):
         text resetting, because wxPython does not permit more than one event
         handler."""
         ##: de-wx! move links to gui
-        from ..balt import Link, Links
+        from ..balt import Link
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
@@ -495,6 +498,28 @@ class GlobalMenu(_AComponent):
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
-            ##: de-wx! move links to gui
-            from ..balt import Links
             Links.Popup = None
+
+class Dragger(_AComponent):
+    """Class that supports a drag and drop operation on one of its elements."""
+    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
+        raise NotImplementedError
+    def _on_drag(self, mouse_evnt, _hittest0):
+        raise NotImplementedError
+    def _on_drag_end(self, mouse_evnt):
+        raise NotImplementedError
+    def _on_drag_end_forced(self):
+        raise NotImplementedError
+    def _reset_drag(self, set_cursor=True):
+        raise NotImplementedError
+
+class DnDStatusBar(Dragger):
+    """A status bar wrapper. Supports Drag and drop of its buttons."""
+    _native_widget: _wx.StatusBar
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._on_size = self._evt_handler(_wx.EVT_SIZE)
+
+    def set_sb_text(self, status_text, i=0):
+        self._native_widget.SetStatusText(status_text, i)

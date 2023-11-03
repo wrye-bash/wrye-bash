@@ -28,14 +28,15 @@ import traceback
 from collections import OrderedDict, defaultdict
 
 from . import ScriptParser, bass, bolt, bosh, bush, load_order
-from .balt import ItemLink, Links, images, staticBitmap
+from .ScriptParser import error
+from .balt import ItemLink
 from .bolt import FName, FNDict, LooseVersion
 from .env import get_file_version, get_game_version_fallback, to_os_path
 from .gui import CENTER, RIGHT, CheckBox, CheckListBox, GridLayout, \
-    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, ListBox, \
-    PictureWithCursor, Stretch, TextArea, VLayout, WizardDialog, WizardPage
+    HBoxedLayout, HLayout, HyperlinkLabel, Label, LayoutOptions, Links, \
+    ListBox, PictureWithCursor, StaticBmp, Stretch, TextArea, VLayout, \
+    WizardDialog, WizardPage, get_image_dir, get_image
 from .ini_files import OBSEIniFile
-from .ScriptParser import error
 from .wbtemp import cleanup_temp_dir
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -183,9 +184,9 @@ class PageSelect(PageInstaller):
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
             self.listOptions.on_mouse_right_up.subscribe(self._on_right_click)
-            self._page_links.append(_Page_SelectAll(self.listOptions))
-            self._page_links.append(_Page_DeselectAll(self.listOptions))
-            self._page_links.append(_Page_ToggleAll(self.listOptions))
+            self._page_links.append_link(_Page_SelectAll(self.listOptions))
+            self._page_links.append_link(_Page_DeselectAll(self.listOptions))
+            self._page_links.append_link(_Page_ToggleAll(self.listOptions))
             for index, dflt in enumerate(items_default.values()):
                 self.listOptions.lb_check_at_index(index, dflt)
         else:
@@ -423,8 +424,7 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmps = [images[i].get_bitmap() for i in (
-            'error_cross.16', 'checkmark.16')]
+        bmps = [*map(get_image, ('error_cross.16', 'checkmark.16'))]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -433,7 +433,7 @@ class PageVersions(PageInstaller):
         linkGame = Label(self, bush.game.display_name)
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
-                                    staticBitmap(self, bmps[bGameOk])])
+                                    StaticBmp(self, bmps[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip_=None):
             if tool is None or tool_name != u'':
@@ -442,7 +442,7 @@ class PageVersions(PageInstaller):
                 link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
-                                            staticBitmap(self, bmps[ok])])
+                                            StaticBmp(self, bmps[ok])])
         # Script Extender
         _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender
@@ -1370,7 +1370,7 @@ class WryeParser(ScriptParser.Parser):
             if wiz_img_path and wiz_img_path.is_file():
                 image_paths.append(wiz_img_path)
             elif i.lower().startswith('wizard images'):
-                std_img_path = to_os_path(bass.dirs['images'].join(i).s)
+                std_img_path = to_os_path(os.path.join(get_image_dir(), i))
                 if std_img_path and std_img_path.is_file():
                     image_paths.append(std_img_path)
                 else:

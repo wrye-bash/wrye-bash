@@ -39,8 +39,9 @@ from functools import partial
 from pathlib import Path as PPath ##: To be obsoleted when we refactor Path
 from typing import TypeVar, Any
 
-from .. import bolt
-from ..bolt import GPath, Path, deprint
+from .. import bolt, bass
+from ..bolt import GPath, deprint, undefinedPath
+from ..bolt import Path as _Path
 from ..wbtemp import TempDir
 
 try:
@@ -170,8 +171,8 @@ def _parse_steam_manifests(submod, steam_path: _StrPath | None):
 @dataclass(slots=True)
 class _LegacyWinAppVersionInfo:
     full_name: str
-    install_location: Path
-    mutable_location: Path
+    install_location: _Path
+    mutable_location: _Path
     # NOTE: the version parsed here is from the package name or app manifest
     # which do not agree in general with the canonical "game version" found in
     # the executable.  We store it only as a fallback in case the Windows Store
@@ -213,7 +214,7 @@ class _LegacyWinAppInfo:
                 f'versions=<{len(self.versions)} version(s)>)')
 
 def _get_language_paths(language_dirs: list[str],
-        main_location: Path) -> list[Path]:
+        main_location: _Path) -> list[_Path]:
     """Utility function that checks a list of language dirs for a game and, if
     that list isn't empty, joins a main location path with all those dirs and
     returns a list of all such present language paths. If the list is empty, it
@@ -286,7 +287,7 @@ class FileOperationType(Enum):
     RENAME = 'RENAME'
     DELETE = 'DELETE'
 
-def _retry(operation: Callable[..., T], from_path: Path, to_path: Path) -> T:
+def _retry(operation: Callable[..., T], from_path: _Path, to_path: _Path) -> T:
     """Helper to auto-retry an operation if it fails due to a missing
     folder."""
     try:
@@ -295,7 +296,7 @@ def _retry(operation: Callable[..., T], from_path: Path, to_path: Path) -> T:
         to_path.head.makedirs()
         return operation(from_path, to_path)
 
-def __copy_or_move(sources_dests: dict[Path, Path | Iterable[Path]],
+def __copy_or_move(sources_dests: dict[_Path, _Path | Iterable[_Path]],
         rename_on_collision: bool, ask_confirm, parent,
         move: bool) -> dict[str, str]:
     """Copy files using shutil."""
@@ -304,7 +305,7 @@ def __copy_or_move(sources_dests: dict[Path, Path | Iterable[Path]],
     # TODO(241): rename_on_collision NOT IMPLEMENTED
     operation_results: dict[str, str] = {}
     for src_path, to_paths in sources_dests.items():
-        if isinstance(to_paths, Path):
+        if isinstance(to_paths, _Path):
             to_paths = [to_paths]
         for i, to_path in enumerate(to_paths):
             # If we're moving, all but the last operation needs to be a copy
@@ -458,3 +459,69 @@ def is_case_sensitive(test_path):
         (ci_test_path / '.wb_case_test').touch()
         (ci_test_path / '.Wb_CaSe_TeSt').touch()
         return len(list(ci_test_path.iterdir())) == 2
+
+# App launchers ---------------------------------------------------------------
+def set_cwd(func):
+    """Function decorator to switch current working dir."""
+    @functools.wraps(func)
+    def _switch_dir(self, exe_path, *args):
+        cwd = os.getcwd()
+        os.chdir(exe_path.head.s)
+        try:
+            func(self, exe_path, *args)
+        finally:
+            os.chdir(cwd)
+    return _switch_dir
+
+class _AppLauncher:
+    """Info on launching an App - currently windows only."""
+    exePath: _Path # the path to the app launcher (currently exe)
+    _exe_args: tuple # cli for the application
+    display_launcher: bool # whether to display the launcher
+
+    def __init__(self, exePath: _Path, cli_args=(), display_launcher=True,
+                 *args):
+        super().__init__(*args)
+        self.exePath = exePath
+        self._display_launcher = display_launcher
+        self._exe_args = cli_args
+
+    def allow_create(self): return False ##: for linux - flesh out!
+
+    @classmethod
+    def find_launcher(cls, app_exe, app_key, *, root_dirs: tuple | str = tuple(
+            map(GPath, (r'C:\Program Files', r'C:\Program Files (x86)'))),
+            subfolders=()):
+        """Check a list of paths to locate the app launcher - syscalls, so
+        avoid.
+        :param app_exe: the (currently exe) app launcher
+        :param app_key: the ini key whose value is the path to the exe
+        :param root_dirs: the root directories of the exe path
+        :param subfolders: subdirs of root_dirs where app is located
+        :return: a path to the exe and whether it exists."""
+        if app_key is not None and (
+                ini_tool_path := bass.get_path_from_ini(app_key.lower())):
+            # override with the ini path *even* if it does not exist
+            return ini_tool_path, ini_tool_path.exists()
+        if app_exe is None:
+            return undefinedPath, False
+        if isinstance(root_dirs, str):
+            # a key to bass dirs done this way to be able to define launchers
+            # before bass.dirs is initialized
+            root_dirs = [bass.dirs[root_dirs]]
+        elif isinstance(root_dirs, _Path):
+            root_dirs = [root_dirs]
+        if isinstance(subfolders, str):
+            subfolders = [(subfolders,)]
+        elif isinstance(subfolders, tuple):
+            subfolders = [subfolders]
+        launcher = GPath(app_exe)
+        for rt in root_dirs:
+            for subs in subfolders:
+                if (launcher := rt.join(*subs, app_exe)).exists():
+                    return launcher, True
+        # the last one tested, should not matter because it does not exist
+        return launcher, False
+
+    def launch_app(self, exe_path, exe_args):
+        raise NotImplementedError

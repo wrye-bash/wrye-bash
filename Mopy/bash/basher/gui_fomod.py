@@ -25,17 +25,17 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bush
-from ..balt import EnabledLink, Links, colors
+from .. import bass, bush
+from ..balt import EnabledLink, colors
 from ..bolt import LowerDict, dict_sort, reverse_dict_multi
 from ..env import get_file_version, get_game_version_fallback, to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
-    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
-    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
-    TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
-    copy_text_to_clipboard, showWarning
+    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, Links, \
+    OkButton, PictureWithCursor, RadioButton, ScrollableWindow, Stretch, \
+    Table, TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
+    copy_text_to_clipboard, showWarning, StaticBmp
 from ..wbtemp import cleanup_temp_dir
 
 class FomodInstallInfo(object):
@@ -81,7 +81,7 @@ class ValidatorPopup(DialogWindow):
             'package or have to make guesses as to what was intended.')
         VLayout(item_expand=True, border=10, spacing=6, items=[
             (HLayout(spacing=10, items=[
-                (balt.staticBitmap(self), LayoutOptions(v_align=TOP)),
+                (StaticBmp(self), LayoutOptions(v_align=TOP)),
                 (self._error_log, LayoutOptions(expand=True, weight=1)),
             ]), LayoutOptions(weight=1)),
             HLayout(items=[
@@ -253,9 +253,9 @@ class PageSelect(PageInstaller):
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
-        self._group_links.append(_Group_SelectAll())
-        self._group_links.append(_Group_DeselectAll())
-        self._group_links.append(_Group_ToggleAll())
+        self._group_links.append_link(_Group_SelectAll())
+        self._group_links.append_link(_Group_DeselectAll())
+        self._group_links.append_link(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
         first_checkable = None

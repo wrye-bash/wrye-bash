@@ -24,12 +24,17 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
+import os
+import shlex
 
-from . import BashStatusBar, BSAList, INIList, InstallersList, \
+from . import BSAList, INIList, InstallersList, \
     InstallersPanel, MasterList, ModList, SaveList, ScreensList
 # modules below define the __all__ directive
 from .app_buttons import *
 from .bsa_links import *
+from .constants import oblivion_tools, oblivion_java_tools, loot_bosh, \
+    skyrim_tools, modeling_tools_buttons, texture_tool_buttons, audio_tools, \
+    misc_tools, nifskope
 from .files_links import *
 from .ini_links import *
 from .installer_links import *
@@ -40,883 +45,855 @@ from .mods_links import *
 from .saves_links import *
 # Rest of internal imports
 from .. import bass, bush
-from ..balt import MenuLink, SeparatorLink, UIList_Delete, UIList_Hide, \
-    UIList_OpenItems, UIList_OpenStore, UIList_Rename, images
+from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
+    UIList_Hide, UIList_OpenItems, UIList_OpenStore, UIList_Rename
+from ..bolt import os_name
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
-from ..gui import ImageWrapper
+from ..gui import GuiImage, get_image
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
+_is_skyrim = bush.game.fsName == 'Skyrim'
+_j = os.path.join
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
-    """Initialize status bar links."""
+    """Initialize status bar buttons."""
+    __fp = GuiImage.from_path
     def _png_list(template):
-        return [ImageWrapper(bass.dirs[u'images'].join(template % i)) for i in
-                (16, 24, 32)]
+        return [__fp(template % i) for i in (16, 24, 32)]
     def _svg_list(svg_fname):
-        return [ImageWrapper(bass.dirs['images'].join(svg_fname), iconSize=i)
-                for i in (16, 24, 32)]
-    def _init_tool_buttons(): # tooldirs must have been initialized
-        return (((bass.tooldirs[u'OblivionBookCreatorPath'],
-                  bass.inisettings[u'OblivionBookCreatorJavaArg']),
-                 _png_list('tools/oblivionbookcreator%s.png'),
-                 _(u'Launch Oblivion Book Creator'),
-                 {'uid': u'OblivionBookCreator'}),
-                ((bass.tooldirs[u'Tes4GeckoPath'],
-                  bass.inisettings[u'Tes4GeckoJavaArg']),
-                 _png_list('tools/tes4gecko%s.png'),
-                 _(u'Launch Tes4Gecko'), {'uid': u'Tes4Gecko'}),
-                ((bass.tooldirs[u'Tes5GeckoPath']),
-                _png_list('tools/tesvgecko%s.png'),
-                _(u'Launch TesVGecko'), {'uid': u'TesVGecko'}),
-        )
+        return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar
-    BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
+    BashStatusBar.obseButton = obse_button = ObseButton('OBSE')
     all_links = [
-        obseButton,
-        AutoQuit_Button(uid='AutoQuit'),
-        Game_Button(
-            bass.dirs['app'].join(bush.game.launch_exe),
-            bass.dirs['app'].join(bush.game.version_detect_file),
-            _png_list(f'games/{bush.game.game_icon}'),
-            _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
-            _('Launch %(game_name)s %(app_version)s')),
+        obse_button,
+        AutoQuitButton('AutoQuit'),
+        GameButton(_png_list(f'games/{bush.game.game_icon}')),
+        TESCSButton(_png_list(f'tools/{bush.game.Ck.image_name}'))
     ]
-    if bush.game.Ck.ck_abbrev:
-        all_links.append(TESCS_Button( # Construction Set / Creation Kit
-            bass.dirs['app'].join(bush.game.Ck.exe),
-            _png_list(f'tools/{bush.game.Ck.image_name}'),
-            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
-            _('Launch %(ck_name)s %(app_version)s'),
-            bush.game.Ck.se_args))
-    # OBMM
-    all_links.append(app_button_factory(
-        bass.dirs['app'].join('OblivionModManager.exe'),
-        _png_list('tools/obmm%s.png'), _('Launch OBMM'),
-        uid='OBMM'))
-    # Just an _App_Button whose path is in bass.tooldirs
-    Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
-                                                      *args[1:])
-    from .constants import toolbar_buttons
-    for tb in toolbar_buttons:
-        all_links.append(Tooldir_Button(*tb))
-    for tb2 in _init_tool_buttons():
-        all_links.append(app_button_factory(*tb2[:-1], **tb2[-1]))
-    all_links.append( #Tes4View
-        App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
-            _png_list('tools/tes4view%s.png'), _('Launch TES4View'),
-            uid='TES4View'))
-    all_xes = set()
-    for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
-        all_xes.add(game_class.Xe.full_name)
+    all_xes = dict.fromkeys( # keep order to not reorder much
+        game_class.Xe.full_name for game_class in PatchGame.supported_games())
+    xe_images = _png_list('tools/tes4edit%s.png')
+    def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
+        app_launcher, tooltip_str, path_kwargs, *cli_args = app_path_data
+        if app_key in {'Steam', 'LOOT'}:
+            list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
+        elif app_key[:-4] in all_xes: # chop off 'Path'
+            list_img = xe_images
+        else:
+            list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
+        kwargs.setdefault('uid', app_key)
+        if cli_args:
+            kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
+        return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
+            list_img, tooltip_str, **kwargs)
+    # Launchers of tools ------------------------------------------------------
+    all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
+                     in oblivion_tools.items())
+    all_links.extend(_tool_args(k, (*v, *shlex.split(bass.inisettings[
+        f'{(u := k[:-4])}JavaArg'], posix=os_name != 'nt')), uid=u,
+        display_launcher=_is_oblivion) for k, v in oblivion_java_tools.items())
+    all_links.extend(_tool_args(*tool, display_launcher=_is_skyrim,
+        uid=tool[0][:-4]) for tool in skyrim_tools.items())
+    # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        all_links.append(App_xEdit((bass.tooldirs[f'{xe_name}Path'],
-             '-%s -edit' % xe_name[:-4]), # chop off edit
-            _png_list('tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
-            uid=xe_name))
-    all_links.append(  #TesVGecko
-        app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
-                           _png_list('tools/tesvgecko%s.png'),
-                           _(u"Launch TesVGecko"), uid=u'TesVGecko'))
-    all_links.append(  #Tes4Trans
-        App_xEdit((bass.tooldirs['Tes4TransPath'], '-TES4 -translate'),
-            _png_list('tools/tes4trans%s.png'), _('Launch TES4Trans'),
-            uid='TES4Trans'))
+        args = (f'{xe_name}.exe', _('Launch %s') % xe_name, {
+            'root_dirs': 'app'}, f'-{xe_name[:-4]} -edit')
+        all_links.append(_tool_args(f'{xe_name}Path', args, clazz=AppXEdit,
+            uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name))
+        if xe_name == 'TES4Edit': # set the paths for TES4Trans/TES4View
+            tes4_edit_dir= all_links[-1].exePath.head
+    # not specified in the ini - we bypass app_button_factory - avoid!
+    all_links.append(AppXEdit(tes4_edit_dir.join('TES4View.exe'),
+        _png_list(_j('tools', f'{"TES4ViewPath".lower()}%s.png')),
+        _('Launch TES4View'), 'TES4View', cli_args=('-TES4', '-view'),
+        display_launcher=_is_oblivion))
+    all_links.append(AppXEdit(tes4_edit_dir.join('TES4Trans.exe'),
+        _png_list(_j('tools', f'{"TES4TransPath".lower()}%s.png')),
+        _('Launch TES4Trans'), 'TES4Trans', cli_args=('-TES4', '-translate'),
+        display_launcher=_is_oblivion))
     all_links.append(  #Tes4LODGen
-        App_xEdit((bass.tooldirs['Tes4LodGenPath'], '-TES4 -lodgen'),
-            _png_list('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
-            uid='TES4LODGen'))
-    if bush.game.boss_game_name:
-        all_links.append( #BOSS
-            App_BOSS(bass.tooldirs['boss'], _png_list('tools/boss%s.png'),
-                _('Launch BOSS'), uid='BOSS'))
-    if bush.game.loot_game_name:
-        all_links.append( #LOOT
-            App_LOOT(bass.tooldirs['LOOT'], _svg_list('tools/loot.svg'),
-                _('Launch LOOT'), uid='LOOT'))
-    if bass.inisettings[u'ShowModelingToolLaunchers']:
-        from .constants import modeling_tools_buttons
-        for mb in modeling_tools_buttons:
-            all_links.append(Tooldir_Button(*mb))
-        all_links.append( #Softimage Mod Tool
-            app_button_factory((bass.tooldirs[u'SoftimageModTool'], u'-mod'),
-                               _png_list('tools/softimagemodtool%s.png'),
-                               _(u"Launch Softimage Mod Tool"),
-                               uid=u'SoftimageModTool'))
-    if bass.inisettings[u'ShowModelingToolLaunchers'] \
-            or bass.inisettings[u'ShowTextureToolLaunchers']:
-        all_links.append( #Nifskope
-            Tooldir_Button(u'NifskopePath', _png_list('tools/nifskope%s.png'),
-                _(u'Launch Nifskope')))
-    if bass.inisettings[u'ShowTextureToolLaunchers']:
-        from .constants import texture_tool_buttons
-        for tt in texture_tool_buttons:
-            all_links.append(Tooldir_Button(*tt))
-    if bass.inisettings[u'ShowAudioToolLaunchers']:
-        from .constants import audio_tools
-        for at in audio_tools:
-            all_links.append(Tooldir_Button(*at))
-    from .constants import misc_tools
-    for mt in misc_tools: all_links.append(Tooldir_Button(*mt))
+        _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
+            {'root_dirs': 'app'}, '-TES4 -lodgen'), clazz=AppXEdit,
+            uid='TES4LODGen', display_launcher=_is_oblivion))
+    all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
+        for tool, cls, dipl in zip(loot_bosh.items(), (AppLOOT, AppBOSS), (
+            bush.game.loot_game_name, bush.game.boss_game_name)))
+    show_model = bass.inisettings['ShowModelingToolLaunchers']
+    all_links.extend(_tool_args(*mt, display_launcher=show_model) for mt in
+                     modeling_tools_buttons.items())
+    show_texture = bass.inisettings['ShowTextureToolLaunchers']
+    all_links.append(_tool_args(*nifskope, # Nifskope
+                                display_launcher=show_model or show_texture))
+    all_links.extend(_tool_args(*tt, display_launcher=show_texture) for tt in
+                     texture_tool_buttons.items())
+    all_links.extend(_tool_args(*at, display_launcher=bass.inisettings[
+        'ShowAudioToolLaunchers']) for at in audio_tools.items())
+    all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Apps
-    dirApps = bass.dirs[u'mopy'].join(u'Apps')
-    badIcons = [images['error_cross.16'].get_bitmap()] * 3
-    for pth, img_path, shortcut_descr in init_app_links(dirApps):
+    badIcons = [get_image('error_cross.16')] * 3
+    for pth, img_path, shortcut_descr in init_app_links(
+            bass.dirs['mopy'].join('Apps')):
         if img_path is None:
             imgs = badIcons # use the 'x' icon
         else:
-            imgs = [ImageWrapper(img_path, ImageWrapper.img_types['.ico'], x)
-                    for x in (16, 24, 32)]
-        all_links.append(app_button_factory(
-            (pth, ()), imgs, shortcut_descr, canHide=False))
+            imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
+                    zip((16, 24, 32), img_path)]
+        #target.stail would keep the id on renaming the .lnk but this is unique
+        app_key = pth.stail.lower()
+        all_links.append(LnkButton(pth, imgs, shortcut_descr, app_key,
+                                   canHide=False))
     #--Final couple
-    all_links.append(App_DocBrowser(uid='DocBrowser'))
-    all_links.append(App_PluginChecker(uid='ModChecker'))
-    all_links.append(App_Settings(uid='Settings', canHide=False))
-    all_links.append(App_Help(uid='Help', canHide=False))
-    if bass.inisettings['ShowDevTools']:
-        all_links.append(App_Restart(uid='Restart'))
+    all_links.append(DocBrowserButton('DocBrowser'))
+    all_links.append(PluginCheckerButton('ModChecker'))
+    all_links.append(SettingsButton('Settings', canHide=False))
+    all_links.append(HelpButton('Help', canHide=False))
+    all_links.append(RestartButton('Restart'))
     BashStatusBar.all_sb_links = {li.uid: li for li in all_links}
 
 #------------------------------------------------------------------------------
 def InitMasterLinks():
     """Initialize master list menus."""
     #--MasterList: Column Links
-    MasterList.column_links.append(SortByMenu(
+    MasterList.column_links.append_link(SortByMenu(
         sort_options=[Mods_MastersFirst(), Mods_ActiveFirst()]))
-    MasterList.column_links.append(ColumnsMenu())
-    MasterList.column_links.append(SeparatorLink())
-    MasterList.column_links.append(Master_AllowEdit())
-    MasterList.column_links.append(Master_ClearRenames())
+    MasterList.column_links.append_link(ColumnsMenu())
+    MasterList.column_links.append_link(SeparatorLink())
+    MasterList.column_links.append_link(Master_AllowEdit())
+    MasterList.column_links.append_link(Master_ClearRenames())
     #--MasterList: Item Links
-    MasterList.context_links.append(Master_ChangeTo())
-    MasterList.context_links.append(Master_Disable())
-    MasterList.context_links.append(SeparatorLink())
-    MasterList.context_links.append(Master_JumpTo())
+    MasterList.context_links.append_link(Master_ChangeTo())
+    MasterList.context_links.append_link(Master_Disable())
+    MasterList.context_links.append_link(SeparatorLink())
+    MasterList.context_links.append_link(Master_JumpTo())
 
 #------------------------------------------------------------------------------
 def InitInstallerLinks():
     """Initialize Installers tab menus."""
     #--Column links
     # Sorting and Columns
-    InstallersList.column_links.append(SortByMenu(
+    InstallersList.column_links.append_link(SortByMenu(
         sort_options=[Installers_InstalledFirst(), Installers_SimpleFirst(),
                       Installers_ProjectsFirst()]))
-    InstallersList.column_links.append(ColumnsMenu())
-    InstallersList.column_links.append(SeparatorLink())
+    InstallersList.column_links.append_link(ColumnsMenu())
+    InstallersList.column_links.append_link(SeparatorLink())
     if True: #--Files
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(_('Unhides hidden installers.')))
-        files_menu.links.append(SeparatorLink())
-        files_menu.links.append(Installers_CreateNewProject())
-        files_menu.links.append(Installers_AddMarker())
-        InstallersList.column_links.append(files_menu)
-        InstallersList.column_links.append(SeparatorLink())
+        files_menu.links.append_link(UIList_OpenStore())
+        files_menu.links.append_link(
+            Files_Unhide(_('Unhides hidden installers.')))
+        files_menu.links.append_link(SeparatorLink())
+        files_menu.links.append_link(Installers_CreateNewProject())
+        files_menu.links.append_link(Installers_AddMarker())
+        InstallersList.column_links.append_link(files_menu)
+        InstallersList.column_links.append_link(SeparatorLink())
     if True: #--Data
         data_menu = MenuLink(_('Data..'))
-        data_menu.links.append(Installers_MonitorExternalInstallation())
-        data_menu.links.append(Installers_CleanData())
-        data_menu.links.append(SeparatorLink())
-        data_menu.links.append(Installers_RefreshData())
-        data_menu.links.append(Installers_FullRefresh())
-        InstallersList.column_links.append(data_menu)
+        data_menu.links.append_link(Installers_MonitorExternalInstallation())
+        data_menu.links.append_link(Installers_CleanData())
+        data_menu.links.append_link(SeparatorLink())
+        data_menu.links.append_link(Installers_RefreshData())
+        data_menu.links.append_link(Installers_FullRefresh())
+        InstallersList.column_links.append_link(data_menu)
     if True: #--Packages
         packages_menu = MenuLink(_('Packages..'))
-        packages_menu.links.append(Installers_AnnealAll())
-        packages_menu.links.append(Installers_UninstallAllPackages())
-        packages_menu.links.append(Installers_ApplyEmbeddedBCFs())
-        packages_menu.links.append(SeparatorLink())
-        packages_menu.links.append(Installers_ListPackages())
-        packages_menu.links.append(Installers_WizardOverlay())
-        packages_menu.links.append(SeparatorLink())
-        packages_menu.links.append(Installers_ExportOrder())
-        packages_menu.links.append(Installers_ImportOrder())
-        InstallersList.column_links.append(packages_menu)
-        InstallersList.column_links.append(SeparatorLink())
-    InstallersList.column_links.append(Installers_Enabled())
-    InstallersList.column_links.append(Installers_AvoidOnStart())
-    InstallersList.column_links.append(Installers_ValidateFomod())
+        packages_menu.links.append_link(Installers_AnnealAll())
+        packages_menu.links.append_link(Installers_UninstallAllPackages())
+        packages_menu.links.append_link(Installers_ApplyEmbeddedBCFs())
+        packages_menu.links.append_link(SeparatorLink())
+        packages_menu.links.append_link(Installers_ListPackages())
+        packages_menu.links.append_link(Installers_WizardOverlay())
+        packages_menu.links.append_link(SeparatorLink())
+        packages_menu.links.append_link(Installers_ExportOrder())
+        packages_menu.links.append_link(Installers_ImportOrder())
+        InstallersList.column_links.append_link(packages_menu)
+        InstallersList.column_links.append_link(SeparatorLink())
+    InstallersList.column_links.append_link(Installers_Enabled())
+    InstallersList.column_links.append_link(Installers_AvoidOnStart())
+    InstallersList.column_links.append_link(Installers_ValidateFomod())
     if True: #--Installation Settings
         inst_settings_menu = MenuLink(_('Installation Settings..'))
-        inst_settings_menu.links.append(Installers_AutoAnneal())
-        inst_settings_menu.links.append(Installers_AutoWizard())
-        inst_settings_menu.links.append(Installers_AutoRefreshProjects())
-        inst_settings_menu.links.append(Installers_IgnoreFomod())
-        inst_settings_menu.links.append(SeparatorLink())
-        inst_settings_menu.links.append(Installers_BsaRedirection())
-        inst_settings_menu.links.append(Installers_RemoveEmptyDirs())
-        InstallersList.column_links.append(inst_settings_menu)
+        inst_settings_menu.links.append_link(Installers_AutoAnneal())
+        inst_settings_menu.links.append_link(Installers_AutoWizard())
+        inst_settings_menu.links.append_link(Installers_AutoRefreshProjects())
+        inst_settings_menu.links.append_link(Installers_IgnoreFomod())
+        inst_settings_menu.links.append_link(SeparatorLink())
+        inst_settings_menu.links.append_link(Installers_BsaRedirection())
+        inst_settings_menu.links.append_link(Installers_RemoveEmptyDirs())
+        InstallersList.column_links.append_link(inst_settings_menu)
     if True: #--Conflict Settings
         cflt_settings_menu = MenuLink(_('Conflict Settings..'))
-        cflt_settings_menu.links.append(Installers_ShowInactiveConflicts())
-        cflt_settings_menu.links.append(Installers_ShowLowerConflicts())
-        cflt_settings_menu.links.append(Installers_ShowActiveBSAConflicts())
-        InstallersList.column_links.append(cflt_settings_menu)
-    InstallersList.column_links.append(SeparatorLink())
-    InstallersList.column_links.append(Installers_SkipVanillaContent())
-    InstallersList.column_links.append(Installers_GlobalSkips())
-    InstallersList.column_links.append(Installers_GlobalRedirects())
-    InstallersList.column_links.append(SeparatorLink())
-    InstallersList.column_links.append(Misc_SaveData())
-    InstallersList.column_links.append(Misc_SettingsDialog())
+        cflt_settings_menu.links.append_link(
+            Installers_ShowInactiveConflicts())
+        cflt_settings_menu.links.append_link(Installers_ShowLowerConflicts())
+        cflt_settings_menu.links.append_link(
+            Installers_ShowActiveBSAConflicts())
+        InstallersList.column_links.append_link(cflt_settings_menu)
+    InstallersList.column_links.append_link(SeparatorLink())
+    InstallersList.column_links.append_link(Installers_SkipVanillaContent())
+    InstallersList.column_links.append_link(Installers_GlobalSkips())
+    InstallersList.column_links.append_link(Installers_GlobalRedirects())
+    InstallersList.column_links.append_link(SeparatorLink())
+    InstallersList.column_links.append_link(Misc_SaveData())
+    InstallersList.column_links.append_link(Misc_SettingsDialog())
     #--Item links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(Installer_Open())
-        file_menu.links.append(UIList_Rename())
-        file_menu.links.append(Installer_Duplicate())
-        file_menu.links.append(Installer_Hide())
-        file_menu.links.append(UIList_Delete())
-        InstallersList.context_links.append(file_menu)
+        file_menu.links.append_link(Installer_Open())
+        file_menu.links.append_link(UIList_Rename())
+        file_menu.links.append_link(Installer_Duplicate())
+        file_menu.links.append_link(Installer_Hide())
+        file_menu.links.append_link(UIList_Delete())
+        InstallersList.context_links.append_link(file_menu)
     if True: #--Open At...
         openAtMenu = MenuLink(_('Open At..'), oneDatumOnly=True)
-        openAtMenu.links.append(Installer_OpenSearch())
-        openAtMenu.links.append(Installer_OpenNexus())
-        openAtMenu.links.append(Installer_OpenTESA())
-        InstallersList.context_links.append(openAtMenu)
+        openAtMenu.links.append_link(Installer_OpenSearch())
+        openAtMenu.links.append_link(Installer_OpenNexus())
+        openAtMenu.links.append_link(Installer_OpenTESA())
+        InstallersList.context_links.append_link(openAtMenu)
     #--Install, uninstall, etc.
-    InstallersList.context_links.append(SeparatorLink())
-    InstallersList.context_links.append(Installer_OpenReadme())
-    InstallersList.context_links.append(Installer_Anneal())
-    InstallersList.context_links.append(
+    InstallersList.context_links.append_link(SeparatorLink())
+    InstallersList.context_links.append_link(Installer_OpenReadme())
+    InstallersList.context_links.append_link(Installer_Anneal())
+    InstallersList.context_links.append_link(
         Installer_Refresh(calculate_projects_crc=False))
-    InstallersList.context_links.append(Installer_Move())
-    InstallersList.context_links.append(Installer_SyncFromData())
-    InstallersList.context_links.append(SeparatorLink())
-    InstallersList.context_links.append(Installer_InstallSmart())
+    InstallersList.context_links.append_link(Installer_Move())
+    InstallersList.context_links.append_link(Installer_SyncFromData())
+    InstallersList.context_links.append_link(SeparatorLink())
+    InstallersList.context_links.append_link(Installer_InstallSmart())
     if True: #--Advanced Installation
         installMenu = MenuLink(_('Advanced Installation..'))
-        installMenu.links.append(Installer_Install())
-        installMenu.links.append(Installer_Install('MISSING'))
-        installMenu.links.append(Installer_Install('LAST'))
-        installMenu.links.append(SeparatorLink())
+        installMenu.links.append_link(Installer_Install())
+        installMenu.links.append_link(Installer_Install('MISSING'))
+        installMenu.links.append_link(Installer_Install('LAST'))
+        installMenu.links.append_link(SeparatorLink())
         if True: #--FOMOD Installer
             fomod_menu = MenuLink(_('FOMOD Installer..'))
-            fomod_menu.links.append(Installer_RunFomod())
-            fomod_menu.links.append(Installer_CaptureFomodOutput())
-            fomod_menu.links.append(SeparatorLink())
-            fomod_menu.links.append(Installer_EditFomod())
-            installMenu.links.append(fomod_menu)
+            fomod_menu.links.append_link(Installer_RunFomod())
+            fomod_menu.links.append_link(Installer_CaptureFomodOutput())
+            fomod_menu.links.append_link(SeparatorLink())
+            fomod_menu.links.append_link(Installer_EditFomod())
+            installMenu.links.append_link(fomod_menu)
         if True: #--Wizard Installer
             wizardMenu = MenuLink(_('Wizard Installer..'))
-            wizardMenu.links.append(Installer_Wizard(auto_wizard=False))
-            wizardMenu.links.append(Installer_Wizard(auto_wizard=True))
-            wizardMenu.links.append(SeparatorLink())
-            wizardMenu.links.append(Installer_EditWizard())
-            installMenu.links.append(wizardMenu)
-        InstallersList.context_links.append(installMenu)
-    InstallersList.context_links.append(Installer_Uninstall())
-    InstallersList.context_links.append(SeparatorLink())
+            wizardMenu.links.append_link(Installer_Wizard(auto_wizard=False))
+            wizardMenu.links.append_link(Installer_Wizard(auto_wizard=True))
+            wizardMenu.links.append_link(SeparatorLink())
+            wizardMenu.links.append_link(Installer_EditWizard())
+            installMenu.links.append_link(wizardMenu)
+        InstallersList.context_links.append_link(installMenu)
+    InstallersList.context_links.append_link(Installer_Uninstall())
+    InstallersList.context_links.append_link(SeparatorLink())
     if True: #--Package - always visible
         package_menu = MenuLink(_('Package..'))
-        package_menu.links.append(Installer_Refresh())
+        package_menu.links.append_link(Installer_Refresh())
         if bush.game.has_achlist:
-            package_menu.links.append(Installer_ExportAchlist())
-        package_menu.links.append(Installer_ListStructure())
-        package_menu.links.append(Installer_CopyConflicts())
-        package_menu.links.append(SeparatorLink())
-        package_menu.links.append(Installer_HasExtraData())
-        package_menu.links.append(Installer_OverrideSkips())
-        package_menu.links.append(Installer_SkipVoices())
-        InstallersList.context_links.append(package_menu)
+            package_menu.links.append_link(Installer_ExportAchlist())
+        package_menu.links.append_link(Installer_ListStructure())
+        package_menu.links.append_link(Installer_CopyConflicts())
+        package_menu.links.append_link(SeparatorLink())
+        package_menu.links.append_link(Installer_HasExtraData())
+        package_menu.links.append_link(Installer_OverrideSkips())
+        package_menu.links.append_link(Installer_SkipVoices())
+        InstallersList.context_links.append_link(package_menu)
     if True: #--Archive - only visible for archives
         archive_menu = Installer_ArchiveMenu()
-        archive_menu.links.append(InstallerArchive_Unpack())
+        archive_menu.links.append_link(InstallerArchive_Unpack())
         if True: #--BAIN Conversions
             conversions_menu = MenuLink(_('BAIN Conversions..'))
-            conversions_menu.links.append(InstallerConverter_Create())
-            conversions_menu.links.append(InstallerConverter_ConvertMenu())
+            conversions_menu.links.append_link(InstallerConverter_Create())
+            conversions_menu.links.append_link(
+                InstallerConverter_ConvertMenu())
             archive_menu.append(conversions_menu)
-        InstallersList.context_links.append(archive_menu)
+        InstallersList.context_links.append_link(archive_menu)
     if True: #--Project - only visible for projects
         project_menu = Installer_ProjectMenu()
-        project_menu.links.append(InstallerProject_Pack())
-        project_menu.links.append(InstallerProject_ReleasePack())
-        project_menu.links.append(Installer_SkipRefresh())
-        project_menu.links.append(InstallerProject_OmodConfig())
-        InstallersList.context_links.append(project_menu)
+        project_menu.links.append_link(InstallerProject_Pack())
+        project_menu.links.append_link(InstallerProject_ReleasePack())
+        project_menu.links.append_link(Installer_SkipRefresh())
+        project_menu.links.append_link(InstallerProject_OmodConfig())
+        InstallersList.context_links.append_link(project_menu)
     # Plugin Filter: Main Menu
-    InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
-    InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())
-    InstallersPanel.espmMenu.append(Installer_Espm_List())
-    InstallersPanel.espmMenu.append(SeparatorLink())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_SelectAll())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_DeselectAll())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_List())
+    InstallersPanel.espmMenu.append_link(SeparatorLink())
     # Plugin Filter: Item Menu
-    InstallersPanel.espmMenu.append(Installer_Espm_Rename())
-    InstallersPanel.espmMenu.append(Installer_Espm_Reset())
-    InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
-    InstallersPanel.espmMenu.append(SeparatorLink())
-    InstallersPanel.espmMenu.append(Installer_Espm_JumpToMod())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_Rename())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_Reset())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_ResetAll())
+    InstallersPanel.espmMenu.append_link(SeparatorLink())
+    InstallersPanel.espmMenu.append_link(Installer_Espm_JumpToMod())
     # Sub-Packages: Main Menu
-    InstallersPanel.subsMenu.append(Installer_Subs_SelectAll())
-    InstallersPanel.subsMenu.append(Installer_Subs_DeselectAll())
-    InstallersPanel.subsMenu.append(Installer_Subs_ToggleSelection())
-    InstallersPanel.subsMenu.append(SeparatorLink())
-    InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
+    InstallersPanel.subsMenu.append_link(Installer_Subs_SelectAll())
+    InstallersPanel.subsMenu.append_link(Installer_Subs_DeselectAll())
+    InstallersPanel.subsMenu.append_link(Installer_Subs_ToggleSelection())
+    InstallersPanel.subsMenu.append_link(SeparatorLink())
+    InstallersPanel.subsMenu.append_link(Installer_Subs_ListSubPackages())
     # InstallersList: Global Links
     # File Menu
     file_menu = InstallersList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(_('Unhides hidden installers.')))
-    file_menu.append(SeparatorLink())
-    file_menu.append(Installers_CreateNewProject())
-    file_menu.append(Installers_AddMarker())
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(Files_Unhide(_('Unhides hidden installers.')))
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Installers_CreateNewProject())
+    file_menu.append_link(Installers_AddMarker())
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # Edit Menu
     edit_menu = InstallersList.global_links[_('Edit')]
-    edit_menu.append(Installers_MonitorExternalInstallation())
-    edit_menu.append(Installers_CleanData())
-    edit_menu.append(SeparatorLink())
-    edit_menu.append(Installers_RefreshData())
-    edit_menu.append(Installers_FullRefresh())
-    edit_menu.append(SeparatorLink())
-    edit_menu.append(Installers_AnnealAll())
-    edit_menu.append(Installers_UninstallAllPackages())
-    edit_menu.append(Installers_ApplyEmbeddedBCFs())
-    edit_menu.append(SeparatorLink())
-    edit_menu.append(Installers_ExportOrder())
-    edit_menu.append(Installers_ImportOrder())
+    edit_menu.append_link(Installers_MonitorExternalInstallation())
+    edit_menu.append_link(Installers_CleanData())
+    edit_menu.append_link(SeparatorLink())
+    edit_menu.append_link(Installers_RefreshData())
+    edit_menu.append_link(Installers_FullRefresh())
+    edit_menu.append_link(SeparatorLink())
+    edit_menu.append_link(Installers_AnnealAll())
+    edit_menu.append_link(Installers_UninstallAllPackages())
+    edit_menu.append_link(Installers_ApplyEmbeddedBCFs())
+    edit_menu.append_link(SeparatorLink())
+    edit_menu.append_link(Installers_ExportOrder())
+    edit_menu.append_link(Installers_ImportOrder())
     # View Menu
     view_menu = InstallersList.global_links[_('View')]
-    view_menu.append(SortByMenu(
+    view_menu.append_link(SortByMenu(
         sort_options=[Installers_InstalledFirst(), Installers_SimpleFirst(),
                       Installers_ProjectsFirst()]))
-    view_menu.append(ColumnsMenu())
-    view_menu.append(SeparatorLink())
-    view_menu.append(Installers_ListPackages())
-    view_menu.append(Installers_WizardOverlay())
+    view_menu.append_link(ColumnsMenu())
+    view_menu.append_link(SeparatorLink())
+    view_menu.append_link(Installers_ListPackages())
+    view_menu.append_link(Installers_WizardOverlay())
     # Settings Menu
     settings_menu = InstallersList.global_links[_('Settings')]
-    settings_menu.append(Installers_Enabled())
-    settings_menu.append(Installers_AvoidOnStart())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Installers_AutoAnneal())
-    settings_menu.append(Installers_AutoWizard())
-    settings_menu.append(Installers_AutoRefreshProjects())
-    settings_menu.append(Installers_IgnoreFomod())
-    settings_menu.append(Installers_ValidateFomod())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Installers_ShowActiveBSAConflicts())
-    settings_menu.append(Installers_ShowInactiveConflicts())
-    settings_menu.append(Installers_ShowLowerConflicts())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Installers_BsaRedirection())
-    settings_menu.append(Installers_RemoveEmptyDirs())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Installers_SkipVanillaContent())
-    settings_menu.append(Installers_GlobalSkips())
-    settings_menu.append(Installers_GlobalRedirects())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Misc_SettingsDialog())
+    settings_menu.append_link(Installers_Enabled())
+    settings_menu.append_link(Installers_AvoidOnStart())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Installers_AutoAnneal())
+    settings_menu.append_link(Installers_AutoWizard())
+    settings_menu.append_link(Installers_AutoRefreshProjects())
+    settings_menu.append_link(Installers_IgnoreFomod())
+    settings_menu.append_link(Installers_ValidateFomod())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Installers_ShowActiveBSAConflicts())
+    settings_menu.append_link(Installers_ShowInactiveConflicts())
+    settings_menu.append_link(Installers_ShowLowerConflicts())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Installers_BsaRedirection())
+    settings_menu.append_link(Installers_RemoveEmptyDirs())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Installers_SkipVanillaContent())
+    settings_menu.append_link(Installers_GlobalSkips())
+    settings_menu.append_link(Installers_GlobalRedirects())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
     # Sorting and Columns
-    INIList.column_links.append(SortByMenu(
+    INIList.column_links.append_link(SortByMenu(
         sort_options=[INI_ValidTweaksFirst()]))
-    INIList.column_links.append(ColumnsMenu())
-    INIList.column_links.append(SeparatorLink())
+    INIList.column_links.append_link(ColumnsMenu())
+    INIList.column_links.append_link(SeparatorLink())
     if True: #--Files
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        INIList.column_links.append(files_menu)
-    INIList.column_links.append(SeparatorLink())
-    INIList.column_links.append(INI_AllowNewLines())
-    INIList.column_links.append(INI_ListINIs())
-    INIList.column_links.append(SeparatorLink())
-    INIList.column_links.append(Misc_SaveData())
-    INIList.column_links.append(Misc_SettingsDialog())
+        files_menu.links.append_link(UIList_OpenStore())
+        INIList.column_links.append_link(files_menu)
+    INIList.column_links.append_link(SeparatorLink())
+    INIList.column_links.append_link(INI_AllowNewLines())
+    INIList.column_links.append_link(INI_ListINIs())
+    INIList.column_links.append_link(SeparatorLink())
+    INIList.column_links.append_link(Misc_SaveData())
+    INIList.column_links.append_link(Misc_SettingsDialog())
     #--Item menu
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(INI_Open())
-        file_menu.links.append(File_Duplicate())
-        file_menu.links.append(UIList_Delete())
-        INIList.context_links.append(file_menu)
-    INIList.context_links.append(SeparatorLink())
-    INIList.context_links.append(INI_Apply())
-    INIList.context_links.append(INI_CreateNew())
-    INIList.context_links.append(INI_ListErrors())
-    INIList.context_links.append(SeparatorLink())
-    INIList.context_links.append(File_JumpToSource())
+        file_menu.links.append_link(INI_Open())
+        file_menu.links.append_link(File_Duplicate())
+        file_menu.links.append_link(UIList_Delete())
+        INIList.context_links.append_link(file_menu)
+    INIList.context_links.append_link(SeparatorLink())
+    INIList.context_links.append_link(INI_Apply())
+    INIList.context_links.append_link(INI_CreateNew())
+    INIList.context_links.append_link(INI_ListErrors())
+    INIList.context_links.append_link(SeparatorLink())
+    INIList.context_links.append_link(File_JumpToSource())
     # INIList: Global Links
     # File Menu
     file_menu = INIList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # View Menu
     view_menu = INIList.global_links[_('View')]
-    view_menu.append(SortByMenu(sort_options=[INI_ValidTweaksFirst()]))
-    view_menu.append(ColumnsMenu())
-    view_menu.append(SeparatorLink())
-    view_menu.append(INI_ListINIs())
+    view_menu.append_link(SortByMenu(sort_options=[INI_ValidTweaksFirst()]))
+    view_menu.append_link(ColumnsMenu())
+    view_menu.append_link(SeparatorLink())
+    view_menu.append_link(INI_ListINIs())
     # Settings Menu
     settings_menu = INIList.global_links[_('Settings')]
-    settings_menu.append(INI_AllowNewLines())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Misc_SettingsDialog())
+    settings_menu.append_link(INI_AllowNewLines())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
     # Sorting and Columns
-    ModList.column_links.append(SortByMenu(
+    ModList.column_links.append_link(SortByMenu(
         sort_options=[Mods_MastersFirst(), Mods_ActiveFirst()]))
-    ModList.column_links.append(ColumnsMenu())
-    ModList.column_links.append(SeparatorLink())
+    ModList.column_links.append_link(ColumnsMenu())
+    ModList.column_links.append_link(SeparatorLink())
     if True: #--Files
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(_('Unhides hidden plugins.')))
+        files_menu.links.append_link(UIList_OpenStore())
+        files_menu.links.append_link(
+            Files_Unhide(_('Unhides hidden plugins.')))
         if bush.game.Esp.canBash:
-            files_menu.links.append(SeparatorLink())
-            files_menu.links.append(Mods_CreateBlank())
-            files_menu.links.append(Mods_CreateBlankBashedPatch())
-        ModList.column_links.append(files_menu)
-    ModList.column_links.append(SeparatorLink())
-    ModList.column_links.append(Mods_ActivePlugins())
+            files_menu.links.append_link(SeparatorLink())
+            files_menu.links.append_link(Mods_CreateBlank())
+            files_menu.links.append_link(Mods_CreateBlankBashedPatch())
+        ModList.column_links.append_link(files_menu)
+    ModList.column_links.append_link(SeparatorLink())
+    ModList.column_links.append_link(Mods_ActivePlugins())
     if True: #--Load Order
         lo_menu = MenuLink(_('Load Order..'))
-        lo_menu.links.append(Mods_LOUndo())
-        lo_menu.links.append(Mods_LORedo())
-        lo_menu.links.append(SeparatorLink())
-        lo_menu.links.append(Mods_LockActivePlugins())
-        lo_menu.links.append(SeparatorLink())
-        lo_menu.links.append(Mods_OpenLOFileMenu())
-        ModList.column_links.append(lo_menu)
-        ModList.column_links.append(SeparatorLink())
-    ModList.column_links.append(Mods_LockLoadOrder())
-    ModList.column_links.append(Mods_AutoGhost())
+        lo_menu.links.append_link(Mods_LOUndo())
+        lo_menu.links.append_link(Mods_LORedo())
+        lo_menu.links.append_link(SeparatorLink())
+        lo_menu.links.append_link(Mods_LockActivePlugins())
+        lo_menu.links.append_link(SeparatorLink())
+        lo_menu.links.append_link(Mods_OpenLOFileMenu())
+        ModList.column_links.append_link(lo_menu)
+        ModList.column_links.append_link(SeparatorLink())
+    ModList.column_links.append_link(Mods_LockLoadOrder())
+    ModList.column_links.append_link(Mods_AutoGhost())
     if True: #--Plugins
         plugins_menu = MenuLink(_('Plugins..'))
         if bush.game.has_esl:
-            plugins_menu.links.append(Mods_AutoESLFlagBP())
-            plugins_menu.links.append(SeparatorLink())
-        plugins_menu.links.append(Mods_ScanDirty())
-        plugins_menu.links.append(Mods_IgnoreDirtyVanillaFiles())
-        plugins_menu.links.append(SeparatorLink())
-        plugins_menu.links.append(Mods_CrcRefresh())
-        plugins_menu.links.append(Mods_ListMods())
-        plugins_menu.links.append(Mods_OblivionEsmMenu())
-        ModList.column_links.append(plugins_menu)
+            plugins_menu.links.append_link(Mods_AutoESLFlagBP())
+            plugins_menu.links.append_link(SeparatorLink())
+        plugins_menu.links.append_link(Mods_ScanDirty())
+        plugins_menu.links.append_link(Mods_IgnoreDirtyVanillaFiles())
+        plugins_menu.links.append_link(SeparatorLink())
+        plugins_menu.links.append_link(Mods_CrcRefresh())
+        plugins_menu.links.append_link(Mods_ListMods())
+        plugins_menu.links.append_link(Mods_OblivionEsmMenu())
+        ModList.column_links.append_link(plugins_menu)
     if bush.game.allTags: #--Bash Tags
         bash_tags_menu = MenuLink(_('Bash Tags..'))
-        bash_tags_menu.links.append(Mods_ListBashTags())
-        bash_tags_menu.links.append(Mods_ExportBashTags())
-        bash_tags_menu.links.append(Mods_ImportBashTags())
-        bash_tags_menu.links.append(Mods_ClearManualBashTags())
-        ModList.column_links.append(bash_tags_menu)
-        ModList.column_links.append(SeparatorLink())
-    ModList.column_links.append(Mods_PluginChecker())
-    ModList.column_links.append(Mods_CleanDummyMasters())
-    ModList.column_links.append(SeparatorLink())
-    ModList.column_links.append(Misc_SaveData())
-    ModList.column_links.append(Misc_SettingsDialog())
+        bash_tags_menu.links.append_link(Mods_ListBashTags())
+        bash_tags_menu.links.append_link(Mods_ExportBashTags())
+        bash_tags_menu.links.append_link(Mods_ImportBashTags())
+        bash_tags_menu.links.append_link(Mods_ClearManualBashTags())
+        ModList.column_links.append_link(bash_tags_menu)
+        ModList.column_links.append_link(SeparatorLink())
+    ModList.column_links.append_link(Mods_PluginChecker())
+    ModList.column_links.append_link(Mods_CleanDummyMasters())
+    ModList.column_links.append_link(SeparatorLink())
+    ModList.column_links.append_link(Misc_SaveData())
+    ModList.column_links.append_link(Misc_SettingsDialog())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
         dev_tools_menu = MenuLink('Dev Tools..')
-        dev_tools_menu.links.append(Mod_FullLoad())
-        dev_tools_menu.links.append(Mod_RecalcRecordCounts())
-        dev_tools_menu.links.append(Mod_DumpSubrecords())
-        dev_tools_menu.links.append(Mod_DumpRecordTypeNames())
-        ModList.context_links.append(dev_tools_menu)
+        dev_tools_menu.links.append_link(Mod_FullLoad())
+        dev_tools_menu.links.append_link(Mod_RecalcRecordCounts())
+        dev_tools_menu.links.append_link(Mod_DumpSubrecords())
+        dev_tools_menu.links.append_link(Mod_DumpRecordTypeNames())
+        ModList.context_links.append_link(dev_tools_menu)
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(Mod_Duplicate())
-        file_menu.links.append(UIList_Hide())
-        file_menu.links.append(Mod_Redate())
-        file_menu.links.append(UIList_Delete())
-        file_menu.links.append(SeparatorLink())
-        file_menu.links.append(File_Backup())
-        file_menu.links.append(File_RevertToBackup())
-        file_menu.links.append(SeparatorLink())
-        file_menu.links.append(File_Snapshot())
-        file_menu.links.append(File_RevertToSnapshot())
-        ModList.context_links.append(file_menu)
-    ModList.context_links.append(SeparatorLink())
-    ModList.context_links.append(Mod_Move())
-    ModList.context_links.append(Mod_ShowReadme())
-    ModList.context_links.append(File_JumpToSource())
+        file_menu.links.append_link(Mod_Duplicate())
+        file_menu.links.append_link(UIList_Hide())
+        file_menu.links.append_link(Mod_Redate())
+        file_menu.links.append_link(UIList_Delete())
+        file_menu.links.append_link(SeparatorLink())
+        file_menu.links.append_link(File_Backup())
+        file_menu.links.append_link(File_RevertToBackup())
+        file_menu.links.append_link(SeparatorLink())
+        file_menu.links.append_link(File_Snapshot())
+        file_menu.links.append_link(File_RevertToSnapshot())
+        ModList.context_links.append_link(file_menu)
+    ModList.context_links.append_link(SeparatorLink())
+    ModList.context_links.append_link(Mod_Move())
+    ModList.context_links.append_link(Mod_ShowReadme())
+    ModList.context_links.append_link(File_JumpToSource())
     if True: #--Info
         info_menu = MenuLink(_('Info..'))
         if bush.game.allTags:
-            info_menu.links.append(Mod_ListBashTags())
-        info_menu.links.append(Mod_ListDependent())
-        info_menu.links.append(File_ListMasters())
+            info_menu.links.append_link(Mod_ListBashTags())
+        info_menu.links.append_link(Mod_ListDependent())
+        info_menu.links.append_link(File_ListMasters())
         if bush.game.Esp.canBash:
-            info_menu.links.append(Mod_ListPatchConfig())
-        info_menu.links.append(SeparatorLink())
+            info_menu.links.append_link(Mod_ListPatchConfig())
+        info_menu.links.append_link(SeparatorLink())
         if bush.game.allTags:
-            info_menu.links.append(Mod_CreateLOOTReport())
-        info_menu.links.append(Mod_CopyModInfo())
+            info_menu.links.append_link(Mod_CreateLOOTReport())
+        info_menu.links.append_link(Mod_CopyModInfo())
         if bush.game.Esp.canBash:
-            info_menu.links.append(Mod_Details())
-        ModList.context_links.append(info_menu)
+            info_menu.links.append_link(Mod_Details())
+        ModList.context_links.append_link(info_menu)
     if bush.game.Esp.canBash:
-        ModList.context_links.append(SeparatorLink())
-        ModList.context_links.append(Mod_CheckQualifications())
-        ModList.context_links.append(Mod_RebuildPatch())
-        ModList.context_links.append(SeparatorLink())
-        ModList.context_links.append(Mod_FlipEsm())
+        ModList.context_links.append_link(SeparatorLink())
+        ModList.context_links.append_link(Mod_CheckQualifications())
+        ModList.context_links.append_link(Mod_RebuildPatch())
+        ModList.context_links.append_link(SeparatorLink())
+        ModList.context_links.append_link(Mod_FlipEsm())
         if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append(Mod_FlipEsl())
+            ModList.context_links.append_link(Mod_FlipEsl())
         if MergeabilityCheck.OVERLAY_CHECK in bush.game.mergeability_checks:
-            ModList.context_links.append(Mod_FlipOverlay())
-        ModList.context_links.append(Mod_FlipMasters())
-        ModList.context_links.append(Mod_CreateDummyMasters())
-    ModList.context_links.append(SeparatorLink())
+            ModList.context_links.append_link(Mod_FlipOverlay())
+        ModList.context_links.append_link(Mod_FlipMasters())
+        ModList.context_links.append_link(Mod_CreateDummyMasters())
+    ModList.context_links.append_link(SeparatorLink())
     if True: #--Plugin
         plugin_menu = MenuLink(_('Plugin..'))
         if True: #--Groups
             groupMenu = MenuLink(_('Groups..'))
-            groupMenu.links.append(Mod_Groups())
-            plugin_menu.links.append(groupMenu)
+            groupMenu.links.append_link(Mod_Groups())
+            plugin_menu.links.append_link(groupMenu)
         if True: #--Ratings
             ratingMenu = MenuLink(_('Rating..'))
-            ratingMenu.links.append(Mod_Ratings())
-            plugin_menu.links.append(ratingMenu)
-        plugin_menu.links.append(SeparatorLink())
-        plugin_menu.links.append(Mod_AllowGhosting())
-        plugin_menu.links.append(Mod_GhostUnghost())
-        plugin_menu.links.append(Mod_OrderByName())
+            ratingMenu.links.append_link(Mod_Ratings())
+            plugin_menu.links.append_link(ratingMenu)
+        plugin_menu.links.append_link(SeparatorLink())
+        plugin_menu.links.append_link(Mod_AllowGhosting())
+        plugin_menu.links.append_link(Mod_GhostUnghost())
+        plugin_menu.links.append_link(Mod_OrderByName())
         if bush.game.Esp.canBash:
-            plugin_menu.links.append(SeparatorLink())
-            plugin_menu.links.append(Mod_CopyToMenu())
+            plugin_menu.links.append_link(SeparatorLink())
+            plugin_menu.links.append_link(Mod_CopyToMenu())
             if True: #--Cleaning
                 cleanMenu = MenuLink(_('Cleaning..'))
-                cleanMenu.links.append(Mod_SkipDirtyCheck())
-                cleanMenu.links.append(SeparatorLink())
-                cleanMenu.links.append(Mod_ScanDirty())
-                cleanMenu.links.append(Mod_RemoveWorldOrphans())
+                cleanMenu.links.append_link(Mod_SkipDirtyCheck())
+                cleanMenu.links.append_link(SeparatorLink())
+                cleanMenu.links.append_link(Mod_ScanDirty())
+                cleanMenu.links.append_link(Mod_RemoveWorldOrphans())
                 if _is_oblivion:
-                    cleanMenu.links.append(Mod_FogFixer())
-                plugin_menu.links.append(cleanMenu)
-        ModList.context_links.append(plugin_menu)
+                    cleanMenu.links.append_link(Mod_FogFixer())
+                plugin_menu.links.append_link(cleanMenu)
+        ModList.context_links.append_link(plugin_menu)
     if bush.game.Esp.canBash: #--Advanced
         advanced_menu = MenuLink(_('Advanced..'))
         if True: #--Export
             exportMenu = MenuLink(_('Export..'))
-            exportMenu.links.append(Mod_EditorIds_Export())
-            exportMenu.links.append(Mod_Factions_Export())
-            exportMenu.links.append(Mod_FactionRelations_Export())
+            exportMenu.links.append_link(Mod_EditorIds_Export())
+            exportMenu.links.append_link(Mod_Factions_Export())
+            exportMenu.links.append_link(Mod_FactionRelations_Export())
             if bush.game.fsName in ('Enderal', 'Skyrim'):
-                exportMenu.links.append(Mod_FullNames_Export())
-                exportMenu.links.append(Mod_Prices_Export())
+                exportMenu.links.append_link(Mod_FullNames_Export())
+                exportMenu.links.append_link(Mod_Prices_Export())
             elif bush.game.fsName in ('Fallout3', 'FalloutNV'):
                 # TODO(inf) Commented out lines were only in FNV branch
-                exportMenu.links.append(Mod_FullNames_Export())
-                exportMenu.links.append(Mod_Prices_Export())
-                # exportMenu.links.append(Mod_IngredientDetails_Export())
-                # exportMenu.links.append(Mod_Scripts_Export())
-                # exportMenu.links.append(Mod_SpellRecords_Export())
-                exportMenu.links.append(Mod_Stats_Export())
+                exportMenu.links.append_link(Mod_FullNames_Export())
+                exportMenu.links.append_link(Mod_Prices_Export())
+                # exportMenu.links.append_link(Mod_IngredientDetails_Export())
+                # exportMenu.links.append_link(Mod_Scripts_Export())
+                # exportMenu.links.append_link(Mod_SpellRecords_Export())
+                exportMenu.links.append_link(Mod_Stats_Export())
             elif _is_oblivion:
-                exportMenu.links.append(Mod_IngredientDetails_Export())
-                exportMenu.links.append(Mod_FullNames_Export())
-                exportMenu.links.append(Mod_ActorLevels_Export())
-                exportMenu.links.append(Mod_Prices_Export())
-                exportMenu.links.append(Mod_Scripts_Export())
-                exportMenu.links.append(Mod_SigilStoneDetails_Export())
-                exportMenu.links.append(Mod_SpellRecords_Export())
-                exportMenu.links.append(Mod_Stats_Export())
-            advanced_menu.links.append(exportMenu)
+                exportMenu.links.append_link(Mod_IngredientDetails_Export())
+                exportMenu.links.append_link(Mod_FullNames_Export())
+                exportMenu.links.append_link(Mod_ActorLevels_Export())
+                exportMenu.links.append_link(Mod_Prices_Export())
+                exportMenu.links.append_link(Mod_Scripts_Export())
+                exportMenu.links.append_link(Mod_SigilStoneDetails_Export())
+                exportMenu.links.append_link(Mod_SpellRecords_Export())
+                exportMenu.links.append_link(Mod_Stats_Export())
+            advanced_menu.links.append_link(exportMenu)
         if True: #--Import
             importMenu = MenuLink(_('Import..'))
-            importMenu.links.append(Mod_EditorIds_Import())
-            importMenu.links.append(Mod_Factions_Import())
-            importMenu.links.append(Mod_FactionRelations_Import())
+            importMenu.links.append_link(Mod_EditorIds_Import())
+            importMenu.links.append_link(Mod_Factions_Import())
+            importMenu.links.append_link(Mod_FactionRelations_Import())
             if bush.game.fsName in ('Enderal', 'Skyrim'):
-                importMenu.links.append(Mod_FullNames_Import())
-                importMenu.links.append(Mod_Prices_Import())
+                importMenu.links.append_link(Mod_FullNames_Import())
+                importMenu.links.append_link(Mod_Prices_Import())
             elif bush.game.fsName in ('Fallout3', 'FalloutNV'):
                 # TODO(inf) Commented out lines were only in FNV branch
-                importMenu.links.append(Mod_FullNames_Import())
-                importMenu.links.append(Mod_Prices_Import())
-                # importMenu.links.append(Mod_IngredientDetails_Import())
-                # importMenu.links.append(Mod_Scripts_Import())
-                importMenu.links.append(Mod_Stats_Import())
-                # importMenu.links.append(SeparatorLink())
-                # importMenu.links.append(Mod_Face_Import())
-                # importMenu.links.append(Mod_Fids_Replace())
+                importMenu.links.append_link(Mod_FullNames_Import())
+                importMenu.links.append_link(Mod_Prices_Import())
+                # importMenu.links.append_link(Mod_IngredientDetails_Import())
+                # importMenu.links.append_link(Mod_Scripts_Import())
+                importMenu.links.append_link(Mod_Stats_Import())
+                # importMenu.links.append_link(SeparatorLink())
+                # importMenu.links.append_link(Mod_Face_Import())
+                # importMenu.links.append_link(Mod_Fids_Replace())
             elif _is_oblivion:
-                importMenu.links.append(Mod_IngredientDetails_Import())
-                importMenu.links.append(Mod_FullNames_Import())
-                importMenu.links.append(Mod_ActorLevels_Import())
-                importMenu.links.append(Mod_Prices_Import())
-                importMenu.links.append(Mod_Scripts_Import())
-                importMenu.links.append(Mod_SigilStoneDetails_Import())
-                importMenu.links.append(Mod_SpellRecords_Import())
-                importMenu.links.append(Mod_Stats_Import())
-                importMenu.links.append(SeparatorLink())
-                importMenu.links.append(Mod_Face_Import())
-                importMenu.links.append(Mod_Fids_Replace())
-        advanced_menu.links.append(importMenu)
+                importMenu.links.append_link(Mod_IngredientDetails_Import())
+                importMenu.links.append_link(Mod_FullNames_Import())
+                importMenu.links.append_link(Mod_ActorLevels_Import())
+                importMenu.links.append_link(Mod_Prices_Import())
+                importMenu.links.append_link(Mod_Scripts_Import())
+                importMenu.links.append_link(Mod_SigilStoneDetails_Import())
+                importMenu.links.append_link(Mod_SpellRecords_Import())
+                importMenu.links.append_link(Mod_Stats_Import())
+                importMenu.links.append_link(SeparatorLink())
+                importMenu.links.append_link(Mod_Face_Import())
+                importMenu.links.append_link(Mod_Fids_Replace())
+        advanced_menu.links.append_link(importMenu)
         if _is_oblivion:
-            advanced_menu.links.append(SeparatorLink())
-            advanced_menu.links.append(Mod_DecompileAll())
-            advanced_menu.links.append(Mod_SetVersion())
-        ModList.context_links.append(advanced_menu)
+            advanced_menu.links.append_link(SeparatorLink())
+            advanced_menu.links.append_link(Mod_DecompileAll())
+            advanced_menu.links.append_link(Mod_SetVersion())
+        ModList.context_links.append_link(advanced_menu)
     # ModList: Global Links
     # File Menu
     file_menu = ModList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(_('Unhides hidden plugins.')))
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(Files_Unhide(_('Unhides hidden plugins.')))
     if bush.game.Esp.canBash:
-        file_menu.append(SeparatorLink())
-        file_menu.append(Mods_CreateBlank())
-        file_menu.append(Mods_CreateBlankBashedPatch())
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+        file_menu.append_link(SeparatorLink())
+        file_menu.append_link(Mods_CreateBlank())
+        file_menu.append_link(Mods_CreateBlankBashedPatch())
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # Edit Menu
     edit_menu = ModList.global_links[_('Edit')]
-    edit_menu.append(Mods_ActivePlugins())
+    edit_menu.append_link(Mods_ActivePlugins())
     lo_submenu = MenuLink(_('Load Order..'))
-    lo_submenu.links.append(Mods_LOUndo())
-    lo_submenu.links.append(Mods_LORedo())
-    lo_submenu.links.append(SeparatorLink())
-    lo_submenu.links.append(Mods_OpenLOFileMenu())
-    edit_menu.append(lo_submenu)
-    edit_menu.append(Mods_OblivionEsmMenu())
+    lo_submenu.links.append_link(Mods_LOUndo())
+    lo_submenu.links.append_link(Mods_LORedo())
+    lo_submenu.links.append_link(SeparatorLink())
+    lo_submenu.links.append_link(Mods_OpenLOFileMenu())
+    edit_menu.append_link(lo_submenu)
+    edit_menu.append_link(Mods_OblivionEsmMenu())
     if bush.game.allTags:
-        edit_menu.append(SeparatorLink())
-        edit_menu.append(Mods_ExportBashTags())
-        edit_menu.append(Mods_ImportBashTags())
-        edit_menu.append(Mods_ClearManualBashTags())
-    edit_menu.append(SeparatorLink())
-    edit_menu.append(Mods_CleanDummyMasters())
-    edit_menu.append(Mods_CrcRefresh())
+        edit_menu.append_link(SeparatorLink())
+        edit_menu.append_link(Mods_ExportBashTags())
+        edit_menu.append_link(Mods_ImportBashTags())
+        edit_menu.append_link(Mods_ClearManualBashTags())
+    edit_menu.append_link(SeparatorLink())
+    edit_menu.append_link(Mods_CleanDummyMasters())
+    edit_menu.append_link(Mods_CrcRefresh())
     # View Menu
     view_menu = ModList.global_links[_('View')]
-    view_menu.append(SortByMenu(
+    view_menu.append_link(SortByMenu(
         sort_options=[Mods_MastersFirst(), Mods_ActiveFirst()]))
-    view_menu.append(ColumnsMenu())
-    view_menu.append(SeparatorLink())
-    view_menu.append(Mods_ListMods())
+    view_menu.append_link(ColumnsMenu())
+    view_menu.append_link(SeparatorLink())
+    view_menu.append_link(Mods_ListMods())
     if bush.game.allTags:
-        view_menu.append(Mods_ListBashTags())
-    view_menu.append(Mods_PluginChecker())
+        view_menu.append_link(Mods_ListBashTags())
+    view_menu.append_link(Mods_PluginChecker())
     # Settings Menu
     settings_menu = ModList.global_links[_('Settings')]
-    settings_menu.append(Mods_AutoGhost())
+    settings_menu.append_link(Mods_AutoGhost())
     if bush.game.has_esl:
-        settings_menu.append(Mods_AutoESLFlagBP())
-    settings_menu.append(Mods_LockLoadOrder())
-    settings_menu.append(Mods_LockActivePlugins())
-    settings_menu.append(Mods_ScanDirty())
-    settings_menu.append(Mods_IgnoreDirtyVanillaFiles())
-    settings_menu.append(SeparatorLink())
-    settings_menu.append(Misc_SettingsDialog())
+        settings_menu.append_link(Mods_AutoESLFlagBP())
+    settings_menu.append_link(Mods_LockLoadOrder())
+    settings_menu.append_link(Mods_LockActivePlugins())
+    settings_menu.append_link(Mods_ScanDirty())
+    settings_menu.append_link(Mods_IgnoreDirtyVanillaFiles())
+    settings_menu.append_link(SeparatorLink())
+    settings_menu.append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitSaveLinks():
     """Initialize save tab menus."""
     #--SaveList: Column Links
     # Sorting and Columns
-    SaveList.column_links.append(SortByMenu())
-    SaveList.column_links.append(ColumnsMenu())
-    SaveList.column_links.append(SeparatorLink())
+    SaveList.column_links.append_link(SortByMenu())
+    SaveList.column_links.append_link(ColumnsMenu())
+    SaveList.column_links.append_link(SeparatorLink())
     if True: #--Files
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(_('Unhides hidden saves.')))
-    SaveList.column_links.append(files_menu)
-    SaveList.column_links.append(SeparatorLink())
+        files_menu.links.append_link(UIList_OpenStore())
+        files_menu.links.append_link(Files_Unhide(_('Unhides hidden saves.')))
+    SaveList.column_links.append_link(files_menu)
+    SaveList.column_links.append_link(SeparatorLink())
     if True: #--Profile
         subDirMenu = MenuLink(_('Profile..'))
-        subDirMenu.links.append(Saves_Profiles())
-        SaveList.column_links.append(subDirMenu)
-    SaveList.column_links.append(Mods_OblivionEsmMenu(set_profile=True))
-    SaveList.column_links.append(SeparatorLink())
-    SaveList.column_links.append(Misc_SaveData())
-    SaveList.column_links.append(Misc_SettingsDialog())
+        subDirMenu.links.append_link(Saves_Profiles())
+        SaveList.column_links.append_link(subDirMenu)
+    SaveList.column_links.append_link(Mods_OblivionEsmMenu(set_profile=True))
+    SaveList.column_links.append_link(SeparatorLink())
+    SaveList.column_links.append_link(Misc_SaveData())
+    SaveList.column_links.append_link(Misc_SettingsDialog())
     #--SaveList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(UIList_Rename())
-        file_menu.links.append(File_Duplicate())
-        file_menu.links.append(UIList_Hide())
-        file_menu.links.append(UIList_Delete())
-        file_menu.links.append(SeparatorLink())
-        file_menu.links.append(File_Backup())
-        file_menu.links.append(File_RevertToBackup())
-        SaveList.context_links.append(file_menu)
+        file_menu.links.append_link(UIList_Rename())
+        file_menu.links.append_link(File_Duplicate())
+        file_menu.links.append_link(UIList_Hide())
+        file_menu.links.append_link(UIList_Delete())
+        file_menu.links.append_link(SeparatorLink())
+        file_menu.links.append_link(File_Backup())
+        file_menu.links.append_link(File_RevertToBackup())
+        SaveList.context_links.append_link(file_menu)
     if True: #--Move To
         moveMenu = MenuLink(_('Move To..'))
-        moveMenu.links.append(Save_Move())
-        SaveList.context_links.append(moveMenu)
+        moveMenu.links.append_link(Save_Move())
+        SaveList.context_links.append_link(moveMenu)
     if True: #--Copy To
         copyMenu = MenuLink(_('Copy To..'))
-        copyMenu.links.append(Save_Move(copyMode=True))
-        SaveList.context_links.append(copyMenu)
-    SaveList.context_links.append(SeparatorLink())
-    SaveList.context_links.append(Save_ActivateMasters())
-    SaveList.context_links.append(Save_ReorderMasters())
-    SaveList.context_links.append(File_ListMasters())
-    SaveList.context_links.append(Save_DiffMasters())
-    SaveList.context_links.append(SeparatorLink())
-    SaveList.context_links.append(Save_ExportScreenshot())
-    SaveList.context_links.append(Save_Renumber())
+        copyMenu.links.append_link(Save_Move(copyMode=True))
+        SaveList.context_links.append_link(copyMenu)
+    SaveList.context_links.append_link(SeparatorLink())
+    SaveList.context_links.append_link(Save_ActivateMasters())
+    SaveList.context_links.append_link(Save_ReorderMasters())
+    SaveList.context_links.append_link(File_ListMasters())
+    SaveList.context_links.append_link(Save_DiffMasters())
+    SaveList.context_links.append_link(SeparatorLink())
+    SaveList.context_links.append_link(Save_ExportScreenshot())
+    SaveList.context_links.append_link(Save_Renumber())
     if True: #--Info
         info_menu = MenuLink(_('Info..'))
         if bush.game.Ess.canEditMore:
-            info_menu.links.append(Save_Stats())
-        info_menu.links.append(Save_StatObse())
-        info_menu.links.append(Save_StatPluggy())
-        SaveList.context_links.append(info_menu)
+            info_menu.links.append_link(Save_Stats())
+        info_menu.links.append_link(Save_StatObse())
+        info_menu.links.append_link(Save_StatPluggy())
+        SaveList.context_links.append_link(info_menu)
     if bush.game.Ess.canEditMore: #--Edit & Repair
         edit_menu = MenuLink(_('Edit..'))
-        edit_menu.links.append(Save_EditCreated(b'ALCH'))
-        edit_menu.links.append(Save_ReweighPotions())
-        edit_menu.links.append(SeparatorLink())
-        edit_menu.links.append(Save_EditCreated(b'ENCH'))
-        edit_menu.links.append(Save_EditCreatedEnchantmentCosts())
-        edit_menu.links.append(SeparatorLink())
-        edit_menu.links.append(Save_EditCreated(b'SPEL'))
-        edit_menu.links.append(Save_EditPCSpells())
-        edit_menu.links.append(SeparatorLink())
-        edit_menu.links.append(Save_RenamePlayer())
-        edit_menu.links.append(Save_ImportFace())
-        edit_menu.links.append(Save_UpdateNPCLevels())
+        edit_menu.links.append_link(Save_EditCreated(b'ALCH'))
+        edit_menu.links.append_link(Save_ReweighPotions())
+        edit_menu.links.append_link(SeparatorLink())
+        edit_menu.links.append_link(Save_EditCreated(b'ENCH'))
+        edit_menu.links.append_link(Save_EditCreatedEnchantmentCosts())
+        edit_menu.links.append_link(SeparatorLink())
+        edit_menu.links.append_link(Save_EditCreated(b'SPEL'))
+        edit_menu.links.append_link(Save_EditPCSpells())
+        edit_menu.links.append_link(SeparatorLink())
+        edit_menu.links.append_link(Save_RenamePlayer())
+        edit_menu.links.append_link(Save_ImportFace())
+        edit_menu.links.append_link(Save_UpdateNPCLevels())
         repair_menu = MenuLink(_('Repair..'))
-        repair_menu.links.append(Save_Unbloat())
-        repair_menu.links.append(Save_RepairAbomb())
-        repair_menu.links.append(Save_RepairHair())
-        SaveList.context_links.append(SeparatorLink())
-        SaveList.context_links.append(edit_menu)
-        SaveList.context_links.append(repair_menu)
+        repair_menu.links.append_link(Save_Unbloat())
+        repair_menu.links.append_link(Save_RepairAbomb())
+        repair_menu.links.append_link(Save_RepairHair())
+        SaveList.context_links.append_link(SeparatorLink())
+        SaveList.context_links.append_link(edit_menu)
+        SaveList.context_links.append_link(repair_menu)
     # SaveList: Global Links
     # File Menu
     file_menu = SaveList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(_('Unhides hidden saves.')))
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(Files_Unhide(_('Unhides hidden saves.')))
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # Edit Menu
     edit_menu = SaveList.global_links[_('Edit')]
     profile_menu = MenuLink(_('Profile..'))
     profile_menu.append(Saves_Profiles())
-    edit_menu.append(profile_menu)
-    edit_menu.append(Mods_OblivionEsmMenu(set_profile=True))
+    edit_menu.append_link(profile_menu)
+    edit_menu.append_link(Mods_OblivionEsmMenu(set_profile=True))
     # View Menu
     view_menu = SaveList.global_links[_('View')]
-    view_menu.append(SortByMenu())
-    view_menu.append(ColumnsMenu())
+    view_menu.append_link(SortByMenu())
+    view_menu.append_link(ColumnsMenu())
     # Settings Menu
-    SaveList.global_links[_('Settings')].append(Misc_SettingsDialog())
+    SaveList.global_links[_('Settings')].append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
     """Initialize BSA tab menus."""
     #--BSAList: Column Links
     # Sorting and Columns
-    BSAList.column_links.append(SortByMenu())
-    BSAList.column_links.append(ColumnsMenu())
-    BSAList.column_links.append(SeparatorLink())
+    BSAList.column_links.append_link(SortByMenu())
+    BSAList.column_links.append_link(ColumnsMenu())
+    BSAList.column_links.append_link(SeparatorLink())
     if True: #--Files
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(_('Unhides hidden BSAs.')))
-    BSAList.column_links.append(files_menu)
-    BSAList.column_links.append(SeparatorLink())
-    BSAList.column_links.append(Misc_SaveData())
-    BSAList.column_links.append(Misc_SettingsDialog())
+        files_menu.links.append_link(UIList_OpenStore())
+        files_menu.links.append_link(Files_Unhide(_('Unhides hidden BSAs.')))
+    BSAList.column_links.append_link(files_menu)
+    BSAList.column_links.append_link(SeparatorLink())
+    BSAList.column_links.append_link(Misc_SaveData())
+    BSAList.column_links.append_link(Misc_SettingsDialog())
     #--BSAList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(File_Duplicate())
-        file_menu.links.append(UIList_Hide())
-        file_menu.links.append(File_Redate())
-        file_menu.links.append(UIList_Delete())
-        file_menu.links.append(SeparatorLink())
-        file_menu.links.append(File_Backup())
-        file_menu.links.append(File_RevertToBackup())
-    BSAList.context_links.append(file_menu)
-    BSAList.context_links.append(BSA_ExtractToProject())
-    BSAList.context_links.append(BSA_ListContents())
+        file_menu.links.append_link(File_Duplicate())
+        file_menu.links.append_link(UIList_Hide())
+        file_menu.links.append_link(File_Redate())
+        file_menu.links.append_link(UIList_Delete())
+        file_menu.links.append_link(SeparatorLink())
+        file_menu.links.append_link(File_Backup())
+        file_menu.links.append_link(File_RevertToBackup())
+    BSAList.context_links.append_link(file_menu)
+    BSAList.context_links.append_link(BSA_ExtractToProject())
+    BSAList.context_links.append_link(BSA_ListContents())
     # BSAList: Global Links
     # File Menu
     file_menu = BSAList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(_('Unhides hidden BSAs.')))
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(Files_Unhide(_('Unhides hidden BSAs.')))
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # View Menu
     view_menu = BSAList.global_links[_('View')]
-    view_menu.append(SortByMenu())
-    view_menu.append(ColumnsMenu())
+    view_menu.append_link(SortByMenu())
+    view_menu.append_link(ColumnsMenu())
     # Settings Menu
-    BSAList.global_links[_('Settings')].append(Misc_SettingsDialog())
+    BSAList.global_links[_('Settings')].append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--ScreensList: Column Links
     # Sorting and Columns
-    ScreensList.column_links.append(SortByMenu())
-    ScreensList.column_links.append(ColumnsMenu())
-    ScreensList.column_links.append(SeparatorLink())
+    ScreensList.column_links.append_link(SortByMenu())
+    ScreensList.column_links.append_link(ColumnsMenu())
+    ScreensList.column_links.append_link(SeparatorLink())
     if True:
         files_menu = MenuLink(_('Files..'))
-        files_menu.links.append(UIList_OpenStore())
-        ScreensList.column_links.append(files_menu)
-    ScreensList.column_links.append(SeparatorLink())
-    ScreensList.column_links.append(Screens_NextScreenShot())
+        files_menu.links.append_link(UIList_OpenStore())
+        ScreensList.column_links.append_link(files_menu)
+    ScreensList.column_links.append_link(SeparatorLink())
+    ScreensList.column_links.append_link(Screens_NextScreenShot())
     if True: #--JPEG Quality
         qualityMenu = MenuLink(_('JPEG Quality..'))
         for i in range(100, 80, -5):
-            qualityMenu.links.append(Screens_JpgQuality(i))
-        qualityMenu.links.append(Screens_JpgQualityCustom())
-        ScreensList.column_links.append(qualityMenu)
-    ScreensList.column_links.append(SeparatorLink())
-    ScreensList.column_links.append(Misc_SaveData())
-    ScreensList.column_links.append(Misc_SettingsDialog())
+            qualityMenu.links.append_link(Screens_JpgQuality(i))
+        qualityMenu.links.append_link(Screens_JpgQualityCustom())
+        ScreensList.column_links.append_link(qualityMenu)
+    ScreensList.column_links.append_link(SeparatorLink())
+    ScreensList.column_links.append_link(Misc_SaveData())
+    ScreensList.column_links.append_link(Misc_SettingsDialog())
     #--ScreensList: Item Links
     if True: #--File
         file_menu = MenuLink(_('File..'))
-        file_menu.links.append(UIList_OpenItems())
-        file_menu.links.append(UIList_Rename())
-        file_menu.links.append(File_Duplicate())
-        file_menu.links.append(UIList_Delete())
-        ScreensList.context_links.append(file_menu)
+        file_menu.links.append_link(UIList_OpenItems())
+        file_menu.links.append_link(UIList_Rename())
+        file_menu.links.append_link(File_Duplicate())
+        file_menu.links.append_link(UIList_Delete())
+        ScreensList.context_links.append_link(file_menu)
     if True: #--Convert
         convertMenu = MenuLink(_('Convert..'))
-        convertMenu.links.append(Screen_ConvertTo('.jpg'))
-        convertMenu.links.append(Screen_ConvertTo('.png'))
-        convertMenu.links.append(Screen_ConvertTo('.bmp'))
-        convertMenu.links.append(Screen_ConvertTo('.tif'))
-        ScreensList.context_links.append(convertMenu)
+        convertMenu.links.append_link(Screen_ConvertTo('.jpg'))
+        convertMenu.links.append_link(Screen_ConvertTo('.png'))
+        convertMenu.links.append_link(Screen_ConvertTo('.bmp'))
+        convertMenu.links.append_link(Screen_ConvertTo('.tif'))
+        ScreensList.context_links.append_link(convertMenu)
     # ScreensList: Global Links
     # File Menu
     file_menu = ScreensList.global_links[_('File')]
-    file_menu.append(UIList_OpenStore())
-    file_menu.append(SeparatorLink())
-    file_menu.append(Misc_SaveData())
+    file_menu.append_link(UIList_OpenStore())
+    file_menu.append_link(SeparatorLink())
+    file_menu.append_link(Misc_SaveData())
     # View Menu
     view_menu = ScreensList.global_links[_('View')]
-    view_menu.append(SortByMenu())
-    view_menu.append(ColumnsMenu())
+    view_menu.append_link(SortByMenu())
+    view_menu.append_link(ColumnsMenu())
     # Settings Menu
     settings_menu = ScreensList.global_links[_('Settings')]
-    settings_menu.append(Screens_NextScreenShot())
+    settings_menu.append_link(Screens_NextScreenShot())
     jpeg_quality_menu = MenuLink(_('JPEG Quality..'))
     for i in range(100, 80, -5):
-        jpeg_quality_menu.links.append(Screens_JpgQuality(i))
-    jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
-    settings_menu.append(qualityMenu)
-    settings_menu.append(SeparatorLink())
-    ScreensList.global_links[_('Settings')].append(Misc_SettingsDialog())
+        jpeg_quality_menu.links.append_link(Screens_JpgQuality(i))
+    jpeg_quality_menu.links.append_link(Screens_JpgQualityCustom())
+    settings_menu.append_link(qualityMenu)
+    settings_menu.append_link(SeparatorLink())
+    ScreensList.global_links[_('Settings')].append_link(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitLinks():
     """Call other link initializers."""
-    InitStatusBar()
     InitMasterLinks()
     InitInstallerLinks()
     InitINILinks()

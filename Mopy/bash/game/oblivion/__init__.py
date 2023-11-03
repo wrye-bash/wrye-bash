@@ -81,7 +81,7 @@ class AOblivionGameInfo(PatchGame):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
-        se_args = u'-editor'
+        se_args = ('-editor',)
         image_name = u'tescs%s.png'
 
     class Se(GameInfo.Se):
@@ -97,6 +97,15 @@ class AOblivionGameInfo(PatchGame):
         url = u'http://obse.silverlock.org/'
         url_tip = u'http://obse.silverlock.org/'
         limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
+
+        @classmethod
+        def exe_path_sc(cls):
+            from ... import bass
+            # OBSE refuses to start when its EXE is launched on a Steam
+            # installation
+            if 'steam' in bass.dirs['app'].cs:
+                return None
+            return super().exe_path_sc()
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'

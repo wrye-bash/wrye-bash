@@ -329,14 +329,59 @@ def dump_environment(wxver=None):
     bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))
     return msg
 
-def _bash_ini_parser(bash_ini_path):
-    bash_ini_parser = None
-    if bash_ini_path is not None and os.path.exists(bash_ini_path):
-        bash_ini_parser = ConfigParser()
-        # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
-        # English INI is ASCII)
-        bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    return bash_ini_parser
+def _parse_bash_ini(bash_ini_path):
+    """Set default values for all valid INI settings then update from ini."""
+    ini_set = { # sections are case-sensitive
+        'General': dict.fromkeys(
+            ['BashModData', 'InstallersData', 'LocalAppDataPath',
+             'OblivionMods', 'OblivionPath', 'PersonalPath', 'UserPath'], ''),
+        'Settings': {
+            'OblivionTexturesBSAName': 'Oblivion - Textures - Compressed.bsa',
+            'Command7z': '7z', 'ScriptFileExt': '.txt',
+            **dict.fromkeys(['AutoItemCheck', 'EnableSplashScreen',
+                'EnsurePatchExists', 'PromptActivateBashedPatch',
+                'ResetBSATimestamps', 'WarnTooManyFiles'], True),
+            **dict.fromkeys(['ShowDevTools', 'SkipHideConfirmation',
+                'SkipResetTimeNotifications', 'SkipWSDetection'], False),
+            **dict.fromkeys(['7zExtraCompressionArguments',
+                'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
+                'xEditCommandLineArguments'], '')
+        },
+        'Tool Options': {
+            'OblivionBookCreatorJavaArg': '-Xmx1024m',
+            'Tes4GeckoJavaArg': '-Xmx1024m', 'ShowTextureToolLaunchers': True,
+            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True
+        }
+    }
+    bass.inisettings.clear() #ini might be reinitialized due to restore failing
+    for v in ini_set.values():
+        bass.inisettings.update(v)
+    # if bash.ini exists update those settings from there
+    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+        return
+    bash_ini_parser = ConfigParser()
+    # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
+    # English INI is ASCII)
+    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
+    for section in bash_ini_parser.sections():
+        section_defaults = ini_set.get(section, {})
+        section_defaults = {k.lower(): (k, v) for k, v in
+                            section_defaults.items()}
+        # retrieving ini settings is case-insensitive - key: lowercase
+        for ini_key_lower, value in bash_ini_parser.items(section):
+            if not value or value == '.': continue
+            if default := section_defaults.get(ini_key_lower[1:]):
+                ini_settings_key, default_value = default
+                if type(default_value) is bool:
+                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                else:
+                    value = value.strip()
+                bass.inisettings[ini_settings_key] = value
+            elif section == 'Tool Options':
+                ##:(570) provisional - we want to stop specifying tool paths
+                # in the ini but we need some UI for that
+                # stash all settings in here in case they match tool path keys
+                bass.inisettings[ini_key_lower[1:]] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -444,7 +489,7 @@ def _main(opts, wx_locale, wxver):
             restore_ = None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
+        bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
         if restore_:
             try:
@@ -461,11 +506,9 @@ def _main(opts, wx_locale, wxver):
                 # _detect_game -> _import_bush_and_set_game
                 from . import bush
                 bush.reset_bush_globals()
-                bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
-        ##: Break bosh-balt/gui coupling, though this doesn't actually cause
-        # init problems (since we init those in main)
+                bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
-        bosh.initBosh(bashIni, game_ini_path)
+        bosh.initBosh(game_ini_path)
         from . import env
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
@@ -478,8 +521,9 @@ def _main(opts, wx_locale, wxver):
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
-    # Status bar buttons are initialized in InitLinks and use images
+    # Status bar buttons (initialized in InitStatusBar) use images
     basher.InitImages()
+    basher.links_init.InitStatusBar()
     basher.InitLinks()
     #--Start application
     bapp = basher.BashApp(bash_app)
@@ -545,39 +589,35 @@ def _main(opts, wx_locale, wxver):
 
 def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
-    bashIni = _bash_ini_parser(backup_bash_ini)
+    _parse_bash_ini(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file
-    user_path = opts.userPath or None  ##: not sure why this must be set first
-    if user_path is None:
-        ini_user_path = bass.get_ini_option(bashIni, u'sUserPath')
-        if ini_user_path and not ini_user_path == u'.':
-            user_path = ini_user_path
+    ##: not sure why this must be set first
+    user_path = opts.userPath or bass.inisettings['UserPath']
     if user_path:
         homedrive, homepath = os.path.splitdrive(user_path)
         os.environ[u'HOMEDRIVE'] = homedrive
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
-    bush_game = _import_bush_and_set_game(opts, bashIni)
+    bush_game = _import_bush_and_set_game(opts)
     if not bush_game:
         return None, None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     from . import initialization
     game_ini_path, init_warnings = initialization.init_dirs(
-        bashIni, opts.personalPath, opts.localAppDataPath, bush_game)
+        opts.personalPath, opts.localAppDataPath, bush_game)
     if init_warnings:
         warning_msg = _('The following (non-critical) warnings were found '
                         'during initialization:')
         warning_msg += '\n\n'
         warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
-    return bashIni, bush_game, game_ini_path
+    return bush_game, game_ini_path
 
-def _import_bush_and_set_game(opts, bashIni):
+def _import_bush_and_set_game(opts):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(cli_game_dir=opts.oblivionPath,
-        bash_ini_=bashIni)
+    game_infos = bush.detect_and_set_game(opts.oblivionPath)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(
@@ -595,7 +635,7 @@ def _import_bush_and_set_game(opts, bashIni):
         # Add the game to the command line, so we use it if we restart
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
+        bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
@@ -643,7 +683,7 @@ def _show_boot_popup(msg, is_critical=True):
 
 def _tkinter_error_dial(msg, but_kwargs):
     import tkinter
-    root_widget = tkinter.Tk()
+    root_widget = tkinter.Tk() ##: on macos this crashes
     frame = tkinter.Frame(root_widget)
     frame.pack()
     button = tkinter.Button(frame, command=root_widget.destroy, pady=15,
@@ -681,10 +721,11 @@ class _AppReturnCode(object):
 def _select_game_popup(game_infos):
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
-    from .balt import ImageWrapper, Resources
-    from .gui import CENTER, CancelButton, DropDown, HLayout, HorizontalLine, \
-        ImageButton, ImageDropDown, Label, LayoutOptions, SearchBar, Stretch, \
-        TextAlignment, TextField, VBoxedLayout, VLayout, WindowFrame
+    from .balt import Resources
+    from .gui import CENTER, CancelButton, DropDown, GuiImage, HLayout, \
+        HorizontalLine, ImageButton, ImageDropDown, Label, LayoutOptions, \
+        SearchBar, Stretch, TextAlignment, TextField, VBoxedLayout, VLayout, \
+        WindowFrame
     class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 
@@ -697,10 +738,11 @@ def _select_game_popup(game_infos):
             self._game_to_paths = {g.unique_display_name: ps for g, ps
                                   in game_infos.items()}
             self._game_to_info = {g.unique_display_name: g for g in game_infos}
-            gi_join = bass.dirs['images'].join('games').join
-            self._game_to_bitmap = {
-                g.unique_display_name: ImageWrapper(gi_join(g.game_icon % 32),
-                    iconSize=32).get_bitmap() for g in game_infos}
+            ij = bass.dirs['images'].join # images not yet initialized
+            ico_paths = {g: ij(os.path.join('games', g.game_icon % 32)) for g
+                         in game_infos}
+            self._game_to_bitmap = {g.unique_display_name: GuiImage.from_path(
+                p, iconSize=32) for g, p in ico_paths.items()}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self, hint=_('Search Games'))
             game_search.on_text_changed.subscribe(self._perform_search)
@@ -710,14 +752,11 @@ def _select_game_popup(game_infos):
             self._lang_dropdown.on_combo_select.subscribe(self._select_lang)
             self._game_path = TextField(self, editable=False)
             class _ImgCancelButton(CancelButton, ImageButton): pass
-            quit_img = ImageWrapper(bass.dirs['images'].join('quit.svg'),
-                iconSize=32)
-            quit_button = _ImgCancelButton(self, quit_img.get_bitmap(),
-                btn_label=_('Quit'))
+            quit_img = GuiImage.from_path(ij('quit.svg'), iconSize=32)
+            quit_button = _ImgCancelButton(self, quit_img, btn_label=_('Quit'))
             quit_button.on_clicked.subscribe(self._handle_quit)
-            launch_img = ImageWrapper(bass.dirs['images'].join('bash.svg'),
-                iconSize=32)
-            self._launch_button = ImageButton(self, launch_img.get_bitmap(),
+            launch_img = GuiImage.from_path(ij('bash.svg'), iconSize=32)
+            self._launch_button = ImageButton(self, launch_img,
                 btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
             # Start out with an empty search and the alphabetically first game
