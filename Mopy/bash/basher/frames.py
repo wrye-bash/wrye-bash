@@ -26,7 +26,7 @@ import re
 import string
 from collections import OrderedDict
 
-from .. import balt, bass, bolt, bosh, bush, load_order
+from .. import balt, bass, bolt, bosh, bush, load_order, wrye_text
 from ..balt import Link, Resources
 from ..bolt import FName, GPath
 from ..bosh import empty_path, mods_metadata, omods
@@ -270,8 +270,8 @@ class DocBrowser(WindowFrame):
         with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
-            bolt.WryeText.genHtml(doc_path, None,
-                                  bosh.modInfos.store_dir.join(u'Docs'))
+            wrye_text.genHtml(doc_path, None,
+                              bosh.modInfos.store_dir.join('Docs'))
 
     def _load_data(self, doc_path=None, uni_str=None, editing=False,
                    __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
@@ -374,8 +374,8 @@ class DocBrowser(WindowFrame):
             if is_wtxt:  # Update generated html
                 html_path = doc_path.root + '.html'
                 if not html_path.is_file() or doc_path.mtime > html_path.mtime:
-                    bolt.WryeText.genHtml(doc_path, None,
-                                          bosh.modInfos.store_dir.join('Docs'))
+                    wrye_text.genHtml(doc_path, None,
+                                      bosh.modInfos.store_dir.join('Docs'))
         self._load_data(doc_path=doc_path, editing=editing)
 
     def on_closing(self, destroy=True):
@@ -503,7 +503,7 @@ class PluginChecker(WindowFrame):
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
-            bolt.convert_wtext_to_html(log_path, self.check_mods_text, css_dir)
+            wrye_text.convert_wtext_to_html(log_path, self.check_mods_text, css_dir)
             self._html_ctrl.try_load_html(log_path)
         else:
             self._html_ctrl.load_text(self.check_mods_text)

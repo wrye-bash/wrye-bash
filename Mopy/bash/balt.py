@@ -36,7 +36,7 @@ from typing import final
 import wx
 import wx.adv
 
-from . import bass # for dirs - try to avoid
+from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
 from .bass import Store
 from .bolt import FName, Path, deprint, readme_url
@@ -139,7 +139,7 @@ def show_log(parent, logText: str | Path, title: str | Path, wrye_log=False,
             ##: shouldn't we create a tmp file below?
             logPath = bass.dirs['saveBase'].join('WryeLogTemp.html')
             css_dir = bass.dirs['mopy'].join('Docs')
-            bolt.convert_wtext_to_html(logPath, logText, css_dir)
+            wrye_text.convert_wtext_to_html(logPath, logText, css_dir)
             logText = logPath
     if asDialog:
         LogDialog.display_dialog(parent, f'{title}', Resources.bashBlue,

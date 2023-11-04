@@ -82,7 +82,7 @@ class AOblivionGameInfo(PatchGame):
         long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
         se_args = ('-editor',)
-        image_name = u'tescs%s.png'
+        image_name = 'tescs%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'OBSE'

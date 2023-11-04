@@ -28,7 +28,7 @@ from collections import defaultdict
 from .. import bass, bush
 from ..balt import EnabledLink, colors
 from ..bolt import LowerDict, dict_sort, reverse_dict_multi
-from ..env import get_file_version, get_game_version_fallback, to_os_path
+from ..env import to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
@@ -120,13 +120,7 @@ class InstallerFomod(WizardDialog):
         fm_file = self._fomod_dir.join(target_installer.has_fomod_conf).s
         self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
-        test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
-        try:
-            gver = get_file_version(test_path.s)
-            if gver == (0, 0, 0, 0) and bush.ws_info.installed:
-                gver = get_game_version_fallback(test_path, bush.ws_info)
-        except OSError:
-            gver = get_game_version_fallback(test_path, bush.ws_info)
+        gver = bush.game_version()
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, files_list, self.installer_root, bass.dirs[u'mods'],

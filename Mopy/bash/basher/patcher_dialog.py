@@ -28,7 +28,7 @@ import time
 from datetime import timedelta
 
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bosh, bush, env, load_order
+from .. import balt, bass, bolt, bosh, bush, env, load_order, wrye_text
 from ..balt import Link, Resources
 from ..bass import Store
 from ..bolt import GPath_no_norm, SubProgress
@@ -38,14 +38,26 @@ from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, showError, askYes, \
-    showWarning
-from ..patcher import exportConfig
+    showWarning, FileSave
 from ..patcher.patch_files import PatchFile
 from ..wbtemp import TempDir
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
 all_gui_patchers = [] #--All gui patchers classes for this game
+
+def _export_config(patch_name, config, win, outDir):
+    outFile = f'{patch_name}_Configuration.dat'
+    outDir.makedirs()
+    #--File dialog
+    outPath = FileSave.display_dialog(win,
+        title=_('Export Bashed Patch configuration to:'),
+        defaultDir=outDir, defaultFile=outFile, wildcard='*_Configuration.dat')
+    if outPath:
+        pd = bolt.PickleDict(outPath)
+        gkey = bolt.GPath_no_norm('Saved Bashed Patch Configuration (Python)')
+        pd.pickled_data[gkey] = {'bash.patch.configs': config}
+        pd.save()
 
 class PatchDialog(DialogWindow):
     """Bash Patch update dialog.
@@ -253,7 +265,7 @@ class PatchDialog(DialogWindow):
                 with temp_readme.open(u'w', encoding=u'utf-8-sig') as file:
                     file.write(logValue)
                 #--Convert log/readme to wtxt
-                bolt.WryeText.genHtml(temp_readme, None, docsDir)
+                wrye_text.genHtml(temp_readme, None, docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
                     env.shellMove({temp_readme_dir: data_docs_dir},
@@ -361,8 +373,8 @@ class PatchDialog(DialogWindow):
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patch_name=self.patchInfo.fn_key, config=config,
-                     win=self.parent, outDir=bass.dirs[u'patches'])
+        _export_config(patch_name=self.patchInfo.fn_key, config=config,
+                       win=self.parent, outDir=bass.dirs['patches'])
 
     __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'

@@ -34,7 +34,7 @@ from . import game as game_init, bass
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_egs_game_paths, get_legacy_ws_game_info, \
     get_legacy_ws_game_paths, get_gog_game_paths, get_ws_game_paths, \
-    get_steam_game_paths
+    get_steam_game_paths, get_file_version, get_game_version_fallback
 from .exception import BoltError
 from .game import GameInfo, patch_game
 
@@ -289,3 +289,14 @@ def detect_and_set_game(cli_game_dir, gname=None, gm_path=None):
             in foundGames.items()}
 
 def game_path(target_unique_dn): return foundGames[target_unique_dn]
+
+def game_version():
+    """Get the game version - be careful about Windows Store versions."""
+    test_path = bass.dirs['app'].join(game.version_detect_file)
+    try:
+        gver = get_file_version(test_path.s)
+        if gver == (0, 0, 0, 0) and ws_info.installed:
+            gver = get_game_version_fallback(test_path, ws_info)
+    except OSError:
+        gver = get_game_version_fallback(test_path, ws_info)
+    return gver

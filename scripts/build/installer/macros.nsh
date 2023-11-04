@@ -874,6 +874,8 @@
         Delete "${Path}\Mopy\bash\images\tools\tes4files16.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files24.png"
         Delete "${Path}\Mopy\bash\images\tools\tes4files32.png"
+        ; as of 312 belt is moved in basher
+        Delete "${Path}\Mopy\bash\belt.p*"
     !macroend
 
 
