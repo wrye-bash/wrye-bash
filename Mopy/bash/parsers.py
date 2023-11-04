@@ -992,7 +992,7 @@ class ScriptText(_TextParser):
                 if r and deprefix == fileName[:r].lower():
                     fileName = fileName[r:]
                 outpath = dirs[u'patches'].join(folder).join(
-                    fileName + inisettings[u'ScriptFileExt'])
+                    fileName + inisettings['ScriptFileExt'])
                 self._writing_state = (scpt_lines, longid, eid)
                 self.write_text_file(outpath)
                 del self._writing_state
@@ -1073,7 +1073,7 @@ class ScriptText(_TextParser):
         for root_dir, dirs, files in textPath.walk():
             y = len(files)
             for z, f in enumerate(files):
-                if f.cext != inisettings[u'ScriptFileExt']:
+                if f.cext != inisettings['ScriptFileExt']:
                     progress(((1 / y) * z), _(u'Skipping file %s.') % f)
                     continue
                 progress(((1 / y) * z), _(u'Reading file %s.') % f)

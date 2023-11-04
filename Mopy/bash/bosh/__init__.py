@@ -2840,7 +2840,7 @@ class ModInfos(FileInfos):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
-        notDeactivatable = load_order.must_be_active_if_present()
+        notDeactivatable = load_order.force_active_if_present()
         fileNames = {x for x in fileName if x not in notDeactivatable}
         old = sel = set(self._active_wip)
         diff = sel - fileNames
@@ -2919,7 +2919,7 @@ class ModInfos(FileInfos):
         for present_plugin in list(wip_actives):
             if present_plugin.fn_ext != '.esu':
                 _add_masters(present_plugin)
-        wip_actives |= (load_order.must_be_active_if_present() &
+        wip_actives |= (load_order.force_active_if_present() &
                         present_plugins)
         # Sort the result and check if we would hit an actives limit
         ordered_wip = load_order.get_ordered(wip_actives)
@@ -3033,7 +3033,7 @@ class ModInfos(FileInfos):
             Mutually exclusive with with_esl_flag, setting both to True raises
             an InvalidPluginFlagsError as well."""
         if with_esl_flag and with_overlay_flag:
-            raise InvalidPluginFlagsError('both ESL and Overlay flags set.')
+            raise InvalidPluginFlagsError(esl_flag=True, overlay_flag=True)
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
         dir_path = dir_path or self.store_dir
@@ -3046,14 +3046,11 @@ class ModInfos(FileInfos):
             newFile.tes4.flags1.esm_flag = True
         if with_esl_flag:
             if not bush.game.has_esl:
-                raise InvalidPluginFlagsError('an ESL flag, but the game does '
-                                              'not support ESLs.')
+                raise InvalidPluginFlagsError(esl_flag=True)
             newFile.tes4.flags1.esl_flag = True
         elif with_overlay_flag:
             if not bush.game.has_overlay_plugins:
-                raise InvalidPluginFlagsError('an Overlay flag, but the game '
-                                              'does not support Overlay '
-                                              'plugins.')
+                raise InvalidPluginFlagsError(overlay_flag=True)
             newFile.tes4.flags1.overlay_flag = True
         newFile.safeSave()
         if dir_path == self.store_dir:

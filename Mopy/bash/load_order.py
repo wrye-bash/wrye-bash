@@ -431,10 +431,10 @@ def _restore_lo(index_move):
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
-def must_be_active_if_present():
-    return set(_game_handle.must_be_active_if_present) | (
-        set() if _game_handle.allow_deactivate_master else {
-            _game_handle.master_path})
+def force_active_if_present():
+    s = set(_game_handle.must_be_active_if_present)
+    return s if _game_handle.allow_deactivate_master else {*s,
+        _game_handle.master_path}
 
 def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
 

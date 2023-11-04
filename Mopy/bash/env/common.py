@@ -396,7 +396,7 @@ def file_operation(operation: FileOperationType,
 
     :return: A mapping of source file paths to their final new path.  For a
         deletion operation, the final path will be None.
-        TOOD: Implement this.
+        TODO: Implement this.
     """
     if not sources_dests: # Nothing to operate on
         return {}

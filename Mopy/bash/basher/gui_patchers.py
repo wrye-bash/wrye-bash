@@ -381,7 +381,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _do_populate_item_list(self):
         forceItemCheck = self.forceItemCheck
-        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings[u'AutoItemCheck']
+        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
         self.gList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False

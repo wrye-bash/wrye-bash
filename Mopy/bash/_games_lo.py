@@ -269,7 +269,7 @@ class LoGame(object):
         return tuple(lo), tuple(active)
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
-        # we need to override this bit for fallout4 to parse the file once
+        # we need to override this bit for AsteriskGame to parse the file once
         if cached_active is None: # first get active plugins
             cached_active = self._fetch_active_plugins()
         # we need active plugins fetched to check for desync in load order
@@ -289,7 +289,7 @@ class LoGame(object):
         dry_run is True). The different way each game handles this and how
         it modifies common data structures necessitate that info on previous
         (cached) state is passed in, usually for both active plugins and
-        load order. For instance, in the case of asterisk games plugins.txt
+        load order. For instance, in the case of asterisk games, plugins.txt
         is the common structure for defining both the global load order and
         which plugins are active). The logic is as follows:
         - at least one of `lord` or `active` must be not None, otherwise no
@@ -633,7 +633,7 @@ class LoGame(object):
         the Data folder."""
         fixed_ord = [x for x in self.must_be_active_if_present
                      if x in self.mod_infos]
-        return [self.master_path] + fixed_ord
+        return [self.master_path, *fixed_ord]
 
     def _order_fixed(self, lord_or_acti):
         # This may be acti, so don't force-activate fixed-order plugins
@@ -1074,7 +1074,7 @@ class TextfileGame(LoGame):
                          f' but it did not exist')
 
     def _fetch_load_order(self, cached_load_order,
-            cached_active: tuple[Path] | list[Path]):
+            cached_active: tuple[FName] | list[FName]):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and try reading plugins.txt so the load order of the
         user is preserved (note it will create the plugins.txt if not
@@ -1476,8 +1476,8 @@ class Fallout4(AsteriskGame):
     )))
 
 class Fallout4VR(Fallout4):
-    must_be_active_if_present = (
-        *Fallout4.must_be_active_if_present, FName(u'Fallout4_VR.esm'))
+    must_be_active_if_present = (*Fallout4.must_be_active_if_present,
+                                 FName('Fallout4_VR.esm'))
     # No ESLs, reset these back to their pre-ESL versions
     _ccc_filename = ''
     max_espms = 255
@@ -1566,8 +1566,8 @@ class SkyrimSE(AsteriskGame):
     )))
 
 class SkyrimVR(SkyrimSE):
-    must_be_active_if_present = (
-    *SkyrimSE.must_be_active_if_present, FName(u'SkyrimVR.esm'))
+    must_be_active_if_present = (*SkyrimSE.must_be_active_if_present,
+                                 FName('SkyrimVR.esm'))
     # No ESLs, reset these back to their pre-ESL versions
     _ccc_filename = ''
     max_espms = 255
@@ -1584,7 +1584,7 @@ class EnderalSE(SkyrimSE):
         return super()._active_entries_to_remove() - {
             # Enderal - Forgotten Stories.esm is *not* hardcoded to load, so
             # don't remove it from the LO
-            FName(u'Enderal - Forgotten Stories.esm'),
+            FName('Enderal - Forgotten Stories.esm'),
         }
 
 class Starfield(AsteriskGame):

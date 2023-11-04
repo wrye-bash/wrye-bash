@@ -4044,7 +4044,7 @@ class BashFrame(WindowFrame):
     def warnTooManyModsBsas(self):
         limit_fixers = bush.game.Se.limit_fixer_plugins
         if not limit_fixers: return # Problem does not apply to this game
-        if not bass.inisettings[u'WarnTooManyFiles']: return
+        if not bass.inisettings['WarnTooManyFiles']: return
         for lf in limit_fixers:
             lf_path = bass.dirs[u'mods'].join(bush.game.Se.plugin_dir,
                                               u'plugins', lf)
@@ -4189,7 +4189,7 @@ class BashFrame(WindowFrame):
 
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
-            u'SkipResetTimeNotifications']:
+                'SkipResetTimeNotifications']:
             showWarning(self, _('Load order has changed outside of Bash and '
                 'has been reverted to the one saved in Bash. You can hit '
                 'Ctrl + Z while the mods list has focus to undo this.'),
@@ -4426,7 +4426,7 @@ class BashApp(object):
         with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
-            if bass.inisettings[u'EnableSplashScreen']:
+            if bass.inisettings['EnableSplashScreen']:
                 if (splash := GPath(os.path.join(get_image_dir(),
                                                  'wryesplash.png'))).is_file():
                     splash_screen = CenteredSplash(splash.s)
@@ -4470,7 +4470,7 @@ class BashApp(object):
         # screens/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.Esp.canBash:
-            if not bosh.modInfos.bashed_patches and bass.inisettings[u'EnsurePatchExists']:
+            if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress(0.68, _(u'Generating Blank Bashed Patch'))
                 try:
                     bosh.modInfos.generateNextBashedPatch(selected_mods=())

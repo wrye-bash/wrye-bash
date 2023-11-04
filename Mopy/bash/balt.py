@@ -1985,7 +1985,7 @@ class UIList_Hide(EnabledLink):
 
     @conversation
     def Execute(self):
-        if not bass.inisettings[u'SkipHideConfirmation']:
+        if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply '
                         u'moved to the %(hdir)s directory.') % (
                           {'hdir': self._data_store.hidden_dir})

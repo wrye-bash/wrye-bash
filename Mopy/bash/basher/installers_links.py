@@ -491,7 +491,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                 # For Oblivion, undo any alterations done to the textures BSA
                 # and reset the mtimes of vanilla BSAs ##: port to FO3/FNV?
                 bsaPath = bosh.modInfos.store_dir.join(
-                        bass.inisettings[u'OblivionTexturesBSAName'])
+                        bass.inisettings['OblivionTexturesBSAName'])
                 bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                      names_only=False)
                 with balt.Progress(

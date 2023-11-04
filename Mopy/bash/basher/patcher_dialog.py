@@ -272,7 +272,7 @@ class PatchDialog(DialogWindow):
             readme = readme.root + u'.html'
             for bp_file in bp_files_to_save:
                 bp_file.fileInfo.set_table_prop('doc', readme)
-            balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
+            balt.playSound(self.parent, bass.inisettings['SoundSuccess'])
             balt.show_log(self.parent, readme, patch_name, wrye_log=True,
                           asDialog=True)
             for bp_file in bp_files_to_save:
@@ -326,7 +326,7 @@ class PatchDialog(DialogWindow):
             if progress: progress.Destroy()
 
     def _error(self, e_msg):
-        balt.playSound(self.parent, bass.inisettings[u'SoundError'])
+        balt.playSound(self.parent, bass.inisettings['SoundError'])
         bolt.deprint('Exception during Bashed Patch building:', traceback=True)
         showError(self, e_msg, _('Bashed Patch Error'))
 

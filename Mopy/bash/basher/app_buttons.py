@@ -185,7 +185,7 @@ class AppButton(AppLauncher, StatusBarButton):
         return _strip_version(self.exePath)
 
     def sb_click(self):
-        exeargs = shlex.join([*self._exe_args, *self.extraArgs])
+        exeargs = [*self._exe_args, *self.extraArgs]
         Link.Frame.set_status_info(shlex.join([self.exePath.s, *exeargs]))
         try:
             self.launch_app(self.exePath, exeargs)
@@ -197,7 +197,7 @@ class AppButton(AppLauncher, StatusBarButton):
             msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
                 'launched_exe_path': self.exePath} + '\n' + _(
                 'Used Arguments: %(launched_exe_args)s') % {
-                       'launched_exe_args': exeargs})
+                       'launched_exe_args': shlex.join(exeargs)})
         error_title = _("Could Not Launch '%(launched_exe_name)s'") % {
             'launched_exe_name': self.exePath.stail}
         showError(Link.Frame, msg, title=error_title)
