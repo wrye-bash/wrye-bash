@@ -436,10 +436,7 @@ class AppLOOT(_AAppLOManager):
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
         self.extraArgs = tuple(curr_args)
-        if bolt.os_name == 'nt':
-            super().sb_click()
-        else: ##: test
-            webbrowser.open(self.exePath.s)
+        super().sb_click()
 
     def allow_create(self): # runs on linux too
         return self._display_launcher

@@ -30,7 +30,7 @@ from collections import deque
 
 from .common import _find_legendary_games, _LegacyWinAppInfo, \
     _parse_steam_manifests
-from .common import _AppLauncher as AppLauncher
+from .common import _AppLauncher
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
@@ -398,7 +398,19 @@ class TaskDialog(object):
                  main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')
 
+class AppLauncher(_AppLauncher):
+    def launch_app(self, exe_path, exe_args):
+        subprocess.call(['xdg-open', exe_path, '--', *exe_args])
+
 # Linux versions - disallow create
-class ExeLauncher(AppLauncher): pass
+class ExeLauncher(AppLauncher):
+    def launch_app(self, exe_path, exe_args):
+        # TODO(inf) What about non-Linux executables? Maybe run those via
+        #  protontricks in the game's prefix? Erroring out if protontricks
+        #  isn't installed, of course
+        self._run_exe(exe_path, exe_args)
+
+    def _run_exe(self, exe_path, exe_args):
+        raise NotImplementedError # needs balt
 
 class LnkLauncher(AppLauncher): pass
