@@ -53,6 +53,7 @@ GAME_DATA = {
     'Skyrim': 'skyrim',
     'SkyrimSE': 'skyrimse',
     'SkyrimVR': 'skyrimvr',
+    'Starfield': 'starfield',
 }
 
 def setup_parser(parser):

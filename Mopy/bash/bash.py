@@ -590,7 +590,7 @@ def _detect_game(opts, backup_bash_ini):
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts)
     if not bush_game:
-        return None, None, None
+        return None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     from . import initialization

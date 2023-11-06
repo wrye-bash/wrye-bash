@@ -284,9 +284,9 @@ class LoGame(object):
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None, dry_run=False, fix_lo=None):
+                       previous_active=None, fix_lo=None):
         """Set the load order and/or active plugins (or just validate if
-        dry_run is True). The different way each game handles this and how
+        previous_* is None). The different way each game handles this and how
         it modifies common data structures necessitate that info on previous
         (cached) state is passed in, usually for both active plugins and
         load order. For instance, in the case of asterisk games, plugins.txt
@@ -312,18 +312,19 @@ class LoGame(object):
         :returns the (possibly fixed) lord and active lists
         """
         if lord is active is None:
-            raise ValueError(u'Load order or active must be not None')
+            raise ValueError('Load order or active must be not None')
+        dry_run = previous_lord is previous_active is None
         setting_lo = lord is not None
-        setting_active = active is not None
         if setting_lo:
             # fix the load order - lord is modified in place, hence test below
             self._fix_load_order(lord, fix_lo=fix_lo)
-        setting_lo = setting_lo and previous_lord != lord
+            setting_lo = previous_lord != lord
+        setting_active = active is not None
         if setting_lo and not setting_active:
             # changing load order - must test if active plugins must change too
             if previous_active is None: # active is None
                 raise ValueError(
-                    u'You must pass info on active when setting load order')
+                    'You must pass info on active when setting load order')
             setting_active = previous_lord is None # we must check active
             if not setting_active: # does active need change due to lo changes?
                 prev = set(previous_lord)
@@ -345,7 +346,7 @@ class LoGame(object):
                                      fix_active=fix_lo)
         lord = lord if setting_lo else previous_lord
         active = active if setting_active else previous_active
-        if lord is  None or active is  None: # sanity check
+        if lord is None or active is None: # sanity check
             raise Exception(u'Returned load order and active must be not None')
         if not dry_run: # else just return the (possibly fixed) lists
             self._persist_if_changed(active, lord, previous_active,

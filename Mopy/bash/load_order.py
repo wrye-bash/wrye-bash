@@ -288,11 +288,11 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
-    as loadorder.txt, and of course rewrite it completely for fallout 4 (
-    asterisk method)."""
+    as loadorder.txt, and of course rewrite it completely for AsteriskGame."""
     acti_list = None if acti is None else list(acti)
+    load_list = None if lord is None else list(lord)
     fix_lo = None if quiet else _games_lo.FixInfo()
-    lord, acti = _game_handle.set_load_order(list(lord), acti_list,
+    lord, acti = _game_handle.set_load_order(load_list, acti_list,
                                              list(cached_lord.loadOrder),
                                              list(cached_lord.activeOrdered),
                                              fix_lo=fix_lo)
@@ -347,8 +347,8 @@ def refresh_lo(cached=False, cached_active=True):
         if cached_lord is not __lo_unset:
             if cached_lord != saved: # sanity check, should not happen
                 bolt.deprint(f'Bug: {cached_lord=} is different from {saved=}')
-        lord, acti = _game_handle.set_load_order( # make sure saved lo is valid
-            list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
+        lord, acti = _game_handle.set_load_order( # validate saved lo
+            list(saved.loadOrder), list(saved.activeOrdered))
         fixed = LoadOrder(lord, acti)
         if fixed != saved:
             bolt.deprint(f'Saved load order is no longer valid: {saved}\n'
@@ -417,8 +417,7 @@ def _restore_lo(index_move):
     previous = _saved_load_orders[index].lord
     # fix previous
     lord, acti = _game_handle.set_load_order(list(previous.loadOrder),
-                                             list(previous.activeOrdered),
-                                             dry_run=True)
+                                             list(previous.activeOrdered))
     previous = LoadOrder(lord, acti) # possibly fixed
     if previous == cached_lord:
         index_move += int(math.copysign(1, index_move)) # increase or decrease by 1

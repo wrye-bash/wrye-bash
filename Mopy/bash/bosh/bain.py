@@ -919,7 +919,7 @@ class Installer(ListInfo):
                                             file_relative)
                             continue
                         elif not rootLower and fileExt in plugin_extensions:
-                            #--Remap espms as defined by the user
+                            #--Remap plugins as defined by the user
                             if file_relative in self._remaps:
                                 file_relative = self._remaps[file_relative]
                                 # No need to update fileLower, will skip
@@ -2263,7 +2263,7 @@ class InstallersData(DataStore):
         """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
         cache.
 
-        Recalculates crcs for all espms in Data/ directory and all other
+        Recalculates crcs for all plugins in Data/ directory and all other
         files whose cached date or size has changed. Will skip directories
         (but not files) specified in Installer global skips and remove empty
         dirs if the setting is on."""
@@ -2279,7 +2279,7 @@ class InstallersData(DataStore):
         oldGet = self.data_sizeCrcDate.get
         siz_apath_mtime = bolt.LowerDict()
         new_sizeCrcDate = bolt.LowerDict()
-        from . import modInfos # to get the crcs for espms
+        from . import modInfos # to get the crcs for plugins
         # these should be already updated (fullRefresh explicitly calls
         # modInfos.refresh and so does RefreshData when tabbing in)
         plugins_scd = bolt.LowerDict()
@@ -2390,7 +2390,7 @@ class InstallersData(DataStore):
         root_dirs_files = [(key, [j for i, j in val]) for key, val in
                            groupby(root_files, key=itemgetter(0))]
         progress = progress or bolt.Progress()
-        from . import modInfos  # to get the crcs for espms
+        from . import modInfos  # to get the crcs for plugins
         progress.setFull(1 + len(root_dirs_files))
         siz_apath_mtime = bolt.LowerDict()
         new_sizeCrcDate = bolt.LowerDict()

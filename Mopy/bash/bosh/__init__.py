@@ -2196,9 +2196,8 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.save_lo(load_order.cached_lo_tuple(),
-            load_order.cached_lord.lorder(
-                self._active_wip if active is None else active))
+        load_order.save_lo(None, load_order.cached_lord.lorder(
+            self._active_wip if active is None else active))
 
     @_lo_cache
     def cached_lo_save_lo(self):
@@ -2262,15 +2261,17 @@ class ModInfos(FileInfos):
         self._lo_wip[first_dex:first_dex] = modlist
 
     def cached_lo_append_if_missing(self, mods):
-        new = mods - set(self._lo_wip)
+        lo_wip_set = set(self._lo_wip)
+        new = [x for x in mods if x not in lo_wip_set]
         if not new: return
-        esms = {x for x in new if self[x].in_master_block()}
+        esms = [x for x in new if self[x].in_master_block()]
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
                 self.cached_lo_insert_after(last, esm)
                 last = esm
-            new -= esms
+            esms_set = set(esms)
+            new = [x for x in new if x not in esms_set]
         self._lo_wip.extend(new)
         self.cached_lo_save_lo()
 
@@ -2802,7 +2803,7 @@ class ModInfos(FileInfos):
         if fileName.fn_ext == u'.esu': return []
         try:
             espms_extra, esls_extra = load_order.check_active_limit(
-                self._active_wip + [fileName])
+                [*self._active_wip , fileName])
             if espms_extra or esls_extra:
                 msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
@@ -2812,9 +2813,13 @@ class ModInfos(FileInfos):
                         msg += ' and '
                     msg += f'{load_order.max_esls():d} light plugins'
                 raise PluginsFullError(msg)
-            _children = (_children or tuple()) + (fileName,)
-            if fileName in _children[:-1]:
-                raise BoltError(f'Circular Masters: {" >> ".join(_children)}')
+            if _children:
+                if fileName in _children:
+                    raise BoltError(f'Circular Masters: '
+                                    f'{" >> ".join((*_children, fileName))}')
+                _children.append(fileName)
+            else:
+                _children = [fileName]
             #--Select masters
             if _modSet is None: _modSet = set(self)
             #--Check for bad masternames:

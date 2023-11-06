@@ -362,7 +362,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                         sel_package.espmNots.add(espm)) # bool(None) == False
                     idetails.gEspmList.lb_check_at_index(index, do_check)
                 idetails.refreshCurrent(sel_package)
-                #Rename the espms that need renaming
+                #Rename the plugins that need renaming
                 for oldName, renamed in ret.rename_plugins.items():
                     sel_package.setEspmName(oldName, renamed)
                 idetails.refreshCurrent(sel_package)
