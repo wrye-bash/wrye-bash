@@ -152,13 +152,13 @@ class MelSet(object):
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
-        self._sort_elements = []
+        self.sort_elements = []
         for element in self.elements:
             element.getDefaulters(self.defaulters,'')
             element.getLoaders(self.loaders)
             element.hasFids(self.formElements)
             if element.needs_sorting():
-                self._sort_elements.append(element)
+                self.sort_elements.append(element)
         for sig_candidate in self.loaders:
             if not isinstance(sig_candidate, bytes) or len(sig_candidate) != 4:
                 raise SyntaxError(f"Invalid signature '{sig_candidate!r}': "
@@ -221,11 +221,6 @@ class MelSet(object):
         """Maps fids of subelements."""
         for element in self.formElements:
             element.mapFids(record, mapper, save_fids)
-
-    def sort_subrecords(self, record):
-        """Sorts all subrecords of the specified record that need sorting."""
-        for element in self._sort_elements:
-            element.sort_subrecord(record)
 
     def with_distributor(self, distributor_config: dict) -> Self:
         """Adds a distributor to this MelSet. See _MelDistributor for more
@@ -593,7 +588,8 @@ class MelRecord(MreRecord):
 
     def _sort_subrecords(self):
         """Sorts all subrecords of this record that need sorting."""
-        self.__class__.melSet.sort_subrecords(self)
+        for element in self.__class__.melSet.sort_elements:
+            element.sort_subrecord(self)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""

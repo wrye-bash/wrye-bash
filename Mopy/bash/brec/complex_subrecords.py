@@ -1533,9 +1533,8 @@ class _AVmadComponent(object):
 class _AFixedContainer(_AVmadComponent):
     """Abstract base class for components that contain a fixed number of other
     components. Which ones are present is determined by a flags field. You
-    need to specify a processor that sets an attribute named, by default,
-    fragment_flags to the right value (you can change the name using the class
-    variable _flags_attr). Additionally, you have to set _flags_mapper to a
+    need to specify a processor that sets an attribute named 'fragment_flags'
+    to the right value. Additionally, you have to set _flags_mapper to a
     bolt.Flags instance that can be used for decoding the flags and
     _flags_to_children to a dict that maps flag names to child attribute names.
     The order of this dict is the order in which the children will be read and
@@ -1543,7 +1542,6 @@ class _AFixedContainer(_AVmadComponent):
     correct class for your class type. Note that you have to do this inside
     __init__, as it is an instance variable."""
     # Abstract - to be set by subclasses
-    _flags_attr = 'fragment_flags' # FIXME after refactoring, check if this is still never overriden - if so, get rid of it and use fragment_flags directly
     _flags_mapper: Flags
     _flags_to_children: dict[str, str]
     _child_loader: _AVmadComponent
@@ -1552,9 +1550,8 @@ class _AFixedContainer(_AVmadComponent):
         # Load the regular attributes first
         super().load_frag(record, ins, vmad_ctx, *debug_strs)
         # Then, process the flags and decode them
-        child_flags = self._flags_mapper(
-            getattr(record, self._flags_attr))
-        setattr(record, self._flags_attr, child_flags)
+        child_flags = self._flags_mapper(getattr(record, 'fragment_flags'))
+        setattr(record, 'fragment_flags' , child_flags)
         # Finally, inspect the flags and load the appropriate children. We must
         # always load and dump these in the exact order specified by the
         # subclass!
@@ -1571,7 +1568,7 @@ class _AFixedContainer(_AVmadComponent):
         # Update the flags first, then dump the regular attributes
         # Also use this chance to store the value of each present child
         children = []
-        child_flags = getattr(record, self._flags_attr)
+        child_flags = getattr(record, 'fragment_flags')
         store_child = children.append
         for flag_attr, child_attr in self._flags_to_children.items():
             cont_child = getattr(record, child_attr)
@@ -1588,11 +1585,11 @@ class _AFixedContainer(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return super().used_slots + list(self._flags_to_children.values())
+        return [*super().used_slots, *self._flags_to_children.values()]
 
 class _AVariableContainer(_AVmadComponent):
     """Abstract base class for components that contain a variable number of
-    iother components, with the count stored in a preceding integer. You need
+    other components, with the count stored in a preceding integer. You need
     to specify a processor that sets an attribute named, by default,
     fragment_count to the right value (you can change the name using the class
     variable _counter_attr). Additionally, you have to set _child_loader to an
@@ -1636,7 +1633,7 @@ class _AVariableContainer(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return super().used_slots + [self._children_attr]
+        return [*super().used_slots, self._children_attr]
 
 class _ObjectRef(object):
     """An object ref is a FormID and an AliasID."""
@@ -1802,9 +1799,9 @@ class _AVmadHandlerV6Mixin(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['frag_script'] + list(
-            set(self._v5_processors) | set(self._v6_pre_processors) |
-            set(self._v6_post_processors))
+        proc_keys = self._v5_processors.keys() | self._v6_pre_processors.keys(
+            ) | self._v6_post_processors.keys()
+        return [*super().used_slots, 'frag_script', *proc_keys]
 
 class _VmadHandlerINFO(_AVmadHandlerV6Mixin, _AFixedContainer):
     """Implements special VMAD handling for INFO records."""
@@ -1932,7 +1929,7 @@ class _VmadHandlerQUST(_AVariableContainer):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['qust_aliases', 'frag_script']
+        return [*super().used_slots, 'qust_aliases', 'frag_script']
 
 class _VmadHandlerSCEN(_AVmadHandlerV6Mixin, _AFixedContainer):
     """Implements special VMAD handling for SCEN records."""
@@ -1984,7 +1981,7 @@ class _VmadHandlerSCEN(_AVmadHandlerV6Mixin, _AFixedContainer):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['phase_fragments']
+        return [*super().used_slots, 'phase_fragments']
 
 # Scripts -----------------------------------------------------------------
 class _Script(_AVariableContainer):
@@ -2021,7 +2018,7 @@ class _Script(_AVariableContainer):
 
     @property
     def used_slots(self):
-        return super().used_slots + list(self._v4_processors)
+        return [*super().used_slots, *self._v4_processors]
 
 class _AnonScript(_Script):
     """Special handler for the script inside v6 QUST fragments. The later parts
@@ -2049,7 +2046,7 @@ class _AnonScript(_Script):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['script_name']
+        return [*super().used_slots, 'script_name']
 
 # Properties & Structs --------------------------------------------------------
 # All value types that exist - not all are available for all games, see below
@@ -2208,7 +2205,7 @@ class _AValueComponent(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['val_data']
+        return [*super().used_slots, 'val_data']
 
 # Properties ------------------------------------------------------------------
 class _Property(_AValueComponent):
@@ -2226,11 +2223,9 @@ class _Property(_AValueComponent):
     def load_frag(self, record, ins, vmad_ctx: AVmadContext, *debug_strs):
         # Load the three regular attributes first - need to check version,
         # prop_status got added in v4
-        if vmad_ctx.vmad_ver >= 4:
-            self._processors = self._v4_processors
-        else:
-            self._processors = self._v3_processors
-            record.prop_status = 1 # Defaults to 1 (edited)
+        self._processors = self._v4_processors if vmad_ctx.vmad_ver >= 4 \
+            else self._v3_processors
+        record.prop_status = 1  # Defaults to 1 (edited)
         super().load_frag(record, ins, vmad_ctx, *debug_strs)
 
     def dump_frag(self, record, out, vmad_ctx: AVmadContext):
@@ -2241,7 +2236,7 @@ class _Property(_AValueComponent):
     @property
     def used_slots(self):
         # _processors may be empty, _v4_processors or _v3_processors right now
-        return list(set(super().used_slots) | set(self._v4_processors))
+        return [*{*super().used_slots, *self._v4_processors}]
 
 # Structs ---------------------------------------------------------------------
 class _Member(_AValueComponent):
@@ -2322,8 +2317,7 @@ class _Alias(_AVariableContainer):
 
     @property
     def used_slots(self):
-        return super().used_slots + ['alias_ref_obj'] + list(
-            self._out_processors)
+        return [*super().used_slots, 'alias_ref_obj', *self._out_processors]
 
 # API -------------------------------------------------------------------------
 class AVmadContext:

@@ -351,8 +351,8 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray preludes must have a static size')
 
     def getSlotsUsed(self):
-        slots_ret = self._prelude.getSlotsUsed() if self._prelude else ()
-        return super(MelArray, self).getSlotsUsed() + slots_ret
+        sup = super().getSlotsUsed()
+        return (*sup, *self._prelude.getSlotsUsed()) if self._prelude else sup
 
     def hasFids(self, formElements):
         temp_elements_prelude = set()
@@ -407,14 +407,11 @@ class MelArray(MelBase):
         if not array_val: return None # don't dump out empty arrays
         if self._prelude:
             sub_data = self._prelude.pack_subrecord_data(record)
-            if sub_data is None:
-                deprint(f'{record}: prelude={self._prelude} '
-                        f'for attr={self.attr} returned None packed data')
-                sub_data = b''
-        else:
-            sub_data = b''
-        sub_data += self._pack_array_data(array_val)
-        return sub_data
+            if sub_data is not None:
+                return sub_data + self._pack_array_data(array_val)
+            deprint(f'{record}: prelude={self._prelude} '
+                    f'for attr={self.attr} returned None packed data')
+        return self._pack_array_data(array_val)
 
     def _pack_array_data(self, array_val):
         return b''.join(
