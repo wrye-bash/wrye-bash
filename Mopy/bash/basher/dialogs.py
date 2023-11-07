@@ -491,6 +491,16 @@ class CreateNewPlugin(DialogWindow):
             with_esl_flag=self._esl_flag.is_checked,
             with_overlay_flag=self._overlay_flag.is_checked,
             wanted_masters=[*map(FName, self._chosen_masters)])
+        # Check if we made a plugin with circular masters - we need the ModInfo
+        # object itself to check this. A bit ugly from a UX perspective, but OK
+        # because it's a  rare scenario anyways
+        created_plugin = pw.data_store[chosen_name]
+        if created_plugin.has_circular_masters():
+            showError(self, _('Creating a plugin named %(chosen_plugin_name)s '
+                              'with the chosen masters will cause it to '
+                              'have circular masters, i.e. depend on '
+                              'itself.') % {'chosen_plugin_name': chosen_name})
+            return EventResult.FINISH # leave the dialog open
         if windowSelected:  # assign it the group of the first selected mod
             mod_group = pw.data_store.table.getColumn(u'group')
             mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')

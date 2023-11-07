@@ -83,10 +83,9 @@ class _AMerger(ImportPatcher):
         """We need to scan the masters recursively - add to p_file read
         factories."""
         sup = super()._process_sources(p_sources, p_file)
-        self._masters_and_srcs = {*chain.from_iterable( # merger_masters
-            p_file.p_file_minfos.recurse_masters(srcMod) for srcMod in
+        self._masters_and_srcs = {*chain.from_iterable(
+            p_file.p_file_minfos[srcMod].recurse_masters() for srcMod in
             self.srcs), *self.srcs}
-        # self._update_patcher_factories(p_file, self._masters_and_srcs)
         return sup
 
     def initData(self,progress):

@@ -30,7 +30,7 @@ import os
 import pickle
 import re
 import sys
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, deque, OrderedDict
 from collections.abc import Iterable
 from functools import wraps
 from itertools import chain
@@ -102,13 +102,14 @@ _CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MasterInfo(object):
+class MasterInfo:
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
-    __slots__ = (u'is_ghost', u'curr_name', u'mod_info', u'old_name',
-                 'stored_size', '_was_esl')
+    __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name',
+                 'stored_size', '_was_esl', 'parent_mod_info')
 
-    def __init__(self, master_name, master_size, was_esl):
+    def __init__(self, *, parent_minf, master_name, master_size, was_esl):
+        self.parent_mod_info = parent_minf
         self.stored_size = master_size
         self._was_esl = was_esl
         self.old_name = FName(master_name)
@@ -184,8 +185,8 @@ class FileInfo(AFile, ListInfo):
         g_path = GPath(fullpath)
         ListInfo.__init__(self, g_path.stail) # ghost must be lopped off
         self.header = None
-        self.masterNames = tuple()
-        self.masterOrder = tuple()
+        self.masterNames: tuple[FName, ...] = ()
+        self.masterOrder: tuple[FName, ...] = ()
         self.madeBackup = False
         # True if the masters for this file are not reliable
         self.has_inaccurate_masters = False
@@ -553,6 +554,40 @@ class ModInfo(FileInfo):
     def get_dependents(self):
         """Return a set of all plugins that have this plugin as a master."""
         return modInfos.dependents[self.fn_key]
+
+    def recurse_masters(self, *, fake_masters: list[FName] | None = None) \
+            -> set[FName]:
+        """Recursively collect all masters of this plugin, including transitive
+        ones.
+
+        :param fake_masters: If not None, use this instead of self.masterNames
+            for determining which masters to recurse into."""
+        plugins_to_check = deque([self])
+        checked_plugins = set()
+        ret_masters = set()
+        while plugins_to_check:
+            src_plugin = plugins_to_check.popleft()
+            checked_plugins.add(src_plugin.fn_key)
+            src_masters = (fake_masters
+                           if fake_masters is not None and src_plugin is self
+                           else src_plugin.masterNames)
+            for src_master in src_masters:
+                ret_masters.add(src_master)
+                # Check to make sure we're not going to enter an infinite loop
+                # if we hit a circular master situation
+                if (src_master not in checked_plugins and
+                        (src_master_info := modInfos.get(src_master))):
+                    plugins_to_check.append(src_master_info)
+        return ret_masters
+
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        """Check if this plugin has circular masters, i.e. if it depends on
+        itself (either directly or transitively).
+
+        :param fake_masters: If not None, use this instead of self.masterNames
+            for determining which masters to recurse into. Useful for checking
+            if altering a master list would cause it to become circular."""
+        return self.fn_key in self.recurse_masters(fake_masters=fake_masters)
 
     # Ghosting and ghosting related overrides ---------------------------------
     def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
@@ -3369,15 +3404,6 @@ class ModInfos(FileInfos):
         for p, p_info in self.items():
             for p_master in p_info.masterNames:
                 cached_dependents[p_master].add(p)
-
-    def recurse_masters(self, fn_mod):
-        """Recursively collect all masters of fn_mod."""
-        ret_masters = set()
-        src_masters = self[fn_mod].masterNames if fn_mod in self else []
-        for src_master in src_masters:
-            ret_masters.add(src_master)
-            ret_masters.update(self.recurse_masters(src_master))
-        return ret_masters
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):

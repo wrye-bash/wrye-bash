@@ -201,10 +201,24 @@ class Master_ChangeTo(_Master_EditList):
             return
         curr_master_names = {m.curr_name for m in
                              self.window.data_store.values()}
-        if new_fname in curr_master_names:
-            self._showError(_('This plugin already has %(master_name)s as a '
-                              'master.') % {'master_name': new_fname})
-            return
+        parent_mi = masterInfo.parent_mod_info
+        # If the user is trying to fix a plugin with circular masters, allow
+        # any kind of reassignment - otherwise, run some sanity checks
+        if not parent_mi.has_circular_masters():
+            # Don't allow duplicate masters
+            if new_fname in curr_master_names:
+                self._showError(_('This plugin already has %(master_name)s as '
+                                  'a master.') % {'master_name': new_fname})
+                return
+            # Don't allow adding a master that makes the masters circular
+            altered_masters = [new_fname if m == master_name else m
+                               for m in parent_mi.masterNames]
+            if parent_mi.has_circular_masters(fake_masters=altered_masters):
+                self._showError(_('Having %(problem_master)s as a master '
+                                  'would cause this plugin to have circular '
+                                  'masters, i.e. depend on itself.') % {
+                    'problem_master': new_fname})
+                return
         #--Save Name
         if masterInfo.rename_if_present(new_fname):
             ##: should be True but needs extra validation -> cycles?

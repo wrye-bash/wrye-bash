@@ -183,7 +183,11 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     cannot_scan_overrides = set()
     p_missing_masters = set()
     p_delinquent_masters = set()
+    p_circular_masters = set()
     for p_fn_key, p in all_present_minfs.items():
+        if p.has_circular_masters():
+            # The plugin depends on itself (possibly transitively) -> report
+            p_circular_masters.add(p_fn_key)
         if p_fn_key in all_active_plugins:
             for p_master in p.masterNames:
                 if p_master not in all_present_plugins:
@@ -649,18 +653,36 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
         log_plugins(should_activate)
     if p_missing_masters:
         log.setHeader('=== ' + _('Missing Masters'))
-        log(_(u'The following plugins have missing masters and are active. '
-              u'This will cause a CTD at the main menu and must be '
-              u'corrected.'))
+        log(_('The following plugins have missing masters and are active. '
+              'This will cause a CTD at the main menu and must be corrected '
+              'by installing the missing plugins or removing the plugins with '
+              'missing masters.'))
         log_plugins(p_missing_masters)
     if p_delinquent_masters:
         log.setHeader('=== ' + _('Delinquent Masters'))
-        log(_(u'The following plugins have delinquent masters, i.e. masters '
-              u'that are set to load after their dependent plugins. The game '
-              u'will try to force them to load before the dependent plugins, '
-              u'which can lead to unpredictable or undefined behavior and '
-              u'must be corrected.'))
+        log(_('The following plugins have delinquent masters, i.e. masters '
+              'that are set to load after their dependent plugins. The game '
+              'will try to force them to load before the dependent plugins, '
+              'which can lead to unpredictable or undefined behavior and '
+              'must be corrected. You should correct the load order.'))
         log_plugins(p_delinquent_masters)
+    if p_circular_masters:
+        log.setHeader('=== ' + _('Circular Masters'))
+        log(_("The following plugins have circular masters, i.e. they depend "
+              "on themselves. This can happen either directly (%(example_a)s "
+              "has %(example_a)s as a master) or transitively (%(example_a)s "
+              "has %(example_b)s as a master, which, in turn, has "
+              "%(example_a)s as a master - such a chain may be even longer). "
+              "Resolving this is impossible for the game, which will most "
+              "likely crash when trying to load these plugins. You can try to "
+              "investigate by using the 'Change To...' command to reassign "
+              "the circular master so that the plugin can be opened in "
+              "%(xedit_name)s.") % {
+            'example_a': 'foo.esp',
+            'example_b': 'bar.esp',
+            'xedit_name': bush.game.Xe.full_name,
+        })
+        log_plugins(p_circular_masters)
     if invalid_tes4_versions:
         ver_list = u', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
