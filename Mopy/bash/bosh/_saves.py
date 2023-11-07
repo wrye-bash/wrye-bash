@@ -173,7 +173,7 @@ class SreNPC(object):
         """Returns record as a change record tuple."""
         return 35, self.getFlags(), version, self.getData()
 
-    def dumpText(self,saveFile):
+    def dumpText(self,saveFile): ## unused?
         """Returns informal string representation of data."""
         buff = []
         fids = saveFile.fids
@@ -195,7 +195,7 @@ class SreNPC(object):
             for spell in self.spells:
                 buff.append(f'  {fids[spell]:8X}')
         if self.ai is not None:
-            buff.append(_(u'AI') + f':\n  {self.ai}')
+            buff.append(f'AI:\n  {self.ai}')
         if self.health is not None:
             buff.append(f'Health\n  {self.health}')
             buff.append(f'Unused2\n  {self.unused2}')
