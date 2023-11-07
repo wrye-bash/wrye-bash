@@ -6425,7 +6425,7 @@ msgstr "Master hinzufügen"
 
 #: bash\basher.py:8229
 msgid "File must be selected from Oblivion Data Files directory"
-msgstr "Datei muss aus dem Oblivion\Data Ordner ausgewählt werden"
+msgstr "Datei muss aus dem Oblivion\\Data Ordner ausgewählt werden"
 
 #: bash\basher.py:8231
 msgid "%s is already a master!"

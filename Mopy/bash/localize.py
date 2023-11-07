@@ -31,12 +31,14 @@ import locale
 import os
 import pkgutil
 import re
-import subprocess
 import sys
 import time
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
+
+# We need the vendored i18n files
+from ._i18n import msgfmt, pygettext
 
 def set_c_locale():
     # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
@@ -133,21 +135,10 @@ def setup_locale(cli_lang, _wx):
             # We have a translation file, check if it has to be compiled
             if not os.path.isfile(mo) or (os.path.getmtime(po) >
                                           os.path.getmtime(mo)):
-                # Try compiling - have to do it differently if we're a
-                # standalone build
-                args = [u'm', u'-o', mo, po]
-                if bass.is_standalone:
-                    # Delayed import, since it's only present on standalone
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
-                else:
-                    # msgfmt is only in Tools, so call it explicitly
-                    from .env import python_tools_dir
-                    m = os.path.join(python_tools_dir(), u'i18n', u'msgfmt.py')
-                    subprocess.call([sys.executable, m, u'-o', mo, po])
+                old_argv = sys.argv[:]
+                sys.argv = ['m', '-o', mo, po]
+                msgfmt.main()
+                sys.argv = old_argv
             # We've successfully compiled the translation, read it into memory
             with open(mo, u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
@@ -207,23 +198,12 @@ def dump_translator(out_path, lang):
     new_po = os.path.join(out_path, f'{lang}NEW.po')
     tmp_po = os.path.join(out_path, f'{lang}NEW.tmp')
     old_po = os.path.join(out_path, f'{lang}.po')
-    gt_args = [u'p', u'-a', u'-o', new_po]
+    gt_args = ['p', '-a', '-o', new_po]
     gt_args.extend(_find_all_bash_modules())
-    # Need to do this differently on standalone
-    if bass.is_standalone:
-        # Delayed import, since it's only present on standalone
-        import pygettext
-        old_argv = sys.argv[:]
-        sys.argv = gt_args
-        pygettext.main()
-        sys.argv = old_argv
-    else:
-        # pygettext is only in Tools, so call it explicitly
-        gt_args[0] = sys.executable
-        from .env import python_tools_dir
-        gt_args.insert(1, os.path.join(python_tools_dir(), u'i18n',
-                                       u'pygettext.py'))
-        subprocess.call(gt_args, shell=True)
+    old_argv = sys.argv[:]
+    sys.argv = gt_args
+    pygettext.main()
+    sys.argv = old_argv
     # Fill in any already translated stuff...?
     try:
         re_msg_ids_start = re.compile(b'#:')

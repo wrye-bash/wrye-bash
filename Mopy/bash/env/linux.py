@@ -266,22 +266,7 @@ def fixup_taskbar_icon():
     pass # Windows only
 
 def mark_high_dpi_aware():
-    pass ##: Equivalent on Linux? Not needed?
-
-def python_tools_dir():
-    # This is much more complicated on Linux than on Windows, since sys.prefix
-    # only points to /usr here, so is useless
-    for path_entry in sys.path:
-        tools_path = os.path.join(path_entry, u'Tools')
-        # Actually check for the files we really want
-        try_paths = [os.path.join(tools_path, u'i18n', x)
-                     for x in (u'msgfmt.py', u'pygettext.py')]
-        if all(os.path.isfile(p) for p in try_paths):
-            return tools_path
-    # Fall back on /usr/lib/python*.* - this should never happen
-    _deprint(u'Failed to find Python Tools dir on sys.path')
-    return f'/usr/lib/python{sys.version_info.major:d}.' \
-           f'{sys.version_info.minor:d}'
+    pass # Windows only
 
 def convert_separators(p):
     return p.replace(u'\\', u'/')

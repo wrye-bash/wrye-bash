@@ -1224,11 +1224,6 @@ def _real_sys_prefix():
     else:
         return sys.prefix
 
-def python_tools_dir():
-    """Returns the absolute path to the Tools directory of the currently used
-    Python installation."""
-    return os.path.join(_real_sys_prefix(), 'Tools') # easy on Windows
-
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')

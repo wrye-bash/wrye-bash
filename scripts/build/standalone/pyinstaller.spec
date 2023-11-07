@@ -28,7 +28,7 @@ block_cipher = None
 entry_point = os.path.join(MOPY_PATH, 'Wrye Bash Launcher.pyw')
 icon_path = os.path.join(WBSA_PATH, 'bash.ico')
 manifest_path = os.path.join(WBSA_PATH, 'manifest.xml')
-hiddenimports = ['pygettext', 'msgfmt']
+hiddenimports = []
 
 for root, _, filenames in os.walk(GAME_PATH):
     for filename in fnmatch.filter(filenames, '*.py'):
