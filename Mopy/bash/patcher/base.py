@@ -506,7 +506,7 @@ class ImportPatcher(ListPatcher, ScanPatcher):
     patcher_group = u'Importers'
     patcher_order = 20
     # Override in subclasses as needed
-    logMsg = u'\n=== ' + _(u'Modified Records')
+    logMsg = '\n=== ' + _('Modified Records')
 
     def _update_patcher_factories(self, p_file):
         # most of the import patchers scan their sources' masters
@@ -519,8 +519,6 @@ class ImportPatcher(ListPatcher, ScanPatcher):
         self._log_srcs(log)
         self._plog(log,type_count)
 
-    ##: Unify these - decide which one looks best in the end and make all
-    # patchers use that one
     def _plog(self,log,type_count):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
@@ -528,8 +526,3 @@ class ImportPatcher(ListPatcher, ScanPatcher):
             if count:
                 log('* ' + _('Modified %(tg_type)s Records: %(rec_cnt)d') % {
                     'tg_type': sig_to_str(top_grup_sig), 'rec_cnt': count})
-
-    def _plog1(self,log,mod_count): # common logging variation
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in load_order.get_ordered(mod_count):
-            log(f'* {mod}: {mod_count[mod]:3d}')

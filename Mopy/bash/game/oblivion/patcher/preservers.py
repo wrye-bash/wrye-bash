@@ -36,7 +36,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     patcher_tags = {'Roads'}
     _config_key = u'RoadImporter'
 
-    logMsg = u'\n=== ' + _(u'Worlds Patched')
+    logMsg = '\n=== ' + _('Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
