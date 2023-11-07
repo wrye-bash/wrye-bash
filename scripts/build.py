@@ -86,8 +86,9 @@ else:
 
 def setup_parser(parser):
     version_group = parser.add_mutually_exclusive_group()
-    nightly_version = f'{bass.AppVersion.split(u".")[0]}.' \
-                      f'{datetime.datetime.utcnow().strftime(u"%Y%m%d%H%M")}'
+    curr_datetime = datetime.datetime.now(datetime.UTC)
+    nightly_version = (f'{bass.AppVersion.split(".")[0]}.'
+                       f'{curr_datetime.strftime("%Y%m%d%H%M")}')
     version_group.add_argument(
         u'-n',
         u'--nightly',

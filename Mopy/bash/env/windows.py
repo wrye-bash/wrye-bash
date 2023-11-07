@@ -513,10 +513,7 @@ def _find_ws_games() -> dict[str, _Path]:
     installed games in the resulting 'Xbox' game libraries."""
     # First, look for the libraries
     found_libraries = []
-    # Couldn't just return a list of strings of course - thanks pywin32
-    # PY3.12: Use os.listdrives()
-    all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
-    for curr_drive in all_drives:
+    for curr_drive in os.listdrives():
         library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
         if library_path is None:
             continue # No .GamingRoot or failed to parse - either way, skip

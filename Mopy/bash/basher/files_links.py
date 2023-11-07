@@ -167,8 +167,8 @@ class File_ListMasters(OneItemLink):
 #------------------------------------------------------------------------------
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
-    _help = _(u'Creates a snapshot copy of the selected file(s) in a '
-              u'subdirectory (Bash\Snapshots).')
+    _help = _("Creates a snapshot copy of the selected file(s) in a "
+              "'Snapshots' subdirectory.")
 
     @property
     def link_text(self):

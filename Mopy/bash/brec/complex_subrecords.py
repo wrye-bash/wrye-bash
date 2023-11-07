@@ -2042,7 +2042,8 @@ class _AValueComponent(_AVmadComponent):
     slots, val_data and val_type. val_data will be loaded when you call
     _load_val and dumped when you call _dump_val, but val_type has to be loaded
     by your subclass."""
-    # Only the MelObject-derived classes have slots, so cached_property is fine
+    # Only the MelObject-derived classes have slots, so fast_cached_property is
+    # fine
     @bolt.fast_cached_property
     def _struct_loader(self):
         """Structs can be infinitely recursive, so we have to lazily construct

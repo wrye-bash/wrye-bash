@@ -469,7 +469,7 @@ class PluginChecker(WindowFrame):
         """Copies text of report to clipboard."""
         mods_txt = f'[spoiler]\n{self.check_mods_text}[/spoiler]'
         mods_txt = re.sub(r'\[\[.+?\|\s*(.+?)\]\]', r'\1', mods_txt)
-        mods_txt = re.sub('(__|\*\*|~~)', '', mods_txt)
+        mods_txt = re.sub(r'(__|\*\*|~~)', '', mods_txt)
         mods_txt = re.sub('&bull; &bull;', '**', mods_txt)
         mods_txt = re.sub('<[^>]+>', '', mods_txt)
         copy_text_to_clipboard(mods_txt)

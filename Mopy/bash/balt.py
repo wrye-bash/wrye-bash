@@ -29,7 +29,7 @@ import time
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
-from functools import partial, wraps, cached_property
+from functools import partial, wraps
 from itertools import islice
 from typing import final
 
@@ -39,7 +39,7 @@ import wx.adv
 from . import bass, wrye_text  # bass for dirs - track
 from . import bolt
 from .bass import Store
-from .bolt import FName, Path, deprint, readme_url
+from .bolt import FName, Path, deprint, readme_url, fast_cached_property
 from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CheckListBox, Color, DialogWindow, \
@@ -673,7 +673,7 @@ class UIList(PanelWin):
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
         self.populate_items()
 
-    @cached_property
+    @fast_cached_property
     def icons(self):
         return ColorChecks(get_color_checks())
 
