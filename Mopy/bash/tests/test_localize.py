@@ -40,7 +40,6 @@ class TestLocalize:
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')
             print(f'getlocale: {locale.getlocale()}')
-            print(f'getdefaultlocale: {locale.getdefaultlocale()}')
             wx_locale = setup_locale(loc, _wx)
             # getlocale = locale.getlocale()
             # print(getlocale)

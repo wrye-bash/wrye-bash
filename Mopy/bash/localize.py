@@ -33,6 +33,7 @@ import pkgutil
 import re
 import sys
 import time
+import warnings
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
@@ -72,9 +73,17 @@ def setup_locale(cli_lang, _wx):
         target_name = cli_target.CanonicalName
     else:
         # Fall back on the default language
-        language_code, enc = locale.getdefaultlocale()
+        try:
+            with warnings.catch_warnings():
+                # Work around https://github.com/python/cpython/issues/82986
+                warnings.simplefilter('ignore', category=DeprecationWarning)
+                language_code, enc = locale.getdefaultlocale()
+        except AttributeError:
+            bolt.deprint('getdefaultlocale no longer exists, this will '
+                         'probably break on Windows now')
+            language_code, enc = locale.getlocale()
         bolt.deprint(f'{cli_lang=} - {cli_target=} - falling back to '
-                     f'({language_code}, {enc}) from getdefaultlocale')
+                     f'({language_code}, {enc}) from default locale')
         lang_info = _wx.Locale.FindLanguageInfo(language_code)
         target_name = lang_info and lang_info.CanonicalName
         bolt.deprint(f'wx gave back {target_name}')

@@ -128,6 +128,7 @@ class _BaseApp(_wx.App):
         rv = _wx.PyApp.MainLoop(self)
         if restore_stdio: self.RestoreStdio()
         return rv
+
     def InitLocale(self):
         if sys.platform.startswith('win') and sys.version_info > (3,8):
             locale.setlocale(locale.LC_CTYPE, 'C')
