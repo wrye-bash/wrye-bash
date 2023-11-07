@@ -98,29 +98,29 @@ def validNumber(string):
 # Define Some Constants ---------------------------
 
 # Some error string
-def err_too_few_args(obj_type, obj_name, got, expected):
+def _err_too_few_args(obj_type, obj_name, got, expected):
     error(_("Too few arguments to %(obj_type)s '%(obj_name)s': got %(got)s, "
             "expected %(expected)s.") % {'obj_type': obj_type,
                                          'obj_name': obj_name, 'got': got,
                                          'expected': expected})
 
-def err_too_many_args(obj_type, obj_name, got, expected):
+def _err_too_many_args(obj_type, obj_name, got, expected):
     error(_("Too many arguments to %(obj_type)s '%(obj_name)s': got %(got)s, "
             "expected %(expected)s.") % {'obj_type': obj_type,
                                          'obj_name': obj_name, 'got': got,
                                          'expected': expected})
 
-def err_cant_set(obj_type, obj_name, type_enum):
+def _err_cant_set(obj_type, obj_name, type_enum):
     error(_("Cannot set %(obj_type)s '%(obj_name)s': type is "
             "'%(conflicting_type)s'.") % {
         'obj_type': obj_type, 'obj_name': obj_name,
         'conflicting_type': Types[type_enum]})
 
-def err_unexpected(unexp_keyword):
+def _err_unexpected(unexp_keyword):
     error(_("Unexpected '%(unexpected_keyword)s'.") % {
         'unexpected_keyword': unexp_keyword})
 
-def err_only_strings(function_name):
+def _err_only_strings(function_name):
     error(_("Function '%(string_only_function)s' only operates on string "
             "types.") % {'string_only_function': function_name})
 
@@ -278,19 +278,19 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    err_too_many_args(self.Type, self.callable_name, numArgs,
-                                      self.minArgs)
+                    _err_too_many_args(self.Type, self.callable_name, numArgs,
+                                       self.minArgs)
                 else:
-                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                    _err_too_many_args(self.Type, self.callable_name, numArgs,
                         f'min: {self.minArgs}, max: {self.maxArgs}')
             if numArgs < self.minArgs:
                 args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    err_too_few_args(*args, f'>= {self.minArgs}')
+                    _err_too_few_args(*args, f'>= {self.minArgs}')
                 elif self.minArgs == self.maxArgs:
-                    err_too_few_args(*args, self.minArgs)
+                    _err_too_few_args(*args, self.minArgs)
                 else:
-                    err_too_few_args(*args,
+                    _err_too_few_args(*args,
                         f'>= {self.minArgs} && <= {self.maxArgs}')
             return self.function(*args)
 
@@ -515,29 +515,29 @@ class Parser(object):
     def SetOperator(self, op_name, *args, **kwdargs):
         type_ = self.getType(op_name)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            err_cant_set(u'operator', op_name,  type_)
+            _err_cant_set(u'operator', op_name,  type_)
         self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
         for i in op_name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, keywrd_name, *args, **kwdargs):
         type_ = self.getType(keywrd_name)
         if type_ not in [NAME,KEYWORD]:
-            err_cant_set(u'keyword', keywrd_name,  type_)
+            _err_cant_set(u'keyword', keywrd_name,  type_)
         self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
     def SetFunction(self, fun_name, *args, **kwdargs):
         type_ = self.getType(fun_name)
         if type_ not in [NAME,FUNCTION]:
-            err_cant_set(u'function', fun_name,  type_)
+            _err_cant_set(u'function', fun_name,  type_)
         self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
     def SetConstant(self, const_name, value):
         type_ = self.getType(const_name)
         if type_ not in [NAME,CONSTANT]:
-            err_cant_set(u'constant', const_name,  type_)
+            _err_cant_set(u'constant', const_name,  type_)
         self.constants[const_name] = value
     def SetVariable(self, var_name, value):
         type_ = self.getType(var_name)
         if type_ not in [NAME, VARIABLE]:
-            err_cant_set(u'variable', var_name,  type_)
+            _err_cant_set(u'variable', var_name,  type_)
         self.variables[var_name] = value
 
     # Flow control stack
@@ -762,7 +762,8 @@ class Parser(object):
         for i in rpn:
             if i.type == OPERATOR:
                 if len(stack) < (tkn_min_args := i.tkn.minArgs):
-                    err_too_few_args('operator',i.text,len(stack),tkn_min_args)
+                    _err_too_few_args('operator', i.text, len(stack),
+                        tkn_min_args)
                 args = []
                 while len(args) < tkn_min_args:
                     args.append(stack.pop())
@@ -774,7 +775,8 @@ class Parser(object):
                     stack.append(Parser.Token(ret))
             elif i.type == FUNCTION:
                 if len(stack) < i.numArgs:
-                    err_too_few_args('function', i.text, len(stack), i.numArgs)
+                    _err_too_few_args('function', i.text, len(stack),
+                        i.numArgs)
                 args = []
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
@@ -1201,14 +1203,14 @@ class PreParser(Parser):
         # ... which doesn't really cause harm, but is pretty strange and
         # inconsistent
         if any([l.strip().startswith('EndExec(') for l in lines]):
-            err_unexpected('EndExec')
+            _err_unexpected('EndExec')
         lines.append(f'EndExec({len(lines) + 1:d})')
         self.lines[self.cLine:self.cLine] = lines
         self.ExecCount += 1
 
     def fnEndExec(self, numLines):
         if self.ExecCount == 0:
-            err_unexpected('EndExec')
+            _err_unexpected('EndExec')
         del self.lines[self.cLine-numLines:self.cLine]
         self.cLine -= numLines
         self.ExecCount -= 1
@@ -1235,28 +1237,28 @@ class PreParser(Parser):
 
     def fnEndsWith(self, String, *args):
         if not isinstance(String, str):
-            err_only_strings('endswith')
+            _err_only_strings('endswith')
         return String.endswith(args)
 
     def fnStartsWith(self, String, *args):
         if not isinstance(String, str):
-            err_only_strings('startswith')
+            _err_only_strings('startswith')
         return String.startswith(args)
 
     def fnLower(self, String):
         if not isinstance(String, str):
-            err_only_strings('lower')
+            _err_only_strings('lower')
         return String.lower()
 
     def fnFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, str):
-            err_only_strings('find')
+            _err_only_strings('find')
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
 
     def fnRFind(self, String, sub, start=0, end=-1):
         if not isinstance(String, str):
-            err_only_strings('rfind')
+            _err_only_strings('rfind')
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
 
@@ -1278,7 +1280,7 @@ class PreParser(Parser):
 
     def kwdElif(self, bActive):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            err_unexpected('Elif')
+            _err_unexpected('Elif')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
         else:
@@ -1287,7 +1289,7 @@ class PreParser(Parser):
 
     def kwdElse(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            err_unexpected('Else')
+            _err_unexpected('Else')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
             self.PeekFlow().hitElse = True
@@ -1297,7 +1299,7 @@ class PreParser(Parser):
 
     def kwdEndIf(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
-            err_unexpected('EndIf')
+            _err_unexpected('EndIf')
         self.PopFlow()
 
     def kwdWhile(self, bActive):
@@ -1320,7 +1322,7 @@ class PreParser(Parser):
             index -= 1
         if index < 0:
             # No while statement was found
-            err_unexpected('Continue')
+            _err_unexpected('Continue')
         #Discard any flow control statments that happened after
         #the While/For, since we're resetting either back to the
         #the While/For', or the EndWhile/EndFor
@@ -1355,7 +1357,7 @@ class PreParser(Parser):
 
     def kwdEndWhile(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
-            err_unexpected('EndWhile')
+            _err_unexpected('EndWhile')
         #Re-evaluate the while loop's expression, if needed
         flow = self.PopFlow()
         if flow.active:
@@ -1363,7 +1365,7 @@ class PreParser(Parser):
 
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
-            err_unexpected('EndFor')
+            _err_unexpected('EndFor')
         #Increment the variable, then test to see if we should end or keep going
         flow = self.PeekFlow()
         if flow.active:
@@ -1398,14 +1400,14 @@ class PreParser(Parser):
 
     def kwdCase(self, value):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            err_unexpected('Case')
+            _err_unexpected('Case')
         if value in self.PeekFlow().values or str(value) in self.PeekFlow().values:
             self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
 
     def kwdDefault(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            err_unexpected('Default')
+            _err_unexpected('Default')
         if self.PeekFlow().hitCase:
             return
         self.PeekFlow().active = True
@@ -1424,7 +1426,7 @@ class PreParser(Parser):
                 index -= 1
             if index < 0:
                 # No while or for statements found
-                err_unexpected('Break')
+                _err_unexpected('Break')
             self.PeekFlow(index).active = False
 
             # We're going to jump to the EndWhile/EndFor, so discard
@@ -1435,7 +1437,7 @@ class PreParser(Parser):
 
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            err_unexpected('EndSelect')
+            _err_unexpected('EndSelect')
         self.PopFlow()
 
     # Package selection functions
