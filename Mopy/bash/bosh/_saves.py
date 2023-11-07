@@ -435,15 +435,18 @@ class SaveFile(object):
             elif modIndex == 0xFF:
                 return self.fileInfo.fn_key
             else:
-                return _(u'Missing Master ')+hex(modIndex)
+                return _('Missing Master %(missing_master_index)s') % {
+                    'missing_master_index': hex(modIndex)}
         #--ABomb
         (tesClassSize,abombCounter,abombFloat) = self.getAbomb()
-        log.setHeader(_(u'Abomb Counter'))
-        log(_(u'  Integer:\t0x%08X') % abombCounter)
-        log(_(u'  Float:\t%.2f') % abombFloat)
+        log.setHeader(_('Abomb Counter'))
+        log(_('  As integer: %(abomb_counter)s') % {
+            'abomb_counter': f'0x{abombCounter:08X}'})
+        log(_('  As float: %(abomb_counter)f') % {'abomb_counter': abombFloat})
         #--FBomb
-        log.setHeader(_(u'Fbomb Counter'))
-        log(_('  Next in-game object: %08X') % __unpacker(self.preGlobals[:4]))
+        log.setHeader(_('Fbomb Counter'))
+        log(_('  Next in-game object: %(next_obj_id)s') % {
+            'next_obj_id': f'{__unpacker(self.preGlobals[:4]):%08X}'})
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(f'  {len(self.created)}\t{_("Created Items")}')

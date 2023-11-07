@@ -247,7 +247,7 @@ class Installer(ListInfo):
     #--Initialization, etc ----------------------------------------------------
     def __init__(self, fn_key, **kwargs):
         self.initDefault()
-        super().__init__('%s' % fn_key)
+        super().__init__(f'{fn_key}')
 
     def initDefault(self):
         """Initialize everything to default values."""
@@ -316,7 +316,9 @@ class Installer(ListInfo):
 
     def size_string(self): return round_size(self.fsize)
 
-    def size_info_str(self): return _('Size:') + f' {self.size_string()}'
+    def size_info_str(self):
+        return _('Size: %(package_size)s') % {
+            'package_size': self.size_string()}
 
     # Accessors for encapsulating the semantic meaning of bain_type
     @property
@@ -706,15 +708,16 @@ class Installer(ListInfo):
         goodDlls = Installer.goodDlls(force_recalc)
         badDlls = Installer.badDlls(force_recalc)
         def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, dll_size,
-                             crc, desc, ext, exeDir, dialogTitle):
+                             crc, exeDir):
             if not fileLower.startswith(exeDir): return True
             if fileLower in badDlls and [archiveRoot, dll_size, crc] in \
                     badDlls[fileLower]: return True
             if not checkOBSE or fileLower in goodDlls and [archiveRoot,
                 dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
-                                        desc, ext, badDlls, goodDlls)
-            if not ask_yes(None, message, dialogTitle): ##: was balt.Link.Frame <=> None?
+                                        badDlls, goodDlls)
+            ##: was balt.Link.Frame <=> None?
+            if not ask_yes(None, message, _('Executable Binary Warning')):
                 badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
@@ -723,46 +726,39 @@ class Installer(ListInfo):
             return False
         if bush.game.Se.se_abbrev:
             _obse = partial(__skipExecutable,
-                    desc=_(u'%s plugin DLL') % bush.game.Se.se_abbrev,
-                    ext=(_(u'a dll')),
-                    exeDir=(bush.game.Se.plugin_dir.lower() + os_sep),
-                    dialogTitle=bush.game.Se.se_abbrev + _(u' DLL Warning'))
-            Installer._executables_process[u'.dll'] = \
-            Installer._executables_process[u'.dlx'] = _obse
+                    exeDir=(bush.game.Se.plugin_dir.lower() + os_sep))
+            Installer._executables_process['.dll'] = \
+            Installer._executables_process['.dlx'] = _obse
         if bush.game.Sd.sd_abbrev:
             _asi = partial(__skipExecutable,
-                   desc=_(u'%s plugin ASI') % bush.game.Sd.long_name,
-                   ext=(_(u'an asi')),
-                   exeDir=(bush.game.Sd.install_dir.lower() + os_sep),
-                   dialogTitle=bush.game.Sd.long_name + _(u' ASI Warning'))
-            Installer._executables_process[u'.asi'] = _asi
+                   exeDir=(bush.game.Sd.install_dir.lower() + os_sep))
+            Installer._executables_process['.asi'] = _asi
         if bush.game.Sp.sp_abbrev:
             _jar = partial(__skipExecutable,
-                   desc=_(u'%s patcher JAR') % bush.game.Sp.long_name,
-                   ext=(_(u'a jar')),
-                   exeDir=(bush.game.Sp.install_dir.lower() + os_sep),
-                   dialogTitle=bush.game.Sp.long_name + _(u' JAR Warning'))
-            Installer._executables_process[u'.jar'] = _jar
+                   exeDir=(bush.game.Sp.install_dir.lower() + os_sep))
+            Installer._executables_process['.jar'] = _jar
 
     @staticmethod
-    def _dllMsg(fileLower, full, archiveRoot, desc, ext, badDlls, goodDlls):
-        message = u'\n'.join((
-            _(u'This installer (%s) has an %s.'), _(u'The file is %s'),
-            _(u'Such files can be malicious and hence you should be very '
-              u'sure you know what this file is and that it is legitimate.'),
-            _(u'Are you sure you want to install this?'),)) % (
-                      archiveRoot, desc, full)
+    def _dllMsg(fileLower, full, archiveRoot, badDlls, goodDlls):
+        message = [_('This package (%(source_package)s) contains an '
+                     'executable binary file (%(executable_name)s). Such '
+                     'files can be malicious and hence you should be very '
+                     'sure you know what this file is and that it is '
+                     'legitimate. Are you sure you want to install this?') % {
+            'source_package': archiveRoot, 'executable_name': full}]
         if fileLower in goodDlls:
-            message += _(u' You have previously chosen to install '
-                         u'%s by this name but with a different size, '
-                         u'crc and or source archive name.') % ext
+            message.append(_('You have previously chosen to install an '
+                             'executable binary with the same name, but with '
+                             'a different size, CRC and/or source package '
+                             'name.'))
         elif fileLower in badDlls:
-            message += _(u' You have previously chosen to NOT '
-                         u'install %s by this name but with a different '
-                         u'size, crc and/or source archive name - make '
-                         u'extra sure you want to install this one before '
-                         u'saying yes.') % ext
-        return message
+            message.append(_('You have previously chosen NOT to install an '
+                             'executable binary with the same name, but with '
+                             'a different size, CRC and/or source archive '
+                             'name.'))
+            message.append(_('Make EXTRA sure you want to install this one '
+                             'before saying yes.'))
+        return '\n\n'.join(message)
 
     def refreshDataSizeCrc(self, checkOBSE=False, *, splitExt=os.path.splitext,
                            __skip_exts: set[str] = skipExts):
@@ -1369,8 +1365,9 @@ class _InstallerPackage(Installer, AFile):
         progress.setFull(len(delta_files))
         for rel_src, rel_dest in self.refreshDataSizeCrc().items():
             if rel_src not in delta_files: continue
-            progress(del_numb + upt_numb, (_('Syncing from %s folder...'
-                ) % bush.game.mods_dir) + f'\n{rel_src}')
+            progress(del_numb + upt_numb,
+                     _('Syncing from %(data_folder)s folder...') % {
+                         'data_folder': bush.game.mods_dir} + f'\n{rel_src}')
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -1446,9 +1443,9 @@ class InstallerMarker(Installer):
 
     def size_string(self): return u''
 
-    def size_info_str(self): return  _(u'Size:') + u' N/A\n'
+    def size_info_str(self): return _('Size: N/A')
 
-    def structure_string(self): return _(u'Structure: N/A')
+    def structure_string(self): return _('Structure: N/A')
 
     def log_package(self, log, showInactive):
         log(f'{f"{self.order:03d}"} - {self.fn_key}')
@@ -1463,14 +1460,16 @@ class InstallerArchive(_InstallerPackage):
     def size_info_str(self):
         if self.isSolid:
             if self.blockSize:
-                sSolid = _(u'Solid, Block Size: %d MB') % self.blockSize
+                sSolid = _('Solid, Block Size: %(block_size)s') % {
+                    'block_size': f'{self.blockSize}MB'}
             elif self.blockSize is None:
-                sSolid = _(u'Solid, Block Size: Unknown')
+                sSolid = _('Solid, Block Size: Unknown')
             else:
-                sSolid = _(u'Solid, Block Size: 7z Default')
+                sSolid = _('Solid, Block Size: 7z Default')
         else:
-            sSolid = _(u'Non-solid')
-        return _(u'Size: %s (%s)') % (self.size_string(), sSolid)
+            sSolid = _('Non-solid')
+        return _('Size: %(package_size)s (%(package_solid)s)') % {
+            'package_size': self.size_string(), 'package_solid': sSolid}
 
     @classmethod
     def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
@@ -1478,14 +1477,20 @@ class InstallerArchive(_InstallerPackage):
         r, e = os.path.splitext(name_str)
         if allowed_exts and e.lower() not in allowed_exts:
             if not use_default_ext: # renaming as opposed to creating the file
-                return _(u'%s does not have correct extension (%s).') % (
-                    name_str, u', '.join(allowed_exts)), None
-            msg = _(u'The %s extension is unsupported. Using %s instead.') % (
-                e, __7z)
+                msg = _('%(invalid_name)s does not have correct extension '
+                        '(%(allowed_extensions)s).') % {
+                    'invalid_name': name_str,
+                    'allowed_extensions': ', '.join(allowed_exts)}
+                return msg, None
+            msg = _('The %(invalid_extension)s extension is unsupported. '
+                    'Using %(default_extension)s instead.') % {
+                'invalid_extension': e, 'default_extension': __7z}
             name_str, e = r + __7z, __7z
-        else: msg = u''
-        name_path, root = super(Installer, cls).validate_filename_str(name_str,
-                                                                      {e})
+        else:
+            msg = ''
+        # Skip Installer's validate_filename_str
+        name_path, root = super(Installer, cls).validate_filename_str(
+            name_str, {e})
         if root is None:
             return name_path, None
         if msg: # propagate the msg for extension change
@@ -1494,7 +1499,7 @@ class InstallerArchive(_InstallerPackage):
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
-        return boshInstallerArchive, (self.fn_key,), ('%s' % self.fn_key,
+        return boshInstallerArchive, (self.fn_key,), (f'{self.fn_key}',
                 *(getattr(self, a) for a in self.persistent))
 
     #--File Operations --------------------------------------------------------
@@ -2465,8 +2470,8 @@ class InstallersData(DataStore):
         new_skips_overrides = (self.overridden_skips -
                                self.data_sizeCrcDate.keys())
         progress = progress or bolt.Progress()
-        progress(0, (
-            _(u'%s: Skips overrides...') % bass.dirs[u'mods'].stail) + u'\n')
+        progress(0, _('%(data_folder)s: Skips overrides...') % {
+            'data_folder': bush.game.mods_dir} + '\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     @staticmethod
@@ -2614,10 +2619,10 @@ class InstallersData(DataStore):
                 continue
             # Re-write the tweak. Use UTF-8 so that we can localize the
             # comment at the top
-            with tweakPath.open(u'w', encoding=u'utf-8') as ini_:
-                ini_.write(u'; %s\n\n' % (_(u'INI Tweak created by Wrye Bash '
-                                            u'%s, using settings from old '
-                                            u'file.') % bass.AppVersion))
+            with tweakPath.open('w', encoding='utf-8') as ini_:
+                msg = _('INI Tweak created by Wrye Bash %(wb_version)s, using '
+                        'settings from old file.')
+                ini_.write(f'; {msg}\n\n' % {'wb_version': bass.AppVersion})
                 ini_.writelines(lines)
             # We notify BAIN below, although highly improbable the created ini
             # is included to a package
