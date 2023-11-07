@@ -650,10 +650,9 @@ class Mod_Details(OneItemLink):
                     buff.append('  %s\n' % _('(Details not provided for this '
                                              'record type.)'))
                     continue
-                recs = [(f, e) for f, (_h, e) in group_records.items()]
-                recs.sort(key=lambda r: r[1].lower())
-                for f, e in recs:
-                    buff.append(f'  {f} {e}')
+                recs = sorted(group_records, key=lambda r: r[1].lower())
+                for h, e in recs:
+                    buff.append(f'  {h.fid} {e}')
                 buff.append('') # an empty line
             self._showLog('\n'.join(buff), title=self._selected_item)
 
@@ -1267,14 +1266,14 @@ class Mod_ScanDirty(ItemLink):
                     add_deleted_navm = all_deleted_navms[plugin_fn].append
                     add_deleted_rec = all_deleted_others[plugin_fn].append
                     for r, d in ext_data.items():
-                        for r_fid, (r_header, r_eid) in d.items():
+                        for r_header, r_eid in d:
                             if r_header.flags1 & 0x00000020:
                                 if (w_rec_type := r_header.recType) == b'NAVM':
-                                    add_deleted_navm(r_fid)
+                                    add_deleted_navm(r_header.fid)
                                 elif w_rec_type in all_ref_types:
-                                    add_deleted_ref(r_fid)
+                                    add_deleted_ref(r_header.fid)
                                 else:
-                                    add_deleted_rec(r_fid)
+                                    add_deleted_rec(r_header.fid)
         except CancelError:
             return
         log = bolt.LogFile(io.StringIO())

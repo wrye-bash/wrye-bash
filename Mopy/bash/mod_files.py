@@ -30,7 +30,7 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error, GPath_no_norm, FName
+    struct_error, GPath_no_norm, FName, unpack_int
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
@@ -380,6 +380,9 @@ class ModFile(object):
         self.tops[new_rec_sig].setRecord(new_rec, do_copy=False)
         return new_rec
 
+# Typing for ModHeaderReader below
+_ModDataDict = defaultdict[bytes, list[tuple[RecHeader, str]]]
+
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
@@ -418,14 +421,13 @@ class ModHeaderReader(object):
                                header_fid.mod_dex >= num_masters)
 
     @staticmethod
-    def extract_mod_data(mod_info, progress, *, __unpacker=int_unpacker):
+    def extract_mod_data(mod_info, progress) -> _ModDataDict:
         """Reads the headers and EDIDs of every record in the specified mod,
         returning them as a dict, mapping record signature to a dict mapping
         FormIDs to a list of tuples containing the headers and EDIDs of every
         record with that signature. Note that the flags are not processed
-        either - if you need that, manually call MreRecord.flags1_() on them.
-
-        :rtype: defaultdict[bytes, defaultdict[int, tuple[RecHeader, str]]]"""
+        either - if you need that, manually call MreRecord.flags1_() on
+        them."""
         # This method is *heavily* optimized for performance. Inlines and other
         # ugly code ahead
         progress = progress or bolt.Progress()
@@ -433,17 +435,19 @@ class ModHeaderReader(object):
         # accessing via dot is slow
         wanted_encoding = bolt.pluginEncoding
         avoided_encodings = (u'utf8', u'utf-8')
-        minf_size = mod_info.fsize
+        # PY3.13: Check if removing all the dot 'inlines' in here is faster
+        # now - on py3.12 it is *slower*, even though it really should be
+        # faster!
         plugin_fn = mod_info.fn_key
         sh_unpack = Subrecord.sub_header_unpack
         sh_size = Subrecord.sub_header_size
         main_progress_msg = _(u'Loading: %s') % plugin_fn
         # Where we'll store all the collected record data
-        group_records = defaultdict(lambda: defaultdict(tuple))
+        group_records: _ModDataDict = defaultdict(list)
         # The current top GRUP label - starts out as TES4/TES3
         tg_label = bush.game.Esp.plugin_header_sig
-        # The dict we'll use to store records from the current top GRUP
-        records = group_records[tg_label]
+        # The list we'll use to store records from the current top GRUP
+        record_list = group_records[tg_label]
         ##: Uncomment these variables and the block below that uses them once
         # all of FO4's record classes have been written
         # The record types that can even contain EDIDs
@@ -454,9 +458,6 @@ class ModHeaderReader(object):
         with mod_info.abs_path.open(u'rb') as ins:
             initial_bytes = ins.read()
         with FastModReader(plugin_fn, initial_bytes) as ins:
-            # PY3.12: Check if removing these is faster now - on py3.11 it is
-            # *slower*, even though it really should be faster!
-            # More local methods to avoid repeated dot access
             ins_tell = ins.tell
             ins_seek = ins.seek
             ins_read = ins.read
@@ -470,28 +471,28 @@ class ModHeaderReader(object):
                     # Nothing special to do for non-top GRUPs
                     if not next_header.is_top_group_header: continue
                     tg_label = next_header.label
-                    progress(ins_tell() / minf_size,
+                    progress(ins_tell() / mod_info.fsize,
                              f'{main_progress_msg}\n{sig_to_str(tg_label)}')
-                    records = group_records[tg_label]
+                    record_list = group_records[tg_label]
                 #     skip_eids = tg_label not in records_with_eids
                 # elif skip_eids:
                 #     # This record type has no EDIDs, skip directly to the next
                 #     # record (can't use skip_blob because that passes
                 #     # debug_strs to seek()...)
-                #     records[next_header.fid] = (next_header, '')
+                #     record_list.append((next_header, ''))
                 #     ins_seek(ins_tell() + next_header.blob_size)
                 else:
                     # This is a regular record, look for the EDID subrecord
-                    eid = u''
+                    eid = ''
                     blob_siz = next_header.blob_size
                     next_record = ins_tell() + blob_siz
                     if next_header.flags1 & 0x00040000: # 'compressed' flag
-                        size_check = __unpacker(ins_read(4))[0]
+                        size_check = unpack_int(ins)
                         try:
                             new_rec_data = zlib_decompress(ins_read(
                                 blob_siz - 4))
                         except zlib_error:
-                            if plugin_fn == u'FalloutNV.esm':
+                            if plugin_fn == 'FalloutNV.esm':
                                 # Yep, FalloutNV.esm has a record with broken
                                 # zlib data. Just skip it.
                                 ins_seek(next_record)
@@ -508,23 +509,22 @@ class ModHeaderReader(object):
                     fmr_read = fmr.read
                     fmr_tell = fmr.tell
                     fmr_size = fmr.size
-                    fmr_unpack = fmr.unpack
                     while fmr_tell() != fmr_size:
                         # Inlined from unpackSubHeader & FastModReader.unpack
                         read_data = fmr_read(sh_size)
                         if len(read_data) != sh_size:
                             raise ModReadError(
-                                plugin_fn, [_rsig, u'SUB_HEAD'],
+                                plugin_fn, [_rsig, 'SUB_HEAD'],
                                 fmr_tell() - len(read_data), fmr_size)
                         mel_sig, mel_size = sh_unpack(read_data)
                         # Extended storage - very rare, so don't optimize
                         # inlines etc. for it
                         if mel_sig == b'XXXX':
                             # Throw away size here (always == 0)
-                            mel_size = fmr_unpack(__unpacker, 4, _rsig,
+                            mel_size = fmr.unpack(int_unpacker, 4, _rsig,
                                                   'XXXX.SIZE')[0]
-                            mel_sig = fmr_unpack(sh_unpack, sh_size,
-                                                 _rsig, 'XXXX.TYPE')[0]
+                            mel_sig = fmr.unpack(sh_unpack, sh_size, _rsig,
+                                                 'XXXX.TYPE')[0]
                         if mel_sig == b'EDID':
                             # No need to worry about newlines, these are Editor
                             # IDs and so won't contain any
@@ -533,7 +533,7 @@ class ModHeaderReader(object):
                             break
                         else:
                             fmr_seek(mel_size, 1)
-                    records[next_header.fid] = (next_header, eid)
+                    record_list.append((next_header, eid))
                     ins_seek(next_record) # we may have break'd at EDID
         del group_records[bush.game.Esp.plugin_header_sig] # skip TES4 record
         return group_records
