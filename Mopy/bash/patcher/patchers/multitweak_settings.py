@@ -50,8 +50,9 @@ class _AGlobalsTweak(_ASettingsTweak, CustomChoiceTweak):
         record.global_value = self.chosen_value
 
     def tweak_log(self, log, count):
-        log(u'* ' + _(u'%s set to: %4.2f') % (
-            self.tweak_name, self.chosen_value))
+        log('* ' + _('%(global_tweak_name)s set to %(global_tweak_value)s') % {
+            'global_tweak_name': self.tweak_name,
+            'global_tweak_value': f'{self.chosen_value:4.2f}'})
 
 #------------------------------------------------------------------------------
 class GlobalsTweak_Timescale(_AGlobalsTweak):
@@ -167,11 +168,14 @@ class _AGmstTweak(_ASettingsTweak):
                 if not isinstance(target_value, str) and target_value < 0:
                     return _("Oblivion GMST values can't be negative")
         for target_eid, target_value in zip(self.chosen_eids, chosen_values):
-            if target_eid.startswith(u'f') and not isinstance(
-                    target_value, float):
-                    return _("The value chosen for GMST '%s' must be a float, "
-                             "but is currently of type %s (%s).") % (
-                        target_eid, type(target_value).__name__, target_value)
+            if (target_eid.startswith('f') and
+                    not isinstance(target_value, float)):
+                msg = _("The value chosen for GMST '%(gmst_eid)s' must be a "
+                        "float, but is currently of type %(actual_type)s "
+                        "(%(actual_value)s).")
+                return msg % {'gmst_eid': target_eid,
+                              'actual_type': type(target_value).__name__,
+                              'actual_value': target_value}
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
@@ -196,15 +200,15 @@ class _AGmstTweak(_ASettingsTweak):
             chosen_label = self.choiceLabels[self.chosen]
             if chosen_label == self.custom_choice:
                 if isinstance(self.chosen_values[0], str):
-                    log(u'* %s: %s %s' % (self.tweak_name, chosen_label,
-                                          self.chosen_values[0]))
+                    log(f'* {self.tweak_name}: {chosen_label} '
+                        f'{self.chosen_values[0]}')
                 else:
-                    log(u'* %s: %s %4.2f' % (self.tweak_name, chosen_label,
-                                             self.chosen_values[0]))
+                    log(f'* {self.tweak_name}: {chosen_label} '
+                        f'{self.chosen_values[0]:4.2f}')
             else:
-                log(u'* %s: %s' % (self.tweak_name, chosen_label))
+                log(f'* {self.tweak_name}: {chosen_label}')
         else:
-            log(u'* ' + self.tweak_name)
+            log(f'* {self.tweak_name}')
 
     def finish_tweaking(self, patch_file):
         # Create new records for any remaining EDIDs

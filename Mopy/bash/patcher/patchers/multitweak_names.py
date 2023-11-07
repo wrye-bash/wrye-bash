@@ -202,10 +202,11 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
         cho_len = len(chosen_values[0])
         req_len = len(self.tweak_choices[0][0])
         if cho_len != req_len:
-            return _("The value has length %d, but must have length %d to "
-                     "match the number of body part types for this game. See "
-                     "the 'Tweak Names' section of the Advanced Readme for "
-                     "more information.") % (cho_len, req_len)
+            return _("The value has length %(actual_len)d, but must have "
+                     "length %(expected_len)d to match the number of body "
+                     "part types for this game. See the 'Tweak Names' section "
+                     "of the Advanced Readme for more information.") % {
+                'actual_len': cho_len, 'expected_len': req_len}
         return super().validate_values(chosen_values)
 
 #------------------------------------------------------------------------------
@@ -885,7 +886,8 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 if not body_part_tags:
-                    msg = _("'Body Part Codes' must be enabled when using the "
-                            "'%s' tweak.")
-                    raise BPConfigError(msg % names_tweak.tweak_name)
+                    raise BPConfigError(
+                        _("'Body Part Codes' must be enabled when using the "
+                          "'%(bpc_dependent_tweak)s' tweak.") % {
+                            'bpc_dependent_tweak': names_tweak.tweak_name})
                 names_tweak._tweak_body_tags = body_part_tags

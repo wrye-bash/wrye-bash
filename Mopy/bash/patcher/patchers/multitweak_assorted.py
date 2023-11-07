@@ -206,14 +206,14 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     _align_text = {u'^^': u'center', u'<<': u'left', u'>>': u'right'}
     _re_align = re.compile(r'^(<<|\^\^|>>)', re.M)
     _re_bold = re.compile(r'(__|\*\*|~~)')
-    _re_color = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
-    _re_div = re.compile(u'<div', re.I + re.M)
+    _re_color = re.compile('<font color="?([a-fA-F0-9]+)"?>', re.I | re.M)
+    _re_div = re.compile('<div', re.I | re.M)
     _re_head_2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n', re.M)
     _re_head_3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
-    _re_font = re.compile(u'<font', re.I + re.M)
-    _re_font_1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',
+    _re_font = re.compile('<font', re.I | re.M)
+    _re_font_1 = re.compile('(<?<font face=1( ?color=[0-9a-zA]+)?>)+',
                             re.I | re.M)
-    _re_tag_in_word = re.compile(u'([a-z])<font face=1>', re.M)
+    _re_tag_in_word = re.compile('([a-z])<font face=1>', re.M)
 
     def wants_record(self, record):
         return (record.book_text and not record.enchantment and
@@ -242,10 +242,10 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
             if ma_color:
                 color = ma_color.group(1)
             elif record.flags.isScroll:
-                color = u'000000'
+                color = '000000'
             else:
-                color = u'444444'
-            font_face = u'<font face=3 color='+color+u'>'
+                color = '444444'
+            font_face = f'<font face=3 color={color}>'
             rec_text = self._re_tag_in_word.sub(r'\1', rec_text)
             if (self._re_div.search(rec_text) and
                     not self._re_font.search(rec_text)):
@@ -257,11 +257,10 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     # Helper methods for _darnify
     def _replace_bold(self, _mo):
         self.inBold = not self.inBold
-        return u'<font face=3 color=%s>' % (
-            u'440000' if self.inBold else u'444444')
+        return f"<font face=3 color={'440000' if self.inBold else '444444'}>"
 
     def _replace_align(self, mo):
-        return u'<div align=%s>' % self._align_text[mo.group(1)]
+        return f'<div align={self._align_text[mo.group(1)]}>'
 
 #------------------------------------------------------------------------------
 class AssortedTweak_FogFix(MultiTweakItem):
@@ -667,27 +666,27 @@ class _AAttenuationTweak(CustomChoiceTweak):
 #------------------------------------------------------------------------------
 class AssortedTweak_SetSoundAttenuationLevels(_AAttenuationTweak):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
-    tweak_name = _(u'Set Sound Attenuation Levels')
-    tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
-                  u'Does not affect {}.').format(bush.game.nirnroots)
-    tweak_key = u'Attenuation%:'
+    tweak_name = _('Set Sound Attenuation Levels')
+    tweak_tip = _('Sets sound attenuation levels to tweak percentage times '
+                  'current level. Does not affect %(nirnroots)s.') % {
+        'nirnroots': bush.game.nirnroots}
+    tweak_key = 'Attenuation%:'
 
     def wants_record(self, record):
-        return super(AssortedTweak_SetSoundAttenuationLevels,
-            self).wants_record(record) and not self._is_nirnroot(record)
+        return super().wants_record(record) and not self._is_nirnroot(record)
 
 #------------------------------------------------------------------------------
 class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(_AAttenuationTweak):
     """Sets Sound Attenuation Levels for Nirnroots."""
-    tweak_name = _(u'Set Sound Attenuation Levels: %s '
-                   u'Only') % bush.game.nirnroots
-    tweak_tip = _(u'Sets sound attenuation levels to tweak%*current level. '
-                  u'Only affects {}.').format(bush.game.nirnroots)
-    tweak_key = u'Nirnroot Attenuation%:'
+    tweak_name = _('Set Sound Attenuation Levels: %(nirnroots)s Only') % {
+        'nirnroots': bush.game.nirnroots}
+    tweak_tip = _('Sets sound attenuation levels to tweak percentage times '
+                  'current level. Only affects %(nirnroots)s.') % {
+        'nirnroots': bush.game.nirnroots}
+    tweak_key = 'Nirnroot Attenuation%:'
 
     def wants_record(self, record):
-        return super(AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,
-            self).wants_record(record) and self._is_nirnroot(record)
+        return super().wants_record(record) and self._is_nirnroot(record)
 
 #------------------------------------------------------------------------------
 class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):

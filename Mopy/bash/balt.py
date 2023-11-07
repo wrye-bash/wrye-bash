@@ -1867,7 +1867,6 @@ class OneItemLink(EnabledLink):
 
     To be used in Link subclasses where self.selected is a list instance.
     """
-    ##: maybe edit _help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
     @property
