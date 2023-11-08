@@ -105,7 +105,9 @@ def InitStatusBar():
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        args = f'{xe_name}.exe', _('Launch %s') % xe_name, {'root_dirs': 'app'}
+        args = (f'{xe_name}.exe',
+                _('Launch %(xedit_name)s') % {'xedit_name': xe_name},
+                {'root_dirs': 'app'})
         all_links.append(_tool_args(f'{xe_name}Path', args, uid=xe_name,
             display_launcher=bush.game.Xe.full_name == xe_name,
             cli_args=(f'-{xe_name[:-4]}', '-edit'), clazz=AppXEdit))
