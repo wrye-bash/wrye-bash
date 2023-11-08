@@ -447,11 +447,11 @@ class Installer_OpenReadme(_SingleInstallable):
 #------------------------------------------------------------------------------
 class Installer_Anneal(_NoMarkerLink):
     """Anneal all packages."""
-    _text = _(u'Anneal')
-    _help = _(u'Install any missing files (for active packages) and update '
-              u'the contents of the %s folder to account for install order '
-              u'and configuration changes in the selected '
-              u'package(s).') % bush.game.mods_dir
+    _text = _('Anneal')
+    _help = _('Install any missing files (for active packages) and update '
+              'the contents of the %(data_folder)s folder to account for '
+              'install order and configuration changes in the selected '
+              'packages.') % {'data_folder': bush.game.mods_dir}
 
     def Execute(self):
         ui_refresh = defaultdict(bool)
@@ -549,16 +549,16 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
 
 class Installer_Install(_NoMarkerLink):
     """Install selected packages."""
-    mode_title = {u'DEFAULT': _(u'Install Configured'),
-                  u'LAST': _(u'Install Last'),
-                  u'MISSING': _(u'Install Missing Files')}
-    mode_help = {u'DEFAULT': _(u'Install all configured files from selected '
-                               u'installer(s), overwriting mismatched files.'),
-                 u'LAST': _(u'Install all configured files from selected '
-                            u'installer(s) at the last position, overwriting '
-                            u'mismatched files.'),
-                 u'MISSING': _(u'Install all missing files from the selected '
-                               u'installer(s).')}
+    mode_title = {'DEFAULT': _('Install Configured'),
+                  'LAST': _('Install Last'),
+                  'MISSING': _('Install Missing Files')}
+    mode_help = {'DEFAULT': _('Install all configured files from the selected '
+                              'packages, overwriting mismatched files.'),
+                 'LAST': _('Install all configured files from the selected '
+                           'packages at the last position, overwriting '
+                           'mismatched files.'),
+                 'MISSING': _('Install all missing files from the selected '
+                              'packages. Never overwrites files.')}
 
     def __init__(self,mode=u'DEFAULT'):
         super(Installer_Install, self).__init__()
@@ -650,9 +650,9 @@ class Installer_Install(_NoMarkerLink):
 class Installer_InstallSmart(_NoMarkerLink):
     """A 'smart' installer for new users. Uses wizards and FOMODs if present,
     then falls back to regular install if that isn't possible."""
-    _text = _(u'Install...')
-    _help = _(u'Installs selected installer(s), preferring a visual method if '
-              u'available.')
+    _text = _('Install...')
+    _help = _('Installs the selected packages, preferring a visual method if '
+              'available.')
 
     def _try_installer(self, sel_package, link_instance: EnabledLink):
         """Checks if the specified installer link is enabled and, if so, runs
@@ -720,7 +720,7 @@ class Installer_ExportAchlist(_SingleInstallable):
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     _text = _('Move To...')
-    _help = _('Move the selected package(s) to a position of your choice.')
+    _help = _('Move the selected packages to a position of your choice.')
 
     @balt.conversation
     def Execute(self):
@@ -880,8 +880,10 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
 
 class Installer_Uninstall(_NoMarkerLink):
     """Uninstall selected Installers."""
-    _text = _(u'Uninstall')
-    _help = _(u'Uninstall selected Installer(s)')
+    _text = _('Uninstall')
+    _help = _('Uninstall the selected packages, removing all their matched '
+              'files from the %(data_folder)s folder.') % {
+        'data_folder': bush.game.mods_dir}
 
     @balt.conversation
     def Execute(self):
@@ -1339,8 +1341,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
 
     @property
     def link_help(self):
-        return _(u'Applies %(bcf)s to the selected installer(s).') % {
-            u'bcf': self.dispName}
+        return _('Applies %(bcf_name)s to the selected packages.') % {
+            'bcf_name': self.dispName}
 
     @balt.conversation
     def Execute(self):
@@ -1376,9 +1378,9 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
-    _text = _(u'Embedded BCF')
+    _text = _('Embedded BCF')
     _help = _('Applies the BAIN conversion files (BCFs) embedded in the '
-              'selected package(s).')
+              'selected packages.')
     _dialog_title = _(u'Apply BCF...')
 
     @balt.conversation

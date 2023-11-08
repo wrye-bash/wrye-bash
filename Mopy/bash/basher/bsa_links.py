@@ -32,9 +32,9 @@ __all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
 
 class BSA_ExtractToProject(ItemLink):
     """Extracts one or more BSAs into projects."""
-    _text = _(u'Extract to Project(s)...')
-    _help = _(u'Extracts the contents of the selected BSA(s) into one or more '
-              u'projects, where they can be edited.')
+    _text = _('Extract to Project...')
+    _help = _('Extracts the contents of the selected BSAs into projects, '
+              'where they can be edited.')
 
     # TODO(inf) This is almost entirely copy-pasted from
     #  InstallerArchive_Unpack! Should be absorbed by a base class
@@ -86,7 +86,7 @@ class BSA_ExtractToProject(ItemLink):
                 prog_curr += step_size
                 prog_next += step_size
         msg = _('Successfully extracted all selected BSAs. Open the '
-                'Installers tab to view and manage the created project(s).')
+                'Installers tab to view and manage the created projects.')
         self._showOk(msg, _('Extraction Completed'))
 
 class BSA_ListContents(ItemLink):

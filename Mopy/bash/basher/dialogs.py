@@ -971,7 +971,7 @@ class MastersAffectedDialog(_ALORippleHighlightDialog):
     title = _('Masters Affected')
     _change_desc = _('Wrye Bash automatically activates the masters of '
                      'activated plugins. Activating the following plugins '
-                     'thus caused %(num_affected)d master(s) to be activated '
+                     'thus caused %(num_affected)d masters to be activated '
                      'as well.')
 
 class DependentsAffectedDialog(_ALORippleHighlightDialog):
@@ -981,7 +981,7 @@ class DependentsAffectedDialog(_ALORippleHighlightDialog):
     _change_desc = _('Wrye Bash automatically deactivates the dependent '
                      'plugins of deactivated plugins. Deactivating the '
                      'following plugins thus caused %(num_affected)d '
-                     'dependent(s) to be deactivated as well.')
+                     'dependents to be deactivated as well.')
 
 #------------------------------------------------------------------------------
 class LoadOrderSanitizedDialog(_AChangeHighlightDialog):
@@ -1098,7 +1098,7 @@ class ImportOrderDialog(DialogWindow, AImportOrderParser):
             balt.showError(self, reorder_err, title=_('Import Order - Error'))
         else:
             balt.showInfo(self, _('Imported order and installation status for '
-                                  '%(total_imported)d package(s).') % {
+                                  '%(total_imported)d packages.') % {
                 'total_imported': len(self._partial_package_order)},
                 title=_('Import Order - Done'))
 

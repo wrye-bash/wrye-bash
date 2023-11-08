@@ -25,6 +25,7 @@
 attribute points to SaveList singleton."""
 
 import io
+import os
 import re
 import shutil
 
@@ -608,8 +609,9 @@ class Save_Move(ChoiceLink):
     def __init__(self, copyMode=False):
         super(Save_Move, self).__init__()
         self.copyMode = copyMode
-        self._help_str = _(u'Copy save(s) to %s') if copyMode else _(
-            u'Move save(s) to %s')
+        self._help_str = (_('Copy the selected saves to %(save_profile)s.')
+                          if copyMode else
+                          _('Copy the selected saves to %(save_profile)s.'))
 
     @property
     def _choices(self): return initialization.getLocalSaveDirs()
@@ -619,26 +621,27 @@ class Save_Move(ChoiceLink):
         Save_Move.local = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
-            _text = _(u'Default')
-            _help = _self._help_str % bass.dirs[u'saveBase'].join(
-                bush.game.Ini.save_prefix)
+            _text = _('Default')
+            _help = _self._help_str % {
+                'save_profile': bush.game.Ini.save_prefix}
             def _enable(self):
                 return Save_Move.local != bush.game.Ini.save_prefix
-            def Execute(self): _self.MoveFiles(_(u'Default'))
+            def Execute(self): _self.MoveFiles(profile=None)
         class _SaveProfileLink(EnabledLink):
             @property
             def link_help(self):
-                return _self._help_str % bass.dirs[u'saveBase'].join(
-                    bush.game.Ini.save_prefix, self._text)
+                return _self._help_str % {
+                    'save_profile': os.path.join(
+                        bush.game.Ini.save_prefix, self._text)}
             def _enable(self):
                 return Save_Move.local != _win_join(self._text)
-            def Execute(self): _self.MoveFiles(self._text)
+            def Execute(self): _self.MoveFiles(profile=self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
 
-    def MoveFiles(self,profile):
-        destDir = bass.dirs[u'saveBase'].join(u'Saves')
-        if profile != _(u'Default'):
+    def MoveFiles(self, profile: str | None):
+        destDir = bass.dirs['saveBase'].join('Saves')
+        if profile is not None:
             destDir = destDir.join(profile)
         if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
@@ -650,11 +653,15 @@ class Save_Move(ChoiceLink):
                 moved = bosh.saveInfos.delete_refresh(self.selected, None,
                                                       check_existence=True)
                 self.window.RefreshUI(to_del=moved)
-        msg = (_(u'%d files copied to %s.') if self.copyMode else _(
-            u'%d files moved to %s.')) % (count, profile)
-        self._showInfo(msg, title=_(u'Copy File'))
+        profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
+        msg = (_('%(num_save_files)d files copied to %(save_profile)s.')
+               if self.copyMode else
+               _('%(num_save_files)d files moved to %(save_profile)s.'))
+        self._showInfo(msg % {'num_save_files': count,
+                              'save_profile': profile_rel},
+            title=_('Saves Copied') if self.copyMode else _('Saves Moved'))
 
-    def _move_saves(self, destDir, profile):
+    def _move_saves(self, destDir, profile: str | None):
         savesTable = bosh.saveInfos.table
         #--bashDir
         destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
@@ -663,8 +670,13 @@ class Save_Move(ChoiceLink):
         ask = True
         for fileName in self.selected:
             if ask and destDir.join(fileName).exists():
-                message = (_(u'A file named %s already exists in %s. Overwrite it?')
-                    % (fileName,profile))
+                profile_dir = bush.game.Ini.save_prefix
+                if profile is not None:
+                    profile_dir = os.path.join(profile_dir, profile)
+                message = (_('A file named %(conflicting_save)s already '
+                             'exists in %(save_profile)s. Overwrite it?') % {
+                    'conflicting_save': fileName,
+                    'save_profile': profile_dir})
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -873,9 +885,9 @@ class Save_UpdateNPCLevels(EnabledLink):
     def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
-        msg = _('This will relevel the NPCs in the selected save game(s) '
-                'according to the npc levels in the currently active mods.  '
-                'This supersedes the older "Import NPC Levels" command.')
+        msg = _('This will relevel the NPCs in the selected saves according '
+                'to the NPC levels in the currently active plugins. This '
+                'supersedes the older "Import NPC Levels" command.')
         if not self._askContinue(msg, u'bash.updateNpcLevels.continue',
                                  _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:

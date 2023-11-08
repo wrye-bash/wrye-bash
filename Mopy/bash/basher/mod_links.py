@@ -266,8 +266,8 @@ class Mod_OrderByName(EnabledLink):
 class Mod_Move(EnabledLink):
     """Moves selected mod(s) to a different LO position."""
     _text = _('Move To...')
-    _help = _('Move the selected plugin(s) to a position of your choice. '
-              'Only works if the selected plugin(s) may be reordered.')
+    _help = _('Move the selected plugins to a position of your choice. '
+              'Only works if the selected plugins may be reordered.')
 
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
@@ -436,8 +436,8 @@ class _Mod_Labels(ChoiceLink):
                 del _self.listEditor  ##: used by the buttons code - should be
                 # encapsulated
         class _None(CheckLink):
-            _text = _(u'None')
-            _help = _(u'Clear labels from selected mod(s)')
+            _text = _('None')
+            _help = _('Remove all labels from the selected plugins.')
             def Execute(self):
                 """Handle selection of None."""
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
@@ -462,9 +462,9 @@ class _Mod_Labels(ChoiceLink):
                     fileInfo.set_table_prop(_self.column, self._text)
                 _self._refresh()
             @property
-            def link_help(self): return _(
-                u"Applies the label '%(lbl)s' to the selected mod(s).") % {
-                                            u'lbl': self._text}
+            def link_help(self):
+                return _("Applies the label '%(target_label)s' to the "
+                         "selected plugins.") % {'target_label': self._text}
             def _check(self):
                 """Check the link if any of the selected plugins have labels
                 matching this one."""
@@ -700,9 +700,9 @@ class _NotObLink(EnabledLink):
 
 class Mod_CreateLOOTReport(_NotObLink):
     """Creates a basic LOOT masterlist entry with URL and tags."""
-    _text = _(u'Create LOOT Entry...')
-    _help = _(u'Creates LOOT masterlist entries based on the tags you have '
-              u'applied to the selected plugin(s).')
+    _text = _('Create LOOT Entry...')
+    _help = _('Creates LOOT masterlist entries based on the tags you have '
+              'applied to the selected plugins.')
 
     def Execute(self):
         log_txt = u''
@@ -853,13 +853,13 @@ class _DirectGhostLink(_GhostLink, EnabledLink):
                    for p in self.selected)
 
 class _Mod_Ghost(_DirectGhostLink):
-    _text = _(u'Ghost')
-    _help = _(u"Ghost selected mod(s). Active mods can't be ghosted.")
+    _text = _('Ghost')
+    _help = _("Ghost selected plugins. Active plugins can't be ghosted.")
     toGhost = staticmethod(lambda fname: not load_order.cached_is_active(fname))
 
 class _Mod_Unghost(_DirectGhostLink):
-    _text = _(u'Unghost')
-    _help = _(u'Unghost selected mod(s).')
+    _text = _('Unghost')
+    _help = _('Unghost selected plugins.')
     toGhost = staticmethod(lambda fname: False)
 
 class Mod_GhostUnghost(TransLink):
@@ -908,42 +908,42 @@ class Mod_CheckQualifications(ItemLink):
             if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
                 if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
                     # Overlay + ESL + Merge
-                    return _('Scan the selected plugin(s) to determine '
+                    return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '
                              'Bashed Patch, assigned the ESL flag or assigned '
-                             'the Overlay flag, reporting also the reason(s) '
+                             'the Overlay flag, reporting also the reasons '
                              'if they cannot.')
                 # Overlay + ESL
-                return _('Scan the selected plugin(s) to determine whether or '
+                return _('Scan the selected plugins to determine whether or '
                          'not they can be assigned the ESL flag or assigned '
-                         'the Overlay flag, reporting also the reason(s) if '
+                         'the Overlay flag, reporting also the reasons if '
                          'they cannot.')
             elif MergeabilityCheck.MERGE in bush.game.mergeability_checks:
                 # Overlay + Merge
-                return _('Scan the selected plugin(s) to determine whether or '
+                return _('Scan the selected plugins to determine whether or '
                          'not they can be merged into the Bashed Patch or '
                          'assigned the Overlay flag, reporting also the '
-                         'reason(s) if they cannot.')
+                         'reasons if they cannot.')
             # Overlay
-            return _('Scan the selected plugin(s) to determine whether or not '
+            return _('Scan the selected plugins to determine whether or not '
                      'they can be assigned the Overlay flag, reporting also '
-                     'the reason(s) if they cannot.')
+                     'the reasons if they cannot.')
         else:
             if MergeabilityCheck.ESL_CHECK in bush.game.mergeability_checks:
                 if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
                     # ESL + Merge
-                    return _('Scan the selected plugin(s) to determine '
+                    return _('Scan the selected plugins to determine '
                              'whether or not they can be merged into the '
                              'Bashed Patch or assigned the ESL flag, '
-                             'reporting also the reason(s) if they cannot.')
+                             'reporting also the reasons if they cannot.')
                 # ESL
-                return _('Scan the selected plugin(s) to determine '
+                return _('Scan the selected plugins to determine '
                          'whether or not they can be assigned the ESL flag, '
-                         'reporting also the reason(s) if they cannot.')
+                         'reporting also the reasons if they cannot.')
             # Merge
-            return _('Scan the selected plugin(s) to determine whether or not '
+            return _('Scan the selected plugins to determine whether or not '
                      'they can be merged into the Bashed Patch, reporting '
-                     'also the reason(s) if they cannot.')
+                     'also the reasons if they cannot.')
 
     @balt.conversation
     def Execute(self):
@@ -1224,9 +1224,9 @@ class Mod_SkipDirtyCheck(TransLink):
 #------------------------------------------------------------------------------
 class Mod_ScanDirty(ItemLink):
     """Give detailed printout of what Wrye Bash is detecting as UDR records."""
-    _text = _(u'Scan for Deleted Records')
-    _help = _(u'Gives a detailed printout of deleted records in the selected '
-              u'plugin(s).')
+    _text = _('Scan for Deleted Records')
+    _help = _('Gives a detailed report of deleted records in the selected '
+              'plugins.')
 
     def Execute(self):
         """Handle execution"""
@@ -1278,8 +1278,8 @@ class Mod_ScanDirty(ItemLink):
             return
         log = bolt.LogFile(io.StringIO())
         log.setHeader(u'= '+_(u'Deleted Records'))
-        log(_(u'This is a report of deleted records that were found in the '
-              u'selected plugin(s).') + u'\n')
+        log(_('This is a report of deleted records that were found in the '
+              'selected plugins.') + u'\n')
         # Change a FID to something more useful for displaying
         def _log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
@@ -1310,24 +1310,25 @@ class Mod_ScanDirty(ItemLink):
             else:
                 clean_plugins.append(f'* __{modInfo}__')
         if dirty_plugins:
-            log(_(u'Detected %d plugin(s) with deleted '
-                  u'records:') % len(dirty_plugins))
+            log(_('Detected %(num_dirty_plugins)d plugins with deleted '
+                  'records:') % {'num_dirty_plugins': len(dirty_plugins)})
             for p in dirty_plugins:
                 log(p)
             log(u'\n')
         if clean_plugins:
-            log(_(u'Detected %d plugin(s) without deleted '
-                  u'records:') % len(clean_plugins))
+            log(_('Detected %(num_clean_plugins)d plugins without deleted '
+                  'records:') % {'num_clean_plugins': len(clean_plugins)})
             for p in clean_plugins:
                 log(p)
             log(u'\n')
         if skipped_plugins:
-            log(_(u'Skipped %d plugin(s):') % len(skipped_plugins))
+            log(_('Skipped %(num_skipped_plugins)d plugins:') % {
+                'num_skipped_plugins': len(skipped_plugins)})
             for p in skipped_plugins:
                 log(p)
             log(u'\n')
-        self._showWryeLog(log.out.getvalue(), title=_(u'Dirty Record Results'),
-                          asDialog=False)
+        self._showWryeLog(log.out.getvalue(), asDialog=False,
+            title=_('Scan for Deleted Records - Report'))
 
 #------------------------------------------------------------------------------
 class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
@@ -1402,8 +1403,9 @@ class _CopyToLink(EnabledLink):
     def __init__(self, plugin_ext):
         super(_CopyToLink, self).__init__(plugin_ext)
         self._target_ext = plugin_ext
-        self._help = _(u'Creates a copy of the selected plugin(s) with the '
-                       u'extension changed to %s.') % plugin_ext
+        self._help = _('Creates a copy of the selected plugins with the '
+                       'extensions changed to %(new_plugin_ext)s.') % {
+            'new_plugin_ext': plugin_ext}
 
     def _enable(self):
         return any(p.get_extension() != self._target_ext
@@ -1554,8 +1556,8 @@ class _AFlipFlagLink(EnabledLink):
 
 class Mod_FlipEsm(_AFlipFlagLink):
     """Add or remove the ESM flag. Extension must be .esp or .esu."""
-    _help = _('Flip the ESM flag on the selected plugin(s), turning a master '
-              'into a regular plugin and vice versa.')
+    _help = _('Flip the ESM flag on the selected plugins, turning masters '
+              'into regular plugins and vice versa.')
     _add_flag, _remove_flag = _('Add ESM Flag'), _('Remove ESM Flag')
 
     @property
@@ -1577,8 +1579,8 @@ class Mod_FlipEsm(_AFlipFlagLink):
 #------------------------------------------------------------------------------
 class Mod_FlipEsl(_AFlipFlagLink):
     """Add or remove the ESL flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
-              'plugin into a regular one and vice versa.')
+    _help = _('Flip the ESL flag on the selected plugins, turning light '
+              'plugins into regular ones and vice versa.')
     _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
 
     @property
@@ -1601,9 +1603,9 @@ class Mod_FlipEsl(_AFlipFlagLink):
 #------------------------------------------------------------------------------
 class Mod_FlipOverlay(_AFlipFlagLink):
     """Add or remove the Overlay flag. Extension must be .esm, .esp or .esu."""
-    _help = _('Flip the ESL flag on the selected plugin(s), turning a light '
-              'plugin into a regular one and vice versa.')
-    _add_flag, _remove_flag = _('Add ESL Flag'), _('Remove ESL Flag')
+    _help = _('Flip the Overlay flag on the selected plugins, turning overlay '
+              'plugins into regular ones and vice versa.')
+    _add_flag, _remove_flag = _('Add Overlay Flag'), _('Remove Overlay Flag')
 
     @property
     def _already_flagged(self):
@@ -1614,7 +1616,7 @@ class Mod_FlipOverlay(_AFlipFlagLink):
         Overlay flag state and are Overlay-capable if converting to Overlay."""
         first_is_overlay = self._already_flagged
         return all(m.fn_ext in ('.esm', '.esp', '.esu') and
-                   minfo.has_esl_flag() == first_is_overlay and
+                   minfo.has_overlay_flag() == first_is_overlay and
                    (first_is_overlay or
                     m in bosh.modInfos.overlay_capable_plugins)
                    for m, minfo in self.iselected_pairs())

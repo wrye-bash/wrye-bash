@@ -493,7 +493,7 @@ class Mods_ExportBashTags(_AMods_BashTags):
         if not exp_path: return
         self.plugins_exported = 0
         self.write_text_file(exp_path)
-        self._showInfo(_('Exported tags for %(exp_num)d plugin(s) to '
+        self._showInfo(_('Exported tags for %(exp_num)d plugins to '
                          '%(exp_path)s.') % {'exp_num': self.plugins_exported,
                                              'exp_path': exp_path},
             title=_('Export Bash Tags - Done'))
@@ -534,7 +534,7 @@ class Mods_ImportBashTags(_AMods_BashTags):
                 title=_('Import Bash Tags - Invalid CSV'))
             return
         self.window.RefreshUI(redraw=self.plugins_imported)
-        self._showInfo(_('Imported tags for %(total_imported)d plugin(s).') % {
+        self._showInfo(_('Imported tags for %(total_imported)d plugins.') % {
             'total_imported': len(self.plugins_imported)},
             title=_('Import Bash Tags - Done'))
 
@@ -577,7 +577,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 p.set_auto_tagged(True)
                 p.reloadBashTags()
         self.window.RefreshUI(redraw=pl_reset)
-        self._showInfo(_('Cleared tags from %(total_cleared)d plugin(s).') % {
+        self._showInfo(_('Cleared tags from %(total_cleared)d plugins.') % {
             'total_cleared': len(pl_reset)},
             title=_('Clear Manual Bash Tags - Done'))
 

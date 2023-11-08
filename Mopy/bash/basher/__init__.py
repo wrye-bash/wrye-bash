@@ -4205,7 +4205,7 @@ class BashFrame(WindowFrame):
             multi_warnings.append(_mk_warning(
                 _('The following BA2s have filenames whose hashes collide, '
                   'which will cause one or more of them to fail to work '
-                  'correctly. This should be corrected by the mod author(s) '
+                  'correctly. This should be corrected by the mod authors '
                   'by renaming the files to avoid the collision.'),
                 ba2_colls - self.known_ba2_collisions, key_bsas))
             self.known_ba2_collisions |= ba2_colls
