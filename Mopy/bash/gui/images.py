@@ -189,7 +189,7 @@ class ImgFromPath(GuiImage):
             if self.get_img_size() != (wanted_size, wanted_size):
                 native.Rescale(wanted_size, wanted_size,
                     _wx.IMAGE_QUALITY_HIGH)
-        if self._quality is not None: # This only has an effect on jpegs
+        if self._quality is not None: # This only has an effect on jpgs
             native.SetOption(_wx.IMAGE_OPTION_QUALITY, self._quality)
         return native
 

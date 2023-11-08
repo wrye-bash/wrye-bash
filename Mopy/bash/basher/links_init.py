@@ -853,8 +853,8 @@ def InitScreenLinks():
         ScreensList.column_links.append_link(files_menu)
     ScreensList.column_links.append_link(SeparatorLink())
     ScreensList.column_links.append_link(Screens_NextScreenShot())
-    if True: #--JPEG Quality
-        qualityMenu = MenuLink(_('JPEG Quality..'))
+    if True: #--JPG Quality
+        qualityMenu = MenuLink(_('JPG Quality..'))
         for i in range(100, 80, -5):
             qualityMenu.links.append_link(Screens_JpgQuality(i))
         qualityMenu.links.append_link(Screens_JpgQualityCustom())
@@ -890,10 +890,10 @@ def InitScreenLinks():
     # Settings Menu
     settings_menu = ScreensList.global_links[_('Settings')]
     settings_menu.append_link(Screens_NextScreenShot())
-    jpeg_quality_menu = MenuLink(_('JPEG Quality..'))
+    jpg_quality_menu = MenuLink(_('JPG Quality..'))
     for i in range(100, 80, -5):
-        jpeg_quality_menu.links.append_link(Screens_JpgQuality(i))
-    jpeg_quality_menu.links.append_link(Screens_JpgQualityCustom())
+        jpg_quality_menu.links.append_link(Screens_JpgQuality(i))
+    jpg_quality_menu.links.append_link(Screens_JpgQualityCustom())
     settings_menu.append_link(qualityMenu)
     settings_menu.append_link(SeparatorLink())
     ScreensList.global_links[_('Settings')].append_link(Misc_SettingsDialog())

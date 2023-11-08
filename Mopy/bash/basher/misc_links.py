@@ -41,19 +41,19 @@ __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
 #------------------------------------------------------------------------------
 class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
-    _text = _(u'Next Shot...')
-    _help = _(u'Set screenshot base name and number')
+    _text = _('Next Shot...')
+    _help = _('Sets screenshot base name and number.')
     rePattern = re.compile(r'^(.+?)(\d*)$', re.I | re.U)
 
     def _enable(self):
-        return not bosh.oblivionIni.isCorrupted \
-               and bosh.oblivionIni.abs_path.exists()
+        return (not bosh.oblivionIni.isCorrupted
+                and bosh.oblivionIni.abs_path.exists())
 
     @property
     def link_help(self):
         if not self._enable():
-            return self._help + u'.  ' + _(u'%(ini)s must exist') % {
-                u'ini': bush.game.Ini.dropdown_inis[0]}
+            return self._help + ' ' + _('%(game_ini_name)s must exist.') % {
+                'game_ini_name': bush.game.Ini.dropdown_inis[0]}
         else: return self._help
 
     def Execute(self):
@@ -63,9 +63,11 @@ class Screens_NextScreenShot(EnabledLink):
         base = bosh.oblivionIni.getSetting(*base_key)
         index = bosh.oblivionIni.getSetting(*index_key)
         pattern = self._askText(
-            _(u'Screenshot base name, optionally with next screenshot number.')
-            + u'\n' +
-            _(r'E.g. ScreenShot, ScreenShot_101 or Subdir\ScreenShot_201.'),
+            _('Screenshot base name, optionally with next screenshot number '
+              '(e.g. %(ini_example1)s, %(ini_example2)s or '
+              '%(ini_example3)s).') % {
+                'ini_example1': 'ScreenShot', 'ini_example2': 'ScreenShot_101',
+                'ini_example3': r'Subdir\ScreenShot_201'},
             default=base + index)
         if not pattern: return
         new_base, new_index = self.__class__.rePattern.match(pattern).groups()
@@ -98,7 +100,8 @@ class Screen_ConvertTo(EnabledLink):
 
     def Execute(self):
         try:
-            with balt.Progress(_('Converting to %s') % self._ext[1:]) as progress:
+            msg = _('Converting to %(img_ext)s') % {'img_ext': self._ext[1:]}
+            with balt.Progress(msg) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
                     progress(index, fileName)
@@ -116,8 +119,8 @@ class Screen_ConvertTo(EnabledLink):
 
 #------------------------------------------------------------------------------
 class Screens_JpgQuality(RadioLink):
-    """Sets JPEG quality for saving."""
-    _help = _(u'Sets JPEG quality for saving')
+    """Sets JPG quality for saving."""
+    _help = _('Sets JPG quality for saving.')
 
     def __init__(self, quality):
         super().__init__()
@@ -135,15 +138,17 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
         super().__init__(bass.settings['bash.screens.jpgCustomQuality'])
-        self._text = _(u'Custom [%i]') % self.quality
+        self._text = _('Custom [%(custom_quality)d]') % {
+            'custom_quality': self.quality}
 
     def Execute(self):
-        quality = self._askNumber(_(u'JPEG Quality'), initial_num=self.quality,
+        quality = self._askNumber(_('JPG Quality'), initial_num=self.quality,
                                   min_num=0, max_num=100)
         if quality is None: return
         self.quality = quality
-        bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
-        self._text = _(u'Custom [%i]') % quality
+        bass.settings['bash.screens.jpgCustomQuality'] = self.quality
+        self._text = _('Custom [%(custom_quality)d]') % {
+            'custom_quality': self.quality}
         super().Execute()
 
 # Masters Links ---------------------------------------------------------------
@@ -156,9 +161,9 @@ class Master_AllowEdit(CheckLink, EnabledLink):
     def Execute(self): self.window.allowEdit ^= True
 
 class Master_ClearRenames(ItemLink):
-    _text = _(u'Clear Renames')
-    _help = _(u'Clear the renames dictionary, causing Wrye Bash to no longer '
-              u'automatically apply the renames stored within.')
+    _text = _('Clear Renames')
+    _help = _('Clear the renames dictionary, causing Wrye Bash to no longer '
+              'automatically apply previously executed renames.')
 
     def Execute(self):
         bass.settings[u'bash.mods.renames'].clear()
@@ -194,8 +199,8 @@ class Master_ChangeTo(_Master_EditList):
         newDir, newName = newPath.headTail
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
-            self._showError(_(u'File must be selected from %s '
-                              u'directory.') % bush.game.mods_dir)
+            self._showError(_('File must be selected from %(data_folder)s '
+                              'folder.') % {'data_folder': bush.game.mods_dir})
             return
         # Handle ghosts: simply chop off the extension
         if newName.cext == '.ghost':
@@ -334,11 +339,12 @@ class ColumnsMenu(ChoiceMenuLink):
 #------------------------------------------------------------------------------
 class _SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
-    def __init__(self, _text='COLNAME'):
+    def __init__(self, _text: str):
         super(_SortBy, self).__init__()
         self.sortCol = _text
-        self._text = bass.settings[u'bash.colNames'][_text]
-        self._help = _(u'Sort by %s') % self._text
+        self._text = bass.settings['bash.colNames'][_text]
+        self._help = _("Sort by the '%(column_name)s' column.") % {
+            'column_name': self._text}
 
     def _check(self): return self.window.sort_column == self.sortCol
 
@@ -349,12 +355,10 @@ class SortByMenu(ChoiceMenuLink):
     _text = _('Sort By..')
     choiceLinkType = _SortBy
 
-    def __init__(self, sort_options=None):
+    def __init__(self, sort_options: list[Link] | None = None):
         """Creates a new 'sort by' menu, optionally prepending the specified
         sort options before the choices. A separator is automatically inserted
-        if any sort options are specified.
-
-        :type sort_options: list[balt.Link]"""
+        if any sort options are specified."""
         super(SortByMenu, self).__init__()
         if sort_options:
             self.extraItems = sort_options + [SeparatorLink()]
