@@ -42,13 +42,15 @@ class BSA_ExtractToProject(ItemLink):
         selected_bsas = [x for x in self.iselected_infos()]
         if len(selected_bsas) == 1:
             fn_bsa = selected_bsas[0].fn_key
-            result = self._askText(_(u'Extract %s to Project:') % fn_bsa,
+            result = self._askText(_('Extract %(target_bsa_name)s to '
+                                     'Project:') % {'target_bsa_name': fn_bsa},
                                    default=fn_bsa.fn_body)
             if not result: return
             # Error checking
             if (result := FName(result)).fn_ext in archives.readExts:
-                self._showWarning(_('%s is not a valid project name.') %
-                                  result)
+                self._showWarning(_('%(invalid_proj_name)s is not a valid '
+                                    'project name.') % {
+                    'invalid_proj_name': result})
                 return
             to_unpack = [(result, selected_bsas[0])]
         else:
@@ -57,16 +59,18 @@ class BSA_ExtractToProject(ItemLink):
         # More error checking
         # TODO(inf) Maybe create bosh.installers_data singleton?
         for project, _bsa_inf in to_unpack:
-            proj_path = bass.dirs[u'installers'].join(project)
+            proj_path = bass.dirs['installers'].join(project)
             if proj_path.is_file():
-                self._showWarning(_('%s is a file.') % project)
+                self._showWarning(_('%(invalid_proj_name)s is a '
+                                    'file.') % {'invalid_proj_name': project})
                 return
             if proj_path.is_dir():
-                question = _('%s already exists. Overwrite it?') % project
+                question = _('%(existing_proj)s already exists. Overwrite '
+                             'it?') % {'existing_proj': project}
                 if not self._askYes(question, default_is_yes=False):
                     return
                 # Clear existing project, user wanted to overwrite it
-                proj_path.rmtree(safety=u'Installers')
+                proj_path.rmtree(safety='Installers')
         # All error checking is done, proceed to extract
         with Progress(_(u'Extracting BSAs...')) as prog:
             prog_curr = 0.0
