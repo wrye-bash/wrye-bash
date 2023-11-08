@@ -74,7 +74,8 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_Subs_ListSubPackages', u'Installer_OpenNexus',
            u'Installer_ExportAchlist', u'Installer_Espm_JumpToMod',
            'Installer_RunFomod', 'Installer_InstallSmart',
-           'Installer_EditFomod', 'Installer_ProjectMenu']
+           'Installer_EditFomod', 'Installer_ProjectMenu',
+           'Installer_QuickRefresh']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -83,9 +84,9 @@ class _InstallerLink(Installers_Link, EnabledLink):
     """Common methods for installer links."""
 
     def _promptSolidBlockSize(self, title, default_size=0):
-        return self._askNumber(
-            _('Use what maximum size for each solid block?') + '\n' + _(
-                "Enter '0' to use 7z's default size."), prompt='MB',
+        return self._askNumber('\n'.join([
+            _('Use what maximum size for each solid block?'),
+            _("Enter '0' to use 7z's default size.")]), prompt='MB',
             title=title, initial_num=default_size, min_num=0, max_num=102400)
 
 def _with_busy_cursor(func):
@@ -470,8 +471,8 @@ class Installer_Duplicate(_SingleInstallable):
 
     @property
     def link_help(self):
-        return _(u'Duplicate selected %(installername)s.') % (
-            {u'installername': self._selected_item})
+        return _('Duplicate selected %(sel_pkg)s.') % (
+            {'sel_pkg': self._selected_item})
 
     @balt.conversation
     def Execute(self):
@@ -481,10 +482,10 @@ class Installer_Duplicate(_SingleInstallable):
         r, e = (fn_inst.fn_body, fn_inst.fn_ext) if is_arch else (fn_inst, '')
         newName = self._selected_info.unique_key(r, e, add_copy=True)
         allowed_exts = {e} if is_arch else set()
-        result = self._askFilename(
-            _(u'Duplicate %s to:') % fn_inst, newName,
-            inst_type=type(self._selected_info),
-            disallow_overwrite=True, no_dir=False, ##: no_dir=False?
+        msg = _('Duplicate %(target_package)s to:') % {
+            'target_package': fn_inst}
+        result = self._askFilename(msg, newName, no_dir=False, ##: True? False?
+            inst_type=type(self._selected_info), disallow_overwrite=True,
             allowed_exts=allowed_exts, use_default_ext=False)
         if not result: return
         #--Duplicate
@@ -519,7 +520,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     @property
     def link_help(self):
         return _('Override global file type skipping for '
-                 '%(installername)s.') % {'installername': self._selected_item}
+                 '%(sel_pkg)s.') % {'sel_pkg': self._selected_item}
 
     def _check(self):
         return self._enable() and self._selected_info.overrideSkips
@@ -695,10 +696,10 @@ class Installer_ListStructure(_SingleInstallable):
 class Installer_ExportAchlist(_SingleInstallable):
     """Write an achlist file with all the destinations files for this
     installer in this configuration."""
-    _text = _(u'Export Achlist')
-    _mode_info_dir = u'Mod Info Exports'
-    _help = (_(u'Create achlist file for use by the %s.') %
-             bush.game.Ck.long_name)
+    _text = _('Export Achlist')
+    _mode_info_dir = 'Mod Info Exports'
+    _help = (_('Create achlist file for use by the %(ck_name)s.') % {
+        'ck_name': bush.game.Ck.long_name})
 
     def Execute(self):
         out_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
@@ -719,26 +720,29 @@ class Installer_ExportAchlist(_SingleInstallable):
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     _text = _('Move To...')
-    _help = _('Move the selected installer(s) to a position of your choice.')
+    _help = _('Move the selected package(s) to a position of your choice.')
 
     @balt.conversation
     def Execute(self):
         curPos = min(inf.order for inf in self.iselected_infos())
-        message = (_(u'Move selected archives to what position?') + u'\n' +
-                   _(u'Enter position number.') + u'\n' +
-                   _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
-                   )
-        newPos = self._askText(message, default=str(curPos))
-        if not newPos: return
-        try:
-            newPos = int(newPos)
-        except ValueError:
-            self._showError(_(u'Position must be an integer.'))
-            return
-        if newPos == -3: newPos = self.idata[self.idata.lastKey].order
-        elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
-        elif newPos < 0: newPos = len(self.idata)
-        self.idata.moveArchives(self.selected,newPos)
+        last_key, first_of_last_key, semi_last_key = -1, -2, -3
+        message = '\n\n'.join([
+            _('Move selected packages to what position?'),
+            _('Last: %(last_key)s; First of Last: %(first_of_last_key)s; '
+              'Semi-Last: %(semi_last_key)s.') % {
+                'last_key': last_key, 'first_of_last_key': first_of_last_key,
+                'semi_last_key': semi_last_key,
+            }])
+        newPos = self._askNumber(message, initial_num=curPos,
+            min_num=semi_last_key)
+        if newPos is None: return
+        if newPos == semi_last_key:
+            newPos = self.idata[self.idata.lastKey].order
+        elif newPos == first_of_last_key:
+            newPos = self.idata[self.idata.lastKey].order + 1
+        elif newPos == last_key:
+            newPos = len(self.idata)
+        self.idata.moveArchives(self.selected, newPos)
         self.idata.refresh_n()
         self.window.RefreshUI(
             detail_item=self.iPanel.detailsPanel.displayed_item)
@@ -839,17 +843,11 @@ class Installer_OpenTESA(_Installer_OpenAt_Regex):
 #------------------------------------------------------------------------------
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
-    _text = _(u'Refresh')
-    _help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
-        u'Ignores skip refresh flag on projects')
-
-    def __init__(self, calculate_projects_crc=True):
-        super(Installer_Refresh, self).__init__()
-        self.calculate_projects_crc = calculate_projects_crc
-        if not calculate_projects_crc:
-            self._text = _(u'Quick Refresh')
-            self._help = Installer_Refresh._help + u'.  ' + _(
-                u'Will not recalculate cached crcs of files in a project')
+    _text = _('Refresh')
+    _help = _('Rescan selected packages. Ignores "Don\'t Refresh" flag on '
+              'projects. Will forcibly recalculate the CRCs of all files in '
+              'any selected projects.')
+    _force_recalc_projects = True
 
     def _enable(self):
         return bool(list(self.idata.ipackages(self.selected)))
@@ -857,7 +855,13 @@ class Installer_Refresh(_InstallerLink):
     @balt.conversation
     def Execute(self):
         self.window.rescanInstallers(self.selected, abort=True,
-            calculate_projects_crc=self.calculate_projects_crc)
+            calculate_projects_crc=self._force_recalc_projects)
+
+class Installer_QuickRefresh(Installer_Refresh):
+    _text = _('Quick Refresh')
+    _help = _('Rescan selected packages. Ignores "Don\'t Refresh" flag on '
+              'projects.')
+    _force_recalc_projects = False
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
@@ -865,8 +869,8 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
 
     @property
     def link_help(self):
-        return _(u'Skip over any voice files in %(installername)s') % (
-                    {u'installername': self._selected_item})
+        return _('Skip over any voice files in %(sel_pkg)s') % (
+                    {'sel_pkg': self._selected_item})
 
     def _check(self): return self._enable() and self._selected_info.skipVoices
 
@@ -894,10 +898,9 @@ class Installer_Uninstall(_NoMarkerLink):
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
-    _text = _(u'Copy Conflicts to Project')
-    _help = _(u'Copy all files that conflict with the selected installer into a'
-             u' new project') + u'.  ' + _(
-        u'Conflicts with inactive installers are included')
+    _text = _('Copy Conflicts to Project')
+    _help = _('Copy all files that conflict with the selected package into a '
+              'new project. Conflicts with inactive packages are included.')
 
     @balt.conversation
     def Execute(self):
@@ -906,9 +909,10 @@ class Installer_CopyConflicts(_SingleInstallable):
         srcConflicts = set()
         packConflicts = []
         src_sizeCrc = self._selected_info.ci_dest_sizeCrc # CIstr -> (int, int)
-        def _ok(msg): self._showOk(msg % self._selected_item)
         if not src_sizeCrc:
-            return _ok(_(u'No files to install for %s'))
+            self._showOk(_('No files to install for %(sel_pkg)s.') % {
+                'sel_pkg': self._selected_item})
+            return
         src_order = self._selected_info.order
         with balt.Progress(_('Scanning Packages...')) as progress:
             progress.setFull(len(self.idata))
@@ -930,7 +934,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 (siz, crc) in srcConflicts}
             numFiles += len(srcConflicts)
         if not numFiles:
-            return _ok(_(u'No conflicts detected for %s'))
+            self._showOk(_('No conflicts detected for %(sel_pkg)s') % {
+                'sel_pkg': self._selected_item})
+            return
         ijoin = self.idata.store_dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
@@ -958,8 +964,8 @@ class Installer_CopyConflicts(_SingleInstallable):
             curConflicts = srcConflicts
             curFile = _copy_conflicts(curFile)
             for order,package,curConflicts in packConflicts:
-                g_path = f'{order if order < src_order else order + 1:03d} ' \
-                         f'- {package}'
+                g_path = (f'{order if order < src_order else order + 1:03d} '
+                          f'- {package}')
                 curFile = _copy_conflicts(curFile)
         self.idata.new_info(fn_conflicts_dir, install_order=src_order + 1)
         self.window.RefreshUI(detail_item=fn_conflicts_dir)
@@ -1042,17 +1048,18 @@ class Installer_Espm_ResetAll(_Installer_Details_Link):
 
 class Installer_Espm_List(_Installer_Details_Link):
     """Lists all plugins in installer for user information."""
-    _text = _(u'List Plugins')
-    _help = _(u'Displays a list of all plugin files in the selected '
-              u'sub-packages (and copies it to the system clipboard).')
+    _text = _('List Plugins')
+    _help = _('Displays a list of all plugin files in the selected '
+              'sub-packages (and copies it to the system clipboard).')
 
     def Execute(self):
-        subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
-        espm_list = self.window.gEspmList
-        for i in range(espm_list.lb_get_items_count()):
-            sub_prefix = ['   ', '** '][espm_list.lb_is_checked_at_index(i)]
-            subs += f'{sub_prefix}{self.window.get_espm(i)}\n'
-        subs += u'[/spoiler]'
+        subs = _('Plugin List for %(sel_pkg)s:') % {'sel_pkg': self._installer}
+        subs += '\n[spoiler]\n'
+        el = self.window.gEspmList
+        for i in range(el.lb_get_items_count()):
+            subs += (f"{'**' if el.lb_is_checked_at_index(i) else '  '} "
+                     f"{self.window.get_espm(i)}\n")
+        subs += '[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_('Plugin List'))
 
@@ -1111,28 +1118,29 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
-    _text = _(u'List Sub-Packages')
-    _help = _(u'Displays a list of all sub-packages in this installer (and '
-              u'copies it to the system clipboard).')
+    _text = _('List Sub-Packages')
+    _help = _('Displays a list of all sub-packages in this package (and '
+              'copies it to the system clipboard).')
 
     def Execute(self):
-        subs = _(u'Sub-Packages List for %s:') % self._installer
-        subs += u'\n[spoiler]\n'
-        sp_list = self.window.gSubList
-        for i in range(sp_list.lb_get_items_count()):
-            subs += ['   ', '** '][sp_list.lb_is_checked_at_index(i)]
-            subs += sp_list.lb_get_str_item_at_index(i) + '\n'
-        subs += u'[/spoiler]'
+        subs = _('Sub-Packages List for %(sel_pkg)s:') % {
+            'sel_pkg': self._installer} + '\n[spoiler]\n'
+        sl = self.window.gSubList
+        for i in range(sl.lb_get_items_count()):
+            subs += (f"{'**' if sl.lb_is_checked_at_index(i) else '  '} "
+                     f"{sl.lb_get_str_item_at_index(i)}\n")
+        subs += '[/spoiler]'
         copy_text_to_clipboard(subs)
-        self._showLog(subs, title=_('Sub-Package Lists'))
+        self._showLog(subs, title=_('Sub-Package List'))
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(_ArchiveOnly):
     """Unpack installer package(s) to Project(s)."""
-    _text = _dialog_title = _(u'Unpack to Project(s)...')
-    _help = _(u'Unpack installer package(s) to Project(s)')
+    _text = _dialog_title = _('Unpack to Project...')
+    _help = _('Unpack the selected archives, creating project copies from '
+              'them.')
 
     @balt.conversation
     def Execute(self):
@@ -1142,19 +1150,20 @@ class InstallerArchive_Unpack(_ArchiveOnly):
         for iname, installer in self.idata.sorted_pairs(self.selected):
             project = iname.fn_body
             if len(self.selected) == 1:
-                project = self._askFilename(_('Unpack %(target_archive)s to '
-                                              'Project:') % {
-                    'target_archive': iname}, project,
+                msg = _('Name the project that %(target_archive)s should get '
+                        'unpacked into:') % {'target_archive': iname}
+                project = self._askFilename(msg, project,
                     inst_type=bosh.InstallerProject, no_file=True)
                 if not project: return
             elif project in self.idata and not self._askYes( #only needed check
-                    _(u'%s already exists. Overwrite it?') % project,
+                    _('%(target_proj)s already exists. Overwrite it?') % {
+                        'target_proj': project},
                     default_is_yes=False):
                 continue
             # All check passed, we can unpack this
             to_unpack.append((installer, project))
         # We're safe to show the progress dialog now
-        with balt.Progress(_('Unpacking to Project...')) as progress:
+        with balt.Progress(_('Unpacking to project...')) as progress:
             projects = []
             for installer, project in to_unpack:
                 count_unpacked = installer.unpackToProject(project,
@@ -1185,8 +1194,8 @@ class InstallerProject_OmodConfig(_SingleProject):
 class Installer_SyncFromData(_SingleInstallable):
     """Synchronize an archive or project with files from the Data directory."""
     _text = _('Sync From Data...')
-    _help = _(u'Synchronize an installer with files from the %s '
-              u'directory.') % bush.game.mods_dir
+    _help = _('Synchronize a package with files from the %(data_folder)s '
+              'folder.') % {'data_folder': bush.game.mods_dir}
 
     def _enable(self):
         return super()._enable() and bool(self._selected_info.missingFiles or
@@ -1246,8 +1255,8 @@ class Installer_SyncFromData(_SingleInstallable):
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
-    _text = _dialog_title = _(u'Pack to Archive...')
-    _help = _(u'Pack project to an archive')
+    _text = _dialog_title = _('Pack to Archive...')
+    _help = _('Pack this project, creating a copy of it as an archive.')
     release = False
 
     @balt.conversation
@@ -1255,8 +1264,9 @@ class InstallerProject_Pack(_SingleProject):
         #--Generate default filename from the project name and the default extension
         archive_name = self._selected_item + archives.defaultExt
         #--Confirm operation
-        archive_name = self._askFilename(
-            _(u'Pack %s to Archive:') % self._selected_item, archive_name)
+        msg = _('Name the archive that %(sel_proj)s should get packed '
+                'into:') % {'sel_proj': self._selected_item}
+        archive_name = self._askFilename(msg, archive_name)
         if not archive_name: return
         installer = self._selected_info
         #--Archive configuration options
@@ -1265,13 +1275,14 @@ class InstallerProject_Pack(_SingleProject):
             isSolid = False
         else:
             if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
-                isSolid = self._askYes(_('Use solid compression for %s?')
-                                       % archive_name, default_is_yes=False)
+                msg = _('Use solid compression for %(new_archive)s?') % {
+                    'new_archive': archive_name}
+                isSolid = self._askYes(msg, default_is_yes=False)
                 if isSolid:
                     blockSize = self._promptSolidBlockSize(title=self._text)
             else:
                 isSolid = True
-        with balt.Progress(_('Packing to Archive...')) as progress:
+        with balt.Progress(_('Packing to archive...')) as progress:
             #--Pack
             installer.packToArchive(self._selected_item, archive_name, isSolid,
                                     blockSize, SubProgress(progress, 0, 0.8),
@@ -1285,9 +1296,9 @@ class InstallerProject_Pack(_SingleProject):
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):
     """Pack project to an archive for release. Ignores dev files/folders."""
-    _text = _(u'Package for Release...')
-    _help = _(
-        u'Pack project to an archive for release. Ignores dev files/folders')
+    _text = _('Package for Release...')
+    _help = _('Pack this project for release, creating a copy of it as an '
+              'archive. Does not package development files.')
     release = True
 
 #------------------------------------------------------------------------------
@@ -1446,29 +1457,39 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             self.idata.irefresh(progress, what='C')
         #--Generate log
         log = LogFile(io.StringIO())
-        log.setHeader(f'== {_("Overview")}\n')
+        log.setHeader(f"== {_('Overview')}\n")
         # log('{{CSS:wtxt_sand_small.css}}')
-        log(f'. {_("Name")}: {bcf_fname}')
-        log(f'. {_("Size")}: {round_size(conv.fullPath.psize)}')
-        log(f'. {_("Remapped: %u file(s)") % len(conv.convertedFiles)}')
-        log.setHeader('. ' + _('Requires: %u file(s)') % len(conv.srcCRCs))
+        log(f". {_('Name: %(bcf_name)s')}" % {'bcf_name': bcf_fname})
+        log(f". {_('Size: %(total_bcf_size)s')}" % {
+            'total_bcf_size': round_size(conv.fullPath.psize)})
+        log(f". {_('Remapped: %(num_remapped)d files')}" % {
+            'num_remapped': len(conv.convertedFiles)})
+        log.setHeader(f". {_('Requires: %(num_required)d files')}" % {
+            'num_required': len(conv.srcCRCs)})
         log('  * ' + '\n  * '.join(sorted(
             f'({x:08X}) - {crc_installer[x]}' for x in conv.srcCRCs
             if x in crc_installer)))
-        log.setHeader('. ' + _('Options:'))
-        log(f'  *  {_("Skip Voices")} = {bool(conv.skipVoices)}')
-        log(f'  *  {_("Solid Archive")} = {bool(conv.isSolid)}')
+        log.setHeader(f". {_('Options:')}")
+        log(f"  *  {_('Skip Voices: %(skip_voices)s')}" % {
+            'skip_voices': bool(conv.skipVoices)})
+        log(f"  *  {_('Solid Archive: %(solid_archive)s')}" % {
+            'solid_archive': bool(conv.isSolid)})
         if conv.isSolid:
             if conv.blockSize:
-                log(f'    *  {_("Solid Block Size")} = {conv.blockSize:d}')
+                log(f"    *  {_('Solid Block Size: %(block_size)s')}" % {
+                    'block_size': conv.blockSize})
             else:
-                log(f'    *  {_("Solid Block Size")} = 7z default')
-        log(f'  *  {_("Has Comments")} = {bool(conv.comments)}')
-        log(f'  *  {_("Has Extra Directories")} = {bool(conv.hasExtraData)}')
-        log(f'  *  {_("Has Plugins Unselected")} = {bool(conv.espmNots)}')
-        log(f'  *  {_("Has Packages Selected")} = {bool(conv.subActives)}')
-        log.setHeader('. ' + _('Contains: %u file(s)') % len(
-            conv.bcf_missing_files))
+                log(f"    *  {_('Solid Block Size: 7z Default')}")
+        log(f"  *  {_('Has Comments: %(has_comments)s')}" % {
+            'has_comments': bool(conv.comments)})
+        log(f"  *  {_('Has Extra Directories: %(has_extra_dirs)s')}" % {
+            'has_extra_dirs': bool(conv.hasExtraData)})
+        log(f"  *  {_('Has Unselected Plugins: %(has_unsel_plugins)s')}" % {
+            'has_unsel_plugins': bool(conv.espmNots)})
+        log(f"  *  {_('Has Selected Packages: %(has_sel_packages)s')}" % {
+            'has_sel_packages': bool(conv.subActives)})
+        log.setHeader(f". {_('Contains %(num_contained_files)d files:')}" % {
+            'num_contained_files': len(conv.bcf_missing_files)})
         log('  * ' + '\n  * '.join(sorted(map(str, conv.bcf_missing_files))))
         if log:
             self._showLog(log.out.getvalue(), title=_('BCF Information'))

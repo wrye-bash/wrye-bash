@@ -263,8 +263,7 @@ def InitInstallerLinks():
     InstallersList.context_links.append_link(SeparatorLink())
     InstallersList.context_links.append_link(Installer_OpenReadme())
     InstallersList.context_links.append_link(Installer_Anneal())
-    InstallersList.context_links.append_link(
-        Installer_Refresh(calculate_projects_crc=False))
+    InstallersList.context_links.append_link(Installer_QuickRefresh())
     InstallersList.context_links.append_link(Installer_Move())
     InstallersList.context_links.append_link(Installer_SyncFromData())
     InstallersList.context_links.append_link(SeparatorLink())
