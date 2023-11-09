@@ -38,7 +38,8 @@ from .basic_elements import MelBase, MelBaseR, MelFid, MelGroup, MelGroups, \
     MelObject, MelReadOnly, MelSequential, MelString, MelStruct, MelUInt32, \
     MelUnorderedGroups, MelUInt8
 from .common_subrecords import MelFull
-from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
+from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker, \
+    SlottedType
 from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16, \
@@ -99,7 +100,7 @@ class _MelCs2kCs2d(MelGroups):
 
     def getDefaulters(self, mel_set_instance, mel_key=''):
         super().getDefaulters(mel_set_instance, mel_key)
-        mel_set_instance.defaultrs['_had_cs2k'] = False
+        mel_set_instance.defaulters['_had_cs2k'] = False
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if sub_type == b'CS2D':
@@ -134,8 +135,8 @@ class _MelCs2kCs2d(MelGroups):
             else:
                 sounds_kw.append(s)
         ##: Does the game/CK sort by actor_sound_fid too?
-        record.actor_sounds = sounds_none + sorted(sounds_kw,
-            key=attrgetter_cache['actor_sound_keyword'])
+        record.actor_sounds = [*sounds_none, *sorted(sounds_kw,
+            key=attrgetter_cache['actor_sound_keyword'])]
 
 class MelActorSounds2(MelDependentSequential):
     """Bethesda redesigned actor sounds for FO4. This handles the new
@@ -1513,7 +1514,7 @@ class _AVmadComponent(object):
 
     @bolt.fast_cached_property
     def _component_class(self):
-        class _MelComponentInstance(MelObject):
+        class _MelComponentInstance(metaclass=SlottedType):
             __slots__ = self.used_slots
         return _MelComponentInstance
 

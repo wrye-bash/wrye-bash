@@ -41,6 +41,8 @@ class SlottedType(type):
 
     def __new__(cls, name, bases, classdict):
         slots = classdict.get('__slots__', ())
+        if slots: # fixme remove - tracks which classes use slots
+            bolt.deprint(f'__slots__={slots} in {name}({bases=}, {classdict=}')
         ms_slots = melSet.getSlotsUsed() if (
                 melSet := classdict.get('melSet')) else ()
         if ms_slots and slots:
@@ -607,8 +609,8 @@ class GetAttrer(metaclass=SlottedType):
     values for those in MelRecord so the code might expect to be able to do
     record.attr without an attribute error. However, the goal is to obsolete
     this behavior - so add debug code here to track these uses and replace
-    them - as it does not make sense to ask for an attribute to a record
-    that misses it. This is meant especially for defaultrs, as the
+    them - as it makes little sense to ask for an attribute to a record
+    that misses it. This is meant especially for defaulters, as the
     mel_providers_dict will be difficult to uproot and listers is somewhat
     convenient."""
 
@@ -619,7 +621,7 @@ class GetAttrer(metaclass=SlottedType):
             target = []
         elif missing_attr in self.__class__.melSet.mel_providers_dict:
             target = self.__class__.melSet.mel_providers_dict[missing_attr]()
-        else:
+        else: # todo add support for slots only specified attrs?
             raise AttributeError(missing_attr)
         setattr(self, missing_attr, target)
         return target

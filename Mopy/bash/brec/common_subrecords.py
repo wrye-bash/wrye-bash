@@ -31,7 +31,7 @@ from .basic_elements import MelBase, MelFid, MelFloat, MelGroup, \
     MelGroups, MelLString, MelNull, MelReadOnly, MelSequential, \
     MelSInt32, MelString, MelStrings, MelStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16Flags, MelUInt32, MelUInt32Flags, MelSInt8, MelUInt16, \
-    MelSimpleGroups, MelUInt32Bool
+    MelSimpleGroups, MelUInt32Bool, MelObject
 from .utils_constants import FID, ZERO_FID, ambient_lighting_attrs, \
     color_attrs, color3_attrs, int_unpacker, null1, gen_coed_key, \
     PackGeneralFlags, PackInterruptFlags, position_attrs, rotation_attrs, \
@@ -1635,12 +1635,16 @@ class MelPerkData(MelTruncatedStruct):
 class MelPerkParamsGroups(MelGroups):
     """Hack to make pe_function available to the group elements so that their
     deciders can use it."""
+    class _MelPeFunc(MelObject):
+        __slots__ = ('pe_function',) ##: hacky we would prefer to pass a melSet
+    _mel_object_base_type = _MelPeFunc
+
     def __init__(self, *elements):
         super().__init__('pe_params', *elements)
 
     def _new_object(self, record):
         target = super()._new_object(record)
-        pe_fn = record.pe_function
+        pe_fn = record.pe_function # fish the pe_function from the record
         target.pe_function = pe_fn if pe_fn is not None else -1
         return target
 

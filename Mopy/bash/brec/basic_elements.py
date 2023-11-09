@@ -44,7 +44,7 @@ class _MelObjectType(SlottedType):
         comp_attrs = classdict.get('compare_attrs') or new.__slots__
         if acts := classdict.get('compare_actions'): # iterated separately
             comp_attrs = (c for c in comp_attrs if c not in acts)
-        new.compare_attrs = tuple(comp_attrs)
+        new.compare_attrs = frozenset(comp_attrs)
         return new
 
 class MelObject(GetAttrer, metaclass=_MelObjectType):
@@ -54,8 +54,9 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
     def __eq__(self, other):
         """Operator: =="""
         try:
-            return all(getattr(self, a) == getattr(other, a) for a in
-                       type(self).compare_attrs) # fixme - if cmp attr is empty is asymmetrical
+            comp_att = type(self).compare_attrs
+            return type(other).compare_attrs == comp_att and all(
+                getattr(self, a) == getattr(other, a) for a in comp_att)
         except AttributeError:
             return False
 
@@ -71,6 +72,8 @@ class MelObject(GetAttrer, metaclass=_MelObjectType):
         the MelObject instance will be created in GetAttrer.__getattr__,
         hasattr will return True. This is a hacky way to check if the MelObject
         instance is an empty instance just created."""
+        # fixme check also the mel_providers_dict?
+        bolt.deprint(f'__bool__ called on {self!r}')
         for a in self.__class__.melSet.defaulters:
             if getattr(self, a) is not None:
                 return True
@@ -421,9 +424,8 @@ class MelGroup(MelSequential):
         self.attr, self.loaders = attr, {}
         # set up the MelObject needed for this MelGroup
         from .record_structs import MelSet
-        group_mel_set = MelSet(*elements)
         class _MelObject(self.__class__._mel_object_base_type):
-            melSet = group_mel_set
+            melSet = MelSet(*elements)
         self._mel_object_type = _MelObject
 
     def getDefaulters(self, mel_set_instance, mel_key=''):
@@ -461,7 +463,7 @@ class MelGroup(MelSequential):
 
     def sort_subrecord(self, record):
         target = getattr(record, self.attr)
-        if not target: return
+        if not target: return ##: todo drop - avoid checking a MelObject truth value
         super().sort_subrecord(target)
 
 #------------------------------------------------------------------------------
