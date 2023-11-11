@@ -326,7 +326,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
                     _current_list_index = max (0, _current_list_index)
                     _new_entry()
 
-def refresh_lo(cached=False, cached_active=True):
+def refresh_lo(cached: bool, cached_active: bool):
     """Refresh cached_lord, reverting if locked to the saved one. If any of
     cached or cached_active are True, we will keep the cached values for
     those except if _game_handle.***_changed() respective methods return

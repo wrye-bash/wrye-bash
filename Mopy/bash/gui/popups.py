@@ -402,15 +402,14 @@ class DateAndTimeDialog(DialogWindow):
         self._date_picker.set_date(new_datetime.date())
         self._time_picker.set_time(new_datetime.time())
 
-    def show_modal(self) -> tuple[bool, datetime.datetime | None]:
-        """Return whether the OK button or Cancel button was pressed and the
-        final chosen date and time as a datetime.datetime object."""
-        result = super().show_modal()
-        if result:
-            manual_datetime = datetime.datetime.strptime(
-                self._manual_entry.text_content, _COMMON_FORMAT)
-            return result, manual_datetime
-        return result, None
+    def show_modal(self) -> datetime.datetime | bool:
+        """Return the final chosen date and time as a datetime.datetime
+        object, or False if user cancelled."""
+        if not (result := super().show_modal()):
+            return result
+        manual_datetime = datetime.datetime.strptime(
+            self._manual_entry.text_content, _COMMON_FORMAT)
+        return manual_datetime
 
 # Misc ------------------------------------------------------------------------
 @dataclass(slots=True, kw_only=True)

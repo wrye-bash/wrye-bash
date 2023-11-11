@@ -342,10 +342,10 @@ class File_Redate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        user_ok, user_datetime = DateAndTimeDialog.display_dialog(
-            self.window, warning_color=balt.colors['default.warn'],
-            icon_bundle=balt.Resources.bashBlue)
-        if not user_ok or not user_datetime: return
+        if not (user_datetime := DateAndTimeDialog.display_dialog(self.window,
+                warning_color=balt.colors['default.warn'],
+                icon_bundle=balt.Resources.bashBlue)):
+            return
         # Perform the redate process and refresh
         user_timestamp = user_datetime.timestamp()
         for to_redate in self._infos_to_redate():

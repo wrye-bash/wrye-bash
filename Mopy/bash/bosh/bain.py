@@ -2910,28 +2910,34 @@ class InstallersData(DataStore):
             skipDir in bain.wrye_bash_data_dirs | bain.keep_data_dirs))
         return [f for f in ci_removes if not f.lower().startswith(skip_start)]
 
-    def clean_data_dir(self, removes, refresh_ui):
+    def clean_data_dir(self, ci_removes, refresh_ui):
         destDir = bass.dirs['bainData'].join(
             f'{bush.game.mods_dir} Folder Contents ({bolt.timestamp()})')
         try:
-            from . import modInfos
-            emptyDirs, mods = set(), set()
-            norm_ghost_get = Installer.getGhosted().get
-            for filename in removes:
-                full_path = bass.dirs[u'mods'].join(
-                    norm_ghost_get(filename, filename))
+            emptyDirs = set()
+            stores = data_tracking_stores()
+            store_del = defaultdict(set)
+            for ci_rel_path in ci_removes:
+                for store in stores:
+                    if store_inf := store.data_path_to_info(str(ci_rel_path)):
+                        full_path = store_inf.abs_path
+                        break
+                else:
+                    store = None
+                    full_path = bass.dirs['mods'].join(ci_rel_path)
                 try:
-                    full_path.moveTo(destDir.join(filename)) # will drop .ghost
-                    if modInfos.rightFileType(full_path.stail):
-                        mods.add(FName(str(filename)))
-                        refresh_ui |= Store.MODS.DO()
-                    self.data_sizeCrcDate.pop(filename, None)
+                    full_path.moveTo(destDir.join(ci_rel_path)) # will drop .ghost
+                    if store is not None:
+                        store_del[store].add(store_inf.fn_key)
+                    self.data_sizeCrcDate.pop(ci_rel_path, None)
                     emptyDirs.add(full_path.head)
                 except (StateError, OSError):
                     #It's not imperative that files get moved, so ignore errors
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
-            modInfos.delete_refresh(mods, None, check_existence=False)
+            for store, del_keys in store_del.items():
+                store.delete_refresh(del_keys, None, check_existence=False)
+                refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:
                     emptyDir.removedirs()

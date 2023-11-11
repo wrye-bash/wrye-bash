@@ -57,10 +57,9 @@ def __write_plugins(out, lord, active, _star):
     def asterisk(active_set=frozenset(active)):
         return b'*' if _star and (mod in active_set) else b''
     for mod in (_star and lord) or active:
-        # Ok, this seems to work for Oblivion, but not Skyrim
-        # Skyrim seems to refuse to have any non-cp1252 named file in
-        # plugins.txt.  Even activating through the SkyrimLauncher
-        # doesn't work.
+        # Ok, this seems to work for Oblivion, but not for Skyrim, which seems
+        # to refuse to have any non-cp1252 named file in plugins.txt.  Even
+        # activating through the SkyrimLauncher doesn't work.
         try:
             out.write(asterisk() + bolt.encode(mod, firstEncoding=u'cp1252'))
             out.write(b'\r\n')
@@ -568,11 +567,11 @@ class LoGame(object):
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user and backup previous plugins.txt
-                fix_active.act_header = u'Invalid Plugin txt corrected:\n'
+                fix_active.act_header = 'Invalid Plugin txt corrected:\n'
                 self._backup_active_plugins()
                 self._persist_active_plugins(acti, lord)
             else: # active list we passed in when setting load order is invalid
-                fix_active.act_header = u'Invalid active plugins list corrected:\n'
+                fix_active.act_header = 'Invalid active plugins list corrected:\n'
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
@@ -676,8 +675,7 @@ class INIGame(LoGame):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
         super().__init__(mod_infos, plugins_txt_path)
-        self._handles_actives = self.__class__.ini_key_actives != (
-            u'', u'', u'')
+        self._handles_actives = self.__class__.ini_key_actives != ('', '', '')
         self._handles_lo = self.__class__.ini_key_lo != (u'', u'', u'')
         if self._handles_actives:
             self._cached_ini_actives = self._mk_ini(
@@ -1054,7 +1052,7 @@ class TextfileGame(_CleanPlugins):
             cached_active_copy = cached_active[:]
             cached_active_set = set(cached_active)
             active_in_lo = [x for x in lo if x in cached_active_set]
-            w = {x: i for i, x in enumerate(lo)}
+            lo_dex = {x: i for i, x in enumerate(lo)}
             while active_in_lo:
                 # Use list(), we may modify cached_active_copy and active_in_lo
                 for i, (ordered, current) in list(enumerate(
@@ -1069,18 +1067,18 @@ class TextfileGame(_CleanPlugins):
                         for j, x in enumerate(active_in_lo[i:]):
                             if x == ordered: break
                             # x should be above ordered
-                            to = w[ordered] + 1 + j
+                            to = lo_dex[ordered] + 1 + j
                             # make room
-                            w = {x: (i if i < to else i + 1) for x, i in
-                                 w.items()}
-                            w[x] = to # bubble them up !
+                            lo_dex = {x: (i if i < to else i + 1) for x, i in
+                                 lo_dex.items()}
+                            lo_dex[x] = to # bubble them up !
                         active_in_lo.remove(ordered)
                         cached_active_copy = cached_active_copy[i + 1:]
                         active_in_lo = active_in_lo[i:]
                         break
                 else: break
             fetched_lo = lo[:]
-            lo.sort(key=w.get)
+            lo.sort(key=lo_dex.get)
             if lo != fetched_lo:
                 # We fixed a desync, make a backup and write the load order
                 self._backup_load_order()
@@ -1235,15 +1233,14 @@ class AsteriskGame(_CleanPlugins):
         if not cls._ccc_filename: return # Abort if this game has no CC
         ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
         try:
-            with open(ccc_path, u'rb') as ins:
+            with open(ccc_path, 'rb') as ins:
                 ccc_contents = []
                 for ccc_line in ins.readlines():
                     try:
                         ccc_dec = bolt.decoder(ccc_line, encoding=u'cp1252')
                         ccc_contents.append(FName(ccc_dec.strip()))
                     except UnicodeError:
-                        bolt.deprint(u'Failed to decode CCC entry %r'
-                                     % ccc_line)
+                        bolt.deprint(f'Failed to decode CCC entry {ccc_line}')
                         continue
                 cls.must_be_active_if_present += tuple(ccc_contents)
         except OSError as e:

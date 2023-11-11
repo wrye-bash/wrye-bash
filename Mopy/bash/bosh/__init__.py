@@ -1783,7 +1783,6 @@ class FileInfos(TableFileInfos):
         #--Table
         deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
                                                   check_existence)
-        if not deleted_keys: return deleted_keys
         for del_fn in deleted_keys:
             self.pop(del_fn, None)
             self.corrupted.pop(del_fn, None)
