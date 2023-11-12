@@ -1746,12 +1746,10 @@ class TableFileInfos(DataStore):
                 fileInfo = self.factory(self.store_dir.join(fileName))
             #--File
             filePath = fileInfo.abs_path
-            abs_delete_paths.append(filePath)
-            self._additional_deletes(fileInfo, abs_delete_paths)
+            abs_delete_paths.extend((filePath,
+                                     *self._additional_deletes(fileInfo)))
             #--Table
             tableUpdate[filePath] = fileName
-        #--Now do actual deletions
-        abs_delete_paths = {x for x in abs_delete_paths if x.exists()}
         return abs_delete_paths, tableUpdate
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
@@ -1761,7 +1759,7 @@ class TableFileInfos(DataStore):
             InstallersData.notify_external(del_set=del_set, altered=altered,
                                            renamed=renamed)
 
-    def _additional_deletes(self, fileInfo, toDelete): pass
+    def _additional_deletes(self, fileInfo): return ()
 
     def save(self):
         # items deleted outside Bash
@@ -1833,9 +1831,9 @@ class FileInfos(TableFileInfos):
         del_infos = oldNames - inodes.keys()
         return new_or_present, del_infos
 
-    def _additional_deletes(self, fileInfo, toDelete):
+    def _additional_deletes(self, fileInfo):
         #--Backups
-        toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
+        return fileInfo.all_backup_paths()  # will include cosave ones
 
     #--Rename
     def rename_operation(self, member_info, newName):
@@ -3222,13 +3220,14 @@ class ModInfos(FileInfos):
             self.cached_lo_save_all() # will perform the needed refreshes
         return deleted_keys
 
-    def _additional_deletes(self, fileInfo, toDelete):
-        super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
+    def _additional_deletes(self, fileInfo):
+        sup = super()._additional_deletes(fileInfo)
         # Add ghosts - the file may exist in both states (bug, or user mistake)
-        # if both versions exist file should be marked as normal
+        # in this case the file is marked as normal but let's delete the ghost
         if not fileInfo.is_ghost: # add ghost if not added
-            ghost_version = self.store_dir.join(f'{fileInfo.fn_key}.ghost')
-            if ghost_version.exists(): toDelete.append(ghost_version)
+            return *sup, self.store_dir.join(f'{fileInfo.fn_key}.ghost')
+        else:
+            return sup
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
@@ -3497,11 +3496,10 @@ class SaveInfos(FileInfos):
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return old_key
 
-    def _additional_deletes(self, fileInfo, toDelete):
-        # type: (SaveInfo, list) -> None
-        toDelete.extend(x.abs_path for x in fileInfo._co_saves.values())
+    def _additional_deletes(self, fileInfo):
         # now add backups and cosaves backups
-        super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
+        return *super()._additional_deletes(fileInfo), *(
+            x.abs_path for x in fileInfo._co_saves.values())
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
                   save_lo_cache=False):

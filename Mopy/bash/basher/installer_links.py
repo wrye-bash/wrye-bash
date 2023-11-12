@@ -497,8 +497,8 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
     """Installers tab version of the Hide command."""
     def _filter_unhideable(self, to_hide_items):
         # Can't hide markers, so filter those out
-        return (h for h in super()._filter_unhideable(to_hide_items)
-                if not self.idata[h].is_marker)
+        return {h: v for h, v in super()._filter_unhideable(
+            to_hide_items).items() if not v.is_marker}
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
@@ -750,7 +750,7 @@ class Installer_Move(_InstallerLink):
 class Installer_Open(Installers_Link, balt.UIList_OpenItems):
     """Open selected installer(s). Selected markers are skipped."""
     def _filter_unopenable(self, to_open_items):
-        return (p for p in to_open_items if not self.idata[p].is_marker)
+        return [p for p in to_open_items if not self.idata[p].is_marker]
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):

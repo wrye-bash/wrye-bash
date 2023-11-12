@@ -2006,9 +2006,9 @@ class InstallersData(DataStore):
     def files_to_delete(self, filenames, **kwargs):
         toDelete = []
         markers = []
-        for item in self.filter_essential(filenames):
-            if self[item].is_marker: markers.append(item)
-            else: toDelete.append(self.store_dir.join(item))
+        for k, inst in self.filter_essential(filenames).items():
+            if inst.is_marker: markers.append(k)
+            else: toDelete.append(inst.abs_path)
         return toDelete, markers
 
     def _delete_operation(self, paths, markers, *, recycle=True):
@@ -2027,7 +2027,7 @@ class InstallersData(DataStore):
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # The ==Last== marker must always be present
-        return (i for i in fn_items if i != self.lastKey)
+        return {i: self[i] for i in fn_items if i != self.lastKey}
 
     def copy_installer(self, src_inst, destName):
         """Copies archive to new location."""

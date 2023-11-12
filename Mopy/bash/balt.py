@@ -1161,8 +1161,8 @@ class UIList(PanelWin):
 
     def get_selected_infos_filtered(self, selected=None):
         """Version of GetSelectedInfos that filters out essential infos."""
-        return [self.data_store[i] for i in self.data_store.filter_essential(
-            selected or self.GetSelected())]
+        return [v for v in self.data_store.filter_essential(
+            selected or self.GetSelected()).values()]
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self._get_uil_index(item)
@@ -1411,11 +1411,11 @@ class UIList(PanelWin):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, items: Iterable[FName]):
+    def hide(self, items: dict[FName, ...]):
         """Hides the items in the specified iterable."""
         hidden_ = []
-        for fnkey in items:
-            destDir = self.data_store[fnkey].get_hide_dir()
+        for fnkey, inf in items.items():
+            destDir = inf.get_hide_dir()
             if destDir.join(fnkey).exists():
                 message = (_('A file named %(target_file_name)s already '
                              'exists in the hidden files directory. Overwrite '
@@ -1907,7 +1907,7 @@ class UIList_Delete(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one deletable file is selected
-        return bool(list(self._filter_undeletable(self.selected)))
+        return bool(self._filter_undeletable(self.selected))
 
     @property
     def link_help(self):
@@ -1964,7 +1964,7 @@ class UIList_OpenItems(EnabledLink):
 
     @property
     def link_help(self):
-        sel_filtered = list(self._filter_unopenable(self.selected))
+        sel_filtered = self._filter_unopenable(self.selected)
         if sel_filtered == self.selected:
             if len(sel_filtered) == 1:
                 return _("Open '%(item_to_open)s' with the system's default "
@@ -1981,7 +1981,7 @@ class UIList_OpenItems(EnabledLink):
 
     def _enable(self):
         # Enable if we have at least one openable file
-        return bool(list(self._filter_unopenable(self.selected)))
+        return bool(self._filter_unopenable(self.selected))
 
     def Execute(self):
         self.window.OpenSelected(
@@ -2009,7 +2009,7 @@ class UIList_Hide(EnabledLink):
 
     def _enable(self):
         # Only enable if at least one hideable file is selected
-        return bool(list(self._filter_unhideable(self.selected)))
+        return bool(self._filter_unhideable(self.selected))
 
     @property
     def link_help(self):
