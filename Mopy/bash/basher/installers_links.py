@@ -96,7 +96,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Refresh Data
         ui_refresh = defaultdict(bool)
         with load_order.Unlock(): ##: single use outside refreshLoadOrder
-            for store in bosh.data_tracking_stores():
+            for store in bosh.data_tracking_stores(): # todo return the RData object
                 ui_refresh[store.unique_store_key] = bool(store.refresh())
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
@@ -341,8 +341,8 @@ class Installers_ImportOrder(Installers_Link):
 #------------------------------------------------------------------------------
 class _Installers_BoolLink_Refresh(BoolLink):
     def Execute(self):
-        super(_Installers_BoolLink_Refresh, self).Execute()
-        self.window.RefreshUI()
+        super().Execute()
+        self.window.RefreshUI() # todo do we need to redraw?
 
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):

@@ -447,7 +447,7 @@ class LoGame:
         # ordering or a manually edited loadorder.txt) so move it up
         master_name = self._game_handle.master_file
         # Tracks if fix_lo.lo_reordered needs updating
-        lo_order_changed = any(fix_lo.lo_reordered)
+        lo_order_changed = any(fix_lo.lo_reordered) ##: needed? isn't fix_lo instance fresh here?
         cached_minfs = self.mod_infos
         try:
             mdex = lord.index(master_name)
