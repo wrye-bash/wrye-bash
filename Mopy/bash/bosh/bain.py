@@ -1323,7 +1323,8 @@ class _InstallerPackage(Installer, AFile):
             for (owned_file, dest) in owned_files:
                 try:
                     inf = store.new_info(owned_file, owner=self.fn_key,
-                        _in_refresh=True) # we don't want to refresh info sets
+                         # we refresh info sets in cached_lo_append_if_missing
+                         _in_refresh=True)
                     data_sizeCrcDate_update[dest][2] = inf.mtime
                     mtimes.append(owned_file)
                 except FileError as error: # repeated from refresh

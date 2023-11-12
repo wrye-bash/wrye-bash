@@ -322,7 +322,9 @@ class _RevertBackup(OneItemLink):
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
                     info_path.replace_with_temp(known_good_copy)
-                    self._data_store.new_info(sel_file, notify_bain=True)
+                    self._data_store.new_info(sel_file, notify_bain=True,
+                        # see FileInfo.revert_backup (check also RUI.redraw)
+                        _in_refresh=True)
         # don't refresh saves as neither selection state nor load order change
         self.window.RefreshUI(redraw=[sel_file])
 

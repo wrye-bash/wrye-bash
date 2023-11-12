@@ -291,7 +291,7 @@ class FileInfo(AFile, ListInfo):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def revert_backup(self, first=False):
+    def revert_backup(self, first=False): # single call site - good
         backup_paths = self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
@@ -301,7 +301,15 @@ class FileInfo(AFile, ListInfo):
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self.file_mod_time, crc_changed=True)
-        self.get_store().new_info(self.fn_key, notify_bain=True)
+        ##: _in_refresh=True is not entirely correct here but can't be made
+        # entirely correct by leaving _in_refresh to False either as we
+        # don't back up the config so we can't really detect changes in
+        # imported/merged - a (another) backup edge case - as backup is
+        # half-baked anyway let's agree for now that BPs remain BPs with the
+        # same config as before - if not, manually run a mergeability scan
+        # after updating the config (in case the restored file is a BP)
+        self.get_store().new_info(self.fn_key, notify_bain=True,
+            _in_refresh=True)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -2079,7 +2087,7 @@ def _lo_cache(lord_func):
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refresh_active_no_cp1252()
-                self._reset_info_sets()
+                self._update_info_sets()
                 self._refreshMissingStrings()
             #if lo changed (including additions/removals) let refresh handle it
             if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
@@ -2115,7 +2123,10 @@ class ModInfos(FileInfos):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
-        #--Info lists/sets
+        #--Info lists/sets. Most are set in refresh and used in the UI. Some
+        # of those could be set JIT in set_item_format, for instance, however
+        # the catch is that the UI refresh is triggered by
+        # RefrData.redraw/added so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         if dirs[u'mods'].join(bush.game.master_file).is_file():
             self._master_esm = bush.game.master_file
@@ -2140,10 +2151,8 @@ class ModInfos(FileInfos):
         self.plugin_inis = ()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
-        # sentinel for calculating info sets when needed in gui and patcher
-        # code, **after** self is refreshed
-        self.__calculate = object()
-        self._reset_info_sets()
+        # merged, imported, bashed_patches caches
+        self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
         self.voAvailable = set()
@@ -2156,28 +2165,17 @@ class ModInfos(FileInfos):
         self._active_wip = []
         self._lo_wip = []
 
-    # merged, bashed_patches, imported caches
-    def _reset_info_sets(self):
-        self._merged = self._imported = self._bashed_patches = self.__calculate
-
-    @property
-    def imported(self):
-        if self._imported is self.__calculate:
-            self._merged, self._imported = self.getSemiActive()
-        return self._imported
-
-    @property
-    def merged(self):
-        if self._merged is self.__calculate:
-            self._merged, self._imported = self.getSemiActive()
-        return self._merged
-
-    @property
-    def bashed_patches(self):
-        if self._bashed_patches is self.__calculate:
-            self._bashed_patches = {mname for mname, modinf in self.items()
-                                    if modinf.isBP()}
-        return self._bashed_patches
+    def _update_info_sets(self):
+        """Refresh bashed_patches/imported/merged - active state changes and/or
+        removal/addition of plugins should trigger a refresh."""
+        bps, self.bashed_patches = self.bashed_patches, {
+            mname for mname, modinf in self.items() if modinf.isBP()}
+        mrgd, imprtd = self.merged, self.imported
+        active_patches = {bp for bp in self.bashed_patches if
+               load_order.cached_is_active(bp)}
+        self.merged, self.imported = self.getSemiActive(active_patches)
+        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
+                *(imprtd ^ self.imported)}
 
     ##: Do we need fast_cached_property here?
     @property
@@ -2364,7 +2362,7 @@ class ModInfos(FileInfos):
             # to recalculate dependents
             self._recalc_dependents()
             self._refresh_active_no_cp1252()
-            self._reset_info_sets()
+            self._update_info_sets()
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
@@ -2627,14 +2625,17 @@ class ModInfos(FileInfos):
     #--Refresh File
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
-        # we should refresh info sets if we manage to add the info, but also
-        # if we fail, which might mean that some info got corrupted
-        self._reset_info_sets()
-        return super(ModInfos, self).new_info(fileName, _in_refresh, owner,
-                                              notify_bain, itsa_ghost)
+        try:
+            return super().new_info(fileName, _in_refresh, owner, notify_bain,
+                                    itsa_ghost)
+        finally:
+            # we should refresh info sets if we manage to add the info, but
+            # also if we fail, which might mean that some info got corrupted
+            if not _in_refresh:
+                self._update_info_sets() # we may need to use the return value
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self, patches=None, skip_active=False):
+    def getSemiActive(self, patches, skip_active=False):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
@@ -2644,9 +2645,8 @@ class ModInfos(FileInfos):
         :param patches: A set of mods to look for bashed patches in.
         :param skip_active: If True, only return inactive merged/imported
             plugins."""
-        if patches is None: patches = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
-        for patch in patches & self.bashed_patches:
+        for patch in patches & self.bashed_patches: # this must be up to date!
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
@@ -3208,7 +3208,7 @@ class ModInfos(FileInfos):
         self._lo_caches_remove_mods(deleted_keys)
         self.cached_lo_save_all()
         self._refresh_active_no_cp1252()
-        self._reset_info_sets()
+        self._update_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
         self._recalc_dependents()

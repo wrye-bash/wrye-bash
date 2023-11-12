@@ -220,7 +220,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
         to_select = []
         for mod, info, previous in to_refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.new_info(mod, notify_bain=True)
+            bosh.modInfos.new_info(mod, notify_bain=True, _in_refresh=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
