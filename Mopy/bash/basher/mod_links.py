@@ -41,7 +41,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
-from ..exception import BoltError, CancelError
+from ..exception import BoltError, CancelError, PluginsFullError
 from ..game import MergeabilityCheck
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
@@ -1005,18 +1005,37 @@ class Mod_RebuildPatch(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         """Handle activation event."""
-        self.mods_to_reselect = set()
+        self._reactivate_mods, self._bps = set(), []
         try:
             if not self._execute_bp(self._find_parent_bp(), bosh.modInfos):
                 return # prevent settings save
         except CancelError:
             return # prevent settings save
         finally:
-            if self.mods_to_reselect: # may be cleared in PatchDialog#PatchExecute
-                for mod in self.mods_to_reselect:
-                    bosh.modInfos.lo_activate(mod, doSave=False)
+            count, resave = 0, False
+            to_act = dict.fromkeys(self._bps, True)
+            to_act.update(dict.fromkeys(self._reactivate_mods, False))
+            for fn_mod, is_bp in to_act.items():
+                message = _('Activate %(bp_name)s?') % {'bp_name': fn_mod}
+                if not is_bp or load_order.cached_is_active(fn_mod) or (
+                        bass.inisettings['PromptActivateBashedPatch'] and
+                        self._askYes(message, fn_mod)):
+                    try:
+                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp)
+                        if is_bp and act != [fn_mod]:
+                            msg = _('Masters Activated: %(num_activated)d') % {
+                                'num_activated': len({*act} - {fn_mod})}
+                            Link.Frame.set_status_info(msg)
+                        count += len(act)
+                        resave |= not is_bp and bool(act)
+                    except PluginsFullError:
+                        msg = _('Unable to activate plugin %(bp_name)s because'
+                            ' the load order is full.') % {'bp_name': fn_mod}
+                        self._showError(msg)
+                        break # don't keep trying
+            if resave:
                 bosh.modInfos.cached_lo_save_active()
-                self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+            self.window.RefreshUI(refresh_others=Store.SAVES.IF(count))
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
@@ -1070,7 +1089,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,
-                                   self.mods_to_reselect, bp_config)
+                                   self._bps, bp_config)
         return True
 
     def _ask_deactivate_mergeable(self, bashed_patch):
@@ -1095,7 +1114,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         to_deselect = set(chain(ed_mergeable, ed_nomerge, ed_deactivate))
         if not ed_ok or not to_deselect:
             return False # Aborted by user or nothing left enabled
-        self.mods_to_reselect = ed_nomerge
+        self._reactivate_mods = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
             self.window.RefreshUI(refresh_others=Store.SAVES.DO())
