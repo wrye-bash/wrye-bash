@@ -2344,19 +2344,13 @@ class ModInfos(FileInfos):
                     fname_to_ghost[unghosted] = True # a real ghost
         return fname_to_ghost
 
-    def refresh(self, refresh_infos=True, booting=False, _modTimesChange=False):
+    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False):
         """Update file data for additions, removals and date changes.
-
-        See usages for how to use the refresh_infos and _modTimesChange params.
-        _modTimesChange is not strictly needed after the lo rewrite, as
-        games.LoGame.load_order_changed will always return True for timestamp
-        games - kept to help track places in the code where timestamp load
-        order may change.
-         NB: if an operation we performed changed the load order we do not want
-         lock load order to revert our own operation. So either call some of
-         the set_load_order methods, or guard refresh (which only *gets* load
-         order) with load_order.Unlock.
-        """
+        See usages for how to use the refresh_infos and unlock_lo params.
+        NB: if an operation *we* performed changed the load order we do not
+        want lock load order to revert our own operation. So either call
+        some of the set_load_order methods, or pass unlock_lo=True (refresh
+        only *gets* load order)."""
         change = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
@@ -2366,9 +2360,8 @@ class ModInfos(FileInfos):
             change = bool(change)
         self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
-        _modTimesChange = _modTimesChange and not bush.game.using_txt_file
-        lo_changed = self.refreshLoadOrder(
-            forceRefresh=change or _modTimesChange, forceActive=deleted)
+        lo_changed = self.refreshLoadOrder(forceRefresh=change or unlock_lo,
+            forceActive=deleted, unlock_lo=unlock_lo)
         self._refresh_bash_tags()
         # if active did not change, we must perform the refreshes below
         if lo_changed < 2: # in case ini files were deleted or modified

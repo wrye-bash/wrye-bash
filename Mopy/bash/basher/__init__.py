@@ -1832,8 +1832,8 @@ class ModDetails(_ModsSavesDetails):
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
-            with load_order.Unlock():
-                bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
+            unlock = not bush.game.using_txt_file
+            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
             self.panel_uilist.RefreshUI( # refresh saves if lo changed
                 refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
             return
@@ -1867,10 +1867,9 @@ class ModDetails(_ModsSavesDetails):
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
         #--Done
-        with load_order.Unlock():
-            bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
-        should_refresh_saves = (detail_item is None or changeName or
-                                (changeDate and not bush.game.using_txt_file))
+        unlock = changeDate and not bush.game.using_txt_file
+        bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
+        should_refresh_saves = detail_item is None or changeName or unlock
         self.panel_uilist.RefreshUI(detail_item=detail_item,
             refresh_others=Store.SAVES.IF(should_refresh_saves))
 

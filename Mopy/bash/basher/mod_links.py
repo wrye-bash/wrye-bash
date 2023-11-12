@@ -315,7 +315,8 @@ class Mod_Redate(File_Redate):
                 in load_order.get_ordered(self.selected)]
 
     def _perform_refresh(self):
-        bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
+        bosh.modInfos.refresh(refresh_infos=False,
+                              unlock_lo=not bush.game.using_txt_file)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
