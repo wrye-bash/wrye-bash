@@ -569,7 +569,7 @@ class _ABainMLE(_AWBMLE):
     """Base class for BAIN-related multi-list editors. Automatically converts
     results back to CIstrs."""
     def show_modal(self):
-        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in
+        # Add the CIstrs we removed in __init__ (see map(str)'s below) back in todo does wx need the strs?
         result = super().show_modal()
         final_lists = [list(map(CIstr, l)) for l in result[1:]]
         return result[0], *final_lists
