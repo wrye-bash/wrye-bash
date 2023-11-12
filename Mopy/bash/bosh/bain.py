@@ -1940,7 +1940,7 @@ class InstallersData(DataStore):
         if 'C' in what or changes:
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
-        if changes: self.hasChanged = True
+        if changes: self.hasChanged = True # todo use refresh_info here?
         return refresh_info
 
     def refresh_ns(self, *args, **kwargs):
@@ -2826,7 +2826,7 @@ class InstallersData(DataStore):
                             if store.tracks_ownership:
                                 store_info.set_table_prop(
                                     'installer', f'{ikey}')
-                            refresh_ui[store.unique_store_key] = True
+                            refresh_ui[store.unique_store_key] = True ## todo refreshdata
                             # Each file may only belong to one data store
                             break
         finally:

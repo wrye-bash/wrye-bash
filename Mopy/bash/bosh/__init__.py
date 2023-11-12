@@ -2000,7 +2000,7 @@ class INIInfos(TableFileInfos):
                 rdata.to_add.add(k)
         rdata.ini_changed = refresh_target and (
                     self.ini.updated or self.ini.do_update())
-        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
+        if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it # todo move in RUI?
             self.ini.updated = False
             for ini_info in self.values(): ini_info.reset_status()
         return rdata
@@ -2074,7 +2074,7 @@ def _lo_cache(lord_func):
         try:
             ldiff: LordDiff = lord_func(self, *args, **kwargs)
             if not (ldiff.act_changed() or ldiff.added or ldiff.missing):
-                return ldiff
+                return ldiff ##: todo do any changes depend on ldiff.reordered for inactive only?
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
             ldiff.affected |= self._file_or_active_updates()
@@ -2339,6 +2339,12 @@ class ModInfos(TableFileInfos):
         # If refresh_infos is False and mods are added _do_ manually refresh
         ldiff = self.refreshLoadOrder(forceRefresh=mods_changes or
             unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
+        if add_check := (refresh_infos and (ldiff.added ^ rdata.to_add)):
+            ms = f'{ldiff.added=} differs from {rdata.to_add}: {add_check}'
+            deprint(ms, traceback=True)
+        if miss_check := (refresh_infos and (ldiff.missing ^ rdata.to_del)):
+            ms = f'{ldiff.missing=} differs from {rdata.to_del}: {miss_check}'
+            deprint(ms, traceback=True)
         # if active did not change, we must perform the refreshes below
         if not ((act_ch := ldiff.act_changed()) or ldiff.added or
                 ldiff.missing):
@@ -2347,7 +2353,7 @@ class ModInfos(TableFileInfos):
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
             rdata.redraw |= self._refresh_mod_inis_and_strings()
-            if mods_changes:
+            if mods_changes: ##: just rdata.redraw? is rdata.to_del/add==ldiff.missing/added?
                 rdata.redraw |= self._file_or_active_updates()
         else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected

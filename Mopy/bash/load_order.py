@@ -349,7 +349,7 @@ def refresh_lo(cached: bool, cached_active: bool):
     ldiff = _update_cache(lo, active)
     if saved is not __lo_unset:
         if _cached_lord.loadOrder != saved.loadOrder or (
-           _cached_lord.active != saved.active and #active order doesn't matter
+           _cached_lord.active != saved.active and #active order doesn't matter ##: was true for oblivion still valid?
            bass.settings[u'bash.load_order.lock_active_plugins']):
             global warn_locked
             warn_locked = True
