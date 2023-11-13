@@ -3216,7 +3216,7 @@ class ModInfos(FileInfos):
         return self.get_bsa_lo(for_plugins=load_order.cached_active_tuple())
 
     @staticmethod
-    def plugin_wildcard(file_str=_(u'Mod Files')):
+    def plugin_wildcard(file_str=_('Plugins')):
         joinstar = ';*'.join(bush.game.espm_extensions)
         return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
