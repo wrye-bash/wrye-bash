@@ -290,7 +290,7 @@ class Mod_Move(EnabledLink):
                   u'plugins should be moved.') + u'\n' +
                 _(u'Note that it must be a hexadecimal number, as shown in '
                   u'the Mods tab.'),
-                default=u'%X' % default_index)
+                default=f'{default_index:X}')
             if not entered_text: return # Abort if canceled or empty string
             target_index = int(entered_text, base=16)
         except (TypeError, ValueError):

@@ -65,7 +65,7 @@ class Screens_NextScreenShot(EnabledLink):
         pattern = self._askText(
             _(u'Screenshot base name, optionally with next screenshot number.')
             + u'\n' +
-            _(u'E.g. ScreenShot, ScreenShot_101 or Subdir\\ScreenShot_201.'),
+            _(r'E.g. ScreenShot, ScreenShot_101 or Subdir\ScreenShot_201.'),
             default=base + index)
         if not pattern: return
         new_base, new_index = self.__class__.rePattern.match(pattern).groups()

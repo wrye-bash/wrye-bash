@@ -1294,7 +1294,7 @@ class _InstallerPackage(Installer, AFile):
             for store in stores:
                 if fname_key := store.data_path_to_info(dest, would_be=True):
                     try: # FName
-                        dest_path = join_data_dir(dest)
+                        dest_path = join_data_dir(fname_key)
                     except TypeError: # info is present, possibly ghosted
                         dest_path = fname_key.abs_path
                         fname_key = fname_key.fn_key

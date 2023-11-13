@@ -1294,7 +1294,7 @@ class ModList(_ModsUIList):
         for act in active:
             if act in touched: continue # already deactivated
             try:
-                deactivated = self.data_store.lo_deactivate(act, doSave=False)
+                deactivated = self.data_store.lo_deactivate(act)
                 if not deactivated:
                     # Can't deactivate that mod, track this
                     illegal_deactivations.append(act)

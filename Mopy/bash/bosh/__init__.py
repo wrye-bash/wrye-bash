@@ -586,7 +586,7 @@ class ModInfo(FileInfo):
             # Don't allow the master ESM to be ghosted, we need that one
             return self.isGhost
         normal = self._file_key
-        ghost = normal + '.ghost'
+        ghost = normal + '.ghost' # Path.__add__ !
         # Current status != what we want, so change it
         try:
             if not normal.editable() or not ghost.editable():
@@ -2058,7 +2058,7 @@ def _lo_cache(lord_func):
                     active_set != old_active_set)
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
-                self._refreshBadNames()
+                self._refresh_active_no_cp1252()
                 self._reset_info_sets()
                 self._refreshMissingStrings()
             #if lo changed (including additions/removals) let refresh handle it
@@ -2174,10 +2174,6 @@ class ModInfos(FileInfos):
         """All plugins that could receive al Overlay flag, but don't have one
         yet."""
         return self._mergeable_by_type[MergeabilityCheck.OVERLAY_CHECK]
-
-    def all_merg_type_plugins(self) -> set[FName]: ##: Ugh, better name pls
-        """All plugins that could be merged, ESL-flagged or Overlay-flagged."""
-        return set(chain.from_iterable(self._mergeable_by_type.values()))
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -2340,10 +2336,8 @@ class ModInfos(FileInfos):
             change = FileInfos.refresh(self, booting=booting)
             if change:
                 _added, _updated, deleted = change
-                # If any plugins have been added, updated or deleted, we need
-                # to recalculate dependents
-                self._recalc_dependents()
             change = bool(change)
+        self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not bush.game.using_txt_file
         lo_changed = self.refreshLoadOrder(
@@ -2353,20 +2347,17 @@ class ModInfos(FileInfos):
         if lo_changed < 2: # in case ini files were deleted or modified
             self._refresh_mod_inis()
         if lo_changed < 2 and change:
-            self._refreshBadNames()
+            # If any plugins have been added, updated or deleted, we need
+            # to recalculate dependents
+            self._recalc_dependents()
+            self._refresh_active_no_cp1252()
             self._reset_info_sets()
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
         self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        oldMergeable = self.all_merg_type_plugins()
         scanList = self._refreshMergeable()
-        difMergeable = (oldMergeable ^
-                        self.all_merg_type_plugins()) & set(self)
-        if scanList:
-            self.rescanMergeable(scanList) ##: maybe re-add progress?
-        change |= bool(scanList or difMergeable)
-        return bool(change) or lo_changed
+        return bool(change) or bool(scanList) or lo_changed
 
     _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):
@@ -2400,11 +2391,12 @@ class ModInfos(FileInfos):
             ini_order.append((acti_ini_path, acti_ini))
         self._plugin_inis = OrderedDict(ini_order)
 
-    def _refreshBadNames(self):
-        """Refreshes which filenames cannot be saved to plugins.txt
-        It seems that Skyrim and Oblivion read plugins.txt as a cp1252
-        encoded file, and any filename that doesn't decode to cp1252 will
-        be skipped."""
+    def _refresh_active_no_cp1252(self):
+        """Refresh which filenames cannot be saved to plugins.txt - active
+        state changes and/or removal/addition of plugins should trigger a
+        refresh. It seems that Skyrim and Oblivion read plugins.txt as a
+        cp1252 encoded file, and any filename that doesn't decode to cp1252
+        will be skipped."""
         bad = self.bad_names = set()
         activeBad = self.activeBad = set()
         for fileName in self:
@@ -2468,8 +2460,10 @@ class ModInfos(FileInfos):
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
-        #--Mods that need to be rescanned - call rescanMergeable !
-        newMods = []
+        # All plugins that could be merged, ESL-flagged or Overlay-flagged
+        oldMergeable = {*chain.from_iterable(self._mergeable_by_type.values())}
+        #--Mods that need to be rescanned
+        rescan_mods = set()
         for m in self._mergeable_by_type.values():
             m.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
@@ -2525,8 +2519,12 @@ class ModInfos(FileInfos):
                 # We have to rescan mergeability - either the plugin's size
                 # changed or there is at least one required mergeability check
                 # we have not yet run for this plugin
-                newMods.append(fn_mod)
-        return newMods
+                rescan_mods.add(fn_mod)
+        if rescan_mods:
+            self.rescanMergeable(rescan_mods) ##: maybe re-add progress?
+        difMergeable = (oldMergeable ^ {*chain.from_iterable(
+            self._mergeable_by_type.values())}) & set(self)
+        return rescan_mods | difMergeable
 
     def rescanMergeable(self, names, prog=bolt.Progress(),
                             return_results=False):
@@ -2795,9 +2793,9 @@ class ModInfos(FileInfos):
         return tagList
 
     #--Active mods management -------------------------------------------------
-    def lo_activate(self, fileName, doSave=True, _modSet=None, _children=None,
-                    _activated=None):
-        """Mutate _active_wip cache then save if needed."""
+    def lo_activate(self, fileName, _modSet=None, _children=None,
+                    _activated=None, doSave=False):
+        """Mutate _active_wip cache then save if doSave is True."""
         if _activated is None: _activated = set()
         # Skip .esu files, those can't be activated
         ##: This .esu handling needs to be centralized - sprinkled all over
@@ -2833,8 +2831,7 @@ class ModInfos(FileInfos):
             for master in self[fileName].masterNames:
                 # Check that the master is on disk and not already activated
                 if master in _modSet and master not in acti_set:
-                    self.lo_activate(master, False, _modSet, _children,
-                                     _activated)
+                    self.lo_activate(master, _modSet, _children, _activated)
             #--Select in plugins
             if fileName not in acti_set:
                 self._active_wip.append(fileName)
@@ -2843,7 +2840,7 @@ class ModInfos(FileInfos):
         finally:
             if doSave: self.cached_lo_save_active()
 
-    def lo_deactivate(self, fileName, doSave=True):
+    def lo_deactivate(self, fileName, doSave=False):
         """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
@@ -2880,7 +2877,7 @@ class ModInfos(FileInfos):
         def _add_to_actives(p):
             """Helper for activating a plugin, if necessary."""
             if p not in wip_actives:
-                self.lo_activate(p, doSave=False)
+                self.lo_activate(p)
                 wip_actives.add(p)
         def _activatable(p):
             """Helper for checking if a plugin should be activated."""
@@ -3178,13 +3175,13 @@ class ModInfos(FileInfos):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.fn_key)
         if isSelected:
-            self.lo_deactivate(member_info.fn_key, doSave=False)
+            self.lo_deactivate(member_info.fn_key)
         old_key = super(ModInfos, self).rename_operation(member_info, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(old_key)
         self._lo_caches_remove_mods([old_key])
         self._lo_wip.insert(oldIndex, newName)
-        if isSelected: self.lo_activate(newName, doSave=False)
+        if isSelected: self.lo_activate(newName)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
         # Update linked BP parts if the parent BP got renamed
@@ -3197,7 +3194,7 @@ class ModInfos(FileInfos):
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
         filenames = set(self.filter_essential(filenames))
-        self.lo_deactivate(filenames, doSave=False) ##: do this *after* deletion?
+        self.lo_deactivate(filenames) ##: do this *after* deletion?
         return super(ModInfos, self).files_to_delete(filenames)
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
@@ -3210,7 +3207,7 @@ class ModInfos(FileInfos):
         if _in_refresh: return
         self._lo_caches_remove_mods(deleted_keys)
         self.cached_lo_save_all()
-        self._refreshBadNames()
+        self._refresh_active_no_cp1252()
         self._reset_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
@@ -3230,7 +3227,7 @@ class ModInfos(FileInfos):
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
-        self.lo_deactivate(fileName, doSave=False)
+        self.lo_deactivate(fileName)
         FileInfos.move_info(self, fileName, destDir)
 
     def move_infos(self, sources, destinations, window, bash_frame):
@@ -3324,8 +3321,8 @@ class ModInfos(FileInfos):
         def _activate(active, mod):
             if active:
                 self[mod].setGhost(False) # needed if autoGhost is False
-                self.lo_activate(mod, doSave=False)
-            else: self.lo_deactivate(mod, doSave=False)
+                self.lo_activate(mod)
+            else: self.lo_deactivate(mod)
         _activate(is_new_info_active, oldName)
         _activate(is_master_active, self._master_esm)
         # Save to disc (load order and plugins.txt)
