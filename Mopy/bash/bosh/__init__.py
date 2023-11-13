@@ -2142,6 +2142,9 @@ class ModInfos(FileInfos):
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
         self.activeBad = set() #--Set of all mods with bad names that are active
+        # active mod inis in active mods order (used in bsa files detection
+        # for string files and in mergeability checks)
+        self.plugin_inis = ()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
         # sentinel for calculating info sets when needed in gui and patcher
@@ -2383,7 +2386,6 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         return bool(change) or bool(scanList) or lo_changed
 
-    _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):
         if not bush.game.Ini.supports_mod_inis: return
         data_folder_path = bass.dirs['mods']
@@ -2395,25 +2397,21 @@ class ModInfos(FileInfos):
         possible_inis = [self[m].get_ini_name() for m in
                          load_order.cached_active_tuple()]
         active_inis = [i for i in possible_inis if i.lower() in present_inis]
-        # Delete now inactive or deleted INIs from the cache
-        if self._plugin_inis: # avoid on boot
-            active_inis_lower = {i.lower() for i in active_inis}
-            for prev_ini in list(self._plugin_inis):
-                if prev_ini.stail.lower() not in active_inis_lower:
-                    del self._plugin_inis[prev_ini]
         # Add new or modified INIs to the cache and copy the final order
-        data_join = bass.dirs['mods'].join
-        ini_order = []
+        inis_active = []
+        # check present inis for updates
+        prev_inis = {k.abs_path: k for k in self.plugin_inis[:-1]}
         for acti_ini_name in active_inis:
             # Need to restore the full path here since we'll stat that path
             # when resetting the cache during __init__
-            acti_ini_path = data_join(acti_ini_name)
-            acti_ini = self._plugin_inis.get(acti_ini_path)
+            acti_ini_path = data_folder_path.join(acti_ini_name)
+            acti_ini = prev_inis.get(acti_ini_path)
             if acti_ini is None or acti_ini.do_update():
-                acti_ini = self._plugin_inis[acti_ini_path] = IniFile(
-                    acti_ini_path, 'cp1252')
-            ini_order.append((acti_ini_path, acti_ini))
-        self._plugin_inis = OrderedDict(ini_order)
+                acti_ini = IniFile(acti_ini_path, 'cp1252')
+            inis_active.append(acti_ini)
+        # values in active order, later loading inis override previous settings
+        ##: What about SkyrimCustom.ini etc?
+        self.plugin_inis = (*reversed(inis_active), oblivionIni)
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active
@@ -3023,10 +3021,6 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def ini_files(self): ##: What about SkyrimCustom.ini etc?
-        # values in active order, later loading inis override previous settings
-        return [*reversed(self._plugin_inis.values()), oblivionIni]
-
     ##: This honestly does way too much. Look at the jumble of parameters and
     # the giant docstring for evidence
     def create_new_mod(self, newName: str | FName,
@@ -3108,8 +3102,9 @@ class ModInfos(FileInfos):
         bsa_cause = {} # Reason each BSA was loaded
         # BSAs from INI files load first
         ini_idx = -sys.maxsize - 1 # Make sure they come first
+        ini_files_cached = self.plugin_inis
         for ini_k in bush.game.Ini.resource_archives_keys:
-            for ini_f in self.ini_files():
+            for ini_f in ini_files_cached:
                 if ini_f.has_setting(u'Archive', ini_k):
                     for binf in _bsas_from_ini(ini_f, ini_k, available_bsas):
                         bsa_lo[binf] = ini_idx
@@ -3126,7 +3121,7 @@ class ModInfos(FileInfos):
                            bush.game.Ini.resource_override_defaults]
             res_ov_cause = f'{bush.game.Ini.dropdown_inis[0]} ({res_ov_key})'
             # Then look if any INIs overwrite them
-            for ini_f in self.ini_files():
+            for ini_f in ini_files_cached:
                 if ini_f.has_setting(u'Archive', res_ov_key):
                     res_ov_bsas = _bsas_from_ini(
                         ini_f, res_ov_key, available_bsas)
