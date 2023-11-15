@@ -222,17 +222,15 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
     scan_for_cleaning = set()
-    dirty_msgs = [(k, m.getDirtyMessage()) for k, m in
+    dirty_msgs = [(k, m.getDirtyMessage(scan_beth=True)) for k, m in
                   all_present_minfs.items()]
-    ignore_vanilla = bass.settings['bash.mods.ignore_dirty_vanilla_files']
     num_dirty_vanilla = 0
     for x, y in dirty_msgs:
-        if y[0]:
-            # Don't report vanilla plugins if the ignore setting is on
-            if ignore_vanilla and x in vanilla_masters:
+        if y:
+            if isinstance(y, str):
+                cleaning_messages[x] = y
+            else: # Don't report vanilla plugins if the ignore setting is on
                 num_dirty_vanilla += 1
-                continue
-            cleaning_messages[x] = y[1]
         elif scan_plugins:
             scan_for_cleaning.add(x)
     # -------------------------------------------------------------------------

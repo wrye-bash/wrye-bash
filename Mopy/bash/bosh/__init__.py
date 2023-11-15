@@ -149,11 +149,27 @@ class MasterInfo:
             return self.get_extension() in (u'.esm', u'.esl')
 
     def is_esl(self):
-        """Delegate to self.modInfo.is_esl if exists, else rely on ."""
+        """Delegate to self.modInfo.is_esl if exists, else rely on _was_esl."""
         if self.mod_info:
             return self.mod_info.is_esl()
         else:
             return self._was_esl
+
+    def is_overlay(self):
+        """Delegate to self.modInfo.is_overlay if exists - we should deprint,
+        overlay plugins won't be in master lists."""
+        if self.mod_info:
+            return self.mod_info.is_overlay()
+        else:
+            return False
+
+    def has_master_size_mismatch(self, do_test): # used in set_item_format
+        return _('Stored size does not match the one on disk.') if do_test \
+          and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
+
+    def getDirtyMessage(self, scan_beth=False):
+        """Returns a dirty message from LOOT."""
+        return self.mod_info.getDirtyMessage(scan_beth) if self.mod_info else ''
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -970,14 +986,15 @@ class ModInfo(FileInfo):
         return resource_path and self.info_dir.join(resource_path).join(
             self.fn_key).exists()
 
-    def has_master_size_mismatch(self): # used in status calculation
+    def has_master_size_mismatch(self, do_test): # used in status calculation
         """Checks if this plugin has at least one stored master size that does
         not match that master's size on disk."""
+        if not do_test: return ''
         m_sizes = self.header.master_sizes
         for i, master_name in enumerate(self.masterNames):
             if modInfos.size_mismatch(master_name, m_sizes[i]):
-                return True
-        return False
+                return _('Has size-mismatched masters.')
+        return ''
 
     def update_onam(self):
         """Checks if this plugin needs ONAM data and either adds or removes it
@@ -1003,12 +1020,16 @@ class ModInfo(FileInfo):
         # TODO(inf) On FO4, ONAM is based on all overrides in complex records.
         #  That will have to go somewhere like ModFile.save though.
 
-    def getDirtyMessage(self):
-        """Returns a dirty message from LOOT."""
+    def getDirtyMessage(self, scan_beth=False):
+        """Return a dirty message from LOOT - or, if scan_beth is True, just
+        True for a dirty vanilla plugin."""
+        skipbeth = bass.settings['bash.mods.ignore_dirty_vanilla_files'] and \
+                   self.fn_key in bush.game.bethDataFiles
+        if not scan_beth and skipbeth: return ''
         if self.get_table_prop(u'ignoreDirty', False) or not \
                 initialization.lootDb.is_plugin_dirty(self.fn_key, modInfos):
-            return False, u''
-        return True, _(u'Contains dirty edits, needs cleaning.')
+            return ''
+        return True if skipbeth else _('Contains dirty edits, needs cleaning.')
 
     def match_oblivion_re(self):
         return self.fn_key in bush.game.modding_esm_size or \

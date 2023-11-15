@@ -524,11 +524,30 @@ def conversation(func):
 @dataclass(slots=True)
 class _ListItemFormat:
     icon_key: tuple[str | None, ...] = (None,)
-    back_key: str = 'default.bkgd'
-    text_key: str = 'default.text'
     bold: bool = False
     italics: bool = False
     underline: bool = False
+    _text_key: str = 'default.text'
+    _back_key: str = 'default.bkgd'
+
+    _back_key_priority = {k: j for j, k in enumerate([
+        # Plugins -------------------------------------------------------------
+        'default.bkgd', 'mods.bkgd.size_mismatch', 'mods.bkgd.ghosted',
+        'mods.bkgd.doubleTime.exists', 'mods.bkgd.doubleTime.load',
+        # INIs ----------------------------------------------------------------
+        'ini.bkgd.invalid',
+        # Installers ----------------------------------------------------------
+        'installers.bkgd.skipped', 'installers.bkgd.outOfOrder',
+        'installers.bkgd.dirty'])}
+    _text_key_priority = {k: j for j, k in enumerate([
+        # Plugins -------------------------------------------------------------
+        'default.text',
+        *(f'mods.text.es{suff}' for suff in ('l', 'o', 'm', 'lm', 'om')),
+        'mods.text.mergeable', 'mods.text.noMerge', 'mods.text.bashedPatch',
+        # Installers ----------------------------------------------------------
+        'installers.text.invalid', 'installers.text.marker',
+        'installers.text.complex',
+    ])}
 
     def to_tree_node_format(self, parent_uil: UIList):
         """Convert this list item format to an equivalent tree node format,
@@ -538,6 +557,24 @@ class _ListItemFormat:
             back_color=parent_uil.lookup_back_key(self.back_key),
             text_color=parent_uil.lookup_text_key(self.text_key),
             bold=self.bold, italics=self.italics, underline=self.underline)
+
+    @property
+    def back_key(self) -> str:
+        return self._back_key
+
+    @back_key.setter
+    def back_key(self, val: str):
+        self._back_key = max(val, self._back_key,
+                             key=self._back_key_priority.__getitem__)
+
+    @property
+    def text_key(self) -> str:
+        return self._text_key
+
+    @text_key.setter
+    def text_key(self, val: str):
+        self._text_key = max(val, self._text_key,
+                             key=self._text_key_priority.__getitem__)
 
 DecoratedTreeDict = dict[FName, tuple[TreeNodeFormat | None,
     list[tuple[FName, TreeNodeFormat | None]]]]
