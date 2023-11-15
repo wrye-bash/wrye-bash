@@ -243,21 +243,19 @@ class Mod_OrderByName(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        message = _(u'Reorder selected mods in alphabetical order?  The first '
-            u'file will be given the date/time of the current earliest file '
-            u'in the group, with consecutive files following at 1 minute '
-            u'increments.') if not bush.game.using_txt_file else _(
-            u'Reorder selected mods in alphabetical order starting at the '
-            u'lowest ordered?')
-        message += (u'\n\n' + _(
-            u'Note that some mods need to be in a specific order to work '
-            u'correctly, and this sort operation may break that order.'))
+        message = _('Reorder selected mods in alphabetical order starting '
+            'at the lowest ordered?') if bush.game.using_txt_file else _(
+            'Reorder selected mods in alphabetical order?  The first file '
+            'will be given the date/time of the current earliest file in the '
+            'group, with consecutive files following at 1 minute increments.')
+        message = '\n\n'.join((message, _(
+            'Note that some mods need to be in a specific order to work '
+            'correctly, and this sort operation may break that order.')))
         if not self._askContinue(message, u'bash.sortMods.continue',
                                  title=self._text): return
         #--Do it
-        self.selected.sort()
-        self.selected.sort( # sort masters first
-            key=lambda m: not bosh.modInfos[m].in_master_block())
+        self.selected.sort(# sort masters first
+            key=lambda m: (not bosh.modInfos[m].in_master_block(), m))
         lowest = load_order.get_ordered(self.selected)[0]
         bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
         # Reorder the actives too to avoid bogus LO warnings

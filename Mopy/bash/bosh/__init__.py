@@ -1552,7 +1552,7 @@ class TableFileInfos(DataStore):
         # the type of the table keys is always bolt.FName
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
-        ##: fix nightly regression storing FName as installer property
+        ##: fix nightly regression storing 'installer' property as FName
         inst_column = self.table.getColumn('installer')
         for fn_key, val in inst_column.items():
             if type(val) is not str:
@@ -2466,7 +2466,6 @@ class ModInfos(FileInfos):
         rescan_mods = set()
         for m in self._mergeable_by_type.values():
             m.clear()
-        name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
         merg_checks = bush.game.mergeability_checks
@@ -2480,6 +2479,7 @@ class ModInfos(FileInfos):
         # game
         quick_checks = {k: v for k, v in quick_checks.items()
                         if k in merg_checks}
+        name_mergeInfo = self.table.getColumn('mergeInfo')
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
             cached_size, canMerge = name_mergeInfo.get(fn_mod, (None, {}))
@@ -2526,69 +2526,66 @@ class ModInfos(FileInfos):
             self._mergeable_by_type.values())}) & set(self)
         return rescan_mods | difMergeable
 
-    def rescanMergeable(self, names, prog=bolt.Progress(),
-                            return_results=False):
+    def rescanMergeable(self, names, progress=bolt.Progress(),
+                        return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
-        with prog:
-            return self._rescanMergeable(names, prog, return_results)
-
-    def _rescanMergeable(self, names, progress, return_results):
-        all_known_checks = {
-            MergeabilityCheck.MERGE: isPBashMergeable,
-            MergeabilityCheck.ESL_CHECK: is_esl_capable,
-            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
-        }
-        # The checks that are actually required for this game
-        required_checks = {m: c for m, c in all_known_checks.items()
-                           if m in bush.game.mergeability_checks}
-        mod_mergeInfo = self.table.getColumn('mergeInfo')
-        progress.setFull(max(len(names),1))
-        result, tagged_no_merge = {}, set()
-        for i, fileName in enumerate(names):
-            all_reasons = (None if not return_results else
-                           {m: [] for m in bush.game.mergeability_checks})
-            progress(i, fileName)
-            fileInfo = self[fileName]
-            cs_name = fileName.lower()
-            check_results = {}
-            for merg_type, merg_check in required_checks.items():
-                reasons = (None if not return_results else
-                           all_reasons[merg_type])
-                if cs_name in bush.game.bethDataFiles:
-                    # Fail all mergeability checks for vanilla plugins
-                    if return_results: reasons.append(_('Is Vanilla Plugin.'))
-                    check_results[merg_type] = False
-                else:
-                    try:
-                        check_results[merg_type] = merg_check(
-                            fileInfo, self, reasons)
-                    except Exception: # as e
-                        # deprint(f'Error scanning mod {fileName} ({e})')
-                        # # Assume it's not mergeable
-                        # check_results[merg_type] = False
-                        raise
-            # Special handling for MERGE: NoMerge-tagged plugins
-            if (fileName in self.mergeable_plugins and
-                    'NoMerge' in fileInfo.getBashTags()):
-                tagged_no_merge.add(fileName)
-                if return_results:
-                    all_reasons[MergeabilityCheck.MERGE].append(_(
-                        'Technically mergeable, but has NoMerge tag.'))
-            result[fileName] = all_reasons is not None and {
-                m: (check_results[m], r) for m, r in all_reasons.items()}
-            for m, m_mergeable in check_results.items():
-                merg_set = self._mergeable_by_type[m]
-                if m_mergeable:
-                    merg_set.add(fileName)
-                else:
-                    merg_set.discard(fileName)
-            # Only store the enum values (i.e. the ints) in our settings files,
-            # that way we can move the enum itself around etc.
-            mod_mergeInfo[fileName] = (fileInfo.fsize, {
-                k.value: v for k, v in check_results.items()
-            })
-        return result, tagged_no_merge
+        with progress:
+            all_known_checks = {
+                MergeabilityCheck.MERGE: isPBashMergeable,
+                MergeabilityCheck.ESL_CHECK: is_esl_capable,
+                MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
+            }
+            # The checks that are actually required for this game
+            required_checks = {m: c for m, c in all_known_checks.items()
+                               if m in bush.game.mergeability_checks}
+            mod_mergeInfo = self.table.getColumn('mergeInfo')
+            progress.setFull(max(len(names),1))
+            result, tagged_no_merge = {}, set()
+            for i, fileName in enumerate(names):
+                all_reasons = (None if not return_results else
+                               {m: [] for m in bush.game.mergeability_checks})
+                progress(i, fileName)
+                fileInfo = self[fileName]
+                cs_name = fileName.lower()
+                check_results = {}
+                for merg_type, merg_check in required_checks.items():
+                    reasons = (None if not return_results else
+                               all_reasons[merg_type])
+                    if cs_name in bush.game.bethDataFiles:
+                        # Fail all mergeability checks for vanilla plugins
+                        if return_results:
+                            reasons.append(_('Is Vanilla Plugin.'))
+                        check_results[merg_type] = False
+                    else:
+                        try:
+                            check_results[merg_type] = merg_check(
+                                fileInfo, self, reasons)
+                        except Exception: # as e
+                            # deprint(f'Error scanning mod {fileName} ({e})')
+                            # # Assume it's not mergeable
+                            # check_results[merg_type] = False
+                            raise
+                # Special handling for MERGE: NoMerge-tagged plugins
+                if (fileName in self.mergeable_plugins and
+                        'NoMerge' in fileInfo.getBashTags()):
+                    tagged_no_merge.add(fileName)
+                    if return_results:
+                        all_reasons[MergeabilityCheck.MERGE].append(_(
+                            'Technically mergeable, but has NoMerge tag.'))
+                result[fileName] = all_reasons is not None and {
+                    m: (check_results[m], r) for m, r in all_reasons.items()}
+                for m, m_mergeable in check_results.items():
+                    merg_set = self._mergeable_by_type[m]
+                    if m_mergeable:
+                        merg_set.add(fileName)
+                    else:
+                        merg_set.discard(fileName)
+                # Only store the enum values (i.e. the ints) in our settings
+                # files, we are moving away from pickling non-std classes
+                mod_mergeInfo[fileName] = (fileInfo.fsize, {
+                    k.value: v for k, v in check_results.items()})
+            return result, tagged_no_merge
 
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
@@ -2846,11 +2843,11 @@ class ModInfos(FileInfos):
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         notDeactivatable = load_order.force_active_if_present()
         fileNames = {x for x in fileName if x not in notDeactivatable}
-        old = sel = set(self._active_wip)
-        diff = sel - fileNames
-        if len(diff) == len(sel): return set()
+        old = set_awip = set(self._active_wip)
+        diff = set_awip - fileNames
+        if len(diff) == len(set_awip): return set()
         #--Unselect self
-        sel = diff
+        set_awip = diff
         #--Unselect children
         children = set()
         cached_dependents = self.dependents
@@ -2858,14 +2855,14 @@ class ModInfos(FileInfos):
             children |= cached_dependents[fileName]
         while children:
             child = children.pop()
-            if child not in sel: continue # already inactive, skip checks
-            sel.remove(child)
+            if child not in set_awip: continue # already inactive, skip checks
+            set_awip.remove(child)
             children |= cached_dependents[child]
         # Commit the changes made above
-        self._active_wip = [x for x in self._active_wip if x in sel]
+        self._active_wip = [x for x in self._active_wip if x in set_awip]
         #--Save
         if doSave: self.cached_lo_save_active()
-        return old - sel # return deselected
+        return old - set_awip # return deselected
 
     def lo_activate_all(self, activate_mergeable=True):
         """Activates all non-mergeable plugins (except ones tagged Deactivate),
@@ -3495,8 +3492,7 @@ class SaveInfos(FileInfos):
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None
-        toDelete.extend(
-            x.abs_path for x in fileInfo._co_saves.values())
+        toDelete.extend(x.abs_path for x in fileInfo._co_saves.values())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 

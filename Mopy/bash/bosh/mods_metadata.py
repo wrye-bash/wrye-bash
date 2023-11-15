@@ -545,10 +545,10 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
             orig_minf = modInfos[fid_orig_plugin]
             proper_index = orig_minf.real_index()
             if orig_minf.is_esl():
-                return u'FE%03X%03X' % (proper_index - sort_offset,
-                                        whole_lo_fid & 0x00000FFF)
+                return f'FE{proper_index - sort_offset:03X}' \
+                       f'{whole_lo_fid & 0x00000FFF:03X}'
             else:
-                return u'%02X%06X' % (proper_index, whole_lo_fid & 0x00FFFFFF)
+                return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
     else:
         def format_fid(whole_lo_fid: int, _fid_orig_plugin):
             # For non-ESL games simple hexadecimal formatting will do

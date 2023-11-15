@@ -490,11 +490,11 @@ class MasterList(_ModsUIList):
         else:
             return status  # 0, Green
 
-    def set_item_format(self, mi, item_format, target_ini_setts):
-        masterInfo = self.data_store[mi]
-        masters_name = masterInfo.curr_name
+    def set_item_format(self, item_key, item_format, target_ini_setts):
+        minf = self.data_store[item_key]
+        item_name = self._item_name(item_key)
         #--Font color
-        fileBashTags = masterInfo.getBashTags()
+        fileBashTags = minf.getBashTags()
         mouseText = u''
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
         has_priority_text_color = False
@@ -504,10 +504,10 @@ class MasterList(_ModsUIList):
             if not has_priority_text_color:
                 has_priority_text_color = True
                 item_format.text_key = text_key_val
-        if masters_name in bosh.modInfos.bashed_patches:
+        if item_name in bosh.modInfos.bashed_patches:
             _try_color_text('mods.text.bashedPatch')
             mouseText += _('Bashed Patch.') + ' '
-        if masters_name in bosh.modInfos.mergeable_plugins:
+        if item_name in bosh.modInfos.mergeable_plugins:
             if 'NoMerge' in fileBashTags:
                 _try_color_text('mods.text.noMerge')
                 mouseText += _('Technically mergeable, but has NoMerge '
@@ -516,50 +516,50 @@ class MasterList(_ModsUIList):
                 _try_color_text('mods.text.mergeable')
                 # Merged plugins won't be in master lists
                 mouseText += _('Can be merged into Bashed Patch.') + ' '
-        if masters_name in bosh.modInfos.esl_capable_plugins:
+        if item_name in bosh.modInfos.esl_capable_plugins:
             _try_color_text('mods.text.mergeable')
             mouseText += _('Can be ESL-flagged.') + ' '
-        if masters_name in bosh.modInfos.overlay_capable_plugins:
+        if item_name in bosh.modInfos.overlay_capable_plugins:
             _try_color_text('mods.text.mergeable')
             mouseText += _('Can be Overlay-flagged.') + ' '
         final_text_key = 'mods.text.es'
-        if masterInfo.is_esl():
+        if minf.is_esl():
             final_text_key += 'l'
             mouseText += _('Light plugin.') + ' '
-        if masterInfo.in_master_block():
+        if minf.in_master_block():
             final_text_key += 'm'
             mouseText += _('Master plugin.') + ' '
         # Check if it's special, leave ESPs alone
         if final_text_key != 'mods.text.es':
             _try_color_text(final_text_key)
         # Text background
-        if masters_name in bosh.modInfos.activeBad: # if active, it's in LO
+        if item_name in bosh.modInfos.activeBad:  # if active, it's in LO
             item_format.back_key = u'mods.bkgd.doubleTime.load'
             mouseText += _('Plugin name incompatible, will not load.') + ' '
-        elif bosh.modInfos.isBadFileName(masters_name): # might not be in LO
+        elif bosh.modInfos.isBadFileName(item_name):  # might not be in LO
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Plugin name incompatible, cannot be '
                            'activated.') + ' '
-        elif masterInfo.hasActiveTimeConflict():
+        elif minf.hasActiveTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.load'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif masterInfo.hasTimeConflict():
+        elif minf.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif masterInfo.is_ghost:
+        elif minf.is_ghost:
             item_format.back_key = u'mods.bkgd.ghosted'
             mouseText += _('Plugin is ghosted.') + ' '
-        elif self._do_size_checks and bosh.modInfos.size_mismatch(
-                masters_name, masterInfo.stored_size):
+        elif self._do_size_checks and bosh.modInfos.size_mismatch(item_name,
+                minf.stored_size):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _('Stored size does not match the one on disk.') + ' '
         if self.allowEdit:
-            if masterInfo.old_name in settings[u'bash.mods.renames']:
+            if minf.old_name in settings['bash.mods.renames']:
                 item_format.bold = True
         #--Image
-        status = self.GetMasterStatus(mi)
-        oninc = load_order.cached_is_active(masters_name) or (
-            masters_name in bosh.modInfos.merged and 2)
+        status = self.GetMasterStatus(item_key)
+        oninc = load_order.cached_is_active(item_name) or (
+            item_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
             mouseText += _('Missing master of %(child_plugin_name)s.') % {
@@ -569,12 +569,12 @@ class MasterList(_ModsUIList):
             if status == 20:
                 mouseText += _('Reordered relative to other masters.') + ' '
             lo_index = load_order.cached_lo_index
-            if lo_index(on_display) < lo_index(masters_name):
+            if lo_index(on_display) < lo_index(item_name):
                 mouseText += _('Loads after %(child_plugin_name)s.') % {
                     'child_plugin_name': on_display} + ' '
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
-        self.mouseTexts[mi] = mouseText
+        self.mouseTexts[item_key] = mouseText
 
     #--Relist
     def _reList(self):
@@ -1030,24 +1030,24 @@ class ModList(_ModsUIList):
                        refresh_others=Store.SAVES.DO())
 
     #--Populate Item
-    def set_item_format(self, mod_name, item_format, target_ini_setts):
-        mod_info = self.data_store[mod_name]
+    def set_item_format(self, item_key, item_format, target_ini_setts):
+        minf = self.data_store[item_key]
         #--Image
-        status = mod_info.getStatus()
-        checkMark = (load_order.cached_is_active(mod_name) # 1
-            or (mod_name in bosh.modInfos.merged and 2)
-            or (mod_name in bosh.modInfos.imported and 3)) # or 0
+        status = minf.getStatus()
+        checkMark = (load_order.cached_is_active(item_key) # 1
+            or (item_key in bosh.modInfos.merged and 2)
+            or (item_key in bosh.modInfos.imported and 3)) # or 0
         status_image_key = 20 if 20 <= status < 30 else status
         item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = u''
-        fileBashTags = mod_info.getBashTags()
-        if mod_name in bosh.modInfos.activeBad:
+        fileBashTags = minf.getBashTags()
+        if item_key in bosh.modInfos.activeBad:
             mouseText += _('Plugin name incompatible, will not load.') + ' '
-        if mod_name in bosh.modInfos.bad_names:
+        if item_key in bosh.modInfos.bad_names:
             mouseText += _('Plugin name incompatible, cannot be '
                            'activated.') + ' '
-        if mod_name in bosh.modInfos.missing_strings:
+        if item_key in bosh.modInfos.missing_strings:
             mouseText += _('Plugin is missing string localization '
                            'files.') + ' '
         # Text foreground - prioritize BP color, then mergeable/NoMerge color
@@ -1058,10 +1058,10 @@ class ModList(_ModsUIList):
             if not has_priority_text_color:
                 has_priority_text_color = True
                 item_format.text_key = text_key_val
-        if mod_name in bosh.modInfos.bashed_patches:
+        if item_key in bosh.modInfos.bashed_patches:
             _try_color_text('mods.text.bashedPatch')
             mouseText += _('Bashed Patch.') + ' '
-        if mod_name in bosh.modInfos.mergeable_plugins:
+        if item_key in bosh.modInfos.mergeable_plugins:
             if 'NoMerge' in fileBashTags:
                 _try_color_text('mods.text.noMerge')
                 mouseText += _('Technically mergeable, but has NoMerge '
@@ -1072,20 +1072,20 @@ class ModList(_ModsUIList):
                     mouseText += _('Merged into Bashed Patch.') + ' '
                 else:
                     mouseText += _('Can be merged into Bashed Patch.') + ' '
-        if mod_name in bosh.modInfos.esl_capable_plugins:
+        if item_key in bosh.modInfos.esl_capable_plugins:
             _try_color_text('mods.text.mergeable')
             mouseText += _('Can be ESL-flagged.') + ' '
-        if mod_name in bosh.modInfos.overlay_capable_plugins:
+        if item_key in bosh.modInfos.overlay_capable_plugins:
             _try_color_text('mods.text.mergeable')
             mouseText += _('Can be Overlay-flagged.') + ' '
         final_text_key = 'mods.text.es'
-        if mod_info.is_esl():
+        if minf.is_esl():
             final_text_key += 'l'
             mouseText += _('Light plugin.') + ' '
-        if mod_info.is_overlay():
+        if minf.is_overlay():
             final_text_key += 'o'
             mouseText += _('Overlay plugin.') + ' '
-        if mod_info.in_master_block():
+        if minf.in_master_block():
             final_text_key += 'm'
             mouseText += _('Master plugin.') + ' '
         # Check if it's special, leave ESPs alone
@@ -1106,42 +1106,42 @@ class ModList(_ModsUIList):
         if u'Deactivate' in fileBashTags:
             item_format.italics = True
         # Text background
-        if mod_name in bosh.modInfos.activeBad:
+        if item_key in bosh.modInfos.activeBad:
             item_format.back_key = u'mods.bkgd.doubleTime.load'
-        elif mod_name in bosh.modInfos.bad_names:
+        elif item_key in bosh.modInfos.bad_names:
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
-        elif mod_name in bosh.modInfos.missing_strings:
-            if load_order.cached_is_active(mod_name):
+        elif item_key in bosh.modInfos.missing_strings:
+            if load_order.cached_is_active(item_key):
                 item_format.back_key = u'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = u'mods.bkgd.doubleTime.exists'
-        elif mod_info.hasBadMasterNames():
-            if load_order.cached_is_active(mod_name):
+        elif minf.hasBadMasterNames():
+            if load_order.cached_is_active(item_key):
                 item_format.back_key = u'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Has master names that will not load.') + ' '
-        elif mod_info.hasActiveTimeConflict():
+        elif minf.hasActiveTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.load'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif mod_info.hasTimeConflict():
+        elif minf.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif mod_info.isGhost:
+        elif minf.isGhost:
             item_format.back_key = u'mods.bkgd.ghosted'
             mouseText += _('Plugin is ghosted.') + ' '
         elif (bush.game.Esp.check_master_sizes
-              and mod_info.has_master_size_mismatch()):
+              and minf.has_master_size_mismatch()):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _('Has size-mismatched masters.') + ' '
         if settings[u'bash.mods.scanDirty']:
             # Don't mark vanilla files as dirty if the ignore setting is active
             if (not settings['bash.mods.ignore_dirty_vanilla_files'] or
-                    mod_name not in bush.game.bethDataFiles):
-                message = mod_info.getDirtyMessage()
+                    item_key not in bush.game.bethDataFiles):
+                message = minf.getDirtyMessage()
                 mouseText += message[1]
                 if message[0]: item_format.underline = True
-        self.mouseTexts[mod_name] = mouseText
+        self.mouseTexts[item_key] = mouseText
 
     # Events ------------------------------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
