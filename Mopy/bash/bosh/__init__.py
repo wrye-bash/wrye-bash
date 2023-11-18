@@ -1755,11 +1755,20 @@ class TableFileInfos(DataStore):
         # Will set the destination's mtime to the source's mtime
         cp_file_info.abs_path.copyTo(cp_dest_path)
 
+class _Corrupted(AFile):
+    """A 'corrupted' file info. Stores the exception message. Not displayed."""
+
+    def __init__(self, fullpath, error_message, itsa_ghost, **kwargs):
+        if itsa_ghost:
+            fullpath = fullpath + '.ghost' # Path.__add__ !
+        super().__init__(fullpath, **kwargs)
+        self.error_message = error_message
+
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
 
     def _initDB(self, dir_):
-        self.corrupted = FNDict() #--errorMessage = corrupted[fileName]
+        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         return super()._initDB(dir_)
 
     #--Refresh File
@@ -1772,7 +1781,8 @@ class FileInfos(TableFileInfos):
             return fileInfo
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = error.message
+                self.corrupted[fileName] = _Corrupted(
+                    self.store_dir.join(fileName), error.message, itsa_ghost)
                 self.pop(fileName, None)
             raise
 
@@ -1781,25 +1791,36 @@ class FileInfos(TableFileInfos):
         """Refresh from file directory."""
         oldNames = set(self) | set(self.corrupted)
         rdata = RefrData()
-        newNames = self._list_store_dir()
-        for new, itsa_ghost in newNames.items(): #--Might have '.ghost' lopped off
-            oldInfo = self.get(new) # None if new was in corrupted or new one
-            try:
-                if oldInfo is not None:
-                    if oldInfo.do_update(itsa_ghost=itsa_ghost): # will reread the header
-                        rdata.redraw.add(new)
-                else: # added or known corrupted, get a new info
-                    self.new_info(new, _in_refresh=True,
-                        notify_bain=not booting, itsa_ghost=itsa_ghost)
-                    rdata.to_add.add(new)
-            except FileError as e: # old still corrupted, or new(ly) corrupted
-                if not new in self.corrupted \
-                        or self.corrupted[new] != e.message:
+        if True: # refresh_infos
+            newNames = self._list_store_dir() #--Might have '.ghost' lopped off
+            new_files = {k: (None, g) for k, g in newNames.items() if
+                         k not in oldNames}
+            present_infos = {k: (self[k], g) for k, g in newNames.items() if
+                             k in self}
+            changed_corrupted = {k: (None, g) for k, g in newNames.items() if
+                    # if cor.abs_path changed ghost state do_update == True
+                    (cor := self.corrupted.get(k)) and cor.do_update()}
+            for new, (oldInfo, itsa_ghost) in (
+                    present_infos | new_files | changed_corrupted).items():
+                try:
+                    if oldInfo is not None:
+                        # reread the header if any file attributes changed
+                        if oldInfo.do_update(itsa_ghost=itsa_ghost):
+                            rdata.redraw.add(new)
+                    else: # new file or updated corrupted, get a new info
+                        self.new_info(new, _in_refresh=True,
+                            notify_bain=not booting, itsa_ghost=itsa_ghost)
+                        rdata.to_add.add(new)
+                except FileError as e: # old still corrupted, or new(ly) corrupted
                     deprint(f'Failed to load {new}: {e.message}',
-                        traceback=True)
-                    self.corrupted[new] = e.message
-                self.pop(new, None)
-        rdata.to_del = oldNames - set(newNames)
+                            traceback=True)
+                    # we may land here cause cor_path was un/ghosted but
+                    # file remained corrupted so in any case re-add
+                    cor_path = self.store_dir.join(new)
+                    self.corrupted[new] = _Corrupted(cor_path, e.message,
+                                                     itsa_ghost)
+                    self.pop(new, None)
+            rdata.to_del = oldNames - set(newNames)
         self.delete_refresh(rdata.to_del, None, check_existence=False,
                             _in_refresh=True)
         if rdata.redraw:
