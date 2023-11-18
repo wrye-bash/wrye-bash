@@ -2263,7 +2263,7 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        return load_order.save_lo(None, load_order.cached_lord.lorder(
+        return load_order.save_lo(None, load_order.get_ordered(
             self._active_wip if active is None else active))
 
     @_lo_cache
