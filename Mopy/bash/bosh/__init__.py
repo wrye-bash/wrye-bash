@@ -205,7 +205,7 @@ class FileInfo(AFile, ListInfo):
 
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, **kwargs):
         ##: We GPath this three times - not slow, but very inelegant
         g_path = GPath(fullpath)
         ListInfo.__init__(self, g_path.stail) # ghost must be lopped off
@@ -217,7 +217,7 @@ class FileInfo(AFile, ListInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {}
-        super(FileInfo, self).__init__(g_path, load_cache)
+        super().__init__(g_path, load_cache, **kwargs)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -398,12 +398,11 @@ class ModInfo(FileInfo):
         x[1:] for x in bush.game.espm_extensions) + '))'
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
-        if itsa_ghost is None and (fullpath.cs[-6:] == u'.ghost'):
+        if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
             fullpath = fullpath.s[:-6]
             self.is_ghost = True
         else:  # new_info() path
-            self._refresh_ghost_state(regular_path=fullpath,
-                                      itsa_ghost=itsa_ghost)
+            self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
@@ -609,7 +608,7 @@ class ModInfo(FileInfo):
         return ret_masters
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
+    def _refresh_ghost_state(self, itsa_ghost, *, regular_path=None): # TODO(ut): absorb in _reset_cache
         """Refreshes the is_ghost state by checking existence on disk."""
         if itsa_ghost is not None:
             self.is_ghost = itsa_ghost
@@ -620,7 +619,7 @@ class ModInfo(FileInfo):
 
     def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
         old_ghost = self.is_ghost
-        self._refresh_ghost_state(itsa_ghost=itsa_ghost)
+        self._refresh_ghost_state(itsa_ghost)
         # mark updated if ghost state changed but only reread header if needed
         did_change = super(ModInfo, self).do_update(raise_on_error)
         return did_change or self.is_ghost != old_ghost
@@ -1318,12 +1317,12 @@ class SaveInfo(FileInfo):
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
     _co_saves: _CosaveDict
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, **kwargs):
         # Dict of cosaves that may come with this save file. Need to get this
         # first, since readHeader calls _get_masters, which relies on the
         # cosave for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
-        super(SaveInfo, self).__init__(fullpath, load_cache)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     @classmethod
     def get_store(cls): return saveInfos
@@ -1499,9 +1498,9 @@ class ScreenInfo(FileInfo):
         ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
 
-    def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+    def __init__(self, fullpath, load_cache=False, **kwargs):
         self.cached_bitmap = None
-        super(ScreenInfo, self).__init__(fullpath, load_cache)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self.cached_bitmap = None # Lazily reloaded
@@ -1631,13 +1630,13 @@ class TableFileInfos(DataStore):
         self.factory = factory
 
     def new_info(self, fileName, *, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
+                 notify_bain=False, **kwargs):
         """Create, add to self and return a new info using self.factory.
         It will try to read the file to cache its header etc, so use on
         existing files. WIP, in particular _in_refresh must go, but that
         needs rewriting corrupted handling."""
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
-            load_cache=True, itsa_ghost=itsa_ghost)
+            load_cache=True, **kwargs)
         if owner is not None:
             info.set_table_prop('installer', f'{owner}')
         if notify_bain:
@@ -1646,8 +1645,15 @@ class TableFileInfos(DataStore):
 
     def _list_store_dir(self): # performance intensive
         file_matches_store = self.rightFileType
-        return FNDict((x, False) for x in top_level_files(self.store_dir) if
-                      file_matches_store(x))
+        inodes = top_level_files(self.store_dir)
+        inodes = {x for x in inodes if file_matches_store(x)}
+        return self._diff_dir(FNDict(((x, {}) for x in inodes)))
+
+    def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
+        dict[FName, tuple[AFile | None, dict]], set[FName]]:
+        """Return a dict of fn keys (see overrides) of files present in data
+        dir and a set of deleted keys."""
+        raise NotImplementedError
 
     #--Right File Type?
     @classmethod
@@ -1773,43 +1779,45 @@ class FileInfos(TableFileInfos):
 
     #--Refresh File
     def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
+                 notify_bain=False, **kwargs):
         try:
-            fileInfo = super(FileInfos, self).new_info(fileName, owner=owner,
-                notify_bain=notify_bain, itsa_ghost=itsa_ghost)
+            fileInfo = super().new_info(fileName, owner=owner,
+                                        notify_bain=notify_bain, **kwargs)
             self.corrupted.pop(fileName, None)
             return fileInfo
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
                 self.corrupted[fileName] = _Corrupted(
-                    self.store_dir.join(fileName), error.message, itsa_ghost)
+                    self.store_dir.join(fileName), error.message, **kwargs)
                 self.pop(fileName, None)
             raise
 
     #--Refresh
+    def _diff_dir(self, inodes):
+        # for modInfos '.ghost' must have been lopped off from inode keys
+        oldNames = set(self) | set(self.corrupted)
+        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()
+            if k in self or not (cor := self.corrupted.get(k)) # present or new
+            # corrupted that has been updated on disk - if cor.abs_path
+            # changed ghost state (effectivelly deleted) do_update returns True
+            or cor.do_update()} # ghost state can only change manually - don't!
+        del_infos = oldNames - inodes.keys()
+        return new_or_present, del_infos
+
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
-        oldNames = set(self) | set(self.corrupted)
         rdata = RefrData()
         if True: # refresh_infos
-            newNames = self._list_store_dir() #--Might have '.ghost' lopped off
-            new_files = {k: (None, g) for k, g in newNames.items() if
-                         k not in oldNames}
-            present_infos = {k: (self[k], g) for k, g in newNames.items() if
-                             k in self}
-            changed_corrupted = {k: (None, g) for k, g in newNames.items() if
-                    # if cor.abs_path changed ghost state do_update == True
-                    (cor := self.corrupted.get(k)) and cor.do_update()}
-            for new, (oldInfo, itsa_ghost) in (
-                    present_infos | new_files | changed_corrupted).items():
+            new_or_present, del_infos = self._list_store_dir()
+            for new, (oldInfo, kws) in new_or_present.items():
                 try:
                     if oldInfo is not None:
                         # reread the header if any file attributes changed
-                        if oldInfo.do_update(itsa_ghost=itsa_ghost):
+                        if oldInfo.do_update(**kws):
                             rdata.redraw.add(new)
                     else: # new file or updated corrupted, get a new info
                         self.new_info(new, _in_refresh=True,
-                            notify_bain=not booting, itsa_ghost=itsa_ghost)
+                                      notify_bain=not booting, **kws)
                         rdata.to_add.add(new)
                 except FileError as e: # old still corrupted, or new(ly) corrupted
                     deprint(f'Failed to load {new}: {e.message}',
@@ -1818,9 +1826,9 @@ class FileInfos(TableFileInfos):
                     # file remained corrupted so in any case re-add
                     cor_path = self.store_dir.join(new)
                     self.corrupted[new] = _Corrupted(cor_path, e.message,
-                                                     itsa_ghost)
+                                                     **kws)
                     self.pop(new, None)
-            rdata.to_del = oldNames - set(newNames)
+            rdata.to_del = del_infos
         self.delete_refresh(rdata.to_del, None, check_existence=False,
                             _in_refresh=True)
         if rdata.redraw:
@@ -1919,7 +1927,7 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
 
     :param fullpath: Full path to the INI file to wrap
     :param load_cache: Dummy param used in INIInfos.new_info factory call
-    :param itsa_ghost: Cached ghost status information, ignored for INIs"""
+    :param kwargs: Cached ghost status information, ignored for INIs"""
     inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
     ini_info_type = (ObseIniInfo if inferred_ini_type == OBSEIniFile
                      else INIInfo)
@@ -2036,13 +2044,16 @@ class INIInfos(TableFileInfos):
             # convert stray Path instances back to unicode
             [(f'{k}', bass.settings['bash.ini.choices'][k]) for k in keys])
 
+    def _diff_dir(self, inodes):
+        oldNames = {n for n, v in self.items() if not v.is_default_tweak}
+        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()}
+        return new_or_present, oldNames - set(inodes)
+
     def _refresh_ini_tweaks(self):
         """Refresh from file directory."""
-        oldNames = {n for n, v in self.items() if not v.is_default_tweak}
         rdata = _RDIni()
-        newNames = self._list_store_dir()
-        for new_tweak in newNames:
-            oldInfo = self.get(new_tweak) # None if new_tweak was added
+        new_or_present, del_infos = self._list_store_dir()
+        for new_tweak, (oldInfo, kws) in new_or_present.items():
             if oldInfo is not None and not oldInfo.is_default_tweak:
                 if oldInfo.do_update(): rdata.redraw.add(new_tweak)
             else: # added
@@ -2057,18 +2068,18 @@ class INIInfos(TableFileInfos):
                     continue
                 rdata.to_add.add(new_tweak)
             self[new_tweak] = oldInfo
-        rdata.to_del = oldNames - set(newNames)
+        rdata.to_del = del_infos
         self.delete_refresh(rdata.to_del, None, check_existence=False,
                             _in_refresh=True)
         # re-add default tweaks
         for k in list(self):
-            if k not in newNames: del self[k]
+            if k not in new_or_present: del self[k]
         for k, default_info in self._missing_default_inis():
             self[k] = default_info # type: DefaultIniInfo
             if k in rdata.to_del: # we restore default over copy
                 rdata.redraw.add(k)
                 default_info.reset_status()
-        if rdata.redraw:
+        if rdata.redraw: # fixme bug for default inis??
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
 
@@ -2386,19 +2397,23 @@ class ModInfos(FileInfos):
     def bash_dir(self): return dirs[u'modsBash']
 
     #--Refresh-----------------------------------------------------------------
-    def _list_store_dir(self):
-        """Return a dict specifying if the key is in a ghosted state."""
-        fname_to_ghost = super(ModInfos, self)._list_store_dir()
-        for mname in list(fname_to_ghost): # initially ghost bits are all False
-            if mname.fn_ext == '.ghost':
-                del fname_to_ghost[mname] # remove the ghost
-                if (unghosted := mname[:-6]) in fname_to_ghost:
-                    deprint(f'Both {unghosted} and its ghost exist. The ghost '
-                            f'will be ignored but this may lead to undefined '
-                            f'behavior - please remove one or the other')
-                else:
-                    fname_to_ghost[unghosted] = True # a real ghost
-        return fname_to_ghost
+    def _diff_dir(self, inodes):
+        """ModInfos.rightFileType matches ghosts - filter those out from keys
+        and pass the ghost state info to refresh."""
+        ghosts = set()
+        for ghost in [x for x in inodes if x.fn_ext == '.ghost']:
+            if (normal := ghost.fn_body) in inodes: # they exist in both states
+                ##: we need to propagate this warning once refresh dust settles
+                deprint(f'File {normal} and its ghost exist. The ghost '
+                        f'will be ignored but this may lead to undefined '
+                        f'behavior - please remove one or the other')
+            else:
+                inodes[normal] = inodes[ghost]
+                ghosts.add(normal)
+            del inodes[ghost]
+        return super()._diff_dir(FNDict(
+            (x, {**kws, 'itsa_ghost': x in ghosts}) for x, kws in
+            inodes.items()))
 
     def refresh(self, refresh_infos=True, booting=False, unlock_lo=False):
         """Update file data for additions, removals and date changes.
@@ -2674,10 +2689,10 @@ class ModInfos(FileInfos):
 
     #--Refresh File
     def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
+                 notify_bain=False, **kwargs):
         try:
             return super().new_info(fileName, _in_refresh, owner, notify_bain,
-                                    itsa_ghost)
+                                    **kwargs)
         finally:
             # we should refresh info sets if we manage to add the info, but
             # also if we fail, which might mean that some info got corrupted
@@ -3626,10 +3641,10 @@ class BSAInfos(FileInfos):
 
         class BSAInfo(FileInfo, _bsa_type):
             _valid_exts_re = fr'(\.{bush.game.Bsa.bsa_extension[1:]})'
-            def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
+            def __init__(self, fullpath, load_cache=False, **kwargs):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
-                    super(BSAInfo, self).__init__(fullpath, load_cache=False)
+                    super().__init__(fullpath, load_cache=False, **kwargs)
                 except BSAError as e:
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
@@ -3656,9 +3671,9 @@ class BSAInfos(FileInfos):
         super().__init__(dirs['mods'], BSAInfo)
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, itsa_ghost=None):
-        new_bsa = super(BSAInfos, self).new_info(fileName, _in_refresh, owner,
-                                                 notify_bain, itsa_ghost)
+                 notify_bain=False, **kwargs):
+        new_bsa = super().new_info(fileName, _in_refresh, owner, notify_bain,
+                                   **kwargs)
         new_bsa_name = new_bsa.fn_key
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game

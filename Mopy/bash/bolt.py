@@ -45,7 +45,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from typing import ClassVar, Self, TypeVar, get_type_hints, overload
+from typing import ClassVar, Self, TypeVar, get_type_hints, overload, Iterator
 from zlib import crc32
 
 try:
@@ -1093,7 +1093,7 @@ class Path(os.PathLike):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def ilist(self):
+    def ilist(self) -> Iterator[FName] | list[FName]:
         """For directory: Return list of files - bit weird this returns
         FName but let's say Path and FName are friend classes."""
         try:
