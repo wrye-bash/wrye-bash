@@ -2204,7 +2204,7 @@ class ModInfos(FileInfos):
         self.activeBad = set() #--Set of all mods with bad names that are active
         # active mod inis in active mods order (used in bsa files detection
         # for string files and in mergeability checks)
-        self.plugin_inis = ()
+        self.plugin_inis = FNDict()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
         # merged, imported, bashed_patches caches
@@ -2440,7 +2440,7 @@ class ModInfos(FileInfos):
         # Add new or modified INIs to the cache and copy the final order
         inis_active = []
         # check present inis for updates
-        prev_inis = {k.abs_path: k for k in self.plugin_inis[:-1]}
+        prev_inis = {k.abs_path: k for k in [*self.plugin_inis.values()][:-1]}
         for acti_ini_name in active_inis:
             # Need to restore the full path here since we'll stat that path
             # when resetting the cache during __init__
@@ -2451,7 +2451,8 @@ class ModInfos(FileInfos):
             inis_active.append(acti_ini)
         # values in active order, later loading inis override previous settings
         ##: What about SkyrimCustom.ini etc?
-        self.plugin_inis = (*reversed(inis_active), oblivionIni)
+        self.plugin_inis = FNDict((k.abs_path.stail, k) for k in
+                                  (*reversed(inis_active), oblivionIni))
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active
@@ -2590,16 +2591,16 @@ class ModInfos(FileInfos):
                         return_results=False):
         """Rescan specified mods. Return value is only meaningful when
         return_results is set to True."""
+        all_known_checks = {
+            MergeabilityCheck.MERGE: isPBashMergeable,
+            MergeabilityCheck.ESL_CHECK: is_esl_capable,
+            MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
+        }
+        # The checks that are actually required for this game
+        required_checks = {m: c for m, c in all_known_checks.items()
+                           if m in bush.game.mergeability_checks}
+        mod_mergeInfo = self.table.getColumn('mergeInfo')
         with progress:
-            all_known_checks = {
-                MergeabilityCheck.MERGE: isPBashMergeable,
-                MergeabilityCheck.ESL_CHECK: is_esl_capable,
-                MergeabilityCheck.OVERLAY_CHECK: is_overlay_capable,
-            }
-            # The checks that are actually required for this game
-            required_checks = {m: c for m, c in all_known_checks.items()
-                               if m in bush.game.mergeability_checks}
-            mod_mergeInfo = self.table.getColumn('mergeInfo')
             progress.setFull(max(len(names),1))
             result, tagged_no_merge = {}, set()
             for i, fileName in enumerate(names):
@@ -3142,7 +3143,7 @@ class ModInfos(FileInfos):
         bsa_cause = {} # Reason each BSA was loaded
         # BSAs from INI files load first
         ini_idx = -sys.maxsize - 1 # Make sure they come first
-        ini_files_cached = self.plugin_inis
+        ini_files_cached = self.plugin_inis.values()
         for ini_k in bush.game.Ini.resource_archives_keys:
             for ini_f in ini_files_cached:
                 if ini_f.has_setting(u'Archive', ini_k):

@@ -28,54 +28,29 @@ from ..bolt import sig_to_str
 from ..exception import ModError
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 
-def _is_mergeable_no_load(modInfo, reasons):
+def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     verbose = reasons is not None
-    if modInfo.has_esm_flag():
-        if not verbose: return False
-        reasons.append(_(u'Has ESM flag.'))
+    _exit = lambda x: not verbose or reasons.append(x) # append returns None
+    if modInfo.has_esm_flag() and _exit(_('Has ESM flag.')):
+        return False
     #--Bashed Patch
-    if modInfo.isBP():
-        if not verbose: return False
-        reasons.append(_(u'Is Bashed Patch.'))
+    if modInfo.isBP() and _exit(_('Is Bashed Patch.')):
+        return False
     # Plugin INIs would get deactivated if the plugin got merged
-    plugin_ini_name = modInfo.get_ini_name()
-    plugin_inis_lower = {p.abs_path.stail.lower()
-                         for p in modInfo.get_store().plugin_inis}
-    if plugin_ini_name.lower() in plugin_inis_lower:
-        if not verbose: return False
-        reasons.append(_('Has plugin INI (%(plugin_ini_name)s).') % {
-            'plugin_ini_name': plugin_ini_name})
+    if (plugin_ini_name := modInfo.get_ini_name()) in minfos.plugin_inis and \
+            _exit(_('Has plugin INI (%(plugin_ini_name)s).') % {
+                'plugin_ini_name': plugin_ini_name}):
+        return False
     #--Bsa / blocking resources?
-    has_resources = modInfo.hasResources()
-    if has_resources != (False, False):
-        if not verbose: return False
-        hasBsa, has_blocking_resources = has_resources
-        if hasBsa:
-            reasons.append(_(u'Has BSA archive.'))
-        if has_blocking_resources:
-            dir_list = u''
-            for pnd in bush.game.plugin_name_specific_dirs:
-                blocking_dir = _format_blocking_dir(pnd)
-                if blocking_dir:
-                    dir_list += u'\n  - ' + blocking_dir
-            reasons.append((_('Has plugin-specific directory - one of the '
-                              'following:') + dir_list) % {
-                'blocking_plugin_name': modInfo.fn_key})
-    # Client must make sure NoMerge tag not in tags - if in tags
-    # don't show up as mergeable.
-    return False if reasons else True
-
-def _format_blocking_dir(blocking_dir):
-    """Formats a path with path separators. Returns u'' for empty paths."""
-    if blocking_dir:
-        return blocking_dir + os.sep + '%(blocking_plugin_name)s'
-    else:
-        return u''
-
-def _pbash_mergeable_no_load(modInfo, reasons):
-    verbose = reasons is not None
-    if not _is_mergeable_no_load(modInfo, reasons) and not verbose:
-        return False  # non verbose mode
+    hasBsa, has_blocking_resources = modInfo.hasResources()
+    if hasBsa and _exit(_('Has BSA archive.')):
+        return False
+    if has_blocking_resources:
+        dir_list = '\n  - '.join(f'{pnd}{os.sep}%(blocking_plugin_name)s'
+            for pnd in bush.game.plugin_name_specific_dirs if pnd)
+        if _exit((_('Has plugin-specific directory - one of the following:') +
+              f'\n  - {dir_list}') % {'blocking_plugin_name': modInfo.fn_key}):
+            return False
     #--Missing Strings Files?
     if modInfo.isMissingStrings():
         if not verbose: return False
@@ -85,18 +60,20 @@ def _pbash_mergeable_no_load(modInfo, reasons):
         reasons.append(_('Missing string translation files '
                          '(%(strings_example)s, etc).') % {
             'strings_example': strings_example})
+    # Client must make sure NoMerge tag not in tags - if in tags
+    # don't show up as mergeable.
     return False if reasons else True
 
 def isPBashMergeable(modInfo, minfos, reasons):
     """Returns True or error message indicating whether specified mod is mergeable."""
     verbose = reasons is not None
-    if not _pbash_mergeable_no_load(modInfo, reasons) and not verbose:
+    if not _pbash_mergeable_no_load(modInfo, minfos, reasons) and not verbose:
         return False  # non verbose mode
-    if not bush.game.Esp.canBash:
-        if not verbose: return False
-        reasons.append(_('Wrye Bash does not currently support loading '
-                         'plugins for %(game_name)s.') % {
-            'game_name': bush.game.display_name})
+    _exit = lambda x: not verbose or reasons.append(x) # append returns None
+    if not bush.game.Esp.canBash and _exit(
+        _('Wrye Bash does not currently support loading plugins for '
+          '%(game_name)s.') % {'game_name': bush.game.display_name}):
+        return False
     #--Load test: use generic MreRecord (without unpacking). ModFile.load will
     # unpack the header which is enough for record.flags1|fid checks
     merge_types_fact = LoadFactory(False, generic=bush.game.mergeable_sigs)
@@ -104,17 +81,14 @@ def isPBashMergeable(modInfo, minfos, reasons):
     try:
         modFile.load_plugin(loadStrings=False, catch_errors=False)
     except ModError as error:
-        if not verbose: return False
-        reasons.append(f'{error}.')
+        if _exit(f'{error}.'): return False
     #--Skipped over types?
-    if modFile.topsSkipped:
-        if not verbose: return False
-        reasons.append(
-            _(u'Unsupported types: ') + f'{_join_sigs(modFile.topsSkipped)}.')
+    if modFile.topsSkipped and _exit(_('Unsupported types: ') +
+                                     f'{_join_sigs(modFile.topsSkipped)}.'):
+        return False
     #--Empty mod
-    elif not modFile.tops:
-        if not verbose: return False
-        reasons.append(_(u'Empty mod.'))
+    elif not modFile.tops and _exit(_('Empty mod.')):
+        return False
     #--New record
     newblocks = []
     self_name = modInfo.fn_key
@@ -127,10 +101,9 @@ def isPBashMergeable(modInfo, minfos, reasons):
     if newblocks: reasons.append(
         _(u'New record(s) in block(s): ') + f'{_join_sigs(newblocks)}.')
     dependent = _dependent(self_name, minfos)
-    if dependent:
-        if not verbose: return False
-        reasons.append(_('Is a master of non-mergeable plugins: ') +
-                       ', '.join(sorted(dependent)) + '.')
+    if dependent and _exit(_('Is a master of non-mergeable plugins: ') +
+                           ', '.join(sorted(dependent)) + '.'):
+        return False
     return False if reasons else True
 
 def _join_sigs(rec_sigs):
@@ -156,21 +129,19 @@ def is_esl_capable(modInfo, _minfos, reasons):
                     return value of this method is of interest.
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
-    if modInfo.is_esl():
-        if not verbose: return False
-        reasons.append(_('Already ESL-flagged.')) # duh
-    if modInfo.is_overlay():
-        if not verbose: return False
-        reasons.append(_('Has Overlay flag.'))
+    _exit = lambda x: not verbose or reasons.append(x) # append returns None
+    if modInfo.is_esl() and _exit(_('Already ESL-flagged.')):
+        return False
+    if modInfo.is_overlay() and _exit(_('Has Overlay flag.')):
+        return False
     formids_valid = True
     try:
         formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
     except ModError as e:
-        if not verbose: return False
-        reasons.append(f'{e}.')
-    if not formids_valid:
-        if not verbose: return False
-        reasons.append(_('Contains records with FormIDs greater than 0xFFF.'))
+        if _exit(f'{e}.'): return False
+    if not formids_valid and _exit(
+            _('Contains records with FormIDs greater than 0xFFF.')):
+        return False
     return False if reasons else True
 
 def is_overlay_capable(modInfo, _minfos, reasons):
@@ -185,22 +156,18 @@ def is_overlay_capable(modInfo, _minfos, reasons):
         of this method is of interest.
     :return: True if the specified mod could be flagged as Overlay."""
     verbose = reasons is not None
-    if modInfo.is_overlay():
-        if not verbose: return False
-        reasons.append(_('Already Overlay-flagged.')) # duh
-    if modInfo.is_esl():
-        if not verbose: return False
-        reasons.append(_('Has ESL flag.'))
-    if not modInfo.masterNames:
-        if not verbose: return False
-        reasons.append(_('Does not have any masters.'))
+    _exit = lambda x: not verbose or reasons.append(x) # append returns None
+    if modInfo.is_overlay() and _exit(_('Already Overlay-flagged.')):
+        return False
+    if modInfo.is_esl() and _exit(_('Has ESL flag.')):
+        return False
+    if not modInfo.masterNames and _exit(_('Does not have any masters.')):
+        return False
     has_new_recs = False
     try:
         has_new_recs = ModHeaderReader.has_new_records(modInfo)
     except ModError as e:
-        if not verbose: return False
-        reasons.append(f'{e}.')
-    if has_new_recs:
-        if not verbose: return False
-        reasons.append(_('Contains new records.'))
+        if _exit(f'{e}.'): return False
+    if has_new_recs and _exit(_('Contains new records.')):
+        return False
     return False if reasons else True
