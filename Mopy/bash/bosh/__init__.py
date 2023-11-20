@@ -2141,10 +2141,9 @@ def _lo_cache(lord_func):
                 return ldiff
             # Update all data structures that may be affected by LO change
             ldiff.affected |= self._refresh_mod_inis_and_strings()
-            self._recalc_dependents()
-            ldiff.affected |= {*self._refresh_active_no_cp1252(),
-                *self._update_info_sets(), *self._recalc_real_indices()}
-            ghostify = dict.fromkeys(ldiff.act_new, False) #new active, unghost
+            ldiff.affected |= self._file_or_active_updates()
+            # unghost new active plugins and ghost new inactive (if autoGhost)
+            ghostify = dict.fromkeys(ldiff.act_new, False)
             if bass.settings['bash.mods.autoGhost']:
                 allowGhosting = self.table.getColumn('allowGhosting')
                 new_inactive = (ldiff.act_del - ldiff.missing) | (
@@ -2404,24 +2403,28 @@ class ModInfos(FileInfos):
             unlock_lo, forceActive=bool(rdata.to_del), unlock_lo=unlock_lo)
         # if active did not change, we must perform the refreshes below
         if not ((act_ch := ldiff.act_changed()) or ldiff.added or
-                ldiff.missing): # else we did all steps below in _modinfos_cache_wrapper
+                ldiff.missing):
+            rdata.redraw |= ldiff.reordered
             # in case ini files were deleted or modified or maybe string files
             # were deleted... we need a load order below: in skyrim we read
             # inis in active order - we then need to redraw what changed status
             rdata.redraw |= self._refresh_mod_inis_and_strings()
             if mods_changes:
-                # If any plugins have been added, updated or deleted, we need
-                # to recalculate dependents
-                self._recalc_dependents()
-                rdata.redraw |= {*self._refresh_active_no_cp1252(),
-                    *self._update_info_sets(), *self._recalc_real_indices()}
-        else:
+                rdata.redraw |= self._file_or_active_updates()
+        else: # we did all the refreshes above in _modinfos_cache_wrapper
             rdata.redraw |= act_ch | ldiff.reordered | ldiff.affected
-        rdata.redraw |= ldiff.reordered
         self.voAvailable, self.voCurrent = bush.game.modding_esms(self)
-        rdata.redraw.update(self._refreshMergeable())
         rdata.redraw -= rdata.to_add | rdata.to_del ##: centralize this
         return rdata
+
+    def _file_or_active_updates(self):
+        """If any plugins have been added, updated or deleted, or the active
+        order/status changed we need to recalculate cached data structures.
+        We could be more granular but the performance is elsewhere plus the
+        complexity might not worth it."""
+        self._recalc_dependents()
+        return {*self._refresh_active_no_cp1252(), *self._update_info_sets(),
+                *self._recalc_real_indices(), *self._refreshMergeable()}
 
     def _refresh_mod_inis_and_strings(self):
         """Refresh ini and str files from Data directory. Those need to be
@@ -3235,16 +3238,9 @@ class ModInfos(FileInfos):
         # adapted from refresh() (avoid refreshing from the data directory)
         deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
                                               check_existence)
-        if not deleted_keys: return
-        # temporarily track deleted mods so BAIN can update its UI
-        if _in_refresh: return
+        if not deleted_keys or _in_refresh: return
         self._lo_caches_remove_mods(deleted_keys)
-        self.cached_lo_save_all()
-        self._refresh_active_no_cp1252()
-        self._update_info_sets()
-        self._refresh_mod_inis_and_strings()
-        self._refreshMergeable()
-        self._recalc_dependents()
+        self.cached_lo_save_all() # will perform the needed refreshes
 
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
