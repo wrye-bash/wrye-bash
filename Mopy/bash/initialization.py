@@ -34,8 +34,7 @@ from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_legacy_ws_game_info, get_local_app_data_path, \
     get_personal_path, shellMakeDirs, is_case_sensitive, \
     get_case_sensitivity_advice
-from .exception import BoltError
-##: This pulls in bush long before _import_bush_and_set_game!
+from .exception import BoltError, NonExistentDriveError
 from .loot_parser import LOOTParser
 
 mopy_dirs_initialized = bash_dirs_initialized = False
@@ -272,8 +271,8 @@ def init_dirs(game_info, opts, init_warnings):
             wanted_dir = dirs[dir_key]
             deprint(f' - {wanted_dir}')
             shellMakeDirs([wanted_dir])
-    except NotADirectoryError as e:
-        # NotADirectoryError is thrown by shellMakeDirs if any of the
+    except NonExistentDriveError as e:
+        # NonExistentDriveError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive (in posix if permission is denied). Find which keys are
         # causing the errors

@@ -33,6 +33,7 @@ from typing import Any
 from .common import *
 from .common import file_operation as _default_file_operation
 from ..bolt import os_name, Path, deprint, empty_path
+from ..exception import NonExistentDriveError
 from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
@@ -105,7 +106,7 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
     #  supposed to be on doesn't exist)
     errorPaths = [d for d in dirs if not drive_exists(d)]
     if errorPaths:
-        raise NotADirectoryError(errorPaths)
+        raise NonExistentDriveError(errorPaths)
     if os_name == 'posix':
         return # drive_exists creates the directories on posix
     #--Checks complete, start working

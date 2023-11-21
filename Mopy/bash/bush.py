@@ -288,8 +288,8 @@ def detect_and_set_game(opts, init_warnings, gname=None, gm_path=None):
         foundGames.update(foundGames_) # set the global name -> game path dict
     # Try the game returned by detectGames() or specified
     if gname is not None and gm_path is not None:
-        __setGame(gname, gm_path, 'Using %(gamename)s game:', opts,
-                  init_warnings)
+        msg = 'Using %(gamename)s game:'
+        __setGame(gname, gm_path, msg, opts, init_warnings)
         return None
     elif len(foundGames) == 1 and len(single_game_paths := next(
             iter(foundGames.values()))) == 1:
