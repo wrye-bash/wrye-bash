@@ -1602,6 +1602,7 @@ class RefrData:
 class TableFileInfos(DataStore):
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
+    _rdata_type = RefrData
     factory: type[AFile]
 
     def _initDB(self, dir_):
@@ -1625,8 +1626,42 @@ class TableFileInfos(DataStore):
 
     def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
+        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         super().__init__(self._initDB(dir_))
         self.factory = factory
+
+    def refresh(self, refresh_infos=True, booting=False):
+        """Refresh from file directory."""
+        rdata = self._rdata_type()
+        if True: # refresh_infos
+            new_or_present, del_infos = self._list_store_dir()
+            for new, (oldInfo, kws) in new_or_present.items():
+                try:
+                    if oldInfo is not None:
+                        # reread the header if any file attributes changed
+                        if oldInfo.do_update(**kws):
+                            rdata.redraw.add(new)
+                    else: # new file or updated corrupted, get a new info
+                        self.new_info(new, _in_refresh=True,
+                                      notify_bain=not booting, **kws)
+                        rdata.to_add.add(new)
+                except (FileError, UnicodeError, BoltError,
+                        NotImplementedError) as e:
+                    # old still corrupted, or new(ly) corrupted or we landed
+                    # here cause cor_path was un/ghosted but file remained
+                    # corrupted so in any case re-add to corrupted
+                    cor_path = self.store_dir.join(new)
+                    er = e.message if hasattr(e, 'message') else f'{e}'
+                    self.corrupted[new] = cor = _Corrupted(cor_path, er, **kws)
+                    deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
+                            traceback=True)
+                    self.pop(new, None)
+            rdata.to_del = del_infos
+        self.delete_refresh(rdata.to_del, None, check_existence=False,
+                            _in_refresh=True)
+        if rdata.redraw:
+            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
+        return rdata
 
     def new_info(self, fileName, *, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
@@ -1634,13 +1669,21 @@ class TableFileInfos(DataStore):
         It will try to read the file to cache its header etc, so use on
         existing files. WIP, in particular _in_refresh must go, but that
         needs rewriting corrupted handling."""
-        info = self[fileName] = self.factory(self.store_dir.join(fileName),
-            load_cache=True, **kwargs)
-        if owner is not None:
-            info.set_table_prop('installer', f'{owner}')
-        if notify_bain:
-            self._notify_bain(altered={info.abs_path})
-        return info
+        try:
+            info = self[fileName] = self.factory(self.store_dir.join(fileName),
+                                                 load_cache=True, **kwargs)
+            self.corrupted.pop(fileName, None)
+            if owner is not None:
+                info.set_table_prop('installer', f'{owner}') ## fixme move out
+            if notify_bain:
+                self._notify_bain(altered={info.abs_path})
+            return info
+        except FileError as error:
+            if not _in_refresh: # if refresh just raise so we print the error
+                self.corrupted[fileName] = _Corrupted(
+                    self.store_dir.join(fileName), error.message, **kwargs)
+                self.pop(fileName, None)
+            raise
 
     def _list_store_dir(self): # performance intensive
         file_matches_store = self.rightFileType
@@ -1653,6 +1696,27 @@ class TableFileInfos(DataStore):
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
         raise NotImplementedError
+
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
+                       _in_refresh=False):
+        """Special case for the saves, inis, mods and bsas.
+        :param deleted_keys: must be the data store keys and not full paths
+        :param paths_to_keys: a dict mapping full paths to the keys
+        """
+        #--Table
+        if paths_to_keys is None:  # we passed the keys in, get the paths
+            paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
+        if check_existence:
+            for filePath in list(paths_to_keys):
+                if filePath.exists():
+                    del paths_to_keys[filePath]  # item was not deleted
+        self._notify_bain(del_set=paths_to_keys)
+        deleted_keys = list(paths_to_keys.values())
+        for del_fn in deleted_keys:
+            self.pop(del_fn, None)
+            self.corrupted.pop(del_fn, None)
+            self.table.pop(del_fn, None)
+        return deleted_keys
 
     #--Right File Type?
     @classmethod
@@ -1691,18 +1755,6 @@ class TableFileInfos(DataStore):
         #--Now do actual deletions
         abs_delete_paths = {x for x in abs_delete_paths if x.exists()}
         return abs_delete_paths, tableUpdate
-
-    def _update_deleted_paths(self, deleted_keys, paths_to_keys,
-                              check_existence):
-        """Must be called BEFORE we remove the keys from self."""
-        if paths_to_keys is None: # we passed the keys in, get the paths
-            paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
-        if check_existence:
-            for filePath in list(paths_to_keys):
-                if filePath.exists():
-                    del paths_to_keys[filePath] # item was not deleted
-        self._notify_bain(del_set=paths_to_keys)
-        return list(paths_to_keys.values())
 
     def _notify_bain(self, del_set: set[Path] = frozenset(),
         altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
@@ -1762,7 +1814,7 @@ class TableFileInfos(DataStore):
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
 
-    def __init__(self, fullpath, error_message, itsa_ghost, **kwargs):
+    def __init__(self, fullpath, error_message, *, itsa_ghost=False, **kwargs):
         if itsa_ghost:
             fullpath = fullpath + '.ghost' # Path.__add__ !
         super().__init__(fullpath, **kwargs)
@@ -1770,25 +1822,6 @@ class _Corrupted(AFile):
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
-
-    def _initDB(self, dir_):
-        self.corrupted: FNDict[FName, _Corrupted] = FNDict()
-        return super()._initDB(dir_)
-
-    #--Refresh File
-    def new_info(self, fileName, _in_refresh=False, owner=None,
-                 notify_bain=False, **kwargs):
-        try:
-            fileInfo = super().new_info(fileName, owner=owner,
-                                        notify_bain=notify_bain, **kwargs)
-            self.corrupted.pop(fileName, None)
-            return fileInfo
-        except FileError as error:
-            if not _in_refresh: # if refresh just raise so we print the error
-                self.corrupted[fileName] = _Corrupted(
-                    self.store_dir.join(fileName), error.message, **kwargs)
-                self.pop(fileName, None)
-            raise
 
     #--Refresh
     def _diff_dir(self, inodes):
@@ -1801,52 +1834,6 @@ class FileInfos(TableFileInfos):
             or cor.do_update()} # ghost state can only change manually - don't!
         del_infos = oldNames - inodes.keys()
         return new_or_present, del_infos
-
-    def refresh(self, refresh_infos=True, booting=False):
-        """Refresh from file directory."""
-        rdata = RefrData()
-        if True: # refresh_infos
-            new_or_present, del_infos = self._list_store_dir()
-            for new, (oldInfo, kws) in new_or_present.items():
-                try:
-                    if oldInfo is not None:
-                        # reread the header if any file attributes changed
-                        if oldInfo.do_update(**kws):
-                            rdata.redraw.add(new)
-                    else: # new file or updated corrupted, get a new info
-                        self.new_info(new, _in_refresh=True,
-                                      notify_bain=not booting, **kws)
-                        rdata.to_add.add(new)
-                except FileError as e: # old still corrupted, or new(ly) corrupted
-                    deprint(f'Failed to load {new}: {e.message}',
-                            traceback=True)
-                    # we may land here cause cor_path was un/ghosted but
-                    # file remained corrupted so in any case re-add
-                    cor_path = self.store_dir.join(new)
-                    self.corrupted[new] = _Corrupted(cor_path, e.message,
-                                                     **kws)
-                    self.pop(new, None)
-            rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, None, check_existence=False,
-                            _in_refresh=True)
-        if rdata.redraw:
-            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
-        return rdata
-
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
-        """Special case for the saves, inis, mods and bsas.
-        :param deleted_keys: must be the data store keys and not full paths
-        :param paths_to_keys: a dict mapping full paths to the keys
-        """
-        #--Table
-        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                                  check_existence)
-        for del_fn in deleted_keys:
-            self.pop(del_fn, None)
-            self.corrupted.pop(del_fn, None)
-            self.table.pop(del_fn, None)
-        return deleted_keys
 
     def _additional_deletes(self, fileInfo, toDelete):
         #--Backups
@@ -1942,6 +1929,7 @@ class INIInfos(TableFileInfos):
     file_pattern = re.compile('|'.join(
         f'\\{x}' for x in supported_ini_exts) + '$' , re.I)
     unique_store_key = Store.INIS
+    _rdata_type = _RDIni
     _ini: IniFileInfo | None
     _data: dict[FName, AINIInfo]
     factory: Callable[[...], INIInfo]
@@ -2054,33 +2042,16 @@ class INIInfos(TableFileInfos):
                 k not in self)
 
     def refresh(self, refresh_infos=True, booting=False, refresh_target=True):
-        rdata = _RDIni()
-        if refresh_infos:
-            new_or_present, del_infos = self._list_store_dir()
-            for new, (oldInfo, kws) in new_or_present.items():
-                if oldInfo is not None:
-                    if oldInfo.do_update(): rdata.redraw.add(new)
-                else:  # added
-                    try:
-                        self.new_info(new, _in_refresh=True,
-                                      notify_bain=not booting, **kws)
-                        rdata.to_add.add(new)
-                    except UnicodeDecodeError:
-                        deprint(f'Failed to read {self.store_dir.join(new)}',
-                                traceback=True)
-                    except (BoltError, NotImplementedError) as e:
-                        deprint(e.message)
-            rdata.to_del = del_infos
-            self.delete_refresh(rdata.to_del, None, check_existence=False,
-                                _in_refresh=True)
-            if rdata.redraw: # do this *before* adding default tweaks to redraw
-                self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
-            # re-add default tweaks
-            for k, default_info in self._missing_default_inis():
-                self[k] = default_info  # type: DefaultIniInfo
-                if k in rdata.to_del:  # we restore default over copy
-                    rdata.redraw.add(k)
-                    default_info.reset_status()
+        rdata = super().refresh(booting=booting) if refresh_infos else _RDIni()
+        # re-add default tweaks (booting / restoring a default over copy,
+        # delete should take care of this but needs to update redraw...)
+        for k, default_info in self._missing_default_inis():
+            self[k] = default_info  # type: DefaultIniInfo
+            if k in rdata.to_del:  # we restore default over copy
+                rdata.redraw.add(k)
+                default_info.reset_status()
+            else: # booting
+                rdata.to_add.add(k)
         rdata.ini_changed = refresh_target and (
                     self.ini.updated or self.ini.do_update())
         if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
@@ -2093,12 +2064,8 @@ class INIInfos(TableFileInfos):
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
-        deleted_keys = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                                  check_existence)
-        if not deleted_keys: return deleted_keys
-        for del_fn in deleted_keys:
-            self.pop(del_fn, None)
-            self.table.delRow(del_fn)
+        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
+                                              check_existence)
         if not _in_refresh: # re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
@@ -2414,8 +2381,8 @@ class ModInfos(FileInfos):
         some of the set_load_order methods, or pass unlock_lo=True
         (refreshLoadOrder only *gets* load order)."""
         # Scan the data dir, getting info on added, deleted and modified files
-        rdata = FileInfos.refresh(self, booting=booting) if refresh_infos \
-            else RefrData()
+        rdata = super().refresh(booting=booting) if refresh_infos else \
+            self._rdata_type()
         mods_changes = bool(rdata)
         self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
@@ -2682,8 +2649,8 @@ class ModInfos(FileInfos):
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
         try:
-            return super().new_info(fileName, _in_refresh, owner, notify_bain,
-                                    **kwargs)
+            return super().new_info(fileName, _in_refresh=_in_refresh,
+                owner=owner, notify_bain=notify_bain, **kwargs)
         finally:
             # we should refresh info sets if we manage to add the info, but
             # also if we fail, which might mean that some info got corrupted
@@ -3247,16 +3214,13 @@ class ModInfos(FileInfos):
         return old_key
 
     #--Delete
-    def files_to_delete(self, filenames, **kwargs):
-        filenames = set(self.filter_essential(filenames))
-        self.lo_deactivate(filenames) ##: do this *after* deletion?
-        return super(ModInfos, self).files_to_delete(filenames)
-
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
         # adapted from refresh() (avoid refreshing from the data directory)
         deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
                                               check_existence)
+        # we need to call deactivate to deactivate dependents
+        self.lo_deactivate(deleted_keys)
         if not deleted_keys or _in_refresh: return
         self._lo_caches_remove_mods(deleted_keys)
         self.cached_lo_save_all() # will perform the needed refreshes
@@ -3525,8 +3489,8 @@ class SaveInfos(FileInfos):
 
     def refresh(self, refresh_infos=True, booting=False):
         if not booting: self._refreshLocalSave() # otherwise we just did this
-        return FileInfos.refresh(self, booting=booting) if refresh_infos \
-            else RefrData()
+        return super().refresh(booting=booting) if refresh_infos else \
+           self._rdata_type()
 
     def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName, update also cosave
@@ -3663,8 +3627,8 @@ class BSAInfos(FileInfos):
 
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, **kwargs):
-        new_bsa = super().new_info(fileName, _in_refresh, owner, notify_bain,
-                                   **kwargs)
+        new_bsa = super().new_info(fileName, _in_refresh=_in_refresh,
+            owner=owner, notify_bain=notify_bain, **kwargs)
         new_bsa_name = new_bsa.fn_key
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game

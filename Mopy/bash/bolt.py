@@ -2155,12 +2155,6 @@ class DataTable(DataDict):
             del self._data[row][column]
             self.hasChanged = True
 
-    def delRow(self,row):
-        """Deletes row."""
-        if row in self._data:
-            del self._data[row]
-            self.hasChanged = True
-
     ##: DataTableColumn.clear is the only usage, and that seems unused too
     def delColumn(self,column):
         """Deletes column of data."""
