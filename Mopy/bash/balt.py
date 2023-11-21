@@ -1044,23 +1044,20 @@ class UIList(PanelWin):
         """Check if the renaming operation is allowed and return the item type
         of the selected labels to be renamed as well as an error to show the
         user."""
-        sel_original = self.GetSelected()
-        sel_filtered = list(self.data_store.filter_essential(sel_original))
+        if not (sel_original := self.GetSelected()):
+            # I don't see how this would be possible, but just in case...
+            return None, _('No items selected for renaming.')
+        sel_filtered = self.data_store.filter_essential(sel_original)
         if not sel_filtered:
             # None of the selected items may be renamed, so this whole renaming
             # attempt is a nonstarter
             return None, _('The selected items cannot be renamed.')
-        if (sel_original and sel_filtered and
-                sel_filtered[0] != sel_original[0]):
+        if next(iter(sel_filtered)) != sel_original[0]:
             # The currently selected/detail item cannot be renamed, so we can't
             # edit labels, which means we have to abort the renaming attempt
             return None, _('Renaming %(first_item)s is not allowed.') % {
                 'first_item': sel_original[0]}
-        to_rename = [self.data_store[i] for i in sel_filtered]
-        if to_rename:
-            return type(to_rename[0]), ''
-        # I don't see how this would be possible, but just in case...
-        return None, _('No items selected for renaming.')
+        return type(next(iter(sel_filtered.values()))), ''
 
     def could_rename(self):
         """Returns True if the currently selected item(s) would allow

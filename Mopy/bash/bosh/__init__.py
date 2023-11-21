@@ -1542,9 +1542,8 @@ class DataStore(DataDict):
 
     def filter_essential(self, fn_items: Iterable[FName]):
         """Filters essential files out of the specified filenames. Useful to
-        determine whether or not a file will cause instability when
-        deleted/hidden."""
-        return fn_items
+        determine whether a file will cause instability when deleted/hidden."""
+        return {k: self.get(k) for k in fn_items}
 
     def delete_refresh(self, del_paths, deleted2, check_existence):
         raise NotImplementedError
@@ -1679,10 +1678,9 @@ class TableFileInfos(DataStore):
         #--Cache table updates
         tableUpdate = {}
         #--Go through each file
-        for fileName in self.filter_essential(fileNames):
-            try:
-                fileInfo = self[fileName]
-            except KeyError: # corrupted
+        for fileName, fileInfo in self.filter_essential(fileNames).items():
+            if fileInfo is None: # corrupted, delete might be called from BAIN
+                # factory is called with load_cache=False
                 fileInfo = self.factory(self.store_dir.join(fileName))
             #--File
             filePath = fileInfo.abs_path
@@ -2046,51 +2044,43 @@ class INIInfos(TableFileInfos):
 
     def _diff_dir(self, inodes):
         oldNames = {n for n, v in self.items() if not v.is_default_tweak}
-        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()}
-        return new_or_present, oldNames - set(inodes)
-
-    def _refresh_ini_tweaks(self):
-        """Refresh from file directory."""
-        rdata = _RDIni()
-        new_or_present, del_infos = self._list_store_dir()
-        for new_tweak, (oldInfo, kws) in new_or_present.items():
-            if oldInfo is not None and not oldInfo.is_default_tweak:
-                if oldInfo.do_update(): rdata.redraw.add(new_tweak)
-            else: # added
-                tweak_path = self.store_dir.join(new_tweak)
-                try:
-                    oldInfo = self.factory(tweak_path)
-                except UnicodeDecodeError:
-                    deprint(f'Failed to read {tweak_path}', traceback=True)
-                    continue
-                except (BoltError, NotImplementedError) as e:
-                    deprint(e.message)
-                    continue
-                rdata.to_add.add(new_tweak)
-            self[new_tweak] = oldInfo
-        rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, None, check_existence=False,
-                            _in_refresh=True)
-        # re-add default tweaks
-        for k in list(self):
-            if k not in new_or_present: del self[k]
-        for k, default_info in self._missing_default_inis():
-            self[k] = default_info # type: DefaultIniInfo
-            if k in rdata.to_del: # we restore default over copy
-                rdata.redraw.add(k)
-                default_info.reset_status()
-        if rdata.redraw: # fixme bug for default inis??
-            self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
-        return rdata
+        new_or_present = {k: (iinf if (iinf := self.get(
+            k)) and not iinf.is_default_tweak else None, kws) for k, kws in
+            inodes.items()} # if iinf is a default tweak a file has replaced it
+        return new_or_present, oldNames - new_or_present.keys()
 
     def _missing_default_inis(self):
         return ((k, v) for k, v in self._default_tweaks.items() if
                 k not in self)
 
-    def refresh(self, refresh_infos=True, refresh_target=True):
+    def refresh(self, refresh_infos=True, booting=False, refresh_target=True):
+        rdata = _RDIni()
         if refresh_infos:
-            rdata = self._refresh_ini_tweaks()
-        else: rdata = _RDIni()
+            new_or_present, del_infos = self._list_store_dir()
+            for new, (oldInfo, kws) in new_or_present.items():
+                if oldInfo is not None:
+                    if oldInfo.do_update(): rdata.redraw.add(new)
+                else:  # added
+                    try:
+                        self.new_info(new, _in_refresh=True,
+                                      notify_bain=not booting, **kws)
+                        rdata.to_add.add(new)
+                    except UnicodeDecodeError:
+                        deprint(f'Failed to read {self.store_dir.join(new)}',
+                                traceback=True)
+                    except (BoltError, NotImplementedError) as e:
+                        deprint(e.message)
+            rdata.to_del = del_infos
+            self.delete_refresh(rdata.to_del, None, check_existence=False,
+                                _in_refresh=True)
+            if rdata.redraw: # do this *before* adding default tweaks to redraw
+                self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
+            # re-add default tweaks
+            for k, default_info in self._missing_default_inis():
+                self[k] = default_info  # type: DefaultIniInfo
+                if k in rdata.to_del:  # we restore default over copy
+                    rdata.redraw.add(k)
+                    default_info.reset_status()
         rdata.ini_changed = refresh_target and (
                     self.ini.updated or self.ini.do_update())
         if rdata.ini_changed: # reset the status of all infos and let RefreshUI set it
@@ -2117,7 +2107,8 @@ class INIInfos(TableFileInfos):
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Can't remove default tweaks
-        return (i for i in fn_items if not self[i].is_default_tweak)
+        return {k: v for k in fn_items if # return None for corrupted
+                not (v := self.get(k)) or not v.is_default_tweak}
 
     def get_tweak_lines_infos(self, tweakPath):
         return self._ini.analyse_tweak(self[tweakPath])
@@ -3280,7 +3271,7 @@ class ModInfos(FileInfos):
 
     def filter_essential(self, fn_items: Iterable[FName]):
         # Removing the game master breaks everything, for obvious reasons
-        return (i for i in fn_items if i != self._master_esm)
+        return {k: self.get(k) for k in fn_items if k != self._master_esm}
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
