@@ -128,6 +128,14 @@ def _parse_vdf(vdf_path: _StrPath, *, vdf_root: str) -> dict | None:
         return None
     return vdf_root
 
+def _parse_version_string(full_ver):
+    # xSE uses commas in its version fields, so use this 'heuristic'
+    split_on = ',' if ',' in full_ver else '.'
+    try:
+        return tuple([int(part) for part in full_ver.split(split_on)])
+    except ValueError:
+        return 0, 0, 0, 0
+
 @functools.cache
 def _get_steam_manifests(steam_path: _StrPath) -> dict[int, str]:
     """Read the libraryfolders.vdf file used by Steam for storing the Steam
@@ -435,7 +443,9 @@ def file_operation(operation: FileOperationType,
                     deprint(f'Permission to create trash directory denied, '
                             f'permanently deleting the file ({to_delete}) '
                             f'instead', traceback=True)
-            if to_delete.is_dir():
+            if to_delete.is_dir() and not os.path.islink(to_delete):
+                # python would attempt to call rmtree on symlinks to dirs, and
+                # raise
                 to_delete.rmtree(to_delete.stail)
             else:
                 to_delete.remove()
@@ -467,7 +477,7 @@ def set_cwd(func):
         cwd = os.getcwd()
         os.chdir(exe_path.head.s)
         try:
-            func(self, exe_path, *args)
+            return func(self, exe_path, *args)
         finally:
             os.chdir(cwd)
     return _switch_dir
@@ -485,7 +495,8 @@ class _AppLauncher:
         self._display_launcher = display_launcher
         self._exe_args = cli_args
 
-    def allow_create(self): return False ##: for linux - flesh out!
+    def allow_create(self): # if self.exePath does not exist this must be False
+        return self._display_launcher
 
     @classmethod
     def find_launcher(cls, app_exe, app_key, *, root_dirs: tuple | str = tuple(

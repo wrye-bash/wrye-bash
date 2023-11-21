@@ -27,16 +27,15 @@ import os
 import subprocess
 import sys
 from collections import deque
+from shutil import which
 
-from .common import _find_legendary_games, _LegacyWinAppInfo, \
-    _parse_steam_manifests
-from .common import _AppLauncher
+from .common import _AppLauncher, _find_legendary_games, _LegacyWinAppInfo, \
+    _parse_steam_manifests, set_cwd, _parse_version_string
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath
 from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
-from ..bolt import structs_cache
 from ..exception import EnvError
 
 # API - Constants =============================================================
@@ -45,6 +44,15 @@ FO_COPY = 2
 FO_DELETE = 3
 FO_RENAME = 4
 FOF_NOCONFIRMMKDIR = 512
+
+# TODO(inf) We should use protontricks instead to launch within the right
+#  prefix automatically - that way e.g. xEdit will Just Work(TM)
+_WINEPATH = which('wine')
+
+_STRINGS = which('strings')
+if not _STRINGS:
+    _deprint('strings not found, EXE version reading will not work. Try '
+             'installing binutils')
 
 # TaskDialog is Windows-specific, so stub all this out (and raise if TaskDialog
 # is used, see below)
@@ -217,98 +225,42 @@ def is_uac():
 
 @functools.cache
 def getJava():
+    # Prefer the version indicated by JAVA_HOME
     try:
         java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'java')
         if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
-    try:
-        java_bin_path = subprocess.check_output(
-            u'command -v java', shell=True,
-            encoding=_Path.sys_fs_enc).rstrip(u'\n')
-    except subprocess.CalledProcessError:
-        # Fall back to the likely correct path on most distros - but probably
-        # Java is missing entirely if command can't find it
-        java_bin_path = u'/usr/bin/java'
-    return _GPath(java_bin_path)
+    java_bin_path = which('java') # Otherwise, look through the PATH
+    if java_bin_path:
+        return _GPath_no_norm(java_bin_path)
+    # Fall back to the likely correct path on most distros - but probably
+    # Java is missing entirely if which can't find it
+    return _GPath('/usr/bin/java')
 
-# TODO(inf) This method needs support for string fields and product versions
-def get_file_version(filename):
-    """A python replacement for win32api.GetFileVersionInfo that can be used
-    on systems where win32api isn't available."""
-    _WORD, _DWORD = u'<H', u'<I'
-    def _read(target_fmt, file_obj, offset=0, count=1, absolute=False):
-        """Read one or more chunks from the file, either a word or dword."""
-        target_struct = structs_cache[target_fmt]
-        file_obj.seek(offset, not absolute)
-        result = [target_struct.unpack(file_obj.read(target_struct.size))[0]
-                  for _x in range(count)] ##: array.fromfile(f, n)
-        return result[0] if count == 1 else result
-    def _find_version(file_obj, pos, offset):
-        """Look through the RT_VERSION and return VS_VERSION_INFO."""
-        def _pad(num):
-            return num if num % 4 == 0 else num + 4 - (num % 4)
-        file_obj.seek(pos + offset)
-        len_, val_len, type_ = _read(_WORD, file_obj, count=3)
-        info = u''
-        for i in range(200):
-            info += chr(_read(_WORD, file_obj))
-            if info[-1] == u'\x00': break
-        offset = _pad(file_obj.tell()) - pos
-        file_obj.seek(pos + offset)
-        if type_ == 0: # binary data
-            if info[:-1] == u'VS_VERSION_INFO':
-                file_v = _read(_WORD, file_obj, count=4, offset=8)
-                # prod_v = _read(_WORD, f, count=4) # this isn't used
-                return 0, (file_v[1], file_v[0], file_v[3], file_v[2])
-                # return 0, {'FileVersionMS': (file_v[1], file_v[0]),
-                #            'FileVersionLS': (file_v[3], file_v[2]),
-                #            'ProductVersionMS': (prod_v[1], prod_v[0]),
-                #            'ProductVersionLS': (prod_v[3], prod_v[2])}
-            offset += val_len
-        else: # text data (utf-16)
-            offset += val_len * 2
-        while offset < len_:
-            offset, result = _find_version(file_obj, pos, offset)
-            if result is not None:
-                return 0, result
-        return _pad(offset), None
-    version_pos = None
-    with open(filename, u'rb') as f:
-        f.seek(_read(_DWORD, f, offset=60))
-        section_count = _read(_WORD, f, offset=6)
-        optional_header_size = _read(_WORD, f, offset=12)
-        optional_header_pos = f.tell() + 2
-        # jump to the datatable and check the third entry
-        resources_va = _read(_DWORD, f, offset=98 + 2*8)
-        section_table_pos = optional_header_pos + optional_header_size
-        for section_num in range(section_count):
-            section_pos = section_table_pos + 40 * section_num
-            f.seek(section_pos)
-            if f.read(8).rstrip(b'\x00') != b'.rsrc':  # section name_
-                continue
-            section_va = _read(_DWORD, f, offset=4)
-            raw_data_pos = _read(_DWORD, f, offset=4)
-            section_resources_pos = raw_data_pos + resources_va - section_va
-            num_named, num_id = _read(_WORD, f, count=2, absolute=True,
-                                      offset=section_resources_pos + 12)
-            for resource_num in range(num_named + num_id):
-                resource_pos = section_resources_pos + 16 + 8 * resource_num
-                name_ = _read(_DWORD, f, offset=resource_pos, absolute=True)
-                if name_ != 16: continue # RT_VERSION
-                for i in range(3):
-                    res_offset = _read(_DWORD, f)
-                    if i < 2:
-                        res_offset &= 0x7FFFFFFF
-                    ver_dir = section_resources_pos + res_offset
-                    f.seek(ver_dir + (20 if i < 2 else 0))
-                version_va = _read(_DWORD, f)
-                version_pos = raw_data_pos + version_va - section_va
-                break
-        if version_pos is not None:
-            return _find_version(f, version_pos, 0)[1]
-        return ()
+@functools.cache
+def get_file_version(filename, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
+    ver_candidate = (0, 0, 0, 0)
+    if not _STRINGS:
+        return ver_candidate
+    # get the stringies, separated by newlines
+    hexdump = subprocess.getoutput(
+        f'"{_STRINGS}" -a -t x -e l "{filename}"').splitlines()
+    # grep for fields. When we find one, we get the next line.
+    for i, line in enumerate(hexdump):
+        if 'FileVersion' in line or 'ProductVersion' in line:
+            # strings gives us this for SSE-GOG:
+            # 20f87b6 FileVersion
+            # 20f87d0 1.6.659.0
+            # So discard the first hex part. Note that xSE uses commas and
+            # spaces for separation, so join them back together to a single
+            # string (discarding the spaces)
+            ver_candidate = _parse_version_string(
+                ' '.join(hexdump[i + 1].strip().split(' ')[1:]))
+            if ver_candidate not in __ignored:
+                return ver_candidate
+    return ver_candidate # unable to parse for some reason
 
 def fixup_taskbar_icon():
     pass # Windows only
@@ -387,10 +339,9 @@ def get_case_sensitivity_advice():
               "the '-O casefold' option can use 'chattr +F' to mark the Data "
               "folder as case-insensitive, for example. Please check if your "
               "filesystem supports this and how to enable it.") + '\n\n' +
-            _('Otherwise, you can use ciopfs, which is a FUSE layer that '
-              'needs to be setup and added to your fstab file. See its '
-              'website (https://www.brain-dump.org/projects/ciopfs/) for more '
-              'information.'))
+            _("You may use a loop device if your current filesystem does not "
+              "support casefolding or try CIOPFS/CICPOFFS (FUSE), though "
+              "those utilities are outdated and have known issues."))
 
 # API - Classes ===============================================================
 class TaskDialog(object):
@@ -400,20 +351,30 @@ class TaskDialog(object):
 
 class AppLauncher(_AppLauncher):
     def launch_app(self, exe_path, exe_args):
-        subprocess.call(['xdg-open', exe_path, '--', *exe_args])
+        kw = dict(close_fds=True, env=os.environ.copy())
+        if os.access(exe_path, mode=os.X_OK):
+            # we could run this if we tried so let's do it
+            return subprocess.Popen([exe_path.s, *exe_args], **kw)
+        # not executable, calling xdg-open to figure this out (can't pass args)
+        return subprocess.Popen([which('xdg-open'), exe_path.s], **kw)
 
-# Linux versions - disallow create
+# Linux versions
 class ExeLauncher(AppLauncher):
-    def launch_app(self, exe_path, exe_args):
-        # TODO(inf) What about non-Linux executables? Maybe run those via
-        #  protontricks in the game's prefix? Erroring out if protontricks
-        #  isn't installed, of course
+    """Win executable ending in .exe, run with wine/proton."""
+
+    def launch_app(self, exe_path: _Path, exe_args):
         self._run_exe(exe_path, exe_args)
 
-    def _run_exe(self, exe_path, exe_args):
-        raise NotImplementedError # needs balt
+    @set_cwd
+    def _run_exe(self, exe_path: _Path, exe_args: list[str]) -> subprocess.Popen:
+        if exe_path.cext == '.exe':  # win exec, run with wine/proton
+            return subprocess.Popen([_WINEPATH, exe_path.s, *exe_args],
+                                    close_fds=True, env=os.environ.copy())
+        return super().launch_app(exe_path, exe_args)
 
-class LnkLauncher(AppLauncher): pass
+class LnkLauncher(AppLauncher):
+    def allow_create(self):
+        return False  # wanting to run a windows .lnk on linux is an overkill
 
 def in_mo2_vfs() -> bool:
     return False # No native MO2 version

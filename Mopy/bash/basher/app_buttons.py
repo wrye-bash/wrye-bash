@@ -229,7 +229,7 @@ class AppButton(AppLauncher, StatusBarButton):
 class _ExeButton(ExeLauncher, AppButton):
 
     def _run_exe(self, exe_path, exe_args):
-        popen = subprocess.Popen([exe_path.s, *exe_args], close_fds=True)
+        popen = super()._run_exe(exe_path, exe_args)
         if self.wait:
             with balt.Progress(_('Waiting for %(other_process)s...') % {
                     'other_process': exe_path.stail}) as progress:
@@ -427,22 +427,12 @@ class AppLOOT(_AAppLOManager):
         bt_links.append_link(_Mods_LOOTAutoSort())
         return super()._init_menu(bt_links)
 
-    # Run LOOT on linux - if we get more launchers like this we'll need a class
     def sb_click(self):
         curr_args = [f'--game={bush.game.loot_game_name}']
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
         self.extraArgs = tuple(curr_args)
         super().sb_click()
-
-    def allow_create(self): # runs on linux too
-        return self._display_launcher
-
-    @classmethod
-    def find_launcher(cls, *args, **kwargs):
-        if bolt.os_name == 'nt':
-            return super().find_launcher(*args, **kwargs)
-        return (p := GPath('/opt/loot/LOOT')), p.exists()
 
 #------------------------------------------------------------------------------
 class GameButton(_ExeButton):

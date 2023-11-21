@@ -39,6 +39,7 @@ from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
+from subprocess import Popen
 from uuid import UUID
 
 try:
@@ -53,7 +54,7 @@ from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
     _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests, \
-    _AppLauncher, set_cwd
+    _AppLauncher, set_cwd, _parse_version_string
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
 from ..bolt import GPath as _GPath, top_level_files, undefinedPath
@@ -269,14 +270,6 @@ def _query_string_field_version(file_name, version_prefix):
     ver_query = f'\\StringFileInfo\\{lang:04X}{codepage:04X}\\{version_prefix}'
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
     return _parse_version_string(full_ver)
-
-def _parse_version_string(full_ver):
-    # xSE uses commas in its version fields, so use this 'heuristic'
-    split_on = u',' if u',' in full_ver else u'.'
-    try:
-        return tuple([int(part) for part in full_ver.split(split_on)])
-    except ValueError:
-        return 0, 0, 0, 0
 
 def _query_fixed_field_version(file_name, version_prefix):
     """
@@ -1132,6 +1125,7 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
         init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
+@functools.cache
 def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
     """Return the version of a dll/exe, using the native win32 functions
     if available and otherwise a pure python implementation that works
@@ -1648,9 +1642,6 @@ class TaskDialog(object):
 # END TASKDIALOG PART =========================================================
 class AppLauncher(_AppLauncher):
 
-    def allow_create(self): # if self.exePath does not exist this must be False
-        return self._display_launcher
-
     def launch_app(self, exe_path, exe_args):
         args = shlex.join(exe_args)
         try:
@@ -1678,8 +1669,8 @@ class ExeLauncher(AppLauncher):
             os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
                          exe_path.head.s, 1)
 
-    def _run_exe(self, exe_path, exe_args):
-        raise NotImplementedError # needs balt
+    def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
+        return Popen([exe_path.s, *exe_args], close_fds=True)
 
 class LnkLauncher(AppLauncher):
 
