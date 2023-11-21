@@ -28,6 +28,7 @@ import copy
 import io
 import os
 import re
+import shutil
 import sys
 import time
 from collections import defaultdict
@@ -45,7 +46,8 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict
+    forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict, \
+    copy_or_reflink2
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -2029,9 +2031,15 @@ class InstallersData(DataStore):
 
     def copy_installer(self, src_inst, destName):
         """Copies archive to new location."""
-        src_inst.abs_path.copyTo(self.store_dir.join(destName))
+        dest_path = self.store_dir.join(destName)
+        if proj := src_inst.is_project:
+            # does not preserve mtimes so next do_update will return True?
+            shutil.copytree(src_inst.abs_path.s, dest_path.s,
+                            copy_function=copy_or_reflink2)
+        else:
+            src_inst.abs_path.copyTo(dest_path)
         clone = self.new_info(destName,
-            is_proj=src_inst.is_project, install_order=src_inst.order + 1,
+            is_proj=proj, install_order=src_inst.order + 1,
             do_refresh=False, # we only need to call refresh_n()
             load_cache=False) # don't load from disc - copy all attributes over
         atts = (*Installer.persistent, *Installer.volatile) # drop fn_key

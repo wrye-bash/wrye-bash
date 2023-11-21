@@ -1205,23 +1205,19 @@ class Path(os.PathLike):
                 os.startfile(self._s)
             else: ##: TTT linux - WIP move this switch to env launch_file
                 subprocess.call(['xdg-open', f'{self._s}'])
-    def copyTo(self,destName):
-        """Copy self to destName, make dirs if necessary and preserve ftime."""
-        destName = GPath(destName)
+    def copyTo(self, dest_path, set_time=None):
+        """Copy self to dest_path make dirs if necessary and preserve ftime."""
+        dest_path = GPath(dest_path)
         if self.is_dir():
-            ##: Does not preserve mtimes - is that a problem?
-            shutil.copytree(self._s, destName._s,
-                copy_function=copy_or_reflink2)
-            return
+            raise exception.StateError(f'{self._s} is a directory.')
         try:
-            copy_or_reflink(self._s, destName._s)
-            destName.mtime = self.mtime
+            copy_or_reflink(self._s, dest_path._s)
+            dest_path.mtime = set_time or self.mtime
         except FileNotFoundError:
-            if not (dest_par := destName.shead) or os.path.exists(dest_par):
+            if not (dest_par := dest_path.shead) or os.path.exists(dest_par):
                 raise
             os.makedirs(dest_par)
-            copy_or_reflink(self._s, destName._s)
-            destName.mtime = self.mtime
+            self.copyTo(dest_path, set_time)
     def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
             raise exception.StateError(f'{self._s} cannot be moved because it '

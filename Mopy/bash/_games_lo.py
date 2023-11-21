@@ -239,10 +239,10 @@ class LoGame(object):
                               "must_be_active_if_present!")
 
     def _plugins_txt_modified(self):
-        exists = self.plugins_txt_path.exists()
+        exists = (pl_path := self.plugins_txt_path).exists()
         if not exists and self.mtime_plugins_txt: return True # deleted !
         return exists and ((self.size_plugins_txt, self.mtime_plugins_txt) !=
-                           self.plugins_txt_path.size_mtime())
+                           pl_path.size_mtime())
 
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
@@ -384,15 +384,13 @@ class LoGame(object):
         # If this game has no plugins.txt, don't try to swap it
         if not self.__class__.has_plugins_txt: return False
         # Save plugins.txt inside the old (saves) directory
-        if self.plugins_txt_path.exists():
-            self.plugins_txt_path.copyTo(_resolve_case_ambiguity(old_dir.join(
-                self.plugins_txt_path.stail)))
+        if (pl_path := self.plugins_txt_path).exists():
+            pl_path.copyTo(_resolve_case_ambiguity(
+                old_dir.join(pl_path.stail)))
         # Move the new plugins.txt here for use
-        move = _resolve_case_ambiguity(new_dir.join(
-            self.plugins_txt_path.stail))
-        if move.exists():
-            move.copyTo(self.plugins_txt_path)
-            self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
+        move = _resolve_case_ambiguity(new_dir.join(pl_path.stail))
+        if move.exists(): # copy will not change mtime, bad
+            move.copyTo(pl_path, set_time=time.time())
             return True
         return False
 
@@ -998,9 +996,8 @@ class TextfileGame(_CleanPlugins):
         # Move the new loadorder.txt here for use
         move = _resolve_case_ambiguity(new_dir.join(
             self.loadorder_txt_path.stail))
-        if move.exists():
-            move.copyTo(self.loadorder_txt_path)
-            self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
+        if move.exists(): # update mtime to trigger refresh
+            move.copyTo(self.loadorder_txt_path, set_time=time.time())
             return True
         return False
 
@@ -1022,8 +1019,8 @@ class TextfileGame(_CleanPlugins):
         try:
             self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
         except OSError:
-            bolt.deprint(f'Tried to back up {self.loadorder_txt_path},'
-                         f' but it did not exist')
+            bolt.deprint(f'Tried to back up {self.loadorder_txt_path}, '
+                         f'but it did not exist')
 
     def _fetch_load_order(self, cached_load_order,
             cached_active: tuple[FName] | list[FName]):
