@@ -1657,8 +1657,7 @@ class TableFileInfos(DataStore):
                             traceback=True)
                     self.pop(new, None)
             rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, None, check_existence=False,
-                            _in_refresh=True)
+        self.delete_refresh(rdata.to_del, None, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
@@ -1697,8 +1696,7 @@ class TableFileInfos(DataStore):
         dir and a set of deleted keys."""
         raise NotImplementedError
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
         """Special case for the saves, inis, mods and bsas.
         :param deleted_keys: must be the data store keys and not full paths
         :param paths_to_keys: a dict mapping full paths to the keys
@@ -2062,11 +2060,10 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
         deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
                                               check_existence)
-        if not _in_refresh: # re-add default tweaks
+        if check_existence: # DataStore.delete() path - re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
                 default_info.reset_status()
@@ -3214,16 +3211,16 @@ class ModInfos(FileInfos):
         return old_key
 
     #--Delete
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
         # adapted from refresh() (avoid refreshing from the data directory)
         deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
                                               check_existence)
         # we need to call deactivate to deactivate dependents
-        self.lo_deactivate(deleted_keys)
-        if not deleted_keys or _in_refresh: return
-        self._lo_caches_remove_mods(deleted_keys)
-        self.cached_lo_save_all() # will perform the needed refreshes
+        self.lo_deactivate(deleted_keys) # no-op if empty
+        if deleted_keys and check_existence: # delete() path - refresh caches
+            self._lo_caches_remove_mods(deleted_keys)
+            self.cached_lo_save_all() # will perform the needed refreshes
+        return deleted_keys
 
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
