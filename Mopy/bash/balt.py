@@ -1426,7 +1426,7 @@ class UIList(PanelWin):
                 self.data_store.move_info(fnkey, destDir)
                 hidden_.append(fnkey)
         #--Refresh stuff
-        self.data_store.delete_refresh(hidden_, None, check_existence=True)
+        self.data_store.delete_refresh(hidden_, check_existence=True)
 
     @staticmethod
     def _unhide_wildcard(): raise NotImplementedError

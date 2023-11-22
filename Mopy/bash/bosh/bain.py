@@ -2005,24 +2005,20 @@ class InstallersData(DataStore):
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):
         toDelete = []
-        markers = []
-        for k, inst in self.filter_essential(filenames).items():
-            if inst.is_marker: markers.append(k)
-            else: toDelete.append(inst.abs_path)
+        markers = [k for k, inst in self.filter_essential(filenames).items() if
+                   inst.is_marker or toDelete.append(inst.abs_path)] # or None
         return toDelete, markers
 
     def _delete_operation(self, paths, markers, *, recycle=True):
         for m in markers: del self[m]
         super()._delete_operation(paths, markers, recycle=recycle)
 
-    def delete_refresh(self, del_paths, markers, check_existence):
-        if any(isinstance(p, FName) for p in del_paths): # UIList.hide path
-            del_paths = [self.store_dir.join(p) for p in del_paths]
-        del_paths = {FName(item.stail) for item in del_paths
-                     if not check_existence or not item.exists()}
+    def delete_refresh(self, del_paths, check_existence, markers):
+        if check_existence:
+            del_paths = {i for i in del_paths if not self[i].abs_path.exists()}
         if del_paths:
             self.irefresh(what='I', deleted=del_paths)
-        elif markers:
+        elif markers: # markers are popped in _delete_operation
             self.refreshOrder()
 
     def filter_essential(self, fn_items: Iterable[FName]):
@@ -2921,7 +2917,7 @@ class InstallersData(DataStore):
                     deprint(f'Clean Data: moving {full_path} to {destDir} '
                             f'failed', traceback=True)
             for store, del_keys in store_del.items():
-                store.delete_refresh(del_keys, None, check_existence=False)
+                store.delete_refresh(del_keys, check_existence=False)
                 refresh_ui |= store.unique_store_key.DO()
             for emptyDir in emptyDirs:
                 if emptyDir.is_dir() and not [*emptyDir.ilist()]:

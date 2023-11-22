@@ -1531,8 +1531,9 @@ class DataStore(DataDict):
             self._delete_operation(full_delete_paths, delete_info,
                 recycle=recycle)
         finally:
-            self.delete_refresh(full_delete_paths, delete_info,
-                check_existence=True)
+            if delete_info: # Installers - remove markers from keys
+                delete_keys = {k for k in delete_keys if k not in delete_info}
+            self.delete_refresh(delete_keys, True, delete_info)
 
     def files_to_delete(self, filenames, **kwargs):
         raise NotImplementedError
@@ -1545,7 +1546,7 @@ class DataStore(DataDict):
         determine whether a file will cause instability when deleted/hidden."""
         return {k: self.get(k) for k in fn_items}
 
-    def delete_refresh(self, del_paths, deleted2, check_existence):
+    def delete_refresh(self, del_paths, check_existence, extra_del_data=None):
         raise NotImplementedError
 
     def refresh(self): raise NotImplementedError
@@ -1647,7 +1648,7 @@ class _AFileInfos(DataStore):
                             traceback=True)
                     self.pop(new, None)
             rdata.to_del = del_infos
-        self.delete_refresh(rdata.to_del, None, check_existence=False)
+        self.delete_refresh(rdata.to_del, check_existence=False)
         if rdata.redraw:
             self._notify_bain(altered={self[n].abs_path for n in rdata.redraw})
         return rdata
@@ -1686,14 +1687,12 @@ class _AFileInfos(DataStore):
         dir and a set of deleted keys."""
         raise NotImplementedError
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
+    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
         """Special case for the saves, inis, mods and bsas.
         :param deleted_keys: must be the data store keys and not full paths
-        :param paths_to_keys: a dict mapping full paths to the keys
-        """
+        :param extra_del_data: unused"""
         #--Table
-        if paths_to_keys is None:  # we passed the keys in, get the paths
-            paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
+        paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
         if check_existence:
             for filePath in list(paths_to_keys):
                 if filePath.exists():
@@ -1760,25 +1759,16 @@ class TableFileInfos(_AFileInfos):
 
     #--Delete
     def files_to_delete(self, fileNames, **kwargs):
-        abs_delete_paths = []
-        #--Cache table updates
-        tableUpdate = {}
-        #--Go through each file
-        for fileName, fileInfo in self.filter_essential(fileNames).items():
-            if fileInfo is None: # corrupted, delete might be called from BAIN
-                # factory is called with load_cache=False
-                fileInfo = self.factory(self.store_dir.join(fileName))
-            #--File
-            filePath = fileInfo.abs_path
-            abs_delete_paths.extend((filePath,
-                                     *self._additional_deletes(fileInfo)))
-            #--Table
-            tableUpdate[filePath] = fileName
-        return abs_delete_paths, tableUpdate
+        finfos = (v or self.factory(self.store_dir.join(k)) for k, v in
+                  self.filter_essential(fileNames).items())
+        abs_delete_paths = [*chain.from_iterable(
+            (fileInfo.abs_path, *self._additional_deletes(fileInfo)) for
+            fileInfo in finfos)]
+        return abs_delete_paths, None # no extra delete info
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
-        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
-                                              check_existence)
+    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
+        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
+                                              extra_del_data)
         for del_fn in deleted_keys:
             self.table.pop(del_fn, None)
         return deleted_keys
@@ -2073,9 +2063,9 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs[u'modsBash'].join(u'INI Data')
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
-        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
-                                              check_existence)
+    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
+        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
+                                              extra_del_data)
         if check_existence: # DataStore.delete() path - re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo
@@ -3224,10 +3214,10 @@ class ModInfos(FileInfos):
         return old_key
 
     #--Delete
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
+    def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
-                                              check_existence)
+        deleted_keys = super().delete_refresh(deleted_keys, check_existence,
+                                              extra_del_data)
         # we need to call deactivate to deactivate dependents
         self.lo_deactivate(deleted_keys) # no-op if empty
         if deleted_keys and check_existence: # delete() path - refresh caches
