@@ -1599,36 +1599,26 @@ class RefrData:
     def __bool__(self):
         return bool(self.to_add or self.to_del or self.redraw)
 
-class TableFileInfos(DataStore):
+class _AFileInfos(DataStore):
+    """File data stores - all of them except InstallersData."""
     _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
     _rdata_type = RefrData
     factory: type[AFile]
-
-    def _initDB(self, dir_):
-        self.store_dir = dir_ #--Path
-        deprint(f'Initializing {self.__class__.__name__}')
-        deprint(f' store_dir: {self.store_dir}')
-        deprint(f' bash_dir: {self.bash_dir}')
-        self.store_dir.makedirs()
-        self.bash_dir.makedirs() # self.store_dir may need be set
-        # the type of the table keys is always bolt.FName
-        self.table = bolt.DataTable(
-            bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
-        ##: fix nightly regression storing 'installer' property as FName
-        inst_column = self.table.getColumn('installer')
-        for fn_key, val in inst_column.items():
-            if type(val) is not str:
-                deprint(f'stored installer for {fn_key} is {val!r}')
-                inst_column[fn_key] = str(val)
-        self._data = FNDict()
-        return self._data
 
     def __init__(self, dir_, factory):
         """Init with specified directory and specified factory type."""
         self.corrupted: FNDict[FName, _Corrupted] = FNDict()
         super().__init__(self._initDB(dir_))
         self.factory = factory
+
+    def _initDB(self, dir_):
+        self.store_dir = dir_ #--Path
+        deprint(f'Initializing {self.__class__.__name__}')
+        deprint(f' store_dir: {self.store_dir}')
+        self.store_dir.makedirs()
+        self._data = FNDict()
+        return self._data
 
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
@@ -1713,8 +1703,14 @@ class TableFileInfos(DataStore):
         for del_fn in deleted_keys:
             self.pop(del_fn, None)
             self.corrupted.pop(del_fn, None)
-            self.table.pop(del_fn, None)
         return deleted_keys
+
+    def _notify_bain(self, del_set: set[Path] = frozenset(),
+        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
+        """Note that all of these parameters need to be absolute paths!"""
+        if self._bain_notify:
+            InstallersData.notify_external(del_set=del_set, altered=altered,
+                                           renamed=renamed)
 
     #--Right File Type?
     @classmethod
@@ -1734,6 +1730,34 @@ class TableFileInfos(DataStore):
         return fnkey if os.path.basename(data_path) == data_path and \
             self.rightFileType(fnkey) else None
 
+    def rename_operation(self, member_info, newName):
+        # Override to allow us to notify BAIN if necessary
+        ##: This is *very* inelegant/inefficient, we calculate these paths
+        # twice (once here and once in super)
+        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
+        res = super().rename_operation(member_info, newName)
+        #--FileInfo
+        member_info.abs_path = self.store_dir.join(newName)
+        return res
+
+class TableFileInfos(_AFileInfos):
+
+    def _initDB(self, dir_):
+        """Load pickled data for mods, saves, inis and bsas."""
+        db = super()._initDB(dir_)
+        deprint(f' bash_dir: {self.bash_dir}')
+        self.bash_dir.makedirs() # self.store_dir may need be set
+        # the type of the table keys is always bolt.FName
+        self.table = bolt.DataTable(
+            bolt.PickleDict(self.bash_dir.join('Table.dat')))
+        ##: fix nightly regression storing 'installer' property as FName
+        inst_column = self.table.getColumn('installer')
+        for fn_key, val in inst_column.items():
+            if type(val) is not str:
+                deprint(f'stored installer for {fn_key} is {val!r}')
+                inst_column[fn_key] = str(val)
+        return db
+
     #--Delete
     def files_to_delete(self, fileNames, **kwargs):
         abs_delete_paths = []
@@ -1752,12 +1776,12 @@ class TableFileInfos(DataStore):
             tableUpdate[filePath] = fileName
         return abs_delete_paths, tableUpdate
 
-    def _notify_bain(self, del_set: set[Path] = frozenset(),
-        altered: set[Path] = frozenset(), renamed: dict[Path, Path] = {}):
-        """Note that all of these parameters need to be absolute paths!"""
-        if self._bain_notify:
-            InstallersData.notify_external(del_set=del_set, altered=altered,
-                                           renamed=renamed)
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence):
+        deleted_keys = super().delete_refresh(deleted_keys, paths_to_keys,
+                                              check_existence)
+        for del_fn in deleted_keys:
+            self.table.pop(del_fn, None)
+        return deleted_keys
 
     def _additional_deletes(self, fileInfo): return ()
 
@@ -1767,12 +1791,15 @@ class TableFileInfos(DataStore):
             del self.table[del_key]
         self.table.save()
 
+    #--Rename
     def rename_operation(self, member_info, newName):
-        # Override to allow us to notify BAIN if necessary
-        ##: This is *very* inelegant/inefficient, we calculate these paths
-        # twice (once here and once in super)
-        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
-        return super(TableFileInfos, self).rename_operation(member_info, newName)
+        """Renames member file from oldName to newName."""
+        #--Update references
+        #--File system
+        old_key = super().rename_operation(member_info, newName)
+        self.table.moveRow(old_key, newName)
+        # self[newName]._mark_unchanged() # not needed with shellMove !
+        return old_key
 
     #--Copy
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
@@ -1834,18 +1861,6 @@ class FileInfos(TableFileInfos):
     def _additional_deletes(self, fileInfo):
         #--Backups
         return fileInfo.all_backup_paths()  # will include cosave ones
-
-    #--Rename
-    def rename_operation(self, member_info, newName):
-        """Renames member file from oldName to newName."""
-        #--Update references
-        #--File system
-        old_key = super(FileInfos, self).rename_operation(member_info, newName)
-        #--FileInfo
-        member_info.abs_path = self.store_dir.join(newName)
-        self.table.moveRow(old_key, newName)
-        # self[newName]._mark_unchanged() # not needed with shellMove !
-        return old_key
 
     #--Move
     def move_info(self, fileName, destDir):
