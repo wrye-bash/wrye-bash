@@ -1732,6 +1732,17 @@ class ListInfo:
         return (_('Bad extension or file root (%(ext_or_root)s).') % {
             'ext_or_root': name_str}), None
 
+    def validate_name(self, name_str, check_store=True):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(
+                self.fn_key.fn_ext.lower()):
+            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
+                    '%(expected_ext)s).') % {
+                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return msg, None
+        return self.__class__.validate_filename_str(name_str)
+
     @classmethod
     def _name_re(cls, allowed_exts):
         exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
@@ -1775,11 +1786,6 @@ class ListInfo:
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
     # Instance methods --------------------------------------------------------
-    def get_rename_paths(self, newName):
-        """Return possible paths this file's renaming might affect (possibly
-        omitting some that do not exist)."""
-        return [(self.abs_path, self.get_store().store_dir.join(newName))]
-
     def unique_key(self, new_root, ext=u'', add_copy=False):
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
@@ -1795,31 +1801,37 @@ class ListInfo:
     def set_table_prop(self, prop, val):
         return self.get_store().table.setItem(self.fn_key, prop, val)
 
-    def validate_name(self, name_str, check_store=True):
-        # disallow extension change but not if no-extension info type
-        check_ext = name_str and self.__class__._valid_exts_re
-        if check_ext and not name_str.lower().endswith(
-                self.fn_key.fn_ext.lower()):
-            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
-                    '%(expected_ext)s).') % {
-                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
-            return msg, None
-        #--Else file exists?
-        if check_store and self.info_dir.join(name_str).exists():
-            return _('File %(bad_name_str)s already exists.') % {
-                'bad_name_str': name_str}, None
-        return self.__class__.validate_filename_str(name_str)
-
-    @property
-    def info_dir(self):
-        return self.abs_path.head
-
     def __str__(self):
-        """Alias for self.ci_key."""
+        """Alias for self.fn_key."""
         return self.fn_key
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.fn_key}>'
+
+#------------------------------------------------------------------------------
+class AFileInfo(AFile, ListInfo):
+    """List Info representing a file."""
+    def __init__(self, fullpath, load_cache=False, **kwargs):
+        ListInfo.__init__(self, fullpath.stail) # ghost must be lopped off
+        super().__init__(fullpath, load_cache, **kwargs)
+
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    def validate_name(self, name_str, check_store=True):
+        super_validate = super().validate_name(name_str,
+            check_store=check_store)
+        #--Else file exists?
+        if check_store and self.info_dir.join(name_str).exists():
+            return _('File %(bad_name_str)s already exists.') % {
+                'bad_name_str': name_str}, None
+        return super_validate
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
 
 #------------------------------------------------------------------------------
 class PickleDict(object):

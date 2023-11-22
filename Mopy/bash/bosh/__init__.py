@@ -48,7 +48,7 @@ from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, DataDict, FName, FNDict, GPath, ListInfo, Path, \
     decoder, deprint, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
-    OrderedLowerDict
+    OrderedLowerDict, AFileInfo
 from ..brec import FormIdReadContext, FormIdWriteContext, RecordHeader, \
     RemapWriteContext
 from ..exception import ArgumentError, BoltError, BSAError, CancelError, \
@@ -199,16 +199,13 @@ class MasterInfo:
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
 #------------------------------------------------------------------------------
-class FileInfo(AFile, ListInfo):
+class FileInfo(AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
     def __init__(self, fullpath, load_cache=False, **kwargs):
-        ##: We GPath this three times - not slow, but very inelegant
-        g_path = GPath(fullpath)
-        ListInfo.__init__(self, g_path.stail) # ghost must be lopped off
         self.header = None
         self.masterNames: tuple[FName, ...] = ()
         self.masterOrder: tuple[FName, ...] = ()
@@ -217,7 +214,7 @@ class FileInfo(AFile, ListInfo):
         self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {}
-        super().__init__(g_path, load_cache, **kwargs)
+        super().__init__(fullpath, load_cache, **kwargs)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -292,12 +289,12 @@ class FileInfo(AFile, ListInfo):
         if self not in self.get_store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.get_store().copy_info(self.fn_key, self.backup_dir)
+        cop = self.get_store().copy_info
+        cop(self.fn_key, self.backup_dir)
         #--First backup
         firstBackup = self.backup_dir.join(self.fn_key) + 'f'
         if not firstBackup.exists():
-            self.get_store().copy_info(self.fn_key, self.backup_dir,
-                firstBackup.tail)
+            cop(self.fn_key, self.backup_dir, firstBackup.tail)
         self.madeBackup = True
 
     def backup_restore_paths(self, first=False, fname=None):
@@ -399,11 +396,11 @@ class ModInfo(FileInfo):
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
-            fullpath = fullpath.s[:-6]
+            fullpath = fullpath.root
             self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(itsa_ghost, regular_path=fullpath)
-        super(ModInfo, self).__init__(fullpath, load_cache)
+        super().__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
         dest_dir = self.get_store().hidden_dir
@@ -1491,7 +1488,7 @@ class SaveInfo(FileInfo):
         return old_new_paths
 
 #------------------------------------------------------------------------------
-class ScreenInfo(FileInfo):
+class ScreenInfo(AFileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
     _valid_exts_re = r'(\.(?:' + '|'.join(
@@ -1499,8 +1496,8 @@ class ScreenInfo(FileInfo):
     _has_digits = True
 
     def __init__(self, fullpath, load_cache=False, **kwargs):
-        self.cached_bitmap = None
         super().__init__(fullpath, load_cache, **kwargs)
+        self.cached_bitmap = None
 
     def _reset_cache(self, stat_tuple, **kwargs):
         self.cached_bitmap = None # Lazily reloaded
@@ -1536,7 +1533,9 @@ class DataStore(DataDict):
             self.delete_refresh(delete_keys, True, delete_info)
 
     def files_to_delete(self, filenames, **kwargs):
-        raise NotImplementedError
+        abs_delete_paths = (fileInfo.abs_path for fileInfo in
+                            self.filter_essential(filenames).values())
+        return abs_delete_paths, None # no extra delete info
 
     def _delete_operation(self, paths, delete_info, *, recycle=True):
         env.shellDelete(paths, recycle=recycle)
@@ -1621,6 +1620,7 @@ class _AFileInfos(DataStore):
         self._data = FNDict()
         return self._data
 
+    #--Refresh
     def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
         rdata = self._rdata_type()
@@ -1685,7 +1685,15 @@ class _AFileInfos(DataStore):
         dict[FName, tuple[AFile | None, dict]], set[FName]]:
         """Return a dict of fn keys (see overrides) of files present in data
         dir and a set of deleted keys."""
-        raise NotImplementedError
+        # for modInfos '.ghost' must have been lopped off from inode keys
+        oldNames = set(self) | set(self.corrupted)
+        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()
+            if k in self or not (cor := self.corrupted.get(k)) # present or new
+            # corrupted that has been updated on disk - if cor.abs_path
+            # changed ghost state (effectivelly deleted) do_update returns True
+            or cor.do_update()} # ghost state can only change manually - don't!
+        del_infos = oldNames - inodes.keys()
+        return new_or_present, del_infos
 
     def delete_refresh(self, deleted_keys, check_existence, extra_del_data=None):
         """Special case for the saves, inis, mods and bsas.
@@ -1697,7 +1705,7 @@ class _AFileInfos(DataStore):
             for filePath in list(paths_to_keys):
                 if filePath.exists():
                     del paths_to_keys[filePath]  # item was not deleted
-        self._notify_bain(del_set=paths_to_keys)
+        self._notify_bain(del_set={*paths_to_keys})
         deleted_keys = list(paths_to_keys.values())
         for del_fn in deleted_keys:
             self.pop(del_fn, None)
@@ -1738,6 +1746,39 @@ class _AFileInfos(DataStore):
         #--FileInfo
         member_info.abs_path = self.store_dir.join(newName)
         return res
+
+    #--Copy
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
+                  save_lo_cache=False):
+        """Copies member file to destDir. Will overwrite! Will update
+        internal self._data for the file if copied inside self.store_dir but the
+        client is responsible for calling the final refresh of the data store.
+        See usages.
+
+        :param save_lo_cache: ModInfos only save the mod infos load order cache
+        :param set_mtime: if None self[fileName].ftime is copied to destination
+        """
+        destDir.makedirs()
+        if not destName: destName = fileName
+        src_info = self[fileName]
+        if destDir == self.store_dir and destName in self:
+            destPath = self[destName].abs_path
+        else:
+            destPath = destDir.join(destName)
+        self._do_copy(src_info, destPath)
+        if destDir == self.store_dir:
+            self._add_info(destDir, destName, set_mtime, fileName,
+                           save_lo_cache)
+
+    def _add_info(self, destDir, destName, set_mtime, fileNam, save_lo_cache):
+        # TODO(ut) : in duplicate pass the info in and load_cache=False
+        return self.new_info(destName, notify_bain=True)
+
+    def _do_copy(self, cp_file_info, cp_dest_path):
+        """Performs the actual copy operation, copying the file represented by
+        the specified FileInfo to the specified destination path."""
+        # Will set the destination's mtime to the source's mtime
+        cp_file_info.abs_path.copyTo(cp_dest_path)
 
 class TableFileInfos(_AFileInfos):
 
@@ -1791,38 +1832,10 @@ class TableFileInfos(_AFileInfos):
         # self[newName]._mark_unchanged() # not needed with shellMove !
         return old_key
 
-    #--Copy
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies member file to destDir. Will overwrite! Will update
-        internal self.data for the file if copied inside self.info_dir but the
-        client is responsible for calling the final refresh of the data store.
-        See usages.
-
-        :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].ftime is copied to destination
-        """
-        destDir.makedirs()
-        if not destName: destName = fileName
-        src_info = self[fileName]
-        if destDir == self.store_dir and destName in self:
-            destPath = self[destName].abs_path
-        else:
-            destPath = destDir.join(destName)
-        self._do_copy(src_info, destPath)
-        if destDir == self.store_dir:
-            # TODO(ut) : pass the info in and load_cache=False
-            self.new_info(destName, notify_bain=True)
-            self.table.copyRow(fileName, destName)
-            if set_mtime is not None:
-                self[destName].setmtime(set_mtime) # correctly update table
-        return set_mtime
-
-    def _do_copy(self, cp_file_info, cp_dest_path):
-        """Performs the actual copy operation, copying the file represented by
-        the specified FileInfo to the specified destination path."""
-        # Will set the destination's mtime to the source's mtime
-        cp_file_info.abs_path.copyTo(cp_dest_path)
+    def _add_info(self, destDir, destName, set_mtime, fileName, save_lo_cache):
+        self.table.copyRow(fileName, destName) ##: YAK table
+        return super()._add_info(destDir, destName, set_mtime, fileName,
+                                 save_lo_cache)
 
 class _Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -1835,18 +1848,6 @@ class _Corrupted(AFile):
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
-
-    #--Refresh
-    def _diff_dir(self, inodes):
-        # for modInfos '.ghost' must have been lopped off from inode keys
-        oldNames = set(self) | set(self.corrupted)
-        new_or_present = {k: (self.get(k), kws) for k, kws in inodes.items()
-            if k in self or not (cor := self.corrupted.get(k)) # present or new
-            # corrupted that has been updated on disk - if cor.abs_path
-            # changed ghost state (effectivelly deleted) do_update returns True
-            or cor.do_update()} # ghost state can only change manually - don't!
-        del_infos = oldNames - inodes.keys()
-        return new_or_present, del_infos
 
     def _additional_deletes(self, fileInfo):
         #--Backups
@@ -3249,12 +3250,12 @@ class ModInfos(FileInfos):
         bash_frame.warn_corrupted(warn_mods=True, warn_strings=True)
         return moved
 
-    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
-                  save_lo_cache=False):
-        """Copies modfile and optionally inserts into load order cache."""
-        super(ModInfos, self).copy_info(fileName, destDir, destName, set_mtime)
-        if self.store_dir == destDir:
-            self.cached_lo_insert_after(fileName, destName)
+    def _add_info(self, destDir, destName, set_mtime, fileName,
+                  save_lo_cache=None):
+        inf = super()._add_info(destDir, destName, set_mtime, fileName, save_lo_cache)
+        if set_mtime is not None:
+            inf.setmtime(set_mtime) # correctly update table
+        self.cached_lo_insert_after(fileName, destName)
         if save_lo_cache: self.cached_lo_save_lo()
 
     #--Mod info/modify --------------------------------------------------------
@@ -3509,7 +3510,7 @@ class SaveInfos(FileInfos):
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None,
                   save_lo_cache=False):
         """Copies savefile and associated cosaves file(s)."""
-        super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
+        super().copy_info(fileName, destDir, destName, set_mtime)
         self._co_copy_or_move(self[fileName].abs_path,
             destDir.join(destName or fileName))
 
@@ -3656,7 +3657,7 @@ class BSAInfos(FileInfos):
         dirs[u'app'].join(u'ArchiveInvalidation.txt').remove()
 
 #------------------------------------------------------------------------------
-class ScreenInfos(FileInfos):
+class ScreenInfos(_AFileInfos):
     """Collection of screenshots. This is the backend of the Screenshots
     tab."""
     # Files that go in the main game folder (aka default screenshots folder)

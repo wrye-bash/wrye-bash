@@ -46,8 +46,8 @@ from ..archives import compress7z, defaultExt, extract7z, list_archive, \
 from ..bass import Store
 from ..bolt import AFile, CIstr, FName, GPath_no_norm, ListInfo, Path, \
     SubProgress, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, round_size, top_level_items, DefaultFNDict, \
-    copy_or_reflink2
+    forward_compat_path_to_fn_list, round_size, top_level_items, \
+    DefaultFNDict, copy_or_reflink2, AFileInfo
 from ..exception import ArgumentError, BSAError, CancelError, FileError, \
     InstallerArchiveError, SkipError, StateError
 from ..ini_files import OBSEIniFile, supported_ini_exts
@@ -249,7 +249,7 @@ class Installer(ListInfo):
     #--Initialization, etc ----------------------------------------------------
     def __init__(self, fn_key, **kwargs):
         self.initDefault()
-        super().__init__(f'{fn_key}')
+        ListInfo.__init__(self, f'{fn_key}')
 
     def initDefault(self):
         """Initialize everything to default values."""
@@ -1172,7 +1172,7 @@ class Installer(ListInfo):
             compress7z(outDir.join(fn_archive), outDir.join(project), progress,
                        is_solid=isSolid, temp_list=tl, blockSize=blockSize)
 
-class _InstallerPackage(Installer, AFile):
+class _InstallerPackage(Installer, AFileInfo):
     """Installer that corresponds to a file system node (archive or folder)."""
 
     def __init__(self, fn_key, progress=None, load_cache=False):
