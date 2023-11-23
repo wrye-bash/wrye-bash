@@ -1706,7 +1706,7 @@ class InstallerProject(_InstallerPackage):
     @property
     def _null_stat(self): return bolt.LowerDict(), -1, 0.0
 
-    def _stat_tuple(self):
+    def _stat_tuple(self, cached_stat=None):
         """Return the total project size, the max modification time of the
         files/folders and a dict that maps relative (to the project root) paths
         to size/apath/mtime. The latter should suffice to detect changes but
