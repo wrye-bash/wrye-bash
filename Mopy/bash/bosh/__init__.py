@@ -48,7 +48,7 @@ from .. import archives, bass, bolt, bush, env, initialization, load_order
 from ..bass import dirs, inisettings, Store
 from ..bolt import AFile, AFileInfo, DataDict, FName, FNDict, GPath, \
     ListInfo, Path, deprint, dict_sort, forward_compat_path_to_fn, \
-    forward_compat_path_to_fn_list, os_name, struct_error, top_level_files, \
+    forward_compat_path_to_fn_list, os_name, struct_error, \
     OrderedLowerDict, attrgetter_cache
 from ..brec import FormIdReadContext, FormIdWriteContext, ModReader, \
     RecordHeader, RemapWriteContext, unpack_header
@@ -258,7 +258,9 @@ class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
-    def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
+    def _stat_tuple(self, cached_stat=None):
+        return self.abs_path.size_mtime_ctime() if cached_stat is None else (
+            cached_stat.st_size, cached_stat.st_mtime, cached_stat.st_ctime)
 
     def __init__(self, fullpath, load_cache=False, **kwargs):
         self.header = None
@@ -1652,9 +1654,9 @@ class _AFileInfos(DataStore):
 
     def _list_store_dir(self): # performance intensive
         file_matches_store = self.rightFileType
-        inodes = top_level_files(self.store_dir)
-        inodes = {x for x in inodes if file_matches_store(x)}
-        return self._diff_dir(FNDict(((x, {}) for x in inodes)))
+        inodes = FNDict((n, {'cached_stat': x.stat()}) for x in os.scandir(
+            self.store_dir) if x.is_file() and file_matches_store(n := x.name))
+        return self._diff_dir(inodes)
 
     def _diff_dir(self, inodes) -> tuple[ # ugh - when dust settles use 3.12
         dict[FName, tuple[AFile | None, dict]], set[ListInfo]]:
