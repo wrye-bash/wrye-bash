@@ -495,8 +495,8 @@ class ABsa(AFile):
     _folder_type = BSAFolder
     bsa_folders: defaultdict[str, _folder_type]
 
-    def __init__(self, fullpath, load_cache=False, names_only=True):
-        super().__init__(fullpath)
+    def __init__(self, fullpath, load_cache=False, names_only=True, **kwargs):
+        super().__init__(fullpath, load_cache=False, **kwargs)
         self.bsa_name = self.abs_path.stail
         self.bsa_header = typing.get_type_hints(self.__class__)['bsa_header']()
         self.bsa_folders = defaultdict(self._folder_type) # keep folder order
