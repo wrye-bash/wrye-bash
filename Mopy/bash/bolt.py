@@ -433,10 +433,10 @@ class fast_cached_property:
         self._wrapped_func = wrapped_func
         self._wrapped_attr = None # set later
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner_, name):
         self._wrapped_attr = name
 
-    def __get__(self, instance, owner=None):
+    def __get__(self, instance, owner_=None):
         try:
             wrapped_val = instance.__dict__[self._wrapped_attr]
         except KeyError:
@@ -450,8 +450,8 @@ class classproperty:
     def __init__(self, fget):
         self.fget = fget
 
-    def __get__(self, obj, owner):
-        return self.fget(owner)
+    def __get__(self, obj, owner_):
+        return self.fget(owner_)
 
 # JSON parsing ----------------------------------------------------------------
 class JsonParsable:

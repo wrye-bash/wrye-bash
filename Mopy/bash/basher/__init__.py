@@ -520,21 +520,19 @@ class MasterList(_ModsUIList):
         #--Fill data and populate
         self._update_real_indices(fileInfo)
         self.is_inaccurate = fileInfo.has_inaccurate_masters
-        if isinstance(fileInfo, bosh.ModInfo):
-            can_have_sizes = bush.game.Esp.check_master_sizes
-            can_have_esl = False
-        else:
-            can_have_sizes = False
-            can_have_esl = bush.game.has_esl
+        # info attributes?
+        can_have_sizes = (is_mod := isinstance(fileInfo, bosh.ModInfo)) and \
+            bush.game.Esp.check_master_sizes
+        can_have_esl = (not is_mod) and bush.game.has_esl
         all_esl_masters = (set(fileInfo.header.masters_esl) if can_have_esl
-                           else None)
+                           else set())
         all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
                             else repeat(0))
         for mi, (ma_name, ma_size) in enumerate(
                 zip(fileInfo.masterNames, all_master_sizes)):
-            ma_esl = can_have_esl and ma_name in all_esl_masters
             self.data_store[mi] = bosh.MasterInfo(parent_minf=fileInfo,
-                master_name=ma_name, master_size=ma_size, was_esl=ma_esl)
+                master_name=ma_name, master_size=ma_size,
+                was_esl=ma_name in all_esl_masters)
         self._reList()
 
     def set_item_format(self, item_key, item_format, target_ini_setts):

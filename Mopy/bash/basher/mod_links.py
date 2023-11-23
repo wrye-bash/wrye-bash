@@ -186,9 +186,8 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
         'ck_name': bush.game.Ck.long_name,
     }
 
-    def _enable(self):
-        return super(Mod_CreateDummyMasters, self)._enable() and \
-               self._selected_info.getStatus() == 30  # Missing masters
+    def _enable(self): # enable if there are missing masters
+        return super()._enable() and self._selected_info.getStatus() == 30
 
     def Execute(self):
         """Create Dummy Masters"""
@@ -207,7 +206,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
-            to_refresh.append((master, newInfo, previous_master))
+            to_refresh.append((master, previous_master))
             previous_master = master
             newFile = ModFile(newInfo, self._load_fact()) ###
             newFile.tes4.author = u'BASHED DUMMY'
@@ -221,7 +220,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
                 newFile.tes4.flags1.esl_flag = True
             newFile.safeSave()
         to_select = []
-        for mod, info, previous in to_refresh:
+        for mod, previous in to_refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
             bosh.modInfos.new_info(mod, notify_bain=True, _in_refresh=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)

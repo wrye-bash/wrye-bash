@@ -301,18 +301,15 @@ class FileInfo(AFileInfo):
             cop(self.fn_key, self.backup_dir, firstBackup.tail)
         self.madeBackup = True
 
-    def backup_restore_paths(self, first=False, fname=None):
+    def backup_restore_paths(self, first, fname=None) -> list[tuple[Path, Path]]:
         """Return a list of tuples, mapping backup paths to their restore
         destinations. If fname is not given returns the (first) backup
         filename corresponding to self.abs_path, else the backup filename
-        for fname mapped to its restore location in data_store.store_dir
-        :rtype: list[tuple]
-        """
+        for fname mapped to its restore location in data_store.store_dir."""
         restore_path = (fname and self.get_store().store_dir.join(
             fname)) or self.abs_path
         fname = fname or self.fn_key
-        return [(self.backup_dir.join(fname) + (u'f' if first else u''),
-                 restore_path)]
+        return [(self.backup_dir.join(fname + 'f' * first), restore_path)]
 
     def all_backup_paths(self, fname=None):
         """Return the list of all possible paths a backup operation may create.
@@ -1353,7 +1350,7 @@ class SaveInfo(FileInfo):
                     abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
-    def backup_restore_paths(self, first=False, fname=None):
+    def backup_restore_paths(self, first, fname=None):
         """Return as parent and in addition back up paths for the cosaves."""
         back_to_dest = super(SaveInfo, self).backup_restore_paths(first, fname)
         # see if we have cosave backups - we must delete cosaves when restoring
@@ -1606,7 +1603,8 @@ class _AFileInfos(DataStore):
                     self.corrupted[new] = cor = Corrupted(cor_path, er, **kws)
                     deprint(f'Failed to load {new} from {cor.abs_path}: {er}',
                             traceback=True)
-                    self.pop(new, None)
+                    if new := self.pop(new, None): # effectively deleted
+                        del_infos.add(new)
             rdata.to_del = {d.fn_key for d in del_infos}
         self.delete_refresh(del_infos, check_existence=False)
         if rdata.redraw:

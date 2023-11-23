@@ -409,7 +409,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
                     # the User what tweaks to apply manually.
-                    manuallyApply.append((outFile, iniFile))
+                    manuallyApply.append((outFile.stail, iniFile))
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
             if INIList.apply_tweaks((bosh.iniInfos[outFile.stail],),
@@ -423,15 +423,13 @@ class Installer_Wizard(_Installer_AWizardLink):
                     target_path.stail, reset_choices=target_updated)
                 ini_uilist.panel.ShowPanel(focus_list=False,
                                            detail_item=lastApplied)
-            ui_refresh[Store.INIS] = False
-        if len(manuallyApply) > 0:
-            message = _('The following INI Tweaks were not automatically '
-                        'applied. Be sure to apply them after installing the '
-                        'package.')
-            message += u'\n\n'
-            message += u'\n'.join([u' * %s\n   TO: %s' % (x[0].stail, x[1])
-                                   for x in manuallyApply])
-            self._showInfo(message)
+            ui_refresh[Store.INIS] = False # None or we refreshed in ShowPanel
+        if manuallyApply:
+            message = [_('The following INI Tweaks were not automatically '
+                         'applied. Be sure to apply them after installing the '
+                         'package.'), '', '']
+            message.extend(f' * {x}\n   TO: {y}' for x, y in manuallyApply)
+            self._showInfo('\n'.join(message))
 
 class Installer_OpenReadme(_SingleInstallable):
     """Opens the installer's readme if BAIN can find one."""
