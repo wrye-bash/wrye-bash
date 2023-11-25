@@ -1414,12 +1414,11 @@ class InstallerMarker(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        cnt_str = (u' (%d)' % count) if count else u''
-        return '==' + base_name.strip('=') + cnt_str + '=='
+        return f'=={base_name.strip("=")}{f" ({count})" if count else ""}=='
 
     def unique_key(self, new_root, ext=u'', add_copy=False):
         new_name = new_root + (f" {_('Copy')}" if add_copy else '')
-        if u'%s' % new_name == u'%s' % self.fn_key: # allow change of case
+        if f'{new_name}' == f'{self.fn_key}': # allow change of case
             return None
         return self.unique_name(new_name)
 

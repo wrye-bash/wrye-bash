@@ -1789,8 +1789,7 @@ class ListInfo:
     def unique_key(self, new_root, ext=u'', add_copy=False):
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
-        new_name = FName(
-            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        new_name = FName(new_root + (_(' Copy') if add_copy else '') + ext)
         if new_name == self.fn_key: # new and old names are ci-same
             return None
         return self.unique_name(new_name)
@@ -1806,10 +1805,10 @@ class ListInfo:
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
                 self.fn_key.fn_ext.lower()):
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % {
-                'bad_name_str': name_str,
-                'expected_ext': self.fn_key.fn_ext}, None
+            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
+                    '%(expected_ext)s).') % {
+                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return msg, None
         #--Else file exists?
         if check_store and self.info_dir.join(name_str).exists():
             return _('File %(bad_name_str)s already exists.') % {

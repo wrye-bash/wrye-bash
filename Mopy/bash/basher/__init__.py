@@ -2303,9 +2303,8 @@ class SaveList(UIList):
         to_select = set()
         to_del = set()
         for saveInfo in self.get_selected_infos_filtered():
-            rename_res = self.try_rename(saveInfo, root, to_select, to_del,
-                                         item_edited)
-            if not rename_res: break
+            if not self.try_rename(saveInfo, root, to_select, to_del,
+                                   item_edited): break
         if to_select:
             self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
                            detail_item=item_edited[0])
@@ -2316,13 +2315,8 @@ class SaveList(UIList):
     def try_rename(self, saveinf, new_root, to_select=None, to_del=None,
                    item_edited=None, force_ext=''):
         newFileName = saveinf.unique_key(new_root, force_ext)
-        oldName = self._try_rename(saveinf, newFileName)
-        if oldName:
-            if to_select is not None: to_select.add(newFileName)
-            if to_del is not None: to_del.add(oldName)
-            if item_edited and oldName == item_edited[0]:
-                item_edited[0] = newFileName
-            return oldName, newFileName # continue
+        return super().try_rename(saveinf, newFileName, to_select, to_del,
+                                  item_edited)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2359,9 +2353,9 @@ class SaveList(UIList):
             return
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        rename_res = self.try_rename(sinf, fn_item.fn_body,force_ext=extension)
-        if rename_res:
-            self.RefreshUI(redraw=[rename_res[1]], to_del=[fn_item])
+        if rename_res := self.try_rename(sinf, fn_item.fn_body,
+                                         force_ext=extension):
+            self.RefreshUI(redraw=[rename_res], to_del=[fn_item])
 
     # Save profiles
     def set_local_save(self, new_saves, refreshSaveInfos):
@@ -2537,10 +2531,10 @@ class SaveDetails(_ModsSavesDetails):
         if changeName:
             newName = FName(self.fileStr.strip()).fn_body
             # if you were wondering: OnFileEdited checked if file existed,
-            # and yes we recheck below, in Mod/BsaDetails we don't - filesystem
-            # APIs might warn user (with a dialog hopefully) for an overwrite,
-            # otherwise we can have a race whatever we try here - an extra
-            # check can't harm nor makes a (any) difference
+            # and yes we recheck below in unique_key, in Mod/BsaDetails we
+            # don't - filesystem APIs might warn user (with a dialog hopefully)
+            # for an overwrite, otherwise we can have a race whatever we try
+            # here - an extra check can't harm nor makes a (any) difference
             self.panel_uilist.try_rename(saveInfo, newName, to_del=to_del)
         #--Change masters?
         if changeMasters:
@@ -2690,13 +2684,12 @@ class InstallersList(UIList):
         if isinstance(root, tuple):
             root = root[0]
         with BusyCursor():
-            refreshes, ex = [(False, False, False)], None
+            refreshes = [(False, False, False)]
             newselected = []
             try:
                 for package in selected:
-                    if not self.try_rename(package, root, refreshes,
-                                           newselected):
-                        ex = True
+                    if fail := not self.try_rename(package, root, refreshes,
+                                                   newselected):
                         break
             finally:
                 refreshNeeded = modsRefresh = iniRefresh = False
@@ -2704,7 +2697,7 @@ class InstallersList(UIList):
                     refreshNeeded, modsRefresh, iniRefresh = [
                         any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
-            if refreshNeeded or ex: # refresh the UI in case of an exception
+            if refreshNeeded or fail: # refresh the UI in case of an exception
                 self.RefreshUI(refresh_others=(Store.MODS.IF(modsRefresh) |
                                                Store.INIS.IF(iniRefresh)))
                 #--Reselected the renamed items
@@ -3616,8 +3609,8 @@ class ScreensList(UIList):
             to_del = set()
             item_edited = [self.panel.detailsPanel.displayed_item]
             for scrinf in selected:
-                if not self.try_rename(scrinf, root, numStr, to_select, to_del,
-                                       item_edited): break
+                if not self.try_rename(scrinf, root + numStr, to_select,
+                                       to_del, item_edited): break
                 num += 1
                 numStr = str(num).zfill(digits)
             if to_select:
@@ -3627,18 +3620,13 @@ class ScreensList(UIList):
                 self.SelectItemsNoCallback(to_select)
             return EventResult.CANCEL
 
-    def try_rename(self, scrinf, root, numStr, to_select=None, to_del=None,
+    def try_rename(self, scrinf, new_root, to_select=None, to_del=None,
                    item_edited=None):
-        newName = FName(root + numStr + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
+        newName = FName(new_root + scrinf.fn_key.fn_ext) # TODO: add ScreenInfo.unique_key()
         if scrinf.get_store().store_dir.join(newName).exists():
             return None # break
-        oldName = self._try_rename(scrinf, newName)
-        if oldName:
-            if to_select is not None: to_select.add(newName)
-            if to_del is not None: to_del.add(oldName)
-            if item_edited and oldName == item_edited[0]:
-                item_edited[0] = newName
-            return oldName, newName # continue
+        return super().try_rename(scrinf, newName, to_select, to_del,
+                                  item_edited)
 
     def _handle_key_down(self, wrapped_evt):
         # Enter: Open selected screens

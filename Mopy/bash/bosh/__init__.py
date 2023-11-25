@@ -1490,6 +1490,10 @@ class ScreenInfo(FileInfo):
     @classmethod
     def get_store(cls): return screen_infos
 
+    def validate_name(self, name_str, check_store=True):
+        file_root, num_str = super().validate_name(name_str, check_store)
+        return FName(file_root + num_str + self.fn_key.fn_ext), ''
+
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
     """Base class for the singleton collections of infos."""
