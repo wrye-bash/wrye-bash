@@ -139,7 +139,8 @@ def _get_steam_manifests(steam_path: _StrPath) -> dict[int, str]:
         return {}
     steam_manifests = {}
     for library_folder_info in lf_dict.values():
-        if not library_folder_info: continue
+        if not (library_folder_info and isinstance(library_folder_info, dict)):
+            continue
         lf_path = library_folder_info.get('path')
         if not lf_path or not isinstance(lf_path, str): continue
         lf_apps = library_folder_info.get('apps')

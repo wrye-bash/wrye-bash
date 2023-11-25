@@ -1274,31 +1274,24 @@ class SaveInfo(FileInfo):
     @classmethod
     def get_store(cls): return saveInfos
 
-    def getStatus(self):
-        status = super(SaveInfo, self).getStatus()
-        if status > 0:
+    def _masters_order_status(self, status):
+        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
+        if self.masterOrder != self.masterNames:
+            return 20 # Reordered masters are far more important in saves
+        elif status > 0:
             # Missing or reordered masters -> orange or red
             return status
-        masterOrder = self.masterOrder
         active_tuple = load_order.cached_active_tuple()
-        if masterOrder == active_tuple:
+        if self.masterOrder == active_tuple:
             # Exact match with LO -> purple
             return -20
-        len_m = len(masterOrder)
-        if len(active_tuple) > len_m and masterOrder == active_tuple[:len_m]:
+        if self.masterOrder == active_tuple[:len(self.masterOrder)]:
             # Matches LO except for new plugins at the end -> blue
             return -10
         else:
             # Does not match the LO's active plugins, but the order is correct.
             # That means the LO has new plugins, but not at the end -> green
             return 0
-
-    def _masters_order_status(self, status):
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        if self.masterOrder != self.masterNames:
-            return 20 # Reordered masters are far more important in saves
-        else:
-            return status
 
     def is_save_enabled(self):
         """True if I am enabled."""
