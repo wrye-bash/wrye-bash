@@ -728,7 +728,7 @@ class StatusBarPage(_AScrollablePage):
             checked=bass.settings[u'bash.statusbar.showversion'])
         self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
-            value=str(bass.settings[u'bash.statusbar.iconSize']),
+            value=str(bass.settings['bash.statusbar.iconSize']),
             choices=['16', '24', '32'], dd_tooltip=_(
                 'Sets the status bar icons to the selected size in pixels.'))
         self._icon_size_dropdown.on_combo_select.subscribe(
@@ -770,7 +770,7 @@ class StatusBarPage(_AScrollablePage):
     def _handle_icon_size(self, new_selection):
         """Internal callback, called when the icon size dropdown is changed."""
         self._mark_setting_changed(u'icon_size',
-            int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
+            int(new_selection) != bass.settings['bash.statusbar.iconSize'])
 
     def on_apply(self):
         # Note we skip_refresh all status bar changes in order to do them all
@@ -784,9 +784,11 @@ class StatusBarPage(_AScrollablePage):
         # Icon Size
         icon_size_changed = self._is_changed(u'icon_size')
         if icon_size_changed:
-            bass.settings[u'bash.statusbar.iconSize'] = \
-                int(self._icon_size_dropdown.get_value())
-            Link.Frame.statusBar.UpdateIconSizes(skip_refresh=True)
+            new_icon_size = int(self._icon_size_dropdown.get_value())
+            bass.settings['bash.statusbar.iconSize'] = new_icon_size
+            # hot switch icon sizes crashes for some reason, ask for a restart
+            self._request_restart(_('Icon Size: %(new_icon_size)d') % {
+                'new_icon_size': new_icon_size})
         # Hidden Icons
         hidden_icons_changed = self._is_changed(u'hidden_icons')
         if hidden_icons_changed:
@@ -800,10 +802,8 @@ class StatusBarPage(_AScrollablePage):
                 Link.Frame.statusBar.HideButton(to_hide_uid, skip_refresh=True)
             for to_unhide_uid in hidden_removed:
                 Link.Frame.statusBar.UnhideButton(to_unhide_uid)
-        # Perform a single update of the status bar if needed
-        if hidden_icons_changed or icon_size_changed:
-            Link.Frame.statusBar.refresh_status_bar(
-                refresh_icon_size=icon_size_changed)
+            # Perform a single update of the status bar
+            Link.Frame.statusBar.refresh_status_bar()
         super(StatusBarPage, self).on_apply()
 
     def _on_move_btn(self):

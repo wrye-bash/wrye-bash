@@ -114,8 +114,9 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
             _AComponent.tooltip.fset(self, new_tooltip)
 
     def _btn_bmp(self):
-        return get_image(self.imageKey % bass.settings[
-            'bash.statusbar.iconSize'])
+        icon_size_ = BashStatusBar.icon_size - 8 or bass.settings[
+            'bash.statusbar.iconSize']
+        return get_image(self.imageKey % icon_size_)
 
     def DoPopupMenu(self):
         if self.mainMenu:
@@ -169,9 +170,9 @@ class AppButton(AppLauncher, StatusBarButton):
         self.wait = False
 
     def _btn_bmp(self):
-        iconSize = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
-        idex = (iconSize // 8) - 2 # 0, 1, 2
-        return self.images[idex]
+        iconSize = BashStatusBar.icon_size - 8 or bass.settings[ # 16, 24, 32
+            'bash.statusbar.iconSize']
+        return self.images[(iconSize // 8) - 2]  # 0, 1, 2
 
     @property
     def sb_button_tip(self):

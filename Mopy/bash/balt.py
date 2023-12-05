@@ -2097,20 +2097,42 @@ class INIListCtrl(wx.ListCtrl):
 class BashStatusBar(DnDStatusBar):
     all_sb_links: dict = {} # all possible status bar links - visible or not
     obseButton = None # the OBSE button singleton
+    icon_size = 8 # the size of the status bar icons - 8 is a special value
 
     def __init__(self, parent):
         super().__init__(parent)
+        # we can't hotswitch the icon size, so we need to store it
+        # +8 as each button has 4 px border on left and right
+        self.__class__.icon_size = _settings['bash.statusbar.iconSize'] + 8
         self._native_widget.SetFieldsCount(3)
-        self.UpdateIconSizes()
+        self.buttons = {}  # populated with SBLinks whose gButtons is not None
+        # when bash is run for the first time those are empty - set here
+        order = _settings['bash.statusbar.order']
+        hide = _settings['bash.statusbar.hide']
+        # filter for non-existent ids and reorder the dict according to order
+        hidden = {lid for lid in hide if lid in self.all_sb_links}
+        hide.clear()
+        hide.update(hidden)
+        saved_order = {lid: li for lid in order if
+                       (li := self.all_sb_links.get(lid))}
+        # append new buttons and reorder BashStatusBar.all_sb_links
+        self.all_sb_links = saved_order | self.all_sb_links
+        order[:] = list(self.all_sb_links)  # set bash.statusbar.order
+        # Add buttons in order that is saved
+        for link_uid, link in self.all_sb_links.items():
+            # Hidden?
+            if link_uid in hide: continue
+            # Add it, if allow_create allows it
+            if link.native_init(self, on_drag_start=self._on_drag_start,
+                on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                on_drag_end_forced=self._on_drag_end_forced):
+                self.buttons[link.uid] = link
+        self.refresh_status_bar(refresh_icon_size=True)
         #--Bind events
         self._on_size.subscribe(self.OnSize)
         #--Setup Drag-n-Drop reordering
         self._reset_drag(False)
         self.moved = False
-
-    @property
-    def iconsSize(self): # +8 as each button has 4 px border on left and right
-        return _settings[u'bash.statusbar.iconSize'] + 8
 
     # Buttons drag and drop ---------------------------------------------------
     def _getButtonIndex(self, mouseEvent):
@@ -2122,7 +2144,7 @@ class BashStatusBar(DnDStatusBar):
                 # negative beyond that (on the left) and positive after
                 if x < -4:
                     return max(i - 1, 0), button_link
-                elif x > self.iconsSize - 4:
+                elif x > self.icon_size - 4:
                     return min(i + 1, len(self.buttons) - 1), button_link
                 return i, button_link
         return wx.NOT_FOUND, None
@@ -2188,33 +2210,7 @@ class BashStatusBar(DnDStatusBar):
         xPos, yPos = rect.x + 4, rect.y
         for button_link in self.buttons.values():
             button_link.component_position = (xPos, yPos)
-            xPos += self.iconsSize
-
-    def UpdateIconSizes(self, skip_refresh=False):
-        self.buttons = {} # populated with SBLinks whose gButtons is not None
-        # when bash is run for the first time those are empty - set here
-        order = _settings['bash.statusbar.order']
-        hide = _settings['bash.statusbar.hide']
-        # filter for non-existent ids and reorder the dict according to order
-        hidden = {lid for lid in hide if lid in self.all_sb_links}
-        hide.clear()
-        hide.update(hidden)
-        saved_order = {lid: li for lid in order if
-                       (li := self.all_sb_links.get(lid))}
-        # append new buttons and reorder BashStatusBar.all_sb_links
-        self.all_sb_links = saved_order | self.all_sb_links
-        order[:] = list(self.all_sb_links) # set bash.statusbar.order
-        # Add buttons in order that is saved
-        for link_uid, link in self.all_sb_links.items():
-            # Hidden?
-            if link_uid in hide: continue
-            # Add it, if allow_create allows it
-            if link.native_init(self, on_drag_start=self._on_drag_start,
-                    on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                    on_drag_end_forced=self._on_drag_end_forced):
-                self.buttons[link.uid] = link
-        if not skip_refresh:
-            self.refresh_status_bar(refresh_icon_size=True)
+            xPos += self.icon_size
 
     def HideButton(self, link_uid, skip_refresh=False):
         if button := self.buttons.get(link_uid):
@@ -2261,11 +2257,11 @@ class BashStatusBar(DnDStatusBar):
         if wx.Platform != '__WXMSW__':
             text_length_px += 10
         self._native_widget.SetStatusWidths(
-            [self.iconsSize * len(self.buttons), -1, text_length_px])
+            [self.icon_size * len(self.buttons), -1, text_length_px])
         if refresh_icon_size:
             ##: Why - 12? I just tried values until it looked good, why does
             # this one work best?
-            self._native_widget.SetMinHeight(self.iconsSize - 12)
+            self._native_widget.SetMinHeight(self.icon_size - 12)
         # Causes the status bar to fill half the screen on wxGTK
         ##: See if removing this call entirely causes problems on Windows
         if wx.Platform != u'__WXGTK__':
