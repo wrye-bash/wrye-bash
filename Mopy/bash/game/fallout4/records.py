@@ -657,13 +657,13 @@ class MreArma(MelRecord):
         MelBod2(),
         MelRace(),
         MelArmaShared(MelModel),
-        MelGroups('bone_data',
-            MelUInt32(b'BSMP', 'bone_scale_gender'),
-            MelGroups('bone_weight_scales',
+        MelGroups('bone_scale_modifier_set',
+            MelUInt32(b'BSMP', 'target_gender'),
+            MelSorted(MelGroups('bone_scale_modifiers',
                 MelString(b'BSMB', 'bone_name'),
-                MelStruct(b'BSMS', ['3f'], 'weight_scale_value_x',
-                    'weight_scale_value_y', 'weight_scale_value_z'),
-            ),
+                MelStruct(b'BSMS', ['3f'], 'bone_scale_delta_x',
+                    'bone_scale_delta_y', 'bone_scale_delta_z'),
+            ), sort_by_attrs='bone_name'),
         )
     )
 
