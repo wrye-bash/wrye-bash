@@ -825,7 +825,11 @@ class UIList(PanelWin):
                 self.SortItems()
                 self.autosizeColumns()
         self._refresh_details(redraw, detail_item)
-        self.panel.SetStatusCount()
+        if Link.Frame.notebook.currentPage is self.panel:
+            # we need to check if our Panel is currently shown because we may
+            # call Refresh UI of other tabs too - this results for instance in
+            # mods count flickering when deleting a save in saves tab
+            Link.Frame.set_status_info(self.panel.sb_count_str(), 2)
         if focus_list: self.Focus()
         if refresh_others:
             if refresh_others[self.data_store_key]:
@@ -2241,15 +2245,12 @@ class BashStatusBar(DnDStatusBar):
         else:
             self._sort_buttons(order)
 
-    def set_sb_text(self, status_text, i=0):
+    def set_sb_text(self, status_text, i=0, *, show_panel=False):
         super().set_sb_text(status_text, i)
-        self.refresh_status_bar()
+        if show_panel:
+            self._set_fields_size()
 
-    def refresh_status_bar(self, refresh_icon_size=False):
-        """Updates status widths and the icon sizes, if refresh_icon_size is
-        True. Also propagates resizing events.
-
-        :param refresh_icon_size: Whether or not to update icon sizes too."""
+    def _set_fields_size(self):
         text_length_px = self._native_widget.GetTextExtent(
             self._native_widget.GetStatusText(2)).width
         # +10 is necessary to make the entire text fit without it getting
@@ -2258,14 +2259,17 @@ class BashStatusBar(DnDStatusBar):
             text_length_px += 10
         self._native_widget.SetStatusWidths(
             [self.icon_size * len(self.buttons), -1, text_length_px])
+
+    def refresh_status_bar(self, refresh_icon_size=False):
+        """Updates status widths and the icon sizes, if refresh_icon_size is
+        True. Also propagates resizing events.
+
+        :param refresh_icon_size: Whether or not to update icon sizes too."""
+        self._set_fields_size()
         if refresh_icon_size:
             ##: Why - 12? I just tried values until it looked good, why does
             # this one work best?
             self._native_widget.SetMinHeight(self.icon_size - 12)
-        # Causes the status bar to fill half the screen on wxGTK
-        ##: See if removing this call entirely causes problems on Windows
-        if wx.Platform != u'__WXGTK__':
-            self._native_widget.SendSizeEventToParent()
         self.OnSize()
 
     @classmethod

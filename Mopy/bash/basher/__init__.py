@@ -237,12 +237,8 @@ class SashUIListPanel(SashPanel):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
 
-    def _sbCount(self): return self.__class__._status_str % {
+    def sb_count_str(self): return self.__class__._status_str % {
         'status_num': len(self.listData)}
-
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        Link.Frame.set_status_count(self, self._sbCount())
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(focus_list=False)
@@ -256,7 +252,7 @@ class SashUIListPanel(SashPanel):
             self.uiList.SetScrollPosition()
         self.uiList.autosizeColumns()
         self.uiList.Focus()
-        self.SetStatusCount()
+        Link.Frame.set_status_info(self.sb_count_str(), 2, show_panel=True)
         self.uiList.setup_global_menu()
 
     def ClosePanel(self, destroy=False):
@@ -2138,7 +2134,7 @@ class INIPanel(BashTab):
             else:
                 self.uiList.RefreshUI(focus_list=focus_list)
 
-    def _sbCount(self):
+    def sb_count_str(self):
         stati = self.uiList.CountTweakStatus()
         return _('Tweaks: %(status_num)d/%(total_status_num)d') % {
             'status_num': stati[0], 'total_status_num': sum(stati[:-1])}
@@ -2153,7 +2149,7 @@ class ModPanel(BashTab):
         self.listData = bosh.modInfos
         super(ModPanel, self).__init__(parent)
 
-    def _sbCount(self):
+    def sb_count_str(self):
         all_mods = load_order.cached_active_tuple()
         esl_count = 0
         overlay_count = 0
@@ -3497,7 +3493,7 @@ class InstallersPanel(BashTab):
                         continue
         return omod_projects
 
-    def _sbCount(self):
+    def sb_count_str(self):
         active = sum(x.is_active for x in self.listData.values())
         return _('Packages: %(status_num)d/%(total_status_num)d') % {
             'status_num': active, 'total_status_num': len(self.listData)}
@@ -4048,17 +4044,9 @@ class BashFrame(WindowFrame):
             title += f' [{bosh.modInfos.voCurrent}]'
         self._native_widget.SetTitle(title)
 
-    def set_status_count(self, requestingPanel, countTxt):
-        """Sets status bar count field."""
-        if self.notebook.currentPage is requestingPanel: # we need to check if
-        # requesting Panel is currently shown because Refresh UI path may call
-        # Refresh UI of other tabs too - this results for instance in mods
-        # count flickering when deleting a save in saves tab - ##: hunt down
-            self.statusBar.set_sb_text(countTxt, 2)
-
-    def set_status_info(self, infoTxt):
+    def set_status_info(self, infoTxt, field=1, show_panel=False):
         """Sets status bar info field."""
-        self.statusBar.set_sb_text(infoTxt, 1)
+        self.statusBar.set_sb_text(infoTxt, field, show_panel=show_panel)
 
     # Events ------------------------------------------------------------------
     @balt.conversation

@@ -55,7 +55,7 @@ def _strip_version(exe_path=None, ver_tuple=()):
             version.pop(0)
         while version and version[-1] == 0:
             version.pop()
-        return '.'.join([f'{x}' for x in version])
+        return '.'.join([f'{x}' for x in version]) # '.'.join([]) == ''
     except OSError:
         return ''
 
@@ -498,12 +498,13 @@ class TESCSButton(_ExeButton):
         }
         if self._exe_args: # + OBSE
             self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
-            # + CSE
+            # + CSE?
             cse_path = bass.dirs['mods'].join('obse', 'plugins',
                 'Construction Set Extender.dll')
-            cse_version = f' {cse_ver}' if (
-                cse_ver := _strip_version(cse_path)) else ''
-            self._obseTip += f' + CSE{cse_version}'
+            if cse_path.is_file():
+                cse_version = f' {cse_ver}' if (
+                    cse_ver := _strip_version(cse_path)) else ''
+                self._obseTip += f' + CSE{cse_version}'
 
     def sb_click(self):
         old = self.exePath
