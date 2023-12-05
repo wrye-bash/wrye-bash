@@ -498,12 +498,8 @@ class GameButton(_ExeButton):
 class TESCSButton(_ExeButton):
     """CS/CK button. Needs a special tooltip when OBSE is enabled."""
 
-    def __init__(self, ck_images):
-        ck_path = bass.dirs['app'].join(bush.game.Ck.exe)
-        ck_tip = _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name}
-        super().__init__(ck_path, ck_images, ck_tip, 'TESCS',
-                         cli_args=bush.game.Ck.se_args,
-                         display_launcher=bool(bush.game.Ck.ck_abbrev))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, cli_args=bush.game.Ck.se_args, **kwargs)
         self._obseTip = _('Launch %(ck_name)s %(app_version)s') % {
             'ck_name': bush.game.Ck.long_name, 'app_version': self._app_version
         }

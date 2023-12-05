@@ -71,26 +71,31 @@ def InitStatusBar():
     all_links = [
         obse_button,
         AutoQuitButton('AutoQuit'),
-        GameButton(_png_list(f'games/{bush.game.game_icon}')),
-        TESCSButton(_png_list(f'tools/{imn}') if (
-            imn := bush.game.Ck.image_name) else badIcons)
+        GameButton(_png_list(f'games/{bush.game.game_icon}'))
     ]
     all_xes = dict.fromkeys( # keep order to not reorder much
         game_class.Xe.full_name for game_class in PatchGame.supported_games())
     xe_images = _png_list('tools/tes4edit%s.png')
     def _tool_args(app_key, app_path_data, clazz=AppButton, **kwargs):
         app_launcher, tooltip_str, path_kwargs, *cli_args = app_path_data
+        uid = kwargs.setdefault('uid', app_key)
         if app_key in {'Steam', 'LOOT'}:
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
+        elif uid == 'TESCS':
+            list_img = _png_list(f'tools/{imn}') if (
+                imn := bush.game.Ck.image_name) else badIcons
         elif app_key[:-4] in all_xes: # chop off 'Path'
             list_img = xe_images
         else:
             list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
-        kwargs.setdefault('uid', app_key)
-        if cli_args:
+        if cli_args: # for tools defined in constants.py
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
             list_img, tooltip_str, **kwargs)
+    all_links.append(_tool_args(None, (bush.game.Ck.exe,
+            _('Launch %(ck_name)s') % {'ck_name': bush.game.Ck.long_name},
+            {'root_dirs': 'app'}), clazz=TESCSButton, uid='TESCS',
+            display_launcher=bool(bush.game.Ck.ck_abbrev)))
     # Launchers of tools ------------------------------------------------------
     all_links.extend(_tool_args(*tool, display_launcher=_is_oblivion) for tool
                      in oblivion_tools.items())
@@ -101,10 +106,10 @@ def InitStatusBar():
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        args = (f'{xe_name}.exe', _('Launch %s') % xe_name, {
-            'root_dirs': 'app'}, f'-{xe_name[:-4]} -edit')
+        args = f'{xe_name}.exe', _('Launch %s') % xe_name, {'root_dirs': 'app'}
         all_links.append(_tool_args(f'{xe_name}Path', args, clazz=AppXEdit,
-            uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name))
+            uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name,
+            cli_args=(f'-{xe_name[:-4]}', '-edit')))
         if xe_name == 'TES4Edit': # set the paths for TES4Trans/TES4View
             tes4_edit_dir= all_links[-1].exePath.head
     # not specified in the ini - we bypass app_button_factory - avoid!
