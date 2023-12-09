@@ -517,9 +517,5 @@ class DnDStatusBar(Dragger):
     """A status bar wrapper. Supports Drag and drop of its buttons."""
     _native_widget: _wx.StatusBar
 
-    def __init__(self, parent):
-        super().__init__(parent)
-        self._on_size = self._evt_handler(_wx.EVT_SIZE)
-
-    def set_sb_text(self, status_text, i=0):
-        self._native_widget.SetStatusText(status_text, i)
+    def set_sb_text(self, status_text, field_dex):
+        self._native_widget.SetStatusText(status_text, field_dex)

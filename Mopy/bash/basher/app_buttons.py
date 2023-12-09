@@ -151,7 +151,8 @@ class _StatusBar_Hide(ItemLink):
                  "restored through the settings menu).") % {
             'status_btn_name': self.window.tooltip}
 
-    def Execute(self): Link.Frame.statusBar.HideButton(self.window.uid)
+    def Execute(self):
+        Link.Frame.statusBar.toggle_buttons_visible([self.window.uid])
 
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------

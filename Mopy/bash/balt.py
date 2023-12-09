@@ -2131,12 +2131,19 @@ class BashStatusBar(DnDStatusBar):
                 on_drag_end=self._on_drag_end, on_drag=self._on_drag,
                 on_drag_end_forced=self._on_drag_end_forced):
                 self.buttons[link.uid] = link
-        self.refresh_status_bar(refresh_icon_size=True)
-        #--Bind events
-        self._on_size.subscribe(self.OnSize)
+        self._set_fields_size()
+        ##: Why - 12? I just tried values until it looked good, why does
+        # this one work best?
+        self._native_widget.SetMinHeight(self.icon_size - 12)
+        self._draw_buttons()
         #--Setup Drag-n-Drop reordering
         self._reset_drag(False)
         self.moved = False
+
+    def set_sb_text(self, status_text, field_dex, *, show_panel=False):
+        super().set_sb_text(status_text, field_dex)
+        if show_panel:
+            self._set_fields_size()
 
     # Buttons drag and drop ---------------------------------------------------
     def _getButtonIndex(self, mouseEvent):
@@ -2202,53 +2209,52 @@ class BashStatusBar(DnDStatusBar):
                 self._sort_buttons(uid_order)
                 self.dragging = over
                 # Refresh button positions
-                self.OnSize()
+                self._draw_buttons()
 
     def _sort_buttons(self, uid_order):
         uid_order = {k: j for j, k in enumerate(uid_order)}
         self.buttons = {k: self.buttons[k] for k in
                         sorted(self.buttons, key=uid_order.get)}
 
-    def OnSize(self):
+    def _draw_buttons(self):
         rect = self._native_widget.GetFieldRect(0)
         xPos, yPos = rect.x + 4, rect.y
         for button_link in self.buttons.values():
             button_link.component_position = (xPos, yPos)
             xPos += self.icon_size
 
-    def HideButton(self, link_uid, skip_refresh=False):
-        if button := self.buttons.get(link_uid):
-            button.visible = False
-            del self.buttons[link_uid]
-            _settings['bash.statusbar.hide'].add(link_uid)
-            if not skip_refresh:
-                self.refresh_status_bar()
-            return
-
-    def UnhideButton(self, link_uid):
-        _settings['bash.statusbar.hide'].discard(link_uid)
-        link = self.all_sb_links[link_uid]
-        if not link.native_init(self, recreate=False,
-                on_drag_start=self._on_drag_start,
-                on_drag_end=self._on_drag_end, on_drag=self._on_drag,
-                on_drag_end_forced=self._on_drag_end_forced):
-            if not link.allow_create():
-                deprint(f'requested to create non existent button {link}')
-                return
-            link.visible = True  # button was already created and hidden
-        self.buttons[link_uid] = link
-        # Find the position to insert it at
+    def toggle_buttons_visible(self, hide_ids=(), unhide_ids=()):
+        """Toggle the visibility of the specified buttons."""
+        hidden_buttons = _settings['bash.statusbar.hide']
         order = _settings['bash.statusbar.order']
-        if link_uid not in order:
-            # Not specified, put it at the end
-            order.append(link_uid)
-        else:
-            self._sort_buttons(order)
-
-    def set_sb_text(self, status_text, i=0, *, show_panel=False):
-        super().set_sb_text(status_text, i)
-        if show_panel:
-            self._set_fields_size()
+        sort_buttons = False
+        for link_uid in unhide_ids:
+            hidden_buttons.discard(link_uid)
+            link = self.all_sb_links[link_uid]
+            if not link.native_init(self, recreate=False,
+                    on_drag_start=self._on_drag_start,
+                    on_drag_end=self._on_drag_end, on_drag=self._on_drag,
+                    on_drag_end_forced=self._on_drag_end_forced):
+                if not link.allow_create():
+                    deprint(f'requested to create non existent button {link}')
+                    continue
+                link.visible = True  # button was already created and hidden
+            self.buttons[link_uid] = link
+            # Find the position to insert it at
+            if link_uid not in order:
+                # Not specified, put it at the end
+                order.append(link_uid)
+            else:
+                sort_buttons = True
+        if sort_buttons: self._sort_buttons(order)
+        for link_uid in hide_ids:
+            try:
+                self.buttons[link_uid].visible = False
+                del self.buttons[link_uid]
+                hidden_buttons.add(link_uid)
+            except KeyError: pass # should not happen
+        self._set_fields_size()
+        self._draw_buttons()
 
     def _set_fields_size(self):
         text_length_px = self._native_widget.GetTextExtent(
@@ -2259,18 +2265,6 @@ class BashStatusBar(DnDStatusBar):
             text_length_px += 10
         self._native_widget.SetStatusWidths(
             [self.icon_size * len(self.buttons), -1, text_length_px])
-
-    def refresh_status_bar(self, refresh_icon_size=False):
-        """Updates status widths and the icon sizes, if refresh_icon_size is
-        True. Also propagates resizing events.
-
-        :param refresh_icon_size: Whether or not to update icon sizes too."""
-        self._set_fields_size()
-        if refresh_icon_size:
-            ##: Why - 12? I just tried values until it looked good, why does
-            # this one work best?
-            self._native_widget.SetMinHeight(self.icon_size - 12)
-        self.OnSize()
 
     @classmethod
     def set_tooltips(cls):

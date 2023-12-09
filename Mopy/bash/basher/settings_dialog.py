@@ -798,12 +798,9 @@ class StatusBarPage(_AScrollablePage):
             new_hidden = self._get_chosen_hidden_icons()
             hidden_added = new_hidden - old_hidden
             hidden_removed = old_hidden - new_hidden
-            for to_hide_uid in hidden_added:
-                Link.Frame.statusBar.HideButton(to_hide_uid, skip_refresh=True)
-            for to_unhide_uid in hidden_removed:
-                Link.Frame.statusBar.UnhideButton(to_unhide_uid)
-            # Perform a single update of the status bar
-            Link.Frame.statusBar.refresh_status_bar()
+            if hidden_added or hidden_removed:
+                Link.Frame.statusBar.toggle_buttons_visible(
+                    hide_ids=hidden_added, unhide_ids=hidden_removed)
         super(StatusBarPage, self).on_apply()
 
     def _on_move_btn(self):
