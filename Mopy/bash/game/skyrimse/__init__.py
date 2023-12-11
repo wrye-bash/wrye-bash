@@ -22,7 +22,7 @@
 # =============================================================================
 import importlib
 
-from .. import WS_COMMON_FILES, MergeabilityCheck
+from .. import WS_COMMON_FILES, MergeabilityCheck, ObjectIndexRange
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ...bolt import classproperty
@@ -96,6 +96,9 @@ class ASkyrimSEGameInfo(ASkyrimGameInfo):
         # Because the FE slot is reserved for ESLs - yes, including in master
         # lists. Thanks, Bethesda
         master_limit = 253
+        object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
+        object_index_range_expansion_ver = 1.71
+        validHeaderVersions = (0.94, 1.70, 1.71)
         warn_older_form_versions = True
 
     bethDataFiles = {

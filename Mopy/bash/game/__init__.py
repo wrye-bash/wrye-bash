@@ -57,8 +57,8 @@ class ObjectIndexRange(Enum):
     # FormIDs with object indices in the range 0x000-0x7FF are always
     # reserved for the engine
     RESERVED = 0
-    # Plugins with a header version >= 1.0 and at least one master can
-    # use the range 0x000-0x7FF for their own purposes
+    # Plugins with a header version >= object_index_range_expansion_ver and at
+    # least one master can use the range 0x000-0x7FF for their own purposes
     EXPANDED_CONDITIONAL = 1
     # Plugins with at least one master can use the range 0x001-0x7FF
     # for their own purposes
@@ -518,6 +518,10 @@ class GameInfo(object):
         # Determines the range of object indices that plugins are allowed to
         # use. See ObjectIndexRange for more details
         object_index_range = ObjectIndexRange.RESERVED
+        # If object_index_range is ObjectIndexRange.EXPANDED_CONDITIONAL, this
+        # indicates the minimum header version required to use the expanded
+        # range
+        object_index_range_expansion_ver = 0.0
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
         # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)

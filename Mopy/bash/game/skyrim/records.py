@@ -413,8 +413,9 @@ class MreTes4(AMreHeader):
         esl_flag: bool = flag(sse_only(9))
 
     melSet = MelSet(
-        MelStruct(b'HEDR', ['f', '2I'], ('version', 1.7), 'numRecords',
-                  ('nextObject', next_object_default), is_required=True),
+        MelStruct(b'HEDR', ['f', '2I'],
+            ('version', if_sse(le_version=1.7, se_version=1.71)), 'numRecords',
+            ('nextObject', next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),

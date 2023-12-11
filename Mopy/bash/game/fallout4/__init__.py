@@ -142,6 +142,7 @@ class AFallout4GameInfo(PatchGame):
         master_limit = 253
         max_lvl_list_size = 255
         object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
+        object_index_range_expansion_ver = 1.0
         validHeaderVersions = (0.95, 1.0)
 
     # Patchers that will need updating for future record types:

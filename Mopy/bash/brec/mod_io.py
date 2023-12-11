@@ -414,10 +414,11 @@ class FormIdWriteContext:
         # Set utils_constants.short_mapper based on this mod's masters
         index_di = self._get_indices()
         oi_range = bush.game.Esp.object_index_range
+        expansion_ver = bush.game.Esp.object_index_range_expansion_ver
         if skip_engine or (len(self._augmented_masters) > 1 and
                            (oi_range is ObjectIndexRange.EXPANDED_ALWAYS or
                             (oi_range is ObjectIndexRange.EXPANDED_CONDITIONAL
-                             and self._plugin_header_ver >= 1.0))):
+                             and self._plugin_header_ver >= expansion_ver))):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x7FF) range (or we want to skip the check)
             def _short_mapper(formid):

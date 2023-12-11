@@ -30,7 +30,7 @@ tested on (previous versions or latest versions may or may not work):
 * Nehrim (patch 2.0.2.4)
 * Oblivion (patch 1.2.0.416)
 * Skyrim (patch 1.9.36.0)
-* Skyrim Special Edition (patch 1.6.640.0)
+* Skyrim Special Edition (patch 1.6.1130.0)
 * Skyrim VR (patch 1.4.15.0)
 * Starfield (patch 1.7.23.0)
 
