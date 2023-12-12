@@ -62,7 +62,7 @@ def InitStatusBar():
     badIcons = [get_image('error_cross.16')] * 3 ##: 16, 24, 32?
     __fp = GuiImage.from_path
     def _png_list(template):
-        return [__fp(template % i) for i in (16, 24, 32)]
+        return [__fp(template % i, iconSize=i) for i in (16, 24, 32)]
     def _svg_list(svg_fname):
         return [__fp(svg_fname, iconSize=i) for i in (16, 24, 32)]
     #--Bash Status/LinkBar

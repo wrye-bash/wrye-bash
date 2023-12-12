@@ -92,6 +92,13 @@ class Picture(_AComponent):
         caching"""
         if isinstance(bmp, Path):
             bmp = (bmp.is_file() and GuiImage.from_path(bmp)) or None
+        if bmp is not None:
+            bmp = self._resolve(bmp)
+            # If bmp comes from a BmpFromStream, this will be a bitmap; if it
+            # comes from a _BmpFromPath, it will be a bitmap bundle (with only
+            # one bitmap in it)
+            if isinstance(bmp, _wx.BitmapBundle):
+                bmp = bmp.GetBitmap(bmp.GetDefaultSize())
         self._gui_bitmap = bmp
         self._handle_resize()
         return self._gui_bitmap
@@ -106,14 +113,13 @@ class Picture(_AComponent):
         dc.SetBackground(self.background)
         dc.Clear()
         if self._gui_bitmap is not None:
-            ##: wrap _native_widget calls below - a better way?
-            old_x,old_y = self._gui_bitmap._native_widget.GetSize()
+            old_x,old_y = self._gui_bitmap.GetSize()
             scale = min(float(x)/old_x, float(y)/old_y)
             new_x = old_x * scale
             new_y = old_y * scale
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
-            image = self._gui_bitmap._native_widget.ConvertToImage()
+            image = self._gui_bitmap.ConvertToImage()
             image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
             dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc

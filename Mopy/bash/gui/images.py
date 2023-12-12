@@ -92,7 +92,7 @@ class GuiImage(Lazy):
 
 class _SvgFromPath(GuiImage):
     """Wrap an svg."""
-    _native_widget: _svg.SVGimage.ConvertToScaledBitmap
+    _native_widget: _wx.BitmapBundle.FromBitmaps
 
     @property
     def _native_widget(self):
@@ -103,8 +103,11 @@ class _SvgFromPath(GuiImage):
                 svg_data = svg_data.replace(b'var(--invert)',
                     b'#FFF' if self._should_invert_svg() else b'#000')
             svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
-            svg_size = scaled(self.iconSize)
-            self._cached_args = svg_img, (svg_size, svg_size)
+            # Use a bitmap bundle so we get an actual high-res asset at high
+            # DPIs, rather than wx deciding to scale up the low-res asset
+            wanted_svgs = [svg_img.ConvertToScaledBitmap((s, s))
+                           for s in (self.iconSize, scaled(self.iconSize))]
+            self._cached_args = (wanted_svgs,)
         return super()._native_widget
 
     @staticmethod
@@ -124,7 +127,10 @@ class IcoFromPng(GuiImage):
     def _native_widget(self):
         if self._is_created(): return self._cached_widget
         native = super()._native_widget # create a plain wx.Icon
-        native.CopyFromBitmap(self._resolve(self._gui_image))
+        native_bmp = self._resolve(self._gui_image)
+        if isinstance(native_bmp, _wx.BitmapBundle):
+            native_bmp = native_bmp.GetBitmap(native_bmp.GetDefaultSize())
+        native.CopyFromBitmap(native_bmp)
         return native
 
 class _IcoFromPath(GuiImage):
@@ -177,7 +183,9 @@ class ImgFromPath(GuiImage):
         self._cached_args = self._img_path, self._img_type
         native = super()._native_widget
         if self.iconSize != -1:
-            wanted_size = scaled(self.iconSize)
+            # Don't use the scaled icon size here - _BmpFromPath performs its
+            # own scaling and Screen_ConvertTo wouldn't want to scale anyways
+            wanted_size = self.iconSize
             if self.get_img_size() != (wanted_size, wanted_size):
                 native.Rescale(wanted_size, wanted_size,
                     _wx.IMAGE_QUALITY_HIGH)
@@ -189,12 +197,23 @@ class ImgFromPath(GuiImage):
         return self._native_widget.SaveFile(imagePath, self.img_types[exten])
 
 class _BmpFromPath(GuiImage):
-    _native_widget: _wx.Bitmap
+    _native_widget: _wx.BitmapBundle.FromBitmaps
 
     @property
     def _native_widget(self):
-        self._cached_args = ImgFromPath(self._img_path, self.iconSize,
-            self._img_type)._native_widget, # pass wx.Image to wx.Bitmap
+        # Pass wx.Image to wx.Bitmap
+        base_img: _wx.Image = self._resolve(ImgFromPath(self._img_path,
+            imageType=self._img_type))
+        scaled_imgs = [base_img]
+        if self.iconSize != -1:
+            # If we can, also add a scaled-up version so wx stops trying to
+            # scale this by itself - using a higher-res image here if we have
+            # one would be better, but that would be very difficult to
+            # implement, something for the (far) future
+            wanted_size = scaled(self.iconSize)
+            scaled_imgs.append(base_img.Scale(wanted_size, wanted_size,
+                quality=_wx.IMAGE_QUALITY_HIGH))
+        self._cached_args = (list(map(_wx.Bitmap, scaled_imgs)),)
         return super()._native_widget
 
 class BmpFromStream(GuiImage):
@@ -257,9 +276,16 @@ class ImageList(Lazy):
     def native_init(self, *args, **kwargs):
         kwargs.setdefault('recreate', False)
         freshly_created = super().native_init(*args, **kwargs)
+        ##: Accessing these like this feels wrong - maybe store the scaled size
+        # somewhere and retrieve it here?
+        scaled_sb_size = self._cached_args[0:2]
         if freshly_created: # ONCE! we don't support adding more images
-            self._indices = {k: self._native_widget.Add(self._resolve(im)) for
-                             k, im in self._images}
+            self._indices = {}
+            for k, im in self._images:
+                nat_img = self._resolve(im)
+                if isinstance(nat_img, _wx.BitmapBundle):
+                    nat_img = nat_img.GetBitmap(scaled_sb_size)
+                self._indices[k] = self._native_widget.Add(nat_img)
 
     def img_dex(self, *args) -> int | None:
         """Return the index of the specified image in the native control."""

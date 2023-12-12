@@ -78,11 +78,11 @@ def init_image_resources(images_dir):
                 f'{inst_key}.{col}') or _icc(f'checkbox_{col}_{st}.png')
     _gui_images.update(_color_checks)
     # PNGs --------------------------------------------------------------------
-    # Checkboxes ##: some of it loaded with iconSize 16 above  - why we use _png??
+    # Checkboxes
     pixs = (16, 24, 32)
     for st, col, pix in product(['off', 'on'], ('blue', 'green', 'red'), pixs):
         fname = f'checkbox_{col}_{st}%s.png' % ('' if pix == 16 else f'_{pix}')
-        _gui_images[f'checkbox.{col}.{st}.{pix}'] = GuiImage.from_path(fname)
+        _gui_images[f'checkbox.{col}.{st}.{pix}'] = _icc(fname, pix)
     # SVGs --------------------------------------------------------------------
     # Modification time button
     _gui_images['calendar.16'] = _icc('calendar.svg')

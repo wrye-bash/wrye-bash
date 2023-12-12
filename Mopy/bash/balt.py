@@ -2132,9 +2132,10 @@ class BashStatusBar(DnDStatusBar):
                 on_drag_end_forced=self._on_drag_end_forced):
                 self.buttons[link.uid] = link
         self._set_fields_size()
-        ##: Why - 12? I just tried values until it looked good, why does
+        ##: Why - 10? I just tried values until it looked good, why does
         # this one work best?
-        self._native_widget.SetMinHeight(self.icon_size - 12)
+        self._native_widget.SetMinHeight(self._native_widget.FromDIP(
+            self.icon_size - 10))
         self._draw_buttons()
         #--Setup Drag-n-Drop reordering
         self._reset_drag(False)
@@ -2218,10 +2219,11 @@ class BashStatusBar(DnDStatusBar):
 
     def _draw_buttons(self):
         rect = self._native_widget.GetFieldRect(0)
-        xPos, yPos = rect.x + 4, rect.y
+        xPos, yPos = rect.x + self._native_widget.FromDIP(4), rect.y
+        button_spacing = self._native_widget.FromDIP(self.icon_size)
         for button_link in self.buttons.values():
             button_link.component_position = (xPos, yPos)
-            xPos += self.icon_size
+            xPos += button_spacing
 
     def toggle_buttons_visible(self, hide_ids=(), unhide_ids=()):
         """Toggle the visibility of the specified buttons."""
@@ -2264,7 +2266,8 @@ class BashStatusBar(DnDStatusBar):
         if wx.Platform != '__WXMSW__':
             text_length_px += 10
         self._native_widget.SetStatusWidths(
-            [self.icon_size * len(self.buttons), -1, text_length_px])
+            [self._native_widget.FromDIP(self.icon_size) * len(self.buttons),
+             -1, text_length_px])
 
     @classmethod
     def set_tooltips(cls):
