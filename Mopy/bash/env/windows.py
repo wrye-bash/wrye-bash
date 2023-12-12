@@ -1122,6 +1122,8 @@ def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
                             r'%SystemRoot%\System32\shell32.dll')), '2'
                 else:
                     win_icon_path, idex = _get_default_app_icon(idex, target)
+            else:
+                win_icon_path = _GPath(win_icon_path)
             if win_icon_path.exists():
                 g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
                 custom_icon_paths = [g_path] * 3

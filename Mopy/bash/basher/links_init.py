@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
@@ -88,7 +87,7 @@ def InitStatusBar():
             list_img = xe_images
         else:
             list_img = _png_list(_j('tools', f'{app_key.lower()}%s.png'))
-        if cli_args: # for tools defined in constants.py
+        if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
             list_img, tooltip_str, **kwargs)
@@ -107,24 +106,25 @@ def InitStatusBar():
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
         args = f'{xe_name}.exe', _('Launch %s') % xe_name, {'root_dirs': 'app'}
-        all_links.append(_tool_args(f'{xe_name}Path', args, clazz=AppXEdit,
-            uid=xe_name, display_launcher=bush.game.Xe.full_name == xe_name,
-            cli_args=(f'-{xe_name[:-4]}', '-edit')))
-        if xe_name == 'TES4Edit': # set the paths for TES4Trans/TES4View
-            tes4_edit_dir= all_links[-1].exePath.head
-    # not specified in the ini - we bypass app_button_factory - avoid!
-    all_links.append(AppXEdit(tes4_edit_dir.join('TES4View.exe'),
-        _png_list(_j('tools', f'{"TES4ViewPath".lower()}%s.png')),
-        _('Launch TES4View'), 'TES4View', cli_args=('-TES4', '-view'),
-        display_launcher=_is_oblivion))
-    all_links.append(AppXEdit(tes4_edit_dir.join('TES4Trans.exe'),
-        _png_list(_j('tools', f'{"TES4TransPath".lower()}%s.png')),
-        _('Launch TES4Trans'), 'TES4Trans', cli_args=('-TES4', '-translate'),
-        display_launcher=_is_oblivion))
+        all_links.append(_tool_args(f'{xe_name}Path', args, uid=xe_name,
+            display_launcher=bush.game.Xe.full_name == xe_name,
+            cli_args=(f'-{xe_name[:-4]}', '-edit'), clazz=AppXEdit))
+        if xe_name == 'TES4Edit':
+            # set the paths for TES4Trans/TES4View, supposing they are in the
+            # same folder with TES4Edit - these are not specified in the ini
+            tes4_edit_dir = all_links[-1].exePath.head
+            args = 'TES4View.exe', _('Launch TES4View'), {
+                'root_dirs': tes4_edit_dir}, '-TES4', '-view'
+            all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',
+                display_launcher=_is_oblivion, clazz=AppXEdit))
+            args = 'TES4Trans.exe', _('Launch TES4Trans'), {
+                'root_dirs': tes4_edit_dir}, '-TES4', '-translate'
+            all_links.append(_tool_args('TES4TransPath', args, uid='TES4Trans',
+                display_launcher=_is_oblivion, clazz=AppXEdit))
     all_links.append(  #Tes4LODGen
         _tool_args('Tes4LodGenPath', ('TES4LodGen.exe', _('Launch Tes4LODGen'),
-            {'root_dirs': 'app'}, '-TES4 -lodgen'), clazz=AppXEdit,
-            uid='TES4LODGen', display_launcher=_is_oblivion))
+            {'root_dirs': 'app'}), clazz=AppXEdit, uid='TES4LODGen',
+            display_launcher=_is_oblivion, cli_args=('-TES4', '-lodgen')))
     all_links.extend(_tool_args(*tool, display_launcher=bool(dipl), clazz=cls)
         for tool, cls, dipl in zip(loot_bosh.items(), (AppLOOT, AppBOSS), (
             bush.game.loot_game_name, bush.game.boss_game_name)))
