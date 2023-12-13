@@ -355,10 +355,10 @@ class _ChildrenGrup(MobObjects):
     _children_grup_type = -1
 
     def __init__(self, grup_header, load_f, ins=None, master_rec=None):
+        super().__init__(grup_header, load_f, ins)
         if master_rec and (groupFid := grup_header.label) != master_rec.fid:
             self._load_err(f'Children subgroup ({groupFid}) does '
                            f'not match parent {master_rec!r}.')
-        super().__init__(grup_header, load_f, ins)
 
 _EOF = -1 # endPos is at the end of file - used for non-headed groups
 class _Nested(_RecordsGrup):

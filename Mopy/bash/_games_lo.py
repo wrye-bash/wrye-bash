@@ -35,7 +35,7 @@ import time
 from collections import defaultdict
 
 from . import bass, bolt, env, exception
-from .bolt import FName, Path, dict_sort
+from .bolt import FName, GPath, Path, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -719,7 +719,7 @@ class INIGame(LoGame):
     ini_key_actives = (u'', u'', u'')
     ini_key_lo = (u'', u'', u'')
 
-    def __init__(self, mod_infos, plugins_txt_path=u''):
+    def __init__(self, mod_infos, plugins_txt_path=GPath('')):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
         super().__init__(mod_infos, plugins_txt_path)
