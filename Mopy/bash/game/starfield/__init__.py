@@ -105,16 +105,22 @@ class _AStarfieldGameInfo(PatchGame):
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
             # TODO(SF) verify vanilla dirs
+            'distantlod',
+            'geometries',
             'interface',
             'lodsettings',
             'materials',
             'misc',
+            'particles',
+            'planetdata',
             'programs',
             'scripts',
             'seq',
             'sfse', # 3P: SFSE
             'shadersfx',
+            'space',
             'strings',
+            'terrain',
             'vis',
         }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {

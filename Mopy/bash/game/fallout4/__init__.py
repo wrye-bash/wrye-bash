@@ -111,7 +111,9 @@ class AFallout4GameInfo(PatchGame):
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
             'dtf', # 3P: Damage Threshold Framework
+            'dyndolod', # 3P: DynDOLOD (TexGen)
             'f4se', # 3P: F4SE
+            'folip', # 3P: Far Object LOD Improvement Project
             'interface',
             'lodsettings',
             'materials',
