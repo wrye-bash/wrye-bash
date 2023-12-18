@@ -502,24 +502,19 @@ class LoGame(object):
         fix_lo.lo_added |= mods_set - loadorder_set
         # Remove non existent plugins from load order
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
+        ol = lord[:] # take a snapshot used in checking master block reordering
+        for mod in fix_lo.lo_added: # Append new plugins to load order
+            if mod == master_name:
+                lord.insert(0, master_name)
+                bolt.deprint(f'{master_name} inserted to Load order')
+            else: # append all to the end, even esms, will be reordered below
+                lord.append(mod)
         # See if any esm files are loaded below an esp and reorder as necessary
-        ol = lord[:]
         lord.sort(key=lambda m: not cached_minfs[m].in_master_block())
-        lo_order_changed |= ol != lord
-        if fix_lo.lo_added:
-            # Append new plugins to load order
-            index_first_esp = self._index_of_first_esp(lord)
-            for mod in fix_lo.lo_added:
-                if cached_minfs[mod].in_master_block():
-                    if not mod == master_name:
-                        lord.insert(index_first_esp, mod)
-                    else:
-                        lord.insert(0, master_name)
-                        bolt.deprint(f'{master_name} inserted to Load order')
-                    index_first_esp += 1
-                else: lord.append(mod)
-        # end textfile get
+        # check if any of the existing mods were moved in/out the master block
+        lo_order_changed |= ol != [x for x in lord if x not in fix_lo.lo_added]
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
+        # end textfile get
         lo_order_changed |= self._order_fixed(lord)
         if lo_order_changed:
             fix_lo.lo_reordered = old_lord, lord
@@ -548,8 +543,14 @@ class LoGame(object):
         # load last) - won't trigger saving but for Skyrim
         fix_active.act_order_differs_from_load_order += \
             self._check_active_order(acti_filtered, lord)
-        for path in fix_active.missing_must_be_active: # insert after the last master
-            acti_filtered.insert(self._index_of_first_esp(acti_filtered), path)
+        for index_of_first_esp, act in enumerate(acti_filtered):
+            if not self.mod_infos[act].in_master_block(): break
+        else: # no masters *not even the game master* - previous behavior
+            ##: disallow this for games that allow deactivating the master esm?
+            index_of_first_esp = 0
+        # insert after the last master
+        acti_filtered[index_of_first_esp:index_of_first_esp] = (
+            fix_active.missing_must_be_active)
         # Check for duplicates - NOTE: this modifies acti_filtered!
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
@@ -617,13 +618,6 @@ class LoGame(object):
         return u''
 
     # HELPERS -----------------------------------------------------------------
-    def _index_of_first_esp(self, lord):
-        index_of_first_esp = 0
-        while index_of_first_esp < len(lord) and self.mod_infos[
-            lord[index_of_first_esp]].in_master_block():
-            index_of_first_esp += 1
-        return index_of_first_esp
-
     @staticmethod
     def _check_for_duplicates(plugins_list: list[FName]):
         mods, duplicates, j = set(), set(), 0
