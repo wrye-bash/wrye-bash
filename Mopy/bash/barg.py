@@ -117,10 +117,13 @@ def parse():
                         dest='language',
                         help='Specify the user language overriding the '
                              'system language settings.')
-    parser.add_argument('-n', '--unix',
+    parser.add_argument('-n', '--unsupported',
                         action='store_true',
-                        help='Allow bash to run on unix systems ['
-                             'EXPERIMENTTAL].')
+                        help='Allow Wrye Bash to run on unsupported operating '
+                             'systems [EXPERIMENTAL].')
+    # Deprecated alias for --unsupported
+    parser.add_argument('--unix', action='store_true', dest='unsupported',
+                        help=argparse.SUPPRESS)
     # parse and error check backup options
     args = parser.parse_args()
     if args.backup and args.restore:
@@ -135,7 +138,7 @@ _short_to_long = {
     '-f': '--filename',
     '-L': '--Language',
     '-l': '--localAppDataPath',
-    '-n': '--unix',
+    '-n': '--unsupported',
     '-o': '--oblivionPath',
     '-p': '--personalPath',
     '-q': '--quiet-quit',

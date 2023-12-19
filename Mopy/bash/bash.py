@@ -387,11 +387,12 @@ def main(opts):
 
     :param opts: command line arguments
     :type opts: Namespace"""
-    if (os_system := platform.system()) != 'Windows' and not opts.unix:
-        # Linux is still mostly broken, so raise on import
-        raise ImportError(f'Wrye Bash only partially supports {os_system} at '
+    curr_os = platform.system()
+    if curr_os not in ('Linux', 'Windows') and not opts.unsupported:
+        raise ImportError(f'Wrye Bash only partially supports {curr_os} at '
                           f"the moment. If you know what you're doing, use "
-                          f"the --unix switch to bypass this raise statement.")
+                          f"the --unsupported switch to bypass this raise "
+                          f"statement.")
     # Change working dir and logging
     _early_setup()
     # wx is needed to initialize locale, so that's first
