@@ -303,8 +303,8 @@ class NamesTweak_Body_Armor_Fo3(_ANamesTweak_Body_Armor):
             equipment_tag = fancy_tag
         elif body_flags.backpack:
             equipment_tag = backpack_tag
-        elif (body_flags.bodyAddOn1 or body_flags.bodyAddOn2 or
-              body_flags.bodyAddOn3):
+        elif (body_flags.bodyAddon1 or body_flags.bodyAddon2 or
+              body_flags.bodyAddon3):
             equipment_tag = accessory_tag
         elif body_flags.pipboy:
             equipment_tag = pipboy_tag
