@@ -167,7 +167,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         612:  ('PlayerInRegion', 2, 0),
         614:  ('GetChallengeCompleted', 2, 0),
         619:  ('IsAlwaysHardcore', 0, 0),
-        # Added by (x)NVSE - up to date with xNVSE v6.2.9
+        # Added by (x)NVSE - up to date with xNVSE v6.3.4
         1024: ('GetNVSEVersion', 0, 0),
         1025: ('GetNVSERevision', 0, 0),
         1026: ('GetNVSEBeta', 0, 0),
@@ -251,11 +251,16 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         1541: ('GetActorFIKstatus', 0, 0),
         1587: ('GetWeaponRegenRate', 2, 0),
         1590: ('CallFunctionCond', 2, 1),
+        1623: ('HasAmmoEquipped', 2, 0),
+        1624: ('GetEquippedWeaponCanUseAmmo', 2, 0),
+        1625: ('IsEquippedAmmoInList', 2, 0),
+        1626: ('GetEquippedWeaponUsesAmmoList', 2, 0),
+        1631: ('GetWeaponCanUseAmmo', 2, 2),
         # Added by nvse_plugin_ExtendedActorVariable (obsolete & unreleased)
         4352: ('GetExtendedActorVariable', 2, 0),
         4353: ('GetBaseExtendedActorVariable', 2, 0),
         4355: ('GetModExtendedActorVariable', 2, 0),
-        # Added by nvse_extender
+        # Added by nvse_extender - up to date with v19
         4420: ('NX_GetEVFl', 0, 0),
         4426: ('NX_GetQVEVFl', 2, 1),
         # Added by lutana_nvse (included in JIP)
@@ -277,7 +282,7 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         4833: ('GetDistance3D', 2, 0),
         4843: ('PlayerHasKey', 0, 0),
         4897: ('ActorHasEffect', 2, 0),
-        # Added by JIP NVSE Plugin - up to date with v56.76
+        # Added by JIP NVSE Plugin - up to date with v57.21
         5637: ('GetIsPoisoned', 0, 0),
         5708: ('IsEquippedWeaponSilenced', 0, 0),
         5709: ('IsEquippedWeaponScoped', 0, 0),
@@ -312,10 +317,11 @@ class _AFalloutNVGameInfo(AFallout3GameInfo):
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
         6426: ('IsSpellTargetList', 2, 0),
-        # Added by JohnnyGuitar NVSE - up to date with v4.85
+        # Added by JohnnyGuitar NVSE - up to date with v4.98
         8501: ('GetBaseScale', 0, 0),
         8549: ('GetQuestFailed', 2, 0),
         8623: ('GetLocationSpecificLoadScreensOnly', 0, 0),
+        8684: ('GetPlayerCamFOV', 1, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
     }

@@ -41,7 +41,7 @@ from .utils_constants import FID, ZERO_FID, get_structs, int_unpacker
 from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, pack_byte, pack_float, pack_int, \
     pack_int_signed, pack_short, struct_pack, struct_unpack, unpack_str16
-from ..exception import ModError
+from ..exception import ArgumentError, ModError
 
 # Shared helpers --------------------------------------------------------------
 ##: These should probably go somewhere else
@@ -218,6 +218,15 @@ class _MelCtda(MelUnion):
             decider=AttrValDecider('ifunc'),
         ))
         self._ctda_mel: MelStruct = next(iter(self.element_mapping.values()))
+
+    def _get_element(self, decider_ret):
+        try:
+            return super()._get_element(decider_ret)
+        except ArgumentError as e:
+            raise RuntimeError('A condition function could not be retrieved, '
+                               'this almost certainly means the '
+                               'condition_function_data for this game needs '
+                               'to be updated') from e
 
     # Helper methods - Note that we skip func_data[0]; the first element is
     # the function name, which is only needed for puny human brains
