@@ -43,6 +43,7 @@ from .misc_links import *
 from .mod_links import *
 from .mods_links import *
 from .saves_links import *
+from .settings_dialog import launcher_settings
 # Rest of internal imports
 from .. import bass, bush
 from ..balt import BashStatusBar, MenuLink, SeparatorLink, UIList_Delete, \
@@ -89,7 +90,7 @@ def InitStatusBar():
         if cli_args: # for tools defined in constants.py and TES4View/Trans
             kwargs['cli_args'] = (*kwargs.get('cli_args', ()), *cli_args)
         return clazz.app_button_factory(app_key, app_launcher, path_kwargs,
-            list_img, app_name, **kwargs)
+                                        list_img, app_name, **kwargs)
     all_links.append(_tool_args(None, (bush.game.Ck.exe,
             bush.game.Ck.long_name, {'root_dirs': 'app'}), clazz=TESCSButton,
         uid='TESCS', display_launcher=bool(bush.game.Ck.ck_abbrev)))
@@ -149,6 +150,9 @@ def InitStatusBar():
         app_key = pth.stail.lower()
         all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
                                    canHide=False))
+    #--Custom Launchers
+    all_links.extend(AppButton.app_button_factory(uid=launcher_uid) for
+                     launcher_uid in launcher_settings())
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
     all_links.append(PluginCheckerButton('ModChecker'))

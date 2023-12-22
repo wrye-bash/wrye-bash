@@ -24,6 +24,7 @@
 
 import functools
 import os
+import shlex
 import subprocess
 import sys
 from collections import deque
@@ -341,11 +342,16 @@ class TaskDialog(object):
                  main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')
 
+def split_launcher_args(launcher_args: str) -> list[str]:
+    return shlex.split(launcher_args) # raises a ValueError on unclosed quotes
+
+join_launcher_args = shlex.join
+
 class AppLauncher(_AppLauncher):
     def launch_app(self, exe_path, exe_args):
         kw = dict(close_fds=True, env=os.environ.copy())
-        if os.access(exe_path, mode=os.X_OK):
-            # we could run this if we tried so let's do it
+        if exe_path.is_file() and os.access(exe_path, mode=os.X_OK):
+            # we could run this if we tried so let's do it - not folders
             return subprocess.Popen([exe_path.s, *exe_args], **kw)
         # not executable, calling xdg-open to figure this out (can't pass args)
         return subprocess.Popen([which('xdg-open'), exe_path.s], **kw)

@@ -40,7 +40,7 @@ from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
 from itertools import chain
-from subprocess import Popen
+from subprocess import Popen, list2cmdline
 from uuid import UUID
 
 try:
@@ -1647,10 +1647,27 @@ class TaskDialog(object):
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
 
+class _RawArgs(str):
+    """Command line arguments as the user typed them - each Windows program
+    parses its own command line, so splitting and requoting them would mangle
+    some, eg xEdit's -D:"C:\\Some Folder\\"."""
+
+def split_launcher_args(launcher_args: str) -> list[str]:
+    """Return the command line arguments of a launcher, to pass on as they
+    are - raises a ValueError on an unclosed quote."""
+    shlex.split(launcher_args, posix=False) # check the quotes
+    return [_RawArgs(launcher_args)] if launcher_args.strip() else []
+
+def join_launcher_args(launcher_args) -> str:
+    """Return the command line of launcher_args - quoting them as Popen would,
+    but the ones split_launcher_args returned."""
+    return ' '.join(a if isinstance(a, _RawArgs) else list2cmdline([a])
+                    for a in launcher_args)
+
 class AppLauncher(_AppLauncher):
 
     def launch_app(self, exe_path, exe_args):
-        args = shlex.join(exe_args)
+        args = join_launcher_args(exe_args)
         try:
             os.startfile(exe_path.s, arguments=args)
         except WindowsError as e:
@@ -1673,11 +1690,12 @@ class ExeLauncher(AppLauncher):
             self._run_exe(exe_path, exe_args)
         except WindowsError as werr:
             if werr.winerror != 740: raise
-            os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
+            os.startfile(exe_path.s, 'runas', join_launcher_args(exe_args),
                          exe_path.head.s, 1)
 
     def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
-        return Popen([exe_path.s, *exe_args], close_fds=True)
+        return Popen(join_launcher_args([exe_path.s, *exe_args]),
+                     close_fds=True)
 
 class LnkLauncher(AppLauncher):
 
