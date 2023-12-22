@@ -25,14 +25,15 @@ import subprocess
 import webbrowser
 
 from .frames import DocBrowser, PluginChecker
-from .settings_dialog import SettingsDialog
+from .settings_dialog import SettingsDialog, launcher_settings
 from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
-from ..bolt import undefinedPath
+from ..bolt import GPath, deprint, os_name, undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
-    ExeLauncher, LnkLauncher, set_cwd
-from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
-    Lazy, Links, WithDragEvents, get_image, showError
+    ExeLauncher, LnkLauncher, join_launcher_args, set_cwd, \
+    split_launcher_args
+from ..gui import ClickableImage, ERROR_ICONS, EventResult, get_key_down, \
+    get_shift_down, Lazy, Links, WithDragEvents, get_image, showError
 ##: we need to move SB_Button to gui but we are blocked by Link
 from ..gui.base_components import _AComponent
 
@@ -157,6 +158,7 @@ class _StatusBar_Hide(ItemLink):
 #------------------------------------------------------------------------------
 class AppButton(AppLauncher, StatusBarButton):
     """Launch an application."""
+    is_custom = False # a launcher the user added - set by app_button_factory
 
     def __init__(self, launcher_path, images, app_name, uid, cli_args=(),
                  canHide=True, display_launcher=True):
@@ -189,7 +191,7 @@ class AppButton(AppLauncher, StatusBarButton):
 
     def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         exeargs, exepath = self.app_cli(custom_args), self.app_path
-        Link.Frame.set_status_info(shlex.join([exepath.s, *exeargs]))
+        Link.Frame.set_status_info(join_launcher_args([exepath.s, *exeargs]))
         try:
             self.launch_app(exepath, exeargs)
             return
@@ -200,7 +202,7 @@ class AppButton(AppLauncher, StatusBarButton):
             msg = f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
                 'launched_exe_path': exepath} + '\n' + _(
                 'Used Arguments: %(launched_exe_args)s') % {
-                       'launched_exe_args': shlex.join(exeargs)}
+                       'launched_exe_args': join_launcher_args(exeargs)}
         error_title = _("Could Not Launch '%(launched_exe_name)s'") % {
             'launched_exe_name': exepath.stail}
         showError(Link.Frame, msg, title=error_title)
@@ -209,26 +211,37 @@ class AppButton(AppLauncher, StatusBarButton):
         return [*self._exe_args, *custom_args]
 
     @classmethod
-    def app_button_factory(cls, app_key, app_launcher, path_kwargs, *args,
+    def app_button_factory(cls, app_key=None, app_launcher=None,
+                           path_kwargs=None, images=None, appname=None,
                            **kwargs):
-        if kwargs.setdefault('display_launcher', True):
+        """Create a launcher with its launcher settings applied - path_kwargs
+        is where to search for app_launcher, or None for a custom launcher,
+        whose path is in its settings. images None means the 'x' icon,
+        appname None the uid."""
+        launcher_set = launcher_settings().get(kwargs['uid'], {})
+        if path_kwargs is None: # displayed even if missing, with the 'x' icon
+            exe_path = GPath(launcher_set['path']) # the user may type anything
+        elif kwargs.setdefault('display_launcher', True):
             exe_path, is_present = cls.find_launcher(app_launcher, app_key,
                                                      **path_kwargs)
             # App_Button is initialized once on boot, if the path doesn't exist
             # at this time then it will be detected on next launch of Bash
             kwargs['display_launcher'] &= is_present
         else: exe_path = undefinedPath # don't bother figuring that out
-        if cls is not AppButton:
-            return cls(exe_path, *args, **kwargs)
-        if exe_path.cext == '.exe':
-            return _ExeButton(exe_path, *args, **kwargs)
-        if exe_path.cext == '.jar':
-            return _JavaButton(exe_path, *args, **kwargs)
-        if exe_path.cext == '.lnk':
-            return LnkButton(exe_path, *args, **kwargs)
-        if exe_path.is_dir():
-            return _DirButton(exe_path, *args, **kwargs)
-        return cls(exe_path, *args, **kwargs)
+        if 'args' in launcher_set: # they replace the default ones
+            try:
+                kwargs['cli_args'] = split_launcher_args(launcher_set['args'])
+            except ValueError: # the page refuses those, but let's not abort
+                deprint(f'Invalid arguments for launcher {kwargs["uid"]}: '
+                        f'{launcher_set["args"]}', traceback=True)
+        if images is None:
+            images = ERROR_ICONS
+        button_cls = {'.exe': _ExeButton, '.jar': _JavaButton}.get(
+            exe_path.cext, cls) if cls is AppButton else cls
+        app_button = button_cls(exe_path, images, appname or kwargs['uid'],
+                                **kwargs)
+        app_button.is_custom = path_kwargs is None
+        return app_button
 
 class _ExeButton(ExeLauncher, AppButton):
 
@@ -270,11 +283,6 @@ class LnkButton(LnkLauncher, AppButton):
         if self._shortcut_desc is not None:
             return self._shortcut_desc
         return super().sb_button_tip
-
-class _DirButton(AppButton):
-
-    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
-        webbrowser.open(self._app_path.s)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
@@ -337,9 +345,11 @@ class AppXEdit(_ExeButton):
         is_expert = xe_prefix and bass.settings[
             f'{xe_prefix}.iKnowWhatImDoing']
         skip_bsas = xe_prefix and bass.settings[f'{xe_prefix}.skip_bsas']
-        extra_args = [*shlex.split(bass.inisettings[
-            'xEditCommandLineArguments'], posix=False), '-IKnowWhatImDoing'] \
-            if is_expert else []
+        ini_args = bass.inisettings['xEditCommandLineArguments']
+        # xEdit parses a Windows command line, also when run through Wine
+        extra_args = [*(split_launcher_args(ini_args) if os_name == 'nt' else
+            shlex.split(ini_args, posix=False)), '-IKnowWhatImDoing'] if \
+            is_expert else []
         if skip_bsas:
             extra_args.append('-skipbsa')
         return super().app_cli((*extra_args, *custom_args))

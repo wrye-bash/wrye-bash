@@ -21,6 +21,7 @@
 #
 # =============================================================================
 import os
+import pathlib
 import webbrowser
 from collections import defaultdict
 
@@ -30,7 +31,8 @@ from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, readme_url, reverse_dict
-from ..env import is_uac, shellDelete, shellMove
+from ..env import is_uac, join_launcher_args, shellDelete, shellMove, \
+    split_launcher_args
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
     DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
@@ -39,7 +41,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image, HyperlinkLabel
+    get_image, HyperlinkLabel, FilePicker, popups, GridLayout
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -1508,6 +1510,143 @@ class TrustedBinariesPage(_AFixedPage):
                     bush.game.Se.se_abbrev or
                     bush.game.Sp.sp_abbrev)
 
+# Launchers -------------------------------------------------------------------
+def launcher_settings() -> dict[str, dict[str, str]]:
+    """Return the launcher settings of this platform, as {uid: {key: value}}
+    - the launchers the user added. The paths picked on Windows make no sense
+    on Linux and vice versa, should the two share the settings file."""
+    # mutating it is enough for bolt.Settings.save to store it
+    return bass.settings['bash.launchers'].setdefault(bolt.os_name, {})
+
+class LaunchersPage(_AFixedPage):
+    """Add, edit and remove the status bar launchers."""
+
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        # the uid of the launcher displayed in the text fields, if any
+        self._selected_launcher: str | None = None
+        # the launchers, by uid
+        self._launcher_listbox = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=self._handle_launcher_selected)
+        # Name, path and args
+        self._launcher_path = FilePicker(self, hint=_('Path to application'))
+        self._launcher_path.button.tooltip = _('Select a file to launch.')
+        self._launcher_path.text_field.tooltip = _('Path to file')
+        self._launcher_args_txt = TextField(self,
+                                            hint=_('Command line arguments'))
+        self._launcher_args_txt.tooltip = _('Command line arguments')
+        self._launcher_name_txt = TextField(self, hint=_('Shortcut name'))
+        self._launcher_name_txt.tooltip = _('Shortcut name')
+        self._save_launcher_btn = SaveButton(self, btn_label=_('Save'),
+            btn_tooltip=_('Save currently selected launcher.'),
+            on_click=self._save_launcher)
+        self._remove_launcher_btn = Button(self, btn_label=_('Remove'),
+            btn_tooltip=_('Remove currently selected launcher'),
+            on_click=self._remove_launcher)
+        self._new_launcher_btn = Button(self, btn_label=_('New'),
+            btn_tooltip=_('Clear the fields, to add a new launcher.'),
+            on_click=self._cleanup)
+        # that's it, time to build the list
+        self._cleanup()
+        self._populate_launcher_listbox()
+        # finish drawing page
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._page_desc_label,
+            HorizontalLine(self),
+            (self._launcher_listbox, LayoutOptions(weight=1)),
+            HorizontalLine(self),
+            GridLayout(h_spacing=4, v_spacing=4, stretch_cols=[1],
+                item_expand=True, items=[
+                    ((Label(self, label), LayoutOptions(expand=False)), field)
+                    for label, field in ((_('Name:'), self._launcher_name_txt),
+                        (_('Application path:'), self._launcher_path),
+                        (_('Command line arguments:'),
+                         self._launcher_args_txt))]),
+            HLayout(spacing=4, item_expand=True, items=[
+                self._save_launcher_btn,
+                self._remove_launcher_btn,
+                self._new_launcher_btn
+        ])]).apply_to(self)
+
+    def _cleanup(self):
+        """Select no launcher - the text fields are then for a new one."""
+        self._selected_launcher = None
+        self._launcher_listbox.lb_select_none()
+        self._remove_launcher_btn.enabled = False
+        self._set_textfields(editable=True)
+
+    def _set_textfields(self, name='', path='', args='', *, editable=False):
+        """Display the specified launcher details - only editable ones can be
+        saved."""
+        for txt_field, txt in ((self._launcher_name_txt, name),
+                (self._launcher_path.text_field, path),
+                (self._launcher_args_txt, args)):
+            txt_field.text_content = txt
+            txt_field.editable = editable
+        self._launcher_path.button.enabled = editable
+        self._save_launcher_btn.enabled = editable
+
+    def _populate_launcher_listbox(self):
+        self._launcher_listbox.lb_set_items([launcher_uid for launcher_uid,
+            launcher in BashStatusBar.all_sb_links.items() if hasattr(
+            launcher, 'app_cli')]) # AppButtons
+
+    def _handle_launcher_selected(self, _dex, selected_str):
+        self._selected_launcher = selected_str
+        if (launcher := BashStatusBar.all_sb_links[selected_str]).is_custom:
+            launcher_set = launcher_settings()[selected_str]
+            self._set_textfields(selected_str, launcher_set['path'],
+                                 launcher_set.get('args', ''), editable=True)
+        else: # the predefined launchers are read only for now
+            self._set_textfields(selected_str, launcher.app_path.s,
+                                 join_launcher_args(launcher.app_cli(())))
+        self._remove_launcher_btn.enabled = launcher.is_custom
+
+    def _save_launcher(self):
+        from .app_buttons import AppButton
+        launcher_name = self._launcher_name_txt.text_content.strip()
+        entered = {k: txt.text_content.strip() for k, txt in (
+            ('path', self._launcher_path.text_field),
+            ('args', self._launcher_args_txt))}
+        if not (launcher_name and entered['path']):
+            showError(self, _('Launcher name and path cannot be empty.'))
+            return
+        if not pathlib.Path(entered['path']).exists():
+            showError(self, _('The provided path is invalid.'))
+            return
+        try:
+            split_launcher_args(entered['args'])
+        except ValueError as e: # e.g. No closing quotation
+            showError(self, _('Invalid command line arguments: '
+                              '%(args_error)s') % {'args_error': e})
+            return
+        selected = self._selected_launcher
+        if launcher_name != selected and (
+                launcher_name in BashStatusBar.all_sb_links):
+            showError(self, _('A launcher named %(launcher_name)s '
+                'already exists.') % {'launcher_name': launcher_name})
+            return
+        launchers = launcher_settings()
+        launchers.pop(selected, None) # it may have been renamed
+        launchers[launcher_name] = {k: v for k, v in entered.items() if v}
+        new_launcher = AppButton.app_button_factory(uid=launcher_name)
+        if selected is None:
+            Link.Frame.statusBar.add_buttons(new_launcher)
+        else:
+            Link.Frame.statusBar.replace_button(selected, new_launcher)
+        self._cleanup()
+        self._populate_launcher_listbox()
+
+    def _remove_launcher(self):
+        if not popups.askYes(parent=self, message=_('Are you sure?'),
+                             title=_('Remove Launcher'), default_is_yes=False):
+            # user canceled in confirm dialog
+            return
+        del launcher_settings()[self._selected_launcher]
+        Link.Frame.statusBar.remove_buttons(self._selected_launcher)
+        self._cleanup()
+        self._populate_launcher_listbox()
+
 # Page Definitions ------------------------------------------------------------
 _settings_pages = {
     _(u'Appearance'): {
@@ -1517,6 +1656,7 @@ _settings_pages = {
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
+    _('Launchers'): LaunchersPage,
     _(u'Confirmations'): ConfirmationsPage,
     _(u'General'): GeneralPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
@@ -1538,6 +1678,8 @@ _page_descriptions = {
     _(u'Backups'):
         _(u'Create, manage and restore backups of Wrye Bash settings and '
           u'other data. Click on a backup to manage it.'),
+    _('Launchers'):
+        _('Manage shortcuts to other applications from within Wrye Bash.'),
     _(u'Confirmations'):
         _(u"Enable or disable popups with a 'Don't show this in the future' "
           u'option.'),

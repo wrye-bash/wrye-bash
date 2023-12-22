@@ -431,7 +431,8 @@ class _PathPicker(_AComponent):
     and a button for browsing, both configurable."""
     _native_widget: _wx.FilePickerCtrl | _wx.DirPickerCtrl
 
-    def __init__(self, parent, event_type, use_icon=True, *args, **kwargs):
+    def __init__(self, parent, event_type, use_icon=True, *args, hint='',
+                 **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.on_path_changed = self._evt_handler(event_type, lambda e: e.GetPath())
         if use_icon:
@@ -439,6 +440,8 @@ class _PathPicker(_AComponent):
             # the GTK widget might already have an icon and look odd
             bmp = _wx.ArtProvider.GetBitmap(_wx.ART_FOLDER_OPEN, _wx.ART_BUTTON)
             self.button._set_button_image(bmp)
+        if hint: # needs use_text_ctrl
+            self.text_field._set_hint(hint)
 
     def set_initial_directory(self, initial_dir: os.PathLike[str]) -> None:
         self._native_widget.SetInitialDirectory(os.fspath(initial_dir))
@@ -461,7 +464,7 @@ class FilePicker(_PathPicker):
     def __init__(self, parent, dialog_title='', wildcard='*.*',
                  file_action = FilePickerAction.OPEN, use_text_ctrl=True,
                  overwrite_prompt=False, must_exist=True, change_cwd=False,
-                 small_button=False, use_icon=True):
+                 small_button=False, use_icon=True, hint=''):
         if file_action is self.FilePickerAction.OPEN:
             if not dialog_title:
                 dialog_title = _('Open File')
@@ -476,20 +479,20 @@ class FilePicker(_PathPicker):
         style |= _wx.FLP_CHANGE_DIR if change_cwd else 0
         style |= _wx.FLP_SMALL if small_button else 0
         super().__init__(parent, _wx.EVT_FILEPICKER_CHANGED, use_icon,
-                         message=dialog_title, wildcard=wildcard, style=style)
+            hint=hint, message=dialog_title, wildcard=wildcard, style=style)
 
 class DirPicker(_PathPicker):
     _native_widget: _wx.DirPickerCtrl
 
     def __init__(self, parent, dialog_title=_('Select Directory'),
                  use_text_ctrl = True, must_exist=True, change_cwd=False,
-                small=False, use_icon=True):
+                small=False, use_icon=True, hint=''):
         style = _wx.DIRP_DIR_MUST_EXIST if must_exist else 0
         style |= _wx.DIRP_CHANGE_DIR if change_cwd else 0
         style |= _wx.DIRP_SMALL if small else 0
         style |= _wx.DIRP_USE_TEXTCTRL if use_text_ctrl else 0
         super().__init__(parent, _wx.EVT_DIRPICKER_CHANGED, use_icon,
-                         message=dialog_title, style=style)
+                         hint=hint, message=dialog_title, style=style)
 
 # Other -----------------------------------------------------------------------
 class GlobalMenu(_AEvtHandler):
