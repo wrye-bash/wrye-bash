@@ -22,6 +22,8 @@
 # =============================================================================
 import io
 import os
+import shlex
+import subprocess
 import webbrowser
 from collections import defaultdict
 
@@ -30,7 +32,7 @@ from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
+from ..bolt import LooseVersion, deprint, dict_sort, os_name, readme_url, \
     reverse_dict
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
@@ -41,7 +43,7 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
     showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
-    get_image, HyperlinkLabel
+    get_image, HyperlinkLabel, FilePicker
 from ..update_checker import UpdateChecker, can_check_updates
 from ..wbtemp import default_global_temp_dir
 
@@ -1526,6 +1528,143 @@ class TrustedBinariesPage(_AFixedPage):
                     bush.game.Se.se_abbrev or
                     bush.game.Sp.sp_abbrev)
 
+# Launchers -------------------------------------------------------------------
+class LaunchersPage(_AFixedPage):
+    """Create, delete and toggle app launchers."""
+
+    def __init__(self, parent, page_desc):
+        super().__init__(parent, page_desc)
+        self._is_creating_launcher = False
+        # List of existing launchers - display name is the uid of the SBbutton
+        self._launcher_listbox = ListBox(self, isSort=True, isHScroll=True,
+            onSelect=self._handle_launcher_selected)
+        # Name, path and args
+        self._launcher_path = FilePicker(self)
+        self._launcher_path.button.tooltip = _('Select a file to launch.')
+        self._launcher_args_txt = TextField(self)
+        self._launcher_args_txt.tooltip = _('Command line arguments')
+        self._launcher_name_txt = TextField(self)
+        self._launcher_name_txt.tooltip = _('Shortcut name')
+        self._clear_textfields()
+        self._save_launcher_btn = SaveButton(self, btn_label=_('Save'),
+            btn_tooltip=_('Save currently selected launcher.'))
+        self._save_launcher_btn.on_clicked.subscribe(self._save_launcher)
+        self._remove_launcher_btn = Button(self, btn_label=_('Remove'),
+            btn_tooltip=_('Remove currently selected launcher'))
+        self._remove_launcher_btn.on_clicked.subscribe(self._remove_or_cancel)
+        self._remove_launcher_btn.enabled = False # nothing selected at start
+        self._new_launcher_btn = Button(self, btn_label=_('New'),
+                                        btn_tooltip=_('Add a new launcher'))
+        self._new_launcher_btn.on_clicked.subscribe(
+            self._new_launcher_mode)
+        # that's it, time to build the list
+        self._populate_launcher_listbox()
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._page_desc_label,
+            HorizontalLine(self),
+            (self._launcher_listbox, LayoutOptions(weight=1)),
+            HorizontalLine(self),
+            self._launcher_name_txt,
+            HLayout(spacing=2, item_expand=True, items=[
+                (self._launcher_path, LayoutOptions(weight=1)),
+            ]),
+            self._launcher_args_txt,
+            HLayout(spacing=4, item_expand=True, items=[
+                self._save_launcher_btn,
+                self._remove_launcher_btn,
+                self._new_launcher_btn
+        ])]).apply_to(self)
+
+    def _populate_launcher_listbox(self):
+        self._launcher_listbox.lb_set_items(self.___filter())
+        #TODO retrieve launchers from settings
+
+    def ___filter(self): ##: todo temp we want to include all sb links that can be hidden
+        return [k for k, v in BashStatusBar.all_sb_links.items() if
+                hasattr(v, 'app_cli')]
+
+    def _handle_launcher_selected(self, _dex, selected_str):
+        # if selected launcher is one of the preconfigured ones:
+        #   make name and args not editable;
+        #   change remove to reset which will restore the default path
+        if selected_str in BashStatusBar.all_sb_links:
+            self._launcher_name_txt.editable = False
+            self._launcher_args_txt.editable = False
+            self._remove_launcher_btn.button_label = _('Reset')
+            self._remove_launcher_btn.tooltip = _('Restore default settings')
+        # TODO join preconfigured and custom launchers
+        selected_launcher = BashStatusBar.all_sb_links[selected_str]
+        # copy launcher details to textfields
+        self._launcher_name_txt.text_content = selected_str
+        self._launcher_path.text_field.text_content = (
+            selected_launcher.app_path.s)
+        self._launcher_args_txt.text_content = shlex.join(
+            selected_launcher.app_cli(()))
+
+    def _reset_textfields(self):
+        self._launcher_path.text_field.text_content = _('Path to application')
+        self._launcher_args_txt.text_content =_('Command line arguments')
+        self._launcher_name_txt.text_content = _('Shortcut name')
+
+    def _clear_textfields(self):
+        #self._remove_launcher_btn.enabled = False
+        for txt_field in (self._launcher_args_txt, self._launcher_name_txt,
+                          self._launcher_path.text_field):
+            txt_field.text_content = ''
+
+    def _new_launcher_mode(self, disable: bool = False):
+        """'New Launcher Mode' is basically disabling the listbox, the 'New'
+        button and changing the Remove button into a Cancel button.
+        Pass disable = True to return to the normal view (i.e. when calling it
+        from Cancel button)"""
+        # Add text/tooltip to textboxes
+        if not disable:
+            self._reset_textfields()
+        for comp in self._launcher_listbox, self._new_launcher_btn:
+            comp.enabled = disable
+        self._remove_launcher_btn.button_label = _('Remove') if disable else _(
+            'Cancel')
+        # enable cancel button
+        self._remove_launcher_btn.enabled = not disable
+        # enable editing textboxes if they're disabled
+        for comp in (self._launcher_args_txt, self._launcher_name_txt,
+                     self._launcher_path.text_field):
+            comp.editable = not disable
+        self._is_creating_launcher = not disable
+
+    def _save_launcher(self):
+        # get values to save from text boxes.
+        # If path of current launcher is invalid, like <new>, show error dialog
+        # Update list after confirmed save.
+        return
+        launcher = launchers.Launcher(self._launcher_path.text_field.text_content,
+                                      self._launcher_args_txt.text_content)
+        launcher_name = self._launcher_name_txt.text_content
+        if launcher_name in (_(u'<New...>'), u''): #TODO error out if name
+            # already exists, prompt user to edit existing instead
+            return
+        launchers.save_launcher(launcher_name, launcher)
+        self._populate_launcher_listbox()
+
+    def _remove_or_cancel(self):
+        from ..gui import popups
+        if self._is_creating_launcher: # cancel
+            self._new_launcher_mode(disable=True)
+            self._clear_textfields()
+            return
+        # remove
+        if not popups.askYes(parent=self, message=_('Are you sure?'),
+                             title=_('Remove Launcher'), default_is_yes=False):
+            # user canceled in confirm dialog
+            return
+        return
+        launcher_name = self._launcher_name_txt.text_content
+        if launcher_name in (_(u'<New...>'), u''):  # again, can't do that
+            return
+        launchers.remove_launcher(launcher_name)
+        self._clear_textfields()
+        self._populate_launcher_listbox()
+
 # Page Definitions ------------------------------------------------------------
 _settings_pages = {
     _(u'Appearance'): {
@@ -1535,6 +1674,7 @@ _settings_pages = {
         _(u'Status Bar'): StatusBarPage,
     },
     _(u'Backups'): BackupsPage,
+    _('Launchers'): LaunchersPage,
     _(u'Confirmations'): ConfirmationsPage,
     _(u'General'): GeneralPage,
     _(u'Trusted Binaries'): TrustedBinariesPage,
@@ -1557,6 +1697,8 @@ _page_descriptions = {
     _(u'Backups'):
         _(u'Create, manage and restore backups of Wrye Bash settings and '
           u'other data. Click on a backup to manage it.'),
+    _('Launchers'):
+        _('Manage shortcuts to other applications from within Wrye Bash.'),
     _(u'Confirmations'):
         _(u"Enable or disable popups with a 'Don't show this in the future' "
           u'option.'),
