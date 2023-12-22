@@ -450,6 +450,9 @@ settingDefaults = { # keep current naming format till refactored
     'bash.mods.export.skip': '',
     'bash.mods.export.deprefix': '',
     'bash.mods.export.skipcomments': False,
+    #--Launchers: {os_name: {uid: {'path'|'args': value}}}
+    # - see launcher_settings in settings_dialog
+    'bash.launchers': {},
     #--Wrye Bash: Saves
     'bash.saves.cols': ['File', 'Modified', 'Size', 'PlayTime', 'Player',
                         'Cell'],
