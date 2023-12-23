@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for TES V: Skyrim VR."""
-from .. import MergeabilityCheck
+from .. import MergeabilityCheck, ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 
@@ -66,6 +66,10 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
 
     class Esp(ASkyrimSEGameInfo.Esp):
         master_limit = 255
+        ##: Drop once we've implemented support for Skyrim VR ESL Support
+        object_index_range = ObjectIndexRange.RESERVED
+        object_index_range_expansion_ver = 0.0
+        validHeaderVersions = (0.94, 1.70)
 
     bethDataFiles = ASkyrimSEGameInfo.bethDataFiles | {
         'skyrimvr.esm',

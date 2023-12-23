@@ -406,7 +406,7 @@ class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
-    next_object_default = 0x800
+    next_object_default = if_sse(le_version=0x800, se_version=0x001)
 
     class HeaderFlags(AMreHeader.HeaderFlags):
         localized: bool = flag(7)

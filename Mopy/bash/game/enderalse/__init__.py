@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from .. import ObjectIndexRange
 from ..enderal import AEnderalGameInfo
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import GOGMixin, SteamMixin
@@ -56,6 +57,12 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
 
     class Bain(AEnderalGameInfo.Bain, ASkyrimSEGameInfo.Bain):
         skip_bain_refresh = {u'enderalseedit backups', u'enderalseedit cache'}
+
+    ##: Drop once we've implemented support for Backported Extended ESL Support
+    class Esp(ASkyrimSEGameInfo.Esp):
+        object_index_range = ObjectIndexRange.RESERVED
+        object_index_range_expansion_ver = 0.0
+        validHeaderVersions = (0.94, 1.70)
 
     bethDataFiles = {
         'dawnguard.esm',
