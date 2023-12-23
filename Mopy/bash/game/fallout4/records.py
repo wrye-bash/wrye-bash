@@ -924,6 +924,7 @@ class MreCell(AMreCell): ##: Implement once regular records are done
 
     class HeaderFlags(AMreCell.HeaderFlags):
         no_previs: bool = flag(7)
+        partial_form: bool = flag(14)
 
 #------------------------------------------------------------------------------
 class MreClas(_AMreWithProperties):
@@ -1139,6 +1140,9 @@ class MreDfob(MelRecord):
 class MreDial(MelRecord): ##: Implement once regular records are done
     """Dialogue."""
     rec_sig = b'DIAL'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        partial_form: bool = flag(14)
 
     @classmethod
     def nested_records_sigs(cls):
@@ -3057,3 +3061,6 @@ class MreWrld(AMreWrld): ##: Implement once regular records are done
     ref_types = MreCell.ref_types
     exterior_temp_extra = [b'LAND', b'NAVM']
     wrld_children_extra = [b'CELL'] # CELL for the persistent block
+
+    class HeaderFlags(AMreWrld.HeaderFlags):
+        partial_form: bool = flag(14)

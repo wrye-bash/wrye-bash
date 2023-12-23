@@ -786,7 +786,7 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8Flags(b'DATA', 'flags', _CellFlags),
+        MelUInt8Flags(b'DATA', 'flags', _CellFlags, is_required=True),
         MelSkipInterior(MelStruct(b'XCLC', ['2i'], 'posX', 'posY')),
         MelStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '2f'],
             'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',

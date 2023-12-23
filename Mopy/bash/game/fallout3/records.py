@@ -846,7 +846,7 @@ class MreCell(MelRecord, AMreCell):
         MelUInt8Flags(b'DATA', u'flags', cellFlags),
         MelSkipInterior(MelTruncatedStruct(b'XCLC', ['2i', 'I'], 'posX',
             'posY', (_cell_land_flags, 'cell_land_flags'),
-            old_versions={'2i'})),
+            old_versions={'2i'}, is_required=True)),
         MelTruncatedStruct(
             b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i',
                       u'3f'], 'ambientRed', 'ambientGreen', 'ambientBlue',

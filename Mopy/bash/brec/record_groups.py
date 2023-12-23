@@ -541,8 +541,11 @@ class _ComplexRec(_Nested):
     def should_skip(self):
         """Returns True if this complex record should be skipped by most
         processing, i.e. if its master record is ignored or deleted."""
-        return self.master_record.flags1.ignored or \
-            self.master_record.flags1.deleted
+        ##: PARTIAL_FORM_HACK: We shouldn't skip these, since some of their
+        # data still gets applied
+        return (self.master_record.flags1.ignored or
+                self.master_record.flags1.deleted or
+                self.master_record.flags1.partial_form)
 
     def setChanged(self, value=True):
         """Set master_record.changed attribute to given value."""

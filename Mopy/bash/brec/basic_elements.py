@@ -833,8 +833,9 @@ class _MelFlags(MelNum):
     """Integer flag field."""
     __slots__ = (u'_flag_type', u'_flag_default')
 
-    def __init__(self, mel_sig, attr, flags_type):
-        super(_MelFlags, self).__init__(mel_sig, attr)
+    def __init__(self, mel_sig, attr, flags_type, is_required=False):
+        super().__init__(mel_sig, attr,
+            set_default=None if not is_required else flags_type(0))
         self._flag_type = flags_type
         self._flag_default = self._flag_type(self.set_default or 0)
 

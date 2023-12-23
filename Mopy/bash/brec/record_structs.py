@@ -301,6 +301,9 @@ class MreRecord(metaclass=RecordType):
         deleted: bool = flag(5)
         ignored: bool = flag(12)
         compressed: bool = flag(18)
+        ##: PARTIAL_FORM_HACK: so that we can performantly access this in
+        # should_skip et al
+        partial_form = False
 
     def __init__(self, header, ins=None, *, do_unpack=True):
         self.header = header # type: RecHeader
@@ -340,7 +343,10 @@ class MreRecord(metaclass=RecordType):
     def should_skip(self):
         """Returns True if this record should be skipped by most processing,
         i.e. if it is ignored or deleted."""
-        return self.flags1.ignored or self.flags1.deleted
+        ##: PARTIAL_FORM_HACK: We shouldn't skip these, since some of their
+        # data still gets applied
+        return (self.flags1.ignored or self.flags1.deleted or
+                self.flags1.partial_form)
 
     def group_key(self): ##: we need an MreRecord mixin - too many ifs
         """Return a key for indexing the record on the parent (MobObjects)

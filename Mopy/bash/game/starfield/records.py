@@ -69,6 +69,7 @@ class MreCell(AMreCell): ##: Implement once regular records are done
 
     class HeaderFlags(AMreCell.HeaderFlags):
         no_previs: bool = flag(7)
+        partial_form: bool = flag(14)
 
 #------------------------------------------------------------------------------
 class MreWrld(AMreWrld): ##: Implement once regular records are done
@@ -76,3 +77,6 @@ class MreWrld(AMreWrld): ##: Implement once regular records are done
     ref_types = MreCell.ref_types
     exterior_temp_extra = [b'LAND', b'NAVM']
     wrld_children_extra = [b'CELL'] # CELL for the persistent block
+
+    class HeaderFlags(AMreWrld.HeaderFlags):
+        partial_form: bool = flag(14)

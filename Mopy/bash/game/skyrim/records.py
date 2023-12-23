@@ -855,6 +855,9 @@ class MreCell(AMreCell):
     interior_temp_extra = [b'NAVM']
     _has_duplicate_attrs = True # XWCS is an older version of XWCN
 
+    class HeaderFlags(AMreCell.HeaderFlags):
+        partial_form: bool = flag(14)
+
     class CellDataFlags1(Flags):
         isInterior: bool = flag(0)
         hasWater: bool = flag(1)
@@ -889,9 +892,9 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelTruncatedStruct(b'DATA', [u'2B'], (CellDataFlags1, u'flags'),
-                           (CellDataFlags2, u'skyFlags'),
-                           old_versions={'B'}),
+        MelTruncatedStruct(b'DATA', ['2B'], (CellDataFlags1, 'flags'),
+            (CellDataFlags2, 'skyFlags'), old_versions={'B'},
+            is_required=True),
         ##: The other games skip this in interiors - why / why not here?
         MelStruct(b'XCLC', ['2i', 'I'], 'posX', 'posY',
                   (_cell_land_flags, 'cell_land_flags')),
@@ -1091,6 +1094,9 @@ class MreCsty(MelRecord):
 class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        partial_form: bool = flag(14)
 
     class DialTopicFlags(Flags):
         doAllBeforeRepeating: bool
@@ -3684,6 +3690,8 @@ class MreWrld(AMreWrld):
     exterior_temp_extra = [b'LAND', b'NAVM']
     wrld_children_extra = [b'CELL'] # CELL for the persistent block
 
+    class HeaderFlags(AMreWrld.HeaderFlags):
+        partial_form: bool = flag(14)
 
     class WrldFlags2(Flags):
         smallWorld: bool = flag(0)
