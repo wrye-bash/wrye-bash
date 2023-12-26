@@ -33,6 +33,7 @@ __author__ = 'Utumno'
 import re
 import time
 from collections import defaultdict
+from functools import partial
 
 from . import bass, bolt, env, exception
 from .bolt import AFile, FName, GPath, Path, attrgetter_cache, classproperty, \
@@ -70,9 +71,9 @@ def _resolve_case_ambiguity(lo_file_path: Path):
 
 class _LoFile(AFile):
     """Base class for load order files (plugins.txt/loadorder.txt)."""
-    def __init__(self, path, star, **kwargs):
+    def __init__(self, star, path, *args, **kwargs):
         self._star = star
-        super().__init__(_resolve_case_ambiguity(path), **kwargs)
+        super().__init__(_resolve_case_ambiguity(path), *args, **kwargs)
 
     def parse_modfile(self, mod_infos) -> _ParsedLo:
         """Parse loadorder.txt and plugins.txt files with or without stars.
@@ -238,18 +239,13 @@ class LoGame(object):
     must_be_active_if_present: LoTuple = ()
     max_espms = 255
     max_esls = 0
-    # If set to False, indicates that this game has no plugins.txt. Currently
-    # only allows swap() to be a sentinel method for multiple inheritance,
-    # everything else has to be handled through overrides
-    # TODO(inf) Refactor  Game to use this value and raise AbstractExceptions
-    #  when it's False
-    has_plugins_txt = True
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
-    def __init__(self, mod_infos, plugins_txt_path: Path):
+    def __init__(self, mod_infos, plugins_txt_path: Path, *,
+                 plugins_txt_type=_LoFile):
         """:type mod_infos: bosh.ModInfos"""
         super().__init__()
-        self._plugins_txt = _LoFile(plugins_txt_path, self._star)
+        self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
         if self.master_path in self.must_be_active_if_present:
@@ -396,9 +392,7 @@ class LoGame(object):
     def swap(self, old_dir, new_dir):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
-        # If this game has no plugins.txt, don't try to swap it
-        return self._plugins_txt.bkp_pl_txt(old_dir, new_dir) \
-            if self.__class__.has_plugins_txt else False
+        return self._plugins_txt.bkp_pl_txt(old_dir, new_dir)
 
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
@@ -426,8 +420,12 @@ class LoGame(object):
                           cached_active: LoTuple):
         raise NotImplementedError
 
-    def _fetch_active_plugins(self) -> list[FName]:
-        raise NotImplementedError # no override for AsteriskGame
+    def _fetch_active_plugins(self):
+        try:
+            active, _lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            return active
+        except FileNotFoundError:
+            return []
 
     def _persist_load_order(self, lord, active):
         """Persist the fixed lord to disk - will break conflicts for
@@ -436,7 +434,7 @@ class LoGame(object):
                                   f'_persist_load_order')
 
     def _persist_active_plugins(self, active, lord):
-        raise NotImplementedError
+        self._write_plugins_txt(active, active)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -445,14 +443,6 @@ class LoGame(object):
         raise NotImplementedError
 
     # PLUGINS TXT -------------------------------------------------------------
-    def _parse_plugins_txt(self) -> _ParsedLo:
-        """Read plugins.txt file and return a tuple of (active, loadorder)."""
-        try:
-            acti_lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            return acti_lo
-        except FileNotFoundError:
-            return [], []
-
     def _write_plugins_txt(self, lord, active):
         self._plugins_txt.write_modfile(lord, active)
         self._plugins_txt.do_update()
@@ -652,6 +642,54 @@ class LoGame(object):
                 if acti_file:
                     bolt.deprint(f' - Active plugins: {acti_file}')
 
+def _mk_ini(ini_key, star, ini_fpath):
+    """Creates a new IniFile from the specified bolt.Path object."""
+    # We don't support OBSE INIs here, only regular IniFile objects
+    ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
+    class _IniLoFile(_LoFile, ini_type):
+        def __init__(self, ini_key, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.ini_key = ini_key
+
+        def parse_modfile(self, mod_infos) -> _ParsedLo:
+            """Reads a section from self using the in_key and returns all
+            its values as FName objects. Handles missing INI file and an
+            absent section gracefully."""
+            # Returned format is dict[FName, tuple[str, int]], we want the
+            # unicode (i.e. the mod names)
+            section_mapping = self.get_setting_values(self.ini_key[1], {})
+            # Sort by line number, then convert the values to FNames and return
+            section_vals = dict_sort(section_mapping, values_dex=[1])
+            out = [FName(v[0]) for k, v in section_vals]
+            self.do_update() # update the cached info
+            return out, out
+
+        def write_modfile(self, lord, active):
+            """Writes out the specified IniFile using the specified key and mod
+            list."""
+            # Remove any existing section - also prevents duplicate sections
+            # with different case
+            self.remove_section(self.ini_key[1])
+            # Now, write out the changed values - no backup here
+            section_contents = {self.ini_key[2] % {'lo_idx': i}: lo_mod for
+                                i, lo_mod in enumerate(lord)}
+            self.saveSettings({self.ini_key[1]: section_contents})
+
+        def bkp_pl_txt(self, old_dir, new_dir):
+            # If there's no INI inside the old (saves) directory, copy it
+            old_ini = _resolve_case_ambiguity(old_dir.join(ini_key[0]))
+            if not old_ini.is_file():
+                self.abs_path.copyTo(old_ini)
+            # Read from the new INI if it exists and write to our main INI
+            move_ini = _resolve_case_ambiguity(new_dir.join(ini_key[0]))
+            if move_ini.is_file():
+                loact = _mk_ini(ini_key, self._star, move_ini).parse_modfile(
+                    None)
+                self.write_modfile(*loact)
+                return True
+            return False
+    return _IniLoFile(ini_key, star, ini_fpath, ini_encoding)
+
 class INIGame(LoGame):
     """Class for games which use an INI section to determine parts of the load
     order. Meant to be used in multiple inheritance with other LoGame types, be
@@ -676,15 +714,18 @@ class INIGame(LoGame):
     def __init__(self, mod_infos, plugins_txt_path=GPath('')):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
-        super().__init__(mod_infos, plugins_txt_path)
         self._handles_actives = self.__class__.ini_key_actives != ('', '', '')
-        self._handles_lo = self.__class__.ini_key_lo != (u'', u'', u'')
+        self._handles_lo = self.__class__.ini_key_lo != ('', '', '')
+        kwargs = {'plugins_txt_path': plugins_txt_path}
         if self._handles_actives:
-            self._cached_ini_actives = self._mk_ini(
-                self.ini_dir_actives.join(self.ini_key_actives[0]))
+            kwargs = {'plugins_txt_path': self.ini_dir_actives.join(
+                self.ini_key_actives[0]),
+                'plugins_txt_type': partial(_mk_ini, self.ini_key_actives)}
         if self._handles_lo:
-            self._cached_ini_lo = self._mk_ini(
-                self.ini_dir_lo.join(self.ini_key_lo[0]))
+            kwargs.update({ # we must come just before TextfileGame in the MRO
+                'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
+                'lo_txt_type': partial(_mk_ini, self.ini_key_lo)})
+        super().__init__(mod_infos, **kwargs)
 
     # INI directories, override if needed
     @property
@@ -699,87 +740,6 @@ class INIGame(LoGame):
         game path."""
         return bass.dirs[u'app']
 
-    # Utilities
-    @staticmethod
-    def _mk_ini(ini_fpath):
-        """Creates a new IniFile from the specified bolt.Path object."""
-        # We don't support OBSE INIs here, only regular IniFile objects
-        ini_type, ini_encoding = get_ini_type_and_encoding(ini_fpath)
-        return ini_type(ini_fpath, ini_encoding)
-
-    @staticmethod
-    def _read_ini(cached_ini, ini_key: tuple[str, str, str]) -> list[FName]:
-        """Reads a section specified IniFile using the specified key and
-        returns all its values as FName objects. Handles missing INI file and
-        an absent section gracefully."""
-        # Returned format is dict[FName, tuple[str, int]], we want the
-        # unicode (i.e. the mod names)
-        section_mapping = cached_ini.get_setting_values(ini_key[1], {})
-        # Sort by line number, then convert the values to paths and return
-        section_vals = dict_sort(section_mapping, values_dex=[1])
-        return [FName(x[1][0]) for x in section_vals] ##: unpack - is len(x)==2?
-
-    @staticmethod
-    def _write_ini(cached_ini, ini_key: tuple[str, str, str],
-            mod_list: list[FName]):
-        """Writes out the specified IniFile using the specified key and mod
-        list."""
-        # Remove any existing section - also prevents duplicate sections with
-        # different case
-        cached_ini.remove_section(ini_key[1])
-        # Now, write out the changed values - no backup here
-        section_contents = {ini_key[2] % {'lo_idx': i}: lo_mod for i, lo_mod in
-                            enumerate(mod_list)}
-        cached_ini.saveSettings({ini_key[1]: section_contents})
-
-    # Reading from INI
-    def _fetch_active_plugins(self):
-        if self._handles_actives:
-            return self._read_ini(self._cached_ini_actives,
-                                  self.__class__.ini_key_actives)
-        return super()._fetch_active_plugins()
-
-    def _fetch_load_order(self, cached_load_order, cached_active):
-        if self._handles_lo:
-            return self._read_ini(self._cached_ini_lo,
-                                  self.__class__.ini_key_lo)
-        return super()._fetch_load_order(cached_load_order, cached_active)
-
-    # Writing changes to INI
-    def _persist_if_changed(self, active, lord, previous_active,
-                            previous_lord):
-        if self._handles_actives:
-            if previous_active is None or previous_active != active:
-                self._persist_active_plugins(active, lord)
-            # We've handled this, let the next one in line know
-            previous_active = active
-        if self._handles_lo:
-            if previous_lord is None or previous_lord != lord:
-                self._persist_load_order(lord, active)
-            # Same idea as above
-            previous_lord = lord
-        # If we handled both, don't do anything. Otherwise, delegate persisting
-        # to the next method in the MRO
-        if previous_lord != lord or previous_active != active:
-            super()._persist_if_changed(active, lord, previous_active,
-                                        previous_lord)
-
-    def _persist_active_plugins(self, active, lord):
-        if self._handles_actives:
-            self._write_ini(self._cached_ini_actives,
-                            self.__class__.ini_key_actives, active)
-            self._cached_ini_actives.do_update()
-        else:
-            super()._persist_active_plugins(active, lord)
-
-    def _persist_load_order(self, lord, active):
-        if self._handles_lo:
-            self._write_ini(self._cached_ini_lo,
-                            self.__class__.ini_key_lo, lord)
-            self._cached_ini_lo.do_update()
-        else:
-            super()._persist_load_order(lord, active)
-
     # Misc overrides
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
@@ -788,46 +748,6 @@ class INIGame(LoGame):
             return True # Assume order is important for the INI
         return super(INIGame, cls)._must_update_active(deleted_plugins,
                                                        reordered)
-
-    def active_changed(self):
-        if self._handles_actives:
-            return self._cached_ini_actives.needs_update()
-        return super().active_changed()
-
-    def load_order_changed(self):
-        if self._handles_lo:
-            return self._cached_ini_lo.needs_update()
-        return super().load_order_changed()
-
-    def swap(self, old_dir, new_dir):
-        def _do_swap(cached_ini, ini_key):
-            # If there's no INI inside the old (saves) directory, copy it
-            old_ini = _resolve_case_ambiguity(old_dir.join(ini_key[0]))
-            if not old_ini.is_file():
-                cached_ini.abs_path.copyTo(old_ini)
-            # Read from the new INI if it exists and write to our main INI
-            move_ini = _resolve_case_ambiguity(new_dir.join(ini_key[0]))
-            if move_ini.is_file():
-                self._write_ini(cached_ini, ini_key, self._read_ini(
-                    self._mk_ini(move_ini), ini_key))
-                return True
-            return False
-        swapped = False
-        if self._handles_actives:
-            swapped = _do_swap(self._cached_ini_actives, self.ini_key_actives)
-        if self._handles_lo:
-            swapped |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        return super().swap(old_dir, new_dir) or swapped
-
-    def get_acti_file(self):
-        if self._handles_actives:
-            return self._cached_ini_actives.abs_path
-        return super().get_acti_file()
-
-    def get_lo_file(self):
-        if self._handles_lo:
-            return self._cached_ini_lo.abs_path
-        return super().get_lo_file()
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
@@ -873,10 +793,6 @@ class TimestampGame(LoGame):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
 
-    def _fetch_active_plugins(self):
-        active, _lo = self._parse_plugins_txt()
-        return active
-
     def _persist_load_order(self, lord, active):
         assert set(self.mod_infos) == set(lord) # (lord must be valid)
         if not lord: return
@@ -907,9 +823,6 @@ class TimestampGame(LoGame):
         for mod, info in self.mod_infos.items():
             self._mtime_mods[int(info.ftime)].add(mod)
 
-    def _persist_active_plugins(self, active, lord):
-        self._write_plugins_txt(active, active)
-
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
         if previous_lord is None or previous_lord != lord:
@@ -930,7 +843,6 @@ class TimestampGame(LoGame):
 class Morrowind(INIGame, TimestampGame):
     """Morrowind uses timestamps for specifying load order, but stores active
     plugins in Morrowind.ini."""
-    has_plugins_txt = False
     ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
 
 class _CleanPlugins(LoGame): ##: WIP!
@@ -940,9 +852,10 @@ class _CleanPlugins(LoGame): ##: WIP!
 
 class TextfileGame(_CleanPlugins):
 
-    def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path):
-        super().__init__(mod_infos, plugins_txt_path)
-        self._loadorder_txt = _LoFile(loadorder_txt_path, self._star)
+    def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path,
+                 *, lo_txt_type=_LoFile, **kwargs):
+        super().__init__(mod_infos, plugins_txt_path, **kwargs)
+        self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
 
     def load_order_changed(self):
         # if active changed externally, refetch load order to check for desync
@@ -1026,7 +939,7 @@ class TextfileGame(_CleanPlugins):
     def _fetch_active_plugins(self):
         """Fetch what's in the plugins.txt - if something shouldn't be there,
         remove it and rewrite the plugins.txt."""
-        act, __lo = self._parse_plugins_txt()
+        act = super()._fetch_active_plugins()
         if self.master_path in act: # remove master_path from plugins.txt
             bolt.deprint(f'Removing {self.master_path} from '
                          f'{self.get_acti_file()}')
@@ -1041,7 +954,7 @@ class TextfileGame(_CleanPlugins):
 
     def _persist_active_plugins(self, active, lord):
         active_filtered = [x for x in active if x != self.master_path]
-        self._write_plugins_txt(active_filtered, active_filtered)
+        super()._persist_active_plugins(active_filtered, active_filtered)
         return active_filtered
 
     def _persist_if_changed(self, active, lord, previous_active,
@@ -1091,6 +1004,9 @@ class AsteriskGame(_CleanPlugins):
         return self.get_acti_file()
 
     # Abstract overrides ------------------------------------------------------
+    def _fetch_active_plugins(self) -> list[FName]:
+        raise NotImplementedError # no override for AsteriskGame
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached_* is passed in,

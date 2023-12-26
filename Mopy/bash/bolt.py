@@ -1706,11 +1706,6 @@ class AFile(object):
             return True
         return False
 
-    def needs_update(self):
-        """Returns True if this file changed. Throws an OSError if it is
-        deleted. Avoid all but simple uses - use do_update instead."""
-        return self._file_changed(self._stat_tuple())
-
     def _file_changed(self, stat_tuple):
         return (self.fsize, self.ftime) != stat_tuple
 
