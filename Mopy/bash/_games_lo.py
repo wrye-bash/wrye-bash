@@ -42,77 +42,9 @@ from .ini_files import get_ini_type_and_encoding
 # Typing
 LoTuple = tuple[FName, ...]
 LoList = LoTuple | list[FName] | None
-
 _ParsedLo = tuple[list[FName], list[FName]]
 
-def _write_plugins_txt_(path, lord, active, _star):
-    try:
-        with path.open(u'wb') as out:
-            __write_plugins(out, lord, active, _star)
-    except OSError:
-        env.clear_read_only(path)
-        with path.open(u'wb') as out:
-            __write_plugins(out, lord, active, _star)
-
-def __write_plugins(out, lord, active, _star):
-    def asterisk(active_set=frozenset(active)):
-        return b'*' if _star and (mod in active_set) else b''
-    for mod in (_star and lord) or active:
-        # Ok, this seems to work for Oblivion, but not for Skyrim, which seems
-        # to refuse to have any non-cp1252 named file in plugins.txt.  Even
-        # activating through the SkyrimLauncher doesn't work.
-        try:
-            out.write(asterisk() + bolt.encode(mod, firstEncoding=u'cp1252'))
-            out.write(b'\r\n')
-        except UnicodeEncodeError:
-            bolt.deprint(f'{mod} failed to properly encode and was skipped '
-                         f'for inclusion in load order file')
-
 _re_plugins_txt_comment = re.compile(b'^#.*')
-def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> _ParsedLo:
-    """Parse loadorder.txt and plugins.txt files with or without stars.
-
-    Return two lists which are identical except when _star is True, whereupon
-    the second list is the load order while the first the active plugins. In
-    all other cases use the first list, which is either the list of active
-    mods (when parsing plugins.txt) or the load order (when parsing
-    loadorder.txt)
-    :type mod_infos: bosh.ModInfos
-    """
-    with path.open(u'rb') as ins:
-        #--Load Files
-        active, modnames = [], []
-        for line in ins:
-            # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
-            # It wont accept filenames in any other encoding
-            modname = _re_plugins_txt_comment.sub(b'', line.strip())
-            if not modname: continue
-            # use raw strings below
-            is_active_ = not _star or modname.startswith(b'*')
-            if _star and is_active_: modname = modname[1:]
-            try:
-                test = bolt.decoder(modname, encoding=u'cp1252')
-            except UnicodeError:
-                bolt.deprint(f'{modname!r} failed to properly decode')
-                continue
-            mod_g_path = FName(test)
-            if mod_g_path.fn_ext == '.ghost':  # Vortex keeps the .ghost extension!
-                mod_g_path = mod_g_path.fn_body
-            if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
-                # The automatic encoding detector could have returned
-                # an encoding it actually wasn't.  Luckily, we
-                # have a way to double check: modInfos.data
-                for encoding in bolt.encodingOrder:
-                    try:
-                        test2 = str(modname, encoding) # FName does not accept bytes
-                        if test2 in mod_infos:
-                            mod_g_path = FName(test2)
-                            break
-                    except UnicodeError:
-                        pass
-            modnames.append(mod_g_path)
-            if is_active_: active.append(mod_g_path)
-    return active, modnames
 
 def _resolve_case_ambiguity(lo_file_path: Path):
     """Third-party tools like LOOT do not all use the same case for plugins.txt
@@ -143,10 +75,87 @@ class _LoFile(AFile):
         super().__init__(_resolve_case_ambiguity(path), **kwargs)
 
     def parse_modfile(self, mod_infos) -> _ParsedLo:
-        return _parse_plugins_txt_(self.abs_path, mod_infos, _star=self._star)
+        """Parse loadorder.txt and plugins.txt files with or without stars.
+
+        Return two lists which are identical except when _star is True,
+        whereupon the second list is the load order while the first the
+        active plugins. In all other cases use the first list, which is
+        either the list of active mods (when parsing plugins.txt) or the
+        load order (when parsing loadorder.txt)
+        :type mod_infos: bosh.ModInfos"""
+        with self.abs_path.open('rb') as ins:
+            #--Load Files
+            active, modnames = [], []
+            for line in ins:
+                # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
+                # It wont accept filenames in any other encoding
+                modname = _re_plugins_txt_comment.sub(b'', line.strip())
+                if not modname: continue
+                # use raw strings below
+                is_active_ = not self._star or modname.startswith(b'*')
+                if self._star and is_active_: modname = modname[1:]
+                try:
+                    test = bolt.decoder(modname, encoding=u'cp1252')
+                except UnicodeError:
+                    bolt.deprint(f'{modname!r} failed to properly decode')
+                    continue
+                mod_g_path = FName(test)
+                if mod_g_path.fn_ext == '.ghost':  # Vortex keeps the .ghost extension!
+                    mod_g_path = mod_g_path.fn_body
+                if mod_g_path not in mod_infos:  # TODO(ut): is this really needed??
+                    # The automatic encoding detector could have returned
+                    # an encoding it actually wasn't.  Luckily, we
+                    # have a way to double check: modInfos.data
+                    for encoding in bolt.encodingOrder:
+                        try: # FName does not accept bytes
+                            test2 = str(modname, encoding)
+                            if test2 in mod_infos:
+                                mod_g_path = FName(test2)
+                                break
+                        except UnicodeError:
+                            pass
+                modnames.append(mod_g_path)
+                if is_active_: active.append(mod_g_path)
+        self.do_update() # update the cache info
+        return active, modnames
 
     def write_modfile(self, lord, active):
-        _write_plugins_txt_(self.abs_path, lord, active, _star=self._star)
+        try:
+            with self.abs_path.open(u'wb') as out:
+               self.__write_plugins(out, lord, active, self._star)
+        except OSError:
+            env.clear_read_only(self.abs_path)
+            with self.abs_path.open(u'wb') as out:
+                self.__write_plugins(out, lord, active, self._star)
+
+    @staticmethod
+    def __write_plugins(out, lord, active, _star):
+        active_set = frozenset(active)
+        for mod in (_star and lord) or active:
+            # Ok, this seems to work for Oblivion, but not for Skyrim, which
+            # seems to refuse to have any non-cp1252 named file in plugins.txt.
+            # Even activating through the SkyrimLauncher doesn't work.
+            try:
+                out.write(bolt.encode(
+                    f'{"*" if _star and (mod in active_set) else ""}{mod}\r\n',
+                    firstEncoding='cp1252'))
+            except UnicodeEncodeError:
+                bolt.deprint(f'{mod} failed to properly encode and was '
+                             f'skipped for inclusion in load order file')
+
+    def bkp_pl_txt(self, old_dir, new_dir):
+        pl_path = self.abs_path
+        # Save plugins.txt inside the old (saves) directory
+        try: pl_path.copyTo(_resolve_case_ambiguity(
+            old_dir.join(pl_path.stail)))
+        except FileNotFoundError: pass # no plugins.txt to save
+        # Move the new plugins.txt here for use
+        move = _resolve_case_ambiguity(new_dir.join(pl_path.stail))
+        try: # copy will not change mtime, bad
+            move.copyTo(pl_path, set_time=time.time())
+            return True
+        except FileNotFoundError:
+            return False
 
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
@@ -388,19 +397,8 @@ class LoGame(object):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
         # If this game has no plugins.txt, don't try to swap it
-        if not self.__class__.has_plugins_txt: return False
-        # Save plugins.txt inside the old (saves) directory
-        pl_path = self._plugins_txt.abs_path
-        try: pl_path.copyTo(_resolve_case_ambiguity(
-                old_dir.join(pl_path.stail)))
-        except FileNotFoundError: pass # no plugins.txt to save
-        # Move the new plugins.txt here for use
-        move = _resolve_case_ambiguity(new_dir.join(pl_path.stail))
-        try: # copy will not change mtime, bad
-            move.copyTo(pl_path, set_time=time.time())
-            return True
-        except FileNotFoundError:
-            return False
+        return self._plugins_txt.bkp_pl_txt(old_dir, new_dir) \
+            if self.__class__.has_plugins_txt else False
 
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
@@ -451,7 +449,6 @@ class LoGame(object):
         """Read plugins.txt file and return a tuple of (active, loadorder)."""
         try:
             acti_lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            self._plugins_txt.do_update()
             return acti_lo
         except FileNotFoundError:
             return [], []
@@ -957,19 +954,8 @@ class TextfileGame(_CleanPlugins):
         return deleted_plugins or reordered
 
     def swap(self, old_dir, new_dir):
-        super().swap(old_dir, new_dir)
-        # Save loadorder.txt inside the old (saves) directory
-        path_abs = self._loadorder_txt.abs_path
-        try: path_abs.copyTo(_resolve_case_ambiguity(
-                old_dir.join(path_abs.stail)))
-        except FileNotFoundError: pass # no loadorder.txt to save
-        # Move the new plugins.txt here for use
-        move = _resolve_case_ambiguity(new_dir.join(path_abs.stail))
-        try: # copy will not change mtime, bad
-            move.copyTo(path_abs, set_time=time.time())
-            return True
-        except FileNotFoundError:
-            return False
+        swapped_pl = super().swap(old_dir, new_dir)
+        return self._loadorder_txt.bkp_pl_txt(old_dir, new_dir) or swapped_pl
 
     def get_lo_file(self):
         return self._loadorder_txt.abs_path
@@ -987,7 +973,6 @@ class TextfileGame(_CleanPlugins):
         pl_path = self._plugins_txt.abs_path
         try: #--Read file
             _acti, lo = self._loadorder_txt.parse_modfile(self.mod_infos)
-            self._loadorder_txt.do_update()
         except FileNotFoundError:
             mods = cached_active or []
             if cached_active is not None and not pl_path.exists():
