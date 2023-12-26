@@ -35,8 +35,8 @@ import time
 from collections import defaultdict
 
 from . import bass, bolt, env, exception
-from .bolt import FName, GPath, Path, dict_sort, attrgetter_cache, \
-    classproperty
+from .bolt import AFile, FName, GPath, Path, attrgetter_cache, classproperty, \
+    dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -136,6 +136,18 @@ def _resolve_case_ambiguity(lo_file_path: Path):
         return matching_paths[0]
     return matching_paths[0] if matching_paths else lo_file_path
 
+class _LoFile(AFile):
+    """Base class for load order files (plugins.txt/loadorder.txt)."""
+    def __init__(self, path, star, **kwargs):
+        self._star = star
+        super().__init__(_resolve_case_ambiguity(path), **kwargs)
+
+    def parse_modfile(self, mod_infos) -> _ParsedLo:
+        return _parse_plugins_txt_(self.abs_path, mod_infos, _star=self._star)
+
+    def write_modfile(self, lord, active):
+        _write_plugins_txt_(self.abs_path, lord, active, _star=self._star)
+
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
     def __init__(self):
@@ -228,10 +240,7 @@ class LoGame(object):
     def __init__(self, mod_infos, plugins_txt_path: Path):
         """:type mod_infos: bosh.ModInfos"""
         super().__init__()
-        ##: we must replace those with an AFile instance
-        self.mtime_plugins_txt = 0.0
-        self.size_plugins_txt = 0
-        self.plugins_txt_path = _resolve_case_ambiguity(plugins_txt_path)
+        self._plugins_txt = _LoFile(plugins_txt_path, self._star)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
         if self.master_path in self.must_be_active_if_present:
@@ -239,10 +248,7 @@ class LoGame(object):
                               "must_be_active_if_present!")
 
     def _plugins_txt_modified(self):
-        exists = (pl_path := self.plugins_txt_path).exists()
-        if not exists and self.mtime_plugins_txt: return True # deleted !
-        return exists and ((self.size_plugins_txt, self.mtime_plugins_txt) !=
-                           pl_path.size_mtime())
+        return self._plugins_txt.do_update()
 
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
@@ -384,27 +390,40 @@ class LoGame(object):
         # If this game has no plugins.txt, don't try to swap it
         if not self.__class__.has_plugins_txt: return False
         # Save plugins.txt inside the old (saves) directory
-        if (pl_path := self.plugins_txt_path).exists():
-            pl_path.copyTo(_resolve_case_ambiguity(
+        pl_path = self._plugins_txt.abs_path
+        try: pl_path.copyTo(_resolve_case_ambiguity(
                 old_dir.join(pl_path.stail)))
+        except FileNotFoundError: pass # no plugins.txt to save
         # Move the new plugins.txt here for use
         move = _resolve_case_ambiguity(new_dir.join(pl_path.stail))
-        if move.exists(): # copy will not change mtime, bad
+        try: # copy will not change mtime, bad
             move.copyTo(pl_path, set_time=time.time())
             return True
-        return False
+        except FileNotFoundError:
+            return False
 
-    # ABSTRACT ----------------------------------------------------------------
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
         active plugins list."""
-        raise NotImplementedError
+        pl_path = self.get_acti_file()
+        self.__backup(pl_path)
 
     def _backup_load_order(self):
         """This method should make a backup of whatever file is storing the
         load order plugins list."""
-        raise NotImplementedError
+        lo_path = self.get_lo_file()
+        self.__backup(lo_path)
 
+    @staticmethod
+    def __backup(pl_path):
+        try:
+            pl_path.copyTo(pl_path.backup)
+        except FileNotFoundError:
+            bolt.deprint(f'Tried to back up {pl_path}, but it did not exist')
+        except OSError:
+            bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
+
+    # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order: LoTuple | None,
                           cached_active: LoTuple):
         raise NotImplementedError
@@ -427,35 +446,24 @@ class LoGame(object):
         # active only if needed. Both active and lord must not be None.
         raise NotImplementedError
 
-    # MODFILES PARSING --------------------------------------------------------
-    def _parse_modfile(self, path) -> _ParsedLo:
-        return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
-
-    def _write_modfile(self, path, lord, active):
-        _write_plugins_txt_(path, lord, active, _star=self._star)
-
     # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self) -> _ParsedLo:
         """Read plugins.txt file and return a tuple of (active, loadorder)."""
         try:
-            acti_lo = self._parse_modfile(self.plugins_txt_path)
-            self.__update_plugins_txt_cache_info()
+            acti_lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            self._plugins_txt.do_update()
             return acti_lo
         except FileNotFoundError:
             return [], []
 
     def _write_plugins_txt(self, lord, active):
-        self._write_modfile(self.plugins_txt_path, lord, active)
-        self.__update_plugins_txt_cache_info()
+        self._plugins_txt.write_modfile(lord, active)
+        self._plugins_txt.do_update()
 
-    def __update_plugins_txt_cache_info(self):
-        self.size_plugins_txt, self.mtime_plugins_txt = \
-            self.plugins_txt_path.size_mtime()
-
-    def get_acti_file(self) -> Path | None:
+    def get_acti_file(self) -> Path:
         """Returns the path of the file used by this game for storing active
         plugins."""
-        return None # base case
+        return self._plugins_txt.abs_path # base case
 
     def get_lo_file(self) -> Path | None:
         """Returns the path of the file used by this game for storing load
@@ -727,27 +735,6 @@ class INIGame(LoGame):
                             enumerate(mod_list)}
         cached_ini.saveSettings({ini_key[1]: section_contents})
 
-    # Backups
-    def _backup_active_plugins(self):
-        if self._handles_actives:
-            ini_path = self._cached_ini_actives.abs_path
-            try:
-                ini_path.copyTo(ini_path.backup)
-            except OSError:
-                bolt.deprint(
-                    f'Tried to back up {ini_path}, but it did not exist')
-        else: super()._backup_active_plugins()
-
-    def _backup_load_order(self):
-        if self._handles_lo:
-            ini_path = self._cached_ini_lo.abs_path
-            try:
-                ini_path.copyTo(ini_path.backup)
-            except OSError:
-                bolt.deprint(
-                    f'Tried to back up {ini_path}, but it did not exist')
-        else: super()._backup_load_order()
-
     # Reading from INI
     def _fetch_active_plugins(self):
         if self._handles_actives:
@@ -874,9 +861,6 @@ class TimestampGame(LoGame):
             start_time += self._get_free_time_step
         return max(all_mtimes) + self._get_free_time_step
 
-    def get_acti_file(self):
-        return self.plugins_txt_path
-
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
         # sort case insensitive (for time conflicts)
@@ -884,13 +868,6 @@ class TimestampGame(LoGame):
         mods.sort(key=lambda x: self.mod_infos[x].ftime)
         mods.sort(key=lambda x: not self.mod_infos[x].in_master_block())
         return mods
-
-    def _backup_active_plugins(self):
-        try:
-            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except OSError:
-            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, '
-                         f'but it did not exist')
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -968,19 +945,12 @@ class TextfileGame(_CleanPlugins):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path):
         super().__init__(mod_infos, plugins_txt_path)
-        self.loadorder_txt_path = _resolve_case_ambiguity(loadorder_txt_path)
-        self.mtime_loadorder_txt = 0
-        self.size_loadorder_txt = 0
+        self._loadorder_txt = _LoFile(loadorder_txt_path, self._star)
 
     def load_order_changed(self):
-        # if active changed externally refetch load order to check for desync
-        return self.active_changed() or (self.loadorder_txt_path.exists() and (
-            (self.size_loadorder_txt, self.mtime_loadorder_txt) !=
-            self.loadorder_txt_path.size_mtime()))
-
-    def __update_lo_cache_info(self):
-        self.size_loadorder_txt, self.mtime_loadorder_txt = \
-            self.loadorder_txt_path.size_mtime()
+        # if active changed externally, refetch load order to check for desync
+        # will also return True if file was deleted
+        return self.active_changed() or self._loadorder_txt.do_update()
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
@@ -989,38 +959,22 @@ class TextfileGame(_CleanPlugins):
     def swap(self, old_dir, new_dir):
         super().swap(old_dir, new_dir)
         # Save loadorder.txt inside the old (saves) directory
-        if self.loadorder_txt_path.exists():
-            self.loadorder_txt_path.copyTo(_resolve_case_ambiguity(
-                old_dir.join(self.loadorder_txt_path.stail)))
-        # Move the new loadorder.txt here for use
-        move = _resolve_case_ambiguity(new_dir.join(
-            self.loadorder_txt_path.stail))
-        if move.exists(): # update mtime to trigger refresh
-            move.copyTo(self.loadorder_txt_path, set_time=time.time())
+        path_abs = self._loadorder_txt.abs_path
+        try: path_abs.copyTo(_resolve_case_ambiguity(
+                old_dir.join(path_abs.stail)))
+        except FileNotFoundError: pass # no loadorder.txt to save
+        # Move the new plugins.txt here for use
+        move = _resolve_case_ambiguity(new_dir.join(path_abs.stail))
+        try: # copy will not change mtime, bad
+            move.copyTo(path_abs, set_time=time.time())
             return True
-        return False
-
-    def get_acti_file(self):
-        return self.plugins_txt_path
+        except FileNotFoundError:
+            return False
 
     def get_lo_file(self):
-        return self.loadorder_txt_path
+        return self._loadorder_txt.abs_path
 
     # Abstract overrides ------------------------------------------------------
-    def _backup_active_plugins(self):
-        try:
-            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except OSError:
-            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, '
-                         f'but it did not exist')
-
-    def _backup_load_order(self):
-        try:
-            self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
-        except OSError:
-            bolt.deprint(f'Tried to back up {self.loadorder_txt_path}, '
-                         f'but it did not exist')
-
     def _fetch_load_order(self, cached_load_order,
             cached_active: tuple[FName] | list[FName]):
         """Read data from loadorder.txt file. If loadorder.txt does not
@@ -1030,19 +984,19 @@ class TextfileGame(_CleanPlugins):
         anyway call _fix_load_order. If cached_active is passed, the relative
         order of mods will be corrected to match their relative order in
         cached_active."""
+        pl_path = self._plugins_txt.abs_path
         try: #--Read file
-            _acti, lo = self._parse_modfile(self.loadorder_txt_path)
+            _acti, lo = self._loadorder_txt.parse_modfile(self.mod_infos)
+            self._loadorder_txt.do_update()
         except FileNotFoundError:
             mods = cached_active or []
-            if (cached_active is not None
-                    and not self.plugins_txt_path.exists()):
+            if cached_active is not None and not pl_path.exists():
                 self._write_plugins_txt(cached_active, cached_active)
-                bolt.deprint(
-                    f'Created {self.plugins_txt_path} based on cached info')
-            elif cached_active is None and self.plugins_txt_path.exists():
+                bolt.deprint(f'Created {pl_path} based on cached info')
+            elif cached_active is None and pl_path.exists():
                 mods = self._fetch_active_plugins() # will add Skyrim.esm
             self._persist_load_order(mods, mods)
-            bolt.deprint(f'Created {self.loadorder_txt_path}')
+            bolt.deprint(f'Created {self._loadorder_txt.abs_path}')
             return mods
         # handle desync with plugins txt
         if cached_active is not None:
@@ -1080,10 +1034,8 @@ class TextfileGame(_CleanPlugins):
                 # We fixed a desync, make a backup and write the load order
                 self._backup_load_order()
                 self._persist_load_order(lo, lo)
-                bolt.deprint(f'Corrected {self.loadorder_txt_path} (order of '
-                             f'mods differed from their order in '
-                             f'{self.plugins_txt_path})')
-        self.__update_lo_cache_info()
+                bolt.deprint(f'Corrected {self._loadorder_txt.abs_path} '
+                    f'(order of mods differed from their order in {pl_path})')
         return lo
 
     def _fetch_active_plugins(self):
@@ -1099,8 +1051,8 @@ class TextfileGame(_CleanPlugins):
         return [self.master_path, *act]
 
     def _persist_load_order(self, lord, active):
-        _write_plugins_txt_(self.loadorder_txt_path, lord, lord, _star=False)
-        self.__update_lo_cache_info()
+        self._loadorder_txt.write_modfile(lord, lord)
+        self._loadorder_txt.do_update()
 
     def _persist_active_plugins(self, active, lord):
         active_filtered = [x for x in active if x != self.master_path]
@@ -1150,33 +1102,17 @@ class AsteriskGame(_CleanPlugins):
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return True
 
-    def get_acti_file(self):
-        return self.plugins_txt_path
-
     def get_lo_file(self):
-        return self.plugins_txt_path
+        return self.get_acti_file()
 
     # Abstract overrides ------------------------------------------------------
-    def _backup_active_plugins(self):
-        try:
-            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except FileNotFoundError:
-            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, but it '
-                         f'did not exist')
-        except OSError:
-            bolt.deprint(f'Failed to back up {self.plugins_txt_path}',
-                         traceback=True)
-
-    def _backup_load_order(self):
-        self._backup_active_plugins() # same thing for asterisk games
-
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached_* is passed in,
         but due to our ultimate caller being get_load_order *at least one* is
         None."""
         try:
-            active, lo = self._parse_modfile(self.plugins_txt_path)
+            active, lo = self._plugins_txt.parse_modfile(self.mod_infos)
             lo = lo if cached_load_order is None else cached_load_order
             if cached_active is None:  # we fetched active, clean it up
                 rem_from_acti = self._active_entries_to_remove()
@@ -1199,7 +1135,7 @@ class AsteriskGame(_CleanPlugins):
             must_be_active = self._fixed_order_plugins()
             lo = cached_load_order or must_be_active
             self._persist_load_order(lo, active := cached_active or must_be_active)
-            bolt.deprint(f'Created {self.plugins_txt_path}')
+            bolt.deprint(f'Created {self._plugins_txt.abs_path}')
         return lo, active
 
     def _persist_load_order(self, lord, active):
