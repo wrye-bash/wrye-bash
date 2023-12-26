@@ -126,8 +126,8 @@ class INI_CreateNew(OneItemLink):
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
-        ini_info, ini_key = self._selected_info, self._selected_item
-        fileName = ini_info.unique_key(ini_key.fn_body, add_copy=True)
+        ini_info, fn_ini = self._selected_info, self._selected_item
+        fileName = ini_info.unique_key(fn_ini.fn_body, add_copy=True)
         tweak_path = self._askSave(
             title=self._text,
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
@@ -138,6 +138,6 @@ class INI_CreateNew(OneItemLink):
         if root is None:
             self._showError(fn_tweak) # it's an error message in this case
             return
-        if bosh.iniInfos.copy_tweak_from_target(ini_key, fn_tweak):
+        if bosh.iniInfos.copy_tweak_from_target(fn_ini, fn_tweak):
             ##: we need a 'to_add' param in RefreshUI
             self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)
