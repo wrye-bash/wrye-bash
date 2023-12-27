@@ -45,37 +45,40 @@ LoTuple = tuple[FName, ...]
 LoList = LoTuple | list[FName] | None
 _ParsedLo = tuple[list[FName], list[FName]]
 
-_re_plugins_txt_comment = re.compile(b'^#.*')
-
-def _resolve_case_ambiguity(lo_file_path: Path):
-    """Third-party tools like LOOT do not all use the same case for plugins.txt
-    and loadorder.txt. This method returns the canonical path for the specified
-    load order file path and cleans up multiple load order files in the same
-    dir by using the one with the newest mtime and deleting the older ones."""
-    lo_dir, lo_fname = lo_file_path.head, lo_file_path.stail
-    matching_paths = [lo_dir.join(t_fname) for t_fname in lo_dir.ilist()
-                      if t_fname == lo_fname]
-    if len(matching_paths) > 1:
-        matching_paths.sort(key=lambda tp: tp.mtime, reverse=True)
-        filenames = [p.stail for p in matching_paths]
-        bolt.deprint(f'Resolving ambiguous {lo_fname} case (found '
-                     f'{filenames}) to newest file ({filenames[0]})')
-        for p in matching_paths[1:]:
-            try:
-                p.remove()
-            except OSError:
-                bolt.deprint(f'Failed to resolve ambiguous {lo_fname} case',
-                    traceback=True)
-        return matching_paths[0]
-    return matching_paths[0] if matching_paths else lo_file_path
-
 class _LoFile(AFile):
-    """Base class for load order files (plugins.txt/loadorder.txt)."""
+    """A file holding load order information (plugins.txt/loadorder.txt but
+    also ini files for INIGame). We need to be careful in case sensitive
+    file systems and backup could use more work but that's a proud beta."""
     def __init__(self, star, path, *args, **kwargs):
         self._star = star
-        super().__init__(_resolve_case_ambiguity(path), *args, **kwargs)
+        super().__init__(self._resolve_case_ambiguity(path), *args, **kwargs)
 
-    def parse_modfile(self, mod_infos) -> _ParsedLo:
+    @staticmethod
+    def _resolve_case_ambiguity(lo_file_path: Path):
+        """Third-party tools like LOOT do not all use the same case for
+        plugins.txt and loadorder.txt. This method returns the canonical
+        path for the specified load order file path and cleans up multiple
+        load order files in the same dir by using the one with the newest
+        mtime and deleting the older ones."""
+        lo_dir, lo_fname = lo_file_path.head, lo_file_path.stail
+        matching_paths = [lo_dir.join(t_fname) for t_fname in lo_dir.ilist()
+                          if t_fname == lo_fname]
+        if len(matching_paths) > 1:
+            matching_paths.sort(key=lambda tp: tp.mtime, reverse=True)
+            filenames = [p.stail for p in matching_paths]
+            bolt.deprint(f'Resolving ambiguous {lo_fname} case (found '
+                         f'{filenames}) to newest file ({filenames[0]})')
+            for p in matching_paths[1:]:
+                try:
+                    p.remove()
+                except OSError:
+                    bolt.deprint(f'Failed to remove {p} while resolving '
+                                 f'{lo_fname} ambiguous case', traceback=True)
+            return matching_paths[0]
+        return matching_paths[0] if matching_paths else lo_file_path
+
+    def parse_modfile(self, mod_infos, *,
+            __re_plugins_txt_comment=re.compile(b'^#.*')) -> _ParsedLo:
         """Parse loadorder.txt and plugins.txt files with or without stars.
 
         Return two lists which are identical except when _star is True,
@@ -90,7 +93,7 @@ class _LoFile(AFile):
             for line in ins:
                 # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
                 # It wont accept filenames in any other encoding
-                modname = _re_plugins_txt_comment.sub(b'', line.strip())
+                modname = __re_plugins_txt_comment.sub(b'', line.strip())
                 if not modname: continue
                 # use raw strings below
                 is_active_ = not self._star or modname.startswith(b'*')
@@ -144,14 +147,14 @@ class _LoFile(AFile):
                 bolt.deprint(f'{mod} failed to properly encode and was '
                              f'skipped for inclusion in load order file')
 
-    def bkp_pl_txt(self, old_dir, new_dir):
+    def upd_on_swap(self, old_dir, new_dir):
         pl_path = self.abs_path
         # Save plugins.txt inside the old (saves) directory
-        try: pl_path.copyTo(_resolve_case_ambiguity(
+        try: pl_path.copyTo(self._resolve_case_ambiguity(
             old_dir.join(pl_path.stail)))
         except FileNotFoundError: pass # no plugins.txt to save
         # Move the new plugins.txt here for use
-        move = _resolve_case_ambiguity(new_dir.join(pl_path.stail))
+        move = self._resolve_case_ambiguity(new_dir.join(pl_path.stail))
         try: # copy will not change mtime, bad
             move.copyTo(pl_path, set_time=time.time())
             return True
@@ -397,16 +400,26 @@ class LoGame(object):
                           self._plugins_txt.do_update()) else cached_active
         return None, active #timestamps just calculate load order from modInfos
 
-    # Swap plugins and loadorder txt
+    # Handle active plugins file (always exists)
     def swap(self, old_dir, new_dir):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
-        return self._plugins_txt.bkp_pl_txt(old_dir, new_dir)
+        return self._plugins_txt.upd_on_swap(old_dir, new_dir)
 
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
         active plugins list."""
         self._plugins_txt.create_backup()
+
+    def _fetch_active_plugins(self):
+        try:
+            active, _lo = self._plugins_txt.parse_modfile(self.mod_infos)
+            return active
+        except FileNotFoundError:
+            return []
+
+    def _persist_active_plugins(self, active, lord):
+        self._write_plugins_txt(active, active)
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -416,21 +429,11 @@ class LoGame(object):
                           cached_active: LoTuple):
         raise NotImplementedError
 
-    def _fetch_active_plugins(self):
-        try:
-            active, _lo = self._plugins_txt.parse_modfile(self.mod_infos)
-            return active
-        except FileNotFoundError:
-            return []
-
     def _persist_load_order(self, lord, active):
         """Persist the fixed lord to disk - will break conflicts for
         timestamp games."""
         raise NotImplementedError(f'{type(self)} does not define '
                                   f'_persist_load_order')
-
-    def _persist_active_plugins(self, active, lord):
-        self._write_plugins_txt(active, active)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -445,7 +448,7 @@ class LoGame(object):
 
     def get_lo_files(self) -> list[Path]:
         """Returns the paths of the files used by this game for storing load
-        order."""
+        order information."""
         return [self._plugins_txt.abs_path] # base case
 
     # VALIDATION --------------------------------------------------------------
@@ -639,7 +642,7 @@ def _mk_ini(ini_key, star, ini_fpath):
             super().__init__(*args, **kwargs)
             self.ini_key = ini_key
 
-        def parse_modfile(self, mod_infos) -> _ParsedLo:
+        def parse_modfile(self, mod_infos, *, __re=None) -> _ParsedLo:
             """Reads a section from self using the in_key and returns all
             its values as FName objects. Handles missing INI file and an
             absent section gracefully."""
@@ -663,13 +666,13 @@ def _mk_ini(ini_key, star, ini_fpath):
                                 i, lo_mod in enumerate(lord)}
             self.saveSettings({self.ini_key[1]: section_contents})
 
-        def bkp_pl_txt(self, old_dir, new_dir):
+        def upd_on_swap(self, old_dir, new_dir):
             # If there's no INI inside the old (saves) directory, copy it
-            old_ini = _resolve_case_ambiguity(old_dir.join(ini_key[0]))
+            old_ini = self._resolve_case_ambiguity(old_dir.join(ini_key[0]))
             if not old_ini.is_file():
                 self.abs_path.copyTo(old_ini)
             # Read from the new INI if it exists and write to our main INI
-            move_ini = _resolve_case_ambiguity(new_dir.join(ini_key[0]))
+            move_ini = self._resolve_case_ambiguity(new_dir.join(ini_key[0]))
             if move_ini.is_file():
                 loact = _mk_ini(ini_key, self._star, move_ini).parse_modfile(
                     None)
@@ -682,7 +685,10 @@ class INIGame(LoGame):
     """Class for games which use an INI section to determine parts of the load
     order. Meant to be used in multiple inheritance with other LoGame types, be
     sure to put INIGame first, so its init runs first in order to initialize
-    the plugins txt (currently not lo txt) as a _IniLoFile instance.
+    the plugins txt (currently) as a _IniLoFile instance. It is currently
+    used with TimeStampGame and could in principle be used with TextfileGame
+    too, but we are not looking forward to that. It can't be used with
+    AsteriskGame, makes no sense.
 
     To use an INI section to specify active plugins, change ini_key_actives.
     To use an INI section to specify load order, change ini_key_lo. You can
@@ -867,7 +873,7 @@ class TextfileGame(_TextFileLo):
 
     def swap(self, old_dir, new_dir):
         swapped_pl = super().swap(old_dir, new_dir)
-        return self._loadorder_txt.bkp_pl_txt(old_dir, new_dir) or swapped_pl
+        return self._loadorder_txt.upd_on_swap(old_dir, new_dir) or swapped_pl
 
     def get_lo_file(self):
         return self._loadorder_txt
