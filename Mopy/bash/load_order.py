@@ -341,10 +341,9 @@ def refresh_lo(cached: bool, cached_active: bool):
         ldiff_saved = _cached_lord.lo_diff(saved)
     else: saved = __lo_unset
     if _cached_lord is not __lo_unset:
-        lo = _cached_lord.loadOrder if (
-            cached and not _game_handle.load_order_changed()) else None
-        active = _cached_lord.activeOrdered if (
-            cached_active and not _game_handle.active_changed()) else None
+        lo, active = _game_handle._request_cache_update(
+            _cached_lord.loadOrder if cached else None,
+            _cached_lord.activeOrdered if cached_active else None)
     else: active = lo = None
     ldiff = _update_cache(lo, active)
     if saved is not __lo_unset:
