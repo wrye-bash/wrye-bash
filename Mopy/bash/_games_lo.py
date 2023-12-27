@@ -693,8 +693,8 @@ def _mk_ini(ini_key, star, ini_fpath):
 class INIGame(LoGame):
     """Class for games which use an INI section to determine parts of the load
     order. Meant to be used in multiple inheritance with other LoGame types, be
-    sure to put INIGame first, as a few of its methods delegate to super
-    implementations, which are abstract in the LoGame base class.
+    sure to put INIGame first, so its init runs first in order to initialize
+    the plugins txt (currently not lo txt) as a _IniLoFile instance.
 
     To use an INI section to specify active plugins, change ini_key_actives.
     To use an INI section to specify load order, change ini_key_lo. You can
@@ -708,20 +708,18 @@ class INIGame(LoGame):
         Mod0=FirstMod.esp
         Mod1=SecondMod.esp"""
     # The INI keys, see class docstring for more info
-    ini_key_actives = (u'', u'', u'')
-    ini_key_lo = (u'', u'', u'')
+    ini_key_actives = None
+    ini_key_lo = None
 
     def __init__(self, mod_infos, plugins_txt_path=GPath('')):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
-        self._handles_actives = self.__class__.ini_key_actives != ('', '', '')
-        self._handles_lo = self.__class__.ini_key_lo != ('', '', '')
         kwargs = {'plugins_txt_path': plugins_txt_path}
-        if self._handles_actives:
+        if self.__class__.ini_key_actives:
             kwargs = {'plugins_txt_path': self.ini_dir_actives.join(
                 self.ini_key_actives[0]),
                 'plugins_txt_type': partial(_mk_ini, self.ini_key_actives)}
-        if self._handles_lo:
+        if self.__class__.ini_key_lo:
             kwargs.update({ # we must come just before TextfileGame in the MRO
                 'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
                 'lo_txt_type': partial(_mk_ini, self.ini_key_lo)})
@@ -744,10 +742,9 @@ class INIGame(LoGame):
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
         # Can't use _handles_active here, need to duplicate the logic
-        if cls.ini_key_actives != (u'', u'', u''):
+        if cls.ini_key_actives is not None:
             return True # Assume order is important for the INI
-        return super(INIGame, cls)._must_update_active(deleted_plugins,
-                                                       reordered)
+        return super()._must_update_active(deleted_plugins, reordered)
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
