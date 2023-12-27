@@ -158,6 +158,15 @@ class _LoFile(AFile):
         except FileNotFoundError:
             return False
 
+    def create_backup(self):
+        pl_path = self.abs_path
+        try:
+            pl_path.copyTo(pl_path.backup)
+        except FileNotFoundError:
+            bolt.deprint(f'Tried to back up {pl_path}, but it did not exist')
+        except OSError:
+            bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
+
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
     def __init__(self):
@@ -397,23 +406,10 @@ class LoGame(object):
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
         active plugins list."""
-        pl_path = self.get_acti_file()
-        self.__backup(pl_path)
+        self._plugins_txt.create_backup()
 
     def _backup_load_order(self):
-        """This method should make a backup of whatever file is storing the
-        load order plugins list."""
-        lo_path = self.get_lo_file()
-        self.__backup(lo_path)
-
-    @staticmethod
-    def __backup(pl_path):
-        try:
-            pl_path.copyTo(pl_path.backup)
-        except FileNotFoundError:
-            bolt.deprint(f'Tried to back up {pl_path}, but it did not exist')
-        except OSError:
-            bolt.deprint(f'Failed to back up {pl_path}', traceback=True)
+        pass # timestamps, no file to backup
 
     # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order: LoTuple | None,
@@ -447,15 +443,10 @@ class LoGame(object):
         self._plugins_txt.write_modfile(lord, active)
         self._plugins_txt.do_update()
 
-    def get_acti_file(self) -> Path:
-        """Returns the path of the file used by this game for storing active
-        plugins."""
-        return self._plugins_txt.abs_path # base case
-
-    def get_lo_file(self) -> Path | None:
-        """Returns the path of the file used by this game for storing load
+    def get_lo_files(self) -> list[Path]:
+        """Returns the paths of the files used by this game for storing load
         order."""
-        return None # base case
+        return [self._plugins_txt.abs_path] # base case
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: list[FName], fix_lo, _mtime_order=True):
@@ -630,17 +621,14 @@ class LoGame(object):
     def print_lo_paths(self):
         """Prints the paths that will be used and what they'll be used for.
         Useful for debugging."""
-        lo_file = self.get_lo_file()
-        acti_file = self.get_acti_file()
-        if lo_file or acti_file:
-            bolt.deprint(u'Using the following load order files:')
-            if acti_file == lo_file:
-                bolt.deprint(f' - Load order and active plugins: {acti_file}')
-            else:
-                if lo_file:
-                    bolt.deprint(f' - Load order: {lo_file}')
-                if acti_file:
-                    bolt.deprint(f' - Active plugins: {acti_file}')
+        acti_lo = self.get_lo_files()
+        bolt.deprint('Using the following load order files:')
+        if len(acti_lo) == 2 and acti_lo[0] == acti_lo[1]:
+            bolt.deprint(f' - Load order and active plugins: {acti_lo[0]}')
+        else:
+            bolt.deprint(f' - Active plugins: {acti_lo.pop(0)}')
+            if acti_lo:
+                bolt.deprint(f' - Load order: {acti_lo.pop(0)}')
 
 def _mk_ini(ini_key, star, ini_fpath):
     """Creates a new IniFile from the specified bolt.Path object."""
@@ -783,9 +771,6 @@ class TimestampGame(LoGame):
         mods.sort(key=lambda x: not self.mod_infos[x].in_master_block())
         return mods
 
-    def _backup_load_order(self):
-        pass # timestamps, no file to backup
-
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.__calculate_mtime_order()
@@ -842,12 +827,24 @@ class Morrowind(INIGame, TimestampGame):
     plugins in Morrowind.ini."""
     ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
 
-class _CleanPlugins(LoGame): ##: WIP!
+class _TextFileLo(LoGame):
+    """Common code for games that use a text file to store the load order."""
 
     def pinned_mods(self):
         return {self.master_path, *self.must_be_active_if_present}
 
-class TextfileGame(_CleanPlugins):
+    def _backup_load_order(self):
+        """This method should make a backup of whatever file is storing the
+        load order plugins list."""
+        self.get_lo_file().create_backup()
+
+    def get_lo_file(self): # AsteriskGame - has a single lo/actives file
+        return self._plugins_txt
+
+    def get_lo_files(self):
+        return [*super().get_lo_files(), self.get_lo_file().abs_path]
+
+class TextfileGame(_TextFileLo):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path,
                  *, lo_txt_type=_LoFile, **kwargs):
@@ -873,7 +870,7 @@ class TextfileGame(_CleanPlugins):
         return self._loadorder_txt.bkp_pl_txt(old_dir, new_dir) or swapped_pl
 
     def get_lo_file(self):
-        return self._loadorder_txt.abs_path
+        return self._loadorder_txt
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order,
@@ -944,7 +941,7 @@ class TextfileGame(_CleanPlugins):
         act = super()._fetch_active_plugins()
         if self.master_path in act: # remove master_path from plugins.txt
             bolt.deprint(f'Removing {self.master_path} from '
-                         f'{self.get_acti_file()}')
+                         f'{self._plugins_txt.abs_path}')
             self._backup_active_plugins() #we removed master_path back up first
             act = self._persist_active_plugins(act, act)
         # Prepend the game master - should be present and is always active
@@ -977,7 +974,7 @@ class TextfileGame(_CleanPlugins):
                    f'supplied load order ({_pl(acti)})'
         return u''
 
-class AsteriskGame(_CleanPlugins):
+class AsteriskGame(_TextFileLo):
 
     max_espms = 254
     max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
@@ -1005,9 +1002,6 @@ class AsteriskGame(_CleanPlugins):
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return True
 
-    def get_lo_file(self):
-        return self.get_acti_file()
-
     # Abstract overrides ------------------------------------------------------
     def _fetch_active_plugins(self) -> list[FName]:
         raise NotImplementedError # no override for AsteriskGame
@@ -1024,7 +1018,7 @@ class AsteriskGame(_CleanPlugins):
                 rem_from_acti = self._active_entries_to_remove()
                 if any_dropped := ({*active, *lo} & rem_from_acti):
                     bolt.deprint(f'Removing {_pl(sorted(any_dropped))} from '
-                                 f'{self.get_acti_file()}')
+                                 f'{self._plugins_txt.abs_path}')
                     # We removed plugins that don't belong here, back up first
                     self._backup_active_plugins()
                     lo, active = self._persist_load_order(lo, active)
