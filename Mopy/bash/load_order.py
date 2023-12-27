@@ -423,14 +423,7 @@ def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
 def get_lo_files():
     """Returns a list of all files used by this game for storing load
     order."""
-    all_lo_files = set()
-    acti_file = _game_handle.get_acti_file()
-    if acti_file:
-        all_lo_files.add(acti_file)
-    lo_file = _game_handle.get_lo_file()
-    if lo_file:
-        all_lo_files.add(lo_file)
-    return sorted(all_lo_files)
+    return sorted(_game_handle.get_lo_files())
 
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):
