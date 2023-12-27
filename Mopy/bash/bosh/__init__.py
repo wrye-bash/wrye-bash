@@ -127,7 +127,7 @@ class MasterInfo:
         mod_info = modInfos.get(str_or_fn, None)
         if mod_info is not None:
             self.curr_name = FName(str_or_fn)
-            self.is_ghost = mod_info.isGhost
+            self.is_ghost = mod_info.is_ghost
         return mod_info
 
     def disable_master(self):
@@ -291,7 +291,7 @@ class FileInfo(AFile, ListInfo):
         return [backPath for first in (True, False) for backPath, __path in
                 self.backup_restore_paths(first, fname)]
 
-    def revert_backup(self, first=False):
+    def revert_backup(self, first=False): # single call site - good
         backup_paths = self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists():
@@ -301,7 +301,15 @@ class FileInfo(AFile, ListInfo):
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self.file_mod_time, crc_changed=True)
-        self.get_store().new_info(self.fn_key, notify_bain=True)
+        ##: _in_refresh=True is not entirely correct here but can't be made
+        # entirely correct by leaving _in_refresh to False either as we
+        # don't back up the config so we can't really detect changes in
+        # imported/merged - a (another) backup edge case - as backup is
+        # half-baked anyway let's agree for now that BPs remain BPs with the
+        # same config as before - if not, manually run a mergeability scan
+        # after updating the config (in case the restored file is a BP)
+        self.get_store().new_info(self.fn_key, notify_bain=True,
+            _in_refresh=True)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -363,7 +371,7 @@ class ModInfo(FileInfo):
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         if itsa_ghost is None and (fullpath.cs[-6:] == u'.ghost'):
             fullpath = fullpath.s[:-6]
-            self.isGhost = True
+            self.is_ghost = True
         else:  # new_info() path
             self._refresh_ghost_state(regular_path=fullpath,
                                       itsa_ghost=itsa_ghost)
@@ -591,55 +599,48 @@ class ModInfo(FileInfo):
 
     # Ghosting and ghosting related overrides ---------------------------------
     def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
-        """Refreshes the isGhost state by checking existence on disk."""
+        """Refreshes the is_ghost state by checking existence on disk."""
         if itsa_ghost is not None:
-            self.isGhost = itsa_ghost
+            self.is_ghost = itsa_ghost
             return
         if regular_path is None: regular_path = self._file_key
-        self.isGhost = not regular_path.is_file() and os.path.isfile(
+        self.is_ghost = not regular_path.is_file() and os.path.isfile(
             f'{regular_path}.ghost')
 
     def do_update(self, raise_on_error=False, itsa_ghost=None, **kwargs):
-        old_ghost = self.isGhost
+        old_ghost = self.is_ghost
         self._refresh_ghost_state(itsa_ghost=itsa_ghost)
         # mark updated if ghost state changed but only reread header if needed
         did_change = super(ModInfo, self).do_update(raise_on_error)
-        return did_change or self.isGhost != old_ghost
+        return did_change or self.is_ghost != old_ghost
 
     @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._file_key + '.ghost' # Path.__add__
-                ) if self.isGhost else self._file_key
+                ) if self.is_ghost else self._file_key
 
-    def setGhost(self, isGhost):
-        """Sets file to/from ghost mode. Returns ghost status at end."""
-        if isGhost == self.isGhost:
-            # Current status is already what we want it to be
-            return isGhost
-        if self.fn_key == bush.game.master_file:
-            # Don't allow the master ESM to be ghosted, we need that one
-            return self.isGhost
-        normal = self._file_key
-        ghost = normal + '.ghost' # Path.__add__ !
+    def setGhost(self, ghostify):
+        """Set file to/from ghost mode. Return True if ghost status changed."""
+        # Current status is already what we want it to be
+        if (ghostify == self.is_ghost or # Don't allow ghosting the master ESM
+            self.fn_key == bush.game.master_file):
+            return False
         # Current status != what we want, so change it
+        ghost = (normal := self._file_key) + '.ghost' # Path.__add__ !
+        # Determine source and target, then perform the move
+        ghost_source = normal if ghostify else ghost
+        ghost_target = ghost if ghostify else normal
         try:
-            if not normal.editable() or not ghost.editable():
-                return self.isGhost
-            # Determine source and target, then perform the move
-            ghost_source = normal if isGhost else ghost
-            ghost_target = ghost if isGhost else normal
             ghost_source.moveTo(ghost_target)
-            self.isGhost = isGhost
-            # reset cache info as un/ghosting should not make do_update return
-            # True
-            self._mark_unchanged()
-            # Notify BAIN, as this is basically a rename operation
-            modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
-            deprint(f'Failed to {"" if isGhost else "un"}ghost file '
-                    f'{normal if isGhost else ghost}', traceback=True)
-        return self.isGhost
+            deprint(f'Failed to {"" if ghostify else "un"}ghost file '
+                    f'{normal if ghostify else ghost}', traceback=True)
+            return False
+        self.is_ghost = ghostify
+        # reset cache info as un/ghosting should not make do_update return True
+        self._mark_unchanged()
+        return True
 
     #--Bash Tags --------------------------------------------------------------
     def setBashTags(self,keys):
@@ -1015,7 +1016,7 @@ class ModInfo(FileInfo):
 
     def get_rename_paths(self, newName):
         old_new_paths = super(ModInfo, self).get_rename_paths(newName)
-        if self.isGhost:
+        if self.is_ghost:
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
         return old_new_paths
 
@@ -2075,9 +2076,8 @@ def _lo_cache(lord_func):
         try:
             old_lo, old_active = load_order.cached_lo_tuple(), \
                                  load_order.cached_active_tuple()
-            lord_func(self, *args, **kwargs)
-            lo, active = load_order.cached_lo_tuple(), \
-                         load_order.cached_active_tuple()
+            cached_lord = lord_func(self, *args, **kwargs)
+            lo, active = cached_lord.loadOrder, cached_lord.activeOrdered
             lo_changed = lo != old_lo
             active_changed = active != old_active
             active_set = set(active)
@@ -2087,7 +2087,7 @@ def _lo_cache(lord_func):
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refresh_active_no_cp1252()
-                self._reset_info_sets()
+                self._update_info_sets()
                 self._refreshMissingStrings()
             #if lo changed (including additions/removals) let refresh handle it
             if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
@@ -2123,7 +2123,10 @@ class ModInfos(FileInfos):
         exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
         self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
-        #--Info lists/sets
+        #--Info lists/sets. Most are set in refresh and used in the UI. Some
+        # of those could be set JIT in set_item_format, for instance, however
+        # the catch is that the UI refresh is triggered by
+        # RefrData.redraw/added so we need to calculate these in refresh.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         if dirs[u'mods'].join(bush.game.master_file).is_file():
             self._master_esm = bush.game.master_file
@@ -2143,12 +2146,13 @@ class ModInfos(FileInfos):
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
         self.activeBad = set() #--Set of all mods with bad names that are active
+        # active mod inis in active mods order (used in bsa files detection
+        # for string files and in mergeability checks)
+        self.plugin_inis = ()
         # Set of plugins with form versions < RecordHeader.plugin_form_version
         self.older_form_versions = set()
-        # sentinel for calculating info sets when needed in gui and patcher
-        # code, **after** self is refreshed
-        self.__calculate = object()
-        self._reset_info_sets()
+        # merged, imported, bashed_patches caches
+        self.merged, self.imported, self.bashed_patches = set(), set(), set()
         #--Oblivion version
         self.voCurrent = None
         self.voAvailable = set()
@@ -2161,28 +2165,17 @@ class ModInfos(FileInfos):
         self._active_wip = []
         self._lo_wip = []
 
-    # merged, bashed_patches, imported caches
-    def _reset_info_sets(self):
-        self._merged = self._imported = self._bashed_patches = self.__calculate
-
-    @property
-    def imported(self):
-        if self._imported is self.__calculate:
-            self._merged, self._imported = self.getSemiActive()
-        return self._imported
-
-    @property
-    def merged(self):
-        if self._merged is self.__calculate:
-            self._merged, self._imported = self.getSemiActive()
-        return self._merged
-
-    @property
-    def bashed_patches(self):
-        if self._bashed_patches is self.__calculate:
-            self._bashed_patches = {mname for mname, modinf in self.items()
-                                    if modinf.isBP()}
-        return self._bashed_patches
+    def _update_info_sets(self):
+        """Refresh bashed_patches/imported/merged - active state changes and/or
+        removal/addition of plugins should trigger a refresh."""
+        bps, self.bashed_patches = self.bashed_patches, {
+            mname for mname, modinf in self.items() if modinf.isBP()}
+        mrgd, imprtd = self.merged, self.imported
+        active_patches = {bp for bp in self.bashed_patches if
+               load_order.cached_is_active(bp)}
+        self.merged, self.imported = self.getSemiActive(active_patches)
+        return {*(bps ^ self.bashed_patches), *(mrgd ^ self.merged),
+                *(imprtd ^ self.imported)}
 
     ##: Do we need fast_cached_property here?
     @property
@@ -2208,13 +2201,10 @@ class ModInfos(FileInfos):
     @_lo_cache
     def refreshLoadOrder(self, forceRefresh=True, forceActive=True,
                          unlock_lo=False):
-        def _do_lo_refresh():
-            load_order.refresh_lo(cached=not forceRefresh,
-                                  cached_active=not forceActive)
         # Needed for BAIN, which may have to reorder installed plugins
-        if unlock_lo:
-            with load_order.Unlock(): _do_lo_refresh()
-        else: _do_lo_refresh()
+        with load_order.Unlock(unlock_lo):
+            return load_order.refresh_lo(cached=not forceRefresh,
+                                         cached_active=not forceActive)
 
     @_lo_cache
     def cached_lo_save_active(self, active=None):
@@ -2222,13 +2212,13 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.save_lo(None, load_order.cached_lord.lorder(
+        return load_order.save_lo(None, load_order.cached_lord.lorder(
             self._active_wip if active is None else active))
 
     @_lo_cache
     def cached_lo_save_lo(self):
         """Save load order when active did not change."""
-        load_order.save_lo(self._lo_wip)
+        return load_order.save_lo(self._lo_wip)
 
     @_lo_cache
     def cached_lo_save_all(self):
@@ -2237,7 +2227,7 @@ class ModInfos(FileInfos):
         dex = {x: i for i, x in enumerate(self._lo_wip) if
                x in active_wip_set}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        load_order.save_lo(self._lo_wip, acti=self._active_wip)
+        return load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
     def undo_load_order(self): return load_order.undo_load_order()
@@ -2345,19 +2335,13 @@ class ModInfos(FileInfos):
                     fname_to_ghost[unghosted] = True # a real ghost
         return fname_to_ghost
 
-    def refresh(self, refresh_infos=True, booting=False, _modTimesChange=False):
+    def refresh(self, refresh_infos=True, booting=False, unlock_lo=False):
         """Update file data for additions, removals and date changes.
-
-        See usages for how to use the refresh_infos and _modTimesChange params.
-        _modTimesChange is not strictly needed after the lo rewrite, as
-        games.LoGame.load_order_changed will always return True for timestamp
-        games - kept to help track places in the code where timestamp load
-        order may change.
-         NB: if an operation we performed changed the load order we do not want
-         lock load order to revert our own operation. So either call some of
-         the set_load_order methods, or guard refresh (which only *gets* load
-         order) with load_order.Unlock.
-        """
+        See usages for how to use the refresh_infos and unlock_lo params.
+        NB: if an operation *we* performed changed the load order we do not
+        want lock load order to revert our own operation. So either call
+        some of the set_load_order methods, or pass unlock_lo=True (refresh
+        only *gets* load order)."""
         change = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
@@ -2367,9 +2351,8 @@ class ModInfos(FileInfos):
             change = bool(change)
         self._refresh_bash_tags()
         # If refresh_infos is False and mods are added _do_ manually refresh
-        _modTimesChange = _modTimesChange and not bush.game.using_txt_file
-        lo_changed = self.refreshLoadOrder(
-            forceRefresh=change or _modTimesChange, forceActive=deleted)
+        lo_changed = self.refreshLoadOrder(forceRefresh=change or unlock_lo,
+            forceActive=deleted, unlock_lo=unlock_lo)
         self._refresh_bash_tags()
         # if active did not change, we must perform the refreshes below
         if lo_changed < 2: # in case ini files were deleted or modified
@@ -2379,7 +2362,7 @@ class ModInfos(FileInfos):
             # to recalculate dependents
             self._recalc_dependents()
             self._refresh_active_no_cp1252()
-            self._reset_info_sets()
+            self._update_info_sets()
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             change |= self._refreshMissingStrings()
@@ -2387,7 +2370,6 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         return bool(change) or bool(scanList) or lo_changed
 
-    _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):
         if not bush.game.Ini.supports_mod_inis: return
         data_folder_path = bass.dirs['mods']
@@ -2399,25 +2381,21 @@ class ModInfos(FileInfos):
         possible_inis = [self[m].get_ini_name() for m in
                          load_order.cached_active_tuple()]
         active_inis = [i for i in possible_inis if i.lower() in present_inis]
-        # Delete now inactive or deleted INIs from the cache
-        if self._plugin_inis: # avoid on boot
-            active_inis_lower = {i.lower() for i in active_inis}
-            for prev_ini in list(self._plugin_inis):
-                if prev_ini.stail.lower() not in active_inis_lower:
-                    del self._plugin_inis[prev_ini]
         # Add new or modified INIs to the cache and copy the final order
-        data_join = bass.dirs['mods'].join
-        ini_order = []
+        inis_active = []
+        # check present inis for updates
+        prev_inis = {k.abs_path: k for k in self.plugin_inis[:-1]}
         for acti_ini_name in active_inis:
             # Need to restore the full path here since we'll stat that path
             # when resetting the cache during __init__
-            acti_ini_path = data_join(acti_ini_name)
-            acti_ini = self._plugin_inis.get(acti_ini_path)
+            acti_ini_path = data_folder_path.join(acti_ini_name)
+            acti_ini = prev_inis.get(acti_ini_path)
             if acti_ini is None or acti_ini.do_update():
-                acti_ini = self._plugin_inis[acti_ini_path] = IniFile(
-                    acti_ini_path, 'cp1252')
-            ini_order.append((acti_ini_path, acti_ini))
-        self._plugin_inis = OrderedDict(ini_order)
+                acti_ini = IniFile(acti_ini_path, 'cp1252')
+            inis_active.append(acti_ini)
+        # values in active order, later loading inis override previous settings
+        ##: What about SkyrimCustom.ini etc?
+        self.plugin_inis = (*reversed(inis_active), oblivionIni)
 
     def _refresh_active_no_cp1252(self):
         """Refresh which filenames cannot be saved to plugins.txt - active
@@ -2480,9 +2458,7 @@ class ModInfos(FileInfos):
             for mod, modInfo in self.items():
                 modGhost = toGhost and not load_order.cached_is_active(mod) \
                            and allowGhosting.get(mod, True)
-                oldGhost = modInfo.isGhost
-                newGhost = modInfo.setGhost(modGhost)
-                if newGhost != oldGhost:
+                if modInfo.setGhost(modGhost):
                     flipped.append(mod)
         return flipped
 
@@ -2649,14 +2625,17 @@ class ModInfos(FileInfos):
     #--Refresh File
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
-        # we should refresh info sets if we manage to add the info, but also
-        # if we fail, which might mean that some info got corrupted
-        self._reset_info_sets()
-        return super(ModInfos, self).new_info(fileName, _in_refresh, owner,
-                                              notify_bain, itsa_ghost)
+        try:
+            return super().new_info(fileName, _in_refresh, owner, notify_bain,
+                                    itsa_ghost)
+        finally:
+            # we should refresh info sets if we manage to add the info, but
+            # also if we fail, which might mean that some info got corrupted
+            if not _in_refresh:
+                self._update_info_sets() # we may need to use the return value
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self, patches=None, skip_active=False):
+    def getSemiActive(self, patches, skip_active=False):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'patches' then return empty sets.
@@ -2666,9 +2645,8 @@ class ModInfos(FileInfos):
         :param patches: A set of mods to look for bashed patches in.
         :param skip_active: If True, only return inactive merged/imported
             plugins."""
-        if patches is None: patches = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
-        for patch in patches & self.bashed_patches:
+        for patch in patches & self.bashed_patches: # this must be up to date!
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
             if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
@@ -3027,10 +3005,6 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def ini_files(self): ##: What about SkyrimCustom.ini etc?
-        # values in active order, later loading inis override previous settings
-        return [*reversed(self._plugin_inis.values()), oblivionIni]
-
     ##: This honestly does way too much. Look at the jumble of parameters and
     # the giant docstring for evidence
     def create_new_mod(self, newName: str | FName,
@@ -3112,8 +3086,9 @@ class ModInfos(FileInfos):
         bsa_cause = {} # Reason each BSA was loaded
         # BSAs from INI files load first
         ini_idx = -sys.maxsize - 1 # Make sure they come first
+        ini_files_cached = self.plugin_inis
         for ini_k in bush.game.Ini.resource_archives_keys:
-            for ini_f in self.ini_files():
+            for ini_f in ini_files_cached:
                 if ini_f.has_setting(u'Archive', ini_k):
                     for binf in _bsas_from_ini(ini_f, ini_k, available_bsas):
                         bsa_lo[binf] = ini_idx
@@ -3130,7 +3105,7 @@ class ModInfos(FileInfos):
                            bush.game.Ini.resource_override_defaults]
             res_ov_cause = f'{bush.game.Ini.dropdown_inis[0]} ({res_ov_key})'
             # Then look if any INIs overwrite them
-            for ini_f in self.ini_files():
+            for ini_f in ini_files_cached:
                 if ini_f.has_setting(u'Archive', res_ov_key):
                     res_ov_bsas = _bsas_from_ini(
                         ini_f, res_ov_key, available_bsas)
@@ -3233,7 +3208,7 @@ class ModInfos(FileInfos):
         self._lo_caches_remove_mods(deleted_keys)
         self.cached_lo_save_all()
         self._refresh_active_no_cp1252()
-        self._reset_info_sets()
+        self._update_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
         self._recalc_dependents()
@@ -3242,7 +3217,7 @@ class ModInfos(FileInfos):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
         # Add ghosts - the file may exist in both states (bug, or user mistake)
         # if both versions exist file should be marked as normal
-        if not fileInfo.isGhost: # add ghost if not added
+        if not fileInfo.is_ghost: # add ghost if not added
             ghost_version = self.store_dir.join(f'{fileInfo.fn_key}.ghost')
             if ghost_version.exists(): toDelete.append(ghost_version)
 

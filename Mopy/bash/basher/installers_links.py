@@ -94,7 +94,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
         ui_refresh = defaultdict(bool)
-        with load_order.Unlock():
+        with load_order.Unlock(): ##: single use outside refreshLoadOrder
             for store in bosh.data_tracking_stores():
                 refresh_result = store.refresh()
                 ##: This is really ugly - refresh() should pick one type and

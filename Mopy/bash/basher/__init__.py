@@ -1128,7 +1128,7 @@ class ModList(_ModsUIList):
         elif minf.hasTimeConflict():
             item_format.back_key = u'mods.bkgd.doubleTime.exists'
             mouseText += _('Another plugin has the same timestamp.') + ' '
-        elif minf.isGhost:
+        elif minf.is_ghost:
             item_format.back_key = u'mods.bkgd.ghosted'
             mouseText += _('Plugin is ghosted.') + ' '
         elif (bush.game.Esp.check_master_sizes
@@ -1832,8 +1832,8 @@ class ModDetails(_ModsSavesDetails):
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             self._set_date(modInfo)
-            with load_order.Unlock():
-                bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
+            unlock = not bush.game.using_txt_file
+            bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
             self.panel_uilist.RefreshUI( # refresh saves if lo changed
                 refresh_others=Store.SAVES.IF(not bush.game.using_txt_file))
             return
@@ -1867,10 +1867,9 @@ class ModDetails(_ModsSavesDetails):
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.fn_key
         #--Done
-        with load_order.Unlock():
-            bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
-        should_refresh_saves = (detail_item is None or changeName or
-                                (changeDate and not bush.game.using_txt_file))
+        unlock = changeDate and not bush.game.using_txt_file
+        bosh.modInfos.refresh(refresh_infos=False, unlock_lo=unlock)
+        should_refresh_saves = detail_item is None or changeName or unlock
         self.panel_uilist.RefreshUI(detail_item=detail_item,
             refresh_others=Store.SAVES.IF(should_refresh_saves))
 
@@ -4192,13 +4191,13 @@ class BashFrame(WindowFrame):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
         if bosh.modInfos.warn_missing_lo_act:
+            bosh.modInfos.warn_missing_lo_act.clear()
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
                     'data_folder': bush.game.mods_dir,
                 }, bosh.modInfos.warn_missing_lo_act))
-            bosh.modInfos.warn_missing_lo_act = set()
         if bosh.modInfos.selectedExtra:
             if bush.game.has_esl:
                 warn_msg = _('The following plugins have been deactivated '

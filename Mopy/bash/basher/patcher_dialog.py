@@ -28,12 +28,11 @@ import time
 from datetime import timedelta
 
 from .dialogs import DeleteBPPartsEditor
-from .. import balt, bass, bolt, bosh, bush, env, load_order, wrye_text
-from ..balt import Link, Resources
-from ..bass import Store
+from .. import balt, bass, bolt, bosh, bush, env, wrye_text
+from ..balt import Resources
 from ..bolt import GPath_no_norm, SubProgress
 from ..exception import BoltError, BPConfigError, CancelError, FileEditError, \
-    PluginsFullError, SkipError
+    SkipError
 from ..gui import BusyCursor, CancelButton, CheckListBox, DeselectAllButton, \
     DialogWindow, EventResult, FileOpen, HLayout, HorizontalLine, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
@@ -67,9 +66,9 @@ class PatchDialog(DialogWindow):
     _def_size = (600, 600)
     _min_size = (400, 300)
 
-    def __init__(self, parent, bashed_patch: PatchFile, mods_to_reselect,
-            patchConfigs):
-        self.mods_to_reselect = mods_to_reselect
+    def __init__(self, parent, bashed_patch: PatchFile, bashed_patches_out,
+                 patchConfigs):
+        self._bps = bashed_patches_out
         self.parent = parent
         self.bashed_patch = bashed_patch
         self.patchInfo = bashed_patch.fileInfo
@@ -294,22 +293,6 @@ class PatchDialog(DialogWindow):
                 # differ. Most people probably don't keep BAIN packages of BPs,
                 # but *I* do, so...
                 info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
-                message = _('Activate %(bp_name)s?') % {'bp_name': bp_fname}
-                count = 0
-                if load_order.cached_is_active(bp_fname) or (
-                        bass.inisettings['PromptActivateBashedPatch'] and
-                        askYes(self.parent, message, bp_fname)):
-                    try:
-                        count = len(bosh.modInfos.lo_activate(bp_fname,
-                            doSave=True))
-                        if count > 1:
-                            Link.Frame.set_status_info(
-                                _('Masters Activated: %(num_activated)d') % {
-                                    'num_activated': count - 1})
-                    except PluginsFullError:
-                        showError(self, _(
-                            'Unable to activate plugin %(bp_name)s because the '
-                            'load order is full.') % {'bp_name': bp_fname})
                 if bp_fname == patch_name and info.fsize == patch_size:
                     # Needed if size remains the same - mtime is set in
                     # ModFile.safeSave which can't use setmtime(crc_changed),
@@ -317,13 +300,7 @@ class PatchDialog(DialogWindow):
                     # calculate_crc() would not detect the crc change. That's a
                     # general problem with crc cache - API limits
                     info.calculate_crc(recalculate=True)
-            #--Select?
-            if self.mods_to_reselect:
-                for mod in self.mods_to_reselect:
-                    bosh.modInfos.lo_activate(mod, doSave=False)
-                self.mods_to_reselect.clear()
-                bosh.modInfos.cached_lo_save_active() ##: also done below duh
-            self.parent.RefreshUI(refresh_others=Store.SAVES.IF(count))
+                self._bps.append(bp_fname)
         except CancelError:
             pass
         except BPConfigError as e: # User configured BP incorrectly

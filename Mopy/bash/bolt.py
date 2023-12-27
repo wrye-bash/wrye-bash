@@ -1243,22 +1243,6 @@ class Path(os.PathLike):
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
-    def editable(self):
-        """Safely check whether a file is editable."""
-        delete = not os.path.exists(self._s)
-        try:
-            with open(self._s, u'ab'):
-                return True
-        except:
-            return False
-        finally:
-            # If the file didn't exist before, remove the created version
-            if delete:
-                try:
-                    os.remove(self._s)
-                except:
-                    pass
-
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
     # directly compare to str|Path|None and will blow for anything else
     def __hash__(self):

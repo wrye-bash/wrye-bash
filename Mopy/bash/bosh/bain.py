@@ -1118,7 +1118,7 @@ class Installer(ListInfo):
         -20: bad type (grey)
         """
         data_sizeCrc = self.ci_dest_sizeCrc
-        data_sizeCrcDate = installersData.data_sizeCrcDate
+        get_cached = installersData.data_sizeCrcDate.get
         ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
@@ -1132,7 +1132,7 @@ class Installer(ListInfo):
             status = -20
         elif data_sizeCrc:
             for filename,sizeCrc in data_sizeCrc.items():
-                sizeCrcDate = data_sizeCrcDate.get(filename)
+                sizeCrcDate = get_cached(filename)
                 if not sizeCrcDate:
                     missing.add(filename)
                 elif sizeCrc != sizeCrcDate[:2]:
@@ -1148,7 +1148,7 @@ class Installer(ListInfo):
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
         for filename, sizeCrc in list(dirty_sizeCrc.items()):
-            sizeCrcDate = data_sizeCrcDate.get(filename)
+            sizeCrcDate = get_cached(filename)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(filename)
                 ):
@@ -1323,7 +1323,8 @@ class _InstallerPackage(Installer, AFile):
             for (owned_file, dest) in owned_files:
                 try:
                     inf = store.new_info(owned_file, owner=self.fn_key,
-                        _in_refresh=True) # we don't want to refresh info sets
+                         # we refresh info sets in cached_lo_append_if_missing
+                         _in_refresh=True)
                     data_sizeCrcDate_update[dest][2] = inf.mtime
                     mtimes.append(owned_file)
                 except FileError as error: # repeated from refresh
@@ -2304,6 +2305,7 @@ class InstallersData(DataStore):
         # these should be already updated (fullRefresh explicitly calls
         # modInfos.refresh and so does RefreshData when tabbing in)
         plugins_scd = bolt.LowerDict()
+        non_ghosts = set()
         for dirent in os.scandir(mods_dir):
             rpFile = dirent.name
             if dirent.is_dir():
@@ -2311,10 +2313,13 @@ class InstallersData(DataStore):
             else:
                 if (low := rpFile[rpFile.rfind('.'):].lower()) == '.ghost':
                     rpFile = rpFile[:-6]
+                    if rpFile.lower() in non_ghosts: # limbo ghosts skip them
+                        continue
                     low = rpFile[rpFile.rfind('.'):].lower()
                 if low in Installer.skipExts: continue
                 try:
                     modInfo = modInfos[rpFile] # modInfos MUST BE UPDATED
+                    non_ghosts.add(rpFile.lower())
                     plugins_scd[rpFile] = (modInfo.fsize,
                         modInfo.cached_mod_crc(), modInfo.mtime)
                     continue
@@ -2397,7 +2402,8 @@ class InstallersData(DataStore):
         return {x: sDirs[x] for x in newSDirs}
 
     def update_data_SizeCrcDate(self, dest_paths: set[str], progress=None):
-        """Update data_SizeCrcDate with info on given paths.
+        """Update data_SizeCrcDate with info on given paths - paths are given
+        by refreshDataCrcDate, so they should not end in ghost.
         :param progress: must be zeroed - message is used in _process_data_dir
         :param dest_paths: set of paths relative to Data/ - may not exist."""
         _pjoin = os.path.join
@@ -2458,7 +2464,8 @@ class InstallersData(DataStore):
         elif self.__clean_overridden_after_load: # needed on first load
             self.overridden_skips.difference_update(self.data_sizeCrcDate)
             self.__clean_overridden_after_load = False
-        new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
+        new_skips_overrides = (self.overridden_skips -
+                               self.data_sizeCrcDate.keys())
         progress = progress or bolt.Progress()
         progress(0, (
             _(u'%s: Skips overrides...') % bass.dirs[u'mods'].stail) + u'\n')
@@ -2468,8 +2475,8 @@ class InstallersData(DataStore):
     def track(abspath):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
-    @staticmethod
-    def notify_external(altered: set[Path] = frozenset(),
+    @classmethod
+    def notify_external(cls, altered: set[Path] = frozenset(),
                         del_set: set[Path] = frozenset(),
                         renamed: dict[Path, Path] = None):
         """Notifies BAIN of changes in the Data folder done by something other
@@ -2481,15 +2488,13 @@ class InstallersData(DataStore):
             paths to new ones. Currently, only updates tracked changed/deleted
             paths."""
         if renamed is None: renamed = {}
-        ext_updated = InstallersData._externally_updated
-        ext_deleted = InstallersData._externally_deleted
-        ext_updated.update(altered)
-        ext_deleted.update(del_set)
-        for renamed_old, renamed_new in renamed.items():
-            for ext_tracker in (ext_updated, ext_deleted):
-                if renamed_old in ext_tracker:
-                    ext_tracker.discard(renamed_old)
-                    ext_tracker.add(renamed_new)
+        cls._externally_updated.update(altered)
+        cls._externally_deleted.update(del_set)
+        for ext_tracker in (cls._externally_updated, cls._externally_deleted):
+            if renamed_keys := (renamed.keys() & ext_tracker):
+                ext_tracker.difference_update(renamed_keys) # remove old paths
+                ext_tracker.update(
+                    v for k, v in renamed.items() if k in renamed_keys)
 
     def refreshTracked(self):
         del_paths, altered = set(InstallersData._externally_deleted), set(
@@ -2547,9 +2552,12 @@ class InstallersData(DataStore):
                 # don't create ini tweaks for overridden ini tweaks...
                 and os.path.split(x)[0].lower() != u'ini tweaks')
         for relPath in dest_files:
-            oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
-            newCrc = installer.ci_dest_sizeCrc.get(relPath, (None, None))[1]
-            if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
+            try:
+                oldCrc = self.data_sizeCrcDate.get(relPath)[1]
+                newCrc = installer.ci_dest_sizeCrc.get(relPath)[1]
+            except TypeError: # get returned None
+                continue
+            if newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
             co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \

@@ -41,7 +41,7 @@ from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
 from ..bass import Store
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import RecordType
-from ..exception import BoltError, CancelError
+from ..exception import BoltError, CancelError, PluginsFullError
 from ..game import MergeabilityCheck
 from ..gui import BmpFromStream, BusyCursor, copy_text_to_clipboard, askText, \
     showError
@@ -220,7 +220,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
         to_select = []
         for mod, info, previous in to_refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.new_info(mod, notify_bain=True)
+            bosh.modInfos.new_info(mod, notify_bain=True, _in_refresh=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
@@ -315,7 +315,8 @@ class Mod_Redate(File_Redate):
                 in load_order.get_ordered(self.selected)]
 
     def _perform_refresh(self):
-        bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
+        bosh.modInfos.refresh(refresh_infos=False,
+                              unlock_lo=not bush.game.using_txt_file)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -825,8 +826,7 @@ class _GhostLink(ItemLink):
         to_ghost = self.__class__.toGhost
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(to_ghost(fileName)) != oldGhost:
+            if fileInfo.setGhost(to_ghost(fileName)):
                 ghost_changed.append(fileName)
         self.window.RefreshUI(redraw=ghost_changed)
 
@@ -849,7 +849,7 @@ class _DirectGhostLink(_GhostLink, EnabledLink):
     def _enable(self):
         # Enable only if at least one plugin's ghost status would be changed
         ghost_minfs = self._data_store
-        return any(self.__class__.toGhost(p) != ghost_minfs[p].isGhost
+        return any(self.__class__.toGhost(p) != ghost_minfs[p].is_ghost
                    for p in self.selected)
 
 class _Mod_Ghost(_DirectGhostLink):
@@ -867,7 +867,7 @@ class Mod_GhostUnghost(TransLink):
     def _decide(self, window, selection):
         # If any of the selected plugins can be ghosted, return the ghosting
         # link - otherwise, default to unghost
-        if any(_Mod_Ghost.toGhost(p) != window.data_store[p].isGhost
+        if any(_Mod_Ghost.toGhost(p) != window.data_store[p].is_ghost
                for p in selection):
             return _Mod_Ghost()
         return _Mod_Unghost()
@@ -1005,18 +1005,37 @@ class Mod_RebuildPatch(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         """Handle activation event."""
-        self.mods_to_reselect = set()
+        self._reactivate_mods, self._bps = set(), []
         try:
             if not self._execute_bp(self._find_parent_bp(), bosh.modInfos):
                 return # prevent settings save
         except CancelError:
             return # prevent settings save
         finally:
-            if self.mods_to_reselect: # may be cleared in PatchDialog#PatchExecute
-                for mod in self.mods_to_reselect:
-                    bosh.modInfos.lo_activate(mod, doSave=False)
+            count, resave = 0, False
+            to_act = dict.fromkeys(self._bps, True)
+            to_act.update(dict.fromkeys(self._reactivate_mods, False))
+            for fn_mod, is_bp in to_act.items():
+                message = _('Activate %(bp_name)s?') % {'bp_name': fn_mod}
+                if not is_bp or load_order.cached_is_active(fn_mod) or (
+                        bass.inisettings['PromptActivateBashedPatch'] and
+                        self._askYes(message, fn_mod)):
+                    try:
+                        act = bosh.modInfos.lo_activate(fn_mod, doSave=is_bp)
+                        if is_bp and act != [fn_mod]:
+                            msg = _('Masters Activated: %(num_activated)d') % {
+                                'num_activated': len({*act} - {fn_mod})}
+                            Link.Frame.set_status_info(msg)
+                        count += len(act)
+                        resave |= not is_bp and bool(act)
+                    except PluginsFullError:
+                        msg = _('Unable to activate plugin %(bp_name)s because'
+                            ' the load order is full.') % {'bp_name': fn_mod}
+                        self._showError(msg)
+                        break # don't keep trying
+            if resave:
                 bosh.modInfos.cached_lo_save_active()
-                self.window.RefreshUI(refresh_others=Store.SAVES.DO())
+            self.window.RefreshUI(refresh_others=Store.SAVES.IF(count))
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings() ##: just modInfos ?
@@ -1070,7 +1089,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
             return False
         # No errors, proceed with building the BP
         PatchDialog.display_dialog(self.window, bashed_patch,
-                                   self.mods_to_reselect, bp_config)
+                                   self._bps, bp_config)
         return True
 
     def _ask_deactivate_mergeable(self, bashed_patch):
@@ -1095,7 +1114,7 @@ class Mod_RebuildPatch(_Mod_BP_Link):
         to_deselect = set(chain(ed_mergeable, ed_nomerge, ed_deactivate))
         if not ed_ok or not to_deselect:
             return False # Aborted by user or nothing left enabled
-        self.mods_to_reselect = ed_nomerge
+        self._reactivate_mods = ed_nomerge
         with BusyCursor():
             bosh.modInfos.lo_deactivate(to_deselect, doSave=True)
             self.window.RefreshUI(refresh_others=Store.SAVES.DO())

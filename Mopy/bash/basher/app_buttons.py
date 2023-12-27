@@ -358,21 +358,16 @@ class _AAppLOManager(_ExeButton):
 
     def sb_click(self):
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
+        super().sb_click()
         if self.wait:
-            # Clear the saved times from before
-            with load_order.Unlock():
-                super().sb_click()
-                # Refresh to get the new load order that the manager specified.
-                # If on timestamp method scan the data dir, if not
-                # loadorder.txt should have changed, refreshLoadOrder should
-                # detect that
-                bosh.modInfos.refresh(
-                    refresh_infos=not bush.game.using_txt_file)
+            # Refresh to get the new load order that the manager specified. If
+            # on timestamp method scan the data dir, if not loadorder.txt
+            # should have changed, refreshLoadOrder should detect that
+            bosh.modInfos.refresh(refresh_infos=not bush.game.using_txt_file,
+                                  unlock_lo=True)
             # Refresh UI, so WB is made aware of the changes to load order
             Link.Frame.distribute_ui_refresh(
                 ui_refresh=Store.MODS.DO() | Store.SAVES.DO())
-        else:
-            super().sb_click()
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
