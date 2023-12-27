@@ -313,7 +313,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
                     _current_list_index = max (0, _current_list_index)
                     _new_entry()
 
-def refresh_lo(cached: bool, cached_active: bool):
+def refresh_lo(cached: bool, cached_active: bool): # one use - keep it so!
     """Refresh _cached_lord, reverting if locked to the saved one. If any of
     cached or cached_active are True, we will keep the cached values for
     those except if _game_handle.***_changed() respective methods return
@@ -335,22 +335,21 @@ def refresh_lo(cached: bool, cached_active: bool):
             bolt.deprint(f'*** Saved load order is no longer valid: {saved}\n'
                          f'*** Corrected to {fixed}: {saved.lo_diff(fixed)}')
             saved = fixed
+    else: saved = __lo_unset
+    if _cached_lord is not __lo_unset:
+        lo, active = _game_handle.request_cache_update(
+            _cached_lord.loadOrder if cached else None,
+            _cached_lord.activeOrdered if cached_active else None)
+    else: lo = active = None
+    ldiff = _update_cache(lo, active)
+    if saved is not __lo_unset:
         # rest of Bash should only use _cached_lord so since we eventually
         # might impose saved (to move new plugins at the end for instance)
         # cache the diff from _cached_lord to saved to return in that case
         ldiff_saved = _cached_lord.lo_diff(saved)
-    else: saved = __lo_unset
-    if _cached_lord is not __lo_unset:
-        lo = _cached_lord.loadOrder if (
-            cached and not _game_handle.load_order_changed()) else None
-        active = _cached_lord.activeOrdered if (
-            cached_active and not _game_handle.active_changed()) else None
-    else: active = lo = None
-    ldiff = _update_cache(lo, active)
-    if saved is not __lo_unset:
-        if _cached_lord.loadOrder != saved.loadOrder or (
-           _cached_lord.active != saved.active and #active order doesn't matter
-           bass.settings[u'bash.load_order.lock_active_plugins']):
+        if ldiff_saved.lo_changed() or (bass.settings[
+                'bash.load_order.lock_active_plugins'] and
+                ldiff_saved.act_changed()):
             global warn_locked
             warn_locked = True
             save_lo(saved.loadOrder, saved.activeOrdered)

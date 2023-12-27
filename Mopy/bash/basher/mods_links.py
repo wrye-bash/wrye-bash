@@ -440,10 +440,10 @@ class Mods_LockLoadOrder(CheckLink):
 
 class Mods_LockActivePlugins(BoolLink, EnabledLink):
     """Turn on Lock Active Plugins, needs Lock Load Order to be on first."""
-    _text = _(u'Lock Active Plugins')
-    _help = _(u"Enhances 'Lock Load Order' to also detect when mods are "
-              u'enabled or disabled and to undo those changes too.')
-    _bl_key = u'bash.load_order.lock_active_plugins'
+    _text = _('Lock Active Plugins')
+    _help = _("Enhances 'Lock Load Order' to also detect when mods are "
+              'enabled or disabled and to undo those changes too.')
+    _bl_key = 'bash.load_order.lock_active_plugins'
 
     def _enable(self): return load_order.locked # needs Lock LO to be on
 

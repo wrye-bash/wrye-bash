@@ -253,9 +253,6 @@ class LoGame(object):
             raise SyntaxError("Don't include the game master in "
                               "must_be_active_if_present!")
 
-    def _plugins_txt_modified(self):
-        return self._plugins_txt.do_update()
-
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order: LoList,
             cached_active_ordered: LoList, fix_lo) -> tuple[LoTuple, LoTuple]:
@@ -385,9 +382,11 @@ class LoGame(object):
     def _must_update_active(cls, deleted_plugins, reordered):
         raise NotImplementedError
 
-    def active_changed(self): return self._plugins_txt_modified()
-
-    def load_order_changed(self): return True # timestamps, just calculate it
+    def request_cache_update(self, cached_load_order, cached_active): # one use
+        """Return a pair of values for passing to get_load_order."""
+        update_act = cached_active is None or self._plugins_txt.do_update()
+        active = None if update_act else cached_active
+        return None, active # Timestamp just calculate load order from modInfos
 
     # Handle active plugins file (always exists)
     def swap(self, old_dir, new_dir):
@@ -856,10 +855,15 @@ class TextfileGame(_CleanPlugins):
         super().__init__(mod_infos, plugins_txt_path, **kwargs)
         self._loadorder_txt = lo_txt_type(self._star, loadorder_txt_path)
 
-    def load_order_changed(self):
-        # if active changed externally, refetch load order to check for desync
+    def request_cache_update(self, cached_load_order, cached_active):
+        _lo, act = super().request_cache_update(cached_load_order, cached_active)
+        active_changed = act is None
+        # if active changed, refetch load order to check for desync
         # will also return True if file was deleted
-        return self.active_changed() or self._loadorder_txt.do_update()
+        lo_changed = (active_changed or cached_load_order is None or
+                      self._loadorder_txt.do_update())
+        return (None if lo_changed else cached_load_order,
+                None if active_changed else cached_active)
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
@@ -990,7 +994,10 @@ class AsteriskGame(_CleanPlugins):
         file that stores active plugins."""
         return self.pinned_mods()
 
-    def load_order_changed(self): return self._plugins_txt_modified()
+    def request_cache_update(self, *args):
+        if any(x is None for x in args) or self._plugins_txt.do_update():
+            return None, None
+        return args
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once
