@@ -24,6 +24,7 @@ from .. import ObjectIndexRange
 from ..enderal import AEnderalGameInfo
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import GOGMixin, SteamMixin
+from ...bolt import FName
 
 _GOG_IDS = [1708684988]
 
@@ -101,6 +102,13 @@ class _AEnderalSEGameInfo(AEnderalGameInfo, ASkyrimSEGameInfo):
     names_tweaks = (ASkyrimSEGameInfo.names_tweaks |
                     {'NamesTweak_RenamePennies'} -
                     {'NamesTweak_RenameGold'})
+
+    class EnderalSE(ASkyrimSEGameInfo.SkyrimSE):
+        # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
+        must_be_active_if_present = tuple(map(FName, (
+            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
+            'Enderal - Forgotten Stories.esm',)))
+    lo_handler = EnderalSE
 
     @classmethod
     def init(cls, _package_name=None):

@@ -26,6 +26,8 @@ from os.path import join as _j
 from ..patch_game import GameInfo, PatchGame
 from ..store_mixins import SteamMixin
 from ... import bolt
+from ..._games_lo import TextfileGame
+from ...bolt import FName
 
 class ASkyrimGameInfo(PatchGame):
     """GameInfo override for TES V: Skyrim."""
@@ -1470,6 +1472,11 @@ class ASkyrimGameInfo(PatchGame):
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
         b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
     ]
+
+    class Skyrim(TextfileGame):
+        must_be_active_if_present = tuple(map(FName, ('Update.esm',
+            'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
+    lo_handler = Skyrim
 
     @classmethod
     def init(cls, _package_name=None):

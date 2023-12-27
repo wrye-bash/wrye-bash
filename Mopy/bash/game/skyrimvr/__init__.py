@@ -25,6 +25,7 @@ from .. import MergeabilityCheck, ObjectIndexRange
 from ..skyrimse import ASkyrimSEGameInfo
 from ..store_mixins import SteamMixin
 from ... import bass
+from ...bolt import FName, classproperty
 
 class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
     display_name = 'Skyrim VR'
@@ -77,6 +78,22 @@ class _ASkyrimVRGameInfo(ASkyrimSEGameInfo):
         'skyrimvr.esm',
         'skyrim_vr - main.bsa',
     }
+
+    class SkyrimVR(ASkyrimSEGameInfo.SkyrimSE):
+        must_be_active_if_present = (
+            *ASkyrimSEGameInfo.SkyrimSE.must_be_active_if_present,
+            FName('SkyrimVR.esm'))
+        ##: This is nasty, figure out a way to get rid of it
+        @classproperty
+        def max_espms(cls):
+            from ... import bush
+            return 253 if bush.game.has_esl else 255
+
+        @classproperty
+        def max_esls(cls):
+            from ... import bush
+            return 4096 if bush.game.has_esl else 0
+    lo_handler = SkyrimVR
 
     @classmethod
     def init(cls, _package_name=None):

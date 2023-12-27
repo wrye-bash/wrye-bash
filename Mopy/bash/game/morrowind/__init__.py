@@ -26,6 +26,7 @@ from .. import WS_COMMON_FILES, GameInfo
 from ..patch_game import PatchGame
 from ..store_mixins import DiscMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
+from ..._games_lo import INIGame, TimestampGame
 
 _GOG_IDS = [
     1435828767, # Game
@@ -151,6 +152,12 @@ class _AMorrowindGameInfo(PatchGame):
         b'BOOK', b'ALCH', b'LEVI', b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG',
         b'DIAL', b'INFO',
     ]
+
+    class Morrowind(INIGame, TimestampGame):
+        """Morrowind uses timestamps for specifying load order, but stores
+        active plugins in Morrowind.ini."""
+        ini_key_actives = ('Morrowind.ini', 'Game Files', 'GameFile%(lo_idx)s')
+    lo_handler = Morrowind
 
     @classmethod
     def init(cls, _package_name=None):

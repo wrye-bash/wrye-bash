@@ -24,6 +24,7 @@ from .. import MergeabilityCheck, ObjectIndexRange
 from ..fallout4 import AFallout4GameInfo
 from ..store_mixins import SteamMixin
 from ... import bolt
+from ...bolt import FName
 
 class _AFallout4VRGameInfo(AFallout4GameInfo):
     """GameInfo override for Fallout 4 VR."""
@@ -78,6 +79,16 @@ class _AFallout4VRGameInfo(AFallout4GameInfo):
         'fallout4_vr - textures.ba2',
         'fallout4_vr.esm',
     }
+
+    class Fallout4VR(AFallout4GameInfo.Fallout4):
+        must_be_active_if_present = (
+            *AFallout4GameInfo.Fallout4.must_be_active_if_present,
+            FName('Fallout4_VR.esm'))
+        # No ESLs, reset these back to their pre-ESL versions
+        _ccc_filename = ''
+        max_espms = 255
+        max_esls = 0
+    lo_handler = Fallout4VR
 
     @classmethod
     def init(cls, _package_name=None):

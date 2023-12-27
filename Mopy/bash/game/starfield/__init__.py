@@ -26,6 +26,8 @@ from .. import GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
 from ..store_mixins import SteamMixin, WindowsStoreMixin
 from ... import bolt
+from ..._games_lo import AsteriskGame
+from ...bolt import FName
 
 class _AStarfieldGameInfo(PatchGame):
     """GameInfo override for Starfield."""
@@ -236,6 +238,20 @@ class _AStarfieldGameInfo(PatchGame):
         b'WKMF', b'LGDI', b'PSDC', b'SUNP', b'PMFT', b'TODD', b'AVMD', b'CHAL',
     ]
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'} # TODO(SF) verify
+
+    class Starfield(AsteriskGame):
+        must_be_active_if_present = tuple(map(FName, (
+            'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
+        )))
+
+        # The game tries to read a Starfield.ccc already, but it's not present yet
+        # _ccc_filename = 'Starfield.ccc'
+        def _active_entries_to_remove(self):
+            # BlueprintShips-Starfield.esm is hardcoded to be active, but does
+            # not have a hardcoded load order, so don't remove it from the LO
+            return super()._active_entries_to_remove() - {
+                FName('BlueprintShips-Starfield.esm')}
+    lo_handler = Starfield
 
     @classmethod
     def init(cls, _package_name=None):
