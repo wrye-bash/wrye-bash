@@ -388,8 +388,7 @@ class LoGame:
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
     # force installation last - only for timestamp games
-    def get_free_time(self, start_time, end_time=None):
-        raise NotImplementedError
+    def set_mtime_order(self, previous, previous_index, new_mod): pass
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
@@ -423,6 +422,15 @@ class LoGame:
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)
 
+    def _write_plugins_txt(self, lord, active):
+        self._plugins_txt.write_modfile(lord, active)
+        self._plugins_txt.do_update()
+
+    def get_lo_files(self) -> list[Path]:
+        """Returns the paths of the files used by this game for storing load
+        order information."""
+        return [self._plugins_txt.abs_path] # base case
+
     def _backup_load_order(self):
         pass # timestamps, no file to backup
 
@@ -442,16 +450,6 @@ class LoGame:
         # Override for fallout4 to write the file once and oblivion to save
         # active only if needed. Both active and lord must not be None.
         raise NotImplementedError
-
-    # PLUGINS TXT -------------------------------------------------------------
-    def _write_plugins_txt(self, lord, active):
-        self._plugins_txt.write_modfile(lord, active)
-        self._plugins_txt.do_update()
-
-    def get_lo_files(self) -> list[Path]:
-        """Returns the paths of the files used by this game for storing load
-        order information."""
-        return [self._plugins_txt.abs_path] # base case
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: list[FName], fix_lo, _mtime_order=True):
@@ -761,15 +759,19 @@ class TimestampGame(LoGame):
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[ti] - {mod_name}) & active)
 
-    def get_free_time(self, start_time, end_time=None,
-                      __getmtime=attrgetter_cache['ftime']):
+    def set_mtime_order(self, previous, previous_index, new_mod, *,
+                        __getmtime=attrgetter_cache['ftime']):
+        # set the mtime to avoid reordering all subsequent mods
+        start_time, end_time = self.mod_infos.get_time_interval(previous,
+                                                                previous_index)
         all_mtimes = {*map(__getmtime, self.mod_infos.values())}
         end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
-            if not start_time in all_mtimes:
+            if start_time not in all_mtimes:
                 return start_time
             start_time += self._get_free_time_step
-        return max(all_mtimes) + self._get_free_time_step
+        max_1 = max(all_mtimes) + self._get_free_time_step
+        self.mod_infos[new_mod].setmtime(max_1)
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods

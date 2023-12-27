@@ -38,7 +38,7 @@ delegate to the game_handle.
 """
 from __future__ import annotations
 
-__author__ = u'Utumno'
+__author__ = 'Utumno'
 
 import collections
 import math
@@ -64,25 +64,16 @@ _LORDS_PICKLE_VERSION = 2
 __active_mods_sentinel = {}
 _active_mods_lists = {}
 
-def check_active_limit(mods):
-    return _game_handle.check_active_limit(mods)
-
-def max_espms():
-    return _game_handle.max_espms
-
-def max_esls():
-    return _game_handle.max_esls
-
 def initialize_load_order_files():
-    if bass.dirs[u'saveBase'] == bass.dirs[u'app']:
+    if bass.dirs['saveBase'] == bass.dirs['app']:
         #--If using the game directory as rather than the appdata dir.
-        _dir = bass.dirs[u'app']
+        _dir = bass.dirs['app']
     else:
-        _dir = bass.dirs[u'userApp']
+        _dir = bass.dirs['userApp']
     global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
-    _plugins_txt_path = _dir.join(u'plugins.txt')
-    _loadorder_txt_path = _dir.join(u'loadorder.txt')
-    _lord_pickle_path = bass.dirs[u'saveBase'].join(u'BashLoadOrders.dat')
+    _plugins_txt_path = _dir.join('plugins.txt')
+    _loadorder_txt_path = _dir.join('loadorder.txt')
+    _lord_pickle_path = bass.dirs['saveBase'].join('BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos, game_handle):
     global _game_handle
@@ -91,6 +82,69 @@ def initialize_load_order_handle(mod_infos, game_handle):
     _game_handle.parse_ccc_file()
     _game_handle.print_lo_paths()
     __load_pickled_load_orders()
+
+# Saved load orders -----------------------------------------------------------
+lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
+_saved_load_orders: list[lo_entry] = []
+_current_list_index = -1
+
+def __load_pickled_load_orders():
+    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
+        _active_mods_lists
+    _lords_pickle = bolt.PickleDict(_lord_pickle_path)
+    _lords_pickle.load()
+    if _lords_pickle.vdata.get('_lords_pickle_version',
+                               1) < _LORDS_PICKLE_VERSION:
+        # used to load active lists from settings
+        active_mods_list = __active_mods_sentinel
+    else:
+        active_mods_list = {}
+    _get = lambda x, d: _lords_pickle.pickled_data.get(
+        x, d) or _lords_pickle.pickled_data.get(x.encode('ascii'), d)
+    _saved_load_orders = _get('_saved_load_orders', [])
+    _current_list_index = _get('_current_list_index', -1)
+    _active_mods_lists = _get('_active_mods_lists', active_mods_list)
+    if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
+        _active_mods_lists['Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
+        del _active_mods_lists[b'Bethesda ESMs']
+    # transform load orders to FName
+    _saved_load_orders = [lo_entry(date, LoadOrder(
+        forward_compat_path_to_fn_list(lo.loadOrder),
+        forward_compat_path_to_fn_list(lo.active, ret_type=set)))
+                          for (date, lo) in _saved_load_orders]
+    _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
+                          _active_mods_lists.items()}
+    locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
+
+def persist_orders(__keep_max=256):
+    _lords_pickle.vdata['_lords_pickle_version'] = _LORDS_PICKLE_VERSION
+    length = len(_saved_load_orders)
+    if length > __keep_max:
+        x, y = _keep_max(__keep_max, length)
+        _lords_pickle.pickled_data['_saved_load_orders'] = \
+            _saved_load_orders[_current_list_index - x:_current_list_index + y]
+        _lords_pickle.pickled_data['_current_list_index'] = x
+    else:
+        _lords_pickle.pickled_data['_saved_load_orders'] = _saved_load_orders
+        _lords_pickle.pickled_data['_current_list_index'] = _current_list_index
+    _lords_pickle.pickled_data['_active_mods_lists'] = _active_mods_lists
+    _lords_pickle.save()
+
+def _keep_max(max_to_keep, length):
+    max_2 = max_to_keep // 2
+    y = length - _current_list_index
+    if y <= max_2:
+        x = max_to_keep - y
+    else:
+        if _current_list_index > max_2:
+            x = y = max_2
+        else:
+            x, y = _current_list_index, max_to_keep - _current_list_index
+    return x, y
+
+def _new_entry():
+    _saved_load_orders[_current_list_index:_current_list_index] = [
+        lo_entry(time.time(), _cached_lord)]
 
 @dataclass(slots=True)
 class LordDiff: ##: a cousin of both FixInfo and RefrData (property overrides?)
@@ -166,8 +220,8 @@ class LoadOrder(object):
     def __hash__(self): return hash((self._loadOrder, self._active))
 
     def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
-        return {u'_activeOrdered': self._activeOrdered,
-                u'_loadOrder': self.loadOrder}
+        return {'_activeOrdered': self._activeOrdered,
+                '_loadOrder': self.loadOrder}
 
     def __setstate__(self, dct):
         if not all(isinstance(k, str) for k in dct): # bytes keys from older versions
@@ -188,41 +242,6 @@ class LoadOrder(object):
 # Module level cache ----------------------------------------------------------
 __lo_unset = LoadOrder() # load order is not yet set or we failed to set it
 _cached_lord = __lo_unset # must always be valid (or __lo_unset)
-
-# Saved load orders -----------------------------------------------------------
-lo_entry = collections.namedtuple(u'lo_entry', [u'date', u'lord'])
-_saved_load_orders: list[lo_entry] = []
-_current_list_index = -1
-
-def _new_entry():
-    _saved_load_orders[_current_list_index:_current_list_index] = [
-        lo_entry(time.time(), _cached_lord)]
-
-def persist_orders(__keep_max=256):
-    _lords_pickle.vdata[u'_lords_pickle_version'] = _LORDS_PICKLE_VERSION
-    length = len(_saved_load_orders)
-    if length > __keep_max:
-        x, y = _keep_max(__keep_max, length)
-        _lords_pickle.pickled_data[u'_saved_load_orders'] = \
-            _saved_load_orders[_current_list_index - x:_current_list_index + y]
-        _lords_pickle.pickled_data[u'_current_list_index'] = x
-    else:
-        _lords_pickle.pickled_data[u'_saved_load_orders'] = _saved_load_orders
-        _lords_pickle.pickled_data[u'_current_list_index'] = _current_list_index
-    _lords_pickle.pickled_data[u'_active_mods_lists'] = _active_mods_lists
-    _lords_pickle.save()
-
-def _keep_max(max_to_keep, length):
-    max_2 = max_to_keep // 2
-    y = length - _current_list_index
-    if y <= max_2:
-        x = max_to_keep - y
-    else:
-        if _current_list_index > max_2:
-            x = y = max_2
-        else:
-            x, y = _current_list_index, max_to_keep - _current_list_index
-    return x, y
 
 # _cached_lord getters - make sure the cache is valid when using them ---------
 def cached_active_tuple() -> LoTuple:
@@ -271,7 +290,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     load_list = None if lord is None else list(lord)
     fix_lo = None if quiet else FixInfo()
     lord, acti = _game_handle.set_load_order(load_list, acti_list, # pass lists
-        [*_cached_lord.loadOrder], [*_cached_lord.activeOrdered], fix_lo=fix_lo)
+      [*_cached_lord.loadOrder], [*_cached_lord.activeOrdered], fix_lo=fix_lo)
     if not quiet:
         fix_lo.lo_deprint()
     return _update_cache(lord, acti, __index_move=__index_move)
@@ -292,7 +311,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
         return _cached_lord.lo_diff(
             (_cached_lord := LoadOrder(lord, acti_sorted)))
     except Exception:
-        bolt.deprint(u'Error updating load_order cache')
+        bolt.deprint('Error updating load_order cache')
         _cached_lord = __lo_unset
         raise
     finally:
@@ -349,46 +368,19 @@ def refresh_lo(cached: bool, cached_active: bool):
     if saved is not __lo_unset:
         if _cached_lord.loadOrder != saved.loadOrder or (
            _cached_lord.active != saved.active and #active order doesn't matter ##: was true for oblivion still valid?
-           bass.settings[u'bash.load_order.lock_active_plugins']):
+           bass.settings['bash.load_order.lock_active_plugins']):
             global warn_locked
             warn_locked = True
             save_lo(saved.loadOrder, saved.activeOrdered)
             return ldiff_saved
     return ldiff
 
-def __load_pickled_load_orders():
-    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
-        _active_mods_lists
-    _lords_pickle = bolt.PickleDict(_lord_pickle_path)
-    _lords_pickle.load()
-    if _lords_pickle.vdata.get(u'_lords_pickle_version', 1) < _LORDS_PICKLE_VERSION:
-        # used to load active lists from settings
-        active_mods_list = __active_mods_sentinel
-    else:
-        active_mods_list = {}
-    _get = lambda x, d: _lords_pickle.pickled_data.get(
-        x, d) or _lords_pickle.pickled_data.get(x.encode(u'ascii'), d)
-    _saved_load_orders = _get(u'_saved_load_orders', [])
-    _current_list_index = _get(u'_current_list_index', -1)
-    _active_mods_lists = _get(u'_active_mods_lists', active_mods_list)
-    if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
-        _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
-        del _active_mods_lists[b'Bethesda ESMs']
-    # transform load orders to FName
-    _saved_load_orders = [lo_entry(date, LoadOrder(
-        forward_compat_path_to_fn_list(lo.loadOrder),
-        forward_compat_path_to_fn_list(lo.active, ret_type=set)))
-                          for (date, lo) in _saved_load_orders]
-    _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
-                          _active_mods_lists.items()}
-    locked = bass.settings.get(u'bosh.modInfos.resetMTimes', False)
-
 def get_active_mods_lists():
     """Get the user active mods lists from BashLoadOrder.dat, except if they
     are still saved in BashSettings.dat"""
     global _active_mods_lists
     if _active_mods_lists is __active_mods_sentinel:
-        settings_mods_list = bass.settings.get(u'bash.loadLists.data',
+        settings_mods_list = bass.settings.get('bash.loadLists.data',
                                                __active_mods_sentinel)
         _active_mods_lists = settings_mods_list
     return _active_mods_lists
@@ -405,13 +397,21 @@ def _restore_lo(index_move):
     lord, acti = _game_handle.set_load_order(list(previous.loadOrder),
                                              list(previous.activeOrdered))
     previous = LoadOrder(lord, acti) # possibly fixed with new mods appended
-    if previous == _cached_lord:
-        index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
+    if previous == _cached_lord: # increase or decrease by 1
+        index_move += int(math.copysign(1, index_move))
         return _restore_lo(index_move)
     return save_lo(previous.loadOrder, previous.activeOrdered,
                    __index_move=index_move, quiet=True)
 
-# API helpers
+# _game_handle wrappers -------------------------------------------------------
+def check_active_limit(mods):
+    return _game_handle.check_active_limit(mods)
+
+def max_espms():
+    return _game_handle.max_espms
+
+def max_esls():
+    return _game_handle.max_esls
 def swap(old_dir, new_dir):
     return _game_handle.swap(old_dir, new_dir)
 
@@ -434,8 +434,8 @@ def has_load_order_conflict_active(mod_name):
     return _game_handle.has_load_order_conflict_active(mod_name,
                                                        _cached_lord.active)
 
-def get_free_time(start_time, end_time=None):
-    return _game_handle.get_free_time(start_time, end_time)
+def set_mtime_order(previous, previous_index, new_mod):
+    return _game_handle.set_mtime_order(previous, previous_index, new_mod)
 
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order(user_warning_callback):
@@ -444,7 +444,7 @@ def toggle_lock_load_order(user_warning_callback):
     if lock:
         # Make sure the user actually wants to enable this
         lock = user_warning_callback()
-    bass.settings[u'bosh.modInfos.resetMTimes'] = locked = lock
+    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
 
 class Unlock:
     """Context manager to temporarily unlock the load order."""

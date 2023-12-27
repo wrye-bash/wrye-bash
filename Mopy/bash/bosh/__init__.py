@@ -2217,21 +2217,20 @@ class ModInfos(TableFileInfos):
     #--Load Order utility methods - be sure cache is valid when using them
     def cached_lo_insert_after(self, previous, new_mod):
         previous_index = self._lo_wip.index(previous)
-        if not bush.game.using_txt_file:
-            # set the mtime to avoid reordering all subsequent mods
-            try:
-                next_mod = self._lo_wip[previous_index + 1]
-            except IndexError: # last mod
-                next_mod = None
-            end_time = self[next_mod].ftime if next_mod else None
-            start_time = self[previous].ftime
-            if end_time is not None and \
-                    end_time <= start_time: # can happen on esm/esp boundary
-                start_time = end_time - 60.0
-            set_time = load_order.get_free_time(start_time, end_time=end_time)
-            self[new_mod].setmtime(set_time)
+        # set the mtime to avoid reordering all subsequent mods
+        load_order.set_mtime_order(previous, previous_index, new_mod)
         self._lo_wip[previous_index + 1:previous_index + 1] = [
             self[new_mod].fn_key] ##: new_mod is not always an FName
+
+    def get_time_interval(self, previous, previous_index):
+        start_time = self[previous].ftime
+        try:
+            end_time = self[self._lo_wip[previous_index + 1]].ftime
+            if end_time <= start_time:  # can happen on esm/esp boundary
+                start_time = end_time - 60.0
+        except IndexError:  # last mod
+            end_time = None
+        return start_time, end_time
 
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
