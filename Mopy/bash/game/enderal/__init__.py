@@ -22,6 +22,8 @@
 # =============================================================================
 from ..skyrim import ASkyrimGameInfo
 from ..store_mixins import SteamMixin
+from ..._games_lo import TextfileGame
+from ...bolt import FName
 
 class AEnderalGameInfo(ASkyrimGameInfo):
     """GameInfo override for Enderal."""
@@ -117,6 +119,11 @@ class AEnderalGameInfo(ASkyrimGameInfo):
     names_tweaks = ((ASkyrimGameInfo.names_tweaks |
                     {'NamesTweak_RenamePennies'}) -
                     {'NamesTweak_RenameGold'})
+
+    class _LoEnderal(TextfileGame):
+        must_be_active_if_present = tuple(
+            map(FName, ('Update.esm', 'Enderal - Forgotten Stories.esm')))
+    lo_handler = _LoEnderal
 
     @classmethod
     def init(cls, _package_name=None):

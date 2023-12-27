@@ -47,12 +47,12 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from . import _games_lo # LoGame instance providing load order operations API
 from . import bass, bolt, exception
-from ._games_lo import LoTuple, LoList  # for typing
+from ._games_lo import FixInfo, INIGame, LoGame, LoList, LoTuple
 from .bolt import forward_compat_path_to_fn_list, sig_to_str, FName
 
-_game_handle: _games_lo.LoGame | None = None
+# LoGame instance providing load order operations API
+_game_handle: LoGame | None = None
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
@@ -84,10 +84,10 @@ def initialize_load_order_files():
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
     _lord_pickle_path = bass.dirs[u'saveBase'].join(u'BashLoadOrders.dat')
 
-def initialize_load_order_handle(mod_infos, fsname):
+def initialize_load_order_handle(mod_infos, game_handle):
     global _game_handle
-    _game_handle = _games_lo.game_factory(fsname, mod_infos, _plugins_txt_path,
-                                          _loadorder_txt_path)
+    _game_handle = game_handle.lo_handler(mod_infos, _plugins_txt_path,
+        loadorder_txt_path=_loadorder_txt_path)
     _game_handle.parse_ccc_file()
     _game_handle.print_lo_paths()
     __load_pickled_load_orders()
@@ -269,7 +269,7 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     as loadorder.txt, and of course rewrite it completely for AsteriskGame."""
     acti_list = None if acti is None else list(acti)
     load_list = None if lord is None else list(lord)
-    fix_lo = None if quiet else _games_lo.FixInfo()
+    fix_lo = None if quiet else FixInfo()
     lord, acti = _game_handle.set_load_order(load_list, acti_list, # pass lists
         [*_cached_lord.loadOrder], [*_cached_lord.activeOrdered], fix_lo=fix_lo)
     if not quiet:
@@ -285,7 +285,7 @@ def _update_cache(lord: LoList, acti_sorted: LoList, __index_move=0):
     global _cached_lord
     try:
         if lord is None or acti_sorted is None: # really go get load order
-            fix_lo = _games_lo.FixInfo()
+            fix_lo = FixInfo()
             lord, acti_sorted = _game_handle.get_load_order(lord, acti_sorted,
                                                             fix_lo)
             fix_lo.lo_deprint()
@@ -418,7 +418,7 @@ def swap(old_dir, new_dir):
 def force_active_if_present():
     return {*_game_handle.must_be_active_if_present, _game_handle.master_path}
 
-def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
+def using_ini_file(): return isinstance(_game_handle, INIGame)
 
 def get_lo_files():
     """Returns a list of all files used by this game for storing load

@@ -2149,7 +2149,7 @@ class ModInfos(TableFileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
-        load_order.initialize_load_order_handle(self, bush.game.fsName)
+        load_order.initialize_load_order_handle(self, bush.game)
         # cache the bsa_lo for the current load order - expensive to calculate
         self.__bsa_lo = self.__bsa_cause = self.__available_bsas = None
         global modInfos

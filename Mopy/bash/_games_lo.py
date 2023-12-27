@@ -21,8 +21,11 @@
 #  Mopy/bash/games.py copyright (C) 2016 Utumno: Original design
 #
 # =============================================================================
-"""Game class implementing load order handling - **only** imported in
-load_order.py."""
+"""Load order handling backend featuring a LoGame hierarchy implementing base
+load order handling, and _LoFile hierarchy for reading and writing load order
+files. Imported in the game package for defining specific LoGame overrides (to
+keep this file readable and avoid the need of a factory), and in load_order.py,
+where it is initialized and used to implement the load order API."""
 ##: multiple backups? fixes can happen in rapid succession, so preserving
 # several older files in a directory would be useful (maybe limit to some
 # number, e.g. 5 older versions)
@@ -36,8 +39,7 @@ from collections import defaultdict
 from functools import partial
 
 from . import bass, bolt, env, exception
-from .bolt import AFile, FName, GPath, Path, attrgetter_cache, classproperty, \
-    dict_sort
+from .bolt import AFile, FName, Path, attrgetter_cache, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -243,7 +245,7 @@ class FixInfo(object):
             msg.extend(self.act_reordered[1])
         bolt.deprint('\n'.join(msg))
 
-class LoGame(object):
+class LoGame:
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     must_be_active_if_present: LoTuple = ()
@@ -252,9 +254,8 @@ class LoGame(object):
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, plugins_txt_path: Path, *,
-                 plugins_txt_type=_LoFile):
+                 plugins_txt_type=_LoFile, **kwargs):
         """:type mod_infos: bosh.ModInfos"""
-        super().__init__()
         self._plugins_txt = plugins_txt_type(self._star, plugins_txt_path)
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm
@@ -701,14 +702,14 @@ class INIGame(LoGame):
     ini_key_actives = None
     ini_key_lo = None
 
-    def __init__(self, mod_infos, plugins_txt_path=GPath('')):
+    def __init__(self, mod_infos, plugins_txt_path, **kwargs):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
-        kwargs = {'plugins_txt_path': plugins_txt_path}
         if self.__class__.ini_key_actives:
-            kwargs = {'plugins_txt_path': self.ini_dir_actives.join(
-                self.ini_key_actives[0]),
-                'plugins_txt_type': partial(_mk_ini, self.ini_key_actives)}
+            kwargs['plugins_txt_path'] = self.ini_dir_actives.join(
+                self.ini_key_actives[0])
+            kwargs['plugins_txt_type'] = partial(_mk_ini, self.ini_key_actives)
+        else: kwargs['plugins_txt_path'] = plugins_txt_path
         if self.__class__.ini_key_lo:
             kwargs.update({ # we must come just before TextfileGame in the MRO
                 'loadorder_txt_path': self.ini_dir_lo.join(self.ini_key_lo[0]),
@@ -821,12 +822,6 @@ class TimestampGame(LoGame):
         super()._fix_load_order(lord, fix_lo)
         if _mtime_order and fix_lo.lo_added:
             lord[:] = self.__calculate_mtime_order(mods=lord)
-
-# TimestampGame overrides
-class Morrowind(INIGame, TimestampGame):
-    """Morrowind uses timestamps for specifying load order, but stores active
-    plugins in Morrowind.ini."""
-    ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
 
 class _TextFileLo(LoGame):
     """Common code for games that use a text file to store the load order."""
@@ -1063,7 +1058,6 @@ class AsteriskGame(_TextFileLo):
                 previous_active is None or previous_active != active):
             self._persist_load_order(lord, active)
 
-    # Validation overrides ----------------------------------------------------
     @classmethod
     def parse_ccc_file(cls):
         if not cls._ccc_filename: return # Abort if this game has no CC
@@ -1085,345 +1079,6 @@ class AsteriskGame(_TextFileLo):
             bolt.deprint(f'{cls._ccc_filename} does not exist or could not be '
                          f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
-
-# TextfileGame overrides
-class Skyrim(TextfileGame):
-    must_be_active_if_present = tuple(map(FName, (
-        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
-
-class Enderal(TextfileGame):
-    must_be_active_if_present = tuple(map(FName, (
-        u'Update.esm', u'Enderal - Forgotten Stories.esm')))
-
-# AsteriskGame overrides
-class Fallout4(AsteriskGame):
-    must_be_active_if_present = tuple(map(FName, (
-        u'DLCRobot.esm', u'DLCworkshop01.esm', u'DLCCoast.esm',
-        u'DLCWorkshop02.esm', u'DLCWorkshop03.esm', u'DLCNukaWorld.esm',
-        u'DLCUltraHighResolution.esm')))
-    _ccc_filename = u'Fallout4.ccc'
-    _ccc_fallback = tuple(map(FName, (
-        # Up to date as of 2024/04/30
-        'ccBGSFO4001-PipBoy(Black).esl',
-        'ccBGSFO4002-PipBoy(Blue).esl',
-        'ccBGSFO4003-PipBoy(Camo01).esl',
-        'ccBGSFO4004-PipBoy(Camo02).esl',
-        'ccBGSFO4006-PipBoy(Chrome).esl',
-        'ccBGSFO4012-PipBoy(Red).esl',
-        'ccBGSFO4014-PipBoy(White).esl',
-        'ccBGSFO4005-BlueCamo.esl',
-        'ccBGSFO4016-Prey.esl',
-        'ccBGSFO4018-GaussRiflePrototype.esl',
-        'ccBGSFO4019-ChineseStealthArmor.esl',
-        'ccBGSFO4020-PowerArmorSkin(Black).esl',
-        'ccBGSFO4022-PowerArmorSkin(Camo01).esl',
-        'ccBGSFO4023-PowerArmorSkin(Camo02).esl',
-        'ccBGSFO4025-PowerArmorSkin(Chrome).esl',
-        'ccBGSFO4033-PowerArmorSkinWhite.esl',
-        'ccBGSFO4024-PACamo03.esl',
-        'ccBGSFO4038-HorseArmor.esl',
-        'ccBGSFO4041-DoomMarineArmor.esl',
-        'ccBGSFO4042-BFG.esl',
-        'ccBGSFO4044-HellfirePowerArmor.esl',
-        'ccFSVFO4001-ModularMilitaryBackpack.esl',
-        'ccFSVFO4002-MidCenturyModern.esl',
-        'ccFRSFO4001-HandmadeShotgun.esl',
-        'ccEEJFO4001-DecorationPack.esl',
-        'ccRZRFO4001-TunnelSnakes.esm',
-        'ccBGSFO4045-AdvArcCab.esl',
-        'ccFSVFO4003-Slocum.esl',
-        'ccGCAFO4001-FactionWS01Army.esl',
-        'ccGCAFO4002-FactionWS02ACat.esl',
-        'ccGCAFO4003-FactionWS03BOS.esl',
-        'ccGCAFO4004-FactionWS04Gun.esl',
-        'ccGCAFO4005-FactionWS05HRPink.esl',
-        'ccGCAFO4006-FactionWS06HRShark.esl',
-        'ccGCAFO4007-FactionWS07HRFlames.esl',
-        'ccGCAFO4008-FactionWS08Inst.esl',
-        'ccGCAFO4009-FactionWS09MM.esl',
-        'ccGCAFO4010-FactionWS10RR.esl',
-        'ccGCAFO4011-FactionWS11VT.esl',
-        'ccGCAFO4012-FactionAS01ACat.esl',
-        'ccGCAFO4013-FactionAS02BoS.esl',
-        'ccGCAFO4014-FactionAS03Gun.esl',
-        'ccGCAFO4015-FactionAS04HRPink.esl',
-        'ccGCAFO4016-FactionAS05HRShark.esl',
-        'ccGCAFO4017-FactionAS06Inst.esl',
-        'ccGCAFO4018-FactionAS07MM.esl',
-        'ccGCAFO4019-FactionAS08Nuk.esl',
-        'ccGCAFO4020-FactionAS09RR.esl',
-        'ccGCAFO4021-FactionAS10HRFlames.esl',
-        'ccGCAFO4022-FactionAS11VT.esl',
-        'ccGCAFO4023-FactionAS12Army.esl',
-        'ccAWNFO4001-BrandedAttire.esl',
-        'ccSWKFO4001-AstronautPowerArmor.esm',
-        'ccSWKFO4002-PipNuka.esl',
-        'ccSWKFO4003-PipQuan.esl',
-        'ccBGSFO4050-DgBColl.esl',
-        'ccBGSFO4051-DgBox.esl',
-        'ccBGSFO4052-DgDal.esl',
-        'ccBGSFO4053-DgGoldR.esl',
-        'ccBGSFO4054-DgGreatD.esl',
-        'ccBGSFO4055-DgHusk.esl',
-        'ccBGSFO4056-DgLabB.esl',
-        'ccBGSFO4057-DgLabY.esl',
-        'ccBGSFO4058-DGLabC.esl',
-        'ccBGSFO4059-DgPit.esl',
-        'ccBGSFO4060-DgRot.esl',
-        'ccBGSFO4061-DgShiInu.esl',
-        'ccBGSFO4036-TrnsDg.esl',
-        'ccRZRFO4004-PipInst.esl',
-        'ccBGSFO4062-PipPat.esl',
-        'ccRZRFO4003-PipOver.esl',
-        'ccFRSFO4002-AntimaterielRifle.esl',
-        'ccEEJFO4002-Nuka.esl',
-        'ccYGPFO4001-PipCruiser.esl',
-        'ccBGSFO4072-PipGrog.esl',
-        'ccBGSFO4073-PipMMan.esl',
-        'ccBGSFO4074-PipInspect.esl',
-        'ccBGSFO4075-PipShroud.esl',
-        'ccBGSFO4076-PipMystery.esl',
-        'ccBGSFO4071-PipArc.esl',
-        'ccBGSFO4079-PipVim.esl',
-        'ccBGSFO4078-PipReily.esl',
-        'ccBGSFO4077-PipRocket.esl',
-        'ccBGSFO4070-PipAbra.esl',
-        'ccBGSFO4008-PipGrn.esl',
-        'ccBGSFO4015-PipYell.esl',
-        'ccBGSFO4009-PipOran.esl',
-        'ccBGSFO4011-PipPurp.esl',
-        'ccBGSFO4021-PowerArmorSkinBlue.esl',
-        'ccBGSFO4027-PowerArmorSkinGreen.esl',
-        'ccBGSFO4034-PowerArmorSkinYellow.esl',
-        'ccBGSFO4028-PowerArmorSkinOrange.esl',
-        'ccBGSFO4031-PowerArmorSkinRed.esl',
-        'ccBGSFO4030-PowerArmorSkinPurple.esl',
-        'ccBGSFO4032-PowerArmorSkinTan.esl',
-        'ccBGSFO4029-PowerArmorSkinPink.esl',
-        'ccGRCFO4001-PipGreyTort.esl',
-        'ccGRCFO4002-PipGreenVim.esl',
-        'ccBGSFO4013-PipTan.esl',
-        'ccBGSFO4010-PipPnk.esl',
-        'ccSBJFO4001-SolarFlare.esl',
-        'ccZSEF04001-BHouse.esm',
-        'ccTOSFO4001-NeoSky.esm',
-        'ccKGJFO4001-bastion.esl',
-        'ccBGSFO4063-PAPat.esl',
-        'ccQDRFO4001_PowerArmorAI.esl',
-        'ccBGSFO4048-Dovah.esl',
-        'ccBGSFO4101-AS_Shi.esl',
-        'ccBGSFO4114-WS_Shi.esl',
-        'ccBGSFO4115-X02.esl',
-        'ccRZRFO4002-Disintegrate.esl',
-        'ccBGSFO4116-HeavyFlamer.esl',
-        'ccBGSFO4091-AS_Bats.esl',
-        'ccBGSFO4092-AS_CamoBlue.esl',
-        'ccBGSFO4093-AS_CamoGreen.esl',
-        'ccBGSFO4094-AS_CamoTan.esl',
-        'ccBGSFO4097-AS_Jack-oLantern.esl',
-        'ccBGSFO4104-WS_Bats.esl',
-        'ccBGSFO4105-WS_CamoBlue.esl',
-        'ccBGSFO4106-WS_CamoGreen.esl',
-        'ccBGSFO4107-WS_CamoTan.esl',
-        'ccBGSFO4111-WS_Jack-oLantern.esl',
-        'ccBGSFO4118-WS_TunnelSnakes.esl',
-        'ccBGSFO4113-WS_ReillysRangers.esl',
-        'ccBGSFO4112-WS_Pickman.esl',
-        'ccBGSFO4110-WS_Enclave.esl',
-        'ccBGSFO4108-WS_ChildrenOfAtom.esl',
-        'ccBGSFO4103-AS_TunnelSnakes.esl',
-        'ccBGSFO4099-AS_ReillysRangers.esl',
-        'ccBGSFO4098-AS_Pickman.esl',
-        'ccBGSFO4096-AS_Enclave.esl',
-        'ccBGSFO4095-AS_ChildrenOfAtom.esl',
-        'ccBGSFO4090-PipTribal.esl',
-        'ccBGSFO4089-PipSynthwave.esl',
-        'ccBGSFO4087-PipHaida.esl',
-        'ccBGSFO4085-PipHawaii.esl',
-        'ccBGSFO4084-PipRetro.esl',
-        'ccBGSFO4083-PipArtDeco.esl',
-        'ccBGSFO4082-PipPRC.esl',
-        'ccBGSFO4081-PipPhenolResin.esl',
-        'ccBGSFO4080-PipPop.esl',
-        'ccBGSFO4035-Pint.esl',
-        'ccBGSFO4086-PipAdventure.esl',
-        'ccJVDFO4001-Holiday.esl',
-        'ccBGSFO4047-QThund.esl',
-        'ccFRSFO4003-CR75L.esl',
-        'ccZSEFO4002-SManor.esm',
-        'ccACXFO4001-VSuit.esl',
-        'ccBGSFO4040-VRWorkshop01.esl',
-        'ccFSVFO4005-VRDesertIsland.esl',
-        'ccFSVFO4006-VRWasteland.esl',
-        'ccFSVFO4007-Halloween.esl',
-        'ccSBJFO4002_ManwellRifle.esl',
-        'ccTOSFO4002_NeonFlats.esm',
-        'ccBGSFO4117-CapMerc.esl',
-        'ccFSVFO4004-VRWorkshopGNRPlaza.esl',
-        'ccBGSFO4046-TesCan.esl',
-        'ccGCAFO4025-PAGunMM.esl',
-        'ccCRSFO4001-PipCoA.esl',
-        'ccSBJFO4003-Grenade.esl',
-        'ccOTMFO4001-Remnants.esl',
-    )))
-
-class Fallout4VR(Fallout4):
-    must_be_active_if_present = (*Fallout4.must_be_active_if_present,
-                                 FName('Fallout4_VR.esm'))
-    # No ESLs, reset these back to their pre-ESL versions
-    _ccc_filename = ''
-    max_espms = 255
-    max_esls = 0
-
-class SkyrimSE(AsteriskGame):
-    must_be_active_if_present = tuple(map(FName, (
-        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
-    _ccc_filename = u'Skyrim.ccc'
-    _ccc_fallback = tuple(map(FName, (
-        # Up to date as of 2024/04/30
-        'ccASVSSE001-ALMSIVI.esm',
-        'ccBGSSSE001-Fish.esm',
-        'ccBGSSSE002-ExoticArrows.esl',
-        'ccBGSSSE003-Zombies.esl',
-        'ccBGSSSE004-RuinsEdge.esl',
-        'ccBGSSSE005-Goldbrand.esl',
-        'ccBGSSSE006-StendarsHammer.esl',
-        'ccBGSSSE007-Chrysamere.esl',
-        'ccBGSSSE010-PetDwarvenArmoredMudcrab.esl',
-        'ccBGSSSE011-HrsArmrElvn.esl',
-        'ccBGSSSE012-HrsArmrStl.esl',
-        'ccBGSSSE014-SpellPack01.esl',
-        'ccBGSSSE019-StaffofSheogorath.esl',
-        'ccBGSSSE020-GrayCowl.esl',
-        'ccBGSSSE021-LordsMail.esl',
-        'ccMTYSSE001-KnightsoftheNine.esl',
-        'ccQDRSSE001-SurvivalMode.esl',
-        'ccTWBSSE001-PuzzleDungeon.esm',
-        'ccEEJSSE001-Hstead.esm',
-        'ccQDRSSE002-Firewood.esl',
-        'ccBGSSSE018-Shadowrend.esl',
-        'ccBGSSSE035-PetNHound.esl',
-        'ccFSVSSE001-Backpacks.esl',
-        'ccEEJSSE002-Tower.esl',
-        'ccEDHSSE001-NorJewel.esl',
-        'ccVSVSSE002-Pets.esl',
-        'ccBGSSSE037-Curios.esl',
-        'ccBGSSSE034-MntUni.esl',
-        'ccBGSSSE045-Hasedoki.esl',
-        'ccBGSSSE008-Wraithguard.esl',
-        'ccBGSSSE036-PetBWolf.esl',
-        'ccFFBSSE001-ImperialDragon.esl',
-        'ccMTYSSE002-VE.esl',
-        'ccBGSSSE043-CrossElv.esl',
-        'ccVSVSSE001-Winter.esl',
-        'ccEEJSSE003-Hollow.esl',
-        'ccBGSSSE016-Umbra.esm',
-        'ccBGSSSE031-AdvCyrus.esm',
-        'ccBGSSSE038-BowofShadows.esl',
-        'ccBGSSSE040-AdvObGobs.esl',
-        'ccBGSSSE050-BA_Daedric.esl',
-        'ccBGSSSE052-BA_Iron.esl',
-        'ccBGSSSE054-BA_Orcish.esl',
-        'ccBGSSSE058-BA_Steel.esl',
-        'ccBGSSSE059-BA_Dragonplate.esl',
-        'ccBGSSSE061-BA_Dwarven.esl',
-        'ccPEWSSE002-ArmsOfChaos.esl',
-        'ccBGSSSE041-NetchLeather.esl',
-        'ccEDHSSE002-SplKntSet.esl',
-        'ccBGSSSE064-BA_Elven.esl',
-        'ccBGSSSE063-BA_Ebony.esl',
-        'ccBGSSSE062-BA_DwarvenMail.esl',
-        'ccBGSSSE060-BA_Dragonscale.esl',
-        'ccBGSSSE056-BA_Silver.esl',
-        'ccBGSSSE055-BA_OrcishScaled.esl',
-        'ccBGSSSE053-BA_Leather.esl',
-        'ccBGSSSE051-BA_DaedricMail.esl',
-        'ccBGSSSE057-BA_Stalhrim.esl',
-        'ccBGSSSE066-Staves.esl',
-        'ccBGSSSE067-DaedInv.esm',
-        'ccBGSSSE068-Bloodfall.esl',
-        'ccBGSSSE069-Contest.esl',
-        'ccVSVSSE003-NecroArts.esl',
-        'ccVSVSSE004-BeAFarmer.esl',
-        'ccBGSSSE025-AdvDSGS.esm',
-        'ccFFBSSE002-CrossbowPack.esl',
-        'ccBGSSSE013-Dawnfang.esl',
-        'ccRMSSSE001-NecroHouse.esl',
-        'ccEDHSSE003-Redguard.esl',
-        'ccEEJSSE004-Hall.esl',
-        'ccEEJSSE005-Cave.esm',
-        'ccKRTSSE001_Altar.esl',
-        'ccCBHSSE001-Gaunt.esl',
-        'ccAFDSSE001-DweSanctuary.esm',
-        '_ResourcePack.esl',
-    )))
-
-class SkyrimVR(SkyrimSE):
-    must_be_active_if_present = (*SkyrimSE.must_be_active_if_present,
-                                 FName('SkyrimVR.esm'))
-
-    ##: This is nasty, figure out a way to get rid of it
-    @classproperty
-    def max_espms(cls):
-        from . import bush
-        return 253 if bush.game.has_esl else 255
-
-    @classproperty
-    def max_esls(cls):
-        from . import bush
-        return 4096 if bush.game.has_esl else 0
-
-class EnderalSE(SkyrimSE):
-    # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
-    must_be_active_if_present = tuple(map(FName, (
-        'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
-    )))
-    _ccc_fallback = tuple(map(FName, (
-        # Up to date as of 2023/12/29
-        'Enderal - Forgotten Stories.esm',
-    )))
-
-class Starfield(AsteriskGame):
-    must_be_active_if_present = tuple(map(FName, (
-        'Constellation.esm', 'OldMars.esm', 'BlueprintShips-Starfield.esm',
-    )))
-    # The game tries to read a Starfield.ccc already, but it's not present yet
-    # _ccc_filename = 'Starfield.ccc'
-
-    def _active_entries_to_remove(self):
-        return super()._active_entries_to_remove() - {
-            # BlueprintShips-Starfield.esm is hardcoded to be active, but does
-            # not have a hardcoded load order, so don't remove it from the LO
-            FName('BlueprintShips-Starfield.esm'),
-        }
-
-# Game factory
-def game_factory(game_fsName, mod_infos, plugins_txt_path,
-                 loadorder_txt_path=None):
-    match game_fsName:
-        case 'Enderal':
-            return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
-        case 'Enderal Special Edition':
-            return EnderalSE(mod_infos, plugins_txt_path)
-        case 'Fallout3' | 'FalloutNV' | 'Oblivion':
-            return TimestampGame(mod_infos, plugins_txt_path)
-        case 'Fallout4':
-            return Fallout4(mod_infos, plugins_txt_path)
-        case 'Fallout4VR':
-            return Fallout4VR(mod_infos, plugins_txt_path)
-        case 'Morrowind':
-            return Morrowind(mod_infos)
-        case 'Skyrim':
-            return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
-        case 'Skyrim Special Edition':
-            return SkyrimSE(mod_infos, plugins_txt_path)
-        case 'Skyrim VR':
-            return SkyrimVR(mod_infos, plugins_txt_path)
-        case 'Starfield':
-            return Starfield(mod_infos, plugins_txt_path)
-        case _:
-            raise RuntimeError(f'Load order management is not supported for '
-                               f'{game_fsName} yet')
 
 # Print helpers
 def _pl(it, legend='', joint=', '):
