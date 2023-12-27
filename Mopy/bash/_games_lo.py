@@ -39,7 +39,7 @@ from collections import defaultdict
 from functools import partial
 
 from . import bass, bolt, env, exception
-from .bolt import AFile, FName, Path, attrgetter_cache, dict_sort
+from .bolt import AFile, FName, Path, dict_sort
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -314,7 +314,7 @@ class LoGame:
         (cached) state is passed in, usually for both active plugins and
         load order. For instance, in the case of asterisk games, plugins.txt
         is the common structure for defining both the global load order and
-        which plugins are active). The logic is as follows:
+        which plugins are active. The logic is as follows:
         - at least one of `lord` or `active` must be not None, otherwise no
         much use in calling this function anyway - raise ValueError if not.
         - if lord is not None pass it through _fix_load_order. That might
@@ -384,9 +384,6 @@ class LoGame:
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
-    # force installation last - only for timestamp games
-    def get_free_time(self, start_time, end_time=None):
-        raise NotImplementedError
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered):
@@ -419,6 +416,15 @@ class LoGame:
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)
 
+    def _write_plugins_txt(self, lord, active):
+        self._plugins_txt.write_modfile(lord, active)
+        self._plugins_txt.do_update()
+
+    def get_lo_files(self) -> list[Path]:
+        """Returns the paths of the files used by this game for storing load
+        order information."""
+        return [self._plugins_txt.abs_path] # base case
+
     def _backup_load_order(self):
         pass # timestamps, no file to backup
 
@@ -438,16 +444,6 @@ class LoGame:
         # Override for fallout4 to write the file once and oblivion to save
         # active only if needed. Both active and lord must not be None.
         raise NotImplementedError
-
-    # PLUGINS TXT -------------------------------------------------------------
-    def _write_plugins_txt(self, lord, active):
-        self._plugins_txt.write_modfile(lord, active)
-        self._plugins_txt.do_update()
-
-    def get_lo_files(self) -> list[Path]:
-        """Returns the paths of the files used by this game for storing load
-        order information."""
-        return [self._plugins_txt.abs_path] # base case
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord: list[FName], fix_lo, _mtime_order=True):
@@ -741,7 +737,6 @@ class TimestampGame(LoGame):
     times."""
     # Intentionally imprecise mtime cache
     _mtime_mods: defaultdict[int, set[Path]] = defaultdict(set)
-    _get_free_time_step = 1.0 # step by one second intervals
 
     @classmethod
     def _must_update_active(cls, deleted_plugins, reordered): return deleted_plugins
@@ -754,16 +749,6 @@ class TimestampGame(LoGame):
         ti = int(self.mod_infos[mod_name].ftime)
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[ti] - {mod_name}) & active)
-
-    def get_free_time(self, start_time, end_time=None,
-                      __getmtime=attrgetter_cache['ftime']):
-        all_mtimes = {*map(__getmtime, self.mod_infos.values())}
-        end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
-        while start_time < end_time:
-            if not start_time in all_mtimes:
-                return start_time
-            start_time += self._get_free_time_step
-        return max(all_mtimes) + self._get_free_time_step
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
