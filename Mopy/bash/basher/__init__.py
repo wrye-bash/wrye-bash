@@ -1334,6 +1334,9 @@ class ModList(_ModsUIList):
 #------------------------------------------------------------------------------
 class _DetailsMixin(object):
     """Mixin for panels that display detailed info on mods, saves etc."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._resetDetails()
 
     @property
     def file_info(self): return self.file_infos.get(self.displayed_item, None)
@@ -1462,8 +1465,7 @@ class _SashDetailsPanel(_DetailsMixin, SashPanel):
     }
 
     def __init__(self, parent):
-        # call the init of SashPanel - _DetailsMixin hasn't any init
-        super(_DetailsMixin, self).__init__(parent, isVertical=False)
+        super().__init__(parent, isVertical=False)
         # needed so subpanels do not collapse
         self.subSplitter = self._get_sub_splitter()
 
@@ -2344,7 +2346,6 @@ class SaveDetails(_ModsSavesDetails):
         self.saveInfo = None
         textWidth = 200
         #--Player Info
-        self._resetDetails()
         self.playerInfo = Label(top, u' \n \n ')
         self._set_player_info_label()
         self.gCoSaves = Label(top, u'--\n--')
@@ -2954,7 +2955,9 @@ class InstallersDetails(_SashDetailsPanel):
 
     def __init__(self, parent, ui_list_panel):
         """Initialize."""
-        super(InstallersDetails, self).__init__(parent)
+        self.gPackage = self.gSubList = self.gEspmList = self.gComments = None
+        self.infoPages = []
+        super().__init__(parent)
         self.installersPanel = ui_list_panel
         self._idata = self.installersPanel.listData
         self._displayed_installer = None
@@ -2970,7 +2973,6 @@ class InstallersDetails(_SashDetailsPanel):
             second_pane=Splitter(self.subSplitter, min_pane_size=50,
                                  sash_gravity=0.5))
         self.gNotebook.set_min_size(100, 100)
-        self.infoPages = []
         infoTitles = (
             (u'gGeneral', _(u'General')),
             (u'gMatched', _(u'Matched')),
@@ -3106,13 +3108,14 @@ class InstallersDetails(_SashDetailsPanel):
             self.gComments.text_content = installer.comments
 
     def _resetDetails(self):
-        self.gPackage.text_content = u''
-        for index, (gPage, state) in enumerate(self.infoPages):
-            self.infoPages[index][1] = True
-            gPage.text_content = u''
-        self.gSubList.lb_clear()
-        self.gEspmList.lb_clear()
-        self.gComments.text_content = u''
+        if self.gPackage:
+            self.gPackage.text_content = ''
+            for index, (gPage, state) in enumerate(self.infoPages):
+                self.infoPages[index][1] = True
+                gPage.text_content = ''
+            self.gSubList.lb_clear()
+            self.gEspmList.lb_clear()
+            self.gComments.text_content = ''
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -3576,10 +3579,11 @@ class ScreensList(UIList):
 class ScreensDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent, ui_list_panel):
-        super(ScreensDetails, self).__init__(parent)
+        self.screenshot_control = None # For _resetDetails
+        super().__init__(parent)
         self.screenshot_control = Picture(self, 256, 192,
-            background=colors[u'screens.bkgd.image'])
-        self.displayed_screen = None # type: bolt.Path
+            background=colors['screens.bkgd.image'])
+        self.displayed_screen: bolt.Path | None = None
         HLayout(item_expand=True, item_weight=1,
                 items=[self.screenshot_control]).apply_to(self)
 
@@ -3590,7 +3594,8 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def file_infos(self): return bosh.screen_infos
 
     def _resetDetails(self):
-        self.screenshot_control.set_bitmap(None)
+        if self.screenshot_control:
+            self.screenshot_control.set_bitmap(None)
 
     def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
