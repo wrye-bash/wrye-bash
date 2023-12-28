@@ -114,7 +114,7 @@ def InitStatusBar():
         if xe_name == 'TES4Edit':
             # set the paths for TES4Trans/TES4View, supposing they are in the
             # same folder with TES4Edit - these are not specified in the ini
-            tes4_edit_dir = all_links[-1].exePath.head
+            tes4_edit_dir = all_links[-1].app_path.head
             args = 'TES4View.exe', _('Launch TES4View'), {
                 'root_dirs': tes4_edit_dir}, '-TES4', '-view'
             all_links.append(_tool_args('TES4ViewPath', args, uid='TES4View',

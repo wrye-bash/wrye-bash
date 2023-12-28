@@ -104,7 +104,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
 
     def _set_img_and_tip(self):
         # make sure allow_create is True when using this (for instance
-        # exePath must exist to query version)
+        # _app_path must exist to query version)
         self.tooltip = self.sb_button_tip
         self._set_button_image(self._btn_bmp())
 
@@ -161,13 +161,12 @@ class AppButton(AppLauncher, StatusBarButton):
     """Launch an application."""
     _obseTip = None
 
-    def __init__(self, exePath, images, tip, uid, cli_args=(), canHide=True,
-                 display_launcher=True):
+    def __init__(self, launcher_path, images, tip, uid, cli_args=(),
+                 canHide=True, display_launcher=True):
         """images: [16x16,24x24,32x32] images"""
-        super().__init__(exePath, cli_args, display_launcher, uid, canHide, tip)
+        super().__init__(launcher_path, cli_args, display_launcher, uid,
+                         canHide, tip)
         self.images = images
-        # used by _App_Button.sb_click: be sure to set them _before_ calling it
-        self.extraArgs = ()
         self.wait = False
 
     def _btn_bmp(self):
@@ -184,25 +183,28 @@ class AppButton(AppLauncher, StatusBarButton):
 
     @property
     def _app_version(self):
-        return _strip_version(self.exePath)
+        return _strip_version(self._app_path)
 
-    def sb_click(self):
-        exeargs = [*self._exe_args, *self.extraArgs]
-        Link.Frame.set_status_info(shlex.join([self.exePath.s, *exeargs]))
+    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
+        exeargs, exepath = self.app_cli(custom_args), self.app_path
+        Link.Frame.set_status_info(shlex.join([exepath.s, *exeargs]))
         try:
-            self.launch_app(self.exePath, exeargs)
+            self.launch_app(exepath, exeargs)
             return
         except UnicodeError:
             msg = _('Execution failed because one or more of the '
                     'command line arguments failed to encode.')
         except Exception as error:
-            msg = (f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
-                'launched_exe_path': self.exePath} + '\n' + _(
+            msg = f'{error}\n\n' + _('Used Path: %(launched_exe_path)s') % {
+                'launched_exe_path': exepath} + '\n' + _(
                 'Used Arguments: %(launched_exe_args)s') % {
-                       'launched_exe_args': shlex.join(exeargs)})
+                       'launched_exe_args': shlex.join(exeargs)}
         error_title = _("Could Not Launch '%(launched_exe_name)s'") % {
-            'launched_exe_name': self.exePath.stail}
+            'launched_exe_name': exepath.stail}
         showError(Link.Frame, msg, title=error_title)
+
+    def app_cli(self, custom_args):
+        return [*self._exe_args, *custom_args]
 
     @classmethod
     def app_button_factory(cls, app_key, app_launcher, path_kwargs, *args,
@@ -259,7 +261,8 @@ class LnkButton(LnkLauncher, AppButton): pass
 
 class _DirButton(AppButton):
 
-    def sb_click(self): webbrowser.open(self.exePath.s)
+    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
+        webbrowser.open(self._app_path.s)
 
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
@@ -314,7 +317,7 @@ class AppXEdit(_ExeButton):
             bt_links.append_link(_Mods_xEditVQSC(self))
         return super()._init_menu(bt_links)
 
-    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
+    def app_cli(self, custom_args):
         """Computes arguments based on checked links and INI settings, then
         appends the specified custom arguments only for this launch."""
         xe_prefix = bush.game.Xe.xe_key_prefix
@@ -326,8 +329,7 @@ class AppXEdit(_ExeButton):
             if is_expert else []
         if skip_bsas:
             extra_args.append('-skipbsa')
-        self.extraArgs = (*extra_args, *custom_args)
-        super().sb_click()
+        return super().app_cli((*extra_args, *custom_args))
 
 #------------------------------------------------------------------------------
 class _Mods_SuspendLockLO(BoolLink):
@@ -358,9 +360,9 @@ class _AAppLOManager(_ExeButton):
         bt_links.append_link(_Mods_SuspendLockLO())
         return super()._init_menu(bt_links)
 
-    def sb_click(self):
+    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
-        super().sb_click()
+        super().sb_click(custom_args=custom_args)
         if self.wait:
             # Refresh to get the new load order that the manager specified. If
             # on timestamp method scan the data dir, if not loadorder.txt
@@ -382,19 +384,16 @@ class AppBOSS(_AAppLOManager):
     """Runs BOSS if it's present."""
     _registry_keys = ('Boss', 'Installed Path')
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.boss_path = self.exePath
-
     def _init_menu(self, bt_links):
         bt_links.append_link(_Mods_BOSSLaunchGUI())
         return super()._init_menu(bt_links)
 
-    def sb_click(self):
-        if bass.settings['BOSS.UseGUI']:
-            self.exePath = self.boss_path.head.join('boss_gui.exe')
-        else:
-            self.exePath = self.boss_path
+    @property
+    def app_path(self):
+        return self._app_path.head.join('boss_gui.exe') if bass.settings[
+            'BOSS.UseGUI'] else super().app_path
+
+    def app_cli(self, custom_args):
         curr_args = []
         ##: These should become right click options instead
         if get_key_down('R'):
@@ -406,11 +405,10 @@ class AppBOSS(_AAppLOManager):
             curr_args.append('-s') # Silent Mode - BOSS version 1.6+
         if get_key_down('C'): # Print crc calculations in BOSS log.
             curr_args.append('-c')
-        if get_file_version(self.boss_path.s) >= (2, 0, 0, 0):
+        if get_file_version(self._app_path.s) >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             curr_args.append(f'-g{bush.game.boss_game_name}')
-        self.extraArgs = tuple(curr_args)
-        super().sb_click()
+        return super().app_cli((*curr_args, *custom_args))
 
 #------------------------------------------------------------------------------
 class _Mods_LOOTAutoSort(BoolLink):
@@ -427,12 +425,11 @@ class AppLOOT(_AAppLOManager):
         bt_links.append_link(_Mods_LOOTAutoSort())
         return super()._init_menu(bt_links)
 
-    def sb_click(self):
+    def app_cli(self, custom_args):
         curr_args = [f'--game={bush.game.loot_game_name}']
         if bass.settings['LOOT.AutoSort']:
             curr_args.append('--auto-sort')
-        self.extraArgs = tuple(curr_args)
-        super().sb_click()
+        return super().app_cli((*curr_args, *custom_args))
 
 #------------------------------------------------------------------------------
 class GameButton(_ExeButton):
@@ -447,7 +444,7 @@ class GameButton(_ExeButton):
                           'app_version': self._app_version}
         self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
 
-    def sb_click(self):
+    def sb_click(self, *, custom_args: tuple[str, ...] = ()):
         if bush.ws_info.installed:
             version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
@@ -455,17 +452,15 @@ class GameButton(_ExeButton):
                       f'{version_info.entry_point}')
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
-            old = self.exePath # Default to the regular launcher
-            if BashStatusBar.obseButton.button_state:
-                exe_xse = bush.game.Se.exe_path_sc()
-                # Should use the xSE launcher if it's present
-                self.exePath = old if exe_xse is None else exe_xse
-            try:
-                super().sb_click()
-            finally:
-                self.exePath = old
+            super().sb_click(custom_args=custom_args)
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.exit_wb()
+
+    @property
+    def app_path(self):
+        # Should use the xSE launcher if it's present else the regular launcher
+        return exe_xse if BashStatusBar.obseButton.button_state and (
+            exe_xse := bush.game.Se.exe_path_sc()) else super().app_path
 
     @property
     def _app_version(self):
@@ -496,19 +491,15 @@ class TESCSButton(_ExeButton):
                     cse_ver := _strip_version(cse_path)) else ''
                 self._obseTip += f' + CSE{cse_version}'
 
-    def sb_click(self):
-        old = self.exePath
-        if (self._exe_args and BashStatusBar.obseButton.button_state and (
-                ##: does this work for Oblivion or use exe_path_sc here
-                exe_xse := bass.dirs['app'].join(bush.game.Se.exe)).is_file()):
-            # If the script extender for this game has CK support, the xSE
-            # loader is present and xSE is enabled, use that executable and
-            # pass the editor argument to it
-            self.exePath = exe_xse
-        try:
-            super().sb_click()
-        finally:
-            self.exePath = old
+    @property
+    def app_path(self):
+        # If the script extender for this game has CK support, the xSE loader
+        # is present and xSE is enabled, use that executable and pass the
+        # editor argument to it
+        isobse = self._exe_args and BashStatusBar.obseButton.button_state and (
+            ##: does this work for Oblivion or use exe_path_sc here
+            exe_xse := bass.dirs['app'].join(bush.game.Se.exe)).is_file()
+        return exe_xse if isobse else super().app_path
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBarButton):
