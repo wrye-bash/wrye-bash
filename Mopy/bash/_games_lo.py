@@ -1531,15 +1531,11 @@ class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
     must_be_active_if_present = tuple(map(FName, (
         'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
+    )))
+    _ccc_fallback = tuple(map(FName, (
+        # Up to date as of 2023/12/29
         'Enderal - Forgotten Stories.esm',
     )))
-
-    def _active_entries_to_remove(self):
-        return super()._active_entries_to_remove() - {
-            # Enderal - Forgotten Stories.esm is *not* hardcoded to load, so
-            # don't remove it from the LO
-            FName('Enderal - Forgotten Stories.esm'),
-        }
 
 class Starfield(AsteriskGame):
     must_be_active_if_present = tuple(map(FName, (
