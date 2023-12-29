@@ -186,29 +186,30 @@ class FixInfo(object):
 
     def _warn_active(self):
         if not self.act_header: return
-        msg = self.act_header
+        msg = [self.act_header]
         if self.act_removed:
-            msg += u'Active list contains mods not present in Data/ ' \
-                   u'directory, invalid and/or corrupted: '
-            msg += _pl(self.act_removed) + u'\n'
+            msg.append('Active list contains mods not present in Data '
+                       'directory, invalid and/or corrupted:')
+            msg.append(', '.join(self.act_removed))
         if self.master_not_active:
-            msg += f'{self.master_not_active} not present in active mods\n'
+            msg.append(f'{self.master_not_active} not present in active mods')
         for path in self.missing_must_be_active:
-            msg += f'{path} not present in active list while present in ' \
-                   f'Data folder' + u'\n'
+            msg.append(f'{path} not present in active list while present in '
+                       f'Data folder')
         msg += self.act_order_differs_from_load_order
         if self.selectedExtra:
-            msg += u'Active list contains more plugins than allowed' \
-                   u' - the following plugins will be deactivated: '
-            msg += _pl(self.selectedExtra)
+            msg.append('Active list contains more plugins than allowed - the '
+                       'following plugins will be deactivated:')
+            msg.append(', '.join(self.selectedExtra))
         if self.act_duplicates:
-            msg += u'Removed duplicate entries from active list : '
-            msg += _pl(self.act_duplicates)
+            msg.append('Removed duplicate entries from active list:')
+            msg.append(', '.join(self.act_duplicates))
         if len(self.act_reordered) == 2: # from, to
-            msg += u'Reordered active plugins with fixed order '
-            msg += _pl(self.act_reordered[0], u'from:\n', joint=u'\n')
-            msg += _pl(self.act_reordered[1], u'\nto:\n', joint=u'\n')
-        bolt.deprint(msg)
+            msg.append('Reordered active plugins with fixed order from:')
+            msg.extend(self.act_reordered[0])
+            msg.append('to:')
+            msg.extend(self.act_reordered[1])
+        bolt.deprint('\n'.join(msg))
 
 class LoGame(object):
     """API for setting, getting and validating the active plugins and the
@@ -567,11 +568,11 @@ class LoGame(object):
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user and backup previous plugins.txt
-                fix_active.act_header = 'Invalid Plugin txt corrected:\n'
+                fix_active.act_header = 'Invalid Plugin txt corrected:'
                 self._backup_active_plugins()
                 self._persist_active_plugins(acti, lord)
             else: # active list we passed in when setting load order is invalid
-                fix_active.act_header = 'Invalid active plugins list corrected:\n'
+                fix_active.act_header = 'Invalid active plugins list corrected:'
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
