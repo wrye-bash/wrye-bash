@@ -35,7 +35,7 @@ import sys
 import webbrowser
 import winreg
 from collections.abc import Iterable
-from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
+from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
@@ -1446,7 +1446,7 @@ class TaskDialog(object):
                     additional_flags):
         conf = _TASKDIALOGCONFIG()
 
-        if c_links and getattr(self, u'_buttons', []):
+        if c_links and getattr(self, '_buttons', []):
             additional_flags |= _USE_COMMAND_LINKS
         if centered:
             additional_flags |= _POSITION_RELATIVE_TO_WINDOW
@@ -1466,12 +1466,12 @@ class TaskDialog(object):
         # FIXME(ut): unpythonic, as the builder pattern above
         attributes = dir(self)
 
-        if u'_width' in attributes:
+        if '_width' in attributes:
             conf.cxWidth = self._width
 
         if self._footer:
             conf.pszFooter = self._footer
-        if u'_footer_icon' in attributes:
+        if '_footer_icon' in attributes:
             if self._footer_is_stock:
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
@@ -1484,7 +1484,7 @@ class TaskDialog(object):
                 conf.uMainIcon.hMainIcon = self._main_icon
                 additional_flags |= _USE_HICON_MAIN
 
-        if u'_buttons' in attributes:
+        if '_buttons' in attributes:
             custom_buttons = []
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
@@ -1503,7 +1503,7 @@ class TaskDialog(object):
                     custom_buttons.append((text, default, elevated))
 
             conf.cButtons = len(custom_buttons)
-            array_type = ARRAY(_TASKDIALOG_BUTTON, conf.cButtons)
+            array_type = _TASKDIALOG_BUTTON * conf.cButtons
             c_array = array_type()
             for i, tup in enumerate(custom_buttons):
                 c_array[i] = _TASKDIALOG_BUTTON(i + _BUTTONID_OFFSET, tup[0])
@@ -1514,9 +1514,9 @@ class TaskDialog(object):
             conf.pButtons = c_array
             self.__custom_buttons = custom_buttons
 
-        if u'_radio_buttons' in attributes:
+        if '_radio_buttons' in attributes:
             conf.cRadioButtons = len(self._radio_buttons)
-            array_type = ARRAY(_TASKDIALOG_BUTTON, conf.cRadioButtons)
+            array_type = _TASKDIALOG_BUTTON * conf.cRadioButtons
             c_array = array_type()
             for i, button in enumerate(self._radio_buttons):
                 c_array[i] = _TASKDIALOG_BUTTON(i, button)
@@ -1527,7 +1527,7 @@ class TaskDialog(object):
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
-        if u'_expander_data' in attributes:
+        if '_expander_data' in attributes:
             conf.pszCollapsedControlText = self._expander_data[0]
             conf.pszExpandedControlText = self._expander_data[1]
             conf.pszExpandedInformation = self._expander_data[2]
@@ -1537,16 +1537,16 @@ class TaskDialog(object):
             if self._expands_at_footer:
                 additional_flags |= _EXPAND_FOOTER_AREA
 
-        if u'_cbox_label' in attributes:
+        if '_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
                 additional_flags |= _VERIFICATION_FLAG_CHECKED
 
-        if u'_marquee_progress_bar' in attributes:
+        if '_marquee_progress_bar' in attributes:
             additional_flags |= _SHOW_MARQUEE_PROGRESS_BAR
             additional_flags |= _CALLBACK_TIMER
 
-        if u'_progress_bar' in attributes:
+        if '_progress_bar' in attributes:
             additional_flags |= _SHOW_PROGRESS_BAR
             additional_flags |= _CALLBACK_TIMER
 

@@ -1,14 +1,14 @@
 # Runtime, required -----------------------------------------------------------
 chardet==5.2.0
 ifileoperation==1.2.6; sys_platform == 'win32'
-lz4==4.3.2
+lz4==4.3.3
 pywin32==306; sys_platform == 'win32'
 PyYAML==6.0.1
 vdf==3.4
 wxPython==4.2.1
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
-lxml==4.9.4
+lxml==5.0.0
 # For parsing download conditions when checking for updates
 packaging==23.2
 # For PDF support in the doc browser
@@ -27,4 +27,4 @@ pyfiglet==1.0.2
 pygit2==1.13.3
 PyGithub==2.1.1
 pyinstaller==6.3.0
-pytest==7.4.3
+pytest==7.4.4
