@@ -27,8 +27,10 @@ from __future__ import annotations
 __author__ = u'nycz, Infernio, Utumno'
 
 import datetime
+import os
 import re
 from collections import defaultdict
+from enum import Enum, auto
 from itertools import chain
 
 import wx as _wx
@@ -37,10 +39,12 @@ from wx.grid import Grid
 
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _AComponent, _AEvtHandler
+from .buttons import ImageButton
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .images import GuiImage
 from .menus import Links
+from .text_components import TextField
 from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
@@ -421,6 +425,72 @@ class TimePicker(_AComponent):
         specified datetime.time object."""
         self._native_widget.SetTime(new_time.hour, new_time.minute,
             new_time.second)
+        
+class _PathPicker(_AComponent):
+    """A component that allows picking a file or directory. Uses a text field
+    and a button for browsing, both configurable.
+    """
+    _native_widget: _wx.FilePickerCtrl | _wx.DirPickerCtrl
+
+    def __init__(self, parent, event_type, use_icon=True, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.on_path_changed = self._evt_handler(event_type, lambda e: e.GetPath())
+        if use_icon:
+            ## TODO: Check this looks OK on GTK/OSX, based on the wxPython docs
+            # the GTK widget might already have an icon and look odd
+            bmp = _wx.ArtProvider.GetBitmap(_wx.ART_FOLDER_OPEN, _wx.ART_BUTTON)
+            self.button._set_button_image(bmp)
+
+    def set_initial_directory(self, initial_dir: os.PathLike[str]) -> None:
+        self._native_widget.SetInitialDirectory(os.fspath(initial_dir))
+
+    @property
+    def button(self) -> ImageButton:
+        return ImageButton._wrap_object(self._native_widget.GetPickerCtrl())
+    
+    @property
+    def text_field(self) -> TextField:
+        return TextField._wrap_object(self._native_widget.GetTextCtrl())
+    
+class FilePicker(_PathPicker):
+    _native_widget: _wx.FilePickerCtrl
+
+    class FilePickerAction(Enum):
+        OPEN = auto()
+        SAVE = auto()
+
+    def __init__(self, parent, dialog_title='', wildcard='*.*',
+                 file_action = FilePickerAction.OPEN, use_text_ctrl=True,
+                 overwrite_prompt=False, must_exist=True, change_cwd=False,
+                 small_button=False, use_icon=True):
+        if file_action is self.FilePickerAction.OPEN:
+            if not dialog_title:
+                dialog_title = _('Open File')
+            style = _wx.FLP_OPEN
+        else:
+            if not dialog_title:
+                dialog_title = _('Save File')
+            style = _wx.FLP_SAVE
+        style |= _wx.FLP_USE_TEXTCTRL if use_text_ctrl else 0
+        style |= _wx.FLP_OVERWRITE_PROMPT if overwrite_prompt else 0
+        style |= _wx.FLP_FILE_MUST_EXIST if must_exist else 0
+        style |= _wx.FLP_CHANGE_DIR if change_cwd else 0
+        style |= _wx.FLP_SMALL if small_button else 0
+        super().__init__(parent, _wx.EVT_FILEPICKER_CHANGED, use_icon,
+                         message=dialog_title, wildcard=wildcard, style=style)
+
+class DirPicker(_PathPicker):
+    _native_widget: _wx.DirPickerCtrl
+
+    def __init__(self, parent, dialog_title=_('Select Directory'),
+                 use_text_ctrl = True, must_exist=True, change_cwd=False,
+                small=False, use_icon=True):
+        style = _wx.DIRP_DIR_MUST_EXIST if must_exist else 0
+        style |= _wx.DIRP_CHANGE_DIR if change_cwd else 0
+        style |= _wx.DIRP_SMALL if small else 0
+        style |= _wx.DIRP_USE_TEXTCTRL if use_text_ctrl else 0
+        super().__init__(parent, _wx.EVT_DIRPICKER_CHANGED, use_icon,
+                         message=dialog_title, style=style)
 
 # Other -----------------------------------------------------------------------
 class GlobalMenu(_AEvtHandler):
