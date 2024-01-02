@@ -29,7 +29,7 @@ __author__ = 'nycz, Infernio, Utumno'
 import functools
 import platform
 import textwrap
-from typing import get_type_hints
+from typing import Self, get_type_hints
 
 import wx as _wx
 import wx.lib.newevent as _newevent
@@ -136,6 +136,22 @@ class _AObject:
             self._cached_widget = widget
         else:
             self._native_widget = widget
+
+    @classmethod
+    def _wrap_object(cls, native_widget, type_check=True) -> Self:
+        """Wraps an existing wx object with this class.
+        
+        Note: if any additional initialization of the _AObject is required, you
+        must do it yourself.
+        """
+        if type_check:
+            wx_widget_type = get_type_hints(cls)['_native_widget']
+            if not isinstance(native_widget, wx_widget_type):
+                raise TypeError(f'Cannot wrap {native_widget!r} with {cls}, '
+                                f'expected {wx_widget_type}')
+        instance = cls.__new__(cls)
+        instance._native_widget = native_widget
+        return instance
 
     @staticmethod
     def _escape(s):
