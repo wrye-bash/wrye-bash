@@ -77,12 +77,10 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
 
     # we always need to pass a parent to those
     # noinspection PyMethodOverriding
-    def native_init(self, parent, recreate=True, on_drag_start=None,
-                    on_drag_end=None, on_drag_end_forced=None, on_drag=None):
+    def native_init(self, parent, recreate=True, **drag_handlers):
         """Create and return gui button."""
         created = super().native_init(parent, recreate=recreate,
-            on_drag_start=on_drag_start, on_drag_end=on_drag_end,
-            on_drag_end_forced=on_drag_end_forced, on_drag=on_drag)
+                                      **drag_handlers)
         if created:
             self._set_img_and_tip()
             # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
