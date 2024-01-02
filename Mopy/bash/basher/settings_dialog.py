@@ -33,7 +33,7 @@ from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import LooseVersion, deprint, dict_sort, os_name, readme_url, \
-    reverse_dict
+    reverse_dict, GPath_no_norm
 from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
@@ -1636,14 +1636,16 @@ class LaunchersPage(_AFixedPage):
         # get values to save from text boxes.
         # If path of current launcher is invalid, like <new>, show error dialog
         # Update list after confirmed save.
-        return
-        launcher = launchers.Launcher(self._launcher_path.text_field.text_content,
-                                      self._launcher_args_txt.text_content)
         launcher_name = self._launcher_name_txt.text_content
-        if launcher_name in (_(u'<New...>'), u''): #TODO error out if name
-            # already exists, prompt user to edit existing instead
+        if launcher_name in BashStatusBar.all_sb_links:
+            #TODO error out if name already exists, prompt user to edit existing instead
             return
-        launchers.save_launcher(launcher_name, launcher)
+        from .app_buttons import AppButton
+        launcher = AppButton.app_button_factory(None,
+            GPath_no_norm(self._launcher_path.text_field.text_content), None,
+            uid=launcher_name, cli_args=()) #todo -> self._launcher_args_txt.text_content
+        BashStatusBar.all_sb_links[launcher_name] = launcher
+        Link.Frame.statusBar.add_buttons(launcher)
         self._populate_launcher_listbox()
 
     def _remove_or_cancel(self):

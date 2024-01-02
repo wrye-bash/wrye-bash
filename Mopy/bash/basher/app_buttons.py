@@ -215,13 +215,21 @@ class AppButton(AppLauncher, StatusBarButton):
     @classmethod
     def app_button_factory(cls, app_key, app_launcher, path_kwargs, *args,
                            **kwargs):
-        if kwargs.setdefault('display_launcher', True):
+        if isinstance(app_launcher, bolt.Path):
+            # called from settings dialog to create a button, it should exist
+            exe_path = app_launcher
+            args = None, *args, _('Launch %(app_name)s') % {
+                'app_name': exe_path.stail}
+        elif kwargs.setdefault('display_launcher', True):
             exe_path, is_present = cls.find_launcher(app_launcher, app_key,
                                                      **path_kwargs)
             # App_Button is initialized once on boot, if the path doesn't exist
             # at this time then it will be detected on next launch of Bash
             kwargs['display_launcher'] &= is_present
         else: exe_path = undefinedPath # don't bother figuring that out
+        if args[0] is None:
+            badIcons = [get_image('error_cross.16')] * 3  ##: 16, 24, 32?
+            args = badIcons, *args[1:]
         if cls is not AppButton:
             return cls(exe_path, *args, **kwargs)
         if exe_path.cext == '.exe':

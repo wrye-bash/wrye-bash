@@ -50,7 +50,7 @@ from ..bolt import os_name
 from ..env import init_app_links
 from ..game import MergeabilityCheck
 from ..game.patch_game import PatchGame
-from ..gui import GuiImage, get_image
+from ..gui import GuiImage
 
 _is_oblivion = bush.game.fsName == 'Oblivion'
 _is_skyrim = bush.game.fsName == 'Skyrim'
@@ -59,7 +59,6 @@ _j = os.path.join
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar buttons."""
-    badIcons = [get_image('error_cross.16')] * 3 ##: 16, 24, 32?
     __fp = GuiImage.from_path
     def _png_list(template):
         return [__fp(template % i, iconSize=i) for i in (16, 24, 32)]
@@ -82,7 +81,7 @@ def InitStatusBar():
             list_img = _svg_list(_j('tools', f'{app_key.lower()}.svg'))
         elif uid == 'TESCS':
             list_img = _png_list(f'tools/{imn}') if (
-                imn := bush.game.Ck.image_name) else badIcons
+                imn := bush.game.Ck.image_name) else None
         elif app_key[:-4] in all_xes: # chop off 'Path'
             list_img = xe_images
         else:
@@ -142,14 +141,14 @@ def InitStatusBar():
     for pth, img_path, shortcut_desc in init_app_links(
             bass.dirs['mopy'].join('Apps')):
         if img_path is None:
-            imgs = badIcons # use the 'x' icon
+            imgs = None # use the 'x' icon
         else:
             imgs = [__fp(p, GuiImage.img_types['.ico'], x) for x, p in
                     zip((16, 24, 32), img_path)]
         #target.stail would keep the id on renaming the .lnk but this is unique
         app_key = pth.stail.lower()
-        all_links.append(LnkButton(pth, imgs, shortcut_desc, app_key,
-                                   canHide=False))
+        all_links.append(LnkButton.app_button_factory(app_key, pth, None,
+            imgs, shortcut_desc, app_key, canHide=False))
     #--Final couple
     all_links.append(DocBrowserButton('DocBrowser'))
     all_links.append(PluginCheckerButton('ModChecker'))
