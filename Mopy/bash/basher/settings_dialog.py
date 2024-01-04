@@ -26,12 +26,13 @@ import subprocess
 import webbrowser
 from collections import defaultdict
 
-from . import BashStatusBar, tabInfo
+from . import tabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import Link, Resources, colors
-from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion
+from ..balt import BashStatusBar, Link, Resources, colors
+from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
+    reverse_dict
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
     DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
@@ -39,9 +40,11 @@ from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     OpenButton, PanelWin, RevertButton, SaveAsButton, SaveButton, \
     ScrollableWindow, Spacer, Stretch, TextArea, TextField, TreePanel, \
     VBoxedLayout, VLayout, WrappingLabel, CENTER, VerticalLine, Spinner, \
-    showOk, askYes, askText, showError, askWarning, showInfo
+    showOk, askYes, askText, showError, askWarning, showInfo, ImageButton, \
+    get_image
 from ..localize import dump_translator
 from ..update_checker import UpdateChecker, can_check_updates
+from ..wbtemp import default_global_temp_dir
 
 class SettingsDialog(DialogWindow):
     """A dialog for configuring settings, split into multiple pages."""
@@ -55,7 +58,7 @@ class SettingsDialog(DialogWindow):
         :param initial_page: If set to a truthy string, will switch to that
                              page before showing the dialog to the user."""
         super(SettingsDialog, self).__init__(Link.Frame,
-            icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes)
+            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
         # Used to keep track of the pages that have changed settings
         self._changed_state = {}
         # Used to keep track of a potential scheduled restart of Wrye Bash in
@@ -78,7 +81,7 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, balt.images[u'help.24'].get_bitmap(),
+        help_btn = ClickableImage(self, get_image('help.24'),
             btn_tooltip=_(u'View the readme section for the currently active '
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
@@ -218,12 +221,12 @@ class _AFixedPage(_ASettingsPage, PanelWin): pass
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     """Color configuration page."""
     _keys_to_tabs = {
-        u'mods': _(u'[Mods] %s'),
-        u'screens': _(u'[Saves, Screens] %s'),
-        u'installers': _(u'[Installers] %s'),
-        u'ini': _(u'[INI Edits] %s'),
-        u'tweak': _(u'[INI Edits] %s'),
-        u'default': _(u'[All] %s'),
+        'mods': _('[Mods] %s'),
+        'screens': _('[Saves, Screenshots] %s'),
+        'installers': _('[Installers] %s'),
+        'ini': _('[INI Edits] %s'),
+        'tweak': _('[INI Edits] %s'),
+        'default': _('[All] %s'),
     }
 
     def __init__(self, parent, page_desc):
@@ -280,7 +283,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
         with BusyCursor():
-            for (className,title,panel) in tabInfo.values():
+            for (_className, _title, panel) in tabInfo.values():
                 if panel is not None:
                     panel.RefreshUIColors()
 
@@ -418,12 +421,12 @@ class ConfigureEditorDialog(DialogWindow):
     def __init__(self, parent):
         super(ConfigureEditorDialog, self).__init__(parent,
             title=_(u'Configure Editor'), icon_bundle=Resources.bashBlue,
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         self._editor_location = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.path'])
-        browse_editor_btn = OpenButton(self, _(u'Browse...'),
-            btn_tooltip=_(u'Launch a file dialog to interactively choose the '
-                          u'editor binary.'))
+        browse_editor_btn = ImageButton(self, get_image('folder.16'),
+            btn_tooltip=_('Open a file dialog to interactively choose the '
+                          'editor binary.'))
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
         self._params_field = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
@@ -479,8 +482,7 @@ class LanguagePage(_AScrollablePage):
         u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
         u'en_US': _('American English') + ' (American English)',
     })
-    _localized_to_internal = _LangDict(
-        {v: k for k, v in _internal_to_localized.items()})
+    _localized_to_internal = _LangDict(reverse_dict(_internal_to_localized))
 
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
@@ -726,8 +728,8 @@ class StatusBarPage(_AScrollablePage):
             checked=bass.settings[u'bash.statusbar.showversion'])
         self._show_app_ver_chk.on_checked.subscribe(self._handle_app_ver)
         self._icon_size_dropdown = DropDown(self,
-            value=str(bass.settings[u'bash.statusbar.iconSize']),
-            choices=('16', '24', '32'), dd_tooltip=_(
+            value=str(bass.settings['bash.statusbar.iconSize']),
+            choices=['16', '24', '32'], dd_tooltip=_(
                 'Sets the status bar icons to the selected size in pixels.'))
         self._icon_size_dropdown.on_combo_select.subscribe(
             self._handle_icon_size)
@@ -768,14 +770,7 @@ class StatusBarPage(_AScrollablePage):
     def _handle_icon_size(self, new_selection):
         """Internal callback, called when the icon size dropdown is changed."""
         self._mark_setting_changed(u'icon_size',
-            int(new_selection) != bass.settings[u'bash.statusbar.iconSize'])
-
-    def _link_by_uid(self, link_uid):
-        """Returns the status bar Link with the specified UID."""
-        for link_candidate in self._tip_to_links.values():
-            if link_candidate.uid == link_uid:
-                return link_candidate
-        return None
+            int(new_selection) != bass.settings['bash.statusbar.iconSize'])
 
     def on_apply(self):
         # Note we skip_refresh all status bar changes in order to do them all
@@ -783,18 +778,17 @@ class StatusBarPage(_AScrollablePage):
         # Show App Version
         if self._is_changed(u'app_ver'):
             bass.settings[u'bash.statusbar.showversion'] ^= True
-            for button in BashStatusBar.all_sb_links.values():
-                button.set_sb_button_tooltip()
-            if BashStatusBar.obseButton.button_state:
-                BashStatusBar.obseButton.UpdateToolTips()
+            BashStatusBar.set_tooltips()
             # Will change tooltips, so need to repopulate these
             self._populate_icon_lists()
         # Icon Size
         icon_size_changed = self._is_changed(u'icon_size')
         if icon_size_changed:
-            bass.settings[u'bash.statusbar.iconSize'] = \
-                int(self._icon_size_dropdown.get_value())
-            Link.Frame.statusBar.UpdateIconSizes(skip_refresh=True)
+            new_icon_size = int(self._icon_size_dropdown.get_value())
+            bass.settings['bash.statusbar.iconSize'] = new_icon_size
+            # hot switch icon sizes crashes for some reason, ask for a restart
+            self._request_restart(_('Icon Size: %(new_icon_size)d') % {
+                'new_icon_size': new_icon_size})
         # Hidden Icons
         hidden_icons_changed = self._is_changed(u'hidden_icons')
         if hidden_icons_changed:
@@ -804,16 +798,9 @@ class StatusBarPage(_AScrollablePage):
             new_hidden = self._get_chosen_hidden_icons()
             hidden_added = new_hidden - old_hidden
             hidden_removed = old_hidden - new_hidden
-            for to_hide in hidden_added:
-                Link.Frame.statusBar.HideButton(
-                    self._link_by_uid(to_hide).gButton, skip_refresh=True)
-            for to_unhide in hidden_removed:
-                Link.Frame.statusBar.UnhideButton(self._link_by_uid(to_unhide),
-                    skip_refresh=True)
-        # Perform a single update of the status bar if needed
-        if hidden_icons_changed or icon_size_changed:
-            Link.Frame.statusBar.refresh_status_bar(
-                refresh_icon_size=icon_size_changed)
+            if hidden_added or hidden_removed:
+                Link.Frame.statusBar.toggle_buttons_visible(
+                    hide_ids=hidden_added, unhide_ids=hidden_removed)
         super(StatusBarPage, self).on_apply()
 
     def _on_move_btn(self):
@@ -825,28 +812,15 @@ class StatusBarPage(_AScrollablePage):
 
     def _populate_icon_lists(self):
         """Clears and repopulates the two icon lists."""
-        ##: Here be dragons, of the tooltip-related kind
         self._tip_to_links.clear()
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
         visible = []
         for link_uid, link in BashStatusBar.all_sb_links.items():
-            if not link.IsPresent() or not link.canHide: continue
-            button = link.gButton
+            if not link.allow_create() or not link.canHide: continue
             # Get a title for the hidden button
-            if button:
-                # If the wx.Button object exists (it was hidden this
-                # session), use the tooltip from it
-                tip_ = button.tooltip
-            else:
-                # If the link is an _App_Button, it will have a
-                # 'sb_button_tip' attribute
-                tip_ = getattr(link, u'sb_button_tip', None) # YAK YAK YAK
-            if tip_ is None:
-                # No good, use its uid as a last resort
-                tip_ = link_uid
             target_link_list = hidden if link_uid in hide else visible
-            target_link_list.append(tip_)
+            target_link_list.append(tip_ := link.sb_button_tip)
             self._tip_to_links[tip_] = link
         self._icon_lists.left_items = visible
         self._icon_lists.right_items = hidden
@@ -910,7 +884,7 @@ class BackupsPage(_AFixedPage):
         """Deletes the currently selected backup."""
         settings_file = self._backup_dir.join(self._chosen_backup)
         try:
-            env.shellDelete([settings_file], parent=self, ask_confirm=True,
+            env.shellDelete([settings_file], parent=self, ask_confirm=askYes,
                 recycle=True)
         except (exception.CancelError, exception.SkipError): pass
         finally:
@@ -1042,7 +1016,7 @@ class ConfirmationsPage(_AFixedPage):
         u'COPY': _(u'Copy'),
         u'MOVE': _(u'Move'),
     }
-    _label_to_action = {v: k for k, v in _action_to_label.items()}
+    _label_to_action = reverse_dict(_action_to_label)
     ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
     # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
     # sense for non-SSE/FO4 games
@@ -1092,12 +1066,8 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
-        # Strip off the '(GOG)' etc. suffixes for display names
-        ##: Game handling! These different display names shouldn't exist and
-        # such games should instead just show up as 'variants' of the main game
-        # in the GUI
         _("[Mods] Renaming a plugin to something that %(game_name)s can't "
-          'load') % {'game_name': bush.game.displayName.split('(')[0].strip()}:
+          'load') % {'game_name': bush.game.display_name}:
             'bash.rename.isBadFileName.continue',
         _(u'[Mods] Reordering plugins by name'):
             u'bash.sortMods.continue',
@@ -1271,20 +1241,21 @@ class GeneralPage(_AScrollablePage):
         _(u'UTF-8'): u'utf-8',
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
-    _encodings_reverse = {v: k for k, v in _all_encodings.items()}
+    _encodings_reverse = reverse_dict(_all_encodings)
     _global_menu_options = {
         _('Both'): 0,
         _('Global Menu Only'): 1,
         _('Column Menu Only'): 2,
     }
-    _gm_reverse = {v: k for k, v in _global_menu_options.items()}
+    _gm_reverse = reverse_dict(_global_menu_options)
     _setting_ids = {'global_menu_state', 'res_scroll_on', 'managed_game',
                     'plugin_encoding', 'update_check_enabled',
-                    'update_check_cooldown', 'uac_restart'}
+                    'update_check_cooldown', 'uac_restart', 'wb_temp_dir'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
-        self._managed_game = DropDown(self, value=bush.game.displayName,
+        self._managed_game = DropDown(self,
+            value=bush.game.unique_display_name,
             choices=sorted(bush.foundGames), dd_tooltip=_(
                 'Changes which game Wrye Bash is managing.'))
         self._managed_game.on_combo_select.subscribe(self._on_managed_game)
@@ -1322,8 +1293,6 @@ class GeneralPage(_AScrollablePage):
             btn_tooltip=_('Check for Wrye Bash updates right now.'))
         check_now_btn.on_clicked.subscribe(self._on_check_now)
         check_now_btn.enabled = can_check_updates
-        ##: Replace with a dropdown that lets you disable the global menu, the
-        # column menus, or neither
         self._global_menu_dropdown = DropDown(self,
             value=self._gm_reverse[bass.settings['bash.global_menu']],
             choices=sorted(self._global_menu_options),
@@ -1331,8 +1300,11 @@ class GeneralPage(_AScrollablePage):
                          'column header menus, or both should be enabled.'))
         self._global_menu_dropdown.on_combo_select.subscribe(
             self._on_global_menu)
-        # Hide the option on Linux - see refresh_global_menu_visibility
-        self._global_menu_dropdown.visible = os_name == 'nt'
+        global_menu_label = Label(self, _('Global or Column Menu:'))
+        # Hide the whole section on Linux - see refresh_global_menu_visibility
+        if os_name != 'nt':
+            global_menu_label.visible = False
+            self._global_menu_dropdown.visible = False
         self._restore_scroll_checkbox = CheckBox(
             self, _(u'Restore Scroll Positions on Start'),
             chkbx_tooltip=_("Remember where you left off last time and "
@@ -1348,6 +1320,22 @@ class GeneralPage(_AScrollablePage):
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
         self._uac_restart_checkbox.visible = env.is_uac()
+        ##: This should be on its own page for configuring all kinds of paths,
+        # see #572
+        self._temp_folder_path = TextField(self,
+            init_text=bass.settings['bash.temp_dir'])
+        self._temp_folder_path.on_text_changed.subscribe(
+            self._on_temp_folder_change)
+        browse_temp_folder_btn = ImageButton(self, get_image('folder.16'),
+            btn_tooltip=_('Open a file dialog to interactively choose the '
+                          'path at which Wrye Bash will store temporary '
+                          'files.'))
+        browse_temp_folder_btn.on_clicked.subscribe(
+            self._on_temp_folder_browse)
+        reset_temp_folder_btn = ImageButton(self, get_image('reset.16'),
+            btn_tooltip=_('Reset the path at which Wrye Bash will store '
+                          'temporary files back to its default value.'))
+        reset_temp_folder_btn.on_clicked.subscribe(self._on_temp_folder_reset)
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
@@ -1368,9 +1356,15 @@ class GeneralPage(_AScrollablePage):
                 ]),
                 check_now_btn,
             ]),
+            HBoxedLayout(self, _('Temporary Folder'), spacing=4,
+                item_expand=True, items=[
+                    (self._temp_folder_path, LayoutOptions(weight=1)),
+                    browse_temp_folder_btn,
+                    reset_temp_folder_btn,
+            ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
                 HLayout(spacing=6, items=[
-                    Label(self, _('Global or Column Menu:')),
+                    global_menu_label,
                     self._global_menu_dropdown,
                 ]),
                 self._restore_scroll_checkbox,
@@ -1393,7 +1387,7 @@ class GeneralPage(_AScrollablePage):
 
     def _on_managed_game(self, new_game: str):
         self._mark_setting_changed(u'managed_game',
-            new_game != bush.game.displayName)
+            new_game != bush.game.unique_display_name)
 
     def _on_plugin_enc(self, new_enc: str):
         self._mark_setting_changed(u'plugin_encoding',
@@ -1425,6 +1419,21 @@ class GeneralPage(_AScrollablePage):
             showError(self, _('Failed to contact GitHub for update checking. '
                               'Check your Internet connection.'),
                 title=_('Failed To Check for Updates'))
+
+    def _on_temp_folder_change(self, new_temp_dir: str):
+        self._mark_setting_changed('wb_temp_dir',
+            new_temp_dir != bass.settings['bash.temp_dir'])
+
+    def _on_temp_folder_browse(self):
+        chosen_temp_dir = DirOpen.display_dialog(self,
+            title=_('Choose Temporary Folder'),
+            defaultPath=bass.settings['bash.temp_dir'],
+            create_dir=True)
+        if chosen_temp_dir:
+            self._temp_folder_path.text_content = chosen_temp_dir.s
+
+    def _on_temp_folder_reset(self):
+        self._temp_folder_path.text_content = default_global_temp_dir()
 
     def _on_uac_restart(self, checked: bool):
         self._mark_setting_changed(u'uac_restart', checked)
@@ -1459,6 +1468,11 @@ class GeneralPage(_AScrollablePage):
         if self._is_changed('update_check_cooldown'):
             new_cooldown = self._update_check_cooldown.spinner_value
             bass.settings['bash.update_check.cooldown'] = new_cooldown
+        # Temporary Folder
+        if self._is_changed('wb_temp_dir'):
+            new_temp_dir = self._temp_folder_path.text_content
+            bass.settings['bash.temp_dir'] = new_temp_dir
+            self._request_restart(_('Temporary Folder'))
         # Show Global Menu
         if self._is_changed('global_menu_state'):
             new_gm_state = self._global_menu_options[

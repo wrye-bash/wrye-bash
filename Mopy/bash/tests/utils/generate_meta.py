@@ -32,7 +32,7 @@ import argparse
 import os
 import sys
 
-from .. import resource_to_displayName, set_game
+from .. import resource_to_unique_display_name, set_game
 from ... import bush
 from ...bosh.cosaves import _xSEHeader, get_cosave_types, xSECosave
 
@@ -43,13 +43,13 @@ def generate_meta_bsa(target_file):
 def generate_meta_cosave_xse(target_file):
     gm_name = os.path.basename(os.path.dirname(target_file))
     try:
-        gm_displayName = resource_to_displayName[gm_name]
+        gm_unique_dn = resource_to_unique_display_name[gm_name]
     except KeyError:
         print(f"No valid game found in parent directories of file '"
               f"{target_file}'")
         sys.exit(4)
-    set_game(gm_displayName)
-    get_cosave_types(gm_displayName, None, bush.game.Se.cosave_tag,
+    set_game(gm_unique_dn)
+    get_cosave_types(bush.game.fsName, None, bush.game.Se.cosave_tag,
                      bush.game.Se.cosave_ext)
     test_cosave = xSECosave(target_file)
     test_cosave.read_cosave()

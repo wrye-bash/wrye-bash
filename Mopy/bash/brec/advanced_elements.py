@@ -29,10 +29,13 @@ MelStruct."""
 __author__ = 'Infernio'
 
 import copy
+from collections.abc import Callable
 from itertools import chain
+from typing import Any, BinaryIO
 
 from .basic_elements import MelBase, MelNull, MelNum, MelObject, \
     MelSequential, MelStruct
+from .. import bush
 from ..bolt import attrgetter_cache, deprint, structs_cache
 from ..exception import ArgumentError, ModSizeError
 
@@ -527,9 +530,13 @@ class MelLists(MelStruct):
             setattr(record, attr, unpacked[_slice])
 
     def pack_subrecord_data(self, record):
+        attr_vals = [getattr(record, a) for a in self.__class__._attr_indexes]
+        if all(x is None for x in attr_vals):
+            # This is entirely None, skip the dump completely
+            return None
+        ##: What about when this is *partially* None? Skip? Use defaults?
         return self._packer(*chain(
-            *(j if isinstance(j, list) else [j] for j in
-              [getattr(record, a) for a in self.__class__._attr_indexes])))
+            *(j if isinstance(j, list) else [j] for j in attr_vals)))
 
 #------------------------------------------------------------------------------
 # Unions and Deciders
@@ -651,23 +658,33 @@ class FlagDecider(ACommonDecider):
                    for flag_name in self._required_flags)
 
 class FormVersionDecider(ACommonDecider):
-    """Decider that checks if the record's form version against a target form
-    version."""
-    def __init__(self, comp_op, target_form_ver: int):
-        """Creates a new SinceFormVersionDecider with the specified target form
-        version.
+    """Decider that checks a record's form version."""
+    def __init__(self, fv_callable: Callable[[int], Any]):
+        """Creates a new FormVersionDecider with the specified callable.
 
-        :param comp_op: A callable that takes two integers. The first will be
-            the record's form version and the second will be target_form_ver.
-            The return value of this callable will be what's returned by the
-            decider. operator.ge is an example of a valid callable here.
-        :param target_form_ver: The form version in which the change was
-            introduced."""
-        self._comp_op = comp_op
-        self._target_form_ver = target_form_ver
+        :param fv_callable: A callable taking an int, which will be the
+            record's form version. The return value of this callable will be
+            returned by the decider."""
+        self._fv_callable = fv_callable
 
     def _decide_common(self, record):
-        return self._comp_op(record.header.form_version, self._target_form_ver)
+        return self._fv_callable(record.header.form_version)
+
+class SinceFormVersionDecider(FormVersionDecider):
+    """Decider that compares the record's form version against a target form
+    version."""
+    def __init__(self, comp_op: Callable[[int, int], Any],
+            target_form_ver: int):
+        """Creates a new SinceFormVersionDecider with the specified parameters.
+
+        :param comp_op: A callable that takes two integers, which will be the
+            record's form version and target_form_ver. The return value of this
+            callable will be returned by the decider.
+        :param target_form_ver: The form version in which the change was
+            introduced."""
+        def _callable(rec_form_ver: int):
+            return comp_op(rec_form_ver, target_form_ver)
+        super().__init__(_callable)
 
 class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the
@@ -722,7 +739,6 @@ class PerkEpdfDecider(ACommonDecider):
 class SaveDecider(ADecider):
     """Decider that returns True if the input file is a save."""
     def __init__(self):
-        from .. import bush
         self._save_ext = bush.game.Ess.ext
 
     def decide_load(self, record, ins, sub_type, rec_size):
@@ -973,9 +989,6 @@ class _MelWrapper(MelBase):
     def dumpData(self, record, out):
         self._wrapped_mel.dumpData(record, out)
 
-    def pack_subrecord_data(self, record):
-        return self._wrapped_mel.pack_subrecord_data(record)
-
     def mapFids(self, record, function, save_fids=False):
         self._wrapped_mel.mapFids(record, function, save_fids)
 
@@ -993,6 +1006,21 @@ class _MelWrapper(MelBase):
     def static_size(self):
         return self._wrapped_mel.static_size
 
+##: This ugliness just exposes how terrible _MelWrapper really is. A better
+# tool is deperately wanted!
+class _MelWrapperNoDD(_MelWrapper):
+    """Variant of _MelWrapper that does not direct dumpData to the wrapped
+    element. Necessary if you want to use pack_subrecord_data or packSub in
+    your wrapper."""
+    def dumpData(self, record, out):
+        super(_MelWrapper, self).dumpData(record, out) # bypass _MelWrapper
+
+    def pack_subrecord_data(self, record):
+        return self._wrapped_mel.pack_subrecord_data(record)
+
+    def packSub(self, out: BinaryIO, binary_data: bytes):
+        self._wrapped_mel.packSub(out, binary_data)
+
 #------------------------------------------------------------------------------
 class MelCounter(_MelWrapper):
     """Wraps a _MelField-derived object (meaning that it is compatible with
@@ -1001,7 +1029,7 @@ class MelCounter(_MelWrapper):
     Additionally, dumping is skipped if the counter is falsy after updating.
 
     See also MelPartialCounter, which targets mixed structs."""
-    def __init__(self, counter_mel, *, counts):
+    def __init__(self, counter_mel, /, *, counts):
         """Creates a new MelCounter.
 
         :param counter_mel: The element that stores the counter's value.
@@ -1016,13 +1044,14 @@ class MelCounter(_MelWrapper):
         val_len = len(getattr(record, self.counted_attr, []))
         setattr(record, self._wrapped_mel.attr, val_len)
         if val_len:
-            super(MelCounter, self).dumpData(record, out)
+            super().dumpData(record, out)
 
-class MelPartialCounter(_MelWrapper):
+# NoDD for _MelObts and MelOmodData
+class MelPartialCounter(_MelWrapperNoDD):
     """Similar to MelCounter, but works for MelStructs that contain more than
     just a counter (including multiple counters). This means adding behavior
     for mapping fids, but dropping the conditional dumping behavior."""
-    def __init__(self, counter_mel: MelStruct, *, counters: dict[str, str]):
+    def __init__(self, counter_mel: MelStruct, /, *, counters: dict[str, str]):
         """Creates a new MelPartialCounter.
 
         :param counter_mel: The element that stores the counter's value.
@@ -1038,7 +1067,7 @@ class MelPartialCounter(_MelWrapper):
         super().dumpData(record, out)
 
 #------------------------------------------------------------------------------
-class MelExtra(_MelWrapper):
+class MelExtra(_MelWrapperNoDD):
     """Used to wrap another element that has additional unknown/junk data of
     varying length after it."""
     def __init__(self, wrapped_mel: MelBase, *, extra_attr: str):
@@ -1064,11 +1093,12 @@ class MelExtra(_MelWrapper):
         read_size = ins.tell() - start_pos
         setattr(record, self._extra_attr, ins.read(size_ - read_size))
 
-    def dumpData(self, record, out):
-        super().dumpData(record, out)
+    def pack_subrecord_data(self, record):
+        final_packed = self._wrapped_mel.pack_subrecord_data(record)
         extra_data = getattr(record, self._extra_attr)
         if extra_data is not None:
-            out.write(extra_data)
+            final_packed += extra_data
+        return final_packed
 
 #------------------------------------------------------------------------------
 class MelSorted(_MelWrapper):

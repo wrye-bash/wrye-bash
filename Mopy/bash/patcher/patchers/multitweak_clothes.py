@@ -67,8 +67,8 @@ class _AClothesTweak_MaxWeight(_AClothesTweak, CustomChoiceTweak):
         # Guess (i.e. super_weight) is intentionally overweight
         max_weight = self.chosen_weight
         super_weight = max(10, 5 * max_weight)
-        return super(_AClothesTweak_MaxWeight, self).wants_record(
-            record) and max_weight < record.weight < super_weight
+        return (super().wants_record(record) and
+                max_weight < (record.weight or 0.0) < super_weight)
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight

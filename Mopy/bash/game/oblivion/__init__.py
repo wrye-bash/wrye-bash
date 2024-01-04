@@ -23,9 +23,8 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
 _GOG_IDS = [
@@ -33,9 +32,9 @@ _GOG_IDS = [
     1242989820, # Package
 ]
 
-class OblivionGameInfo(PatchGame):
+class AOblivionGameInfo(PatchGame):
     """GameInfo override for TES IV: Oblivion."""
-    displayName = u'Oblivion'
+    display_name = 'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
     game_icon = u'oblivion_%u.png'
@@ -57,13 +56,15 @@ class OblivionGameInfo(PatchGame):
     loot_dir = u'Oblivion'
     loot_game_name = 'Oblivion'
     boss_game_name = u'Oblivion'
-    registry_keys = [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
     nexusKey = u'bash.installers.openOblivionNexus.continue'
 
     using_txt_file = False
     has_standalone_pluggy = True
+    plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
+        _j('textures', 'faces'),
+    ]
     check_legacy_paths = True
 
     @classmethod
@@ -80,8 +81,8 @@ class OblivionGameInfo(PatchGame):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
-        se_args = u'-editor'
-        image_name = u'tescs%s.png'
+        se_args = ('-editor',)
+        image_name = 'tescs%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'OBSE'
@@ -96,6 +97,15 @@ class OblivionGameInfo(PatchGame):
         url = u'http://obse.silverlock.org/'
         url_tip = u'http://obse.silverlock.org/'
         limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
+
+        @classmethod
+        def exe_path_sc(cls):
+            from ... import bass
+            # OBSE refuses to start when its EXE is launched on a Steam
+            # installation
+            if 'steam' in bass.dirs['app'].cs:
+                return None
+            return super().exe_path_sc()
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'
@@ -134,8 +144,8 @@ class OblivionGameInfo(PatchGame):
         valid_versions = {0x67}
 
     class Xe(GameInfo.Xe):
-        full_name = u'TES4Edit'
-        xe_key_prefix = u'tes4View'
+        full_name = 'TES4Edit'
+        xe_key_prefix = 'tes4View'
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
@@ -187,21 +197,20 @@ class OblivionGameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.8, 1.0)
 
-    allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
-
+    allTags = PatchGame.allTags | {'IIM'}
     patchers = {
-        u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
-        u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
-        u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
-        u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
-        u'ImportGraphics', u'ImportInventory', u'ImportNames',
-        u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'MorphFactions', u'NpcChecker', u'ReplaceFormIDs',
-        u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
-        u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
-        'ImportRacesRelations', 'TweakRaces', 'RaceChecker',
-        'TimescaleChecker', 'ImportEnchantments',
+        'AliasPluginNames', 'CoblCatalogs', 'CoblExhaustion',
+        'ContentsChecker', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFaces', 'ImportActorsFactions', 'ImportActorsSpells',
+        'ImportCells', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportGraphics', 'ImportInventory',
+        'ImportNames', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRacesSpells', 'ImportRelations', 'ImportRoads', 'ImportScripts',
+        'ImportSounds', 'ImportSpellStats', 'ImportStats', 'ImportText',
+        'LeveledLists', 'MorphFactions', 'NpcChecker', 'RaceChecker',
+        'ReplaceFormIDs', 'SEWorldTests', 'TimescaleChecker', 'TweakActors',
+        'TweakAssorted', 'TweakClothes', 'TweakNames', 'TweakRaces',
+        'TweakSettings',
     }
 
     weaponTypes = (
@@ -529,16 +538,17 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVSP')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Prices
     #--------------------------------------------------------------------------
-    namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK',
-                  b'BSGN', b'CLAS', b'CLOT', b'CONT', b'CREA', b'DOOR',
-                  b'ENCH', b'EYES', b'FACT', b'FLOR', b'HAIR', b'INGR',
-                  b'KEYM', b'LIGH', b'MGEF', b'MISC', b'NPC_', b'QUST',
-                  b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
+    names_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
+        b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'FLOR',
+        b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC', b'NPC_', b'QUST',
+        b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -576,10 +586,10 @@ class OblivionGameInfo(PatchGame):
     # Import Sounds
     #--------------------------------------------------------------------------
     sounds_attrs = {
-        ##: sounds here has FormIDs, but I don't think filtering it is wise?
+        ##: actor_sounds here has FormIDs, but I don't think filtering it is wise?
         # The structure is complex and I don't know if a sound type entry
         # without any sounds would be valid or not. Leaving as is for now
-        b'CREA': ('footWeight', 'sounds'),
+        b'CREA': ('foot_weight', 'actor_sounds'),
         b'SOUN': ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment',
                   'staticAtten', 'stopTime', 'startTime'),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
@@ -588,7 +598,7 @@ class OblivionGameInfo(PatchGame):
     sounds_fid_attrs = {
         b'ACTI': ('sound',),
         b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('inheritsSoundsFrom',),
+        b'CREA': ('inherits_sounds_from',),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'LIGH': ('sound',),
         b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
@@ -632,7 +642,7 @@ class OblivionGameInfo(PatchGame):
         b'CLOT': ('maleBody', 'maleWorld', 'maleIconPath', 'femaleBody',
                   'femaleWorld', 'femaleIconPath', 'biped_flags'),
         b'CONT': ('model',),
-        b'CREA': ('bodyParts', 'nift_p'),
+        b'CREA': ('bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'particle_texture', 'fill_texture', 'efsh_flags',
@@ -694,7 +704,7 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # NPC Checker
@@ -781,8 +791,8 @@ class OblivionGameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------
@@ -797,40 +807,54 @@ class OblivionGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     actor_importer_attrs = {
         b'CREA': {
-            'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                'fatigue', 'flags.biped', 'flags.essential', 'flags.flies',
-                'flags.noBloodDecal', 'flags.noBloodSpray',
-                'flags.noCombatInWater', 'flags.noCorpseCheck', 'flags.noHead',
-                'flags.noLeftArm', 'flags.noLowLevel', 'flags.noRightArm',
-                'flags.noShadow', 'flags.respawn', 'flags.swims',
-                'flags.walks', 'flags.weaponAndShield',
+            'Actors.ACBS': (
+                'barter_gold', 'base_spell', 'calc_max_level',
+                'calc_min_level', 'fatigue', 'crea_flags.crea_biped',
+                'crea_flags.crea_essential', 'crea_flags.crea_flies',
+                'crea_flags.crea_no_blood_decal',
+                'crea_flags.crea_no_blood_spray',
+                'crea_flags.crea_no_combat_in_water',
+                'crea_flags.no_corpse_check', 'crea_flags.no_head',
+                'crea_flags.no_left_arm', 'crea_flags.no_low_level',
+                'crea_flags.no_right_arm', 'crea_flags.crea_no_shadow',
+                'crea_flags.crea_respawn', 'crea_flags.crea_swims',
+                'crea_flags.crea_walks', 'crea_flags.weapon_and_shield',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('flags.pcLevelOffset', 'level_offset')),
-            'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'attackDamage', 'combatSkill',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magic', 'personality', 'soul', 'stealth',
-                             'speed', 'strength', 'willpower'),
-            'Creatures.Blood': ('bloodDecalPath', 'bloodSprayPath'),
-            'Creatures.Type': ('creatureType',),
+            'Actors.Stats': (
+                'agility', 'attackDamage', 'combat_skill', 'endurance',
+                'health', 'intelligence', 'luck', 'magic', 'personality',
+                'soul', 'stealth', 'speed', 'strength', 'willpower',
+            ),
+            'Creatures.Blood': ('blood_decal_path', 'blood_spray_path'),
+            'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
-            'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
-                'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
-                'flags.essential', 'flags.female', 'flags.noLowLevel',
-                'flags.noPersuasion', 'flags.noRumors', 'flags.respawn',
-                'flags.summonable',
-                ('flags.pcLevelOffset', 'level_offset')), # See above
-            'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                              'responsibility', 'services', 'trainSkill',
-                              'trainLevel'),
+            'Actors.ACBS': (
+                'barter_gold', 'base_spell', 'calc_max_level',
+                'calc_min_level', 'fatigue', 'npc_flags.npc_auto_calc',
+                'npc_flags.can_corpse_check', 'npc_flags.npc_essential',
+                'npc_flags.npc_female', 'npc_flags.no_low_level',
+                'npc_flags.no_persuasion', 'npc_flags.no_rumors',
+                'npc_flags.npc_respawn', 'npc_flags.npc_summonable',
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_skill',
+                'ai_train_level',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -849,12 +873,11 @@ class OblivionGameInfo(PatchGame):
         b'NPC_': {
             'Actors.CombatStyle': ('combat_style',),
             'Actors.DeathItem': ('death_item',),
-            'NPC.Class': ('iclass',),
+            'NPC.Class': ('npc_class',),
             'NPC.Race': ('race',),
         }
     }
-    actor_types = (b'CREA', b'NPC_')
-    spell_types = (b'LVSP', b'SPEL')
+    actor_types = {b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
@@ -950,91 +973,93 @@ class OblivionGameInfo(PatchGame):
     # Tweak Settings
     #--------------------------------------------------------------------------
     settings_tweaks = {
-        'GlobalsTweak_Timescale',
-        'GlobalsTweak_ThievesGuild_QuestStealingPenalty',
-        'GlobalsTweak_ThievesGuild_QuestKillingPenalty',
-        'GlobalsTweak_ThievesGuild_QuestAttackingPenalty',
         'GlobalsTweak_Crime_ForceJail',
+        'GlobalsTweak_ThievesGuild_QuestAttackingPenalty',
+        'GlobalsTweak_ThievesGuild_QuestKillingPenalty',
+        'GlobalsTweak_ThievesGuild_QuestStealingPenalty',
+        'GlobalsTweak_Timescale',
+        'GmstTweak_Actor_GreetingDistance',
+        'GmstTweak_Actor_MaxCompanions',
+        'GmstTweak_Actor_MaxJumpHeight_Tes4',
+        'GmstTweak_Actor_StrengthEncumbranceMultiplier',
+        'GmstTweak_Actor_TrainingLimit',
+        'GmstTweak_Actor_UnconsciousnessDuration',
+        'GmstTweak_AI_ConversationChance',
+        'GmstTweak_AI_ConversationChance_Interior',
+        'GmstTweak_AI_MaxActiveActors',
+        'GmstTweak_AI_MaxDeadActors',
+        'GmstTweak_AI_MaxSmileDistance',
         'GmstTweak_Arrow_LitterCount',
         'GmstTweak_Arrow_LitterTime',
         'GmstTweak_Arrow_RecoveryFromActor',
         'GmstTweak_Arrow_Speed',
-        'GmstTweak_Camera_ChaseTightness',
-        'GmstTweak_Camera_ChaseDistance',
-        'GmstTweak_Magic_ChameleonRefraction',
-        'GmstTweak_Compass_Disable',
-        'GmstTweak_Compass_RecognitionDistance',
-        'GmstTweak_Actor_UnconsciousnessDuration',
-        'GmstTweak_Movement_FatigueFromRunningEncumbrance',
-        'GmstTweak_Player_HorseTurningSpeed',
-        'GmstTweak_Camera_PCDeathTime',
-        'GmstTweak_World_CellRespawnTime',
-        'GmstTweak_Combat_RechargeWeapons',
-        'GmstTweak_Magic_BoltSpeed',
-        'GmstTweak_Msg_EquipMiscItem',
-        'GmstTweak_Msg_AutoSaving',
-        'GmstTweak_Msg_HarvestFailure',
-        'GmstTweak_Msg_HarvestSuccess',
-        'GmstTweak_Msg_QuickSave',
-        'GmstTweak_Msg_HorseStabled',
-        'GmstTweak_Msg_NoFastTravel',
-        'GmstTweak_Msg_LoadingArea',
-        'GmstTweak_Msg_QuickLoad',
-        'GmstTweak_Msg_NotEnoughCharge',
-        'GmstTweak_CostMultiplier_Repair',
-        'GmstTweak_Actor_GreetingDistance',
-        'GmstTweak_CostMultiplier_Recharge',
-        'GmstTweak_MasterOfMercantileExtraGoldAmount',
-        'GmstTweak_Combat_MaxActors',
-        'GmstTweak_Crime_AlarmDistance',
-        'GmstTweak_Crime_PrisonDurationModifier',
-        'GmstTweak_CostMultiplier_Enchantment',
-        'GmstTweak_CostMultiplier_SpellMaking',
-        'GmstTweak_AI_MaxActiveActors',
-        'GmstTweak_Magic_MaxPlayerSummons',
-        'GmstTweak_Combat_MaxAllyHitsInCombat_Tes4',
-        'GmstTweak_Magic_MaxNPCSummons',
         'GmstTweak_Bounty_Assault',
         'GmstTweak_Bounty_HorseTheft',
-        'GmstTweak_Bounty_Theft',
-        'GmstTweak_Combat_Alchemy',
-        'GmstTweak_Combat_Repair',
-        'GmstTweak_Actor_MaxCompanions',
-        'GmstTweak_Actor_TrainingLimit',
-        'GmstTweak_Combat_MaximumArmorRating',
-        'GmstTweak_Warning_InteriorDistanceToHostiles',
-        'GmstTweak_Warning_ExteriorDistanceToHostiles',
-        'GmstTweak_UOPVampireAgingAndFaceFix',
-        'GmstTweak_AI_MaxDeadActors',
-        'GmstTweak_Player_InventoryQuantityPrompt_Tes4',
-        'GmstTweak_Bounty_Trespassing',
+        'GmstTweak_Bounty_Jailbreak',
+        'GmstTweak_Bounty_Murder',
         'GmstTweak_Bounty_Pickpocketing',
+        'GmstTweak_Bounty_Theft',
+        'GmstTweak_Bounty_Trespassing',
+        'GmstTweak_Camera_ChaseDistance',
+        'GmstTweak_Camera_ChaseTightness',
+        'GmstTweak_Camera_PCDeathTime',
+        'GmstTweak_Camera_VanityDelay',
+        'GmstTweak_Camera_VanitySpeedMultiplier',
+        'GmstTweak_Combat_Alchemy',
+        'GmstTweak_Combat_MaxActors',
+        'GmstTweak_Combat_MaxAllyHitsInCombat_Tes4',
+        'GmstTweak_Combat_MaxFriendHitsInCombat_Tes4',
+        'GmstTweak_Combat_MaximumArmorRating',
+        'GmstTweak_Combat_RandomTauntChance',
+        'GmstTweak_Combat_RechargeWeapons',
+        'GmstTweak_Combat_Repair',
+        'GmstTweak_Combat_SpeakOnAttackChance',
+        'GmstTweak_Combat_SpeakOnHitChance_Tes4',
+        'GmstTweak_Combat_SpeakOnHitThreshold_Tes4',
+        'GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4',
+        'GmstTweak_Compass_Disable',
+        'GmstTweak_Compass_RecognitionDistance',
+        'GmstTweak_CostMultiplier_Enchantment',
+        'GmstTweak_CostMultiplier_Recharge',
+        'GmstTweak_CostMultiplier_Repair',
+        'GmstTweak_CostMultiplier_SpellMaking',
+        'GmstTweak_Crime_AlarmDistance',
+        'GmstTweak_Crime_PickpocketingChance',
+        'GmstTweak_Crime_PrisonDurationModifier',
         'GmstTweak_LevelDifference_CreatureMax',
         'GmstTweak_LevelDifference_ItemMax',
-        'GmstTweak_Actor_StrengthEncumbranceMultiplier',
-        'GmstTweak_Visuals_NPCBlood',
-        'GmstTweak_AI_MaxSmileDistance',
+        'GmstTweak_LevelUp_SkillCount',
+        'GmstTweak_Magic_BoltSpeed',
+        'GmstTweak_Magic_ChameleonRefraction',
+        'GmstTweak_Magic_MaxNPCSummons',
+        'GmstTweak_Magic_MaxPlayerSummons',
+        'GmstTweak_MasterOfMercantileExtraGoldAmount',
+        'GmstTweak_Movement_FatigueFromRunningEncumbrance',
+        'GmstTweak_Msg_AutoSaving',
+        'GmstTweak_Msg_EquipMiscItem',
+        'GmstTweak_Msg_HarvestFailure',
+        'GmstTweak_Msg_HarvestSuccess',
+        'GmstTweak_Msg_HorseStabled',
+        'GmstTweak_Msg_LoadingArea',
+        'GmstTweak_Msg_NoFastTravel',
+        'GmstTweak_Msg_NoSoulGemLargeEnough',
+        'GmstTweak_Msg_NotEnoughCharge',
+        'GmstTweak_Msg_QuickLoad',
+        'GmstTweak_Msg_QuickSave',
+        'GmstTweak_Player_HorseTurningSpeed',
+        'GmstTweak_Player_InventoryQuantityPrompt_Tes4',
         'GmstTweak_Player_MaxDraggableWeight',
-        'GmstTweak_AI_ConversationChance',
-        'GmstTweak_AI_ConversationChance_Interior',
-        'GmstTweak_Crime_PickpocketingChance',
-        'GmstTweak_Actor_MaxJumpHeight_Tes4',
-        'GmstTweak_Bounty_Murder',
-        'GmstTweak_Bounty_Jailbreak',
         'GmstTweak_Prompt_Activate_Tes4',
         'GmstTweak_Prompt_Open_Tes4',
         'GmstTweak_Prompt_Read_Tes4',
         'GmstTweak_Prompt_Sit_Tes4',
         'GmstTweak_Prompt_Take_Tes4',
         'GmstTweak_Prompt_Talk_Tes4',
-        'GmstTweak_Msg_NoSoulGemLargeEnough',
-        'GmstTweak_Combat_SpeakOnAttackChance',
-        'GmstTweak_Combat_SpeakOnHitChance_Tes4',
-        'GmstTweak_Combat_SpeakOnHitThreshold_Tes4',
-        'GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4',
-        'GmstTweak_Combat_RandomTauntChance',
-        'GmstTweak_LevelUp_SkillCount',
-        'GmstTweak_Combat_MaxFriendHitsInCombat_Tes4',
+        'GmstTweak_UOPVampireAgingAndFaceFix',
+        'GmstTweak_Visuals_NPCBlood',
+        'GmstTweak_Warning_ExteriorDistanceToHostiles',
+        'GmstTweak_Warning_InteriorDistanceToHostiles',
+        'GmstTweak_World_CellRespawnTime',
     }
 
     #--------------------------------------------------------------------------
@@ -1170,11 +1195,12 @@ class OblivionGameInfo(PatchGame):
         b'MISC', b'STAT', b'GRAS', b'TREE', b'FLOR', b'FURN', b'WEAP', b'AMMO',
         b'NPC_', b'CREA', b'LVLC', b'SLGM', b'KEYM', b'ALCH', b'SBSP', b'SGST',
         b'LVLI', b'WTHR', b'CLMT', b'REGN', b'CELL', b'WRLD', b'DIAL', b'QUST',
-        b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH']
+        b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH',
+    ]
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
-        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        super(AOblivionGameInfo, cls)._dynamic_import_modules(package_name)
         from .patcher import checkers, preservers
         cls.gameSpecificPatchers = {
             u'CoblCatalogs': checkers.CoblCatalogsPatcher,
@@ -1209,20 +1235,26 @@ class OblivionGameInfo(PatchGame):
         # in Oblivion we get them all except the TES4 record
         cls.mergeable_sigs = {*cls.top_groups, *_brec.RecordType.nested_to_top}
 
-class GOGOblivionGameInfo(GOGMixin, OblivionGameInfo):
+class GOGOblivionGameInfo(GOGMixin, AOblivionGameInfo):
     """GameInfo override for the GOG version of Oblivion."""
-    displayName = 'Oblivion (GOG)'
-    check_legacy_paths = False
     _gog_game_ids = _GOG_IDS
-
-class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
-    """GameInfo override for the Windows Store version of Oblivion."""
-    displayName = 'Oblivion (WS)'
-    # `appdata_name` and `my_games_name` use the original locations, unlike
-    # newer Windows Store games.
+    # appdata_name and my_games_name use the original locations
     check_legacy_paths = False
 
-    class Ws(OblivionGameInfo.Ws):
+class SteamOblivionGameInfo(SteamMixin, AOblivionGameInfo):
+    """GameInfo override for the Steam version of Oblivion."""
+    class St(AOblivionGameInfo.St):
+        steam_ids = [
+            22330,  # Oblivion - Game of the Year Edition
+            900883, # Oblivion - Game of the Year Edition Deluxe
+        ]
+
+class WSOblivionGameInfo(WindowsStoreMixin, AOblivionGameInfo):
+    """GameInfo override for the Windows Store version of Oblivion."""
+    # appdata_name and my_games_name use the original locations
+    check_legacy_paths = False
+
+    class Ws(AOblivionGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.TESOblivion-PC'
         ws_language_dirs = ['Oblivion GOTY English',
@@ -1231,5 +1263,5 @@ class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
                             'Oblivion GOTY Italian',
                             'Oblivion GOTY Spanish']
 
-GAME_TYPE = {g.displayName: g for g in
-             (OblivionGameInfo, GOGOblivionGameInfo, WSOblivionGameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGOblivionGameInfo, SteamOblivionGameInfo, WSOblivionGameInfo)}

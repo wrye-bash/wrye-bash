@@ -31,23 +31,28 @@ from ...brec import FID, AMelItems, AMelLLItems, AMreActor, AMreCell, \
     AttrValDecider, BipedFlags, FlagDecider, MelActionFlags, MelActorSounds, \
     MelAnimations, MelArray, MelBase, MelBaseR, MelBodyParts, MelBookText, \
     MelClmtTextures, MelClmtTiming, MelClmtWeatherTypes, MelCombatStyle, \
-    MelConditionsTes4, MelContData, MelDeathItem, MelDescription, \
+    MelConditionsTes4, MelContData, MelDeathItem, MelDescription, AMreGlob, \
     MelDoorFlags, MelEdid, MelEffectsTes4, MelEffectsTes4ObmeFull, \
     MelEnableParent, MelEnchantment, MelFactions, MelFactRanks, MelFid, \
     MelFids, MelFloat, MelFull, MelGrasData, MelGroup, MelGroups, \
     MelHairFlags, MelIco2, MelIcon, MelIdleRelatedAnims, MelIngredient, \
     MelLandShared, MelLighFade, MelLists, MelLLChanceNone, MelLLFlags, \
     MelLscrLocations, MelLtexGrasses, MelLtexSnam, MelMapMarker, MelNull, \
-    MelObme, MelOwnership, MelPartialCounter, MelRace, \
+    MelObme, MelOwnership, MelMgefEsceTes4, MelMgefData, MelRace, \
     MelRaceData, MelRaceParts, MelRaceVoices, MelRandomTeleports, \
     MelReadOnly, MelRecord, MelRef3D, MelReferences, MelRefScale, MelRegions, \
-    MelRegnEntrySubrecord, MelRelations, MelScript, MelScriptVars, \
+    MelRegnEntryMusicType, MelRelations, MelScript, MelScriptVars, \
     MelSeasons, MelSequential, MelSet, MelSimpleArray, MelSInt16, MelSInt32, \
     MelSkipInterior, MelSorted, MelSound, MelSoundClose, MelSoundLooping, \
     MelString, MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, \
     MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, MelValueWeight, \
     MelWeight, MelWorldBounds, MelWthrColors, MelXlod, PartialLoadDecider, \
-    SpellFlags, attr_csv_struct, gen_color, null2, null4, MelMgefEdidTes4
+    SpellFlags, attr_csv_struct, color_attrs, null2, null4, MelMgefEdidTes4, \
+    AMgefFlagsTes4, MelNpcClass, MelAIPackages, MelInheritsSoundsFrom, \
+    PackGeneralOldFlags, MelPackScheduleOld, AMreRegn, MelColor, \
+    MelWorldspace, MelRegnAreas, MelRegnRdat, MelRegnEntryObjects, \
+    MelRegnEntrySoundsOld, MelRegnEntryWeatherTypes, MelRegnEntryGrasses, \
+    MelRegnEntryMapName
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -71,7 +76,7 @@ class MelModel(MelGroup):
 
 #------------------------------------------------------------------------------
 # Common Flags
-class AiService(Flags):
+class ServiceFlags(Flags):
     weapons: bool = flag(0)
     armor: bool = flag(1)
     clothing: bool = flag(2)
@@ -102,12 +107,12 @@ _effects_distributor = {
 
 #------------------------------------------------------------------------------
 class MelAidt(MelStruct):
-    """Handles the AIDT subrecords defining AI Data."""
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
     def __init__(self):
-        super().__init__(b'AIDT', ['4B', 'I', 'b', 'B', '2s'], 'aggression',
-                         'confidence', 'energyLevel', 'responsibility',
-                         (AiService, 'services'), 'trainSkill', 'trainLevel',
-                         'unused1')
+        super().__init__(b'AIDT', ['4B', 'I', 'b', 'B', '2s'], 'ai_aggression',
+            'ai_confidence', 'ai_energy_level', 'ai_responsibility',
+            (ServiceFlags, 'ai_service_flags'), 'ai_train_skill',
+            'ai_train_level', 'ai_unused')
 
 #------------------------------------------------------------------------------
 class MelEmbeddedScript(MelSequential):
@@ -171,7 +176,8 @@ class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
     sorting to SPLOs that we don't fully understand yet. All we know for sure
     so far is that it always seems to put SPLOs that link to LVSPs after ones
     that link to SPELs, and we can't handle that without loading the plugin's
-    masters (see #282 and #577 for two issues that need this as well)."""
+    masters (see #282 and #577 for two issues that need this as well). So we
+    don't sort yet, that way it can't really be *our* fault when it hangs."""
     def __init__(self):
         super().__init__('spells', MelFid(b'SPLO'))
 
@@ -294,8 +300,8 @@ class MreHasEffects(MelRecord):
     attr_csv_struct['effects'] = [None, _effect_headers, lambda val:
         MreHasEffects._write_effects(val)[1:]] # chop off the first comma...
     attr_csv_struct['script_fid'] = [None, (_('Script Mod Name'),
-        _('Script ObjectIndex')), lambda val:(
-    '"None","None"' if val is None else '"%s","0x%06X"' % val)]
+        _('Script ObjectIndex')), lambda val: '"None","None"' if val is None
+            else f'"{val.mod_fn}","0x{val.object_dex:06X}"']
     # typing to silence IDE's warnings - move to pyi stubs!
     effects: list
 
@@ -366,8 +372,8 @@ class MreHasEffects(MelRecord):
         effects_list = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
-            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
-            seschool,sevisual,se_hostile,sename = _effect
+            eff_name, magnitude, area, duration, range_, actorvalue, semod, \
+                seobj, seschool, sevisual, se_hostile, sename = _effect
             eff_name = str_or_none(eff_name) #OBME not supported
             # (support requires adding a mod/objectid format to the
             # csv, this assumes all MGEFCodes are raw)
@@ -429,7 +435,6 @@ class MreHasEffects(MelRecord):
         schoolTypeNumber_Name = cls._school_number_name
         recipientTypeNumber_Name = cls._recipient_number_name
         actorValueNumber_Name = cls._actor_val_number_name
-        scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
         output = []
         for effect in effects:
             efname, magnitude, area, duration, range_, actorvalue = \
@@ -446,8 +451,10 @@ class MreHasEffects(MelRecord):
                 sevisual = 'NONE' if sevisual == null4 else sig_to_str(
                     sevisual)
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                output.append(scriptEffectFormat % (*longid,
-                    seschool, sevisual, bool(int(seflags)), sename))
+                output.append(
+                    f',"{longid.mod_fn}","0x{longid.object_dex:06X}",'
+                    f'"{seschool}","{sevisual}","{bool(int(seflags))}",'
+                    f'"{sename}"')
             else:
                 output.append(',"None","None","None","None","None","None"')
         return ''.join(output)
@@ -488,10 +495,11 @@ class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = set()
+    next_object_default = 0x800
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 1.0), 'numRecords',
-                  ('nextObject', 0x800), is_required=True),
+                  ('nextObject', next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -565,7 +573,7 @@ class MreAlch(MreHasEffects, _ObIcon):
     _default_icons = 'Clutter\\Potions\\IconPotion01.dds'
 
     class _AlchFlags(Flags):
-        autoCalc: bool
+        alch_auto_calc: bool
         alch_is_food: bool
 
     melSet = MelSet(
@@ -605,7 +613,7 @@ class MreAmmo(_ObIcon):
 
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
-    """Animation Object."""
+    """Animated Object."""
     rec_sig = b'ANIO'
 
     melSet = MelSet(
@@ -778,7 +786,7 @@ class MreCell(AMreCell):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelUInt8Flags(b'DATA', 'flags', _CellFlags),
+        MelUInt8Flags(b'DATA', 'flags', _CellFlags, is_required=True),
         MelSkipInterior(MelStruct(b'XCLC', ['2i'], 'posX', 'posY')),
         MelStruct(b'XCLL', ['3B', 's', '3B', 's', '3B', 's', '2f', '2i', '2f'],
             'ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
@@ -810,8 +818,9 @@ class MreClas(_RandIco):
         MelTruncatedStruct(b'DATA', ['2i', 'I', '7i', '2I', 'b', 'B', '2s'],
             'primary1', 'primary2', 'specialization', 'major1', 'major2',
             'major3', 'major4', 'major5', 'major6', 'major7',
-            (_ClasFlags, 'flags'), (AiService, 'services'), 'trainSkill',
-            'trainLevel', 'unused1', old_versions={'2iI7i2I'}),
+            (_ClasFlags, 'flags'), (ServiceFlags, 'class_service_flags'),
+            'class_train_skill', 'class_train_level', 'unused1',
+            old_versions={'2iI7i2I'}),
     )
 
 #------------------------------------------------------------------------------
@@ -892,23 +901,23 @@ class MreCrea(AMreActor):
     rec_sig = b'CREA'
 
     class _CreaFlags(Flags):
-        biped: bool = flag(0)
-        essential: bool = flag(1)
-        weaponAndShield: bool = flag(2)
-        respawn: bool = flag(3)
-        swims: bool = flag(4)
-        flies: bool = flag(5)
-        walks: bool = flag(6)
-        pcLevelOffset: bool = flag(7)
-        noLowLevel: bool = flag(9)
-        noBloodSpray: bool = flag(11)
-        noBloodDecal: bool = flag(12)
-        noHead: bool = flag(15)
-        noRightArm: bool = flag(16)
-        noLeftArm: bool = flag(17)
-        noCombatInWater: bool = flag(18)
-        noShadow: bool = flag(19)
-        noCorpseCheck: bool = flag(20)
+        crea_biped: bool = flag(0)
+        crea_essential: bool = flag(1)
+        weapon_and_shield: bool = flag(2)
+        crea_respawn: bool = flag(3)
+        crea_swims: bool = flag(4)
+        crea_flies: bool = flag(5)
+        crea_walks: bool = flag(6)
+        pc_level_offset: bool = flag(7)
+        no_low_level: bool = flag(9)
+        crea_no_blood_spray: bool = flag(11)
+        crea_no_blood_decal: bool = flag(12)
+        no_head: bool = flag(15)
+        no_right_arm: bool = flag(16)
+        no_left_arm: bool = flag(17)
+        crea_no_combat_in_water: bool = flag(18)
+        crea_no_shadow: bool = flag(19)
+        no_corpse_check: bool = flag(20)
 
     melSet = MelSet(
         MelEdid(),
@@ -917,29 +926,29 @@ class MreCrea(AMreActor):
         MelItems(),
         MelSpellsTes4(),
         MelBodyParts(),
-        MelBase(b'NIFT', 'nift_p'), # Texture File Hashes
+        MelBase(b'NIFT', 'model_list_textures'), # Texture File Hashes
         MelStruct(b'ACBS', ['I', '3H', 'h', '2H'],
-                  (_CreaFlags, 'flags'), 'baseSpell', 'fatigue', 'barterGold',
-                  'level_offset', 'calcMin', 'calcMax'),
-        MelFactions(),
+            (_CreaFlags, 'crea_flags'), 'base_spell', 'fatigue', 'barter_gold',
+            'level_offset', 'calc_min_level', 'calc_max_level'),
+        MelFactions(with_unused=True),
         MelDeathItem(),
         MelScript(),
         MelAidt(),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAIPackages(),
         MelAnimations(),
-        MelStruct(b'DATA', ['5B', 's', 'H', '2s', 'H', '8B'],'creatureType',
-                  'combatSkill', 'magic', 'stealth', 'soul', 'unused2',
+        MelStruct(b'DATA', ['5B', 's', 'H', '2s', 'H', '8B'], 'creature_type',
+                  'combat_skill', 'magic', 'stealth', 'soul', 'unused2',
                   'health', 'unused3', 'attackDamage', 'strength',
                   'intelligence', 'willpower', 'agility', 'speed', 'endurance',
                   'personality', 'luck'),
-        MelUInt8(b'RNAM', 'attackReach'),
+        MelUInt8(b'RNAM', 'attack_reach'),
         MelCombatStyle(),
-        MelFloat(b'TNAM', 'turningSpeed'),
-        MelFloat(b'BNAM', 'baseScale'),
-        MelFloat(b'WNAM', 'footWeight'),
-        MelString(b'NAM0', 'bloodSprayPath'),
-        MelString(b'NAM1', 'bloodDecalPath'),
-        MelFid(b'CSCR', 'inheritsSoundsFrom'),
+        MelFloat(b'TNAM', 'turning_speed'),
+        MelFloat(b'BNAM', 'base_scale'),
+        MelFloat(b'WNAM', 'foot_weight'),
+        MelString(b'NAM0', 'blood_spray_path'),
+        MelString(b'NAM1', 'blood_decal_path'),
+        MelInheritsSoundsFrom(),
         MelActorSounds(),
     )
 
@@ -1045,12 +1054,12 @@ class MreEfsh(MelRecord):
              '3B', 's', '3B', 's', '3B', 's', '6f'],
             (_EfshFlags, 'efsh_flags'), 'unused1', 'ms_source_blend_mode',
             'ms_blend_operation', 'ms_z_test_function',
-            *gen_color('fill_color1'), 'fill_alpha_fade_in_time',
+            *color_attrs('fill_color1'), 'fill_alpha_fade_in_time',
             'fill_full_alpha_time', 'fill_alpha_fade_out_time',
             'fill_persistent_alpha_ratio', 'fill_alpha_pulse_amplitude',
             'fill_alpha_pulse_frequency', 'fill_texture_animation_speed_u',
             'fill_texture_animation_speed_v', 'ee_fall_off',
-            *gen_color('ee_color'), 'ee_alpha_fade_in_time',
+            *color_attrs('ee_color'), 'ee_alpha_fade_in_time',
             'ee_full_alpha_time', 'ee_alpha_fade_out_time',
             'ee_persistent_alpha_ratio', 'ee_alpha_pulse_amplitude',
             'ee_alpha_pulse_frequency', 'fill_full_alpha_ratio',
@@ -1066,10 +1075,12 @@ class MreEfsh(MelRecord):
             'ps_initial_velocity3', 'ps_acceleration1', 'ps_acceleration2',
             'ps_acceleration3', 'ps_scale_key1', 'ps_scale_key2',
             'ps_scale_key1_time', 'ps_scale_key2_time',
-            *gen_color('color_key1'), *gen_color('color_key2'),
-            *gen_color('color_key3'), 'color_key1_alpha', 'color_key2_alpha',
-            'color_key3_alpha', 'color_key1_time', 'color_key2_time',
-            'color_key3_time', old_versions={'B3s3I3Bs9f3Bs8fI'}),
+            *color_attrs('color_key1', rename_alpha=True),
+            *color_attrs('color_key2', rename_alpha=True),
+            *color_attrs('color_key3', rename_alpha=True), 'color_key1_alpha',
+            'color_key2_alpha', 'color_key3_alpha', 'color_key1_time',
+            'color_key2_time', 'color_key3_time',
+            old_versions={'B3s3I3Bs9f3Bs8fI'}),
     )
 
 #------------------------------------------------------------------------------
@@ -1146,6 +1157,10 @@ class MreGras(MelRecord):
         MelModel(),
         MelGrasData(),
     )
+
+#------------------------------------------------------------------------------
+class MreGlob(AMreGlob):
+    """Global."""
 
 #------------------------------------------------------------------------------
 class MreHair(MelRecord):
@@ -1287,7 +1302,7 @@ class MreLigh(_ObIcon):
         MelIcon(),
         MelTruncatedStruct(b'DATA',
             ['i', 'I', '3B', 's', 'I', 'f', 'f', 'I', 'f'], 'duration',
-            'light_radius', *gen_color('light_color'),
+            'light_radius', *color_attrs('light_color'),
             (_LighFlags, 'light_flags'), 'light_falloff', 'light_fov',
             'value', 'weight', old_versions={'iI3BsI2f'}),
         MelLighFade(),
@@ -1383,30 +1398,15 @@ class MreMgef(MelRecord):
         ov_param_flag_d: bool = flag(20)
         ov_hidden: bool = flag(30)
 
-    class _MgefFlags(Flags):
-        hostile: bool = flag(0)
-        recover: bool = flag(1)
-        detrimental: bool = flag(2)
-        magnitude: bool = flag(3)
-        self: bool = flag(4)
-        touch: bool = flag(5)
-        target: bool = flag(6)
-        noDuration: bool = flag(7)
-        noMagnitude: bool = flag(8)
-        noArea: bool = flag(9)
-        fxPersist: bool = flag(10)
+    class _MgefFlags(AMgefFlagsTes4):
+        magnitude_pct: bool = flag(3)
         spellmaking: bool = flag(11)
         enchanting: bool = flag(12)
-        noIngredient: bool = flag(13)
-        useWeapon: bool = flag(16)
-        useArmor: bool = flag(17)
-        useCreature: bool = flag(18)
-        useSkill: bool = flag(19)
-        useAttr: bool = flag(20)
-        useAV: bool = flag(24)
-        sprayType: bool = flag(25)
-        boltType: bool = flag(26)
-        noHitEffect: bool = flag(27)
+        no_ingredient: bool = flag(13)
+        use_weapon: bool = flag(16)
+        use_armor: bool = flag(17)
+        use_creature: bool = flag(18)
+        use_actor_value: bool = flag(24)
 
     _magic_effects = { # effect_sig -> (school, name, value)
         b'ABAT': [5, _('Absorb Attribute'), 0.95],
@@ -1645,18 +1645,15 @@ class MreMgef(MelRecord):
         MelDescription(),
         MelIcon(),
         MelModel(),
-        MelPartialCounter(MelTruncatedStruct(b'DATA',
+        MelMgefData(MelTruncatedStruct(b'DATA',
             ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I', '2f'],
             (_MgefFlags, 'flags'), 'base_cost', (FID, 'associated_item'),
             'school', 'resist_value', 'counter_effect_count', 'unused1',
             (FID, 'light'), 'projectileSpeed', (FID, 'effectShader'),
             (FID, 'enchantEffect'), (FID, 'castingSound'), (FID, 'boltSound'),
             (FID, 'hitSound'), (FID, 'areaSound'), 'cef_enchantment',
-            'cef_barter', old_versions={'IfIiiH2sIfI'}),
-            counters={'counter_effect_count': 'counter_effects'}),
-        MelSorted(MelArray('counter_effects',
-            MelStruct(b'ESCE', ['4s'], 'counter_effect_code'),
-        ), sort_by_attrs='counter_effect_code'),
+            'cef_barter', old_versions={'IfIiiH2sIfI'})),
+        MelMgefEsceTes4(),
     )
 
 #------------------------------------------------------------------------------
@@ -1667,14 +1664,14 @@ class MreMisc(_ObIcon):
 
     class HeaderFlags(MelRecord.HeaderFlags):
         @property
-        def use_actor_value(self) -> bool:
+        def misc_actor_value(self) -> bool:
             """The ActorValue flag is encoded in bits 6-7.  It might
             actually be treated as an int with different meanings for values
-            0, 1, 2, 3, but current code requires both bits set. """
+            0, 1, 2, 3, but current code requires both bits set."""
             return (self._field & 0b01100000) == 0b01100000
 
-        @use_actor_value.setter
-        def use_actor_value(self, new_av: bool) -> None:
+        @misc_actor_value.setter
+        def misc_actor_value(self, new_av: bool) -> None:
             new_bits = 0b01100000 if new_av else 0
             self._field = (self._field & ~0b01100000) | new_bits
 
@@ -1687,7 +1684,7 @@ class MreMisc(_ObIcon):
         MelUnion({
             False: MelValueWeight(),
             True: MelStruct(b'DATA', ['2I'], (FID, 'value'), 'weight'),
-        }, decider=FlagDecider('flags1', ['use_actor_value'])),
+        }, decider=FlagDecider('flags1', ['misc_actor_value'])),
     )
 
 #------------------------------------------------------------------------------
@@ -1697,16 +1694,16 @@ class MreNpc_(AMreActor):
     model: object
 
     class NpcFlags(Flags):
-        female: bool = flag(0)
-        essential: bool = flag(1)
-        respawn: bool = flag(3)
-        autoCalc: bool = flag(4)
-        pcLevelOffset: bool = flag(7)
-        noLowLevel: bool = flag(9)
-        noRumors: bool = flag(13)
-        summonable: bool = flag(14)
-        noPersuasion: bool = flag(15)
-        canCorpseCheck: bool = flag(20)
+        npc_female: bool = flag(0)
+        npc_essential: bool = flag(1)
+        npc_respawn: bool = flag(3)
+        npc_auto_calc: bool = flag(4)
+        pc_level_offset: bool = flag(7)
+        no_low_level: bool = flag(9)
+        no_rumors: bool = flag(13)
+        npc_summonable: bool = flag(14)
+        no_persuasion: bool = flag(15)
+        can_corpse_check: bool = flag(20)
 
     class MelNpcData(MelLists):
         """Convert npc stats into skills, health, attributes."""
@@ -1718,19 +1715,19 @@ class MreNpc_(AMreActor):
         MelEdid(),
         MelFull(),
         MelModel(),
-        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'flags'),
-                  'baseSpell', 'fatigue', 'barterGold', 'level_offset',
-                  'calcMin', 'calcMax'),
-        MelFactions(),
+        MelStruct(b'ACBS', ['I', '3H', 'h', '2H'], (NpcFlags, 'npc_flags'),
+            'base_spell', 'fatigue', 'barter_gold', 'level_offset',
+            'calc_min_level', 'calc_max_level'),
+        MelFactions(with_unused=True),
         MelDeathItem(),
         MelRace(),
         MelSpellsTes4(),
         MelScript(),
         MelItems(),
         MelAidt(),
-        MelFids('aiPackages', MelFid(b'PKID')),
+        MelAIPackages(),
         MelAnimations(),
-        MelFid(b'CNAM','iclass'),
+        MelNpcClass(),
         MelNpcData(b'DATA', ['21B', 'H', '2s', '8B'], 'skills', 'health',
                    'unused2', 'attributes'),
         MelFid(b'HNAM', 'hair'),
@@ -1741,9 +1738,9 @@ class MreNpc_(AMreActor):
         MelStruct(b'HCLR', ['3B', 's'], 'hairRed', 'hairBlue', 'hairGreen',
                   'unused3'),
         MelCombatStyle(),
-        MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
+        MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+        MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
         MelBase(b'FNAM', 'fnam'),
     )
 
@@ -1776,52 +1773,31 @@ class MrePack(MelRecord):
     """AI Package."""
     rec_sig = b'PACK'
 
-    class _PackFlags(Flags):
-        offersServices: bool
-        mustReachLocation: bool
-        mustComplete: bool
-        lockAtStart: bool
-        lockAtEnd: bool
-        lockAtLocation: bool
-        unlockAtStart: bool
-        unlockAtEnd: bool
-        unlockAtLocation: bool
-        continueIfPcNear: bool
-        oncePerDay: bool
-        skipFallout: bool = flag(12)
-        alwaysRun: bool
-        alwaysSneak: bool = flag(17)
-        allowSwimming: bool
-        allowFalls: bool
-        unequipArmor: bool
-        unequipWeapons: bool
-        defensiveCombat: bool
-        useHorse: bool
-        noIdleAnims: bool
-
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'], (_PackFlags, 'flags'),
-            'aiType', 'unused1', old_versions={'HBs'}),
+        MelTruncatedStruct(b'PKDT', ['I', 'B', '3s'],
+            (PackGeneralOldFlags, 'package_flags'), 'package_ai_type',
+            'unused1', old_versions={'HBs'}),
         MelUnion({
-            (0, 1, 2, 3, 4): MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
-                (FID, 'locId'), 'locRadius'),
-            5: MelStruct(b'PLDT', ['i', 'I', 'i'], 'locType', 'locId',
-                'locRadius'),
+            (0, 1, 2, 3, 4): MelStruct(b'PLDT', ['i', 'I', 'i'],
+                'package_location_type', (FID, 'package_location_value'),
+                'package_location_radius'),
+            5: MelStruct(b'PLDT', ['i', 'I', 'i'],
+                'package_location_type', 'package_location_value',
+                'package_location_radius'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PLDT', 'locType'),
-            decider=AttrValDecider('locType'),
+            loader=MelSInt32(b'PLDT', 'package_location_type'),
+            decider=AttrValDecider('package_location_type'),
         ), fallback=MelNull(b'NULL')), # ignore
-        MelStruct(b'PSDT', ['2b', 'B', 'b', 'i'], 'month', 'day', 'date',
-            'time', 'duration'),
+        MelPackScheduleOld(is_required=False), ##: might actually be required?
         MelUnion({
-            (0, 1): MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType',
-                (FID, 'targetId'), 'targetCount'),
-            2: MelStruct(b'PTDT', ['i', 'I', 'i'], 'targetType', 'targetId',
-                'targetCount'),
+            (0, 1): MelStruct(b'PTDT', ['i', 'I', 'i'], 'package_target_type',
+                (FID, 'package_target_value'), 'package_target_count'),
+            2: MelStruct(b'PTDT', ['i', 'I', 'i'], 'package_target_type',
+                'package_target_value', 'package_target_count'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PTDT', 'targetType'),
-            decider=AttrValDecider('targetType'),
+            loader=MelSInt32(b'PTDT', 'package_target_type'),
+            decider=AttrValDecider('package_target_type'),
         ), fallback=MelNull(b'NULL')), # ignore
         MelConditionsTes4(),
     )
@@ -1882,7 +1858,7 @@ class MreQust(_ObIcon):
             ),
         ), sort_by_attrs='stage'),
         MelGroups('targets',
-            MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'targetId'),
+            MelStruct(b'QSTA', ['I', 'B', '3s'], (FID, 'package_target_value'),
                 (_TargetFlags, 'flags'), 'unused1'),
             MelConditionsTes4(),
         ),
@@ -1979,9 +1955,9 @@ class MreRace(AMreRace):
         # them as sorted here, because that's what the Race Checker is for!
         MelSimpleArray('hairs', MelFid(b'HNAM')),
         MelSimpleArray('eyes', MelFid(b'ENAM')),
-        MelBase(b'FGGS', 'fggs_p'), ####FaceGen Geometry-Symmetric
-        MelBase(b'FGGA', 'fgga_p'), ####FaceGen Geometry-Asymmetric
-        MelBase(b'FGTS', 'fgts_p'), ####FaceGen Texture-Symmetric
+        MelBase(b'FGGS', 'fggs_p'), ##: rename to face_gen_geometry_symmetric
+        MelBase(b'FGGA', 'fgga_p'), ##: rename to face_gen_geometry_asymmetric
+        MelBase(b'FGTS', 'fgts_p'), ##: rename to face_gen_texture_symmetric
         MelStruct(b'SNAM', ['2s'], 'snam_p'),
     ).with_distributor({
         b'NAM0': {
@@ -2029,7 +2005,7 @@ class MreRefr(MelRecord):
             'unused3', old_versions={'B3sIB3s'}),
         MelOwnershipTes4(),
         MelEnableParent(),
-        MelFid(b'XTRG', 'targetId'),
+        MelFid(b'XTRG', 'package_target_value'),
         MelBase(b'XSED', 'seed_p'),
         ####SpeedTree Seed, if it's a single byte then it's an offset into
         # the list of seed values in the TREE record
@@ -2057,76 +2033,28 @@ class MreRefr(MelRecord):
     })
 
 #------------------------------------------------------------------------------
-class MreRegn(MelRecord):
+class MreRegn(AMreRegn):
     """Region."""
-    rec_sig = b'REGN'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        border_region: bool = flag(6)
-
-    class _RdatFlags(Flags):
-        Override: bool
-
-    class _ObFlags(Flags):
-        conform: bool = flag(0)
-        paintVertices: bool = flag(1)
-        sizeVariance: bool = flag(2)
-        deltaX: bool = flag(3)
-        deltaY: bool = flag(4)
-        deltaZ: bool = flag(5)
-        Tree: bool = flag(6)
-        hugeRock: bool = flag(7)
-
-    class _SdFlags(Flags):
-        pleasant: bool = flag(0)
-        cloudy: bool = flag(1)
-        rainy: bool = flag(2)
-        snowy: bool = flag(3)
-
     melSet = MelSet(
         MelEdid(),
         MelIcon(),
-        MelStruct(b'RCLR', ['3B', 's'], 'mapRed', 'mapBlue', 'mapGreen',
-                  'unused1'),
-        MelFid(b'WNAM','worldspace'),
-        MelGroups('areas',
-            MelUInt32(b'RPLI', 'edgeFalloff'),
-            MelArray('points',
-                MelStruct(b'RPLD', ['2f'], 'posX', 'posY'),
-            ),
-        ),
-        MelSorted(MelGroups('entries',
-            MelStruct(b'RDAT', ['I', '2B', '2s'], 'entryType',
-                      (_RdatFlags, 'flags'), 'priority', 'unused1'),
-            MelRegnEntrySubrecord(2, MelArray('objects',
-                MelStruct(b'RDOT', ['I', 'H', '2s', 'f', '4B', '2H', '5f',
-                    '3H', '2s', '4s'], (FID, 'objectId'), 'parentIndex',
-                    'unk1', 'density', 'clustering', 'minSlope',
-                    'maxSlope', (_ObFlags, 'flags'), 'radiusWRTParent',
-                    'radius', 'minHeight', 'maxHeight', 'sink', 'sinkVar',
-                    'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
-                    'unk2', 'unk3'),
-            )),
-            ##: Was disabled previously - not in xEdit either...
-            # MelRegnEntrySubrecord(5, MelIcon()),
-            MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
-            MelRegnEntrySubrecord(6, MelSorted(MelArray('grasses',
-                MelStruct(b'RDGS', ['I', '4s'], (FID, 'grass'), 'unknown'),
-            ), sort_by_attrs='grass')),
-            MelRegnEntrySubrecord(7, MelUInt32(b'RDMD', 'musicType')),
-            MelRegnEntrySubrecord(7, MelSorted(MelArray('sounds',
-                MelStruct(b'RDSD', ['3I'], (FID, 'sound'), (_SdFlags, 'flags'),
-                          'chance'),
-            ), sort_by_attrs='sound')),
-            MelRegnEntrySubrecord(3, MelSorted(MelArray('weatherTypes',
-                MelStruct(b'RDWT', ['2I'], (FID, 'weather'), 'chance')
-            ), sort_by_attrs='weather')),
-        ), sort_by_attrs='entryType'),
+        MelColor(b'RCLR'),
+        MelWorldspace(),
+        MelRegnAreas(),
+        MelSorted(MelGroups('regn_entries',
+            MelRegnRdat(),
+            MelRegnEntryObjects(),
+            MelRegnEntryMapName(),
+            MelRegnEntryGrasses(),
+            MelRegnEntryMusicType(),
+            MelRegnEntrySoundsOld(),
+            MelRegnEntryWeatherTypes(with_global=False),
+        ), sort_by_attrs='regn_data_type'),
     )
 
 #------------------------------------------------------------------------------
 class MreRoad(MelRecord):
-    """Road. Part of large worldspaces."""
+    """Road."""
     ####Could probably be loaded via MelArray,
     ####but little point since it is too complex to manipulate
     rec_sig = b'ROAD'
@@ -2398,7 +2326,7 @@ class MreWrld(AMreWrld):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFid(b'WNAM', 'parent'),
+        MelWorldspace('wrld_parent'),
         MelFid(b'CNAM', 'climate'),
         MelFid(b'NAM2', 'water'),
         MelIcon('mapPath'),

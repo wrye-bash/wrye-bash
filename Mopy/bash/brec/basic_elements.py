@@ -30,7 +30,7 @@ from typing import BinaryIO
 from . import utils_constants
 from .utils_constants import FID, ZERO_FID, FixedString, get_structs, \
     int_unpacker, null1
-from .. import bolt, exception
+from .. import bolt, bush, exception
 from ..bolt import Rounder, attrgetter_cache, decoder, encode, sig_to_str, \
     struct_calcsize, struct_error, structs_cache
 
@@ -50,7 +50,6 @@ class MelObject(object):
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
-        from .. import bush
         cond_val_data = bush.game.condition_function_data
         to_show = []
         if hasattr(self, u'__slots__'):
@@ -86,7 +85,9 @@ class Subrecord(object):
             self._dump_bytes(out, binary_data, len(binary_data))
         except Exception:
             bolt.deprint(
-                f'{self!r}: Failed packing: {self.mel_sig!r}, {binary_data!r}')
+                f'{self!r}: Failed packing: '
+                f'{getattr(self, "mel_sig", "<no mel_sig>")!r}, '
+                f'{binary_data!r}')
             raise
 
     def _dump_bytes(self, out, binary_data, lenData):
@@ -108,22 +109,22 @@ def unpackSubHeader(ins, rsig, *, file_offset=0, __unpacker=int_unpacker,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
     # Extended storage - very rare, so don't optimize inlines etc. for it
     if mel_sig == b'XXXX':
-        sizes = []
+        mel_sizes = []
         ins_unpack = ins.unpack
         pos = (file_offset or ins.tell()) - __sr.sub_header_size
         while mel_sig == b'XXXX': #it does happen to have two of those in a row
             mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
             mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
                 rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
-            sizes.append(mel_size)
-        if len(sizes) > 1:
-            msg = f'{ins.inName}: {len(sizes)} consecutive XXXX subrecords ' \
+            mel_sizes.append(mel_size)
+        if len(mel_sizes) > 1:
+            msg = f'{ins.inName}: {len(mel_sizes)} consecutive XXXX subrecords ' \
                   f'reading {sig_to_str(rsig)} starting at file position {pos}'
-            if len(set(sizes)) > 1:
+            if len(set(mel_sizes)) > 1:
                 raise exception.ModError(ins.inName,
-                                         f'{msg} - differing sizes {sizes}!')
+                    f'{msg} - differing sizes {mel_sizes}!')
             bolt.deprint(msg)
-        mel_size = sizes[0]
+        mel_size = mel_sizes[0]
     return mel_sig, mel_size
 
 class SubrecordBlob(Subrecord):
@@ -256,7 +257,7 @@ class MelBaseR(MelBase):
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
     """A simple static subrecord representing a number. Note attr defaults to
-    _unused for usage in MelSimpleArray and similar tools where the attribute
+    '_unused' for usage in MelSimpleArray and similar tools where the attribute
     name does not matter. For everything else, you absolutely have to specify
     an attribute name."""
     _unpacker, packer, static_size = get_structs(u'I')
@@ -475,7 +476,7 @@ class MelGroups(MelGroup):
 
 #------------------------------------------------------------------------------
 class MelUnorderedGroups(MelGroups):
-    """A verion of MelGroups that does not use the usual 'initial sigs'
+    """A version of MelGroups that does not use the usual 'initial sigs'
     mechanism. Instead any element in the group can start a new object if it's
     already been encountered while loading the current object. As an example,
     consider these two subrecord definitions:
@@ -832,8 +833,9 @@ class _MelFlags(MelNum):
     """Integer flag field."""
     __slots__ = (u'_flag_type', u'_flag_default')
 
-    def __init__(self, mel_sig, attr, flags_type):
-        super(_MelFlags, self).__init__(mel_sig, attr)
+    def __init__(self, mel_sig, attr, flags_type, is_required=False):
+        super().__init__(mel_sig, attr,
+            set_default=None if not is_required else flags_type(0))
         self._flag_type = flags_type
         self._flag_default = self._flag_type(self.set_default or 0)
 

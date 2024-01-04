@@ -28,18 +28,19 @@ from itertools import chain
 
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bolt, bosh, bush, load_order
-from ..balt import CheckLink, Links, SeparatorLink
+from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, forward_compat_path_to_fn, \
     forward_compat_path_to_fn_list, text_wrap
+from ..game import MergeabilityCheck
 from ..gui import TOP, Button, CheckBox, CheckListBox, DeselectAllButton, \
     EventResult, FileOpenMultiple, HBoxedLayout, Label, LayoutOptions, \
-    ListBox, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, VLayout, \
-    askText, showError, askNumber
+    ListBox, Links, PanelWin, SearchBar, SelectAllButton, Spacer, TextArea, \
+    VLayout, askText, showError, askNumber
 from ..patcher.base import APatcher, MultiTweakItem, ListPatcher
 from ..patcher.patchers import checkers, mergers, multitweak_actors, \
     multitweak_assorted, multitweak_clothes, multitweak_names, \
     multitweak_races, multitweak_settings, preservers
-from ..patcher.patchers.base import AliasModNamesPatcher, \
+from ..patcher.patchers.base import AliasPluginNamesPatcher, \
     MergePatchesPatcher, MultiTweaker, ReplaceFormIDsPatcher
 
 class _PatcherPanel(object):
@@ -134,7 +135,7 @@ class _PatcherPanel(object):
 
         Most patchers just save their enabled state, except the
         _ListPatcherPanel subclasses - which save their choices - and the
-        AliasModNames that saves the aliases."""
+        AliasPluginNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
         config[u'isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
@@ -184,8 +185,8 @@ class _PatcherPanel(object):
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
-    patcher_name = _(u'Alias Mod Names')
-    patcher_desc = _(u'Specify mod aliases for reading CSV source files.')
+    patcher_name = _('Alias Plugin Names')
+    patcher_desc = _('Specify plugin aliases for reading CSV source files.')
 
     def GetConfigPanel(self, parent: PatchDialog, config_layout, gTipText):
         """Show config."""
@@ -256,7 +257,8 @@ class _ListPatcherPanel(_PatcherPanel):
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     show_empty_sublist_checkbox = False
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    default_remove_empty_sublists = bush.game.displayName == u'Oblivion'
+    ##: Hack, this should not use display_name
+    default_remove_empty_sublists = bush.game.display_name == 'Oblivion'
     gList: ListBox | CheckListBox
     patcher_type: ListPatcher
 
@@ -379,7 +381,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _do_populate_item_list(self):
         forceItemCheck = self.forceItemCheck
-        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings[u'AutoItemCheck']
+        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
         self.gList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False
@@ -719,12 +721,12 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
         for index, itm_txt in enumerate(choiceLabels):
             if itm_txt == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             elif itm_txt == tweak.custom_choice:
                 itm_txt = _custom_label(itm_txt, tweak.choiceValues[index][0])
-                links.append(_ValueLinkCustom(itm_txt, index))
+                links.append_link(_ValueLinkCustom(itm_txt, index))
             else:
-                links.append(_ValueLink(itm_txt, index))
+                links.append_link(_ValueLink(itm_txt, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
@@ -957,9 +959,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         links = Links()
         for index, item_label in enumerate(self.choiceMenu):
             if item_label == '----':
-                links.append(SeparatorLink())
+                links.append_link(SeparatorLink())
             else:
-                links.append(_OnItemChoice(item_label, index))
+                links.append_link(_OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gList, None)
 
@@ -987,9 +989,9 @@ class _GmstTweakerPanel(_TweakPatcherPanel):
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 # Patchers 10 -----------------------------------------------------------------
-class AliasModNames(_AliasesPatcherPanel):
-    _config_key = u'AliasesPatcher'
-    patcher_type = AliasModNamesPatcher
+class AliasPluginNames(_AliasesPatcherPanel):
+    _config_key = 'AliasesPatcher'
+    patcher_type = AliasPluginNamesPatcher
 
 class MergePatches(_ListPatcherPanel):
     """Merges specified patches into Bashed Patch."""
@@ -1060,10 +1062,9 @@ class ImportRelations(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportInventory(_ImporterPatcherPanel):
     """Merge changes to actor inventories."""
-    patcher_name = _(u'Import Inventory')
-    patcher_desc = _(u'Merges changes to NPC, creature and container '
-                     u'inventories.')
-    _config_key = u'ImportInventory'
+    patcher_name = _('Import Inventory')
+    patcher_desc = _('Merges changes to items in various inventories.')
+    _config_key = 'ImportInventory'
     patcher_type = mergers.ImportInventoryPatcher
 
 # -----------------------------------------------------------------------------
@@ -1156,19 +1157,15 @@ class ImportRacesSpells(_ImporterPatcherPanel):
 class ImportSpellStats(_ImporterPatcherPanel):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
-    patcher_desc = _('Import stats from any spells / actor effects from '
-                     'source plugins/files.')
+    patcher_desc = _('Import stats from spells from source plugins/files.')
     _config_key = u'SpellsPatcher'
     patcher_type = preservers.ImportSpellStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportDestructible(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Destructible')
-    patcher_desc = (_(u'Preserves changes to destructible records.')
-                    + u'\n\n' +
-                    _(u'Will have to use if a mod that allows you to destroy '
-                      u'part of the environment is installed and active.'))
-    _config_key = u'DestructiblePatcher'
+    patcher_name = _('Import Destructible')
+    patcher_desc = _('Preserves changes to destructible records.')
+    _config_key = 'DestructiblePatcher'
     patcher_type = preservers.ImportDestructiblePatcher
 
 # -----------------------------------------------------------------------------
@@ -1197,18 +1194,17 @@ class ImportObjectBounds(_ImporterPatcherPanel):
 # -----------------------------------------------------------------------------
 class ImportEnchantmentStats(_ImporterPatcherPanel):
     patcher_name = _(u'Import Enchantment Stats')
-    patcher_desc = _('Import stats from enchantments/object effects from '
-                     'source plugins.')
+    patcher_desc = _('Import stats from enchantments from source plugins.')
     _config_key = u'ImportEnchantmentStats'
     patcher_type = preservers.ImportEnchantmentStatsPatcher
 
 # -----------------------------------------------------------------------------
-class ImportEffectsStats(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Effect Stats')
+class ImportEffectStats(_ImporterPatcherPanel):
+    patcher_name = _('Import Effect Stats')
     patcher_desc = _('Import stats from magic/base effects from source '
                      'plugins.')
-    _config_key = u'ImportEffectsStats'
-    patcher_type = preservers.ImportEffectsStatsPatcher
+    _config_key = 'ImportEffectsStats'
+    patcher_type = preservers.ImportEffectStatsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportEnchantments(_ImporterPatcherPanel):
@@ -1374,7 +1370,13 @@ for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
 def initPatchers():
     group_order = {p_grp: i for i, p_grp in enumerate(
         ('General', 'Importers', 'Tweakers', 'Special'))}
-    patcher_classes = [globals()[p] for p in bush.game.patchers]
+    # If we want to merge patches into the BP, we need the patch merger
+    final_patchers = bush.game.patchers.copy()
+    if MergeabilityCheck.MERGE in bush.game.mergeability_checks:
+        final_patchers.add('MergePatches')
+        # And the NoMerge tag needs to get added too
+        bush.game.allTags.add('NoMerge')
+    patcher_classes = [globals()[p] for p in final_patchers]
     # Sort alphabetically first for aesthetic reasons
     patcher_classes.sort(key=lambda a: a.patcher_name)
     # After that, sort by group to make patchers instantiate in the right order

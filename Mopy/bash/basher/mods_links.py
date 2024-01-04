@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """Menu items for the _main_ menu of the mods tab - their window attribute
-points to BashFrame.modList singleton."""
+points to ModList singleton."""
 
 from .dialogs import CreateNewPlugin
 from .frames import PluginChecker
@@ -29,9 +29,10 @@ from .. import bush # for _Mods_ActivePluginsData, Mods_ActivePlugins
 from .. import balt, bass, bosh, exception, load_order
 from ..balt import AppendableLink, BoolLink, CheckLink, EnabledLink, \
     ItemLink, Link, MenuLink, MultiLink, SeparatorLink
+from ..bass import Store
 from ..bolt import FName, deprint, dict_sort, fast_cached_property
 from ..gui import BusyCursor, copy_text_to_clipboard, get_ctrl_down, \
-    get_shift_down, showError
+    get_shift_down, showError, askYes
 from ..parsers import CsvParser
 
 __all__ = ['Mods_MastersFirst', 'Mods_ActivePlugins', 'Mods_ActiveFirst',
@@ -79,7 +80,7 @@ class _Mods_ActivePluginsData(balt.ListEditorData):
 class _AMods_ActivePlugins(ItemLink):
     """Base class for Active Plugins links."""
     def _refresh_mods_ui(self):
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     def _select_exact(self, mods):
         lo_warn_msg = bosh.modInfos.lo_activate_exact(mods)
@@ -180,8 +181,7 @@ class _Mods_ActivateApList(_AMods_ActivePluginsContext):
 
     def Execute(self):
         wanted_aps = set(self._ap_parent_link.load_lists[self._text])
-        self._select_exact([p for p in self.window.data_store
-                            if p in wanted_aps])
+        self._select_exact([p for p in self._data_store if p in wanted_aps])
 
     @property
     def link_help(self):
@@ -273,8 +273,12 @@ class _Mods_SetOblivionVersion(CheckLink, EnabledLink):
     def Execute(self):
         """Handle selection."""
         if bosh.modInfos.voCurrent == self._version_key: return
+        bosh.modInfos.setOblivionVersion(self._version_key, askYes)
         bosh.modInfos.setOblivionVersion(self._version_key)
-        self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
+        ##: Why refresh saves? Saves should only ever depend on Oblivion.esm,
+        # not any of the modding ESMs. Maybe we should enforce that those
+        # modding ESMs are never active and drop this refresh_others?
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
         if self.setProfile:
             bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
                                             'vOblivion', self._version_key)
@@ -332,7 +336,7 @@ class Mods_ListMods(ItemLink):
         list_txt = bosh.modInfos.getModList(showCRC=get_shift_down(),
                                             showVersion=not get_ctrl_down())
         copy_text_to_clipboard(list_txt)
-        self._showLog(list_txt, title=_(u'Active Plugins'), fixedFont=False)
+        self._showLog(list_txt, title=_('Active Plugins'))
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
@@ -344,7 +348,7 @@ class Mods_ListBashTags(ItemLink):
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
         copy_text_to_clipboard(tags_text)
-        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
+        self._showLog(tags_text, title=_('Bash Tags'))
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
@@ -376,8 +380,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()
-        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True),
-                              refreshSaves=False)
+        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True))
 
 class Mods_AutoESLFlagBP(BoolLink):
     """Automatically flags built Bashed Patches as ESLs. This is safe, since
@@ -394,7 +397,7 @@ class _AMods_DirtyUpdateLink(BoolLink):
     def Execute(self):
         super().Execute()
         # Update static help text & underlined plugins
-        self.window.RefreshUI(refreshSaves=False)
+        self.window.RefreshUI()
 
 class Mods_ScanDirty(_AMods_DirtyUpdateLink):
     """Read mod CRC's to check for dirty mods."""
@@ -458,7 +461,7 @@ class Mods_CrcRefresh(ItemLink):
                               'cached_crc_val': f'{v[1]:08X}',
                               'real_crc_val': f'{v[0]:08X}'}
                  for k, v in mismatched.items()])
-            self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
+            self.window.RefreshUI(redraw=mismatched)
         else: message += _('No stale cached CRC values detected.')
         self._showWryeLog(message)
 
@@ -530,7 +533,7 @@ class Mods_ImportBashTags(_AMods_BashTags):
                               'bash tags CSV export.'),
                 title=_('Import Bash Tags - Invalid CSV'))
             return
-        self.window.RefreshUI(redraw=self.plugins_imported, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.plugins_imported)
         self._showInfo(_('Imported tags for %(total_imported)d plugin(s).') % {
             'total_imported': len(self.plugins_imported)},
             title=_('Import Bash Tags - Done'))
@@ -573,7 +576,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)
                 p.reloadBashTags()
-        self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
+        self.window.RefreshUI(redraw=pl_reset)
         self._showInfo(_('Cleared tags from %(total_cleared)d plugin(s).') % {
             'total_cleared': len(pl_reset)},
             title=_('Clear Manual Bash Tags - Done'))

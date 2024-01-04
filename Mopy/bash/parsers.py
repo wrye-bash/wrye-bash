@@ -506,7 +506,9 @@ class ActorFactions(_AParser):
         """We also need to set the (by default None) unused1 MelStruct
         element."""
         target_entry = super().get_empty_object(record, faction_fid)
-        target_entry.unused1 = b'ODB' ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
+        if hasattr(target_entry, 'unused1'): # Gone in FO4
+            ##: in Oblivion.esm I get {b'NL\x00', b'IFZ', None}
+            target_entry.unused1 = b'ODB'
         return target_entry
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
@@ -532,7 +534,8 @@ class ActorLevels(_HandleAliases):
         _('Offset'), _('CalcMin'), _('CalcMax'), _('Old IsPCLevelOffset'),
         _('Old Offset'), _('Old CalcMin'), _('Old CalcMax'))
     _parser_sigs = [b'NPC_']
-    _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
+    _attr_dex = {'eid': 1, 'level_offset': 4, 'calc_min_level': 5,
+                 'calc_max_level': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, fid_eid=True)
     _id_data_type: DefaultFNDict
@@ -552,10 +555,12 @@ class ActorLevels(_HandleAliases):
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=load_f)
             for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
-                items = zip(('eid', 'flags.pcLevelOffset', 'level_offset',
-                             'calcMin', 'calcMax'), (record.eid,
-                         bool(record.flags.pcLevelOffset), record.level_offset,
-                         record.calcMin, record.calcMax))
+                items = zip(
+                    ('eid', 'npc_flags.pc_level_offset', 'level_offset',
+                     'calc_min_level', 'calc_max_level'),
+                    (record.eid, bool(record.npc_flags.pc_level_offset),
+                     record.level_offset, record.calc_min_level,
+                     record.calc_max_level))
                 mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
@@ -574,12 +579,13 @@ class ActorLevels(_HandleAliases):
 
     _changed_type = list
     def _write_record(self, record, levels, changed_stats, __getter=itemgetter(
-            u'level_offset', u'calcMin', u'calcMax')):
-        level_offset, calcMin, calcMax = __getter(levels)
-        if ((record.level_offset,record.calcMin,record.calcMax) != (
-                level_offset,calcMin,calcMax)):
-            (record.level_offset,record.calcMin,record.calcMax) = (
-                level_offset,calcMin,calcMax)
+        'level_offset', 'calc_min_level', 'calc_max_level')):
+        got_lo, got_min_lv, got_max_lv = __getter(levels)
+        if ((record.level_offset, record.calc_min_level,
+             record.calc_max_level) != (got_lo, got_min_lv, got_max_lv)):
+            record.level_offset = got_lo
+            record.calc_min_level = got_min_lv
+            record.calc_max_level = got_max_lv
             record.setChanged()
             changed_stats.append(record.fid)
 
@@ -588,7 +594,7 @@ class ActorLevels(_HandleAliases):
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         attr_dex = super()._update_from_csv(b'NPC_', csv_fields)
-        attr_dex[u'flags.pcLevelOffset'] = True
+        attr_dex['npc_flags.pc_level_offset'] = True
         return attr_dex
 
     def _key1(self, csv_fields: list[str]) -> str:
@@ -607,13 +613,14 @@ class ActorLevels(_HandleAliases):
             self.id_stored_data[bg_mf]])
 
     def _row_out(self, longfid, di, fn_mod, obId_levels, *,
-                 __getter=itemgetter('eid', 'flags.pcLevelOffset',
-                                     'level_offset', 'calcMin', 'calcMax')):
+            __getter=itemgetter(
+                'eid', 'npc_flags.pc_level_offset', 'level_offset',
+                'calc_min_level', 'calc_max_level')):
         """Export NPC level data to specified text file."""
-        eid, isOffset, offset, calcMin, calcMax = __getter(di)
+        eid, isOffset, offset, row_calc_min, row_calc_max = __getter(di)
         if isOffset:
             out = f'"{fn_mod}","{eid}",{_fid_str(longfid)},"{offset:d}",' \
-                  f'"{calcMin:d}","{calcMax:d}"'
+                  f'"{row_calc_min:d}","{row_calc_max:d}"'
             oldLevels = obId_levels.get(longfid, None)
             if oldLevels:
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
@@ -666,8 +673,8 @@ class EditorIds(_HandleAliases):
         changed_stats = []
         if not old_new: return changed_stats
         reWord = re.compile(r'\w+')
-        def subWord(match):
-            word = match.group(0)
+        def subWord(ma_word):
+            word = ma_word.group(0)
             newWord = old_new.get(word.lower())
             if not newWord:
                 return word
@@ -854,7 +861,7 @@ class FullNames(_HandleAliases):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
-        self._parser_sigs = bush.game.namesTypes
+        self._parser_sigs = bush.game.names_types
         self._attr_dex = {u'full': 4} if self._called_from_patcher else {
             u'eid': 3, u'full': 4}
 
@@ -916,7 +923,7 @@ class ItemStats(_HandleAliases):
                 setattr(record, stat_key, n_stat)
         if change:
             record.setChanged()
-            changed_stats[record.fid[0]] += 1
+            changed_stats[record.fid.mod_fn] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -985,7 +992,7 @@ class ScriptText(_TextParser):
                 if r and deprefix == fileName[:r].lower():
                     fileName = fileName[r:]
                 outpath = dirs[u'patches'].join(folder).join(
-                    fileName + inisettings[u'ScriptFileExt'])
+                    fileName + inisettings['ScriptFileExt'])
                 self._writing_state = (scpt_lines, longid, eid)
                 self.write_text_file(outpath)
                 del self._writing_state
@@ -1008,7 +1015,7 @@ class ScriptText(_TextParser):
     def _header_row(self, out):
         # __win_line_sep: scripts line separator - or so we trust
         _scpt_lines, longid, eid = self._writing_state
-        comment = '\n;'.join((f'{longid[0]}', f'0x{longid[1]:06X}', eid))
+        comment = f'{longid.mod_fn}\n;0x{longid.object_dex:06X}\n;{eid}'
         out.write(f';{comment}\n')
 
     def _write_rows(self, out):
@@ -1066,7 +1073,7 @@ class ScriptText(_TextParser):
         for root_dir, dirs, files in textPath.walk():
             y = len(files)
             for z, f in enumerate(files):
-                if f.cext != inisettings[u'ScriptFileExt']:
+                if f.cext != inisettings['ScriptFileExt']:
                     progress(((1 / y) * z), _(u'Skipping file %s.') % f)
                     continue
                 progress(((1 / y) * z), _(u'Reading file %s.') % f)
@@ -1110,7 +1117,7 @@ class ItemPrices(_HandleAliases):
         value = stats[u'value']
         if record.value != value:
             record.value = value
-            changed_stats[record.fid[0]] += 1
+            changed_stats[record.fid.mod_fn] += 1
             record.setChanged()
 
     def _row_out(self, lfid, stored_data, top_grup,
@@ -1148,6 +1155,9 @@ class _UsesEffectsMixin(_HandleAliases):
         return attr_val
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+        ##: Skip OBME records, do not have actorValue for one
+        if record.obme_record_version is not None:
+            return
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
                                self._attr_serializer}
 

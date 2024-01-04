@@ -49,7 +49,7 @@ class APreserver(ImportPatcher):
     # which get carried forward as a 'block' - if one of the attributes in a
     # fused attribute differs, then all attributes in that 'block' get carried
     # forward, even if the others are unchanged. See for example the handling
-    # of level_offset and pcLevelOffset
+    # of level_offset and pc_level_offset
     rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]] = {}
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported. Set this or Filter plugins will
@@ -316,7 +316,7 @@ class ImportDestructiblePatcher(APreserver):
     patcher_tags = {'Destructible'}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStatsPatcher(APreserver):
+class ImportEffectStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
     _fid_rec_attrs = {b'MGEF': bush.game.mgef_stats_fid_attrs}
@@ -338,15 +338,15 @@ class ImportEnchantmentStatsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportKeywordsPatcher(APreserver):
     # Has FormIDs, but will be filtered in AMreWithKeywords.keep_fids
-    rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
+    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
     patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg =  '\n=== ' + _('Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
-    rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
+    srcsHeader = '=== ' + _('Source Mods/Files')
+    rec_attrs = {x: ('full',) for x in bush.game.names_types}
     _csv_parser = parsers.FullNames
     patcher_tags = {'Names'}
     _csv_key = 'Names'
@@ -443,8 +443,9 @@ class ImportCellsPatcher(ImportPatcher):
                 for cfid, cell_rec in block.iter_present_records(b'CELL'):
                     # If we're in an interior, see if we have to ignore
                     # any attrs
-                    actual_attrs = interior_attrs if \
-                        cell_rec.flags.isInterior else attrs
+                    actual_attrs = (interior_attrs
+                                    if cell_rec.flags and
+                                       cell_rec.flags.isInterior else attrs)
                     for att in actual_attrs:
                         tempCellData[cfid][att] = __attrgetters[att](cell_rec)
             # Add attribute values from record(s) in master file(s). Only adds
@@ -457,8 +458,9 @@ class ImportCellsPatcher(ImportPatcher):
                 for _sig, block in masterFile.iter_tops(self._read_sigs):
                     for cfid, cell_rec in block.iter_present_records(b'CELL'):
                         if cfid not in tempCellData: continue
-                        attrs1 = interior_attrs if cell_rec.flags.isInterior\
-                            else attrs
+                        attrs1 = (interior_attrs
+                                  if cell_rec.flags and
+                                     cell_rec.flags.isInterior else attrs)
                         for att in attrs1:
                             master_attr = __attrgetters[att](cell_rec)
                             if tempCellData[cfid][att] != master_attr:

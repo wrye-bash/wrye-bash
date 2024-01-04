@@ -23,11 +23,12 @@
 import io
 
 from .. import get_meta_value, iter_games, iter_resources, \
-    resource_to_displayName, set_game
+    resource_to_unique_display_name, set_game
 from ... import bush
-from ...bolt import LogFile, Rounder
+from ...bolt import LogFile, Rounder, GPath_no_norm
 from ...bosh.cosaves import PluggyCosave, _Remappable, _xSEChunk, \
     _xSEChunkPLGN, _xSEHeader, _xSEModListChunk, get_cosave_types, xSECosave
+from ...wbtemp import TempFile
 
 # Helper functions ------------------------------------------------------------
 _xse_cosave_exts = (u'.obse', u'.fose', u'.nvse', u'.skse', u'.f4se')
@@ -43,8 +44,8 @@ def _map_cosaves(map_func, cosv_exts, cosv_type):
     """Maps the specified function over all cosaves with one of the specified
     extensions, setting up the correct cosave tags, extensions, etc. first."""
     for gm_folder in iter_games(u'saves'):
-        gm_displayName = resource_to_displayName[gm_folder]
-        set_game(gm_displayName)
+        gm_unique_dn = resource_to_unique_display_name[gm_folder]
+        set_game(gm_unique_dn)
         get_cosave_types(bush.game.fsName, None,
                          bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
         for c in iter_cosaves(filter_by_game={gm_folder}):
@@ -75,16 +76,18 @@ class ATestACosave(object):
     def test_write_cosave(self):
         """Tests if writing out all cosaves produces the same checksum."""
         def _check_writing(curr_cosave: xSECosave):
-            temp_cosave_path = curr_cosave.abs_path.temp
-            curr_cosave.write_cosave(temp_cosave_path)
-            assert curr_cosave.abs_path.crc == temp_cosave_path.crc
-            # write_cosave and write_cosave_safe should have the same behavior
-            curr_cosave.write_cosave_safe(temp_cosave_path)
-            assert curr_cosave.abs_path.crc == temp_cosave_path.crc
-            # Cosave writing should not change mtime, since we use that to
-            # detect desyncs between save and cosave
-            assert Rounder(curr_cosave.abs_path.mtime) == Rounder(
-                temp_cosave_path.mtime)
+            with TempFile() as t:
+                temp_cosave_path = GPath_no_norm(t)
+                curr_cosave.write_cosave(temp_cosave_path)
+                assert curr_cosave.abs_path.crc == temp_cosave_path.crc
+                # write_cosave and write_cosave_safe should have the same
+                # behavior
+                curr_cosave.write_cosave_safe(temp_cosave_path)
+                assert curr_cosave.abs_path.crc == temp_cosave_path.crc
+                # Cosave writing should not change mtime, since we use that to
+                # detect desyncs between save and cosave
+                assert Rounder(curr_cosave.abs_path.mtime) == Rounder(
+                    temp_cosave_path.mtime)
         self._do_map_cosaves(_check_writing)
 
     def test_get_master_list(self):
@@ -127,15 +130,17 @@ class ATestACosave(object):
             curr_cosave.remap_plugins({first_master: _impossible_master})
             # Check that writing the result out produces a bytestring
             # containing the remapped master name
-            temp_cosave_path = curr_cosave.abs_path.temp
-            curr_cosave.write_cosave(temp_cosave_path)
-            assert curr_cosave.abs_path.crc != temp_cosave_path.crc
-            with temp_cosave_path.open(u'rb') as ins:
-                assert _impossible_master.encode(u'ascii') in ins.read()
-            # Check that undoing the mapping produces the original file again
-            curr_cosave.remap_plugins({_impossible_master: first_master})
-            curr_cosave.write_cosave(temp_cosave_path)
-            assert curr_cosave.abs_path.crc == temp_cosave_path.crc
+            with TempFile() as t:
+                temp_cosave_path = GPath_no_norm(t)
+                curr_cosave.write_cosave(temp_cosave_path)
+                assert curr_cosave.abs_path.crc != temp_cosave_path.crc
+                with open(temp_cosave_path, 'rb') as ins:
+                    assert _impossible_master.encode('ascii') in ins.read()
+                # Check that undoing the mapping produces the original file
+                # again
+                curr_cosave.remap_plugins({_impossible_master: first_master})
+                curr_cosave.write_cosave(temp_cosave_path)
+                assert curr_cosave.abs_path.crc == temp_cosave_path.crc
         self._do_map_cosaves(_check_remap_plugins)
 
 # xSE cosave tests ------------------------------------------------------------

@@ -24,12 +24,16 @@
 and the wx.adv (wizards) stuff."""
 from __future__ import annotations
 
-__author__ = u'Utumno, Infernio'
+__author__ = 'Utumno, Infernio'
 
 import wx as _wx
 import wx.adv as _adv
 
 from .base_components import Color, _AComponent, scaled
+from .buttons import OkButton
+from .doc_viewer import DocumentViewer
+from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
+from .text_components import TextArea
 from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
@@ -45,25 +49,26 @@ class _TopLevelWin(_AComponent):
     _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
     _native_widget: _wx.TopLevelWindow
+    _key_prefix = None
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
-        # dict holding size/pos info ##: can be bass.settings or balt.sizes
-        self._sizes_dict = sizes_dict
+        # dict holding size/pos info stored in bass.settings
+        self._sizes_dict = sizes_dict.get('bash.window.sizes', {})
         super().__init__(parent, *args, **kwargs)
-        self._set_pos_size(kwargs, sizes_dict)
+        self._set_pos_size(kwargs)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
-        if icon_bundle: self.set_icons(icon_bundle)
-        if self._min_size: self.set_min_size(*self._min_size)
+        if icon_bundle is not None: self.set_icons(icon_bundle)
+        if self._min_size: self.set_min_size(*self._min_size) ##: shouldn't we set this in _set_pos_size??
 
-    def _set_pos_size(self, kwargs, sizes_dict):
-        wanted_pos = kwargs.get('pos', None) or sizes_dict.get(
-            self._pos_key, self._def_pos)
+    def _set_pos_size(self, kwargs):
+        wanted_pos = kwargs.get('pos', None) or \
+            self._sizes_dict.get(self._pos_key, self._def_pos)
         # Resolve the special DEFAULT_POSITION constant to a real value
         self.component_position = (
             self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
-        wanted_width, wanted_height = kwargs.get(
-            'size', None) or sizes_dict.get(self._size_key, self._def_size)
+        wanted_width, wanted_height = kwargs.get('size', None) or \
+            self._sizes_dict.get(self._size_key, self._def_size)
         # Check if our wanted width or height is too small and bump it up
         if self._min_size:
             if wanted_width < self._min_size[0]:
@@ -87,10 +92,10 @@ class _TopLevelWin(_AComponent):
         """IsIconized(self) -> bool"""
         return self._native_widget.IsIconized()
 
-    # TODO(inf) de-wx! Image API - these use wx.Icon and wx.IconBundle
-    def set_icon(self, wx_icon):
+    # TODO(inf) de-wx! Image API - these use wx.IconBundle
+    def set_icon(self, gui_icon):
         """SetIcon(self, Icon icon)"""
-        return self._native_widget.SetIcon(wx_icon)
+        return self._native_widget.SetIcon(self._resolve(gui_icon))
 
     def set_icons(self, wx_icon_bundle):
         """SetIcons(self, wxIconBundle icons)"""
@@ -108,7 +113,7 @@ class _TopLevelWin(_AComponent):
         if self._sizes_dict and not self.is_iconized and not self.is_maximized:
             if self._pos_key: self._sizes_dict[self._pos_key] = self.component_position
             if self._size_key: self._sizes_dict[self._size_key] = self.component_size
-        if destroy: self.destroy_component()
+        if destroy: self.native_destroy()
 
     def ensureDisplayed(self, x=100, y=100): ##: revisit uses
         """Ensure that frame is displayed."""
@@ -122,21 +127,18 @@ class WindowFrame(_TopLevelWin):
     Events:
      - on_activate(): Posted when the frame is activated.
      """
-    _frame_settings_key = None
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
 
-    def __init__(self, parent, title, icon_bundle=None, _base_key=None,
-                 sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
-                 **kwargs):
-        _key = _base_key or self.__class__._frame_settings_key
-        if _key:
-            self._pos_key = _key + u'.pos'
-            self._size_key = _key + u'.size'
+    def __init__(self, parent, title, *, sizes_dict={}, icon_bundle=None,
+                 caption=False, style=_wx.DEFAULT_FRAME_STYLE, **kwargs):
+        if self._key_prefix:
+            self._pos_key = f'{self._key_prefix}.pos'
+            self._size_key = f'{self._key_prefix}.size'
         if caption: style |= _wx.CAPTION
         if sizes_dict: style |= _wx.RESIZE_BORDER
-        if kwargs.pop(u'clip_children', False): style |= _wx.CLIP_CHILDREN
-        if kwargs.pop(u'tab_traversal', False): style |= _wx.TAB_TRAVERSAL
+        if kwargs.pop('clip_children', False): style |= _wx.CLIP_CHILDREN
+        if kwargs.pop('tab_traversal', False): style |= _wx.TAB_TRAVERSAL
         super(WindowFrame, self).__init__(parent, sizes_dict, icon_bundle,
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
@@ -149,10 +151,6 @@ class WindowFrame(_TopLevelWin):
 
     def raise_frame(self): self._native_widget.Raise()
 
-    # TODO(inf) de-wx! Menu should become a wrapped component as well
-    def show_popup_menu(self, menu):
-        self._native_widget.PopupMenu(menu)
-
     def _bkg_color(self):
         """Returns the background color to use for this window."""
         return Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU))
@@ -162,11 +160,12 @@ class DialogWindow(_TopLevelWin):
     title: str
     _native_widget: _wx.Dialog
 
-    def __init__(self, parent=None, title=None, icon_bundle=None,
-            sizes_dict=None, caption=False, size_key=None, pos_key=None,
-            stay_over_parent=False, style=0, **kwargs):
-        self._size_key = size_key or self.__class__.__name__
-        self._pos_key = pos_key
+    def __init__(self, parent=None, title=None, *, sizes_dict=None,
+                 icon_bundle=None, caption=False, style=0,
+                 stay_over_parent=False, **kwargs):
+        sk = self._key_prefix if self._key_prefix else self.__class__.__name__
+        self._size_key = f'{sk}.size'
+        self._pos_key = self._key_prefix and f'{self._key_prefix}.pos'
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
         if stay_over_parent: style |= _wx.FRAME_FLOAT_ON_PARENT
@@ -184,7 +183,7 @@ class DialogWindow(_TopLevelWin):
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.destroy_component()
+        self.native_destroy()
 
     def on_closing(self, destroy=False): # flip destroy to False
         # dialogs are shown via the context manager above, if we destroy
@@ -229,6 +228,55 @@ class MaybeModalDialogWindow(DialogWindow):
         a WindowFrame."""
         self._native_widget.Show()
         self._native_widget.Raise()
+
+class _LogWin(_TopLevelWin):
+    """Mixin for common log-like windows options. Must come *right* before a
+    DialogWindow or a WindowFrame in the mro."""
+
+    def __init__(self, parent, title, icon_bundle, sizes_dict, logText=None,
+                 dv_bitmaps=None, **kwargs):
+        wrye_log = dv_bitmaps is not None
+        self._key_prefix = 'balt.WryeLog' if wrye_log else 'balt.LogMessage'
+        super().__init__(parent, title, icon_bundle=icon_bundle,
+                         sizes_dict=sizes_dict, **kwargs)
+        self.set_min_size(200, 200)
+        layout_kw = {'border': 2}
+        #--Buttons
+        ok_butt = OkButton(self)
+        ok_butt.on_clicked.subscribe(self.close_win)
+        if wrye_log:
+            #--Text
+            self._html_ctrl = DocumentViewer(self, dv_bitmaps)
+            self._html_ctrl.try_load_html(file_path=logText) # it's a bolt.Path
+            if not isinstance(self, DialogWindow): ##: could we drop this?
+                self.set_background_color(ok_butt.get_background_color())
+            #--Layout
+            layout_kw.update({'item_expand': True, 'items': [
+                (self._html_ctrl, LayoutOptions(weight=1)), (HLayout(items=(
+                    *self._html_ctrl.get_buttons(), Stretch(), ok_butt)),
+                    LayoutOptions(border=2))]})
+        else:
+            #--Bug workaround to ensure that default colour is being used - if not
+            # called we get white borders instead of grey todo PY3: test if needed
+            self.reset_background_color()
+            #--Text
+            txtCtrl = TextArea(self, init_text=logText, auto_tooltip=False)
+                              # special=True) SUNKEN_BORDER and TE_RICH2
+            layout_kw['items'] = [
+                (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
+                (ok_butt, LayoutOptions(h_align=RIGHT, border=2))]
+        VLayout(**layout_kw).apply_to(self)
+
+class LogDialog(_LogWin, DialogWindow):
+    """A log dialog, the user needs to dismiss it to get back to Bash."""
+
+class LogFrame(_LogWin, WindowFrame):
+    """A log frame, stays around."""
+
+    def __init__(self, parent, title, icon_bundle, sizes_dict, **kwargs):
+        kwargs['style'] = (_wx.RESIZE_BORDER | _wx.CAPTION | _wx.SYSTEM_MENU |
+                           _wx.CLOSE_BOX | _wx.CLIP_CHILDREN)
+        super().__init__(parent, title, icon_bundle, sizes_dict, **kwargs)
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
@@ -355,6 +403,6 @@ class CenteredSplash(_AComponent):
 
     def stop_splash(self):
         """Hides and terminates the splash screen."""
-        self.destroy_component()
+        self.native_destroy()
         ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
         self.visible = False

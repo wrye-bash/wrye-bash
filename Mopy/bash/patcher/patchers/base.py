@@ -152,7 +152,7 @@ class MultiTweaker(ScanPatcher):
             tweak.tweak_log(log, tweak_counter[tweak])
 
 # Patchers: 10 ----------------------------------------------------------------
-class AliasModNamesPatcher(APatcher):
+class AliasPluginNamesPatcher(APatcher):
     """Specify mod aliases for patch files."""
     patcher_group = u'General'
     patcher_order = 10
@@ -287,7 +287,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
 ##            for rid, record in self.patchFile.tops[type].iter_present_records():
 ##                if rid in self.old_new:
 ##                    record.fid = old_new.get(record.fid, record.fid)
-##                    count.increment(record.fid[0])
+##                    count.increment(record.fid.mod_fn)
 ####                    record.mapFids(swapper,True)
 ##                    keep(record.fid, record)
         for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_records.items():
@@ -321,8 +321,12 @@ class ReplaceFormIDsPatcher(ListPatcher):
             log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------
+##: This is more complicated in FO4, where we have a 'default template' and
+# several 'template actors', one for each template flag. Probably the default
+# template is the fallback if no template actor is specified for a template
+# flag that has been set?
 def is_templated(record, flag_name):
     """Checks if the specified record has a template record and the
     appropriate template flag set."""
-    return (getattr(record, u'template', None) is not None and
-            getattr(record.templateFlags, flag_name))
+    return (getattr(record, 'template', None) is not None and
+            getattr(record.template_flags, flag_name))

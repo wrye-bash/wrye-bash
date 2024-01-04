@@ -22,23 +22,23 @@
 # =============================================================================
 
 """Menu items for the main and item menus of the saves tab - their window
-attribute points to BashFrame.saveList singleton."""
+attribute points to SaveList singleton."""
 
 import io
 import re
 import shutil
 
-from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import balt, bass, bolt, bosh, bush, initialization, load_order
 from ..balt import AppendableLink, CheckLink, ChoiceLink, EnabledLink, \
     ItemLink, Link, OneItemLink, SeparatorLink
+from ..bass import Store
 from ..bolt import FName, GPath, Path, SubProgress
 from ..bosh import _saves, faces
 from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError
-from ..gui import BusyCursor, FileSave, ImageWrapper, askText, showError, \
-    askYes, showOk
+from ..gui import BusyCursor, FileSave, askText, showError, askYes, showOk, \
+    BmpFromStream
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = ['Saves_Profiles', 'Save_Renumber', 'Save_Move',
@@ -64,7 +64,8 @@ class Saves_ProfilesData(balt.ListEditorData):
         """Initialize."""
         self.baseSaves = bass.dirs[u'saveBase'].join(u'Saves')
         #--GUI
-        balt.ListEditorData.__init__(self,parent)
+        super().__init__(parent)
+        self._parent_list = parent
         self.showAdd    = True
         self.showRename = True
         self.showRemove = True
@@ -107,7 +108,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=True)
+            self._parent_list.set_local_save(newSaves, refreshSaveInfos=True)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
@@ -183,13 +184,12 @@ class Saves_Profiles(ChoiceLink):
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
             with BusyCursor():
-                Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
-                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
-                Link.Frame.modList.RefreshUI(refreshSaves=False,
-                                             focus_list=False)
+                self.window.set_local_save(newSaves, refreshSaveInfos=False)
+                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves, askYes)
                 bosh.saveInfos.refresh()
                 self.window.DeleteAll() # let call below repopulate
-                self.window.RefreshUI(detail_item=None)
+                self.window.RefreshUI(detail_item=None,
+                                      refresh_others=Store.MODS.DO())
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_saves=True)
 
@@ -224,7 +224,7 @@ class _Save_ChangeLO(OneItemLink):
     """Abstract class for links that alter load order."""
     def Execute(self):
         lo_warn_msg = self._lo_operation()
-        BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
+        self.window.RefreshUI(focus_list=False, refresh_others=Store.MODS.DO())
         self.window.Focus()
         if lo_warn_msg:
             self._showWarning(lo_warn_msg, self._selected_item)
@@ -263,7 +263,7 @@ class Save_ImportFace(OneItemLink):
         srcDir = self._selected_info.info_dir
         exts = u';*'.join(bush.game.espm_extensions | {
             bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
-        wildcard = _('%s Files') % bush.game.displayName + \
+        wildcard = _('%s Files') % bush.game.display_name + \
                    f' (*{exts})|*{exts}'
         #--File dialog
         srcPath = self._askOpen(title=_('Face Source:'), defaultDir=srcDir,
@@ -321,19 +321,17 @@ class Save_ExportScreenshot(OneItemLink):
             _(u'Save Screenshot as:'), bass.dirs[u'patches'].s,
             _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
-        # TODO(inf) de-wx! All the image stuff is still way too close to wx
-        image = ImageWrapper.bmp_from_bitstream(
-            *self._selected_info.header.image_parameters).ConvertToImage()
-        image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
+        image = BmpFromStream(*self._selected_info.header.image_parameters)
+        image.save_bmp(imagePath.s)
 
 #------------------------------------------------------------------------------
 ##: Split in two, one OneItemLink diffing against active plugins and one link
 # that needs two or more plugins and diffs those against each other
 class Save_DiffMasters(EnabledLink):
     """Shows how saves masters differ from active mod list."""
-    _text = _(u'Diff Masters...')
-    _help = _(u'Show how the masters of a save differ from active mod list or'
-             u' another save')
+    _text = _('Diff Masters...')
+    _help = _('Show how the masters of a save differ from active mod list or '
+              'another save')
 
     def _enable(self): return len(self.selected) in (1,2)
 
@@ -341,14 +339,14 @@ class Save_DiffMasters(EnabledLink):
         oldNew = self.selected
         oldNew.sort(key=lambda x: bosh.saveInfos[x].mtime)
         oldName = oldNew[0]
-        oldInfo = self.window.data_store[oldName]
+        oldInfo = self._data_store[oldName]
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
             newMasters = set(load_order.cached_active_tuple())
         else:
             newName = oldNew[1]
-            newInfo = self.window.data_store[newName]
+            newInfo = self._data_store[newName]
             newMasters = set(newInfo.masterNames)
         missing = oldMasters - newMasters
         added = newMasters - oldMasters
@@ -783,7 +781,7 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             statslog = log.out.getvalue()
-            self._showLog(statslog, title=self._selected_item, fixedFont=False)
+            self._showLog(statslog, title=self._selected_item)
 
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
@@ -801,8 +799,7 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
             log = bolt.LogFile(io.StringIO())
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             logtxt = log.out.getvalue()
-        self._showLog(logtxt, title=self._cosave.abs_path.tail,
-                      fixedFont=False)
+        self._showLog(logtxt, title=self._cosave.abs_path.tail)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(_Save_StatCosave):
@@ -901,10 +898,11 @@ class Save_UpdateNPCLevels(EnabledLink):
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.augmented_masters(), ordered)
                 for rid, npc in npc_block.iter_present_records():
-                    fid = mapToOrdered(rid.short_fid, None)
+                    fid = mapToOrdered(rid, None)
                     if not fid: continue
-                    npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
-                                     npc.calcMax, npc.flags.pcLevelOffset)
+                    npc_info[fid] = (npc.eid, npc.level_offset,
+                                     npc.calc_min_level, npc.calc_max_level,
+                                     npc.npc_flags.pc_level_offset)
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             msg = [_(u'NPCs Releveled:')]
@@ -918,21 +916,22 @@ class Save_UpdateNPCLevels(EnabledLink):
                 fid_rec = saveFile.fid_recNum
                 for recId, (rec_kind, recFlags, version, rdata) in \
                         fid_rec.items():
-                    orderedRecId = mapToOrdered(recId,None)
-                    if rec_kind != 35 or recId == 7 or orderedRecId not in \
-                            npc_info: continue
-                    eid, level_offset, calcMin, calcMax, pcLevelOffset = \
+                    orderedRecId = mapToOrdered(recId, None)
+                    if (rec_kind != 35 or recId == 7 or
+                            orderedRecId not in npc_info):
+                        continue
+                    eid, info_lo, info_min_lv, info_max_lv, info_pc_lo = \
                         npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
-                    if acbs and (acbs.level_offset != level_offset or
-                                 acbs.calcMin != calcMin or
-                                 acbs.calcMax != calcMax or
-                                 acbs.flags.pcLevelOffset != pcLevelOffset):
-                        acbs.flags.pcLevelOffset = pcLevelOffset
-                        acbs.level_offset = level_offset
-                        acbs.calcMin = calcMin
-                        acbs.calcMax = calcMax
+                    if acbs and (acbs.level_offset != info_lo or
+                                 acbs.calc_min_level != info_min_lv or
+                                 acbs.calc_max_level != info_max_lv or
+                                 acbs.npc_flags.pc_level_offset != info_pc_lo):
+                        acbs.level_offset = info_lo
+                        acbs.calc_min_level = info_min_lv
+                        acbs.calc_max_level = info_max_lv
+                        acbs.npc_flags.pc_level_offset = info_pc_lo
                         releveledCount += 1
                         fid_rec[recId] = npc.getTuple(version)
                 #--Save changes?

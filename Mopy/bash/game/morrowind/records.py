@@ -32,7 +32,7 @@ from ...brec import AMreCell, AMreHeader, AMreLeveledList, AutoFixedString, \
     MelLLFlagsTes3, MelNull, MelRecord, MelRef3D, MelRefScale, MelSequential, \
     MelSet, MelSInt32, MelString, MelStrings, MelStruct, MelTruncatedStruct, \
     MelUInt8, MelUInt16, MelUInt32, MelUInt32Flags, MelUnion, SaveDecider, \
-    SizeDecider, gen_color, gen_color3
+    SizeDecider, color_attrs, color3_attrs, position_attrs, rotation_attrs
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -49,9 +49,9 @@ class MelMWId(MelString): # needed everywhere, so put it early
         super().__init__(b'NAME', 'mw_id')
 
 #------------------------------------------------------------------------------
-class MelAIData(MelStruct):
-    """Handles the AIDT subrecord shared between CREA and NPC_."""
-    class _ai_flags(Flags):
+class MelAidt(MelStruct):
+    """Handles the CREA/NPC_ subrecord AIDT (AI Data)."""
+    class _ServiceFlags(Flags):
         ai_weapon: bool
         ai_armor: bool
         ai_clothing: bool
@@ -72,42 +72,39 @@ class MelAIData(MelStruct):
         ai_repair: bool
 
     def __init__(self):
-        super(MelAIData, self).__init__(b'AIDT',
-            [u'B', u's', u'3B', u'3s', u'I'], u'ai_hello',
-            u'aidt_unknown1', u'ai_fight', u'ai_flee', u'ai_alarm',
-            u'aidt_unknown2', (self._ai_flags, u'ai_flags'))
+        super().__init__(b'AIDT', ['B', 's', '3B', '3s', 'I'], 'ai_hello',
+            'ai_unknown1', 'ai_fight', 'ai_flee', 'ai_alarm', 'ai_unknown2',
+            (self._ServiceFlags, 'ai_service_flags'))
 
 #------------------------------------------------------------------------------
-class MelAIAccompanyPackage(MelStruct):
+class _MelAIAccompanyPackage(MelStruct):
     """Deduplicated from AI_E and AI_F (see below)."""
     def __init__(self, ai_package_sig):
-        super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
+        super().__init__(ai_package_sig,
             ['3f', 'H', '32s', 'B', 's'], 'dest_x', 'dest_y', 'dest_z',
             'package_duration', (FixedString(32), 'package_id'),
             'unknown_marker', 'unused1')
 
-class MelAIPackages(MelGroups):
+class MelAIPackagesTes3(MelGroups):
     """Handles the AI_* and CNDT subrecords, which have the additional
     complication that they may occur in any order."""
     def __init__(self):
-        super(MelAIPackages, self).__init__(u'aiPackages',
+        super().__init__('ai_packages',
             MelUnion({
-                b'AI_A': MelStruct(b'AI_A', [u'32s', u'B'],
-                    (FixedString(32), u'package_name'),
-                    (u'unknown_marker', 1)),
-                b'AI_E': MelAIAccompanyPackage(b'AI_E'),
-                b'AI_F': MelAIAccompanyPackage(b'AI_F'),
-                b'AI_T': MelStruct(b'AI_T', [u'3f', u'B', u'3s'], u'dest_x', u'dest_y',
-                    u'dest_z', (u'unknown_marker', 1), u'unused1'),
-                b'AI_W': MelStruct(b'AI_W', [u'2H', u'10B'], u'wanter_distance',
-                    u'wanter_duration', u'time_of_day', u'idle_1', u'idle_2',
-                    u'idle_3', u'idle_4', u'idle_5', u'idle_6', u'idle_7',
-                    u'idle_8', (u'unknown_marker', 1)),
+                b'AI_A': MelStruct(b'AI_A', ['32s', 'B'],
+                    (FixedString(32), 'package_name'), 'unknown_marker'),
+                b'AI_E': _MelAIAccompanyPackage(b'AI_E'),
+                b'AI_F': _MelAIAccompanyPackage(b'AI_F'),
+                b'AI_T': MelStruct(b'AI_T', ['3f', 'B', '3s'], 'dest_x',
+                    'dest_y', 'dest_z', 'unknown_marker', 'unused1'),
+                b'AI_W': MelStruct(b'AI_W', ['2H', '10B'], 'wanter_distance',
+                    'wanter_duration', 'time_of_day', 'idle_1', 'idle_2',
+                    'idle_3', 'idle_4', 'idle_5', 'idle_6', 'idle_7',
+                    'idle_8', 'unknown_marker'),
             }),
-            # Only present for AI_E and AI_F, but should be fine since the
-            # default for MelString is None, so won't be dumped unless already
-            # present (i.e. the file is already broken)
-            MelString(b'CNDT', u'cell_name'),
+            # Only present for AI_E and AI_F, but won't be dumped unless
+            # already present, so that's fine
+            MelString(b'CNDT', 'cell_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -124,10 +121,10 @@ class MelArmorData(MelGroups):
 class MelDestinations(MelGroups):
     """Handles the common DODT/DNAM subrecords."""
     def __init__(self):
-        super(MelDestinations, self).__init__(u'cell_travel_destinations',
-            MelStruct(b'DODT', [u'6f'], u'dest_pos_x', u'dest_pos_y',
-                u'dest_pos_z', u'dest_rot_x', u'dest_rot_y', u'dest_rot_z'),
-            MelString(b'DNAM', u'dest_cell_name'),
+        super().__init__('cell_travel_destinations',
+            MelStruct(b'DODT', ['6f'], *position_attrs('destination'),
+                *rotation_attrs('destination')),
+            MelString(b'DNAM', 'destination_cell_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -376,8 +373,8 @@ class MreCell(AMreCell):
         MelString(b'RGNN', u'region_name'),
         MelColorO(b'NAM5'),
         MelFloat(b'WHGT', u'water_height'),
-        MelStruct(b'AMBI', ['12B', 'f'], *gen_color('ambi_ambient'),
-            *gen_color('ambi_sunlight'), *gen_color('ambi_fog'),
+        MelStruct(b'AMBI', ['12B', 'f'], *color_attrs('ambi_ambient'),
+            *color_attrs('ambi_sunlight'), *color_attrs('ambi_fog'),
             'fog_density'),
         MelGroups(u'moved_references',
             MelUInt32(b'MVRF', u'reference_id'),
@@ -482,17 +479,16 @@ class MreCrea(MelRecord):
     """Creature."""
     rec_sig = b'CREA'
 
-    # Names match those of MreCrea._flags in later games
-    # Default is 0x48 (walks | crea_none)
-    class _crea_flags(Flags):
-        biped: bool
-        respawn: bool
-        weaponAndShield: bool
+    # Default is 0x48 (crea_walks | crea_none)
+    class _CreaFlags(Flags):
+        crea_biped: bool
+        crea_respawn: bool
+        weapon_and_shield: bool
         crea_none: bool
-        swims: bool
-        flies: bool
-        walks: bool
-        essential: bool
+        crea_swims: bool
+        crea_flies: bool
+        crea_walks: bool
+        crea_essential: bool
 
     melSet = MelSet(
         MelMWId(),
@@ -509,14 +505,14 @@ class MreCrea(MelRecord):
             u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
             u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
             u'crea_gold'),
-        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _crea_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _CreaFlags),
             'blood_type'),
         MelRefScale(),
         MelItems(),
         MelSpellsTes3(),
-        MelAIData(),
+        MelAidt(),
         MelDestinations(),
-        MelAIPackages(),
+        MelAIPackagesTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -756,7 +752,7 @@ class MreLigh(MelRecord):
         MelFullTes3(),
         MelIconTes3(),
         MelStruct(b'LHDT', ['f', 'I', 'i', 'I', '4B', 'I'], 'weight', 'value',
-            'duration', 'light_radius', *gen_color('light_color'),
+            'duration', 'light_radius', *color_attrs('light_color'),
             (_light_flags, 'light_flags')),
         MelString(b'SNAM', 'sound_name'),
         MelScriptId(),
@@ -806,8 +802,8 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelUInt32(b'INDX', u'mgef_index'),
         MelStruct(b'MEDT', ['I', 'f', '4I', '3f'], 'school', 'base_cost',
-            (_mgef_flags, 'flags'), *gen_color3('mgef'), 'speed_x', 'size_x',
-            'size_cap'),
+            (_mgef_flags, 'flags'), *color3_attrs('mgef_color'), 'speed_x',
+            'size_x', 'size_cap'),
         MelIconTes3(),
         MelString(b'PTEX', u'particle_texture'),
         MelString(b'BSND', u'boltSound'),
@@ -841,13 +837,12 @@ class MreNpc_(MelRecord):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    # Names match those of MreNpc_._flags in later games
-    class _npc_flags(Flags):
-        female: bool
-        essential: bool
-        respawn: bool
+    class NpcFlags(Flags):
+        npc_female: bool
+        npc_essential: bool
+        npc_respawn: bool
         default_unknown: bool # always set
-        autoCalc: bool
+        npc_auto_calc: bool
 
     class MelNpcData(MelLists):
         """Converts attributes and skills into lists."""
@@ -863,14 +858,14 @@ class MreNpc_(MelRecord):
         can_decide_at_dump = True
 
         def decide_dump(self, record):
-            return 12 if record.npc_flags.autoCalc else 52
+            return 12 if record.npc_flags.npc_auto_calc else 52
 
     melSet = MelSet(
         MelMWId(),
         MelModel(),
         MelFullTes3(),
-        MelString(b'RNAM', u'race_name'),
-        MelString(b'CNAM', u'class_name'),
+        MelString(b'RNAM', 'race'),
+        MelString(b'CNAM', 'npc_class'),
         MelString(b'ANAM', u'faction_name'),
         MelString(b'BNAM', u'head_model'),
         MelString(b'KNAM', u'hair_model'),
@@ -885,13 +880,13 @@ class MreNpc_(MelRecord):
                 u'npc_fatigue', u'npc_disposition', u'npc_reputation',
                 u'npc_rank', u'unknown3', u'npc_gold'),
         }, decider=NpcDataDecider()),
-        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', _npc_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', NpcFlags),
             'blood_type'),
         MelItems(),
         MelSpellsTes3(),
-        MelAIData(),
+        MelAidt(),
         MelDestinations(),
-        MelAIPackages(),
+        MelAIPackagesTes3(),
     )
 
 #------------------------------------------------------------------------------
@@ -1045,7 +1040,7 @@ class MreSpel(MelRecord):
     rec_sig = b'SPEL'
 
     class _spell_flags(Flags):
-        auto_calc: bool
+        spell_auto_calc: bool
         pc_start: bool
         always_suceeds: bool
 

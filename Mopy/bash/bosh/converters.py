@@ -30,11 +30,12 @@ import pickle
 from collections import defaultdict
 from itertools import chain
 
-from .. import archives, balt, bass, bolt
+from .. import archives, bolt
 from ..archives import defaultExt, readExts
 from ..bolt import DataDict, Path, PickleDict, SubProgress, \
-    forward_compat_path_to_fn_list, top_level_files
+    forward_compat_path_to_fn_list, top_level_files, GPath_no_norm
 from ..exception import ArgumentError, StateError
+from ..wbtemp import TempDir, TempFile
 
 converters_dir: Path | None = None
 installers_dir: Path | None = None
@@ -92,32 +93,32 @@ class ConvertersData(DataDict):
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
                      if self.validConverterName(bcf_arch)] # few files
+        bcf_scd = self.bcfPath_sizeCrcDate
         if change := fullRefresh: # clear all data structures
-            self.bcfPath_sizeCrcDate.clear()
+            bcf_scd.clear()
             self.srcCRC_converters.clear()
             self.bcfCRC_converter.clear()
-            pending = {*map(converters_dir.join, bcfs_list)}
+            pending_ = {*map(converters_dir.join, bcfs_list)}
         else:
-            pending = set()
+            pending_ = set()
             newData = {}
             present_bcfs = [*map(converters_dir.join, bcfs_list)]
             for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
                 # on first run it needs to repopulate the bcfPath_sizeCrcDate
-                cached_size, crc, mod_time = self.bcfPath_sizeCrcDate.get(
+                cached_size, crc, mod_time = bcf_scd.get(
                     bcfPath, (None, None, None))
                 size_mtime = bcfPath.size_mtime()
                 if crc is None or (cached_size, mod_time) != size_mtime:
                     crc_changed = crc != (crc := bcfPath.crc)
-                    self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
-                                                         size_mtime[1])
+                    bcf_scd[bcfPath] = (size_mtime[0], crc, size_mtime[1])
                     if crc_changed:
                         change = True  # added or changed - we must re-add it
-                        pending.add(bcfPath)
+                        pending_.add(bcfPath)
                         continue
                 newData[crc] = self.bcfCRC_converter[crc] # should be unique
                 newData[crc].fullPath = bcfPath ##: why???
             # Remove any converters that no longer exist
-            for bcfPath in list(self.bcfPath_sizeCrcDate):
+            for bcfPath in list(bcf_scd):
                 if bcfPath not in present_bcfs:
                     change = True
                     self.removeConverter(bcfPath)
@@ -126,24 +127,28 @@ class ConvertersData(DataDict):
                 lambda c: c.fullPath not in present_bcfs or c not in old_new)
             #--New/update crcs?
             self.bcfCRC_converter = newData  # empty on first run
-        if pending:
-            progress = progress or balt.Progress(_('Refreshing Converters...'))
+        if pending_:
+            progress = progress or bolt.Progress()
             with progress:
                 progress(0, _('Scanning Converters...'))
-                progress.setFull(len(pending))
-                for index, bcfPath in enumerate(sorted(pending)):
+                progress.setFull(len(pending_))
+                for index, bcfPath in enumerate(sorted(pending_)):
                     progress(index,
                              _('Scanning Converter...') + f'\n{bcfPath}')
+                    path_crc = not fullRefresh and bcf_scd[bcfPath][1]
                     try:
-                        path_crc = self.bcfPath_sizeCrcDate[bcfPath][1]
                         converter = InstallerConverter.from_path(bcfPath,
                             cached_crc=path_crc)
-                    except:
+                    except StateError: ##: we might get other errors here?
                         cor_dir = self.corrupt_bcfs_dir
-                        bolt.deprint(f'{bcfPath} is corrupt, moving to '
-                                     f'{cor_dir}', traceback=True)
-                        bcfPath.moveTo(cor_dir.join(bcfPath.tail))
-                        del self.bcfPath_sizeCrcDate[bcfPath]
+                        try:
+                            bcfPath.moveTo(cor_dir.join(bcfPath.tail))
+                            if not fullRefresh: del bcf_scd[bcfPath]
+                            bolt.deprint(f'{bcfPath} is corrupt, moved to '
+                                         f'{cor_dir}', traceback=True)
+                        except StateError:
+                            bolt.deprint(f'{bcfPath} does not exist',
+                                         traceback=True)
                         continue
                     change |= self.addConverter(converter, update_cache=False)
         return change
@@ -233,11 +238,11 @@ class InstallerConverter(object):
         return ret
 
     @classmethod
-    def from_scratch(cls, srcArchives, idata, destArchive, BCFArchive,
+    def from_scratch(cls, srcArchives, idata, destArchive, bcf_archive,
                      blockSize, progress):
         """Build a BCF from scratch."""
-        ret = cls(converters_dir.join(BCFArchive))
-        ret.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
+        ret = cls(converters_dir.join(bcf_archive))
+        ret.build(srcArchives, idata, destArchive, bcf_archive, blockSize,
                   progress)
         ret.crc = ret.fullPath.crc
         return ret
@@ -292,14 +297,15 @@ class InstallerConverter(object):
         err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
         archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
 
-    def save(self, destInstaller):
-        #--Dump settings into BCF.dat
+    def save(self, conv_out):
+        """Dump settings into BCF.dat"""
         def _dump(att, dat):
             pickle.dump(tuple(getattr(self, a) for a in att), dat, -1)
         try:
-            with bass.getTempDir().join(u'BCF.dat').open(u'wb') as f:
+            with open(os.path.join(conv_out, 'BCF.dat'), 'wb') as f:
                 _dump(self._persistBCF, f)
-                _dump(self._converter_settings + self.volatile + self.addedSettings, f)
+                _dump(self._converter_settings + self.volatile +
+                      self.addedSettings, f)
         except Exception as e:
             raise StateError(f'Error creating BCF.dat:\nError: {e}') from e
 
@@ -307,13 +313,9 @@ class InstallerConverter(object):
         """Applies the BCF and packages the converted archive"""
         #--Prepare by fully loading the BCF and clearing temp
         self.load(True)
-        bass.rmTempDir()
-        tmpDir = bass.newTempDir()
         #--Extract BCF
         if progress:
             progress(0, self.fullPath.stail + '\n' + _('Extracting files...'))
-        # don't pass progress in as we haven't got the count of BCF's files
-        archives.extract7z(self.fullPath, tmpDir, progress=None)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -325,33 +327,31 @@ class InstallerConverter(object):
         else:
             srcCRCs = realCRCs = self.srcCRCs
         nextStep = step = 0.4 / len(srcCRCs)
-        for srcCRC, realCRC in zip(srcCRCs, realCRCs):
-            srcInstaller = crc_installer[srcCRC]
-            files = bolt.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
-            if not files: continue
-            progress(0, f'{srcInstaller}\n' + _(u'Extracting files...'))
-            tempCRC = srcInstaller.crc
-            srcInstaller.crc = realCRC
-            self._unpack(srcInstaller, files,
-                         SubProgress(progress, lastStep, nextStep))
-            srcInstaller.crc = tempCRC
-            lastStep = nextStep
-            nextStep += step
-        #--Move files around and pack them
-        try:
-            self._arrangeFiles(SubProgress(progress, lastStep, 0.7))
-        except StateError:
-            raise
-        else:
-            self._pack(bass.getTempDir(), destArchive, installers_dir,
-                       SubProgress(progress, 0.7, 1.0))
-            #--Lastly, apply the settings.
-            #--That is done by the calling code, since it requires an
-            # InstallerArchive object to work on
-        finally:
-            try: tmpDir.rmtree(safety=tmpDir.s)
-            except: pass
-            bass.rmTempDir()
+        with TempDir() as tmp_extract, TempDir() as tmp_dest:
+            # Don't pass progress in as we haven't got the count of BCF's files
+            archives.extract7z(self.fullPath, tmp_extract)
+            for srcCRC, realCRC in zip(srcCRCs, realCRCs):
+                srcInstaller = crc_installer[srcCRC]
+                files = bolt.sortFiles(
+                    [x[0] for x in srcInstaller.fileSizeCrcs])
+                if not files: continue
+                progress(0, f'{srcInstaller}\n' + _(u'Extracting files...'))
+                tempCRC = srcInstaller.crc
+                srcInstaller.crc = realCRC
+                self._unpack(srcInstaller, files, tmp_extract,
+                    progress=SubProgress(progress, lastStep, nextStep))
+                srcInstaller.crc = tempCRC
+                lastStep = nextStep
+                nextStep += step
+            #--Move files around and pack them
+            self._arrangeFiles(tmp_extract, tmp_dest,
+                progress=SubProgress(progress, lastStep, 0.7))
+            archives.compress7z(installers_dir.join(destArchive),
+                GPath_no_norm(tmp_dest), SubProgress(progress, 0.7, 1.0),
+                is_solid=self.isSolid, blockSize=self.blockSize)
+            # Lastly, we need to apply the settings. That is done by the
+            # calling code, since it requires an InstallerArchive object to
+            # work on (see applySettings below and its usage in BAIN)
 
     def applySettings(self, destInstaller):
         """Applies the saved settings to an Installer"""
@@ -361,15 +361,16 @@ class InstallerConverter(object):
                 v = forward_compat_path_to_fn_list(v, ret_type=set)
             setattr(destInstaller, a, v)
 
-    def _arrangeFiles(self,progress):
-        """Copy and/or move extracted files into their proper arrangement."""
-        tmpDir = bass.getTempDir()
-        destDir = bass.newTempDir()
+    def _arrangeFiles(self, src_temp: str, dst_temp: str, *, progress):
+        """Copy and/or move extracted files into their proper arrangement.
+        Needs two temporary directories as arguments: a source directory
+        containing the files to be arranged and a destination directory where
+        the arranged files will be placed."""
         progress(0, _(u'Moving files...'))
         progress.setFull(1 + len(self.convertedFiles))
         dupes = self.dupeCount.copy()
-        destJoin = destDir.join
-        tempJoin = tmpDir.join
+        tempJoin = GPath_no_norm(src_temp).join
+        destJoin = GPath_no_norm(dst_temp).join
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(
                 self.convertedFiles):
@@ -393,20 +394,18 @@ class InstallerConverter(object):
             dest_full = destJoin(destFile)
             if numDupes > 1:
                 progress(index, _('Copying file...') + f'\n{destFile}')
+                # Decrement so that the last usage can be a move
                 dupes[crcValue] = numDupes - 1
                 src_full.copyTo(dest_full)
             else:
                 progress(index, _('Moving file...') + f'\n{destFile}')
                 src_full.moveTo(dest_full)
-        #--Done with unpacked directory
-        tmpDir.rmtree(safety=tmpDir.s)
 
-    def build(self, srcArchives, idata, destArchive, BCFArchive, blockSize,
+    def build(self, srcArchives, idata, destArchive, bcf_archive, blockSize,
               progress=None, *, __read_ext=tuple(readExts)):
         """Builds and packages a BCF"""
         progress = progress if progress else bolt.Progress()
         #--Initialization
-        bass.rmTempDir()
         srcFiles = {}
         destFiles = []
         destInstaller = idata[destArchive]
@@ -438,25 +437,24 @@ class InstallerConverter(object):
             #--Extract any subArchives
             #--It would be faster to read them with 7z l -slt
             #--But it is easier to use the existing recursive extraction
-            for index, (installerCRC, subs) in enumerate(subArchives.items()):
-                installer = crc_installer[installerCRC]
-                self._unpack(installer, subs,
-                             SubProgress(progress, lastStep, nextStep))
-                lastStep = nextStep
-                nextStep += step
-            #--Note all extracted files
-            tmpDir = bass.getTempDir()
-            for crc in tmpDir.ilist():
-                fpath = tmpDir.join(crc)
-                for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
-                    for file in files:
-                        file = root_dir.join(file)
-                        # crc is an FName, but we want to store strings
-                        archivedFiles[file.crc] = (
-                            str(crc), file.s[len(fpath)+1:]) # +1 for '/'
+            with TempDir() as combined_temp_dir:
+                for installerCRC, subs in subArchives.items():
+                    installer = crc_installer[installerCRC]
+                    self._unpack(installer, subs, combined_temp_dir,
+                        progress=SubProgress(progress, lastStep, nextStep))
+                    lastStep = nextStep
+                    nextStep += step
+                #--Note all extracted files
+                for crc in combined_temp_dir.ilist():
+                    fpath = combined_temp_dir.join(crc)
+                    for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
+                        for file in files:
+                            file = root_dir.join(file)
+                            # crc is an FName, but we want to store strings
+                            archivedFiles[file.crc] = (
+                                str(crc), file.s[len(fpath)+1:]) # +1 for '/'
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
-            bass.rmTempDir()
         #--Make list of destination files
         bcf_missing = u'BCF-Missing'
         for fileName, __size, fileCRC in destInstaller.fileSizeCrcs:
@@ -487,78 +485,67 @@ class InstallerConverter(object):
                 #--No files to pack, but subArchives were unpacked
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.5)
                 lastStep += 0.5
-        sProgress(0, f'{BCFArchive}\n' + _(u'Mapping files...'))
+        sProgress(0, f'{bcf_archive}\n' + _(u'Mapping files...'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
-        sprog_msg = f'{BCFArchive}\n' + _('Mapping files...') + '\n'
+        sprog_msg = f'{bcf_archive}\n' + _('Mapping files...') + '\n'
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
             sProgress(index, sprog_msg + fileName)
         #--Build the BCF
-        if len(self.bcf_missing_files):
-            tempDir2 = bass.newTempDir().join(bcf_missing)
-            #--Unpack missing files
-            bass.rmTempDir()
-            unpack_dir = destInstaller.unpackToTemp(self.bcf_missing_files,
-                SubProgress(progress, lastStep, lastStep + 0.2))
-            lastStep += 0.2
-            #--Move the temp dir to tempDir\BCF-Missing
-            #--Work around since moveTo doesn't allow direct moving of a
-            # directory into its own subdirectory
-            unpack_dir.moveTo(tempDir2)
-            tempDir2.moveTo(unpack_dir.join(bcf_missing))
-        #--Make the temp dir in case it doesn't exist
-        tmpDir = bass.getTempDir()
-        tmpDir.makedirs()
-        self.save(destInstaller)
-        #--Pack the BCF
-        #--BCF's need to be non-Solid since they have to have BCF.dat
-        # extracted and read from during runtime
-        self.isSolid = False
-        self._pack(tmpDir, BCFArchive, converters_dir,
-                   SubProgress(progress, lastStep, 1.0))
+        with TempDir() as conv_out:
+            if self.bcf_missing_files:
+                # We have missing files that we need to extract
+                unpack_dir = destInstaller.unpackToTemp(self.bcf_missing_files,
+                    SubProgress(progress, lastStep, lastStep + 0.2))
+                lastStep += 0.2
+                unpack_dir.moveTo(os.path.join(conv_out, bcf_missing))
+            self.save(conv_out)
+            #--Pack the BCF
+            #--BCF's need to be non-Solid since they have to have BCF.dat
+            # extracted and read from during runtime
+            self.isSolid = False
+            archives.compress7z(converters_dir.join(bcf_archive),
+                GPath_no_norm(conv_out), SubProgress(progress, lastStep, 1.0),
+                is_solid=self.isSolid, blockSize=self.blockSize)
+        ##: Why are we setting isSolid to False, then immediately overwriting
+        # it here? The comment above claims that they "need to be non-Solid",
+        # but this could mark them solid???
         self.isSolid = destInstaller.isSolid
 
-    def _pack(self, srcFolder, destArchive, outDir, progress=None):
-        """Creates the BAIN'ified archive and cleans up temp"""
-        archives.compress7z(outDir.join(destArchive), destArchive, srcFolder,
-            progress, is_solid=self.isSolid, blockSize=self.blockSize)
-        bass.rmTempDir()
-
-    def _unpack(self, srcInstaller, fileNames, progress=None, *,
+    def _unpack(self, srcInstaller, fileNames, temp_dir: str, *, progress=None,
                 __read_ext=tuple(readExts)):
         """Recursive function: completely extracts the source installer to
-        subTempDir. It does NOT clear the temp folder.  This should be done
-        prior to calling the function. Each archive and sub-archive is
-        extracted to its own sub-directory to prevent file thrashing"""
+        a temporary directory. Each archive and sub-archive is extracted to its
+        own sub-directory to prevent file thrashing. Requires the temp
+        directory to which to extract as a parameter."""
         #--Sanity check
         if not fileNames: raise ArgumentError(
             f'No files to extract for {srcInstaller}.')
-        tmpDir = bass.getTempDir()
-        tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
-        #--Dump file list
-        try:
-            ##: We don't use a BOM for tempList in unpackToTemp...
-            with tempList.open(u'w', encoding=u'utf-8-sig') as out:
-                out.write(u'\n'.join(fileNames))
-        except Exception as e:
-            raise StateError(
-                f'Error creating file list for 7z:\nError: {e}') from e
-        #--Determine settings for 7z
-        installerCRC = srcInstaller.crc
-        apath = srcInstaller if isinstance(srcInstaller,
-                                           Path) else srcInstaller.abs_path
-        subTempDir = tmpDir.join(f'{installerCRC:08X}')
-        if progress:
-            progress(0, f'{apath}\n' + _(u'Extracting files...'))
-            progress.setFull(1 + len(fileNames))
-        #--Extract files
-        try:
-            subArchives = archives.extract7z(apath, subTempDir, progress,
-                    read_exts=__read_ext, filelist_to_extract=tempList.s)
-        finally:
-            tempList.remove()
-            bolt.clearReadOnly(subTempDir)  ##: do this once
+        with TempFile(temp_prefix='temp_list', temp_suffix='.txt') as tl:
+            #--Dump file list
+            try:
+                with open(tl, 'w', encoding='utf-8') as out:
+                    out.write('\n'.join(fileNames))
+            except Exception as e:
+                raise StateError(
+                    f'Error creating file list for 7z:\nError: {e}') from e
+            #--Determine settings for 7z
+            installerCRC = srcInstaller.crc
+            apath = srcInstaller if isinstance(
+                srcInstaller, Path) else srcInstaller.abs_path
+            tmp_sub = GPath_no_norm(temp_dir).join(f'{installerCRC:08X}')
+            if progress:
+                progress(0, f"{apath}\n{_('Extracting files...')}")
+                progress.setFull(1 + len(fileNames))
+            try:
+                subArchives = archives.extract7z(apath, tmp_sub, progress,
+                    read_exts=__read_ext, filelist_to_extract=tl)
+            finally:
+                ##: Why are we doing this at all? We have a ton of extract7z
+                # calls, but only two do clearReadOnly afterwards
+                bolt.clearReadOnly(tmp_sub)  ##: do this once
         #--Recursively unpack subArchives
-        for sub_archive in (subTempDir.join(a) for a in subArchives):
-            self._unpack(sub_archive, [u'*']) # it will also unpack the embedded BCF if any...
+        for sub_archive in subArchives:
+            # it will also unpack the embedded BCF if any...
+            self._unpack(tmp_sub.join(sub_archive), ['*'], temp_dir)

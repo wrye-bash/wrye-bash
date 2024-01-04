@@ -22,10 +22,9 @@
 # =============================================================================
 import importlib
 
-from .. import WS_COMMON_FILES
-from ..gog_game import GOGMixin
-from ..skyrim import SkyrimGameInfo
-from ..windows_store_game import WindowsStoreMixin
+from .. import WS_COMMON_FILES, MergeabilityCheck, ObjectIndexRange
+from ..skyrim import ASkyrimGameInfo
+from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ...bolt import classproperty
 
 _GOG_IDS = [
@@ -34,9 +33,9 @@ _GOG_IDS = [
     1711230643, # Package
 ]
 
-class SkyrimSEGameInfo(SkyrimGameInfo):
+class ASkyrimSEGameInfo(ASkyrimGameInfo):
     """GameInfo override for TES V: Skyrim Special Edition."""
-    displayName = u'Skyrim Special Edition'
+    display_name = 'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
     game_icon = u'skyrimse_%u.png'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
@@ -60,46 +59,47 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     loot_dir = u'Skyrim Special Edition'
     loot_game_name = 'Skyrim Special Edition'
     boss_game_name = u'' # BOSS does not support SSE
-    registry_keys = [(r'Bethesda Softworks\Skyrim Special Edition',
-                       'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
 
-    espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
+    espm_extensions = {*ASkyrimGameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    check_esl = True
+    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
 
-    class Se(SkyrimGameInfo.Se):
+    class Se(ASkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'
         long_name = u'Skyrim SE Script Extender'
         exe = u'skse64_loader.exe'
         ver_files = [u'skse64_loader.exe', u'skse64_steam_loader.dll']
 
     # ScriptDragon doesn't exist for SSE
-    class Sd(SkyrimGameInfo.Sd):
+    class Sd(ASkyrimGameInfo.Sd):
         sd_abbrev = u''
         long_name = u''
         install_dir = u''
 
-    class Bsa(SkyrimGameInfo.Bsa):
+    class Bsa(ASkyrimGameInfo.Bsa):
         # Skyrim SE accepts the base name and ' - Textures'
         attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
 
-    class Xe(SkyrimGameInfo.Xe):
+    class Xe(ASkyrimGameInfo.Xe):
         full_name = u'SSEEdit'
         xe_key_prefix = u'sseView'
 
-    class Bain(SkyrimGameInfo.Bain):
+    class Bain(ASkyrimGameInfo.Bain):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
-    class Esp(SkyrimGameInfo.Esp):
+    class Esp(ASkyrimGameInfo.Esp):
         extension_forces_flags = True
+        # Because the FE slot is reserved for ESLs - yes, including in master
+        # lists. Thanks, Bethesda
+        master_limit = 253
+        object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
+        object_index_range_expansion_ver = 1.71
+        validHeaderVersions = (0.94, 1.70, 1.71)
         warn_older_form_versions = True
-
-    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
-    patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
 
     bethDataFiles = {
         'skyrim.esm',
@@ -283,27 +283,43 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         'ccvsvsse004-beafarmer.esl',
     }
 
-    assorted_tweaks = SkyrimGameInfo.assorted_tweaks | {
+    assorted_tweaks = ASkyrimGameInfo.assorted_tweaks | {
         'AssortedTweak_ArrowWeight'}
 
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
     # The contents of these tuples have to stay fixed because of CSV parsers
-    stats_csv_attrs = SkyrimGameInfo.stats_csv_attrs | {
+    stats_csv_attrs = ASkyrimGameInfo.stats_csv_attrs | {
         b'AMMO': ('eid', 'value', 'damage', 'weight'),
     }
-    stats_attrs = SkyrimGameInfo.stats_attrs | {
+    stats_attrs = ASkyrimGameInfo.stats_attrs | {
         b'AMMO': ('value', 'damage', 'weight'),
     }
 
     #--------------------------------------------------------------------------
     # Tweak Names
     #--------------------------------------------------------------------------
-    names_tweaks = SkyrimGameInfo.names_tweaks | {'NamesTweak_AmmoWeight'}
+    names_tweaks = ASkyrimGameInfo.names_tweaks | {'NamesTweak_AmmoWeight'}
 
     # Record information ------------------------------------------------------
-    top_groups = [*SkyrimGameInfo.top_groups, b'LENS', b'VOLI']
+    top_groups = [
+        b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS', b'FACT',
+        b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
+        b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI', b'TACT', b'ARMO', b'BOOK',
+        b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'APPA', b'STAT', b'SCOL',
+        b'MSTT', b'PWAT', b'GRAS', b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP',
+        b'AMMO', b'NPC_', b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ',
+        b'HAZD', b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
+        b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
+        b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS',
+        b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'CAMS', b'CPTH',
+        b'VTYP', b'MATT', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'LCTN', b'MESG',
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
+        b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
+        b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'VOLI', b'MOVT', b'SNDR',
+        b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -316,9 +332,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # package name is skyrim here
         super()._import_records(package_name, plugin_form_vers)
 
-class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
+class EGSSkyrimSEGameInfo(EGSMixin, ASkyrimSEGameInfo):
     """GameInfo override for the Epic Games Store version of Skyrim SE."""
-    displayName = 'Skyrim Special Edition (EGS)'
+    unique_display_name = f'{ASkyrimSEGameInfo.display_name} (EGS)'
     my_games_name = 'Skyrim Special Edition EPIC'
     appdata_name = 'Skyrim Special Edition EPIC'
 
@@ -330,27 +346,30 @@ class EGSSkyrimSEGameInfo(SkyrimSEGameInfo):
     def game_detect_excludes(cls):
         return super().game_detect_excludes - {'EOSSDK-Win64-Shipping.dll'}
 
-    class Eg(SkyrimSEGameInfo.Eg):
+    class Eg(ASkyrimSEGameInfo.Eg):
         egs_app_names = ['5d600e4f59974aeba0259c7734134e27', # AE
                          'ac82db5035584c7f8a2c548d98c86b2c'] # SE
 
-class GOGSkyrimSEGameInfo(GOGMixin, SkyrimSEGameInfo):
+class GOGSkyrimSEGameInfo(GOGMixin, ASkyrimSEGameInfo):
     """GameInfo override for the GOG version of Skyrim SE."""
-    displayName = 'Skyrim Special Edition (GOG)'
     my_games_name = 'Skyrim Special Edition GOG'
     appdata_name = 'Skyrim Special Edition GOG'
     _gog_game_ids = _GOG_IDS
 
-class WSSkyrimSEGameInfo(WindowsStoreMixin, SkyrimSEGameInfo):
+class SteamSkyrimSEGameInfo(SteamMixin, ASkyrimSEGameInfo):
+    """GameInfo override for the Steam version of Skyrim SE."""
+    class St(ASkyrimSEGameInfo.St):
+        steam_ids = [489830]
+
+class WSSkyrimSEGameInfo(WindowsStoreMixin, ASkyrimSEGameInfo):
     """GameInfo override for the Windows Store version of Skyrim SE."""
-    displayName = 'Skyrim Special Edition (WS)'
     my_games_name = 'Skyrim Special Edition MS'
     appdata_name = 'Skyrim Special Edition MS'
 
-    class Ws(SkyrimSEGameInfo.Ws):
+    class Ws(ASkyrimSEGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.SkyrimSE-PC'
 
-GAME_TYPE = {g.displayName: g for g in (
-    SkyrimSEGameInfo, EGSSkyrimSEGameInfo, GOGSkyrimSEGameInfo,
+GAME_TYPE = {g.unique_display_name: g for g in (
+    EGSSkyrimSEGameInfo, GOGSkyrimSEGameInfo, SteamSkyrimSEGameInfo,
     WSSkyrimSEGameInfo)}

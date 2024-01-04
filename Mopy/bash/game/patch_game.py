@@ -42,13 +42,17 @@ class PatchGame(GameInfo):
         if (wrld_block := modFile.tops.get(b'WRLD')) and wrld_block.orphansSkipped:
             patch_file.worldOrphanMods.append(modFile.fileInfo.fn_key)
 
-    # Bash Tags supported by this game. List only tags that aren't used by
+    # Bash Tags supported by this game. List *only* tags that aren't used by
     # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
-    # dynamically added in gui_patchers.
+    # dynamically added in gui_patchers. Similary, NoMerge should *not* be
+    # included here, it is dynamically added in gui_patchers based on the
+    # mergeability_checks for the game.
     allTags = {'Deactivate', 'Filter', 'MustBeActiveIfImported'}
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
-    # name, see gui_patchers.py for their definitions).
+    # name, see gui_patchers.py for their definitions). Note that MergePatches
+    # should *not* be included here, it is dynamically included in gui_patchers
+    # based on the mergeability_checks for the game.
     patchers = set()
 
     # Set in _dynamic_import_modules used in Mopy/bash/basher/gui_patchers.py
@@ -91,12 +95,12 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = ()
+    leveled_list_types = set()
 
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = set()  # initialize with literal
+    names_types = set()
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -132,7 +136,7 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = ()
+    inventory_types = set()
 
     #--------------------------------------------------------------------------
     # NPC Checker
@@ -142,7 +146,7 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Import Keywords
     #--------------------------------------------------------------------------
-    keywords_types = ()
+    keywords_types = set()
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -177,8 +181,8 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
     actor_importer_fid_attrs = {}
-    actor_types = (b'NPC_',)
-    spell_types = (b'SPEL',)
+    actor_types = {b'NPC_'}
+    spell_types = {b'LVSP', b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
@@ -290,11 +294,14 @@ class PatchGame(GameInfo):
                 # override the rec_class in sig_to_class with a stub (for
                 # instance <class 'bash.game.fallout4.records.MreCell'>)
                 if rec_class.melSet is None:
-                    bolt.deprint(f'{rec_class}: no melSet')
+                    # Don't log about record types that don't even exist for
+                    # this game
+                    if rec_sig in valid_header_sigs:
+                        bolt.deprint(f'{rec_class}: no melSet')
                     continue
                 rec_class.validate_record_syntax()
         if miss := [s for s in valid_header_sigs if s not in _sig_class]:
-            bolt.deprint(f'Signatures {miss} lack an implementation - '
+            bolt.deprint(f'Signatures {sorted(miss)} lack an implementation - '
                          f'defaulting to MreRecord')
             _sig_class.update(dict.fromkeys(miss, _brec_.MreRecord))
         rtype.sig_to_class = {k: v for k, v in _sig_class.items() if

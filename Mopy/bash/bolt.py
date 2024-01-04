@@ -25,7 +25,6 @@ from __future__ import annotations
 import collections
 import copy
 import datetime
-import html
 import io
 import os
 import pickle
@@ -33,22 +32,20 @@ import platform
 import re
 import shutil
 import stat
-import string
 import struct
 import subprocess
 import sys
-import tempfile
 import textwrap
 import traceback as _traceback
 import webbrowser
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, redirect_stdout
+from enum import Enum
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
 from typing import ClassVar, Self, TypeVar, get_type_hints, overload
-from urllib.parse import quote
 from zlib import crc32
 
 try:
@@ -56,7 +53,14 @@ try:
 except ImportError:
     chardet = None # We will raise an error on boot in bash._import_deps
 
+try:
+    from reflink import reflink, ReflinkImpossibleError
+except ImportError:
+    # Optional, no reflink copies will be possible if missing
+    reflink = ReflinkImpossibleError = None
+
 from . import exception
+from .wbtemp import TempFile
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -115,12 +119,33 @@ _blocked_encodings = {u'EUC-TW'}
 def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
-    result = chardet.detect(bitstream)
+    if not bitstream:
+        # Default to UTF-8 if the stream we're given is empty and hence no
+        # inference can be made (chardet returns None, which breaks when passed
+        # to decode())
+        return 'utf8', 1.0
+    # If we're fed a really big stream, go through it 16 KB at a time so as to
+    # not time out (really only here so we don't freeze on boot when we get
+    # malformed data fed in, no bytestring we pass in under normal
+    # circumstances is *this* large)
+    if len(bitstream) > 16384:
+        bitstream_view = io.BytesIO(bitstream)
+        result = result_sentinel = {
+            'encoding': None,
+            'confidence': 0.0,
+            'language': None,
+        }
+        while block := bitstream_view.read(16384):
+            result = chardet.detect(block)
+            # If we got a useful result out of chardet here, we're done and can
+            # return it
+            if result != result_sentinel:
+                break
+    else:
+        result = chardet.detect(bitstream)
     encoding_, confidence = result[u'encoding'], result[u'confidence']
     encoding_ = _encodingSwap.get(encoding_,encoding_)
-    ## Debug: uncomment the following to output stats on encoding detection
-    #print('%s: %s (%s)' % (repr(bitstream),encoding,confidence))
-    return encoding_,confidence
+    return encoding_, confidence
 
 def decoder(byte_str, encoding=None, avoidEncodings=()) -> str:
     """Decode a byte string to unicode, using heuristics on encoding."""
@@ -295,7 +320,7 @@ _sig_to_str = SigToStr()
 sig_to_str = _sig_to_str.__getitem__
 
 class StrToSig(dict):
-    """Dict of encoded record strings - will encode unknown keys."""
+    """Dict of encoded record strings - will encode unknown keys in *ascii*."""
     __slots__ = ()
 
     def __missing__(self, key):
@@ -341,6 +366,31 @@ def combine_dicts(dict_a: dict[K, V], dict_b: dict[K, V],
         returning the combined result."""
     return {**dict_a, **dict_b,
             **{k: f(dict_a[k], dict_b[k]) for k in dict_a.keys() & dict_b}}
+
+def reverse_dict(source_dict: dict[K, V]) -> dict[V, K]:
+    """Create a dict that represents the reverse/inverse mapping of the
+    specified dict. If a -> b in target_dict, then b -> a in the returned
+    dict.
+
+    Note that this is meant for 1-to-1 mappings - if you have two keys with the
+    same value, you'll lose the first key! See reverse_dict_multi for a method
+    that avoids this problem."""
+    return {v: k for k, v in source_dict.items()}
+
+def reverse_dict_multi(source_dict: dict[K, V]) -> dict[V, set[K]]:
+    """Create a dict that represents the reverse/inverse mapping of the
+    specified dict, with support for duplicate values in the source dict. See
+    also reverse_dict for simple 1-to-1 mappings."""
+    ret = {}
+    for k, v in source_dict.items():
+        ret.setdefault(v, set()).add(k)
+    return ret
+
+def gen_enum_parser(enum_type: type[Enum]):
+    """Create a dict that maps the values of the specified enum to the matching
+    enum entries. Useful e.g. for when the enum's values represent information
+    inside a file and you want to parse that information into enum entries."""
+    return {e.value: e for e in enum_type.__members__.values()}
 
 _not_cached = object()
 
@@ -825,15 +875,11 @@ class Path(os.PathLike):
     def getcwd():
         return Path(os.getcwd())
 
-    def setcwd(self):
-        """Set cwd."""
-        os.chdir(self._s)
-
     @staticmethod
     def has_invalid_chars(path_str):
-        match = Path.invalid_chars_re.match(path_str)
-        if not match: return None
-        return match.groups()[1]
+        ma_invalid_chars = Path.invalid_chars_re.match(path_str)
+        if not ma_invalid_chars: return None
+        return ma_invalid_chars.groups()[1]
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
@@ -865,14 +911,14 @@ class Path(os.PathLike):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in bytes, not unicode
         norm = decoder(norm)  # decoder will check for unicode
-        self._s = norm
-        # Reconstruct _cs, lower() should suffice
         global _conv_seps
         try:
+            self._s = _conv_seps(norm)
             self._cs = _conv_seps(norm.lower())
         except TypeError:
             from .env import convert_separators
             _conv_seps = convert_separators
+            self._s = _conv_seps(norm)
             self._cs = _conv_seps(norm.lower())
 
     def __len__(self):
@@ -969,27 +1015,28 @@ class Path(os.PathLike):
         except AttributeError:
             self._cext = self.ext.lower()
             return self._cext
-    @property
-    def temp(self):
-        """Temp file path."""
-        baseDir = GPath(tempfile.gettempdir()).join('WryeBash_temp')
-        baseDir.makedirs()
-        return baseDir.join(self.tail + u'.tmp')
 
-    @staticmethod
-    def tempDir(prefix='WryeBash_'):
-        return GPath(tempfile.mkdtemp(prefix=prefix))
+    def replace_with_temp(self, temp_path: str | os.PathLike):
+        """Replace this file with a temporary version created via TempFile or
+        new_temp_file, optionally making a backup of this file first. Note that
+        this *does not work for directories!* It is only intended for files.
 
-    @staticmethod
-    def baseTempDir():
-        return GPath(tempfile.gettempdir())
+        This also does not remove the temporary file from the internal caches
+        so as to work with TempFile."""
+        try:
+            shutil.move(temp_path, self._s)
+        except PermissionError:
+            self.clearRO()
+            shutil.move(temp_path, self._s)
+        # Do *not* call cleanup_temp_file here! This method needs to work with
+        # TempFile, which will already call cleanup_temp_file for us
 
     @property
     def backup(self):
         """Backup file path."""
         return self+u'.bak'
 
-    #--size, atime, ctime
+    #--size, atime
     @property
     def psize(self):
         """Size of file or directory."""
@@ -1007,9 +1054,6 @@ class Path(os.PathLike):
     @property
     def atime(self):
         return os.path.getatime(self._s)
-    @property
-    def ctime(self):
-        return os.path.getctime(self._s)
 
     #--Mtime
     def _getmtime(self):
@@ -1032,22 +1076,6 @@ class Path(os.PathLike):
         """File stats"""
         return os.stat(self._s)
 
-    @property
-    def version(self):
-        """File version (exe/dll) embedded in the file properties."""
-        from .env import get_file_version
-        return get_file_version(self._s)
-
-    @property
-    def strippedVersion(self):
-        """.version with leading and trailing zeros stripped."""
-        version = list(self.version)
-        while len(version) > 1 and version[0] == 0:
-            version.pop(0)
-        while len(version) > 1 and version[-1] == 0:
-            version.pop()
-        return tuple(version)
-
     #--crc
     @property
     def crc(self):
@@ -1063,7 +1091,7 @@ class Path(os.PathLike):
     def __add__(self,other):
         # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
-    def join(*args: str | os.PathLike[str]):
+    def join(*args: str | os.PathLike[str]) -> Path:
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
@@ -1116,25 +1144,15 @@ class Path(os.PathLike):
         else:
             raise
 
-    def clearRO(self):
+    def clearRO(self): ##: we need an (env) decorator for this one
         """Clears RO flag on self"""
         if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
-            try:
-                clearReadOnly(self)
-            except UnicodeError:
-                stat_flags = stat.S_IWUSR|stat.S_IWOTH
-                chmod = os.chmod
-                for root_dir,dirs,files in os.walk(self._s):
-                    rootJoin = root_dir.join
-                    for directory in dirs:
-                        try: chmod(rootJoin(directory),stat_flags)
-                        except: pass
-                    for filename in files:
-                        try: chmod(rootJoin(filename),stat_flags)
-                        except: pass
+            clearReadOnly(self)
 
+    ##: Deprecated, replace with regular open() where possible to help erode
+    # Path dependencies all over WB
     def open(self,*args,**kwdargs):
         try:
             return open(self._s, *args, **kwdargs)
@@ -1151,29 +1169,37 @@ class Path(os.PathLike):
 
     def remove(self):
         try:
-            if self.exists(): os.remove(self._s)
+            os.remove(self._s)
+        except FileNotFoundError:
+            pass # does not exist
         except OSError:
             self.clearRO()
             os.remove(self._s)
-    def removedirs(self):
+    def removedirs(self, raise_error=True):
         try:
-            if self.exists(): os.removedirs(self._s)
-        except OSError:
-            self.clearRO()
             os.removedirs(self._s)
+        except FileNotFoundError:
+            pass # does not exist
+        except OSError:
+            try:
+                self.clearRO()
+                os.removedirs(self._s)
+            except OSError:
+                if raise_error: raise
+
     def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.is_dir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
 
-    #--start, move, copy, touch, untemp
-    def start(self, exeArgs=None):
+    #--start, move, copy
+    def start(self, exe_cli=None):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
-            if not exeArgs:
+            if not exe_cli:
                 subprocess.Popen([self._s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
+                subprocess.Popen(exe_cli, executable=self._s, close_fds=True)
         else:
             if sys.platform == 'darwin':
                 webbrowser.open(f'file://{self._s}')
@@ -1185,18 +1211,20 @@ class Path(os.PathLike):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
         if self.is_dir():
-            shutil.copytree(self._s,destName._s)
+            ##: Does not preserve mtimes - is that a problem?
+            shutil.copytree(self._s, destName._s,
+                copy_function=copy_or_reflink2)
             return
         try:
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
         except FileNotFoundError:
             if not (dest_par := destName.shead) or os.path.exists(dest_par):
                 raise
             os.makedirs(dest_par)
-            shutil.copyfile(self._s,destName._s)
+            copy_or_reflink(self._s, destName._s)
             destName.mtime = self.mtime
-    def moveTo(self, destName, check_exist=True):
+    def moveTo(self, destName, *, check_exist=True):
         if check_exist and not self.exists():
             raise exception.StateError(f'{self._s} cannot be moved because it '
                                        f'does not exist.')
@@ -1214,39 +1242,6 @@ class Path(os.PathLike):
         except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
-
-    def untemp(self,doBackup=False):
-        """Replaces file with temp version, optionally making backup of file first."""
-        if self.temp.exists():
-            if self.exists():
-                if doBackup:
-                    self.backup.remove()
-                    shutil.move(self._s, self.backup._s)
-                else:
-                    # this will fail with Access Denied (!) if self._s is
-                    # (unexpectedly) a directory
-                    try:
-                        os.remove(self._s)
-                    except PermissionError:
-                        self.clearRO()
-                        os.remove(self._s)
-            shutil.move(self.temp._s, self._s)
-
-    def editable(self):
-        """Safely check whether a file is editable."""
-        delete = not os.path.exists(self._s)
-        try:
-            with open(self._s, u'ab'):
-                return True
-        except:
-            return False
-        finally:
-            # If the file didn't exist before, remove the created version
-            if delete:
-                try:
-                    os.remove(self._s)
-                except:
-                    pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
     # directly compare to str|Path|None and will blow for anything else
@@ -1321,6 +1316,8 @@ class Path(os.PathLike):
 
     def __copy__(self):
         return self # immutable
+
+undefinedPath = GPath(r'C:\not\a\valid\path.exe')
 
 # We need to split every time we hit a new 'type' of component. So greedily
 # match as many of one type as possible (except dots and dashes, since those
@@ -1398,8 +1395,9 @@ def clearReadOnly(dirPath):
     # elif platform.system() == u'Darwin':
     #     cmd = f'chflags -R nouchg {dirPath}'
     else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
-        cmds = (fr'find {dirPath} -not -executable -exec chmod a=rw {{}} \; &',
-                fr'find {dirPath} -executable -exec chmod a=rwx {{}} \; &')
+        cmds = (
+            fr'find "{dirPath}" -not -executable -exec chmod a=rw {{}} \; &',
+            fr'find "{dirPath}" -executable -exec chmod a=rwx {{}} \; &')
     for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
 
 # Util Constants --------------------------------------------------------------
@@ -1469,9 +1467,9 @@ class Flags:
         else:
             return self.__class__(self._field)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memodict={}):
         newFlags = self.__class__(self._field)
-        memo[id(self)] = newFlags ##: huh?
+        memodict[id(self)] = newFlags ##: huh?
         return newFlags
 
     def __copy__(self):
@@ -1590,6 +1588,7 @@ class TrimmedFlags(Flags):
         return super().dump()
 
 #------------------------------------------------------------------------------
+##: This seems highly unnecessary now, can we get rid of it?
 class MasterSet(set):
     """Set of master names."""
     __slots__ = ()
@@ -1634,16 +1633,18 @@ class DataDict(object):
 
 #------------------------------------------------------------------------------
 class AFile(object):
-    """Abstract file, supports caching - beta."""
+    """Abstract file or folder, supports caching."""
     _null_stat = (-1, None)
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
+    def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
+                 **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
-            self._reset_cache(self._stat_tuple(), load_cache)
+            self._reset_cache(self._stat_tuple(), load_cache=load_cache,
+                              **kwargs)
         except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
@@ -1654,43 +1655,47 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, force_update=False, **kwargs):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
         True, whereupon raise the OSError we got in stat(). If raise_on_error
         is False user must check if file exists.
 
-        :param raise_on_error: If True, rase on errors instead of just
+        :param raise_on_error: If True, raise on errors instead of just
             resetting the cache and returning.
-        :param itsa_ghost: In ModInfos, if we have the ghosting info available,
-            skip recalculating it."""
+        :param **kwargs: various:
+            - itsa_ghost: In ModInfos, if we have the ghosting info available,
+              skip recalculating it.
+            - progress: will be useful for installers
+        """
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
-            self._reset_cache(self._null_stat, load_cache=False)
+            self._reset_cache(self._null_stat, load_cache=False, **kwargs)
             if raise_on_error: raise
             return file_was_stated # file previously existed, we need to update
-        if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
+        if force_update or self._file_changed(stat_tuple):
+            self._reset_cache(stat_tuple, load_cache=True, **kwargs)
             return True
         return False
 
     def needs_update(self):
-        """Returns True if this file changed. Throws an OSErorr if it is
-        deleted."""
+        """Returns True if this file changed. Throws an OSError if it is
+        deleted. Avoid all but simple uses - use do_update instead."""
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self._file_mod_time) != stat_tuple
+        return (self.fsize, self.file_mod_time) != stat_tuple
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
-        :param load_cache: if True either load the cache (header in Mod and
-        SaveInfo) or reset it so it gets reloaded later
+        :param **kwargs: various
+            - load_cache: if True either load the cache (header in Mod and
+            SaveInfo) or reset it, so it gets reloaded later
         """
-        self.fsize, self._file_mod_time = stat_tuple
+        self.fsize, self.file_mod_time = stat_tuple
 
     def __repr__(self): return f'{self.__class__.__name__}<' \
                                f'{self.abs_path.stail}>'
@@ -1784,8 +1789,7 @@ class ListInfo:
     def unique_key(self, new_root, ext=u'', add_copy=False):
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
-        new_name = FName(
-            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        new_name = FName(new_root + (_(' Copy') if add_copy else '') + ext)
         if new_name == self.fn_key: # new and old names are ci-same
             return None
         return self.unique_name(new_name)
@@ -1801,10 +1805,10 @@ class ListInfo:
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(
                 self.fn_key.fn_ext.lower()):
-            return _('%(bad_name_str)s: Incorrect file extension (must be '
-                     '%(expected_ext)s).') % {
-                'bad_name_str': name_str,
-                'expected_ext': self.fn_key.fn_ext}, None
+            msg = _('%(bad_name_str)s: Incorrect file extension (must be '
+                    '%(expected_ext)s).') % {
+                'bad_name_str': name_str, 'expected_ext': self.fn_key.fn_ext}
+            return msg, None
         #--Else file exists?
         if check_store and self.info_dir.join(name_str).exists():
             return _('File %(bad_name_str)s already exists.') % {
@@ -1821,74 +1825,6 @@ class ListInfo:
 
     def __repr__(self):
         return f'{self.__class__.__name__}<{self.fn_key}>'
-
-#------------------------------------------------------------------------------
-class MainFunctions(object):
-    """Encapsulates a set of functions and/or object instances so that they can
-    be called from the command line with normal command line syntax.
-
-    Functions are called with their arguments. Object instances are called
-    with their method and method arguments. E.g.:
-    * bish bar arg1 arg2 arg3
-    * bish foo.bar arg1 arg2 arg3"""
-
-    def __init__(self):
-        """Initialization."""
-        self.funcs = {}
-
-    def add(self, func, func_key=None):
-        """Add a callable object.
-        func - A function or class instance.
-        func_key - Command line invocation for object (defaults to name of
-        func).
-        """
-        func_key = func_key or func.__name__
-        self.funcs[func_key] = func
-        return func
-
-    def main(self):
-        """Main function. Call this in __main__ handler."""
-        #--Get func
-        args = sys.argv[1:]
-        attrs_ = args.pop(0).split(u'.')
-        func_key = attrs_.pop(0)
-        func = self.funcs.get(func_key)
-        if not func:
-            msg = _('Unknown function/object: %(func_key)s') % {
-                'func_key': func_key}
-            try: print(msg)
-            except UnicodeError: print(msg.encode(u'mbcs'))
-            return
-        for attr in attrs_:
-            func = getattr(func,attr)
-        #--Separate out keywords args
-        keywords = {}
-        argDex = 0
-        reKeyArg  = re.compile(r'^-(\D\w+)', re.U)
-        reKeyBool = re.compile(r'^\+(\D\w+)', re.U)
-        while argDex < len(args):
-            arg = args[argDex]
-            if reKeyArg.match(arg):
-                keyword = reKeyArg.match(arg).group(1)
-                value   = args[argDex+1]
-                keywords[keyword] = value
-                del args[argDex:argDex+2]
-            elif reKeyBool.match(arg):
-                keyword = reKeyBool.match(arg).group(1)
-                keywords[keyword] = True
-                del args[argDex]
-            else:
-                argDex += 1
-        #--Apply
-        func(*args, **keywords)
-
-#--Commands Singleton
-_mainFunctions = MainFunctions()
-def mainfunc(func):
-    """A function for adding funcs to _mainFunctions.
-    Used as a function decorator ("@mainfunc")."""
-    _mainFunctions.add(func)
-    return func
 
 #------------------------------------------------------------------------------
 class PickleDict(object):
@@ -1984,10 +1920,15 @@ class PickleDict(object):
         VDATA3."""
         if self.readOnly: return False
         #--Pickle it
-        with self._pkl_path.temp.open(u'wb') as out:
-            for pkl in (u'VDATA3', self.vdata, self.pickled_data):
-                pickle.dump(pkl, out, -1)
-        self._pkl_path.untemp(doBackup=True)
+        with TempFile() as temp_pkl:
+            with open(temp_pkl, 'wb') as out:
+                for pkl in ('VDATA3', self.vdata, self.pickled_data):
+                    pickle.dump(pkl, out, -1)
+            try:
+                self._pkl_path.copyTo(self._pkl_path.backup)
+            except FileNotFoundError:
+                pass # No settings file to back up yet, this is fine
+            self._pkl_path.replace_with_temp(temp_pkl)
         return True
 
 #------------------------------------------------------------------------------
@@ -2058,6 +1999,8 @@ def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
 def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
     out.write(__pack(value))
+def unpack_int64(ins, __unpack=structs_cache['Q'].unpack) -> int:
+    return __unpack(ins.read(8))[0]
 def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
 def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
@@ -2442,18 +2385,18 @@ class LogFile(Log):
 #------------------------------------------------------------------------------
 class Progress(object):
     """Progress Callable: Shows progress when called."""
-    def __init__(self,full=1.0):
-        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
-        self.message = u''
+    def __init__(self, full=1.0):
+        if not full: raise exception.ArgumentError('Full must be non-zero!')
+        self.message = ''
         self.full = 1.0 * full
         self.state = 0
 
     def getParent(self):
         return None
 
-    def setFull(self,full):
-        """Set's full and for convenience, returns self."""
-        if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
+    def setFull(self, full):
+        """Sets full and for convenience, returns self."""
+        if not full: raise exception.ArgumentError('Full must be non-zero!')
         self.full = 1.0 * full
         return self
 
@@ -2526,24 +2469,28 @@ class StringTable(dict):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
-            with open(path, u'rb') as ins:
+            # These may be extracted from a BSA, so their case may not match
+            # what we expect at all
+            from .env import canonize_ci_path
+            canon_path = canonize_ci_path(path)
+            with open(canon_path, u'rb') as ins:
                 ins.seek(0, os.SEEK_END)
                 eof = ins.tell()
                 ins.seek(0)
                 if eof < 8:
-                    deprint(f"Warning: Strings file '{path}' file size "
-                            f"({eof}) is less than 8 bytes.  8 bytes are "
-                            f"the minimum required by the expected format, "
-                            f"assuming the Strings file is empty.")
+                    deprint(f"Warning: Strings file '{canon_path}' file size "
+                            f"({canon_path}) is less than 8 bytes. 8 bytes "
+                            f"are the minimum required by the expected "
+                            f"format, assuming the Strings file is empty.")
                     return
                 numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(f"Warning: Strings file '{path}' dataSize element "
-                            f"({dataSize}) results in a string start location "
-                            f"of {eof - dataSize}, but the expected location "
-                            f"is {stringsStart}")
+                    deprint(f"Warning: Strings file '{canon_path}' dataSize "
+                            f"element ({dataSize}) results in a string start "
+                            f"location of {eof - dataSize}, but the expected "
+                            f"location is {stringsStart}")
                 id_ = -1
                 offset = -1
                 for x in range(numIds):
@@ -2557,7 +2504,8 @@ class StringTable(dict):
                             # seems needed, strings are null terminated
                             value = cstrip(value)
                         else:
-                            value = readCString(ins, path) #drops the null byte
+                            # drops the null byte
+                            value = readCString(ins, canon_path)
                         try:
                             value = value.decode('utf-8')
                         except UnicodeDecodeError:
@@ -2576,7 +2524,7 @@ class StringTable(dict):
 #------------------------------------------------------------------------------
 _esub_component = re.compile(r'\$(\d+)\(([^)]+)\)')
 _rsub_component = re.compile(r'\\(\d+)')
-_plain_component = re.compile(r'[^\\\$]+', re.U)
+_plain_component = re.compile(r'[^\\\$]+')
 
 def build_esub(esub_str):
     r"""Builds an esub (enhanced substitution) callable and returns it. These
@@ -2783,7 +2731,7 @@ def _parse_rpath(rpath_str: str) -> _ARP_Subpath | None:
                 _RP_LeafSubpath)(sub_rpath, rest_rpath)
 
 #------------------------------------------------------------------------------
-_digit_re = re.compile(u'([0-9]+)')
+_digit_re = re.compile('([0-9]+)')
 
 def natural_key():
     """Returns a sort key for 'natural' sort order, i.e. similar to how most
@@ -2796,9 +2744,9 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(f'{curr_str}')]
 
-def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
+def dict_sort(di, *, key_f=None, values_dex=(), by_value=False, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
-    precedence."""
+    precedence, then values_dex then by_value. Copies the keys."""
     if key_f is None:
         if values_dex:
             key_f = lambda k: tuple(di[k][x] for x in values_dex)
@@ -2823,398 +2771,38 @@ def readme_url(mopy, advanced=False, skip_local=False):
         readme = f'http://wrye-bash.github.io/docs/{readme_name}'
     return readme.replace(u' ', u'%20')
 
-# WryeText --------------------------------------------------------------------
-html_start = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-        <title>%s</title>
-        <style type="text/css">%s</style>
-    </head>
-    <body>
-"""
-html_end = """    </body>
-</html>
-"""
-default_css = """
-h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
-h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
-h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
-a:link { text-decoration:none; }
-a:hover { text-decoration:underline; }
-p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
-p.empty {}
-p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
-p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
-p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
-p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
-p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
-p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
-.code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
-pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
-code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
-td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
-body { background-color: #ffffcc; }
-"""
-
-codebox = None
-class WryeText:
-    """This class provides a function for converting wtxt text files to html
-    files.
-
-    Headings:
-    = HHHH >> H1 "HHHH"
-    == HHHH >> H2 "HHHH"
-    === HHHH >> H3 "HHHH"
-    ==== HHHH >> H4 "HHHH"
-    Notes:
-    * These must start at first character of line.
-    * The XXX text is compressed to form an anchor. E.g == Foo Bar gets anchored as" FooBar".
-    * If the line has trailing ='s, they are discarded. This is useful for making
-      text version of level 1 and 2 headings more readable.
-
-    Bullet Lists:
-    * Level 1
-      * Level 2
-        * Level 3
-    Notes:
-    * These must start at first character of line.
-    * Recognized bullet characters are: - ! ? . + * o The dot (.) produces an invisible
-      bullet, and the * produces a bullet character.
-
-    Styles:
-      __Bold__
-      ~~Italic~~
-      **BoldItalic**
-    Notes:
-    * These can be anywhere on line, and effects can continue across lines.
-
-    Links:
-     [[file]] produces <a href=file>file</a>
-     [[file|text]] produces <a href=file>text</a>
-     [[!file]] produces <a href=file target="_blank">file</a>
-     [[!file|text]] produces <a href=file target="_blank">text</a>
-
-    Contents
-    {{CONTENTS=NN}} Where NN is the desired depth of contents (1 for single level,
-    2 for two levels, etc.).
-    """
-
-    # Conversion ---------------------------------------------------------------
-    @staticmethod
-    def genHtml(ins, out=None, *css_dirs):
-        """Reads a wtxt input stream and writes an html output stream."""
-        # Path or Stream? -----------------------------------------------
-        if isinstance(ins, (Path, str)):
-            srcPath = GPath(ins)
-            outPath = GPath(out) or srcPath.root+u'.html'
-            css_dirs = (srcPath.head,) + css_dirs
-            ins = srcPath.open(u'r', encoding=u'utf-8-sig')
-            out = outPath.open(u'w', encoding=u'utf-8-sig')
-        else:
-            srcPath = outPath = None
-        # Setup
-        outWrite = out.write
-
-        css_dirs = (GPath(d) for d in css_dirs)
-        # Setup ---------------------------------------------------------
-        #--Headers
-        reHead = re.compile(u'(=+) *(.+)',re.U)
-        headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
-        headFormatNA = u'<h%d>%s</h%d>\n'
-        #--List
-        reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
-        #--Code
-        reCode = re.compile(r'\[code\](.*?)\[/code\]', re.I | re.U)
-        reCodeStart = re.compile(r'(.*?)\[code\](.*?)$', re.I | re.U)
-        reCodeEnd = re.compile(r'(.*?)\[/code\](.*?)$', re.I | re.U)
-        reCodeBoxStart = re.compile(r'\s*\[codebox\](.*?)', re.I | re.U)
-        reCodeBoxEnd = re.compile(r'(.*?)\[/codebox\]\s*', re.I | re.U)
-        reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
-        codeLines = None
-        codeboxLines = None
-        def subCode(match):
-            try:
-                return u' '.join(codebox([match.group(1)],False,False))
-            except:
-                return match(1)
-        #--Misc. text
-        reHr = re.compile(u'^------+$',re.U)
-        reEmpty = re.compile(r'\s+$', re.U)
-        reMDash = re.compile(u' -- ',re.U)
-        rePreBegin = re.compile(u'<pre',re.I|re.U)
-        rePreEnd = re.compile(u'</pre>',re.I|re.U)
-        anchorlist = [] #to make sure that each anchor is unique.
-        def subAnchor(match):
-            text = match.group(1)
-            anchor = quote(reWd.sub(u'', text))
-            count = 0
-            if re.match(r'\d', anchor):
-                anchor = u'_' + anchor
-            while anchor in anchorlist and count < 10:
-                count += 1
-                if count == 1:
-                    anchor += str(count)
-                else:
-                    anchor = anchor[:-1] + str(count)
-            anchorlist.append(anchor)
-            return f"<a id='{anchor}'>{text}</a>"
-        #--Bold, Italic, BoldItalic
-        reBold = re.compile(u'__',re.U)
-        reItalic = re.compile(u'~~',re.U)
-        reBoldItalic = re.compile(r'\*\*',re.U)
-        states = {u'bold':False,u'italic':False,u'boldItalic':False,u'code':0}
-        def subBold(match):
-            state = states[u'bold'] = not states[u'bold']
-            return u'<b>' if state else u'</b>'
-        def subItalic(match):
-            state = states[u'italic'] = not states[u'italic']
-            return u'<i>' if state else u'</i>'
-        def subBoldItalic(match):
-            state = states[u'boldItalic'] = not states[u'boldItalic']
-            return u'<i><b>' if state else u'</b></i>'
-        #--Preformatting
-        #--Links
-        reLink = re.compile(r'\[\[(.*?)\]\]', re.U)
-        reHttp = re.compile(u' (http://[_~a-zA-Z0-9./%-]+)',re.U)
-        reWww = re.compile(r' (www\.[_~a-zA-Z0-9./%-]+)', re.U)
-        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')), re.U)
-        rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)', re.U)
-        reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
-        reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
-        reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
-        def subColor(match):
-            return (f'<span style="color:{match.group(1)};">'
-                    f'{match.group(2)}</span>')
-        def subBGColor(match):
-            return (f'<span style="background-color:{match.group(1)};">'
-                    f'{match.group(2)}</span>')
-        def subLink(match):
-            address = text = match.group(1).strip()
-            if u'|' in text:
-                (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += quote(reWd.sub(u'', text))
-            if address.startswith(u'!'):
-                newWindow = u' target="_blank"'
-                if address == text:
-                    # We have no text, cut off the '!' here too
-                    text = text[1:]
-                address = address[1:]
-            else:
-                newWindow = u''
-            if not reFullLink.search(address):
-                address += u'.html'
-            return f'<a href="{address}"{newWindow}>{text}</a>'
-        #--Tags
-        reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
-        reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
-        reAnchorHeadersTag = re.compile(r'\s*{{ANCHORHEADERS=(\d+)}}\s*$',re.U)
-        reCssTag = re.compile(r'\s*{{CSS:(.+?)}}\s*$',re.U)
-        #--Defaults ----------------------------------------------------------
-        title = u''
-        spaces = u''
-        cssName = None
-        #--Init
-        outLines = []
-        contents = []
-        outLinesAppend = outLines.append
-        outLinesExtend = outLines.extend
-        addContents = 0
-        inPre = False
-        anchorHeaders = True
-        #--Read source file --------------------------------------------------
-        for line in ins:
-            line = html.escape(to_unix_newlines(line))
-            #--Codebox -----------------------------------
-            if codebox:
-                if codeboxLines is not None:
-                    maCodeBoxEnd = reCodeBoxEnd.match(line)
-                    if maCodeBoxEnd:
-                        codeboxLines.append(maCodeBoxEnd.group(1))
-                        outLinesAppend(u'<pre style="width:850px;">')
-                        try:
-                            codeboxLines = codebox(codeboxLines)
-                        except:
-                            pass
-                        outLinesExtend(codeboxLines)
-                        outLinesAppend(u'</pre>\n')
-                        codeboxLines = None
-                        continue
-                    else:
-                        codeboxLines.append(line)
-                        continue
-                maCodeBox = reCodeBox.match(line)
-                if maCodeBox:
-                    outLines.append(u'<pre style="width:850px;">')
-                    try:
-                        outLinesExtend(codebox([maCodeBox.group(1)]))
-                    except:
-                        outLinesAppend(maCodeBox.group(1))
-                    outLinesAppend(u'</pre>\n')
-                    continue
-                maCodeBoxStart = reCodeBoxStart.match(line)
-                if maCodeBoxStart:
-                    codeboxLines = [maCodeBoxStart.group(1)]
-                    continue
-            #--Code --------------------------------------
-                if codeLines is not None:
-                    maCodeEnd = reCodeEnd.match(line)
-                    if maCodeEnd:
-                        codeLines.append(maCodeEnd.group(1))
-                        try:
-                            codeLines = codebox(codeLines,False)
-                        except:
-                            pass
-                        outLinesExtend(codeLines)
-                        codeLines = None
-                        line = maCodeEnd.group(2)
-                    else:
-                        codeLines.append(line)
-                        continue
-                line = reCode.sub(subCode,line)
-                maCodeStart = reCodeStart.match(line)
-                if maCodeStart:
-                    line = maCodeStart.group(1)
-                    codeLines = [maCodeStart.group(2)]
-            #--Preformatted? -----------------------------
-            maPreBegin = rePreBegin.search(line)
-            maPreEnd = rePreEnd.search(line)
-            if inPre or maPreBegin or maPreEnd:
-                inPre = maPreBegin or (inPre and not maPreEnd)
-                outLinesAppend(line)
-                continue
-            #--Font/Background Color
-            line = reColor.sub(subColor,line)
-            line = reBGColor.sub(subBGColor,line)
-            #--Re Matches -------------------------------
-            maContents = reContentsTag.match(line)
-            maAnchorHeaders = reAnchorHeadersTag.match(line)
-            maCss = reCssTag.match(line)
-            maHead = reHead.match(line)
-            maList  = reWryeList.match(line)
-            maPar   = rePar.match(line)
-            maEmpty = reEmpty.match(line)
-            #--Contents
-            if maContents:
-                if maContents.group(1):
-                    addContents = int(maContents.group(1))
-                else:
-                    addContents = 100
-                inPar = False
-            elif maAnchorHeaders:
-                anchorHeaders = maAnchorHeaders.group(1) != u'0'
-                continue
-            #--CSS
-            elif maCss:
-                #--Directory spec is not allowed, so use tail.
-                cssName = GPath(maCss.group(1).strip()).tail
-                continue
-            #--Headers
-            elif maHead:
-                lead,text = maHead.group(1,2)
-                text = re.sub(u' *=*#?$', u'', text.strip())
-                anchor = quote(reWd.sub(u'', text))
-                level_ = len(lead)
-                if anchorHeaders:
-                    if re.match(r'\d', anchor):
-                        anchor = u'_' + anchor
-                    count = 0
-                    while anchor in anchorlist and count < 10:
-                        count += 1
-                        if count == 1:
-                            anchor += str(count)
-                        else:
-                            anchor = anchor[:-1] + str(count)
-                    anchorlist.append(anchor)
-                    line = (headFormatNA,headFormat)[anchorHeaders] % (level_,anchor,text,level_)
-                    if addContents: contents.append((level_,anchor,text))
-                else:
-                    line = headFormatNA % (level_,text,level_)
-                #--Title?
-                if not title and level_ <= 2: title = text
-            #--Paragraph
-            elif maPar and not states[u'code']:
-                line = u'<p>'+line+u'</p>\n'
-            #--List item
-            elif maList:
-                spaces = maList.group(1)
-                bullet = maList.group(2)
-                text = maList.group(3)
-                if bullet == u'.': bullet = u'&nbsp;'
-                elif bullet == u'*': bullet = u'&bull;'
-                level_ = len(spaces)//2 + 1
-                line = f'{spaces}<p class="list-{level_}">{bullet}&nbsp;'
-                line = line + text + u'</p>\n'
-            #--Empty line
-            elif maEmpty:
-                line = spaces+u'<p class="empty">&nbsp;</p>\n'
-            #--Misc. Text changes --------------------
-            line = reHr.sub(u'<hr>',line)
-            line = reMDash.sub(u' &#150; ',line)
-            #--Bold/Italic subs
-            line = reBold.sub(subBold,line)
-            line = reItalic.sub(subItalic,line)
-            line = reBoldItalic.sub(subBoldItalic,line)
-            #--Wtxt Tags
-            line = reAnchorTag.sub(subAnchor,line)
-            #--Hyperlinks
-            line = reLink.sub(subLink,line)
-            line = reHttp.sub(r' <a href="\1">\1</a>', line)
-            line = reWww.sub(r' <a href="http://\1">\1</a>', line)
-            #--Save line ------------------
-            #print line,
-            outLines.append(line)
-        #--Get Css -----------------------------------------------------------
-        if not cssName:
-            css = default_css
-        else:
-            if cssName.ext != u'.css':
-                raise exception.BoltError(f'Invalid Css file: {cssName}')
-            for css_dir in css_dirs:
-                cssPath = GPath(css_dir).join(cssName)
-                if cssPath.exists(): break
-            else:
-                raise exception.BoltError(f'Css file not found: {cssName}')
-            with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
-                css = u''.join(cssIns.readlines())
-            if u'<' in css:
-                raise exception.BoltError(f'Non css tag in {cssPath}')
-        #--Write Output ------------------------------------------------------
-        outWrite(html_start % (title,css))
-        didContents = False
-        for line in outLines:
-            if reContentsTag.match(line):
-                if contents and not didContents:
-                    baseLevel = min([level_ for (level_,name_,text) in contents])
-                    for (level_,name_,text) in contents:
-                        level_ = level_ - baseLevel + 1
-                        if level_ <= addContents:
-                            outWrite(f'<p class="list-{level_}">&bull;&nbsp; '
-                                     f'<a href="#{name_}">{text}</a></p>\n')
-                    didContents = True
-            else:
-                outWrite(line)
-        outWrite(html_end)
-        #--Close files?
-        if srcPath:
-            ins.close()
-            out.close()
-
-def convert_wtext_to_html(logPath, logText, *css_dirs):
-    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
-    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
-        WryeText.genHtml(ins, out, *css_dirs)
-
-# Main -------------------------------------------------------------------------
-if __name__ == u'__main__' and len(sys.argv) > 1:
-    #--Commands----------------------------------------------------------------
-    @mainfunc
-    def genHtml(*args,**keywords):
-        """Wtxt to html. Just pass through to WryeText.genHtml."""
-        if not len(args):
-            args = [u'..\\Wrye Bash.txt']
-        WryeText.genHtml(*args,**keywords)
-
-    #--Command Handler --------------------------------------------------------
-    _mainFunctions.main()
+# Reflinks --------------------------------------------------------------------
+if reflink is not None:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            reflink(a, b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        a, b = os.fspath(a), os.fspath(b) # reflink needs strings
+        try:
+            # Don't alter b itself in case we need to fall back to copy2
+            if os.path.isdir(final_b := b):
+                final_b = os.path.join(final_b, os.path.basename(a))
+            reflink(a, final_b)
+            shutil.copystat(a, final_b)
+        except (OSError, ReflinkImpossibleError):
+            shutil.copy2(a, b)
+else:
+    def copy_or_reflink(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copyfile, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copyfile(a, b)
+    def copy_or_reflink2(a: str | os.PathLike, b: str | os.PathLike):
+        """Behaves like shutil.copy2, but uses a reflink if possible. See
+        https://en.wikipedia.org/wiki/Data_deduplication#reflink for more
+        information."""
+        shutil.copy2(a, b)

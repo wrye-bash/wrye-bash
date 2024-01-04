@@ -25,19 +25,62 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+from enum import Enum
 from itertools import chain
 from os.path import join as _j
 
 from .. import bolt
 from ..bolt import FNDict, fast_cached_property
 
+# Constants and Helpers -------------------------------------------------------
+# Files shared by versions of games that are published on the Windows Store
+WS_COMMON_FILES = {'appxmanifest.xml'}
+
+# The int values get stored in the settings files (mergeability cache), so they
+# should always remain the same just to be safe
+class MergeabilityCheck(Enum):
+    """The various mergeability checks that a game can have. See the comment
+    above each of them for more information."""
+    # If set for the game, the Merge Patches patcher will be enabled, the
+    # NoMerge tag will be available and WB will check plugins for their BP
+    # mergeability.
+    MERGE = 0
+    # If set for the game, the Add ESL Flag command will be available and WB
+    # will check plugins for their ESL capability.
+    ESL_CHECK = 1
+    # If set for the game, the Add Overlay Flag command will be available and
+    # WB will check plugins for their Overlay capability.
+    OVERLAY_CHECK = 2
+
+class ObjectIndexRange(Enum):
+    """Valid values for object_index_range."""
+    # FormIDs with object indices in the range 0x000-0x7FF are always
+    # reserved for the engine
+    RESERVED = 0
+    # Plugins with a header version >= object_index_range_expansion_ver and at
+    # least one master can use the range 0x000-0x7FF for their own purposes
+    EXPANDED_CONDITIONAL = 1
+    # Plugins with at least one master can use the range 0x001-0x7FF
+    # for their own purposes
+    EXPANDED_ALWAYS = 2
+
+# Abstract class - to be overriden --------------------------------------------
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
-    # Name of the game to use in UI.
-    displayName = u'' ## Example: u'Skyrim'
+    # The name of the game that will be shown to the user. That is its *only*
+    # use! There are a few places where this is (mis)used for other purposes
+    # left, those should be hunted down and replaced with dedicated game vars
+    display_name = '' ## Example: 'Skyrim'
+    # A name that must be 100% unique per game, but will also be shown in the
+    # GUI (namely when picking what game to launch). This is automatically set
+    # to display_name, with a (Store) suffix appended (e.g. (Steam)) by the
+    # appropriate mixin classes (e.g. SteamMixin), so there is generally no
+    # need to set it manually
+    unique_display_name = '' ## Example: 'Skyrim Special Edition (Steam)'
     # A name used throughout the codebase for identifying the current game in
     # various situations, e.g. to decide which BSAs to use, which save header
-    # types to use, etc.
+    # types to use, etc. *DEPRECATED* for new uses - introduce dedicated game
+    # vars instead
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
@@ -105,17 +148,18 @@ class GameInfo(object):
     # The name that this game has on the BOSS command line. If empty, indicates
     # that BOSS does not support this game
     boss_game_name = u''
-    # Registry keys to read to find the install location. This is a list of
-    # tuples of two strings, where each tuple defines the subkey and entry to
-    # try. Multiple tuples in the list will be tried in order, with the first
-    # one that works being used.
+    # Registry keys to read to find the install location for GOG. This is a
+    # list of tuples of two strings, where each tuple defines the subkey and
+    # entry to try. Multiple tuples in the list will be tried in order, with
+    # the first one that works being used. Generally automatically generated
+    # via GOGMixin, so there is usually no need to fill this in manually.
     # These are relative to:
     #  HKLM\Software
     #  HKLM\Software\Wow6432Node
     #  HKCU\Software
     #  HKCU\Software\Wow6432Node
     # Example: [(r'Bethesda Softworks\Oblivion', 'Installed Path')]
-    registry_keys = []
+    gog_registry_keys = []
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
@@ -123,29 +167,37 @@ class GameInfo(object):
                      # settings.dat
 
     # Additional game info - override as needed -------------------------------
-    # plugin extensions
+    # All file extensions used by plugins for this game
     espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Load order info
     using_txt_file = True
-    # bethesda net export files
+    # True if the game's CK has Bethesda.net export files (achlist files)
     has_achlist = False
-    # check if a plugin is convertible to a light master instead of checking
-    # mergeability
-    check_esl = False
+    # What mergeability checks to perform for this game. See MergeabilityCheck
+    # above for more information
+    mergeability_checks = {MergeabilityCheck.MERGE}
+    check_esl = False # FIXME TEMP DROP
+    # True if this game supports overlay plugins (i.e. its TES4 record's header
+    # flags feature an overlay_flag); these are plugins that don't take up a
+    # load order slot but can only contain overrides (any non-override records
+    # in it will become injected into either the first plugin in the master
+    # list or the first plugin in the whole LO - probably the former)
+    # TODO(SF) check which of those two is true
+    has_overlay_plugins = False
     # Whether or not this game has standalone .pluggy cosaves
     has_standalone_pluggy = False
     # Information about Plugin-Name-specific Directories supported by this
-    # game. Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata
+    # game. Some examples are sound\voice\PLUGIN_NAME.esp, or the facegendata
     # ones. An empty list means that the game does not have any such
     # directories.
-    plugin_name_specific_dirs = [_j(u'sound', u'voice')]
+    plugin_name_specific_dirs = [_j('sound', 'voice')]
     # Whether or not to check for 'Bash' and 'Installers' folders inside the
     # game folder and use those instead of the default paths when present
     check_legacy_paths = False
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
-        self.has_esl = u'.esl' in self.espm_extensions
+        self.has_esl = '.esl' in self.espm_extensions
 
     # Master esm form ids factory
     __master_fids = {}
@@ -158,6 +210,12 @@ class GameInfo(object):
             from .. import brec
             return cls.__master_fids.setdefault(object_id,
                 brec.FormId.from_tuple((cls.master_file, object_id)))
+
+    class St:
+        """Information about this game on Steam."""
+        # The app IDs on Steam. An empty list indicates the game is not
+        # available on Steam
+        steam_ids = []
 
     class Ws(object):
         """Information about this game on the Windows Store."""
@@ -189,7 +247,8 @@ class GameInfo(object):
     class Ck(object):
         """Information about the official plugin editor (generally called some
         variation of 'Creation Kit') for this game."""
-        # Abbreviated name
+        # Abbreviated name. If not present, indicates that this game does not
+        # have an official plugin editor
         ck_abbrev = u''
         # Full name
         long_name = u''
@@ -197,9 +256,9 @@ class GameInfo(object):
         exe = u'*DNE*'
         # Argument to pass to the script extender to load the CK. If None,
         # indicates that this game's script extender does not have this feature
-        se_args = None
+        se_args = ()
         # Image name template for the status bar, relative to images/tools
-        image_name = u''
+        image_name = ''
 
     class Se(object):
         """Information about the Script Extender for this game."""
@@ -232,6 +291,12 @@ class GameInfo(object):
         # A list of xSE plugins that fix the plugin/BSA handle problem. Empty
         # if that does not apply to this game.
         limit_fixer_plugins = []
+
+        @classmethod
+        def exe_path_sc(cls):
+            from .. import bass
+            exe_xse = bass.dirs['app'].join(cls.exe)
+            return exe_xse if exe_xse.is_file() else None
 
     class Sd(object):
         """Information about Script Dragon for this game."""
@@ -326,12 +391,14 @@ class GameInfo(object):
         canReadBasic = True
         # Advanced editing
         canEditMore = False
-        # Save file extension
-        ext = u'.ess'
         # If True, then this game will reliably and safely remove a missing
         # master from an existing save if you just load the game without that
         # master
         can_safely_remove_masters = False
+        # Save file extension
+        ext = u'.ess'
+        # Whether or not this game has screenshots in its savegames
+        has_screenshots = True
 
     class Bsa(object):
         """Information about the BSAs (Bethesda Archives) used by this game."""
@@ -372,10 +439,10 @@ class GameInfo(object):
     class Xe(object):
         """Information about xEdit for this game."""
         # The name that xEdit has for this game, e.g. 'TES5Edit' for Skyrim
-        full_name = u'xEdit'
+        full_name = 'xEdit'
         # A prefix for settings keys related to this version of xEdit (e.g.
         # expert mode)
-        xe_key_prefix = u''
+        xe_key_prefix = ''
 
     class Bain(object):
         """Information about what BAIN should do for this game. All strings in
@@ -421,6 +488,7 @@ class GameInfo(object):
 
     # Plugin format stuff
     class Esp(object):
+        """Information about plugins."""
         # WB can create Bashed Patches
         canBash = False
         # WB can edit basic info in the main header record - generally has
@@ -431,10 +499,6 @@ class GameInfo(object):
         # background color if that is the case. Needs meaningful information in
         # the DATA subrecords.
         check_master_sizes = False
-        # If True, then plugins with at least one master can use the
-        # 0x000-0x800 range for their own records.
-        # If False, that range is reserved for hardcoded engine records.
-        expanded_plugin_range = False
         # If True, then plugins with a .esm extension will always be treated
         # as having the ESM flag set and plugins with a .esl extension will
         # always be treated as having the ESL and ESM flags set
@@ -443,7 +507,7 @@ class GameInfo(object):
         # the ESM flag to plugins and discard it when removing the ESM flag.
         generate_temp_child_onam = False
         # The maximum number of masters that a plugin can have for this game.
-        master_limit = 255 # 256 - 1 for the plugin itself
+        master_limit = 255
         # Maximum length of the Author string in the plugin header
         max_author_length = 511 # 512 - 1 for the null terminator
         # Maximum length of the Description string in the plugin header
@@ -451,6 +515,13 @@ class GameInfo(object):
         # The maximum number of entries inside a leveled list for this game.
         # Zero means no limit.
         max_lvl_list_size = 0
+        # Determines the range of object indices that plugins are allowed to
+        # use. See ObjectIndexRange for more details
+        object_index_range = ObjectIndexRange.RESERVED
+        # If object_index_range is ObjectIndexRange.EXPANDED_CONDITIONAL, this
+        # indicates the minimum header version required to use the expanded
+        # range
+        object_index_range_expansion_ver = 0.0
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
         # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
@@ -473,7 +544,7 @@ class GameInfo(object):
     #--Game ESM/ESP/BSA files
     ## These are all of the ESM,ESP,and BSA data files that belong to the game
     ## These filenames need to be in lowercase,
-    bethDataFiles = set()  # initialize with literal
+    bethDataFiles = set()
 
     # Known record types - maps integers from the save format to human-readable
     # names for the record types. Used in save editing code.
@@ -482,7 +553,7 @@ class GameInfo(object):
     # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
     # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
     # deleted) to OrderedDicts that implement the actual tweaks. See
-    # DefaultIniFile.__init__ for how the tweaks are parsed.
+    # DefaultIniInfo.__init__ for how the tweaks are parsed.
     default_tweaks = {}
 
     # Set in game/*/vanilla_files.py, this is a set listing every file that
@@ -500,7 +571,8 @@ class GameInfo(object):
 
     @fast_cached_property
     def modding_esm_size(self):
-        if self.displayName != 'Oblivion': # hack to avoid a bunch of overrides
+        # Hack to avoid a bunch of overrides
+        if self.display_name != 'Oblivion':
             return FNDict()
         b, e = self.master_file.rsplit('.', 1)
         return FNDict({
@@ -566,9 +638,5 @@ class GameInfo(object):
                 any(test_path.join(p).exists()
                 for p in cls.game_detect_excludes))
 
-# Constants -------------------------------------------------------------------
-# Files shared by versions of games that are published on the Windows Store
-WS_COMMON_FILES = {'appxmanifest.xml'}
-
-# The GameInfo-derived type used for this game
+# The GameInfo-derived type used for this game, to be set by each game package
 GAME_TYPE: type[GameInfo] | dict[str, type[GameInfo]]

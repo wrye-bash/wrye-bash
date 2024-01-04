@@ -30,6 +30,7 @@ from .bass import dirs
 from .bolt import AFile, CIstr, DefaultLowerDict, ListInfo, LowerDict, \
     OrderedLowerDict, decoder, deprint, getbestencoding
 from .exception import CancelError, FailedIniInferError, SkipError
+from .wbtemp import TempFile
 
 _comment_start_re = re.compile(r'^[^\S\r\n]*[;#][^\S\r\n]*')
 
@@ -45,8 +46,9 @@ def _to_lower(ini_settings):
         return ret_type(input_dict)
     return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
 
-def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
-    """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
+def get_ini_type_and_encoding(abs_ini_path, fallback_type=None) -> tuple[
+        type['IniFileInfo'], str]:
+    """Return ini type (one of IniFileInfo, OBSEIniFile) and inferred encoding
     of the file at abs_ini_path. It reads the file and performs heuristics
     for detecting the encoding, then decodes and applies regexes to every
     line to detect the ini type. Those operations are somewhat expensive, so
@@ -65,7 +67,7 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
     detected_encoding, _confidence = getbestencoding(content)
     # If the game does not have OBSE INIs, just the encoding suffices
     if not bush.game.Ini.has_obse_inis:
-        return IniFile, detected_encoding
+        return IniFileInfo, detected_encoding
     ##: Add a 'return encoding' param to decoder to avoid the potential double
     # chardet here!
     decoded_content = decoder(content, detected_encoding)
@@ -84,7 +86,7 @@ def get_ini_type_and_encoding(abs_ini_path, fallback_type=None):
 
 def _scan_ini(lines, scan_comments=False):
     count = Counter()
-    for ini_type in (IniFile, OBSEIniFile):
+    for ini_type in (IniFileInfo, OBSEIniFile):
         comment_re = _comment_start_re if scan_comments else ini_type.reComment
         for line in lines:
             line_stripped = comment_re.sub('', line).strip()
@@ -96,7 +98,7 @@ def _scan_ini(lines, scan_comments=False):
                     break
     return count.most_common(1)[0][0] if count else None
 
-class AIniFile(ListInfo):
+class AIniInfo(ListInfo):
     """ListInfo displayed on the ini tab - currently default tweaks or
     ini files, either standard or xSE ones."""
     reComment = re.compile('[;#].*')
@@ -148,17 +150,16 @@ class AIniFile(ListInfo):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
-        Only used in get_ci_settings should be bypassed for DefaultIniFile.
+        Only used in get_ci_settings should be bypassed for ADefaultIniInfo.
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
         raise NotImplementedError
 
-    def read_ini_content(self, as_unicode=True):
+    def read_ini_content(self, as_unicode=True) -> list[str] | bytes:
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
-        Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[str]|bytes"""
+        Note we strip line endings at the end of the line in unicode mode."""
         raise NotImplementedError
 
     def analyse_tweak(self, tweak_file):
@@ -190,7 +191,7 @@ class AIniFile(ListInfo):
             maDeletedSetting = reDeleted.match(line)
             maSection = reSection.match(line)
             maSetting = reSetting.match(line)
-            deleted = False
+            is_deleted = False
             setting = None
             value = u''
             status = 0
@@ -221,15 +222,15 @@ class AIniFile(ListInfo):
                     status = 10
                 elif section in ci_deletedSettings and setting in ci_deletedSettings[section]:
                     lineNo = ci_deletedSettings[section][setting]
-                deleted = True
+                is_deleted = True
             else:
                 if reComment.sub('', line).strip():
                     status = -10
             lines.append((line, section, setting, value, status, lineNo,
-                          deleted))
+                          is_deleted))
         return lines
 
-class IniFile(AIniFile, AFile):
+class IniFileInfo(AIniInfo, AFile):
     """Any old ini file."""
     __empty_settings = LowerDict()
     _ci_settings_cache_linenum = __empty_settings
@@ -244,7 +245,7 @@ class IniFile(AIniFile, AFile):
         self.updated = False # notify iniInfos which should clear this flag
 
     # AFile overrides ---------------------------------------------------------
-    def do_update(self, raise_on_error=False, itsa_ghost=None):
+    def do_update(self, raise_on_error=False, **kwargs):
         try:
             # do_update will return True if the file was deleted then restored
             self.updated |= super().do_update(raise_on_error=True)
@@ -260,16 +261,12 @@ class IniFile(AIniFile, AFile):
             if raise_on_error: raise
             return update
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super()._reset_cache(stat_tuple, load_cache)
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
         self._ci_settings_cache_linenum = self.__empty_settings
 
-    # AIniFile overrides ------------------------------------------------------
+    # AIniInfo overrides ------------------------------------------------------
     def read_ini_content(self, as_unicode=True):
-        """Return a list of the decoded lines in the ini file, if as_unicode
-        is True, or the raw bytes in the ini file, if as_unicode is False.
-        Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[str]|bytes"""
         try:
             with self.abs_path.open(u'rb') as f:
                 content = f.read()
@@ -308,7 +305,6 @@ class IniFile(AIniFile, AFile):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
-        Only used in get_ci_settings should be bypassed for DefaultIniFile.
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
@@ -343,11 +339,12 @@ class IniFile(AIniFile, AFile):
         return ci_settings, ci_deleted_settings, isCorrupted
 
     # Modify ini file ---------------------------------------------------------
-    def _open_for_writing(self): # preserve windows EOL
+    def _open_for_writing(self, temp_path): # preserve windows EOL
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
-        to out_encoding."""
-        return open(self.abs_path.temp, u'w', encoding=self.out_encoding)
+        to out_encoding. temp_path must point to some temporary file created
+        via TempFile or similar API."""
+        return open(temp_path, 'w', encoding=self.out_encoding)
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
@@ -362,49 +359,49 @@ class IniFile(AIniFile, AFile):
         reDeleted = self.reDeletedSetting
         reSection = self.reSection
         reSetting = self.reSetting
-        #--Read init, write temp
         section = None
         sectionSettings = {}
-        with self._open_for_writing() as tmp_ini:
-            def _add_remaining_new_items():
-                if section in ini_settings: del ini_settings[section]
-                if not sectionSettings: return
-                for sett, val in sectionSettings.items():
-                    tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
-                tmp_ini.write('\n')
-            for line in self.read_ini_content(as_unicode=True):
-                maSection = reSection.match(line)
-                if maSection:
-                    # 'new' entries still to be added from previous section
-                    _add_remaining_new_items()
-                    section = maSection.group(1)  # entering new section
-                    sectionSettings = ini_settings.get(section, {})
-                else:
-                    match_set = reSetting.match(line)
-                    match_del = reDeleted.match(line)
-                    if match := (match_set or match_del):
-                        ##: What about inline comments in deleted lines?
-                        comment = match_set.group(3) if match_set else ''
-                        setting = match.group(1)
-                        if setting in sectionSettings:
-                            value = sectionSettings[setting]
-                            line = self._fmt_setting(setting, value)
-                            if comment:
-                                line += comment # preserve inline comments
-                            del sectionSettings[setting]
-                        elif section in deleted_settings and setting in deleted_settings[section]:
-                            line = f'{self._comment_char}-{line}'
-                tmp_ini.write(f'{line}\n')
-            # This will occur for the last INI section in the ini file
-            _add_remaining_new_items()
-            # Add remaining new entries
-            for section, sectionSettings in list(ini_settings.items()):
+        with TempFile() as tmp_ini_path:
+            with self._open_for_writing(tmp_ini_path) as tmp_ini:
+                def _add_remaining_new_items():
+                    if section in ini_settings: del ini_settings[section]
+                    if not sectionSettings: return
+                    for sett, val in sectionSettings.items():
+                        tmp_ini.write(f'{self._fmt_setting(sett, val)}\n')
+                    tmp_ini.write('\n')
+                for line in self.read_ini_content(as_unicode=True):
+                    maSection = reSection.match(line)
+                    if maSection:
+                        # 'new' entries still to be added from previous section
+                        _add_remaining_new_items()
+                        section = maSection.group(1)  # entering new section
+                        sectionSettings = ini_settings.get(section, {})
+                    else:
+                        match_set = reSetting.match(line)
+                        match_del = reDeleted.match(line)
+                        if match_set_del := (match_set or match_del):
+                            ##: What about inline comments in deleted lines?
+                            comment = match_set.group(3) if match_set else ''
+                            setting = match_set_del.group(1)
+                            if setting in sectionSettings:
+                                value = sectionSettings[setting]
+                                line = self._fmt_setting(setting, value)
+                                if comment:
+                                    line += comment # preserve inline comments
+                                del sectionSettings[setting]
+                            elif (section in deleted_settings and
+                                  setting in deleted_settings[section]):
+                                line = f'{self._comment_char}-{line}'
+                    tmp_ini.write(f'{line}\n')
+                # This will occur for the last INI section in the ini file
+                _add_remaining_new_items()
+                # Add remaining new entries - list() because
                 # _add_remaining_new_items may modify ini_settings
-                if sectionSettings:
-                    tmp_ini.write(f'[{section}]\n')
-                    _add_remaining_new_items()
-        #--Done
-        self.abs_path.untemp()
+                for section, sectionSettings in list(ini_settings.items()):
+                    if sectionSettings:
+                        tmp_ini.write(f'[{section}]\n')
+                        _add_remaining_new_items()
+            self.abs_path.replace_with_temp(tmp_ini_path)
 
     def _fmt_setting(self, setting, value):
         """Format a key-value setting appropriately for the current INI
@@ -435,7 +432,7 @@ class IniFile(AIniFile, AFile):
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
-    def remove_section(self, target_section): # type: (str) -> None
+    def remove_section(self, target_section: str):
         """Removes a section and all its contents from the INI file. Note that
         this will only remove the first matching section. If you want to remove
         multiple, you will have to call this in a loop and check if the section
@@ -445,56 +442,25 @@ class IniFile(AIniFile, AFile):
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing() as out:
-            for line in self.read_ini_content(as_unicode=True):
-                match_section = re_section.match(line)
-                if match_section:
-                    section = match_section.group(1)
-                    # Check if we need to remove this section
-                    if remove_current is None and section.lower() == \
-                            target_section.lower():
-                        # Yes, so start removing every read line
-                        remove_current = True
-                    elif remove_current:
-                        # We've removed the target section, remember that
-                        remove_current = False
-                if not remove_current:
-                    out.write(line + u'\n')
-        self.abs_path.untemp()
+        with TempFile() as out_path:
+            with self._open_for_writing(out_path) as out:
+                for line in self.read_ini_content(as_unicode=True):
+                    match_section = re_section.match(line)
+                    if match_section:
+                        section = match_section.group(1)
+                        # Check if we need to remove this section
+                        if (remove_current is None and
+                                section.lower() == target_section.lower()):
+                            # Yes, so start removing every read line
+                            remove_current = True
+                        elif remove_current:
+                            # We've removed the target section, remember that
+                            remove_current = False
+                    if not remove_current:
+                        out.write(line + '\n')
+            self.abs_path.replace_with_temp(out_path)
 
-class DefaultIniFile(AIniFile):
-    """A default ini tweak - hardcoded."""
-
-    def __init__(self, default_ini_name, settings_dict):
-        super().__init__(default_ini_name)
-        #--Settings cache
-        self.lines, current_line = [], 0
-        self._ci_settings_cache_linenum = OrderedLowerDict()
-        for sect, setts in settings_dict.items():
-            self.lines.append(f'[{sect}]')
-            self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
-            current_line += 1
-            for sett, val in setts.items():
-                self.lines.append(f'{sett}={val}')
-                self._ci_settings_cache_linenum[sect][sett] = (
-                    val, current_line)
-                current_line += 1
-
-    def get_ci_settings(self, with_deleted=False):
-        if with_deleted:
-            return self._ci_settings_cache_linenum, self._deleted_cache
-        return self._ci_settings_cache_linenum
-
-    def read_ini_content(self, as_unicode=True):
-        """Note as_unicode=True strips line endings as opposed to parent -
-        this is wanted and does not harm in this case. Note also, the binary
-        instantiation of the default ini is with windows EOL."""
-        if as_unicode:
-            return iter(self.lines) # do not modify return value directly
-        # Add a newline at the end of the INI
-        return b'\r\n'.join(li.encode('ascii') for li in self.lines) + b'\r\n'
-
-class TomlFile(IniFile):
+class TomlFile(IniFileInfo):
     """A TOML file. Encoding is always UTF-8 (demanded by spec). Note that
     ini_files only supports INI-like TOML files right now. That means TOML
     files must be tables of key-value pairs and the values may not be arrays or
@@ -510,7 +476,7 @@ class TomlFile(IniFile):
     def _fmt_setting(self, setting, value):
         return f'{setting} = {value}'
 
-class OBSEIniFile(IniFile):
+class OBSEIniFile(IniFileInfo):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
     reDeleted = re.compile(r';-(\w.*?)$')
@@ -543,9 +509,9 @@ class OBSEIniFile(IniFile):
     @classmethod
     def _parse_obse_line(cls, line):
         for regex, sectionKey, format_string in cls._regex_tuples:
-            match = regex.match(line)
-            if match:
-                return match, sectionKey, format_string
+            ma_obse = regex.match(line)
+            if ma_obse:
+                return ma_obse, sectionKey, format_string
         return None, None, None
 
     def _get_ci_settings(self, tweakPath):
@@ -563,10 +529,10 @@ class OBSEIniFile(IniFile):
                 else:
                     settings_dict = ini_settings
                 stripped = reComment.sub(u'',line).strip()
-                match, section_key, _fmt = self._parse_obse_line(stripped)
-                if match:
-                    settings_dict[section_key][match.group(1)] = match.group(
-                        2).strip(), i
+                ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
+                if ma_obse:
+                    settings_dict[section_key][ma_obse.group(1)] = (
+                        ma_obse.group(2).strip(), i)
         return ini_settings, deleted_settings, False
 
     def analyse_tweak(self, tweak_file):
@@ -581,9 +547,9 @@ class OBSEIniFile(IniFile):
             else: stripped = line
             stripped = reComment.sub(u'',stripped).strip()
             # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-            match, section, _fmt = self._parse_obse_line(stripped)
-            if match:
-                groups = match.groups()
+            ma_obse, section, _fmt = self._parse_obse_line(stripped)
+            if ma_obse:
+                groups = ma_obse.groups()
             else:
                 if stripped:
                     # Some other kind of line
@@ -618,42 +584,48 @@ class OBSEIniFile(IniFile):
         deleted_settings = _to_lower(deleted_settings or {})
         reDeleted = self.reDeleted
         reComment = self.reComment
-        with self._open_for_writing() as tmpFile:
-            # Modify/Delete existing lines
-            for line in self.read_ini_content(as_unicode=True):
-                # if not line.rstrip(): continue
-                # Test if line is currently deleted
-                maDeleted = reDeleted.match(line)
-                if maDeleted: stripped = maDeleted.group(1)
-                else: stripped = line
-                # Test what kind of line it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-                stripped = reComment.sub(u'', stripped).strip()
-                match, section_key, format_string = self._parse_obse_line(
-                    stripped)
-                if match:
-                    setting = match.group(1)
-                    # Apply the modification
-                    if section_key in ini_settings and setting in ini_settings[section_key]:
-                        # Un-delete/modify it
-                        value = ini_settings[section_key][setting]
-                        del ini_settings[section_key][setting]
-                        if isinstance(value, bytes):
-                            raise RuntimeError(u'Do not pass bytes into '
-                                               u'saveSettings!')
-                        if isinstance(value, str) and value[-1:] == u'\n':
-                            line = value.rstrip(u'\n\r') # removes just \n too
-                        else:
-                            line = format_string % (setting, value)
-                    elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
-                        # It isn't deleted, but we want it deleted
-                        line = u';-' + line
-                tmpFile.write(line + u'\n')
-            # Add new lines
-            for sectionKey in ini_settings:
-                section = ini_settings[sectionKey]
-                for setting in section:
-                    tmpFile.write(section[setting])
-        self.abs_path.untemp()
+        with TempFile() as tmp_file_path:
+            with self._open_for_writing(tmp_file_path) as tmpFile:
+                # Modify/Delete existing lines
+                for line in self.read_ini_content(as_unicode=True):
+                    # if not line.rstrip(): continue ##: ?
+                    # Test if line is currently deleted
+                    maDeleted = reDeleted.match(line)
+                    if maDeleted: stripped = maDeleted.group(1)
+                    else: stripped = line
+                    # Test what kind of line it is - 'set' or 'setGS' or
+                    # 'SetNumericGameSetting'
+                    stripped = reComment.sub('', stripped).strip()
+                    ma_obse, section_key, format_string = \
+                        self._parse_obse_line(stripped)
+                    if ma_obse:
+                        setting = ma_obse.group(1)
+                        # Apply the modification
+                        if (section_key in ini_settings and
+                                setting in ini_settings[section_key]):
+                            # Un-delete/modify it
+                            value = ini_settings[section_key][setting]
+                            del ini_settings[section_key][setting]
+                            if isinstance(value, bytes):
+                                raise RuntimeError('Do not pass bytes into '
+                                                   'saveSettings!')
+                            if isinstance(value, str) and value[-1:] == '\n':
+                                # Handle all newlines, this removes just \n too
+                                line = value.rstrip('\n\r')
+                            else:
+                                line = format_string % (setting, value)
+                        elif (not maDeleted and
+                              section_key in deleted_settings and
+                              setting in deleted_settings[section_key]):
+                            # It isn't deleted, but we want it deleted
+                            line = f';-{line}'
+                    tmpFile.write(f'{line}\n')
+                # Add new lines
+                for sectionKey in ini_settings:
+                    section = ini_settings[sectionKey]
+                    for setting in section:
+                        tmpFile.write(section[setting])
+            self.abs_path.replace_with_temp(tmp_file_path)
 
     def applyTweakFile(self, tweak_lines):
         reDeleted = self.reDeleted
@@ -671,46 +643,47 @@ class OBSEIniFile(IniFile):
                 settings_ = ini_settings
             # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
             stripped = reComment.sub(u'',stripped).strip()
-            match, section_key, _fmt = self._parse_obse_line(stripped)
-            if match:
-                setting = match.group(1)
+            ma_obse, section_key, _fmt = self._parse_obse_line(stripped)
+            if ma_obse:
+                setting = ma_obse.group(1)
                 # Save the setting for applying
                 if line[-1] != u'\n': line += u'\n'
                 settings_[section_key][setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
-    def remove_section(self, target_section, do_backup=False):
-        # type: (str, bool) -> None
+    def remove_section(self, target_section: str):
         re_comment = self.reComment
         re_section = self.reSection
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing() as out:
-            for line in self.read_ini_content(as_unicode=True):
-                stripped = re_comment.sub(u'', line).strip()
-                # Try checking if it's an OBSE line first
-                _match, section, _fmt = self._parse_obse_line(stripped)
-                if not section:
-                    # It's not, assume it's a regular line
-                    match_section = re_section.match(stripped)
-                    section = match_section.group(1) if match_section else u''
-                if section:
-                    # Check if we need to remove this section
-                    if remove_current is None and section.lower() == \
-                            target_section.lower():
-                        # Yes, so start removing every read line
-                        remove_current = True
-                    elif remove_current:
-                        # We've removed the target section, remember that
-                        remove_current = False
-                if not remove_current:
-                    out.write(line + u'\n')
-        self.abs_path.untemp(do_backup)
+        with TempFile() as out_path:
+            with self._open_for_writing(out_path) as out:
+                for line in self.read_ini_content(as_unicode=True):
+                    stripped = re_comment.sub('', line).strip()
+                    # Try checking if it's an OBSE line first
+                    _ma_obse, section, _fmt = self._parse_obse_line(stripped)
+                    if not section:
+                        # It's not, assume it's a regular line
+                        match_section = re_section.match(stripped)
+                        section = (match_section.group(1)
+                                   if match_section else '')
+                    if section:
+                        # Check if we need to remove this section
+                        if (remove_current is None and
+                                section.lower() == target_section.lower()):
+                            # Yes, so start removing every read line
+                            remove_current = True
+                        elif remove_current:
+                            # We've removed the target section, remember that
+                            remove_current = False
+                    if not remove_current:
+                        out.write(f'{line}\n')
+            self.abs_path.replace_with_temp(out_path)
 
-class GameIni(IniFile):
+class GameIni(IniFileInfo):
     """Main game ini file. Only use to instantiate bosh.oblivionIni"""
     bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
                       u'..\\obmm\\bsaredirection.bsa'}

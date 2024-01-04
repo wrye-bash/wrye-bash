@@ -49,10 +49,10 @@ There are four main differences between this system and wx's:
 Subscribing:
   To subscribe to an event, simply call subscribe() on the EventHandler
   instance provided by the GUI component you're using. For example:
-    >>> parent = # ...
-    >>> def on_text(new_text):
-    >>>     # do something with new_text here
-    >>> from gui import TextArea
+    >>> parent = None
+    >>> def on_text(new_text: str):
+    >>>     ... # do something with new_text here
+    >>> from Mopy.bash.gui import TextArea
     >>> txt_area = TextArea(parent)
     >>> txt_area.on_text_changed.subscribe(on_text)
   Now, whenever the text changes in txt_area changes, on_text will get called
@@ -108,7 +108,7 @@ Return Values:
        can be canceled, all others will raise a RuntimeError instead."""
 from __future__ import annotations
 
-__author__ = u'Infernio'
+__author__ = 'Infernio'
 
 from enum import Enum
 
@@ -137,16 +137,17 @@ class EventResult(Enum):
     others will raise a RuntimeError instead."""
 
 class _EHPauseSubscription:
-    """Helper for EventHandler.pause_subscription."""
+    """Helper for EventHandler.pause_subscription. Can be used reliably for
+    just **one** listener at a time."""
     def __init__(self, event_handler, listener):
-        self._event_handler = event_handler
+        self._event_handler: EventHandler = event_handler
         self._listener = listener
 
     def __enter__(self):
-        self._event_handler.unsubscribe(self._listener)
+        self._listener_pos = self._event_handler.unsubscribe(self._listener)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._event_handler.subscribe(self._listener)
+        self._event_handler.subscribe(self._listener, _pos=self._listener_pos)
 
 class EventHandler(object):
     """This class implements the actual event processing, catching native wx
@@ -196,7 +197,7 @@ class EventHandler(object):
         # Need to propagate it up the wx chain
         event.Skip()
 
-    def subscribe(self, listener):
+    def subscribe(self, listener, *, _pos=None):
         """Subscribes the specified listener to this event handler. The order
         in which the listeners are processed is guaranteed to be the same as
         the order in which they subscribed.
@@ -204,8 +205,11 @@ class EventHandler(object):
         :param listener: The listener to subscribe."""
         if listener in self._listeners:
             raise ListenerBound(
-                u'Listener %s already bound on %r' % (listener, self))
-        self._listeners.append(listener)
+                f'Listener {listener} already bound on {self!r}')
+        if _pos is None:
+            self._listeners.append(listener)
+        else:
+            self._listeners.insert(_pos, listener)
         self._update_wx_binding()
 
     def unsubscribe(self, listener):
@@ -213,11 +217,13 @@ class EventHandler(object):
 
         :param listener: The listener to unsubscribe."""
         try:
+            pos = self._listeners.index(listener)
             self._listeners.remove(listener)
         except ValueError:
             raise UnknownListener(
-                u'Listener %s not subscribed on %r' % (listener, self))
+                f'Listener {listener} not subscribed on {self!r}')
         self._update_wx_binding()
+        return pos
 
     def pause_subscription(self, listener):
         """Unsubscribe to the specified listener for this event handler,
@@ -244,5 +250,4 @@ class EventHandler(object):
             self._is_bound = False
 
     def __repr__(self):
-        return u'%s(%s, %s)' % (
-            type(self).__name__, self._wx_owner, self._wx_event_id)
+        return f'{type(self).__name__}({self._wx_owner}, {self._wx_event_id})'

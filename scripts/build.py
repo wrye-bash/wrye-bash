@@ -78,7 +78,7 @@ from bash import bass
 # distributable right now
 NOT_WINDOWS = os.name != 'nt'
 
-NSIS_VERSION = '3.08'
+NSIS_VERSION = '3.09'
 if NOT_WINDOWS:
     EXE_7z = '7z'
 else:
@@ -166,11 +166,11 @@ def get_version_info(version):
     if re.match(production_regex, version) is not None:
         file_version = f'{version}.0.0.0'
     else:
-        match = re.match(nightly_regex, version)
-        assert match is not None
-        timestamp = match.group(2)
-        file_version = f'{match.group(1)}.{timestamp[:4]}.{timestamp[4:8]}.' \
-                       f'{timestamp[8:12]}'
+        ma_version = re.match(nightly_regex, version)
+        assert ma_version is not None
+        timestamp = ma_version.group(2)
+        file_version = (f'{ma_version.group(1)}.{timestamp[:4]}.'
+                        f'{timestamp[4:8]}.{timestamp[8:12]}')
     LOGGER.debug(f'Using file version: {file_version}')
     return file_version
 

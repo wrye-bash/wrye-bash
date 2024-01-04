@@ -26,26 +26,25 @@ implementations for the current OS."""
 from __future__ import annotations
 
 import platform
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
+from typing import Any
 
 # First import the shared API
 from .common import *
 from .common import file_operation as _default_file_operation
-from ..bolt import os_name, Path
+from ..bolt import os_name, GPath_no_norm, Path, GPath, deprint
+from ..wbtemp import cleanup_temp_dir, new_temp_dir
 
 _TShellWindow = '_AComponent | _Window | None'
+_ConfirmationPrompt = Callable[[Any, str, str], bool] | None
 
 # Then check which OS we are running on and import *only* from there
-op_system = platform.system()
-if op_system == u'Windows':
-    from .windows import *
-elif op_system == u'Linux':
-    from .linux import *
-elif op_system == u'Darwin':
-    # let's not have a separate file yet
-    from .linux import *
-else:
-    raise ImportError(f'Wrye Bash does not support {op_system} yet')
+match platform.system():
+    case 'Windows': from .windows import *
+    case 'Linux': from .linux import *
+    case 'Darwin': from .linux import * # let's not have a separate file yet
+    case _: raise ImportError(f'Wrye Bash does not support '
+                              f'{platform.system()} yet')
 
 def _resolve(parent: _TShellWindow):
     """Resolve a parent window to a wx.Window for ifileoperation"""
@@ -57,12 +56,13 @@ def _resolve(parent: _TShellWindow):
 # Higher level APIs using imported OS-specific ones ---------------------------
 def to_os_path(questionable_path: os.PathLike | str) -> Path | None:
     """Convenience method for converting a path of unknown origin to a path
-    compatible with this OS/FS. See normalize_ci_path and convert_separators
+    compatible with this OS/FS. See canonize_ci_path and convert_separators
     for more information."""
-    return normalize_ci_path(convert_separators(os.fspath(questionable_path)))
+    return canonize_ci_path(convert_separators(os.fspath(questionable_path)))
 
-def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
-                ask_confirm=False, recycle=False, __shell=True):
+def shellDelete(files: Iterable[Path], parent: _TShellWindow = None, *,
+                ask_confirm: _ConfirmationPrompt=None, recycle=False,
+                __shell=True):
     operate = file_operation if __shell else _default_file_operation
     srcs_dsts = dict.fromkeys(files, GPath(''))
     try:
@@ -75,23 +75,23 @@ def shellDelete(files: Iterable[Path], parent: _TShellWindow = None,
             return None
         raise
 
-def shellDeletePass(node: Path, parent: _TShellWindow = None, __shell= True):
+def shellDeletePass(node: Path, parent: _TShellWindow = None, *, __shell=True):
     """Delete tmp dirs/files - ignore errors (but log them)."""
     if node.exists():
-        try: shellDelete([node], parent=parent, __shell=__shell)
+        try: shellDelete([node], parent, __shell=__shell)
         except OSError: deprint(f'Error deleting {node}:', traceback=True)
 
-def shellMove(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
-        ask_confirm: bool = False, allow_undo: bool = False,
-        auto_rename: bool = False, silent: bool = False, __shell: bool = True):
+def shellMove(sources_dests: dict[Path, Path | Iterable[Path]],
+        parent: _TShellWindow = None, *, ask_confirm: _ConfirmationPrompt=None,
+        allow_undo=False, auto_rename=False, silent=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.MOVE, sources_dests,
         parent=_resolve(parent), ask_confirm=ask_confirm, allow_undo=allow_undo,
         rename_on_collision=auto_rename, silent=silent)
 
-def shellCopy(sources_dests: dict[Path, Path], parent: _TShellWindow = None,
-        ask_confirm: bool = False, allow_undo: bool = False,
-        auto_rename: bool = False, __shell: bool = True):
+def shellCopy(sources_dests: dict[Path, Path | Iterable[Path]],
+        parent: _TShellWindow = None, *, ask_confirm: _ConfirmationPrompt=None,
+        allow_undo=False, auto_rename=False, __shell=True):
     operate = file_operation if __shell else _default_file_operation
     return operate(FileOperationType.COPY, sources_dests,
         allow_undo=allow_undo, ask_confirm=ask_confirm,
@@ -117,9 +117,9 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
             # to shellMove if UAC or something else stopped it
             try:
                 folder.makedirs()
-            except:
+            except: ##: tighten
                 # Failed, try the UAC workaround
-                tmpDir = Path.tempDir()
+                tmpDir = GPath_no_norm(new_temp_dir())
                 tempDirs.append(tmpDir)
                 toMake = []
                 while not folder.exists() and folder != folder.head:
@@ -137,4 +137,4 @@ def shellMakeDirs(dirs: Iterable[Path], parent: _TShellWindow = None):
             shellMove(move_dirs, parent=parent)
     finally:
         for tmpDir in tempDirs:
-            tmpDir.rmtree(safety=tmpDir.stail)
+            cleanup_temp_dir(tmpDir)

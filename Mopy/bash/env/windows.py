@@ -24,17 +24,22 @@
 
 from __future__ import annotations
 
+import ctypes
 import datetime
 import functools
 import json
 import os
 import re
+import shlex
 import sys
+import webbrowser
 import winreg
-from ctypes import ARRAY, POINTER, WINFUNCTYPE, Structure, Union, byref, \
+from collections.abc import Iterable
+from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, \
     c_int, c_long, c_longlong, c_uint, c_ulong, c_ushort, c_void_p, c_wchar, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
+from subprocess import Popen
 from uuid import UUID
 
 try:
@@ -45,12 +50,15 @@ except ImportError:
 import win32api
 import win32com.client as win32client
 import win32gui
+from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
-    _LegacyWinAppInfo, _LegacyWinAppVersionInfo
+    _LegacyWinAppInfo, _LegacyWinAppVersionInfo, _parse_steam_manifests, \
+    _AppLauncher, set_cwd, _parse_version_string
 from .common import file_operation as _default_file_operation
 # some hiding as pycharm is confused in __init__.py by the import *
-from ..bolt import GPath as _GPath
+from ..bolt import GPath as _GPath, top_level_files, undefinedPath
+from ..bolt import GPath_no_norm as _GPath_no_norm
 from ..bolt import Path as _Path
 from ..bolt import deprint as _deprint
 from ..bolt import unpack_int as _unpack_int
@@ -67,10 +75,10 @@ except ImportError:
     pass # We'll raise an error in bash.py
 from .common import FileOperationType, _StrPath
 
-def file_operation(operation: str | FileOperationType,
-        sources_dests: dict[_StrPath, _StrPath], allow_undo: bool = True,
-        ask_confirm: bool = True, rename_on_collision: bool = False,
-        silent: bool = False, parent=None) -> dict[str, str]:
+def file_operation(operation: FileOperationType,
+        sources_dests: dict[_StrPath, _StrPath | Iterable[_StrPath]],
+        allow_undo=True, ask_confirm=None, rename_on_collision=False,
+        silent=False, parent=None) -> dict[str, str]:
     """file_operation API. Performs a filesystem operation on the specified
     files using the Windows API.
 
@@ -82,15 +90,18 @@ def file_operation(operation: str | FileOperationType,
           anything.
         - For FileOperationType.COPY, MOVE: destinations should be the path
           to the full destination name (not the destination containing
-          directory).
+          directory). The destination may be an iterable, in which case the
+          file is copied to multiple targets (with the last copy being a move,
+          for MOVE).
         - For FileOperationType.RENAME: destinations should be file names only,
           without directories.
         Destinations may be anythin supporting the os.PathLike interface: str,
         bolt.Path, pathlib.Path, etc).
     :param allow_undo: If possible, preserve undo information so the operation
         can be undone. For deletions, this will attempt to use the recylce bin.
-    :param ask_confirm: If True, responds to any OS dialog boxes with "Yes to
-        All".
+    :param ask_confirm: If False, responds to any OS dialog boxes with "Yes to
+        All". Was always True (or askYes) so made it dumb till we decide what
+        to do - note `silent` is unused in common.file_operation
     :param rename_on_collision: If True, automatically renames files on a move
         or copy when collisions occcur.
     :param silent: If True, do not display progress dialogs.
@@ -101,9 +112,9 @@ def file_operation(operation: str | FileOperationType,
     # Options for the file operation
     op_flgs = FileOperationFlags.NO_CONFIRM_MKDIR
     if allow_undo: op_flgs |= FileOperator.UNDO_FLAGS
-    if not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
+    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS # sets NO_CONFIMATION
+    elif not ask_confirm: op_flgs |= FileOperationFlags.NO_CONFIMATION
     if rename_on_collision: op_flgs |= FileOperationFlags.RENAMEONCOLLISION
-    if silent: op_flgs |= FileOperator.FULL_SILENT_FLAGS
     try:
         with FileOperator(parent, op_flgs) as fo:
             # Queue the operations
@@ -114,12 +125,21 @@ def file_operation(operation: str | FileOperationType,
                     except FileNotFoundError:
                         pass
             elif operation in (FileOperationType.MOVE, FileOperationType.COPY):
-                queue_it =  fo.move_file if operation == FileOperationType.MOVE else fo.copy_file
-                for source, target in sources_dests.items():
-                    # Need to get destination directory, name for these operations
-                    target_dir = os.path.dirname(target)
-                    target_name = os.path.basename(target)
-                    queue_it(source, target_dir, target_name)
+                is_move = operation is FileOperationType.MOVE
+                wanted_op = fo.move_file if is_move else fo.copy_file
+                for source, targets in sources_dests.items():
+                    if isinstance(targets, (str, os.PathLike)):
+                        targets = [targets]
+                    for i, target in enumerate(targets):
+                        queue_it = wanted_op
+                        if is_move and i + 1 < len(targets):
+                            # If we're moving, all but the last operation needs
+                            # to be a copy
+                            queue_it = fo.copy_file
+                        # Need to get destination directory, name for these
+                        # operations
+                        target_dir, target_name = os.path.split(target)
+                        queue_it(source, target_dir, target_name)
             elif operation == FileOperationType.RENAME:
                 for source, target in sources_dests.items():
                     fo.rename_file(source, os.fspath(target))
@@ -133,9 +153,9 @@ def file_operation(operation: str | FileOperationType,
     except ifileoperation.errors.InterfaceNotImplementedError as e:
         # Most likely due to running on WINE
         import warnings
-        warnings.warn(f'Exception in ifileoperation: {e}. If you are running on'
-            ' WINE this is expected, otherwise please report this issue. '
-            'Falling back to standard library implementation.')
+        warnings.warn(f'Exception in ifileoperation: {e}. If you are running '
+            f'on WINE this is expected, otherwise please report this issue. '
+            f'Falling back to standard library implementation.')
         return _default_file_operation(operation, sources_dests, allow_undo,
             ask_confirm, rename_on_collision, silent,)
     # Filter out deletions:
@@ -165,8 +185,8 @@ GOOD_EXITS                      = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 _re_env = re.compile(r'%(\w+)%', re.U)
 
-def _subEnv(match):
-    env_var = match.group(1).upper()
+def _subEnv(ma_env):
+    env_var = ma_env.group(1).upper()
     # NOTE: On Python 3, this would be better as a try...except KeyError,
     # then raise BoltError(...) from None
     env_val = os.environ.get(env_var, None)
@@ -213,56 +233,21 @@ def _get_default_app_icon(idex, target):
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
-            icon = filedata
+            icon_path = _GPath(filedata)
         else:
-            icon, idex = filedata.split(u',')
-            icon = os.path.expandvars(icon)
-        if not os.path.isabs(icon):
+            icon_path, idex = filedata.split(',')
+            icon_path = os.path.expandvars(icon_path)
+        if not os.path.isabs(icon_path):
             # Get the correct path to the dll
             for dir_ in os.environ[u'PATH'].split(u';'):
-                test = os.path.join(dir_, icon)
+                test = os.path.join(dir_, icon_path)
                 if os.path.exists(test):
-                    icon = test
+                    icon_path = _GPath(test)
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
         _deprint(f'Error finding icon for {target}:', traceback=True)
-        icon = u'not\\a\\path'
-    return icon, idex
-
-def _get_app_links(apps_dir):
-    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
-
-    :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a dictionary of shortcut properties tuples keyed by the
-    absolute Path of the Apps/.lnk shortcut
-    """
-    if win32client is None: return {}
-    links = {}
-    try:
-        sh = win32client.Dispatch(u'WScript.Shell')
-        for lnk in apps_dir.ilist():
-            lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.is_file():
-                shortcut = sh.CreateShortCut(lnk.s)
-                shortcut_descr = shortcut.Description
-                if not shortcut_descr:
-                    shortcut_descr = u' '.join((_(u'Launch'), lnk.sbody))
-                links[lnk] = (shortcut.TargetPath, shortcut.IconLocation,
-                              # shortcut.WorkingDirectory, shortcut.Arguments,
-                              shortcut_descr)
-    except:
-        _deprint(u'Error initializing links:', traceback=True)
-    return links
-
-def _should_ignore_ver(test_ver):
-    """
-    Small helper method to determine whether or not a version should be
-    ignored. Versions are ignored if they are 1.0.0.0 or 0.0.0.0.
-
-    :param test_ver: The version to test. A tuple containing 4 integers.
-    :return: True if the specified versiom should be ignored.
-    """
-    return test_ver == (1, 0, 0, 0) or test_ver == (0, 0, 0, 0)
+        icon_path = undefinedPath
+    return icon_path, idex
 
 def _query_string_field_version(file_name, version_prefix):
     """
@@ -285,14 +270,6 @@ def _query_string_field_version(file_name, version_prefix):
     ver_query = f'\\StringFileInfo\\{lang:04X}{codepage:04X}\\{version_prefix}'
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
     return _parse_version_string(full_ver)
-
-def _parse_version_string(full_ver):
-    # xSE uses commas in its version fields, so use this 'heuristic'
-    split_on = u',' if u',' in full_ver else u'.'
-    try:
-        return tuple([int(part) for part in full_ver.split(split_on)])
-    except ValueError:
-        return 0, 0, 0, 0
 
 def _query_fixed_field_version(file_name, version_prefix):
     """
@@ -537,6 +514,7 @@ def _find_ws_games() -> dict[str, _Path]:
     # First, look for the libraries
     found_libraries = []
     # Couldn't just return a list of strings of course - thanks pywin32
+    # PY3.12: Use os.listdrives()
     all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
     for curr_drive in all_drives:
         library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
@@ -561,6 +539,12 @@ def _find_ws_games() -> dict[str, _Path]:
                     continue
                 found_ws_games[msgame_name] = ws_content_path
     return found_ws_games
+
+@functools.cache
+def _get_steam_path() -> _Path | None:
+    """Retrieve the path used by Steam."""
+    return get_registry_path(r'Valve\Steam', 'InstallPath',
+        lambda p: p.join('steam.exe').is_file())
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -1041,9 +1025,9 @@ def get_registry_path(subkey, entry, test_path_callback):
             return installPath
     return None
 
-def get_registry_game_paths(submod):
-    """Check registry-supplied game paths for the game detection file(s)."""
-    reg_keys = submod.registry_keys
+def get_gog_game_paths(submod):
+    """Check registry for games with GOG keys."""
+    reg_keys = submod.gog_registry_keys
     if not reg_keys:
         return [] # Game is not detectable via registry
     for subkey, entry in reg_keys:
@@ -1068,18 +1052,45 @@ def get_ws_game_paths(submod):
                 all_ws_games[ws_app_name])
     return []
 
-def get_personal_path():
+def get_steam_game_paths(submod):
+    """Read Steam config information to determine which Steam games are
+    installed and return their install paths."""
+    return [_GPath_no_norm(p) for p in
+            _parse_steam_manifests(submod, _get_steam_path())]
+
+def get_personal_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.Documents)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def get_local_app_data_path():
+def get_local_app_data_path(_submod):
     return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
-def init_app_links(apps_dir, badIcons, iconList):
+def init_app_links(apps_dir) -> list[tuple[_Path, list[_Path] | None, str]]:
+    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
+
+    :param apps_dir: the absolute Path to Mopy/Apps folder
+    :return: a list of shortcut properties (exe_path, icon_path, descr)."""
     init_params = []
-    for path, (target, icon, shortcut_descr) in _get_app_links(
-            apps_dir).items():
+    shortcuts = {}
+    try:
+        try:
+            sh = win32client.Dispatch('WScript.Shell')
+            for lnk in top_level_files(apps_dir):
+                if lnk.fn_ext == '.lnk':
+                    lnk = apps_dir.join(lnk)
+                    shortcut = sh.CreateShortCut(lnk.s)
+                    descr = shortcut.Description
+                    if not descr:
+                        descr = ' '.join((_('Launch'), lnk.sbody))
+                    shortcuts[lnk] = (shortcut.TargetPath,
+                        # shortcut.WorkingDirectory, shortcut.Arguments,
+                        shortcut.IconLocation, descr)
+        except:
+            _deprint('Error initializing shortcuts:', traceback=True)
+    except AttributeError:
+        pass  # win32client is None
+    for path, (target, win_icon_location, shortcut_descr) in shortcuts.items():
         # msi shortcuts: dc0c8de
         if target.lower().find(r'installer\{') != -1:
             target = path
@@ -1087,45 +1098,44 @@ def init_app_links(apps_dir, badIcons, iconList):
             target = _GPath(target)
         if not target.exists(): continue
         # Target exists - extract path, icon and shortcut_descr
-        # First try a custom icon #TODO(ut) docs - also comments methods here!
-        fileName = f'{path.sbody}%i.png'
-        customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
-        if customIcons[0].exists():
-            icon = customIcons
-        # Next try the shortcut specified icon
-        else:
-            icon, idex = icon.split(u',')
-            if icon == u'':
+        # First try a custom icon - undocumented! let it stay so as we will
+        # eventually nuke the Apps folder - we can always allow pointing to
+        # a custom icon once we have a "Launchers" page in settings
+        custom_icon_paths = [apps_dir.join(f'{path.sbody}{x}.png') for x in
+                             (16, 24, 32)]
+        if not custom_icon_paths[0].exists(): # try the shortcut specified icon
+            win_icon_path, idex = win_icon_location.split(',')
+            if win_icon_path == '':
                 if target.cext == u'.exe':
                     if win32gui and win32gui.ExtractIconEx(target.s, -1):
                         # -1 queries num of icons embedded in the exe
-                        icon = target
+                        win_icon_path = target
                     else: # generic exe icon, hardcoded and good to go
-                        icon, idex = os.path.expandvars(
-                            u'%SystemRoot%\\System32\\shell32.dll'), u'2'
+                        win_icon_path, idex = _GPath(os.path.expandvars(
+                            r'%SystemRoot%\System32\shell32.dll')), '2'
                 else:
-                    icon, idex = _get_default_app_icon(idex, target)
-            icon = _GPath(icon)
-            if icon.exists():
-                fileName = u';'.join((icon.s, idex))
-                icon = iconList(_GPath(fileName))
-                # Last, use the 'x' icon
+                    win_icon_path, idex = _get_default_app_icon(idex, target)
             else:
-                icon = badIcons
-        init_params.append((path, icon, shortcut_descr))
+                win_icon_path = _GPath(win_icon_path)
+            if win_icon_path.exists():
+                g_path = _GPath(';'.join((win_icon_path.s, idex)))  ##: huh?
+                custom_icon_paths = [g_path] * 3
+            else:
+                custom_icon_paths = None
+        init_params.append((path, custom_icon_paths, shortcut_descr))
     return init_params
 
-def get_file_version(filename):
-    """
-    Return the version of a dll/exe, using the native win32 functions
+@functools.cache
+def get_file_version(filename, *, __ignored=((1, 0, 0, 0), (0, 0, 0, 0))):
+    """Return the version of a dll/exe, using the native win32 functions
     if available and otherwise a pure python implementation that works
     on Linux.
 
     :param filename: The file from which the version should be read.
-    :return A 4-int tuple, for example (1, 9, 32, 0).
-    """
+    :param __ignored: versions in __ignored wil be ignored
+    :return A 4-int tuple, for example (1, 9, 32, 0)."""
     # If it's a symbolic link (i.e. a user-added app), resolve it first
-    if filename.endswith(u'.lnk'):
+    if filename.lower().endswith('.lnk'):
         sh = win32client.Dispatch(u'WScript.Shell')
         shortcut = sh.CreateShortCut(filename)
         filename = shortcut.TargetPath
@@ -1134,32 +1144,21 @@ def get_file_version(filename):
     # string fields with ProductVersion, so that's the second one. After
     # that, we prefer the fixed one since it's faster.
     curr_ver = _query_fixed_field_version(filename, u'FileVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_string_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     curr_ver = _query_fixed_field_version(filename, u'ProductVersion')
-    if not _should_ignore_ver(curr_ver):
+    if not curr_ver in __ignored:
         return curr_ver
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    _deprint(u'Testing if game folder is UAC-protected')
-    tmpDir = _Path.tempDir()
-    tempFile = tmpDir.join(u'_tempfile.tmp')
-    dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open(u'wb'): pass # create the file
-    ##: ugh
-    from . import shellDeletePass, shellMove
-    try: # to move it into the Data directory
-        shellMove({tempFile: dest}, silent=True)
-    except PermissionError:
+    _deprint('Testing if game folder is UAC-protected')
+    if not os.access(gameDataPath, os.R_OK | os.W_OK):
         global _isUAC
         _isUAC = True
-    finally:
-        shellDeletePass(tmpDir)
-        shellDeletePass(dest)
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
@@ -1234,7 +1233,7 @@ def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
     return p.replace(u'/', u'\\')
 
-def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
+def canonize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     """Alter the case of a case-insensitive path to match directories and files
     actually present in the filesystem, if any. This is basically identical to
     what Wine does when emulating case insensitivity. If this returns None, the
@@ -1242,6 +1241,24 @@ def normalize_ci_path(ci_path: os.PathLike | str) -> _Path | None:
     guarantee that the path exists, so check using exists()/is_file()/etc."""
     # Windows is case-insensitive, nothing to do here
     return _Path(os.fspath(ci_path))
+
+def set_file_hidden(file_to_hide: str | os.PathLike, is_hidden=True):
+    """Mark the file with the specified path as hidden or unhidden, based on
+    the value of is_hidden (True == hidden, False == unhidden)."""
+    path_to_hide = os.fspath(file_to_hide)
+    curr_attr_flags = win32api.GetFileAttributes(path_to_hide)
+    if is_hidden:
+        new_attr_flags = curr_attr_flags | FILE_ATTRIBUTE_HIDDEN
+    else:
+        new_attr_flags = curr_attr_flags & ~FILE_ATTRIBUTE_HIDDEN
+    win32api.SetFileAttributes(path_to_hide, new_attr_flags)
+
+def get_case_sensitivity_advice():
+    """Retrieve information on how to make the Data folder case-insensitive."""
+    return _("On Windows, you can use fsutil.exe to mark the Data folder as "
+             "case-insensitive again. See Microsoft's 'Adjust case "
+             "sensitivity' page (https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity) "
+             "for more information.")
 
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section
@@ -1356,11 +1373,11 @@ class TaskDialog(object):
         self._default_radio = default
         return self
 
-    def set_footer_icon(self, icon):
+    def set_footer_icon(self, footer_icon: str):
         """Set the icon that appears in the footer of the dialog."""
-        self._footer_is_stock = icon in self.stock_icons
+        self._footer_is_stock = footer_icon in self.stock_icons
         self._footer_icon = self.stock_icons[
-            icon] if self._footer_is_stock else icon
+            footer_icon] if self._footer_is_stock else footer_icon
         return self
 
     def set_expander(self, expander_data, expanded=False, at_footer=False):
@@ -1429,7 +1446,7 @@ class TaskDialog(object):
                     additional_flags):
         conf = _TASKDIALOGCONFIG()
 
-        if c_links and getattr(self, u'_buttons', []):
+        if c_links and getattr(self, '_buttons', []):
             additional_flags |= _USE_COMMAND_LINKS
         if centered:
             additional_flags |= _POSITION_RELATIVE_TO_WINDOW
@@ -1449,12 +1466,12 @@ class TaskDialog(object):
         # FIXME(ut): unpythonic, as the builder pattern above
         attributes = dir(self)
 
-        if u'_width' in attributes:
+        if '_width' in attributes:
             conf.cxWidth = self._width
 
         if self._footer:
             conf.pszFooter = self._footer
-        if u'_footer_icon' in attributes:
+        if '_footer_icon' in attributes:
             if self._footer_is_stock:
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
@@ -1467,7 +1484,7 @@ class TaskDialog(object):
                 conf.uMainIcon.hMainIcon = self._main_icon
                 additional_flags |= _USE_HICON_MAIN
 
-        if u'_buttons' in attributes:
+        if '_buttons' in attributes:
             custom_buttons = []
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
@@ -1486,7 +1503,7 @@ class TaskDialog(object):
                     custom_buttons.append((text, default, elevated))
 
             conf.cButtons = len(custom_buttons)
-            array_type = ARRAY(_TASKDIALOG_BUTTON, conf.cButtons)
+            array_type = _TASKDIALOG_BUTTON * conf.cButtons
             c_array = array_type()
             for i, tup in enumerate(custom_buttons):
                 c_array[i] = _TASKDIALOG_BUTTON(i + _BUTTONID_OFFSET, tup[0])
@@ -1497,9 +1514,9 @@ class TaskDialog(object):
             conf.pButtons = c_array
             self.__custom_buttons = custom_buttons
 
-        if u'_radio_buttons' in attributes:
+        if '_radio_buttons' in attributes:
             conf.cRadioButtons = len(self._radio_buttons)
-            array_type = ARRAY(_TASKDIALOG_BUTTON, conf.cRadioButtons)
+            array_type = _TASKDIALOG_BUTTON * conf.cRadioButtons
             c_array = array_type()
             for i, button in enumerate(self._radio_buttons):
                 c_array[i] = _TASKDIALOG_BUTTON(i, button)
@@ -1510,7 +1527,7 @@ class TaskDialog(object):
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
-        if u'_expander_data' in attributes:
+        if '_expander_data' in attributes:
             conf.pszCollapsedControlText = self._expander_data[0]
             conf.pszExpandedControlText = self._expander_data[1]
             conf.pszExpandedInformation = self._expander_data[2]
@@ -1520,16 +1537,16 @@ class TaskDialog(object):
             if self._expands_at_footer:
                 additional_flags |= _EXPAND_FOOTER_AREA
 
-        if u'_cbox_label' in attributes:
+        if '_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
                 additional_flags |= _VERIFICATION_FLAG_CHECKED
 
-        if u'_marquee_progress_bar' in attributes:
+        if '_marquee_progress_bar' in attributes:
             additional_flags |= _SHOW_MARQUEE_PROGRESS_BAR
             additional_flags |= _CALLBACK_TIMER
 
-        if u'_progress_bar' in attributes:
+        if '_progress_bar' in attributes:
             additional_flags |= _SHOW_PROGRESS_BAR
             additional_flags |= _CALLBACK_TIMER
 
@@ -1623,3 +1640,49 @@ class TaskDialog(object):
         windll.user32.SendMessageW(self.__handle, _SETPBARPOS,
                                    self._progress_bar[u'pos'], 0)
 # END TASKDIALOG PART =========================================================
+class AppLauncher(_AppLauncher):
+
+    def launch_app(self, exe_path, exe_args):
+        args = shlex.join(exe_args)
+        try:
+            os.startfile(exe_path.s, arguments=args)
+        except WindowsError as e:
+            if e.winerror != 740: raise
+            # Requires elevated permissions
+            os.startfile(exe_path.s, 'runas', args)
+        except NotImplementedError:
+            self._webbrowser(exe_path)
+
+    @set_cwd
+    def _webbrowser(self, exe_path):
+        webbrowser.open(exe_path.s)
+
+# Exe and shortcut launchers --------------------------------------------------
+class ExeLauncher(AppLauncher):
+
+    @set_cwd
+    def launch_app(self, exe_path, exe_args):
+        try:
+            self._run_exe(exe_path, exe_args)
+        except WindowsError as werr:
+            if werr.winerror != 740: raise
+            os.startfile(exe_path.s, 'runas', shlex.join(exe_args),
+                         exe_path.head.s, 1)
+
+    def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
+        return Popen([exe_path.s, *exe_args], close_fds=True)
+
+class LnkLauncher(AppLauncher):
+
+    def launch_app(self, exe_path, exe_args):
+        webbrowser.open(exe_path.s)
+
+@functools.cache
+def in_mo2_vfs() -> bool:
+    """Test if Wrye Bash appears be running with MO2's virtual filesystem
+    hooked in."""
+    for dll in ('hook.dll', 'usvfs_x64.dll'):
+        dll_handle = ctypes.windll.kernel32.GetModuleHandleW(dll)
+        if dll_handle:
+            return True
+    return False

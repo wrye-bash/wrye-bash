@@ -32,8 +32,7 @@ import operator
 import os
 import re
 
-##: drop the bush import!
-from . import bass, bush
+from . import bass
 from .bolt import FName, LooseVersion, Path, deprint
 from .env import get_file_version
 from .exception import EvalError, FileError
@@ -399,9 +398,9 @@ def _fn_version(file_path: str, expected_ver: str,
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    if file_path.cext in bush.game.espm_extensions:
+    from .bosh import modInfos
+    if modInfos.rightFileType(file_path.s):
         # Read version from the description
-        from .bosh import modInfos
         actual_ver = LooseVersion(
             modInfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):

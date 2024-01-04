@@ -469,6 +469,8 @@ class ScanPatcher(APatcher):
 
     def scanModFile(self, modFile, progress, scan_sigs=None):
         """Add records from modFile."""
+        if keep_ids := self._keep_ids is not None:
+            if not (keep_ids := self._keep_ids): return # won't add to patch
         for top_sig, block in modFile.iter_tops(scan_sigs or self._read_sigs):
             # do not create the patch block till needed
             patchBlock = self.patchFile.tops.get(top_sig)
@@ -476,10 +478,9 @@ class ScanPatcher(APatcher):
             if self._filter_in_patch and patchBlock:
                 rid_rec = ((rid, rec) for rid, rec in rid_rec if
                            rid not in patchBlock.id_records)
-            if self._keep_ids is not None:
-                if not self._keep_ids: return # won't add to patch
+            if keep_ids:
                 rid_rec = ((rid, rec) for rid, rec in rid_rec if
-                           rid in self._keep_ids)
+                           rid in keep_ids)
             try:
                 rid_rec = [(rid, rec) for rid, rec in rid_rec if
                            self._add_to_patch(rid, rec, top_sig)]

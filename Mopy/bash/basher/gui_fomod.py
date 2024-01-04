@@ -25,16 +25,18 @@ __author__ = u'Ganda'
 
 from collections import defaultdict
 
-from .. import balt, bass, bolt, bush
-from ..balt import EnabledLink, Links, colors
-from ..env import get_file_version, get_game_version_fallback, to_os_path
+from .. import bass, bush
+from ..balt import EnabledLink, colors
+from ..bolt import LowerDict, dict_sort, reverse_dict_multi
+from ..env import to_os_path
 from ..fomod import FailedCondition, FomodInstaller, GroupType, \
     InstallerGroup, InstallerOption, InstallerPage, OptionType
 from ..gui import CENTER, TOP, BusyCursor, Button, CancelButton, CheckBox, \
-    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, OkButton, \
-    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
-    TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
-    copy_text_to_clipboard, showWarning
+    DialogWindow, HLayout, HorizontalLine, Label, LayoutOptions, Links, \
+    OkButton, PictureWithCursor, RadioButton, ScrollableWindow, Stretch, \
+    Table, TextArea, VBoxedLayout, VLayout, WizardDialog, WizardPage, \
+    copy_text_to_clipboard, showWarning, StaticBmp
+from ..wbtemp import cleanup_temp_dir
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -43,7 +45,7 @@ class FomodInstallInfo(object):
         # canceled: true if the user canceled or if an error occurred
         self.canceled = False
         # install_files: file->dest mapping of files to install
-        self.install_files = bolt.LowerDict()
+        self.install_files = LowerDict()
         # should_install: boolean on whether to install the files
         self.should_install = True
 
@@ -65,7 +67,7 @@ class ValidatorPopup(DialogWindow):
         super().__init__(parent,
             title=_('FOMOD Validation Failed - %(fomod_title)s') % {
                 'fomod_title': fm_name},
-            sizes_dict=balt.sizes)
+            sizes_dict=bass.settings)
         copy_log_btn = Button(self, _('Copy Log'))
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')
@@ -79,7 +81,7 @@ class ValidatorPopup(DialogWindow):
             'package or have to make guesses as to what was intended.')
         VLayout(item_expand=True, border=10, spacing=6, items=[
             (HLayout(spacing=10, items=[
-                (balt.staticBitmap(self), LayoutOptions(v_align=TOP)),
+                (StaticBmp(self), LayoutOptions(v_align=TOP)),
                 (self._error_log, LayoutOptions(expand=True, weight=1)),
             ]), LayoutOptions(weight=1)),
             HLayout(items=[
@@ -103,41 +105,31 @@ class ValidatorPopup(DialogWindow):
 
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
+    _key_prefix = 'bash.fomod'
 
-    def __init__(self, parent_window, target_installer, show_install_chkbox):
+    def __init__(self, parent_window, target_installer, show_install_chkbox,
+                 progress):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
-        self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
+        files_list = [a[0] for a in target_installer.fileSizeCrcs]
         # All extracted files need to be specified relative to this root path
         self.installer_root = (
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
-        fm_file = target_installer.fomod_file().s
+        self._fomod_dir = target_installer.get_fomod_file_dir(progress)
+        fm_file = self._fomod_dir.join(target_installer.has_fomod_conf).s
         self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
-        test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
-        try:
-            gver = get_file_version(test_path.s)
-            if gver == (0, 0, 0, 0) and bush.ws_info.installed:
-                gver = get_game_version_fallback(test_path, bush.ws_info)
-        except OSError:
-            gver = get_game_version_fallback(test_path, bush.ws_info)
+        gver = bush.game_version()
         version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
-            fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
+            fm_file, files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
-        super(InstallerFomod, self).__init__(
-            parent_window, sizes_dict=bass.settings,
+        super().__init__(parent_window, sizes_dict=bass.settings,
             title=_('FOMOD Installer - %(fomod_title)s') % {
-                'fomod_title': self.fomod_parser.fomod_name},
-            size_key='bash.fomod.size', pos_key='bash.fomod.pos')
-        self.is_arch = target_installer.is_archive
-        if self.is_arch:
-            self.archive_path = bass.getTempDir()
-        else:
-            self.archive_path = target_installer.abs_path
+                'fomod_title': self.fomod_parser.fomod_name})
+        self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
-        self.first_page = True
 
     def save_size(self): ##: needed?
         # Otherwise, regular resize, save the size if we're not maximized
@@ -188,12 +180,10 @@ class InstallerFomod(WizardDialog):
             self._run_wizard()
             # Invert keys and values ahead of time here, so that BAIN doesn't
             # have to do it just in time
-            self.fm_ret.install_files = bolt.LowerDict({
-                v: k for k, v
-                in self.fomod_parser.get_fomod_files().items()})
-        # Clean up temp files
-        if self.is_arch:
-            bass.rmTempDir()
+            self.fm_ret.install_files = LowerDict(reverse_dict_multi(
+                self.fomod_parser.get_fomod_files()))
+        if self._is_arch:
+            cleanup_temp_dir(self._fomod_dir)
         return self.fm_ret
 
     def validate_fomod(self):
@@ -217,9 +207,9 @@ class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
-    def __init__(self, page_parent):
+    def __init__(self, page_parent: InstallerFomod):
         super(PageInstaller, self).__init__(page_parent)
-        self._page_parent = page_parent # type: InstallerFomod
+        self._page_parent = page_parent
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
@@ -230,18 +220,16 @@ class PageSelect(PageInstaller):
     description for each option, shown when that item is selected."""
     # Syntax: tuple containing text to show for an option of this type and a
     # boolean indicating whether to mark the text as a warning or not
-    _option_type_info = defaultdict(lambda: ('', False))
-    _option_type_info[OptionType.REQUIRED] = (
-        _('This option is required.'), False)
-    _option_type_info[OptionType.RECOMMENDED] = (
-        _('This option is recommended.'), False)
-    _option_type_info[OptionType.COULD_BE_USABLE] = (
-        _('This option could result in instability.'), True)
-    _option_type_info[OptionType.NOT_USABLE] = (
-        _('This option cannot be selected.'), True)
+    _option_type_info = defaultdict(lambda: ('', False), {
+        OptionType.REQUIRED: (_('This option is required.'), False),
+        OptionType.RECOMMENDED: (_('This option is recommended.'), False),
+        OptionType.COULD_BE_USABLE: (_('This option could result in '
+                                       'instability.'), True),
+        OptionType.NOT_USABLE: (_('This option cannot be selected.'), True),
+    })
+    group_option_map: defaultdict[InstallerGroup, list[RadioButton | CheckBox]]
 
-    def __init__(self, page_parent, inst_page):
-        """:type inst_page: InstallerPage"""
+    def __init__(self, page_parent, inst_page: InstallerPage):
         super(PageSelect, self).__init__(page_parent)
         # For runtime retrieval of option/checkable info
         self.checkable_to_option = {}
@@ -259,9 +247,9 @@ class PageSelect(PageInstaller):
         self._text_item = TextArea(self, editable=False, auto_tooltip=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
-        self._group_links.append(_Group_SelectAll())
-        self._group_links.append(_Group_DeselectAll())
-        self._group_links.append(_Group_ToggleAll())
+        self._group_links.append_link(_Group_SelectAll())
+        self._group_links.append_link(_Group_DeselectAll())
+        self._group_links.append_link(_Group_ToggleAll())
         panel_groups = ScrollableWindow(self)
         groups_layout = VLayout(spacing=5, item_expand=True)
         first_checkable = None
@@ -412,7 +400,7 @@ class PageSelect(PageInstaller):
         opt_img = option.option_image
         # Note that these are almost always Windows paths, so we have to
         # convert them if we're on Linux
-        opt_img_path = to_os_path(self._page_parent.archive_path.join(
+        opt_img_path = to_os_path(self._page_parent._fomod_dir.join(
             self._page_parent.installer_root, opt_img))
         self._current_image = opt_img_path # To allow opening via double click
         try:
@@ -498,7 +486,7 @@ class PageFinish(PageInstaller):
             self._output_text = TextArea(
                 self, editable=False, auto_tooltip=False,
                 init_text=self.display_files(installer_output))
-            sorted_output = bolt.dict_sort(installer_output,
+            sorted_output = dict_sort(installer_output,
                 key_f=lambda k: installer_output[k].lower())  # sort by source
             sorted_src = []
             sorted_dst = []
@@ -559,7 +547,7 @@ class _GroupLink(EnabledLink):
             'curr_fomod_group': self.selected_group.group_name}
 
     @property
-    def selected_group(self): # type: () -> InstallerGroup
+    def selected_group(self) -> InstallerGroup:
         """Returns the group that the clicked on option belongs to."""
         return self.window.checkable_to_group[self.selected]
 

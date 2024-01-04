@@ -21,11 +21,13 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from ..fallout3.records import MelDestructible, MelModel
+# Make sure to import the FO3 MelRecord, since it's redefined to include the
+# quest_item header flag
+from ..fallout3.records import MelDestructible, MelModel, MelRecord
 from ...bolt import Flags, flag
 from ...brec import FID, AMreHeader, MelBase, MelBounds, MelConditionsFo3, \
     MelDescription, MelEdid, MelFid, MelFids, MelFloat, MelFull, MelGroups, \
-    MelIco2, MelIcon, MelIcons, MelNull, MelRecord, MelScript, MelSet, \
+    MelIco2, MelIcon, MelIcons, MelNull, MelScript, MelSet, \
     MelSimpleArray, MelSInt32, MelSorted, MelSoundPickupDrop, MelString, \
     MelStruct, MelTruncatedStruct, MelUInt8, MelUInt8Flags, MelUInt32, \
     MelValueWeight
@@ -37,10 +39,11 @@ class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN'}
+    next_object_default = 0x800
 
     melSet = MelSet(
         MelStruct(b'HEDR', ['f', '2I'], ('version', 1.34), 'numRecords',
-                  ('nextObject', 0x800), is_required=True),
+                  ('nextObject', next_object_default), is_required=True),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
         AMreHeader.MelAuthor(),
@@ -263,6 +266,9 @@ class MreHung(MelRecord):
 class MreImod(MelRecord):
     """Item Mod."""
     rec_sig = b'IMOD'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        quest_item: bool = flag(10)
 
     melSet = MelSet(
         MelEdid(),

@@ -20,18 +20,4 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import bolt, gui
-
-def exportConfig(patch_name, config, win, outDir):
-    outFile = patch_name + u'_Configuration.dat'
-    outDir.makedirs()
-    #--File dialog
-    outPath = gui.FileSave.display_dialog(win,
-        title=_(u'Export Bashed Patch configuration to:'),
-        defaultDir=outDir, defaultFile=outFile,
-        wildcard=u'*_Configuration.dat')
-    if outPath:
-        pd = bolt.PickleDict(outPath)
-        gkey = bolt.GPath_no_norm('Saved Bashed Patch Configuration (Python)')
-        pd.pickled_data[gkey] = {'bash.patch.configs': config}
-        pd.save()
+"""Bashed Patch business logic."""

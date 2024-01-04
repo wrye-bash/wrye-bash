@@ -26,6 +26,7 @@ around without breaking third-party code."""
 
 __author__ = u'Infernio'
 
+from ._gui_globals import *
 from .base_components import *
 from .buttons import *
 from .checkables import *
@@ -33,9 +34,11 @@ from .combos import *
 from .doc_viewer import *
 from .events import *
 from .functions import *
+from .images import *
 from .layouts import *
 from .list_ctrl import *
 from .misc_components import *
+from .menus import *
 from .multi_choices import *
 from .popups import *
 from .text_components import *

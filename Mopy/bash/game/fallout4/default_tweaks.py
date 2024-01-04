@@ -21,10 +21,10 @@
 #
 # =============================================================================
 default_tweaks = {
-    'Modding, Enabled [Fallout4].ini': {
+    'Invalidate, Allow loose files [Fallout4].ini': {
         'Archive': {'bInvalidateOlderFiles': '1',
                     'sResourceDataDirsFinal': ''}},
-    'Modding, Disabled ~Default [Fallout4].ini': {
+    'Invalidate, Disallow loose files ~Default [Fallout4].ini': {
         'Archive': {'bInvalidateOlderFiles': '0',
                     'sResourceDataDirsFinal': 'STRINGS\\'}},
     'Always Run, Disabled [Fallout4Prefs].ini': {

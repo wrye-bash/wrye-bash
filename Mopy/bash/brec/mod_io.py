@@ -33,6 +33,7 @@ from .. import bolt, bush
 from ..bolt import decoder, sig_to_str, struct_pack, struct_unpack, \
     structs_cache
 from ..exception import ModError, ModReadError, ModSizeError, StateError
+from ..game import ObjectIndexRange
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
@@ -385,7 +386,13 @@ class FormIdReadContext(ModReader):
         self.form_id_type = utils_constants.FORM_ID
         if self.form_id_type is not None:
             raise StateError(f'Already in a ModReader context')
-        self.load_tes4()
+        try:
+            # This may blow up, in which case we have to explicitly exit the
+            # handler
+            self.load_tes4()
+        except:
+            self.__exit__(None, None, None)
+            raise
         return self
 
 class FormIdWriteContext:
@@ -405,19 +412,21 @@ class FormIdWriteContext:
 
     def _get_short_mapper(self, skip_engine=False):
         # Set utils_constants.short_mapper based on this mod's masters
-        indices = self._get_indices()
-        has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if skip_engine or (has_expanded_range and
-                           len(self._augmented_masters) > 1 and
-                           self._plugin_header_ver >= 1.0):
+        index_di = self._get_indices()
+        oi_range = bush.game.Esp.object_index_range
+        expansion_ver = bush.game.Esp.object_index_range_expansion_ver
+        if skip_engine or (len(self._augmented_masters) > 1 and
+                           (oi_range is ObjectIndexRange.EXPANDED_ALWAYS or
+                            (oi_range is ObjectIndexRange.EXPANDED_CONDITIONAL
+                             and self._plugin_header_ver >= expansion_ver))):
             # Plugin has at least one master, it may freely use the
-            # expanded (0x000-0x800) range (or we want to skip the check)
+            # expanded (0x000-0x7FF) range (or we want to skip the check)
             def _short_mapper(formid):
-                return (indices[formid.mod_fn] << 24) | formid.object_dex
+                return (index_di[formid.mod_fn] << 24) | formid.object_dex
         else:
-            # 0x000-0x800 are reserved for hardcoded (engine) records
+            # 0x000-0x7FF are reserved for hardcoded (engine) records
             def _short_mapper(formid):
-                return ((object_id := formid.object_dex) >= 0x800 and indices[
+                return ((object_id := formid.object_dex) >= 0x800 and index_di[
                     formid.mod_fn] << 24) | object_id
         return _short_mapper
 
@@ -425,7 +434,7 @@ class FormIdWriteContext:
         utils_constants.short_mapper = self._get_short_mapper()
         utils_constants.short_mapper_no_engine = self._get_short_mapper(
             skip_engine=True)
-        self.__out = self._out_path and self._out_path.open('wb')
+        self.__out = self._out_path and open(self._out_path, 'wb')
         return self.__out
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -449,8 +458,8 @@ class RemapWriteContext(FormIdWriteContext):
         # Allow FormIDs to resolve both the new and the old masters - remapped
         # masters will resolve to the same index this way because the order
         # doesn't change when remapping
-        indices = super()._get_indices()
-        return indices | {mname: i for i, mname
+        index_di = super()._get_indices()
+        return index_di | {mname: i for i, mname
                           in enumerate(self._prev_masters)}
 
 class ShortFidWriteContext(FormIdWriteContext):

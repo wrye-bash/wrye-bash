@@ -38,8 +38,8 @@ from .common_subrecords import MelBounds, MelColor, MelColorInterpolator, \
     MelDebrData, MelDescription, MelEdid, MelFull, MelIcon, MelImpactDataset, \
     MelValueInterpolator
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID, FormId, NotPlayableFlag, gen_coed_key
-from .. import bolt, exception
+from .utils_constants import FID, FormId, gen_coed_key
+from .. import bolt, bush, exception
 from ..bolt import Flags, FName, decoder, flag, remove_newlines, sig_to_str, \
     struct_pack, structs_cache, to_unix_newlines, to_win_newlines
 
@@ -161,30 +161,52 @@ class AMreFlst(MelRecord):
         self.setChanged()
 
 #------------------------------------------------------------------------------
+class AMreGlob(MelRecord):
+    """Base class for globals."""
+    rec_sig = b'GLOB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFixedString(b'FNAM', 'global_format', 1),
+        # Rather stupidly all values, despite their designation (short, long,
+        # float, bool (FO4)), are stored as floats - which means that very
+        # large integers lose precision
+        MelFloat(b'FLTV', 'global_value'),
+    )
+
+#------------------------------------------------------------------------------
 class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
     _post_masters_sigs: set[bytes]
+    # Set per game, the value that nextObject defaults to
+    next_object_default: int
 
     class HeaderFlags(MelRecord.HeaderFlags):
         esm_flag: bool = flag(0)
 
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.
-        This is done to make updating the master list much easier."""
-        def __init__(self):
-            self._debug = False
+        This is done to make updating the master list much easier. Starfield
+        does not feature DATA in the TES4 record anymore. Set has_sizes=False
+        if the game in question follows Starfield in this."""
+        def __init__(self, has_sizes=True):
+            self._has_sizes = has_sizes
             self.mel_sig = b'MAST' # just in case something is expecting this
 
         def getLoaders(self, loaders):
-            loaders[b'MAST'] = loaders[b'DATA'] = self
+            loaders[b'MAST'] = self
+            if self._has_sizes:
+                loaders[b'DATA'] = self
 
         def getSlotsUsed(self):
-            return 'masters', 'master_sizes'
+            return ('masters',) + (('master_sizes',)
+                                   if self._has_sizes else ())
 
         def setDefault(self, record):
             record.masters = []
-            record.master_sizes = []
+            if self._has_sizes:
+                record.master_sizes = []
 
         def load_mel(self, record, ins, sub_type, size_, *debug_strs):
             __unpacker=structs_cache[u'Q'].unpack
@@ -195,29 +217,34 @@ class AMreHeader(MelRecord):
                 master_name = decoder(bolt.cstrip(ins.read(size_, *debug_strs)),
                                       avoidEncodings=(u'utf8', u'utf-8'))
                 record.masters.append(FName(master_name))
-            else: # sub_type == 'DATA'
+            elif self._has_sizes and sub_type == b'DATA':
                 # DATA is the size for TES3, but unknown/unused for later games
                 record.master_sizes.append(
                     ins.unpack(__unpacker, size_, *debug_strs)[0])
+            else:
+                raise RuntimeError(f'Unknown master subrecord {sub_type}')
 
         def dumpData(self,record,out):
-            record._truncate_masters()
-            for master_name, master_size in zip(record.masters,
-                                                record.master_sizes):
-                MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                    out, master_name)
-                MelBase(b'DATA', '').packSub(
-                    out, struct_pack(u'Q', master_size))
+            record._truncate_master_sizes()
+            if self._has_sizes:
+                for master_name, master_size in zip(record.masters,
+                                                    record.master_sizes):
+                    MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
+                        out, master_name)
+                    MelBase(b'DATA', '').packSub(
+                        out, struct_pack(u'Q', master_size))
+            else:
+                for master_name in record.masters:
+                    MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
+                        out, master_name)
 
     class MelAuthor(MelUnicode):
         def __init__(self):
-            from .. import bush
             super().__init__(b'CNAM', 'author_pstr',
                              maxSize=bush.game.Esp.max_author_length)
 
     class MelDescription(MelUnicode):
         def __init__(self):
-            from .. import bush
             super().__init__(b'SNAM', 'description_pstr',
                              maxSize=bush.game.Esp.max_desc_length)
 
@@ -242,13 +269,15 @@ class AMreHeader(MelRecord):
         # Load each subrecord
         ins_at_end = ins.atEnd
         masters_loaded = False
+        in_overlay_plugin = (bush.game.has_overlay_plugins and
+                             self.flags1.overlay_flag)
         while not ins_at_end(endPos, self._rec_sig):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
                                                  file_offset=file_offset)
             if not masters_loaded and sub_type in self._post_masters_sigs:
                 masters_loaded = True
                 utils_constants.FORM_ID = FormId.from_masters(
-                    (*self.masters, ins.inName))
+                    (*self.masters, ins.inName), in_overlay_plugin)
             try:
                 loader = loaders[sub_type]
                 try:
@@ -269,17 +298,21 @@ class AMreHeader(MelRecord):
             raise exception.ModError(ins.inName, f'{error!r}') from error
         if not masters_loaded:
             augmented_masters = (*self.masters, ins.inName)
-            utils_constants.FORM_ID = FormId.from_masters(augmented_masters)
-        self._truncate_masters()
+            utils_constants.FORM_ID = FormId.from_masters(
+                augmented_masters, in_overlay_plugin)
+        self._truncate_master_sizes()
 
-    def _truncate_masters(self):
-        # TODO(inf) For Morrowind, this will have to query the files for
-        #  their size and then store that
-        num_masters = self.num_masters
-        num_sizes = len(self.master_sizes)
-        # Just in case, truncate or pad the sizes with zeroes as needed
-        self.master_sizes = self.master_sizes[:num_masters] + [0] * (
-                num_masters - num_sizes) # [] * (-n) == []
+    def _truncate_master_sizes(self):
+        # Starfield (and newer, most likely) don't have DATA and so don't have
+        # a master_sizes either
+        if hasattr(self, 'master_sizes'):
+            num_masters = self.num_masters
+            num_sizes = len(self.master_sizes)
+            # TODO(inf) For Morrowind, this will have to query the files for
+            #  their size and then store that
+            # Just in case, truncate or pad the sizes with zeroes as needed
+            self.master_sizes = self.master_sizes[:num_masters] + [0] * (
+                    num_masters - num_sizes) # [] * (-n) == []
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""
@@ -467,7 +500,6 @@ class AMreLeveledList(MelRecord):
                 newItemsAdd(entry.listId)
         # Check if merging exceeded the counter's limit and, if so, truncate it
         # and warn. Note that pre-Skyrim games do not have this limitation.
-        from .. import bush
         max_lvl_size = bush.game.Esp.max_lvl_list_size
         if max_lvl_size and len(self.entries) > max_lvl_size:
             # TODO(inf) In the future, offer an option to auto-split these into
@@ -522,12 +554,28 @@ class AMreLeveledList(MelRecord):
         self.setChanged(self.mergeOverLast)
 
 #------------------------------------------------------------------------------
+class AMreMgefTes5(AMreWithKeywords):
+    """Base class for MGEF records since Skyrim."""
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.mgef_sounds = [s for s in self.mgef_sounds
+                            if s.ms_sound.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
 class AMreRace(MelRecord):
     """Base class for RACE records."""
     def keep_fids(self, keep_plugins):
         super().keep_fids(keep_plugins)
         self.eyes = [e for e in self.eyes if e.mod_fn in keep_plugins]
         self.hairs = [h for h in self.hairs if h.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class AMreRegn(MelRecord):
+    """Base class for REGN records."""
+    rec_sig = b'REGN'
+
+    class HeaderFlags(MelRecord.HeaderFlags):
+        border_region: bool = flag(6)
 
 #------------------------------------------------------------------------------
 class AMreWrld(MelRecord):
@@ -663,8 +711,8 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    class HeaderFlags(NotPlayableFlag, MelRecord.HeaderFlags):
-        pass # not_playable exists since FO3
+    class HeaderFlags(MelRecord.HeaderFlags):
+        not_playable: bool = flag(2) # since FO3
 
     class _eyes_flags(Flags):
         playable: bool
@@ -702,23 +750,6 @@ class MreFsts(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreGlob(MelRecord):
-    """Global."""
-    rec_sig = b'GLOB'
-
-    class HeaderFlags(MelRecord.HeaderFlags):
-        constant: bool = flag(6)    # since FO3? definitely FO4
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFixedString(b'FNAM', 'global_format', 1),
-        # Rather stupidly all values, despite their designation (short, long,
-        # float, bool (FO4)), are stored as floats - which means that very
-        # large integers lose precision
-        MelFloat(b'FLTV', 'global_value'),
-    )
-
-#------------------------------------------------------------------------------
 class MreGmst(MelRecord):
     """Game Setting.."""
     rec_sig = b'GMST'
@@ -734,4 +765,34 @@ class MreGmst(MelRecord):
             u'eid', transformer=lambda e: e[0] if e else u'i'),
             fallback=MelSInt32(b'DATA', u'value')
         ),
+    )
+
+#------------------------------------------------------------------------------
+class MreOtft(MelRecord):
+    """Outfit."""
+    rec_sig = b'OTFT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
+    )
+
+    def keep_fids(self, keep_plugins):
+        super().keep_fids(keep_plugins)
+        self.items = [i for i in self.items if i.mod_fn in keep_plugins]
+
+#------------------------------------------------------------------------------
+class MreRfct(MelRecord):
+    """Visual Effect."""
+    rec_sig = b'RFCT'
+
+    class _RfctFlags(Flags):
+        rotate_to_face_target: bool
+        attach_to_camera: bool
+        inherit_rotation: bool
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['3I'], (FID, 'rfct_effect_art'),
+            (FID, 'rfct_shader'), (_RfctFlags, 'rfct_flags')),
     )

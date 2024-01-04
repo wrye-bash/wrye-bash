@@ -38,9 +38,11 @@ from ..bolt import AFile, GPath, Path, decoder, deprint, encode, pack_4s, \
     pack_byte, pack_double, pack_float, pack_int, pack_int_signed, \
     pack_short, struct_error, struct_pack, struct_unpack, unpack_4s, \
     unpack_byte, unpack_double, unpack_float, unpack_int, unpack_int_signed, \
-    unpack_short, unpack_spaced_string, unpack_str16, unpack_str32
+    unpack_short, unpack_spaced_string, unpack_str16, unpack_str32, \
+    GPath_no_norm
 from ..exception import BoltError, CosaveError, InvalidCosaveError, \
     UnsupportedCosaveError
+from ..wbtemp import TempFile
 
 # TODO(inf) All the chunk_length stuff needs to be reworked: first encode all
 #  unicode strings, then measure the length of the byte sequence, then dump.
@@ -74,10 +76,10 @@ class _Remappable(object):
     of one or more plugin files referenced in the cosave has been changed."""
     __slots__ = ()
 
-    def remap_plugins(self, plugin_renames: dict[str, str]):
+    def remap_plugins(self, fnmod_rename: dict[str, str]):
         """Remaps the names of relevant plugin entries in this object.
 
-        :param plugin_renames: A dictionary containing the renames: key is the
+        :param fnmod_rename: A dictionary containing the renames: key is the
             name of the plugin before the renaming, value is the name
             afterwards."""
         raise NotImplementedError
@@ -296,8 +298,8 @@ class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
         for mod_name in self.mod_names:
             log(f'    - {mod_name}')
 
-    def remap_plugins(self, plugin_renames):
-        self.mod_names = [plugin_renames.get(x, x) for x in self.mod_names]
+    def remap_plugins(self, fnmod_rename):
+        self.mod_names = [fnmod_rename.get(x, x) for x in self.mod_names]
 
 class _xSEChunkARVR(_xSEChunk, _Dumpable):
     """An ARVR (Array Variable) chunk. Only available in OBSE and NVSE. See
@@ -656,8 +658,8 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
                 log(f'    {self.mod_index:02X}       {self.light_index:04X}  '
                     f'           {self.mod_name}')
 
-        def remap_plugins(self, plugin_renames):
-            self.mod_name = plugin_renames.get(self.mod_name, self.mod_name)
+        def remap_plugins(self, fnmod_rename):
+            self.mod_name = fnmod_rename.get(self.mod_name, self.mod_name)
 
     def __init__(self, ins, chunk_type):
         super().__init__(ins, chunk_type)
@@ -681,9 +683,9 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
         for mod_entry in self.mod_entries:
             mod_entry.dump_to_log(log, save_masters_)
 
-    def remap_plugins(self, plugin_renames):
+    def remap_plugins(self, fnmod_rename):
         for mod_entry in self.mod_entries:
-            mod_entry.remap_plugins(plugin_renames)
+            mod_entry.remap_plugins(fnmod_rename)
 
 class _xSEChunkSTVR(_xSEChunk, _Dumpable):
     """An STVR (String Variable) chunk. Only available in OBSE and NVSE. See
@@ -802,9 +804,9 @@ class _xSEPluginChunk(_AChunk, _Remappable):
             total_len += chunk.chunk_length()
         return total_len
 
-    def remap_plugins(self, plugin_renames):
+    def remap_plugins(self, fnmod_rename):
         for xse_chunk in self.remappable_chunks:
-            xse_chunk.remap_plugins(plugin_renames)
+            xse_chunk.remap_plugins(fnmod_rename)
 
     def __repr__(self):
         ##: Extremely hacky, the proper method is _get_plugin_signature - but
@@ -862,9 +864,9 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
             pack_byte(out, self.game_id)
             _pack_cosave_str32(out, self.plugin_name)
 
-        def remap_plugins(self, plugin_renames):
-            self.plugin_name = plugin_renames.get(self.plugin_name,
-                                                  self.plugin_name)
+        def remap_plugins(self, fnmod_rename):
+            self.plugin_name = fnmod_rename.get(self.plugin_name,
+                                                self.plugin_name)
 
         def dump_to_log(self, log, save_masters_):
             log(u'    %02X    %02X    %s' % (self.pluggy_id, self.game_id,
@@ -890,9 +892,9 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
         for plugin in self.plugins:
             plugin.dump_to_log(log, save_masters_)
 
-    def remap_plugins(self, plugin_renames):
+    def remap_plugins(self, fnmod_rename):
         for plugin in self.plugins:
-            plugin.remap_plugins(plugin_renames)
+            plugin.remap_plugins(fnmod_rename)
 
     def unique_identifier(self):
         return _(u'Plugin Block')
@@ -1338,11 +1340,11 @@ class ACosave(_Dumpable, _Remappable, AFile):
                 raise CosaveError(self.abs_path.tail,
                                   f'Failed to read cosave: {e!r}')
 
-    def _reset_cache(self, stat_tuple, load_cache):
+    def _reset_cache(self, stat_tuple, **kwargs):
         # Reset our loading state to 'unloaded', which will discard everything
         # when the next request is made to the cosave (see read_cosave above)
         self.loading_state = 0
-        super(ACosave, self)._reset_cache(stat_tuple, load_cache)
+        super()._reset_cache(stat_tuple, **kwargs)
 
     def _read_cosave_header(self, ins):
         """Reads and assigns the header of this cosave. You probably don't need
@@ -1394,8 +1396,9 @@ class ACosave(_Dumpable, _Remappable, AFile):
         :param out_path: The path to write to. If empty or None, this cosave's
             own path is used instead."""
         out_path = out_path or self.abs_path
-        self.write_cosave(out_path.temp)
-        out_path.untemp()
+        with TempFile() as tmp_path:
+            self.write_cosave(GPath_no_norm(tmp_path))
+            out_path.replace_with_temp(tmp_path)
 
     def get_master_list(self) -> list[str]:
         """Retrieves a list of masters from this cosave. This will read an
@@ -1417,11 +1420,11 @@ class ACosave(_Dumpable, _Remappable, AFile):
         self.read_cosave()
         self.cosave_header.dump_to_log(log, save_masters_)
 
-    def remap_plugins(self, plugin_renames):
+    def remap_plugins(self, fnmod_rename):
         # We need the entire cosave to remap
         self.read_cosave()
         for cosave_chunk in self.remappable_chunks:
-            cosave_chunk.remap_plugins(plugin_renames)
+            cosave_chunk.remap_plugins(fnmod_rename)
 
     @classmethod
     def get_cosave_path(cls, save_path: Path) -> Path:
@@ -1474,7 +1477,7 @@ class xSECosave(ACosave):
         self.cosave_header.write_header(buff)
         for plugin_ch in self.cosave_chunks:
             plugin_ch.write_chunk(buff)
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(buff.getvalue())
         out_path.mtime = prev_mtime
 
@@ -1655,7 +1658,7 @@ class PluggyCosave(ACosave):
         pack_int(out, out.tell())
         final_data = out.getvalue()
         prev_mtime = self.abs_path.mtime
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(final_data)
             pack_int_signed(out, crc32(final_data))
         out_path.mtime = prev_mtime

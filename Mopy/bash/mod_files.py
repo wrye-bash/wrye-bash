@@ -30,40 +30,47 @@ from zlib import error as zlib_error
 
 from . import bolt, bush, env
 from .bolt import MasterSet, SubProgress, decoder, deprint, sig_to_str, \
-    struct_error
+    struct_error, GPath_no_norm, FName
 # first import of brec for games with patchers - _dynamic_import_modules
 from .brec import ZERO_FID, FastModReader, FormIdReadContext, \
     FormIdWriteContext, MobBase, ModReader, MreRecord, RecHeader, \
     RecordHeader, RecordType, Subrecord, TopGrup, int_unpacker, null1, \
     unpack_header, FormId, SubrecordBlob
 from .exception import MasterMapError, ModError, ModReadError, StateError
-from .load_order import get_ordered
+from .wbtemp import TempFile
 
 class MasterMap(object):
-    """Serves as a map between two sets of masters."""
-    def __init__(self,inMasters,outMasters):
-        """Initiation."""
+    """Serves as a map between two sets of masters. Only returns FormId
+    classes, but accepts both FormIds and short FormIDs (ints) -
+    TODO refactor to drop those"""
+    def __init__(self, inMasters, outMasters):
         mast_map = {}
-        outMastersIndex = outMasters.index
-        for index,master in enumerate(inMasters):
+        for i, master in enumerate(inMasters):
             try:
-                mast_map[index] = outMastersIndex(master)
+                mast_map[i] = outMasters.index(master)
             except ValueError:
-                mast_map[index] = -1
+                mast_map[i] = -1
         self._mast_map = mast_map
+        self._out_masters = outMasters
 
-    def __call__(self, short_fid: int | None, dflt_fid=-1):
-        """Maps a fid from first set of masters to second. If no mapping
-        is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not short_fid: return short_fid
-        inIndex = int(short_fid >> 24)
-        outIndex = self._mast_map.get(inIndex, -2)
-        if outIndex >= 0:
-            return (int(outIndex) << 24 ) | (short_fid & 0xFFFFFF)
-        elif dflt_fid != -1:
+    def __call__(self, fid_to_map: FormId | int | None, dflt_fid=ZERO_FID):
+        """Maps a fid from first set of masters to second. If no mapping is
+        possible, then either returns default (if given) or raises
+        MasterMapError."""
+        if not fid_to_map: return fid_to_map
+        mod_dex_in = (int(fid_to_map >> 24) if isinstance(fid_to_map, int) else
+                      fid_to_map.mod_dex)
+        mod_dex_out = self._mast_map.get(mod_dex_in, -2)
+        if mod_dex_out >= 0:
+            mapped_object_dex = (
+                fid_to_map & 0xFFFFFF if isinstance(fid_to_map, int) else
+                fid_to_map.object_dex)
+            return FormId.from_tuple((self._out_masters[mod_dex_out],
+                                      mapped_object_dex))
+        elif dflt_fid != ZERO_FID:
             return dflt_fid
         else:
-            raise MasterMapError(inIndex)
+            raise MasterMapError(mod_dex_in)
 
 class LoadFactory:
     """Encapsulate info on which record type we use to load which record
@@ -221,7 +228,7 @@ class ModFile(object):
             # for strings
             lang = bosh.oblivionIni.get_ini_language()
             stringsPaths = self.fileInfo.getStringsPaths(lang)
-            stringsProgress.setFull(max(len(stringsPaths), 1))
+            if stringsPaths: stringsProgress.setFull(len(stringsPaths))
             for i, path in enumerate(stringsPaths):
                 self.strings.loadFile(path,
                                       SubProgress(stringsProgress, i, i + 1),
@@ -236,14 +243,16 @@ class ModFile(object):
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
-        self.fileInfo.tempBackup()
+        self.fileInfo.makeBackup()
         filePath = self.fileInfo.getPath()
-        self.save(filePath.temp)
-        if self.fileInfo.mtime is not None: # fileInfo created before the file
-            filePath.temp.mtime = self.fileInfo.mtime
-        # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
-        #  permissions dialog is displayed (should display file in use)
-        env.shellMove({filePath.temp: filePath})
+        with TempFile() as tmp_plugin:
+            self.save(tmp_plugin)
+            # fileInfo created before the file
+            if self.fileInfo.mtime is not None:
+                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.mtime ##: ugh
+            # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
+            #  permissions dialog is displayed (should display file in use)
+            env.shellMove({tmp_plugin: filePath})
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -257,7 +266,7 @@ class ModFile(object):
             raise ModError(self.fileInfo.fn_key,
                            f'Attempting to write a file with too many '
                            f'masters (>{bush.game.Esp.master_limit}).')
-        outPath = outPath or self.fileInfo.getPath()
+        outPath = outPath or self.fileInfo.abs_path
         with FormIdWriteContext(outPath, self.augmented_masters(),
                                 self.tes4.version) as out:
             #--Mod Record
@@ -280,14 +289,37 @@ class ModFile(object):
         return ((top_sig, t) for top_sig, t in self.tops.items() if
                 top_sig in top_sigs)
 
-    def getMastersUsed(self):
-        """Updates set of master names according to masters actually used."""
+    def used_masters(self) -> set[FName]:
+        """Get a set of all masters that this file actually depends on."""
         masters_set = MasterSet([bush.game.master_file])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
-        # The file itself is always implicitly available, so discard it here
+        # The file itself is always implicitly available, so discard it
         masters_set.discard(self.fileInfo.fn_key)
-        return get_ordered(masters_set)
+        return masters_set
+
+    def used_masters_by_top(self) -> dict[bytes, set[FName]]:
+        """Get a dict mapping top group signatures to sets that indicate what
+        masters those top groups depend on."""
+        ret = {}
+        for block_sig, block in self.tops.items():
+            masters_set = MasterSet([bush.game.master_file])
+            block.updateMasters(masters_set.add)
+            # The file itself is always implicitly available, so discard it
+            masters_set.discard(self.fileInfo.fn_key)
+            ret[block_sig] = set(masters_set) ##: drop once MasterSet is gone
+        return ret
+
+    def count_new_records(self):
+        """Count the number of new records in this file. self.tes4.masters must
+        be set correctly. Also updates self.tes4.nextObject to match."""
+        new_rec_count = 0
+        own_name = self.fileInfo.fn_key
+        for t_block in self.tops.values():
+            new_rec_count += len([r for r in t_block.iter_records()
+                                  if r.fid.mod_fn == own_name])
+        self.tes4.nextObject = self.tes4.next_object_default + new_rec_count
+        return new_rec_count
 
     def _index_mgefs(self):
         """Indexes and cache all MGEF properties and stores them for retrieval
@@ -353,25 +385,37 @@ class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
     decoding of anything but the headers."""
     @staticmethod
-    def formids_in_esl_range(mod_info):
-        """Checks if all FormIDs in the specified mod are in the ESL range."""
-        num_masters = len(mod_info.masterNames)
+    def _scan_fids(mod_info, fid_cond):
         with ModReader.from_info(mod_info) as ins:
-            ins_at_end = ins.atEnd
             try:
-                while not ins_at_end():
+                while not ins.atEnd():
                     next_header = unpack_header(ins)
                     # Skip GRUPs themselves, only process their records
                     if next_header.recType != b'GRUP':
-                        header_fid = next_header.fid
-                        if (header_fid.mod_dex >= num_masters and
-                                header_fid.object_dex > 0xFFF):
-                            return False # FormID out of range
+                        if fid_cond(next_header.fid):
+                            return True
                         next_header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, f"Error scanning {mod_info}, file "
                     f"read pos: {ins.tell():d}\nCaused by: '{e!r}'")
-        return True
+        return False
+
+    @staticmethod
+    def formids_in_esl_range(mod_info):
+        """Checks if all FormIDs in the specified mod are in the ESL range."""
+        num_masters = len(mod_info.masterNames)
+        return not ModHeaderReader._scan_fids(mod_info,
+            lambda header_fid: header_fid.mod_dex >= num_masters and
+                               header_fid.object_dex > 0xFFF)
+
+    @staticmethod
+    def has_new_records(mod_info):
+        """Checks if all the specified mod has any new records."""
+        num_masters = len(mod_info.masterNames)
+        # Check for NULL to skip the main file header (i.e. TES3/TES4)
+        return ModHeaderReader._scan_fids(mod_info,
+            lambda header_fid: not header_fid.is_null() and
+                               header_fid.mod_dex >= num_masters)
 
     @staticmethod
     def extract_mod_data(mod_info, progress, *, __unpacker=int_unpacker):

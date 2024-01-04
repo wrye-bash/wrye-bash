@@ -35,8 +35,10 @@ import wx as _wx
 
 from .base_components import _AComponent
 from .buttons import PureImageButton
+from .images import GuiImage
 from .layouts import VLayout
 from .text_components import TextArea
+from .. import env
 from ..bolt import decoder, deprint, redirect_stdout_to_deprint
 from ..exception import StateError
 
@@ -62,7 +64,7 @@ def web_viewer_available():
     can render HTML.
 
     :return: True if we can render HTML."""
-    return bool(_wx_html2)
+    return bool(_wx_html2) and not env.in_mo2_vfs()
 
 def pdf_viewer_available():
     """Checks if pdfViewer is available, meaning that we can display PDFs.
@@ -216,12 +218,12 @@ class DocumentViewer(_AComponent):
     """A viewer for a variety of document types. Can display webpages, text and
     PDFs."""
 
-    def __init__(self, parent, icon_list):
+    def __init__(self, parent, button_icons: list[GuiImage]):
         """Creates a new DocumentViewer with the specified parent.
 
         :param parent: The object that this HTML display belongs to. May be a
             wx object or a component.
-        :param icon_list: A tuple of _wx.Bitmaps to use for the image buttons.
+        :param button_icons: A tuple of GuiImages to use for the image buttons.
             Order is back, forward, reload."""
         super().__init__(parent)
         # init the fallback/plaintext widget
@@ -229,19 +231,19 @@ class DocumentViewer(_AComponent):
         items = [self._text_ctrl]
         if web_viewer_available():
             # We can render HTML, create the WebViewer and use its buttons
-            self._html_ctrl = WebViewer(self, icon_list, parent)
+            self._html_ctrl = WebViewer(self, button_icons, parent)
             self._prev_button, self._next_button, self._reload_button = \
                 self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
             self._text_ctrl.enabled = False
         else:
             # Emulate the buttons WebViewer would normally provide
-            self._prev_button = PureImageButton(parent, icon_list[0],
-                btn_tooltip='')
-            self._next_button = PureImageButton(parent, icon_list[1],
-                btn_tooltip='')
-            self._reload_button = PureImageButton(parent, icon_list[2],
-                btn_tooltip='')
+            self._prev_button = PureImageButton(parent, button_icons[0],
+                                                btn_tooltip='')
+            self._next_button = PureImageButton(parent, button_icons[1],
+                                                btn_tooltip='')
+            self._reload_button = PureImageButton(parent, button_icons[2],
+                                                  btn_tooltip='')
         if pdf_viewer_available():
             self._pdf_ctrl = PDFViewer(self)
             items.append(self._pdf_ctrl)

@@ -35,6 +35,7 @@ from .base_components import Color, _AComponent
 from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
     PureImageButton, SelectAllButton
 from .checkables import CheckBox
+from .images import StaticBmp
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout, TOP
 from .misc_components import DatePicker, HorizontalLine, TimePicker
@@ -57,8 +58,6 @@ class CopyOrMovePopup(DialogWindow):
     def __init__(self, parent, message, *, sizes_dict, icon_bundle):
         super().__init__(parent, sizes_dict=sizes_dict,
             icon_bundle=icon_bundle)
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         self._ret_action = u''
         self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
         move_button = Button(self, btn_label=_(u'Move'))
@@ -67,7 +66,7 @@ class CopyOrMovePopup(DialogWindow):
         copy_button.on_clicked.subscribe(lambda: self._return_action(u'COPY'))
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, item_border=6, items=[
-                (staticBitmap(self), LayoutOptions(v_align=CENTER)),
+                (StaticBmp(self), LayoutOptions(v_align=CENTER)),
                 (Label(self, message), LayoutOptions(expand=True))
             ]), LayoutOptions(weight=1)),
             Stretch(),
@@ -194,16 +193,16 @@ class _FileDialog(_AComponent):
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
     def __init__(self, parent, title='', defaultDir='', defaultFile='',
-                 wildcard='', allow_create=False):
+                 wildcard='', allow_create_file=False):
         defaultDir, defaultFile = map(str, (defaultDir, defaultFile))
         style_ = self.__class__._dialog_style
-        if allow_create and style_ & _wx.FD_FILE_MUST_EXIST:
+        if allow_create_file and style_ & _wx.FD_FILE_MUST_EXIST:
             style_ ^= _wx.FD_FILE_MUST_EXIST
         super().__init__(parent, title, defaultDir, defaultFile, wildcard,
                          style=style_)
 
     def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb): self.destroy_component()
+    def __exit__(self, exc_type, exc_val, exc_tb): self.native_destroy()
 
     @classmethod
     def display_dialog(cls, *args, **kwargs):
@@ -264,8 +263,6 @@ class DeletionDialog(DialogWindow):
             checked by default or not."""
         super().__init__(parent, sizes_dict=sizes_dict, title=title,
             icon_bundle=icon_bundle)
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         self._deletable_items = CheckListBox(self, choices=items_to_delete)
         self._deletable_items.set_all_checkmarks(checked=True)
         self._recycle_checkbox = CheckBox(self, _('Recycle'),
@@ -279,7 +276,7 @@ class DeletionDialog(DialogWindow):
         self._delete_button = OkButton(self, self._get_button_text())
         VLayout(border=6, spacing=4, item_expand=True, items=[
             HLayout(spacing=4, item_expand=True, items=[
-                staticBitmap(self, trash_icon),
+                StaticBmp(self, trash_icon),
                 (VLayout(spacing=4, item_expand=True, items=[
                     self._question_label,
                     HorizontalLine(self),
@@ -329,6 +326,8 @@ class DeletionDialog(DialogWindow):
         return result, chosen_strings, chosen_recycle
 
 # Date and Time ---------------------------------------------------------------
+_COMMON_FORMAT = '%d/%m/%Y, %H:%M:%S'
+
 class DateAndTimeDialog(DialogWindow):
     """Dialog for choosing a date and time."""
     title = _('Choose a date and time')
@@ -373,14 +372,16 @@ class DateAndTimeDialog(DialogWindow):
                 self._handle_manual): # Avoid getting into a loop
             picker_datetime = datetime.datetime.combine(
                 self._date_picker.get_date(), self._time_picker.get_time())
-            self._manual_entry.text_content = picker_datetime.strftime('%c')
+            self._manual_entry.text_content = picker_datetime.strftime(
+                _COMMON_FORMAT)
 
     def _handle_manual(self, new_manual_dt_str):
         """Internal callback that updates the pickers whenever the manual entry
         field has been edited to contain a valid date and time."""
         try:
             # This will raise ValueError if the format does not match
-            new_datetime = datetime.datetime.strptime(new_manual_dt_str, '%c')
+            new_datetime = datetime.datetime.strptime(
+                new_manual_dt_str, _COMMON_FORMAT)
             # This will raise OSError if the datetime cannot be turned into a
             # POSIX timestamp
             new_datetime.timestamp()
@@ -401,13 +402,14 @@ class DateAndTimeDialog(DialogWindow):
         self._date_picker.set_date(new_datetime.date())
         self._time_picker.set_time(new_datetime.time())
 
-    def show_modal(self) -> tuple[bool, datetime.datetime]:
-        """Return whether the OK button or Cancel button was pressed and the
-        final chosen date and time as a datetime.datetime object."""
-        result = super().show_modal()
+    def show_modal(self) -> datetime.datetime | bool:
+        """Return the final chosen date and time as a datetime.datetime
+        object, or False if user cancelled."""
+        if not (result := super().show_modal()):
+            return result
         manual_datetime = datetime.datetime.strptime(
-            self._manual_entry.text_content, '%c')
-        return result, manual_datetime
+            self._manual_entry.text_content, _COMMON_FORMAT)
+        return manual_datetime
 
 # Misc ------------------------------------------------------------------------
 @dataclass(slots=True, kw_only=True)
@@ -561,7 +563,7 @@ class AMultiListEditor(DialogWindow):
 
 # Message Dialogs -------------------------------------------------------------
 def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
-                  icon='warning', commandLinks=True, footer='', expander=None,
+                  icon_='warning', commandLinks=True, footer='', expander=None,
                   heading=''):
     """Always guard with TASK_DIALOG_AVAILABLE == True."""
     vista_buttons = ((BTN_OK, 'ok'), (BTN_CANCEL, 'cancel')) \
@@ -571,7 +573,7 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
     parent_handle = (_AComponent._resolve(parent).GetHandle()
                      if parent else None)
     dialog = TaskDialog(title, heading, message,
-                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon,
+                        tsk_buttons=[x[1] for x in vista_buttons], main_icon=icon_,
                         parenthwnd=parent_handle, footer=footer)
     if expander:
         dialog.set_expander(expander, False, not footer)
@@ -637,15 +639,15 @@ class AskDialog(DialogWindow):
                     vista_buttons.append((BTN_OK, 'ok'))
                 if style & _wx.CANCEL:
                     vista_buttons.append((BTN_CANCEL, 'cancel'))
-            icon = None
+            icon_ = None
             if info_ico:
-                icon = 'information'
+                icon_ = 'information'
             if error_ico:
-                icon = 'error'
-            if warn_ico or not icon: # default to warning icon
-                icon = 'warning'
+                icon_ = 'error'
+            if warn_ico or not icon_: # default to warning icon
+                icon_ = 'warning'
             parent, message, title = args
-            result, _check = _vista_dialog(parent, message, title, icon=icon,
+            result, _check = _vista_dialog(parent, message, title, icon_=icon_,
                 vista_buttons=vista_buttons, expander=expander)
         else:
             kwargs['style'] = style
@@ -665,11 +667,9 @@ class ContinueDialog(DialogWindow):
         bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
         if show_cancel:
             bottom_items.append(CancelButton(self))
-        ##: yuck, decouple!
-        from ..balt import staticBitmap
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
-                (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
+                (StaticBmp(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
             HorizontalLine(self),
@@ -752,20 +752,20 @@ def showOk(parent, message, title=''):
     """Shows a modal confirmation message."""
     if isinstance(title, Path): title = title.s
     return AskDialog.display_dialog(parent, message, title, no_cancel=True,
-                                      info_ico=True)
+                                    info_ico=True)
 
 def showError(parent, message, title=_('Error')):
     """Shows a modal error message."""
     if isinstance(title, Path): title = title.s
     return AskDialog.display_dialog(parent, message, title, no_cancel=True,
-                                      error_ico=True)
+                                    error_ico=True)
 
 def showWarning(parent, message, title=_('Warning'), do_center=False):
     """Shows a modal warning message."""
     return AskDialog.display_dialog(parent, message, title, warn_ico=True,
-                                      no_cancel=True, do_center=do_center)
+                                    no_cancel=True, do_center=do_center)
 
 def showInfo(parent, message, title=_('Information')):
     """Shows a modal information message."""
     return AskDialog.display_dialog(parent, message, title, info_ico=True,
-                                      no_cancel=True)
+                                    no_cancel=True)

@@ -51,8 +51,8 @@ attr_csv_struct = {
     'armorRating': [int_or_zero, _('Armor Rating')],
     'attackShotsPerSec': [float_or_none, _('Attack Shots Per Second')],
     'baseVatsToHitChance': [int_or_zero, _('Base VATS To-Hit Chance')],
-    'calcMax': [int_or_zero, _('CalcMax')],
-    'calcMin': [int_or_zero, _('CalcMin')],
+    'calc_max_level': [int_or_zero, _('CalcMax')],
+    'calc_min_level': [int_or_zero, _('CalcMin')],
     'clipRounds': [int_or_zero, _('Clip Rounds')],
     'clipsize': [int_or_zero, _('Clip Size')],
     'cost': [int_or_zero, _('Cost')],
@@ -297,13 +297,13 @@ class MreRecord(metaclass=RecordType):
         """Common flags to all (most) record types, based on Oblivion flags.
         NOTE: Use explicit indices here and in subclasses, otherwise the order
         can be messed up (due to type hints being saved in dicts which are
-        ordered by insertion order, not update order).
-        """
+        ordered by insertion order, not update order)."""
         deleted: bool = flag(5)
-        quest_item: bool = flag(10)             # types??
-        initially_disabled: bool = flag(11)     # REFR/??
         ignored: bool = flag(12)
         compressed: bool = flag(18)
+        ##: PARTIAL_FORM_HACK: so that we can performantly access this in
+        # should_skip et al
+        partial_form = False
 
     def __init__(self, header, ins=None, *, do_unpack=True):
         self.header = header # type: RecHeader
@@ -343,7 +343,10 @@ class MreRecord(metaclass=RecordType):
     def should_skip(self):
         """Returns True if this record should be skipped by most processing,
         i.e. if it is ignored or deleted."""
-        return self.flags1.ignored or self.flags1.deleted
+        ##: PARTIAL_FORM_HACK: We shouldn't skip these, since some of their
+        # data still gets applied
+        return (self.flags1.ignored or self.flags1.deleted or
+                self.flags1.partial_form)
 
     def group_key(self): ##: we need an MreRecord mixin - too many ifs
         """Return a key for indexing the record on the parent (MobObjects)

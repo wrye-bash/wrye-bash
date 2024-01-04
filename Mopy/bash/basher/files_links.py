@@ -24,8 +24,10 @@ import re
 
 from .. import balt, bass, bolt, bosh, exception
 from ..balt import AppendableLink, MultiLink, ItemLink, OneItemLink
+from ..bass import Store
 from ..gui import BusyCursor, DateAndTimeDialog, copy_text_to_clipboard
 from ..localize import format_date
+from ..wbtemp import TempFile
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
            u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
@@ -58,7 +60,7 @@ class Files_Unhide(ItemLink):
                                   "directory."))
                 return
             # Validate that the file is valid and isn't already present
-            if not self.window.data_store.rightFileType(srcFileName.s):
+            if not self._data_store.rightFileType(srcFileName.s):
                 self._showWarning(_('File skipped: %(skipped_file)s. File is '
                     'not valid.') % {'skipped_file': srcFileName})
                 continue
@@ -73,11 +75,11 @@ class Files_Unhide(ItemLink):
         #--Now move everything at once
         if not srcFiles:
             return
-        moved = self.window.data_store.move_infos(srcFiles, destFiles,
+        moved = self._data_store.move_infos(srcFiles, destFiles,
             self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
-                detail_item=next(iter(moved)), refreshSaves=True)
+                detail_item=next(iter(moved)), refresh_others=Store.SAVES.DO())
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -109,7 +111,7 @@ class File_Duplicate(ItemLink):
     @balt.conversation
     def Execute(self):
         dests = []
-        fileInfos = self.window.data_store
+        fileInfos = self._data_store
         pairs = [*self.iselected_pairs()]
         last = len(pairs) - 1
         for dex, (to_duplicate, fileInfo) in enumerate(pairs):
@@ -139,8 +141,7 @@ class File_Duplicate(ItemLink):
             ##: refresh_infos=True for saves - would love to specify something
             # like refresh_only=dests - #353
             fileInfos.refresh()
-            self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
-                                  refreshSaves=False) #(dup) saves not affected
+            self.window.RefreshUI(redraw=dests, detail_item=dests[-1])
             self.window.SelectItemsNoCallback(dests)
 
     def _disallow_copy(self, fileInfo):
@@ -161,8 +162,7 @@ class File_ListMasters(OneItemLink):
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
         copy_text_to_clipboard(list_of_mods)
-        self._showLog(list_of_mods, title=self._selected_item,
-                      fixedFont=False)
+        self._showLog(list_of_mods, title=self._selected_item)
 
 #------------------------------------------------------------------------------
 class File_Snapshot(ItemLink):
@@ -202,7 +202,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self.window.data_store.copy_info(fileName, destDir, destName)
+            self._data_store.copy_info(fileName, destDir, destName)
 
 #------------------------------------------------------------------------------
 class File_RevertToSnapshot(OneItemLink):
@@ -232,16 +232,16 @@ class File_RevertToSnapshot(OneItemLink):
             'target_file_name': fileName, 'snapsnot_file_name': snapName,
             'snapshot_date': format_date(snapPath.mtime)})
         if not self._askYes(message, _(u'Revert to Snapshot')): return
-        with BusyCursor():
+        with BusyCursor(), TempFile() as known_good_copy:
             destPath = self._selected_info.abs_path
             current_mtime = destPath.mtime
-            # Make a temp backup first in case reverting to snapshot fails
-            destPath.copyTo(destPath.temp)
+            # Make a temp copy first in case reverting to snapshot fails
+            destPath.copyTo(known_good_copy)
             snapPath.copyTo(destPath)
             # keep load order but recalculate the crc
             self._selected_info.setmtime(current_mtime, crc_changed=True)
             try:
-                self.window.data_store.new_info(fileName, notify_bain=True)
+                self._data_store.new_info(fileName, notify_bain=True)
             except exception.FileError:
                 # Reverting to snapshot failed - may be corrupt
                 bolt.deprint('Failed to revert to snapshot', traceback=True)
@@ -255,10 +255,10 @@ class File_RevertToSnapshot(OneItemLink):
                                               'snapshot_file_name': snapName},
                         title=_('Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
-                    destPath.untemp()
-                    self.window.data_store.new_info(fileName, notify_bain=True)
+                    destPath.replace_with_temp(known_good_copy)
+                    self._data_store.new_info(fileName, notify_bain=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[fileName], refreshSaves=False)
+        self.window.RefreshUI(redraw=[fileName])
 
 #------------------------------------------------------------------------------
 class File_Backup(ItemLink):
@@ -268,7 +268,7 @@ class File_Backup(ItemLink):
 
     def Execute(self):
         for fileInfo in self.iselected_infos():
-            fileInfo.makeBackup(True)
+            fileInfo.makeBackup(forceBackup=True)
 
 #------------------------------------------------------------------------------
 class _RevertBackup(OneItemLink):
@@ -279,30 +279,33 @@ class _RevertBackup(OneItemLink):
             u'Revert to Backup...')
         self.first = first
 
-    def _initData(self, window, selection):
-        super()._initData(window, selection)
-        self.backup_path = self._selected_info.backup_dir.join(
-            self._selected_item) + (u'f' if self.first else u'')
-        self._help = _(u'Revert %(file)s to its first backup') if self.first \
-            else _(u'Revert %(file)s to its last backup')
-        self._help %= {'file': self._selected_item}
+    @property
+    def _backup_path(self):
+        return self._selected_info.backup_dir.join(
+            self._selected_item) + ('f' if self.first else '')
+
+    @property
+    def link_help(self):
+        return (_('Revert %(file)s to its first backup') if self.first else _(
+            'Revert %(file)s to its last backup')) % {
+            'file': self._selected_item}
 
     def _enable(self):
-        return super()._enable() and self.backup_path.exists()
+        return super()._enable() and self._backup_path.exists()
 
     @balt.conversation
     def Execute(self):
         #--Warning box
         sel_file = self._selected_item
-        backup_date_fmt = format_date(self.backup_path.mtime)
+        backup_date_fmt = format_date(self._backup_path.mtime)
         message = _('Revert %(target_file_name)s to backup dated '
                     '%(backup_date)s?') % {'target_file_name': sel_file,
                                            'backup_date': backup_date_fmt}
         if not self._askYes(message): return
-        with BusyCursor():
-            # Make a temp backup first in case reverting to backup fails
+        with BusyCursor(), TempFile() as known_good_copy:
+            # Make a temp copy first in case reverting to backup fails
             info_path = self._selected_info.abs_path
-            info_path.copyTo(info_path.temp)
+            info_path.copyTo(known_good_copy)
             try:
                 self._selected_info.revert_backup(self.first)
             except exception.FileError:
@@ -318,10 +321,12 @@ class _RevertBackup(OneItemLink):
                                               'backup_date': backup_date_fmt},
                         title=_('Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
-                    info_path.untemp()
-                    self.window.data_store.new_info(sel_file, notify_bain=True)
+                    info_path.replace_with_temp(known_good_copy)
+                    self._data_store.new_info(sel_file, notify_bain=True,
+                        # see FileInfo.revert_backup (check also RUI.redraw)
+                        _in_refresh=True)
         # don't refresh saves as neither selection state nor load order change
-        self.window.RefreshUI(redraw=[sel_file], refreshSaves=False)
+        self.window.RefreshUI(redraw=[sel_file])
 
 class File_RevertToBackup(MultiLink):
     """Revert to last or first backup."""
@@ -337,17 +342,17 @@ class File_Redate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        user_ok, user_datetime = DateAndTimeDialog.display_dialog(
-            self.window, warning_color=balt.colors['default.warn'],
-            icon_bundle=balt.Resources.bashBlue)
-        if not user_ok: return
+        if not (user_datetime := DateAndTimeDialog.display_dialog(self.window,
+                warning_color=balt.colors['default.warn'],
+                icon_bundle=balt.Resources.bashBlue)):
+            return
         # Perform the redate process and refresh
         user_timestamp = user_datetime.timestamp()
         for to_redate in self._infos_to_redate():
             to_redate.setmtime(user_timestamp)
             user_timestamp += 60.0
         self._perform_refresh()
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refresh_others=Store.SAVES.DO())
 
     # Overrides for Mod_Redate
     def _infos_to_redate(self):
@@ -356,7 +361,7 @@ class File_Redate(ItemLink):
 
     def _perform_refresh(self):
         """Refreshes the data store - """
-        self.window.data_store.refresh(refresh_infos=False)
+        self._data_store.refresh(refresh_infos=False)
 
 #------------------------------------------------------------------------------
 class File_JumpToSource(AppendableLink, OneItemLink):

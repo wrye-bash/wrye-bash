@@ -33,6 +33,8 @@ https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguid
 https://github.com/microsoft/DirectXTex
 https://github.com/ModOrganizer2/modorganizer-preview_dds"""
 
+from __future__ import annotations
+
 __author__ = u'Infernio'
 
 import copy
@@ -41,6 +43,7 @@ from struct import Struct
 
 from ..bolt import AFile, Flags, flag, unpack_4s, unpack_int
 from ..exception import DDSError
+from ..wbtemp import TempFile
 
 # Constants
 _HEADER_MAGIC = b'DDS '
@@ -220,15 +223,14 @@ class _DXGIFormat(object): # PY3: enums sorely missed...
     _curr_index = 0
     index_to_fmt = {}
 
-    def __init__(self, fmt_name, fmt_ddspf=None, fmt_bpp=0,
-                 fmt_compressed=False):
-        """Creates a new _DXGIFormat with the specified name and optional
-        properties. Automatically aquires a a
+    def __init__(self, fmt_name: str, fmt_ddspf: _DDSPixelFormat | None = None,
+            *, fmt_bpp=0, fmt_compressed=False):
+        """Create a new _DXGIFormat with the specified name and optional
+        properties. Automatically acquires a slot in the index-to-format
+        mapping.
 
         :param fmt_name: The standardized name of this format.
-        :type fmt_name: str
         :param fmt_ddspf: The pixel format to use with this DXGI format.
-        :type fmt_ddspf: _DDSPixelFormat
         :param fmt_bpp: The bits per pixel.
         :param fmt_compressed: True if this format is compressed."""
         self._fmt_index = _DXGIFormat._curr_index
@@ -244,13 +246,14 @@ class _DXGIFormat(object): # PY3: enums sorely missed...
         """Returns the index of this DXGI format, for writing to a DDS file."""
         return self._fmt_index
 
-    def setup_file(self, dds_file, use_legacy_formats=False):
+    def setup_file(self, dds_file: DDSFile, use_legacy_formats=False):
         """Sets up the specified DDS file to work with this DXGI format.
 
-        :type dds_file: DDSFile
         :param use_legacy_formats: If set to True, use non-DXT10 legacy formats
             that are equivalent instead."""
-        target_pf = self._fmt_ddspf if use_legacy_formats else _DDSPF_DXT10
+        target_pf = (self._fmt_ddspf
+                     if use_legacy_formats and self._fmt_ddspf else
+                     _DDSPF_DXT10)
         dds_file.dds_header.ddspf = copy.copy(target_pf)
         row_pitch, slice_pitch = _compute_pitch[self._fmt_name](
             self._fmt_bpp, dds_file.dds_header.dw_width,
@@ -263,7 +266,7 @@ class _DXGIFormat(object): # PY3: enums sorely missed...
             dds_file.dds_header.dw_flags.DDSD_PITCH = True
             dds_file.dds_header.dw_flags.DDSD_LINEARSIZE = False
             dds_file.dds_header.dw_pitch_or_linear_size = row_pitch
-        if self._fmt_ddspf.needs_dxt10:
+        if target_pf.needs_dxt10:
             dds_file.dds_dxt10.dxgi_format = copy.copy(self)
 
     def __repr__(self):
@@ -398,6 +401,7 @@ _DXGIFormat(u'DXGI_FORMAT_IA44', fmt_bpp=8)
 _DXGIFormat(u'DXGI_FORMAT_P8', fmt_bpp=8)
 _DXGIFormat(u'DXGI_FORMAT_A8P8', fmt_bpp=16)
 _DXGIFormat(u'DXGI_FORMAT_B4G4R4A4_UNORM', _DDSPF_A4R4G4B4, fmt_bpp=16)
+_DXGIFormat._curr_index = 130 # The enum counter skips here
 _DXGIFormat(u'DXGI_FORMAT_P208', fmt_bpp=16)
 _DXGIFormat(u'DXGI_FORMAT_V208', fmt_bpp=16)
 _DXGIFormat(u'DXGI_FORMAT_V408', fmt_bpp=24)
@@ -623,7 +627,7 @@ class DDSFile(AFile):
         """Writes this DDS file to the specified path. If out_path is None,
         this file's own path will be used."""
         out_path = out_path or self.abs_path
-        with out_path.open(u'wb') as out:
+        with open(out_path, 'wb') as out:
             out.write(self.dump_file())
 
     def write_file_safe(self, out_path=None):
@@ -631,11 +635,12 @@ class DDSFile(AFile):
         file in-between in case something goes wrong while dumping. If out_path
         is None, this file's own path will be used."""
         out_path = out_path or self.abs_path
-        self.write_file(out_path.temp)
-        out_path.untemp()
+        with TempFile() as tmp_path:
+            self.write_file(tmp_path)
+            out_path.replace_with_temp(tmp_path)
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(DDSFile, self)._reset_cache(stat_tuple, load_cache)
+    def _reset_cache(self, stat_tuple, **kwargs):
+        super()._reset_cache(stat_tuple, **kwargs)
         self.dds_header = _DDSHeader()
         self.dds_dxt10 = _DDSHeaderDXT10()
         self.dds_contents = b''

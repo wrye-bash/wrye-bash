@@ -323,7 +323,7 @@ class _AWeightTweak(CustomChoiceTweak):
         log(self._log_weight_value % {'weight_value': self.chosen_weight})
 
     def wants_record(self, record):
-        return record.weight > self.chosen_weight # type: bolt.Rounder
+        return (record.weight or 0.0) > self.chosen_weight
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight
@@ -334,7 +334,7 @@ class _AWeightTweak_SEFF(_AWeightTweak):
     _ignore_effects = bush.game.fsName != u'Oblivion'
 
     def wants_record(self, record):
-        if not super(_AWeightTweak_SEFF, self).wants_record(record):
+        if not super().wants_record(record):
             return False
         return (self._ignore_effects or
                 ##: Skip OBME records, at least for now
@@ -361,8 +361,7 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
-        return record.weight < 1.0 and super(
-            AssortedTweak_PotionWeight, self).wants_record(record)
+        return (record.weight or 0.0) < 1.0 and super().wants_record(record)
 
 #------------------------------------------------------------------------------
 class AssortedTweak_IngredientWeight(_AWeightTweak_SEFF):
@@ -392,8 +391,11 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
     _log_weight_value = _('Ingestibles set to minimum weight of '
                           '%(weight_value)f.')
 
-    def wants_record(self, record): ##: no SEFF condition - intended?
-        return record.weight < self.chosen_weight
+    ##: no SEFF condition - intended?
+    # Probably no SEFF condition because that one delegates to its own super()
+    # and that checks weight *greater than* chosen_weight - refactor that
+    def wants_record(self, record):
+        return (record.weight or 0.0) < self.chosen_weight
 
 #------------------------------------------------------------------------------
 class _AStaffTweak(MultiTweakItem):
@@ -511,7 +513,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     def tweak_record(self, record):
         for mgef_attr, mgef_val in self._silent_attrs.items():
             setattr(record, mgef_attr, mgef_val)
-        record.flags.noHitEffect = True
+        record.flags.no_hit_effect = True
 
     def tweak_log(self, log, count):
         # count would be pointless, always one record

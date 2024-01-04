@@ -33,7 +33,7 @@ import sys
 import traceback
 from configparser import ConfigParser
 
-from . import bass, bolt, exception
+from . import bass, bolt, exception, wbtemp, wrye_text
 
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
@@ -59,10 +59,8 @@ def _early_setup():
     sys.unraisablehook = unraisable_hook
     # ensure we are in the correct directory so relative paths will work
     # properly
-    if bass.is_standalone:
-        pathToProg = os.path.dirname(sys.executable)
-    else:
-        pathToProg = os.path.dirname(sys.argv[0])
+    pathToProg = os.path.dirname(
+        sys.executable if bass.is_standalone else sys.argv[0])
     if pathToProg:
         os.chdir(pathToProg)
     global _bugdump_handle
@@ -154,6 +152,10 @@ def _import_deps():
         import yaml
     except ImportError:
         deps_msg += u'- PyYAML\n'
+    try:
+        import vdf
+    except ImportError:
+        deps_msg += '- vdf\n'
     if deps_msg:
         deps_msg += u'\n'
         if bass.is_standalone:
@@ -204,20 +206,7 @@ def assure_single_instance(instance):
         sys.exit(1)
 
 def exit_cleanup():
-    # Cleanup temp installers directory
-    import tempfile
-    tmpDir = bolt.GPath(tempfile.tempdir)
-    for file_ in tmpDir.ilist():
-        file_ = bolt.GPath_no_norm(f'{file_}')
-        if file_.cs.startswith(u'wryebash_'):
-            file_ = tmpDir.join(file_)
-            try:
-                if file_.is_dir():
-                    file_.rmtree(safety=u'wryebash_')
-                else:
-                    file_.remove()
-            except: ##: tighten this except
-                pass
+    wbtemp.cleanup_temp()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:
@@ -290,6 +279,11 @@ def dump_environment(wxver=None):
     except ImportError:
         requests_ver = 'not found (optional)'
     try:
+        import vdf
+        vdf_ver = vdf.__version__
+    except ImportError:
+        vdf_ver = 'not found'
+    try:
         import websocket
         websocket_client_ver = websocket.__version__
     except ImportError:
@@ -311,16 +305,15 @@ def dump_environment(wxver=None):
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet_ver}',
-    ]
-    if bolt.os_name == 'nt': # Hide on non-Windows platforms
-        msg.append(f' - ifileoperation: {ifileoperation_ver}')
-    msg.extend([
+        (f' - ifileoperation: {ifileoperation_ver}'
+         if bolt.os_name == 'nt' else None),
         f' - lxml: {lxml_ver}',
         f' - packaging: {packaging_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
         f' - requests: {requests_ver}',
+        f' - vdf: {vdf_ver}',
         f' - websocket-client: {websocket_client_ver}',
         f' - wxPython: {wx_ver}',
         # Standalone: stdout will actually be pointing to stderr, which has no
@@ -330,18 +323,63 @@ def dump_environment(wxver=None):
         f'Filesystem encoding: {fse}'
         f'{f" - using {bolt.Path.sys_fs_enc}" if not fse else ""}',
         f'Command line: {sys.argv}',
-    ])
-    bolt.deprint(msg := '\n\t'.join(msg))
+    ]
+    bolt.deprint(msg := '\n\t'.join([l for l in msg if l is not None]))
     return msg
 
-def _bash_ini_parser(bash_ini_path):
-    bash_ini_parser = None
-    if bash_ini_path is not None and os.path.exists(bash_ini_path):
-        bash_ini_parser = ConfigParser()
-        # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
-        # English INI is ASCII)
-        bash_ini_parser.read(bash_ini_path, encoding='utf-8')
-    return bash_ini_parser
+def _parse_bash_ini(bash_ini_path):
+    """Set default values for all valid INI settings then update from ini."""
+    ini_set = { # sections are case-sensitive
+        'General': dict.fromkeys(
+            ['BashModData', 'InstallersData', 'LocalAppDataPath',
+             'OblivionMods', 'OblivionPath', 'PersonalPath', 'UserPath'], ''),
+        'Settings': {
+            'OblivionTexturesBSAName': 'Oblivion - Textures - Compressed.bsa',
+            'Command7z': '7z', 'ScriptFileExt': '.txt',
+            **dict.fromkeys(['AutoItemCheck', 'EnableSplashScreen',
+                'EnsurePatchExists', 'PromptActivateBashedPatch',
+                'ResetBSATimestamps', 'WarnTooManyFiles'], True),
+            **dict.fromkeys(['ShowDevTools', 'SkipHideConfirmation',
+                'SkipResetTimeNotifications', 'SkipWSDetection'], False),
+            **dict.fromkeys(['7zExtraCompressionArguments',
+                'SkippedBashInstallersDirs', 'SoundError', 'SoundSuccess',
+                'xEditCommandLineArguments'], '')
+        },
+        'Tool Options': {
+            'OblivionBookCreatorJavaArg': '-Xmx1024m',
+            'Tes4GeckoJavaArg': '-Xmx1024m', 'ShowTextureToolLaunchers': True,
+            'ShowModelingToolLaunchers': True, 'ShowAudioToolLaunchers': True
+        }
+    }
+    bass.inisettings.clear() #ini might be reinitialized due to restore failing
+    for v in ini_set.values():
+        bass.inisettings.update(v)
+    # if bash.ini exists update those settings from there
+    if bash_ini_path is None or not os.path.exists(bash_ini_path):
+        return
+    bash_ini_parser = ConfigParser()
+    # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
+    # English INI is ASCII)
+    bash_ini_parser.read(bash_ini_path, encoding='utf-8')
+    for section in bash_ini_parser.sections():
+        section_defaults = ini_set.get(section, {})
+        section_defaults = {k.lower(): (k, v) for k, v in
+                            section_defaults.items()}
+        # retrieving ini settings is case-insensitive - key: lowercase
+        for ini_key_lower, value in bash_ini_parser.items(section):
+            if not value or value == '.': continue
+            if default := section_defaults.get(ini_key_lower[1:]):
+                ini_settings_key, default_value = default
+                if type(default_value) is bool:
+                    value = bash_ini_parser.getboolean(section, ini_key_lower)
+                else:
+                    value = value.strip()
+                bass.inisettings[ini_settings_key] = value
+            elif section == 'Tool Options':
+                ##:(570) provisional - we want to stop specifying tool paths
+                # in the ini but we need some UI for that
+                # stash all settings in here in case they match tool path keys
+                bass.inisettings[ini_key_lower[1:]] = value
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -349,11 +387,12 @@ def main(opts):
 
     :param opts: command line arguments
     :type opts: Namespace"""
-    if (os_system := platform.system()) != 'Windows' and not opts.unix:
-        # Linux is still mostly broken, so raise on import
-        raise ImportError(f'Wrye Bash only partially supports {os_system} at '
+    curr_os = platform.system()
+    if curr_os not in ('Linux', 'Windows') and not opts.unsupported:
+        raise ImportError(f'Wrye Bash only partially supports {curr_os} at '
                           f"the moment. If you know what you're doing, use "
-                          f"the --unix switch to bypass this raise statement.")
+                          f"the --unsupported switch to bypass this raise "
+                          f"statement.")
     # Change working dir and logging
     _early_setup()
     # wx is needed to initialize locale, so that's first
@@ -365,6 +404,13 @@ def main(opts):
         wx_locale = localize.setup_locale(opts.language, _wx)
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
                                        not _rightPythonVersion()): return
+        # if HTML file generation was requested, just do it and quit
+        if opts.genHtml is not None: ##: we should do this before localization and wx import
+            print(_(f"Generating HTML file from '%(gen_target)s'") % {
+                'gen_target': opts.genHtml})
+            wrye_text.genHtml(opts.genHtml)
+            print(_('Done'))
+            return
         # Both of these must come early, before we begin showing wx-based GUI
         from . import env
         env.mark_high_dpi_aware()
@@ -418,21 +464,6 @@ def _main(opts, wx_locale, wxver):
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
-    # if HTML file generation was requested, just do it and quit
-    if opts.genHtml is not None:
-        ##: See if the encodes are actually necessary
-        msg1 = _(f"Generating HTML file from '%(gen_target)s'") % {
-            'gen_target': opts.genHtml}
-        msg2 = _('Done')
-        try: print(msg1)
-        except UnicodeError: print(msg1.encode(bolt.Path.sys_fs_enc))
-        ##: belt does bolt.codebox = WryeParser.codebox - FIXME decouple!
-        # noinspection PyUnresolvedReferences
-        from . import belt
-        bolt.WryeText.genHtml(opts.genHtml)
-        try: print(msg2)
-        except UnicodeError: print(msg2.encode(bolt.Path.sys_fs_enc))
-        return
     # We need the Mopy dirs to initialize restore settings instance
     bash_ini_path, restore_ = u'bash.ini', None
     # import barb, which does not import from bosh/bush
@@ -449,7 +480,7 @@ def _main(opts, wx_locale, wxver):
             restore_ = None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
+        bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
         if restore_:
             try:
@@ -466,11 +497,9 @@ def _main(opts, wx_locale, wxver):
                 # _detect_game -> _import_bush_and_set_game
                 from . import bush
                 bush.reset_bush_globals()
-                bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
-        ##: Break bosh-balt/gui coupling, though this doesn't actually cause
-        # init problems (since we init those in main)
+                bush_game, game_ini_path = _detect_game(opts, 'bash.ini')
         from . import bosh
-        bosh.initBosh(bashIni, game_ini_path)
+        bosh.initBosh(game_ini_path)
         from . import env
         env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
@@ -483,8 +512,9 @@ def _main(opts, wx_locale, wxver):
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
-    # Status bar buttons are initialized in InitLinks and use images
+    # Status bar buttons (initialized in InitStatusBar) use images
     basher.InitImages()
+    basher.links_init.InitStatusBar()
     basher.InitLinks()
     #--Start application
     bapp = basher.BashApp(bash_app)
@@ -501,7 +531,7 @@ def _main(opts, wx_locale, wxver):
                 'the %(gameName)s directory.  If you do not start Wrye Bash '
                 'with elevated privileges, you will be prompted at each '
                 'operation that requires elevated privileges.') % {
-                    'gameName': bush_game.displayName}
+                    'gameName': bush_game.display_name}
             uacRestart = balt.ask_uac_restart(message, mopy=bass.dirs['mopy'])
         if uacRestart:
             bass.update_sys_argv(['--uac'])
@@ -550,39 +580,35 @@ def _main(opts, wx_locale, wxver):
 
 def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
-    bashIni = _bash_ini_parser(backup_bash_ini)
+    _parse_bash_ini(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file
-    user_path = opts.userPath or None  ##: not sure why this must be set first
-    if user_path is None:
-        ini_user_path = bass.get_ini_option(bashIni, u'sUserPath')
-        if ini_user_path and not ini_user_path == u'.':
-            user_path = ini_user_path
+    ##: not sure why this must be set first
+    user_path = opts.userPath or bass.inisettings['UserPath']
     if user_path:
         homedrive, homepath = os.path.splitdrive(user_path)
         os.environ[u'HOMEDRIVE'] = homedrive
         os.environ[u'HOMEPATH'] = homepath
     # Detect the game we're running for ---------------------------------------
-    bush_game = _import_bush_and_set_game(opts, bashIni)
+    bush_game = _import_bush_and_set_game(opts)
     if not bush_game:
-        return None, None, None
+        return None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     from . import initialization
     game_ini_path, init_warnings = initialization.init_dirs(
-        bashIni, opts.personalPath, opts.localAppDataPath, bush_game)
+        opts.personalPath, opts.localAppDataPath, bush_game)
     if init_warnings:
         warning_msg = _('The following (non-critical) warnings were found '
                         'during initialization:')
         warning_msg += '\n\n'
         warning_msg += '\n'.join(f'- {w}' for w in init_warnings)
         _show_boot_popup(warning_msg, is_critical=False)
-    return bashIni, bush_game, game_ini_path
+    return bush_game, game_ini_path
 
-def _import_bush_and_set_game(opts, bashIni):
+def _import_bush_and_set_game(opts):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(cli_game_dir=opts.oblivionPath,
-        bash_ini_=bashIni)
+    game_infos = bush.detect_and_set_game(opts.oblivionPath)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
             _show_boot_popup(_(
@@ -600,7 +626,7 @@ def _import_bush_and_set_game(opts, bashIni):
         # Add the game to the command line, so we use it if we restart
         gname, gm_path = retCode
         bass.update_sys_argv([u'--oblivionPath', f'{gm_path}'])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
+        bush.detect_and_set_game(opts.oblivionPath, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
@@ -612,7 +638,7 @@ def _show_boot_popup(msg, is_critical=True):
     try:
         from .balt import Resources
         from .gui import CENTER, CancelButton, Color, LayoutOptions, \
-            StartupDialogWindow, TextArea, VLayout
+            StartupDialogWindow, TextArea, VLayout, HLayout, OkButton
         class MessageBox(StartupDialogWindow):
             def __init__(self, msg):
                 popup_title = (_(u'Wrye Bash Error') if is_critical else
@@ -626,15 +652,20 @@ def _show_boot_popup(msg, is_critical=True):
                 self.component_size = (400, 300)
                 msg_text = TextArea(self, editable=False, init_text=msg,
                                     auto_tooltip=False)
+                if is_critical:
+                    bottom_btns = [CancelButton(self, btn_label=_('Quit'))]
+                else:
+                    bottom_btns = [OkButton(self, btn_label=_('Continue')),
+                                   CancelButton(self, btn_label=_('Abort'))]
                 VLayout(item_border=5, items=[
                     (msg_text, LayoutOptions(expand=True, weight=1)),
-                    (CancelButton(self, btn_label=_(u'Quit') if is_critical
-                                                 else _(u'OK')),
+                    (HLayout(spacing=4, items=bottom_btns),
                      LayoutOptions(h_align=CENTER)),
                 ]).apply_to(self)
         print(msg) # Print msg into error log.
-        MessageBox.display_dialog(msg)
-        if is_critical: sys.exit(1)
+        msg_choice = MessageBox.display_dialog(msg)
+        if is_critical or not msg_choice:
+            sys.exit(1) # Critical error or user aborted
     except Exception: ##: tighten these excepts?
         # Instantiating wx.App failed, fallback to tkinter.
         but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',
@@ -643,7 +674,7 @@ def _show_boot_popup(msg, is_critical=True):
 
 def _tkinter_error_dial(msg, but_kwargs):
     import tkinter
-    root_widget = tkinter.Tk()
+    root_widget = tkinter.Tk() ##: on macos this crashes
     frame = tkinter.Frame(root_widget)
     frame.pack()
     button = tkinter.Button(frame, command=root_widget.destroy, pady=15,
@@ -681,10 +712,11 @@ class _AppReturnCode(object):
 def _select_game_popup(game_infos):
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
-    from .balt import ImageWrapper, Resources
-    from .gui import CENTER, CancelButton, DropDown, HLayout, HorizontalLine, \
-        ImageButton, ImageDropDown, Label, LayoutOptions, SearchBar, Stretch, \
-        TextAlignment, TextField, VBoxedLayout, VLayout, WindowFrame
+    from .balt import Resources
+    from .gui import CENTER, CancelButton, DropDown, GuiImage, HLayout, \
+        HorizontalLine, ImageButton, ImageDropDown, Label, LayoutOptions, \
+        SearchBar, Stretch, TextAlignment, TextField, VBoxedLayout, VLayout, \
+        WindowFrame
     class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 
@@ -692,14 +724,16 @@ def _select_game_popup(game_infos):
             super().__init__(None, title=_('Select Game'),
                 icon_bundle=Resources.bashRed)
             self._callback = callback
-            self._sorted_games = sorted(g.displayName for g in game_infos)
-            self._game_to_paths = {g.displayName: ps for g, ps
+            self._sorted_games = sorted(
+                g.unique_display_name for g in game_infos)
+            self._game_to_paths = {g.unique_display_name: ps for g, ps
                                   in game_infos.items()}
-            self._game_to_info = {g.displayName: g for g in game_infos}
-            gi_join = bass.dirs['images'].join('games').join
-            self._game_to_bitmap = {
-                g.displayName: ImageWrapper(gi_join(g.game_icon % 32),
-                    iconSize=32).get_bitmap() for g in game_infos}
+            self._game_to_info = {g.unique_display_name: g for g in game_infos}
+            ij = bass.dirs['images'].join # images not yet initialized
+            ico_paths = {g: ij(os.path.join('games', g.game_icon % 32)) for g
+                         in game_infos}
+            self._game_to_bitmap = {g.unique_display_name: GuiImage.from_path(
+                p, iconSize=32) for g, p in ico_paths.items()}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self, hint=_('Search Games'))
             game_search.on_text_changed.subscribe(self._perform_search)
@@ -709,14 +743,11 @@ def _select_game_popup(game_infos):
             self._lang_dropdown.on_combo_select.subscribe(self._select_lang)
             self._game_path = TextField(self, editable=False)
             class _ImgCancelButton(CancelButton, ImageButton): pass
-            quit_img = ImageWrapper(bass.dirs['images'].join('quit.svg'),
-                iconSize=32)
-            quit_button = _ImgCancelButton(self, quit_img.get_bitmap(),
-                btn_label=_('Quit'))
+            quit_img = GuiImage.from_path(ij('quit.svg'), iconSize=32)
+            quit_button = _ImgCancelButton(self, quit_img, btn_label=_('Quit'))
             quit_button.on_clicked.subscribe(self._handle_quit)
-            launch_img = ImageWrapper(bass.dirs['images'].join('bash.svg'),
-                iconSize=32)
-            self._launch_button = ImageButton(self, launch_img.get_bitmap(),
+            launch_img = GuiImage.from_path(ij('bash.svg'), iconSize=32)
+            self._launch_button = ImageButton(self, launch_img,
                 btn_label=_('Launch'))
             self._launch_button.on_clicked.subscribe(self._handle_launch)
             # Start out with an empty search and the alphabetically first game

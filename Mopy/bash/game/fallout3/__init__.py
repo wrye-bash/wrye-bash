@@ -23,16 +23,15 @@
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES, GameInfo
-from ..gog_game import GOGMixin
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 _GOG_IDS = [1454315831]
 
-class Fallout3GameInfo(PatchGame):
+class AFallout3GameInfo(PatchGame):
     """GameInfo override for Fallout 3."""
-    displayName = u'Fallout 3'
+    display_name = 'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
     game_icon = u'fallout3_%u.png'
@@ -51,22 +50,22 @@ class Fallout3GameInfo(PatchGame):
     loot_dir = u'Fallout3'
     loot_game_name = 'Fallout3'
     boss_game_name = u'Fallout3'
-    registry_keys = [(r'Bethesda Softworks\Fallout3', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'textures', u'characters', u'BodyMods'),
-        _j(u'textures', u'characters', u'FaceMods')]
+        _j('textures', 'characters', 'bodymods'),
+        _j('textures', 'characters', 'facemods'),
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'GECK'
         long_name = u'Garden of Eden Creation Kit'
         exe = u'GECK.exe'
-        se_args = u'-editor'
-        image_name = u'geck%s.png'
+        se_args = ('-editor',)
+        image_name = 'geck%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'FOSE'
@@ -93,8 +92,8 @@ class Fallout3GameInfo(PatchGame):
         supports_mod_inis = False
 
     class Ess(GameInfo.Ess):
-        ext = u'.fos'
         can_safely_remove_masters = True
+        ext = '.fos'
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
@@ -133,7 +132,15 @@ class Fallout3GameInfo(PatchGame):
         keep_data_files = {'fallout - ai!.bsa'}
         lod_meshes_dir = _j('meshes', 'landscape', 'lod')
         lod_textures_dir = _j('textures', 'landscape', 'lod')
-        skip_bain_refresh = {u'fo3edit backups', u'fo3edit cache'}
+        no_skip = GameInfo.Bain.no_skip | {
+            # 3P: UIO - User Interface Organizer
+            _j('uio', 'private', 'menus_list.txt'),
+            _j('uio', 'private', 'supported.txt'),
+        }
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
+            _j('uio', 'public'): {'.txt'}, # 3P: UIO - User Interface Organizer
+        }
+        skip_bain_refresh = {'fo3edit backups', 'fo3edit cache'}
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
@@ -143,21 +150,17 @@ class Fallout3GameInfo(PatchGame):
         stringsFiles = []
         validHeaderVersions = (0.85, 0.94)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        'ImportActorsAIPackages', 'NpcChecker',
-        'ImportActorsFaces', 'RaceChecker',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
-        u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
-        u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
-        u'TweakRaces', u'TimescaleChecker', u'TweakNames',
-        'ImportEnchantments',
+        'AliasPluginNames', 'ContentsChecker', 'FormIDLists', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFaces', 'ImportActorsFactions',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportNames',
+        'ImportObjectBounds', 'ImportRaces', 'ImportRacesRelations',
+        'ImportRelations', 'ImportScripts', 'ImportSounds', 'ImportSpellStats',
+        'ImportStats', 'ImportText', 'LeveledLists', 'NpcChecker',
+        'RaceChecker', 'TimescaleChecker', 'TweakActors', 'TweakAssorted',
+        'TweakNames', 'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (
@@ -547,12 +550,12 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLC', b'LVLI', b'LVLN')
+    leveled_list_types = {b'LVLC', b'LVLI', b'LVLN'}
 
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {
+    names_types = {
         b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
         b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
         b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
@@ -604,15 +607,15 @@ class Fallout3GameInfo(PatchGame):
     sounds_attrs = {
         b'ASPC': ('environment_type',),
         ##: see sounds_attrs note in oblivion/__init__.py
-        b'CREA': ('footWeight', 'sounds'),
+        b'CREA': ('foot_weight', 'actor_sounds'),
         b'EXPL': ('expl_sound_level',),
         b'IPCT': ('ipct_sound_level',),
-        b'PROJ': ('soundLevel',),
+        b'PROJ': ('sound_level',),
         b'SOUN': ('soundFile', 'minDist', 'maxDist', 'freqAdj', 'flags',
                   'staticAtten', 'stopTime', 'startTime', 'point0', 'point1',
                   'point2', 'point3', 'point4', 'reverb', 'priority', 'xLoc',
                   'yLoc'),
-        b'WEAP': ('soundLevel',),
+        b'WEAP': ('sound_level',),
         # Has FormIDs, but will be filtered in AMreWthr.keep_fids
         b'WTHR': ('sounds',),
     }
@@ -624,7 +627,7 @@ class Fallout3GameInfo(PatchGame):
         b'ASPC': ('sound', 'use_sound_from_region'),
         b'COBJ': ('sound_pickup', 'sound_drop'),
         b'CONT': ('sound', 'sound_close'),
-        b'CREA': ('inheritsSoundsFrom',),
+        b'CREA': ('inherits_sounds_from',),
         b'DOOR': ('sound', 'sound_close', 'sound_looping'),
         b'EXPL': ('expl_sound1', 'expl_sound2'),
         b'IPCT': ('sound', 'ipct_sound2'),
@@ -633,7 +636,7 @@ class Fallout3GameInfo(PatchGame):
         b'MGEF': ('castingSound', 'boltSound', 'hitSound', 'areaSound'),
         b'MISC': ('sound_pickup', 'sound_drop'),
         b'NOTE': ('sound_pickup', 'sound_drop', 'sound'),
-        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
+        b'PROJ': ('proj_sound', 'proj_sound_countdown', 'proj_sound_disable'),
         b'TACT': ('sound',),
         b'TERM': ('sound',),
         b'WATR': ('sound',),
@@ -688,7 +691,7 @@ class Fallout3GameInfo(PatchGame):
         b'CLAS': ('iconPath',),
         b'COBJ': ('iconPath', 'smallIconPath', 'model'),
         b'CONT': ('model',),
-        b'CREA': ('model', 'bodyParts', 'nift_p'),
+        b'CREA': ('model', 'bodyParts', 'model_list_textures'),
         b'DOOR': ('model',),
         b'EFSH': (
             'efsh_flags', 'particle_texture', 'fill_texture', 'holes_texture',
@@ -750,10 +753,10 @@ class Fallout3GameInfo(PatchGame):
         b'MICN': ('iconPath', 'smallIconPath'),
         b'MISC': ('iconPath', 'smallIconPath', 'model'),
         b'MSTT': ('model',),
-        b'NOTE': ('iconPath', 'smallIconPath', 'model', 'texture'),
+        b'NOTE': ('iconPath', 'smallIconPath', 'model', 'note_texture'),
         b'PERK': ('iconPath', 'smallIconPath'),
-        b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
-                  'muzzleFlashPath'),
+        b'PROJ': ('model', 'muzzle_flash_duration', 'proj_fade_duration',
+                  'muzzle_flash_model'),
         b'PWAT': ('model',),
         b'STAT': ('model',),
         b'TACT': ('model',),
@@ -773,7 +776,7 @@ class Fallout3GameInfo(PatchGame):
                   'reloadAnimation'),
     }
     graphicsFidTypes = {
-        b'CREA': ('bodyPartData',),
+        b'CREA': ('body_part_data',),
         b'EFSH': ('addon_models',),
         b'EXPL': ('image_space_modifier', 'expl_light', 'expl_impact_dataset',
                   'placed_impact_object'),
@@ -783,7 +786,7 @@ class Fallout3GameInfo(PatchGame):
                   'impact_hollow_metal', 'impact_organic_bug',
                   'impact_organic_glow'),
         b'MGEF': ('light', 'effectShader', 'enchantEffect'),
-        b'PROJ': ('light', 'muzzleFlash', 'explosion'),
+        b'PROJ': ('proj_light', 'muzzle_flash', 'proj_explosion'),
         b'WEAP': ('scopeEffect', 'impact_dataset', 'firstPersonModel'),
     }
     graphicsModelAttrs = {'model', 'shellCasingModel', 'scopeModel', 'worldModel',
@@ -792,7 +795,7 @@ class Fallout3GameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
+    inventory_types = {b'CONT', b'CREA', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -806,7 +809,7 @@ class Fallout3GameInfo(PatchGame):
         b'MESG': ('description',),
         b'MGEF': ('description',),
         ##: This one *might* be a FormID. How on earth do we handle this?
-        b'NOTE': ('textTopic',),
+        b'NOTE': ('note_contents',),
         b'PERK': ('description',),
         # omit RACE - covered by R.Description
         b'TERM': ('description',),
@@ -820,7 +823,8 @@ class Fallout3GameInfo(PatchGame):
         b'COBJ', b'CONT', b'CREA', b'DOOR', b'EXPL', b'FURN', b'GRAS', b'IDLM',
         b'INGR', b'KEYM', b'LIGH', b'LVLC', b'LVLI', b'LVLN', b'MISC', b'MSTT',
         b'NOTE', b'NPC_', b'PROJ', b'PWAT', b'SCOL', b'SOUN', b'STAT', b'TACT',
-        b'TERM', b'TREE', b'TXST', b'WEAP'}
+        b'TERM', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -840,24 +844,28 @@ class Fallout3GameInfo(PatchGame):
         b'NPC_': _common_entry_types,
     }
     cc_passes = (
-        ((b'LVLC', b'LVLN', b'LVLI'), 'entries', 'listId'),
-        ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
     )
 
     #--------------------------------------------------------------------------
     # Import Scripts
     #--------------------------------------------------------------------------
     # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
-    scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT',
-                     b'CREA', b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH',
-                     b'MISC', b'NPC_', b'QUST', b'TACT', b'TERM', b'WEAP'}
+    scripts_types = {
+        b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_', b'QUST', b'TACT',
+        b'TERM', b'WEAP'
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT',
-                          b'CREA', b'DOOR', b'FURN', b'KEYM', b'LIGH', b'MISC',
-                          b'MSTT', b'NPC_', b'PROJ', b'TACT', b'TERM', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT', b'CREA', b'DOOR',
+        b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'TACT',
+        b'TERM', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors
@@ -865,51 +873,66 @@ class Fallout3GameInfo(PatchGame):
     actor_importer_attrs = {
         b'CREA': {
             'Actors.ACBS': (
-                'barterGold', 'calcMax', 'calcMin', 'dispositionBase',
-                'fatigue', 'flags.allowPCDialogue', 'flags.allowPickpocket',
-                'flags.biped', 'flags.cantOpenDoors', 'flags.essential',
-                'flags.flies', 'flags.immobile', 'flags.invulnerable',
-                'flags.isGhost', 'flags.noBloodDecal', 'flags.noBloodSpray',
-                'flags.noCombatInWater', 'flags.noHead', 'flags.noKnockDown',
-                'flags.noLeftArm', 'flags.noLowLevel', 'flags.noRightArm',
-                'flags.noRotatingHeadTrack', 'flags.noShadow',
-                'flags.notPushable', 'flags.noVATSMelee', 'flags.respawn',
-                'flags.swims', 'flags.tiltFrontBack', 'flags.tiltLeftRight',
-                'flags.walks', 'flags.weaponAndShield', 'karma',
-                'speedMultiplier',
+                'barter_gold', 'calc_max_level', 'calc_min_level',
+                'disposition_base', 'fatigue',
+                'crea_flags.crea_allow_pc_dialogue',
+                'crea_flags.crea_allow_pickpocket', 'crea_flags.crea_biped',
+                'crea_flags.crea_cant_open_doors', 'crea_flags.crea_essential',
+                'crea_flags.crea_flies', 'crea_flags.crea_immobile',
+                'crea_flags.crea_invulnerable', 'crea_flags.crea_is_ghost',
+                'crea_flags.crea_no_blood_decal',
+                'crea_flags.crea_no_blood_spray',
+                'crea_flags.crea_no_combat_in_water', 'crea_flags.no_head',
+                'crea_flags.crea_no_knockdowns', 'crea_flags.no_left_arm',
+                'crea_flags.no_low_level', 'crea_flags.no_right_arm',
+                'crea_flags.crea_no_rotating_head_track',
+                'crea_flags.crea_no_shadow',
+                'crea_flags.crea_not_pushable', 'crea_flags.no_vats_melee',
+                'crea_flags.crea_respawn', 'crea_flags.crea_swims',
+                'crea_flags.crea_tilt_front_back',
+                'crea_flags.crea_tilt_left_right', 'crea_flags.crea_walks',
+                'crea_flags.weapon_and_shield', 'karma', 'speed_multiplier',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('flags.pcLevelOffset', 'level_offset')),
-            'Actors.AIData': ('aggression', 'aggroRadius',
-                              'aggroRadiusBehavior', 'assistance',
-                              'confidence', 'energyLevel', 'mood',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+                ('crea_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
-            'Actors.Stats': ('agility', 'charisma', 'combatSkill', 'damage',
-                             'endurance', 'health', 'intelligence', 'luck',
-                             'magicSkill', 'perception', 'stealthSkill',
-                             'strength'),
-            'Creatures.Type': ('creatureType',),
+            'Actors.Stats': (
+                'agility', 'charisma', 'combat_skill', 'damage', 'endurance',
+                'health', 'intelligence', 'luck', 'magic_skill', 'perception',
+                'stealth_skill', 'strength',
+            ),
+            'Creatures.Type': ('creature_type',),
         },
         b'NPC_': {
-            'Actors.ACBS': ('barterGold', 'calcMax', 'calcMin', 'dispositionBase',
-                            'fatigue', 'flags.autoCalc', 'flags.canBeAllRaces',
-                            'flags.essential', 'flags.female',
-                            'flags.isChargenFacePreset', 'flags.noBloodDecal',
-                            'flags.noBloodSpray', 'flags.noKnockDown',
-                            'flags.noLowLevel', 'flags.noRotatingHeadTrack',
-                            'flags.notPushable', 'flags.noVATSMelee',
-                            'flags.respawn', 'karma', 'speedMultiplier',
-                            ('flags.pcLevelOffset', 'level_offset')), # See above
-            'Actors.AIData': ('aggression', 'aggroRadius',
-                              'aggroRadiusBehavior', 'assistance',
-                              'confidence', 'energyLevel', 'mood',
-                              'responsibility', 'services', 'trainLevel',
-                              'trainSkill'),
+            'Actors.ACBS': (
+                'barter_gold', 'calc_max_level', 'calc_min_level',
+                'disposition_base', 'fatigue', 'npc_flags.npc_auto_calc',
+                'npc_flags.can_be_all_races', 'npc_flags.npc_essential',
+                'npc_flags.npc_female', 'npc_flags.is_chargen_face_preset',
+                'npc_flags.crea_no_blood_decal',
+                'npc_flags.crea_no_blood_spray',
+                'npc_flags.crea_no_knockdowns', 'npc_flags.no_low_level',
+                'npc_flags.crea_no_rotating_head_track',
+                'npc_flags.crea_not_pushable', 'npc_flags.no_vats_melee',
+                'npc_flags.npc_respawn', 'karma', 'speed_multiplier',
+                ('npc_flags.pc_level_offset', 'level_offset'), # See above
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius', 'ai_aggro_radius_behavior',
+                'ai_assistance', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_service_flags', 'ai_train_level',
+                'ai_train_skill',
+            ),
             'Actors.Anims': ('animations',),
             'Actors.RecordFlags': ('flags1',),
             'Actors.Skeleton': ('model',),
@@ -932,11 +955,12 @@ class Fallout3GameInfo(PatchGame):
             'Actors.DeathItem': ('death_item',),
             'Actors.Voice': ('voice',),
             'Creatures.Blood': (),
-            'NPC.Class': ('iclass',),
+            'NPC.Class': ('npc_class',),
             'NPC.Race': ('race',),
         },
     }
-    actor_types = (b'CREA', b'NPC_')
+    actor_types = {b'CREA', b'NPC_'}
+    spell_types = {b'SPEL'}
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
@@ -1192,7 +1216,8 @@ class Fallout3GameInfo(PatchGame):
         b'PACK', b'CSTY', b'LSCR', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR',
         b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'RADS',
         b'CAMS', b'CPTH', b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG',
-        b'RGDL', b'DOBJ', b'LGTM', b'MUSC']
+        b'RGDL', b'DOBJ', b'LGTM', b'MUSC',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -1215,9 +1240,8 @@ FO3_LANG_DIRS = ['Fallout 3 GOTY English', 'Fallout 3 GOTY French',
                  'Fallout 3 GOTY German', 'Fallout 3 GOTY Italian',
                  'Fallout 3 GOTY Spanish']
 
-class EGSFallout3GameInfo(Fallout3GameInfo):
+class EGSFallout3GameInfo(EGSMixin, AFallout3GameInfo):
     """GameInfo override for the Epic Games Store version of Fallout 3."""
-    displayName = 'Fallout 3 (EGS)'
     # appdata_name and my_games_name use the original locations
 
     @classproperty
@@ -1228,26 +1252,32 @@ class EGSFallout3GameInfo(Fallout3GameInfo):
     def game_detect_excludes(cls):
         return super().game_detect_excludes - {'FalloutLauncherEpic.exe'}
 
-    class Eg(Fallout3GameInfo.Eg):
+    class Eg(AFallout3GameInfo.Eg):
         egs_app_names = ['adeae8bbfc94427db57c7dfecce3f1d4']
         egs_language_dirs = FO3_LANG_DIRS
 
-class GOGFallout3GameInfo(GOGMixin, Fallout3GameInfo):
+class GOGFallout3GameInfo(GOGMixin, AFallout3GameInfo):
     """GameInfo override for the GOG version of Fallout 3."""
-    displayName = 'Fallout 3 (GOG)'
     _gog_game_ids = _GOG_IDS
     # appdata_name and my_games_name use the original locations
 
-class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
+class SteamFallout3GameInfo(SteamMixin, AFallout3GameInfo):
+    """GameInfo override for the Steam version of Fallout 3."""
+    class St(AFallout3GameInfo.St):
+        steam_ids = [
+            22300, # Fallout 3
+            22370, # Fallout 3 - Game of the Year Edition
+        ]
+
+class WSFallout3GameInfo(WindowsStoreMixin, AFallout3GameInfo):
     """GameInfo override for the Windows Store version of Fallout 3."""
-    displayName = 'Fallout 3 (WS)'
     # appdata_name and my_games_name use the original locations
 
-    class Ws(Fallout3GameInfo.Ws):
+    class Ws(AFallout3GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout3'
         ws_language_dirs = FO3_LANG_DIRS
 
-GAME_TYPE = {g.displayName: g for g in
-             (Fallout3GameInfo, EGSFallout3GameInfo, GOGFallout3GameInfo,
-              WSFallout3GameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    EGSFallout3GameInfo, GOGFallout3GameInfo, SteamFallout3GameInfo,
+    WSFallout3GameInfo)}

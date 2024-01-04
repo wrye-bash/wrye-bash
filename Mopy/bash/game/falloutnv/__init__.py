@@ -24,16 +24,15 @@ from copy import deepcopy
 from os.path import join as _j
 
 from .. import WS_COMMON_FILES
-from ..fallout3 import Fallout3GameInfo
-from ..gog_game import GOGMixin
-from ..windows_store_game import WindowsStoreMixin
+from ..fallout3 import AFallout3GameInfo
+from ..store_mixins import EGSMixin, GOGMixin, SteamMixin, WindowsStoreMixin
 from ...bolt import DefaultFNDict, FName, classproperty
 
 _GOG_IDS = [1454587428]
 
-class FalloutNVGameInfo(Fallout3GameInfo):
+class _AFalloutNVGameInfo(AFallout3GameInfo):
     """GameInfo override for Fallout New Vegas."""
-    displayName = u'Fallout New Vegas'
+    display_name = 'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
     game_icon = u'falloutnv_%u.png'
@@ -51,12 +50,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     loot_dir = u'FalloutNV'
     loot_game_name = 'FalloutNV'
     boss_game_name = u'FalloutNV'
-    registry_keys = [(r'Bethesda Softworks\FalloutNV', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
     nexusKey = u'bash.installers.openNewVegasNexus.continue'
 
-    class Se(Fallout3GameInfo.Se):
+    class Se(AFallout3GameInfo.Se):
         se_abbrev = u'NVSE'
         long_name = u'New Vegas Script Extender'
         exe = u'nvse_loader.exe'
@@ -67,7 +65,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
 
-    class Bsa(Fallout3GameInfo.Bsa):
+    class Bsa(AFallout3GameInfo.Bsa):
         redate_dict = DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'Fallout - Meshes.bsa': 1104530400,    # '2005-01-01'
             u'Fallout - Meshes2.bsa': 1104616800,   # '2005-01-02'
@@ -78,26 +76,27 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             u'Fallout - Voices1.bsa': 1105048800,   # '2005-01-07'
         })
 
-    class Xe(Fallout3GameInfo.Xe):
+    class Xe(AFallout3GameInfo.Xe):
         full_name = u'FNVEdit'
         xe_key_prefix = u'fnvView'
 
-    class Bain(Fallout3GameInfo.Bain):
-        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
-        no_skip = Fallout3GameInfo.Bain.no_skip | {
+    class Bain(AFallout3GameInfo.Bain):
+        data_dirs = (AFallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
+        no_skip = AFallout3GameInfo.Bain.no_skip | {
             'aaid.txt', # 3P: Auto Activate Invisible Doors
+            _j('uio', 'supported.txt'), # 3P: UIO - User Interface Organizer
         }
-        no_skip_dirs = Fallout3GameInfo.Bain.no_skip_dirs | {
+        no_skip_dirs = AFallout3GameInfo.Bain.no_skip_dirs | {
             # 3P: JIP LN's Script Runner
             _j('nvse', 'plugins', 'scripts'): {'.txt'},
         }
-        skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
+        skip_bain_refresh = {'fnvedit backups', 'fnvedit cache'}
 
-    class Esp(Fallout3GameInfo.Esp):
+    class Esp(AFallout3GameInfo.Esp):
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
-    allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-    patchers = Fallout3GameInfo.patchers | {u'ImportWeaponModifications'}
+    allTags = AFallout3GameInfo.allTags | {'WeaponMods'}
+    patchers = AFallout3GameInfo.patchers | {'ImportWeaponModifications'}
 
     bethDataFiles = {
         'caravanpack - main.bsa',
@@ -147,7 +146,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
 
     # Function Info ---------------------------------------------------------------
     # 0: no param; 1: int param; 2: FormID param; 3: float param
-    condition_function_data = Fallout3GameInfo.condition_function_data | {
+    condition_function_data = AFallout3GameInfo.condition_function_data | {
         # new & changed functions in FNV
         398:  ('IsLimbGone', 1, 1),
         420:  ('GetObjectiveCompleted', 2, 1),
@@ -168,7 +167,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         612:  ('PlayerInRegion', 2, 0),
         614:  ('GetChallengeCompleted', 2, 0),
         619:  ('IsAlwaysHardcore', 0, 0),
-        # Added by (x)NVSE - up to date with xNVSE v6.2.9
+        # Added by (x)NVSE - up to date with xNVSE v6.3.4
         1024: ('GetNVSEVersion', 0, 0),
         1025: ('GetNVSERevision', 0, 0),
         1026: ('GetNVSEBeta', 0, 0),
@@ -252,11 +251,16 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         1541: ('GetActorFIKstatus', 0, 0),
         1587: ('GetWeaponRegenRate', 2, 0),
         1590: ('CallFunctionCond', 2, 1),
+        1623: ('HasAmmoEquipped', 2, 0),
+        1624: ('GetEquippedWeaponCanUseAmmo', 2, 0),
+        1625: ('IsEquippedAmmoInList', 2, 0),
+        1626: ('GetEquippedWeaponUsesAmmoList', 2, 0),
+        1631: ('GetWeaponCanUseAmmo', 2, 2),
         # Added by nvse_plugin_ExtendedActorVariable (obsolete & unreleased)
         4352: ('GetExtendedActorVariable', 2, 0),
         4353: ('GetBaseExtendedActorVariable', 2, 0),
         4355: ('GetModExtendedActorVariable', 2, 0),
-        # Added by nvse_extender
+        # Added by nvse_extender - up to date with v19
         4420: ('NX_GetEVFl', 0, 0),
         4426: ('NX_GetQVEVFl', 2, 1),
         # Added by lutana_nvse (included in JIP)
@@ -278,7 +282,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         4833: ('GetDistance3D', 2, 0),
         4843: ('PlayerHasKey', 0, 0),
         4897: ('ActorHasEffect', 2, 0),
-        # Added by JIP NVSE Plugin - up to date with v56.76
+        # Added by JIP NVSE Plugin - up to date with v57.21
         5637: ('GetIsPoisoned', 0, 0),
         5708: ('IsEquippedWeaponSilenced', 0, 0),
         5709: ('IsEquippedWeaponScoped', 0, 0),
@@ -313,10 +317,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         6368: ('GetGroundMaterial', 0, 0),
         6391: ('EquippedWeaponHasModType', 1, 0),
         6426: ('IsSpellTargetList', 2, 0),
-        # Added by JohnnyGuitar NVSE - up to date with v4.85
+        # Added by JohnnyGuitar NVSE - up to date with v4.98
         8501: ('GetBaseScale', 0, 0),
         8549: ('GetQuestFailed', 2, 0),
         8623: ('GetLocationSpecificLoadScreensOnly', 0, 0),
+        8684: ('GetPlayerCamFOV', 1, 0),
         # Added by TTW nvse plugin
         10247: ('TTW_GetEquippedWeaponSkill', 0, 0),
     }
@@ -328,13 +333,15 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = Fallout3GameInfo.namesTypes | {b'CCRD', b'CHAL', b'CHIP',
-        b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE', b'REPU', }
+    names_types = AFallout3GameInfo.names_types | {
+        b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
+        b'REPU',
+    }
 
     #--------------------------------------------------------------------------
     # Import Stats
     #--------------------------------------------------------------------------
-    stats_csv_attrs = Fallout3GameInfo.stats_csv_attrs | {
+    stats_csv_attrs = AFallout3GameInfo.stats_csv_attrs | {
         b'AMMO': ('eid', 'weight', 'value', 'speed', 'clipRounds',
                   'projPerShot'),
         b'ARMA': ('eid', 'weight', 'value', 'health', 'dr', 'dt'),
@@ -359,10 +366,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Sounds
     #--------------------------------------------------------------------------
-    sounds_attrs = Fallout3GameInfo.sounds_attrs | {
+    sounds_attrs = AFallout3GameInfo.sounds_attrs | {
         b'STAT': ('passthroughSound',),
     }
-    sounds_fid_attrs = Fallout3GameInfo.sounds_fid_attrs | {
+    sounds_fid_attrs = AFallout3GameInfo.sounds_fid_attrs | {
         b'ASPC': ('sound_dawn_default_loop', 'sound_afternoon', 'sound_dusk',
                   'sound_night', 'sound_walla', 'use_sound_from_region'),
         b'CONT': ('sound', 'sound_close', 'sound_random_looping'),
@@ -380,7 +387,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Graphics
     #--------------------------------------------------------------------------
-    graphicsTypes = Fallout3GameInfo.graphicsTypes | {
+    graphicsTypes = AFallout3GameInfo.graphicsTypes | {
         b'CCRD': ('iconPath', 'smallIconPath', 'model', 'textureFace',
                   'textureBack'),
         b'CHAL': ('iconPath', 'smallIconPath'),
@@ -400,7 +407,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Text
     #--------------------------------------------------------------------------
-    text_types = Fallout3GameInfo.text_types | {
+    text_types = AFallout3GameInfo.text_types | {
         b'ACTI': ('activation_prompt',),
         b'AMMO': ('short_name', 'abbreviation'),
         b'CHAL': ('description',),
@@ -410,8 +417,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = Fallout3GameInfo.object_bounds_types | {
-        b'CCRD', b'CHIP', b'CMNY', b'IMOD', }
+    object_bounds_types = AFallout3GameInfo.object_bounds_types | {
+        b'CCRD', b'CHIP', b'CMNY', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -432,45 +440,49 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     #--------------------------------------------------------------------------
     # Import Scripts
     #--------------------------------------------------------------------------
-    scripts_types = Fallout3GameInfo.scripts_types | {
-        b'AMMO', b'CCRD', b'CHAL', b'IMOD'}
+    scripts_types = AFallout3GameInfo.scripts_types | {
+        b'AMMO', b'CCRD', b'CHAL', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = Fallout3GameInfo.destructible_types | {b'CHIP',
-        b'IMOD'}
+    destructible_types = AFallout3GameInfo.destructible_types | {
+        b'CHIP', b'IMOD',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors
     #--------------------------------------------------------------------------
-    actor_importer_attrs = deepcopy(Fallout3GameInfo.actor_importer_attrs)
-    actor_importer_attrs[b'NPC_']['Actors.ACBS'] += ('flags.autocalcService',)
+    actor_importer_attrs = deepcopy(AFallout3GameInfo.actor_importer_attrs)
+    actor_importer_attrs[b'NPC_']['Actors.ACBS'] += (
+        'npc_flags.auto_calc_service',)
 
     #--------------------------------------------------------------------------
     # Tweak Assorted
     #--------------------------------------------------------------------------
-    assorted_tweaks= Fallout3GameInfo.assorted_tweaks | {
+    assorted_tweaks= AFallout3GameInfo.assorted_tweaks | {
         'AssortedTweak_ArrowWeight'}
 
     #--------------------------------------------------------------------------
     # Tweak Settings
     #--------------------------------------------------------------------------
-    settings_tweaks = Fallout3GameInfo.settings_tweaks | {
+    settings_tweaks = AFallout3GameInfo.settings_tweaks | {
         'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
 
     #--------------------------------------------------------------------------
     # Tweak Names
     #--------------------------------------------------------------------------
-    names_tweaks = Fallout3GameInfo.names_tweaks | {
-        'NamesTweak_AmmoWeight_Fnv'} - {'NamesTweak_AmmoWeight_Fo3'}
+    names_tweaks = ((AFallout3GameInfo.names_tweaks |
+                    {'NamesTweak_AmmoWeight_Fnv'}) -
+                    {'NamesTweak_AmmoWeight_Fo3'})
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
-        super(FalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
+        super(_AFalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
         from .patcher import preservers
         cls.game_specific_import_patchers = {
-            u'ImportWeaponModifications':
+            'ImportWeaponModifications':
                 preservers.ImportWeaponModificationsPatcher,
         }
 
@@ -487,7 +499,8 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         b'VTYP', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'MESG', b'RGDL', b'DOBJ',
         b'LGTM', b'MUSC', b'IMOD', b'REPU', b'RCPE', b'RCCT', b'CHIP', b'CSNO',
         b'LSCT', b'MSET', b'ALOC', b'CHAL', b'AMEF', b'CCRD', b'CMNY', b'CDCK',
-        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD']
+        b'DEHY', b'HUNG', b'SLPD', b'CELL', b'WRLD',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -503,10 +516,9 @@ FNV_LANG_DIRS = ['Fallout New Vegas English', 'Fallout New Vegas French',
                  'Fallout New Vegas German', 'Fallout New Vegas Italian',
                  'Fallout New Vegas Spanish']
 
-class EGSFalloutNVGameInfo(FalloutNVGameInfo):
+class EGSFalloutNVGameInfo(EGSMixin, _AFalloutNVGameInfo):
     """GameInfo override for the Epic Games Store version of Fallout New
     Vegas."""
-    displayName = 'Fallout New Vegas (EGS)'
     my_games_name = 'FalloutNV_Epic'
     appdata_name = 'FalloutNV_Epic'
 
@@ -518,26 +530,32 @@ class EGSFalloutNVGameInfo(FalloutNVGameInfo):
     def game_detect_excludes(cls):
         return super().game_detect_excludes - {'EOSSDK-Win32-Shipping.dll'}
 
-    class Eg(FalloutNVGameInfo.Eg):
+    class Eg(_AFalloutNVGameInfo.Eg):
         egs_app_names = ['5daeb974a22a435988892319b3a4f476']
         egs_language_dirs = FNV_LANG_DIRS
 
-class GOGFalloutNVGameInfo(GOGMixin, FalloutNVGameInfo):
+class GOGFalloutNVGameInfo(GOGMixin, _AFalloutNVGameInfo):
     """GameInfo override for the GOG version of Fallout New Vegas."""
-    displayName = 'Fallout New Vegas (GOG)'
     _gog_game_ids = _GOG_IDS
     # appdata_name and my_games_name use the original locations
 
-class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
+class SteamFalloutNVGameInfo(SteamMixin, _AFalloutNVGameInfo):
+    """GameInfo override for the Steam version of Fallout New Vegas."""
+    class St(_AFalloutNVGameInfo.St):
+        steam_ids = [
+            22380, # Fallout: New Vegas
+            22490, # Fallout: New Vegas PCR
+        ]
+
+class WSFalloutNVGameInfo(WindowsStoreMixin, _AFalloutNVGameInfo):
     """GameInfo override for the Windows Store version of Fallout New Vegas."""
-    displayName = 'Fallout New Vegas (WS)'
     # appdata_name and my_games_name use the original locations
 
-    class Ws(FalloutNVGameInfo.Ws):
+    class Ws(_AFalloutNVGameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.FalloutNewVegas'
         ws_language_dirs = FNV_LANG_DIRS
 
-GAME_TYPE = {g.displayName: g for g in
-             (FalloutNVGameInfo, EGSFalloutNVGameInfo, GOGFalloutNVGameInfo,
-              WSFalloutNVGameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    EGSFalloutNVGameInfo, GOGFalloutNVGameInfo, SteamFalloutNVGameInfo,
+    WSFalloutNVGameInfo)}

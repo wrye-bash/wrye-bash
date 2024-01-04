@@ -24,11 +24,12 @@ import re
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from ..store_mixins import SteamMixin
 from ... import bolt
 
-class SkyrimGameInfo(PatchGame):
+class ASkyrimGameInfo(PatchGame):
     """GameInfo override for TES V: Skyrim."""
-    displayName = u'Skyrim'
+    display_name = 'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     game_icon = u'skyrim_%u.png'
@@ -45,20 +46,22 @@ class SkyrimGameInfo(PatchGame):
     loot_dir = u'Skyrim'
     loot_game_name = 'Skyrim'
     boss_game_name = u'Skyrim'
-    registry_keys = [(r'Bethesda Softworks\Skyrim', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = u'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
-        _j(u'textures', u'actors', u'character', u'facegendata', u'facetint')]
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+        _j('textures', 'actors', 'character', 'facegendata', 'facetint'),
+        _j('textures', 'actors', 'character', 'facemods'),
+        _j('textures', 'water'), # SSE only?
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        image_name = u'creationkit%s.png'
+        image_name = 'creationkit%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'SKSE'
@@ -146,7 +149,7 @@ class SkyrimGameInfo(PatchGame):
             'tools', # 3P: FNIS
         }
         keep_data_dirs = {'lsdata'}
-        no_skip = {*(_j('interface', x) for x in (
+        no_skip = GameInfo.Bain.no_skip | {*(_j('interface', x) for x in (
             'controlmap.txt',
             'credits.txt',
             'credits_french.txt',
@@ -200,20 +203,17 @@ class SkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         validHeaderVersions = (0.94, 1.70)
 
-    allTags = PatchGame.allTags | {u'NoMerge'}
-
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
-        'ImportActorsAIPackages',
-        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
-        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
-        u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
-        u'ImportOutfits', u'ImportRelations', u'ImportSounds',
-        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
-        u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
-        'ImportEnchantments', 'TweakNames',
+        'AliasPluginNames', 'ContentsChecker', 'ImportActors',
+        'ImportActorsAIPackages', 'ImportActorsFactions', 'ImportActorsPerks',
+        'ImportActorsSpells', 'ImportCells', 'ImportDestructible',
+        'ImportEffectStats', 'ImportEnchantments', 'ImportEnchantmentStats',
+        'ImportGraphics', 'ImportInventory', 'ImportKeywords', 'ImportNames',
+        'ImportObjectBounds', 'ImportOutfits', 'ImportRaces',
+        'ImportRacesSpells', 'ImportRelations', 'ImportSounds',
+        'ImportSpellStats', 'ImportStats', 'ImportText', 'LeveledLists',
+        'TimescaleChecker', 'TweakActors', 'TweakAssorted', 'TweakNames',
+        'TweakRaces', 'TweakSettings',
     }
 
     weaponTypes = (
@@ -716,18 +716,19 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Leveled Lists
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
+    leveled_list_types = {b'LVLI', b'LVLN', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Import Names
     #--------------------------------------------------------------------------
-    namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF',
-                  b'BOOK', b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH',
-                  b'EXPL', b'EYES', b'FACT', b'FLOR', b'FURN', b'HAZD',
-                  b'HDPT', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MESG',
-                  b'MGEF', b'MISC', b'MSTT', b'NPC_', b'PERK', b'PROJ',
-                  b'QUST', b'RACE', b'SCRL', b'SHOU', b'SLGM', b'SNCT',
-                  b'SPEL', b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
+    names_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
+        b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES', b'FACT', b'FLOR',
+        b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MESG',
+        b'MGEF', b'MISC', b'MSTT', b'NPC_', b'PERK', b'PROJ', b'QUST', b'RACE',
+        b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'SPEL', b'TACT', b'TREE', b'WATR',
+        b'WEAP', b'WOOP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Prices
@@ -774,10 +775,10 @@ class SkyrimGameInfo(PatchGame):
     sounds_attrs = {
         b'EXPL': ('expl_sound_level',),
         b'IPCT': ('ipct_sound_level',),
-        ##: 'sounds' needs to be filtered
-        b'MGEF': ('casting_sound_level', 'sounds'),
-        b'PROJ': ('soundLevel',),
-        b'SNCT': ('staticVolumeMultiplier',),
+        # mgef_sounds has FormIDs, but will be filtered in MreMgef.keep_fids
+        b'MGEF': ('casting_sound_level', 'mgef_sounds'),
+        b'PROJ': ('sound_level',),
+        b'SNCT': ('static_volume_multiplier',),
         # sound_files does not need to loop here
         b'SNDR': ('sound_files', 'looping_type', 'rumble_send_value',
                   'pct_frequency_shift', 'pct_frequency_variance',
@@ -814,10 +815,10 @@ class SkyrimGameInfo(PatchGame):
         b'LIGH': ('sound',),
         b'MISC': ('sound_pickup', 'sound_drop'),
         b'MSTT': ('sound',),
-        b'PROJ': ('sound', 'sound_countdown', 'sound_disable'),
+        b'PROJ': ('proj_sound', 'proj_sound_countdown', 'proj_sound_disable'),
         b'SCRL': ('sound_pickup', 'sound_drop'),
         b'SLGM': ('sound_pickup', 'sound_drop'),
-        b'SNCT': ('parent',),
+        b'SNCT': ('parent_fid',),
         b'SNDR': ('descriptor_category', 'output_model'),
         b'SOUN': ('soundDescriptor',),
         b'TACT': ('sound',),
@@ -955,8 +956,8 @@ class SkyrimGameInfo(PatchGame):
         b'MGEF': ('dual_casting_scale',),
         b'MISC': ('iconPath', 'model'),
         b'PERK': ('iconPath',),
-        b'PROJ': ('model', 'muzzleFlashDuration', 'fadeDuration',
-                  'models'),
+        b'PROJ': ('model', 'muzzle_flash_duration', 'proj_fade_duration',
+                  'muzzle_flash_model'),
         b'SLGM': ('iconPath', 'model'),
         b'STAT': ('model',),
         b'TREE': ('model',),
@@ -982,7 +983,8 @@ class SkyrimGameInfo(PatchGame):
                   'hit_effect_art', 'effect_impact_data', 'dual_casting_art',
                   'enchant_art', 'hit_visuals', 'enchant_visuals',
                   'effect_imad'),
-        b'PROJ': ('light', 'muzzleFlash', 'explosion', 'decalData'),
+        b'PROJ': ('proj_light', 'muzzle_flash', 'proj_explosion',
+                  'proj_decal_data'),
         b'SCRL': ('menu_display_object',),
         b'SPEL': ('menu_display_object',),
         b'WEAP': ('firstPersonModelObject',),
@@ -994,15 +996,16 @@ class SkyrimGameInfo(PatchGame):
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'NPC_', b'CONT',)
+    inventory_types = {b'COBJ', b'CONT', b'NPC_'}
 
     #--------------------------------------------------------------------------
     # Import Keywords
     #--------------------------------------------------------------------------
-    keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
-                      b'FURN', b'INGR', b'KEYM', b'LCTN', b'MGEF', b'MISC',
-                      b'NPC_', b'RACE', b'SCRL', b'SLGM', b'SPEL', b'TACT',
-                      b'WEAP',)
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR', b'FURN', b'INGR',
+        b'KEYM', b'LCTN', b'MGEF', b'MISC', b'NPC_', b'RACE', b'SCRL', b'SLGM',
+        b'SPEL', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Text
@@ -1031,20 +1034,19 @@ class SkyrimGameInfo(PatchGame):
         b'SHOU': ('description',),
         b'SPEL': ('description',),
         b'WEAP': ('description',),
-        b'WOOP': ('translation',),
+        b'WOOP': ('woop_translation',),
     }
 
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA',
-                           b'ARMO', b'ARTO', b'ASPC', b'BOOK', b'CONT',
-                           b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR',
-                           b'FURN', b'GRAS', b'HAZD', b'IDLM', b'INGR',
-                           b'KEYM', b'LIGH', b'LVLI', b'LVLN', b'LVSP',
-                           b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL',
-                           b'SLGM', b'SOUN', b'SPEL', b'STAT', b'TACT',
-                           b'TREE', b'TXST', b'WEAP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'ARTO', b'ASPC',
+        b'BOOK', b'CONT', b'DOOR', b'DUAL', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM', b'SOUN',
+        b'SPEL', b'STAT', b'TACT', b'TREE', b'TXST', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Contents Checker
@@ -1063,18 +1065,19 @@ class SkyrimGameInfo(PatchGame):
         b'OTFT': {b'ARMO', b'LVLI'},
     }
     cc_passes = (
-        ((b'LVLN', b'LVLI', b'LVSP'), 'entries', 'listId'),
-        ((b'COBJ', b'CONT', b'NPC_'), 'items', 'item'),
-        ((b'OTFT',), 'items'),
+        (leveled_list_types, 'entries', 'listId'),
+        (inventory_types,    'items',   'item'),
+        ({b'OTFT'},          'items'),
     )
 
     #--------------------------------------------------------------------------
     # Import Destructible
     #--------------------------------------------------------------------------
-    destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK',
-                          b'CONT', b'DOOR', b'FLOR', b'FURN', b'KEYM', b'LIGH',
-                          b'MISC', b'MSTT', b'NPC_', b'PROJ', b'SCRL', b'SLGM',
-                          b'TACT', b'WEAP'}
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
+        b'SCRL', b'SLGM', b'TACT', b'WEAP',
+    }
 
     #--------------------------------------------------------------------------
     # Import Actors
@@ -1082,38 +1085,44 @@ class SkyrimGameInfo(PatchGame):
     actor_importer_attrs = {
         b'NPC_': {
             'Actors.ACBS': (
-                'bleedoutOverride', 'calcMax', 'calcMin', 'dispositionBase',
-                'flags.autoCalc', 'flags.bleedoutOverride',
-                'flags.doesNotAffectStealth', 'flags.doesNotBleed',
-                'flags.essential', 'flags.female', 'flags.invulnerable',
-                'flags.isCharGenFacePreset', 'flags.isGhost',
-                'flags.loopedAudio', 'flags.loopedScript',
-                'flags.oppositeGenderAnims', 'flags.protected',
-                'flags.respawn', 'flags.simpleActor', 'flags.summonable',
-                'flags.unique', 'healthOffset', 'magickaOffset',
-                'speedMultiplier', 'staminaOffset',
+                'bleedout_override', 'calc_max_level', 'calc_min_level',
+                'disposition_base', 'npc_flags.npc_auto_calc',
+                'npc_flags.bleedout_override',
+                'npc_flags.does_not_affect_stealth',
+                'npc_flags.does_not_bleed', 'npc_flags.npc_essential',
+                'npc_flags.npc_female', 'npc_flags.npc_invulnerable',
+                'npc_flags.is_chargen_face_preset', 'npc_flags.npc_is_ghost',
+                'npc_flags.looped_audio', 'npc_flags.looped_script',
+                'npc_flags.opposite_gender_anims', 'npc_flags.npc_protected',
+                'npc_flags.npc_respawn', 'npc_flags.simple_actor',
+                'npc_flags.npc_summonable', 'npc_flags.npc_unique',
+                'health_offset', 'magicka_offset', 'speed_multiplier',
+                'stamina_offset',
                 # This flag directly impacts how the level_offset is
                 # calculated, so use a fused attribute to always carry them
                 # forward together
-                ('flags.pcLevelOffset', 'level_offset')),
-            'Actors.AIData': ('aggression', 'aggroRadiusBehavior',
-                              'assistance', 'attack', 'confidence',
-                              'energyLevel', 'mood', 'responsibility', 'warn',
-                              'warnAttack'),
+                ('npc_flags.pc_level_offset', 'level_offset'),
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_aggro_radius_behavior', 'ai_assistance',
+                'ai_attack', 'ai_confidence', 'ai_energy_level', 'ai_mood',
+                'ai_responsibility', 'ai_warn', 'ai_warn_attack',
+            ),
             'Actors.RecordFlags': ('flags1',),
-            'Actors.Stats': ('alchemySO', 'alchemySV', 'alterationSO',
-                             'alterationSV', 'blockSO', 'blockSV',
-                             'conjurationSO', 'conjurationSV', 'destructionSO',
-                             'destructionSV', 'enchantingSO', 'enchantingSV',
-                             'health', 'heavyArmorSO', 'heavyArmorSV',
-                             'illusionSO', 'illusionSV', 'lightArmorSO',
-                             'lightArmorSV', 'lockpickingSO', 'lockpickingSV',
-                             'magicka', 'marksmanSO', 'marksmanSV',
-                             'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
-                             'pickpocketSV', 'restorationSO', 'restorationSV',
-                             'smithingSO', 'smithingSV', 'sneakSO', 'sneakSV',
-                             'speechcraftSO', 'speechcraftSV', 'stamina',
-                             'twoHandedSO', 'twoHandedSV'),
+            ##: This should probably be imported as one or two attributes,
+            # meaning NPC_\DNAM should become a MelLists
+            'Actors.Stats': (
+                'alchemySO', 'alchemySV', 'alterationSO', 'alterationSV',
+                'blockSO', 'blockSV', 'conjurationSO', 'conjurationSV',
+                'destructionSO', 'destructionSV', 'enchantingSO',
+                'enchantingSV', 'health', 'heavyArmorSO', 'heavyArmorSV',
+                'illusionSO', 'illusionSV', 'lightArmorSO', 'lightArmorSV',
+                'lockpickingSO', 'lockpickingSV', 'magicka', 'marksmanSO',
+                'marksmanSV', 'oneHandedSO', 'oneHandedSV', 'pickpocketSO',
+                'pickpocketSV', 'restorationSO', 'restorationSV', 'smithingSO',
+                'smithingSV', 'sneakSO', 'sneakSV', 'speechcraftSO',
+                'speechcraftSV', 'stamina', 'twoHandedSO', 'twoHandedSV',
+            ),
         },
     }
     actor_importer_fid_attrs = {
@@ -1121,16 +1130,19 @@ class SkyrimGameInfo(PatchGame):
             'Actors.CombatStyle': ('combat_style',),
             'Actors.DeathItem': ('death_item',),
             'Actors.Voice': ('voice',),
-            'NPC.AIPackageOverrides': ('spectator', 'observe', 'guardWarn',
-                                       'combat'),
-            'NPC.AttackRace': ('attackRace',),
-            'NPC.Class': ('iclass',),
+            'NPC.AIPackageOverrides': (
+                'override_package_list_spectator',
+                'override_package_list_observe_dead_body',
+                'override_package_list_guard_warn',
+                'override_package_list_combat',
+            ),
+            'NPC.AttackRace': ('attack_race',),
+            'NPC.Class': ('npc_class',),
             'NPC.CrimeFaction': ('crime_faction',),
             'NPC.DefaultOutfit': ('default_outfit',),
             'NPC.Race': ('race',),
         }
     }
-    spell_types = (b'LVSP', b'SPEL')
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
@@ -1244,7 +1256,7 @@ class SkyrimGameInfo(PatchGame):
         b'TREE': ('full',),
         b'WATR': ('full',),
         b'WEAP': ('full', 'description'),
-        b'WOOP': ('full',),
+        b'WOOP': ('full', 'woop_translation'),
     }
     gold_attrs = lambda self: {
         'eid': 'Gold001',
@@ -1441,7 +1453,8 @@ class SkyrimGameInfo(PatchGame):
         b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
         b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
         b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
-        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB']
+        b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+    ]
 
     @classmethod
     def init(cls, _package_name=None):
@@ -1453,9 +1466,13 @@ class SkyrimGameInfo(PatchGame):
         # package name is skyrim here
         super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - {
-            b'RGDL', b'SCPT', b'CELL', b'SCEN', b'SCOL', b'HAIR', b'CLDC',
-            b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
+            b'CELL', b'SCEN', b'DIAL', b'NAVI', b'PWAT', b'WRLD'}
         from ... import brec as _brec_
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs # that's what it did
 
-GAME_TYPE = SkyrimGameInfo
+class SteamSkyrimGameInfo(SteamMixin, ASkyrimGameInfo):
+    """GameInfo override for the Steam version of Skyrim."""
+    class St(ASkyrimGameInfo.St):
+        steam_ids = [72850]
+
+GAME_TYPE = SteamSkyrimGameInfo

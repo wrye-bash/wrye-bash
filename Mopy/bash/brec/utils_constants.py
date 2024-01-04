@@ -28,9 +28,9 @@ from collections.abc import Callable
 from contextlib import suppress
 from itertools import chain
 
-from .. import bolt
+from .. import bolt, bush
 from ..bolt import Flags, attrgetter_cache, cstrip, decoder, flag, \
-    structs_cache
+    structs_cache, FName, fast_cached_property
 from ..exception import StateError
 
 # no local imports, imported everywhere in brec
@@ -49,8 +49,9 @@ class FormId:
         self.short_fid = int_val
 
     # factories
-    __master_formid_type: dict[bolt.FName, type] = {} # cache a formid type per mod
-    _form_id_classes: dict[tuple[bolt.FName], type] = {} # cache a formid type per masters list
+    __master_formid_type: dict[FName, type] = {} # cache a formid type per mod
+    # cache a formid type per masters list and Overlay flag state
+    _form_id_classes: dict[tuple[tuple[FName, ...], bool], type] = {}
     @classmethod
     def from_tuple(cls, fid_tuple):
         """Return a FormId (subclass) instance with a given long id - does not
@@ -60,7 +61,7 @@ class FormId:
             return cls.__master_formid_type[fid_tuple[0]](fid_tuple[1])
         except KeyError:
             class __FormId(cls):
-                @bolt.fast_cached_property
+                @fast_cached_property
                 def long_fid(self):
                     return fid_tuple[0], self.short_fid
                 @property
@@ -78,26 +79,44 @@ class FormId:
         return cls(objectIndex | (modIndex << 24))
 
     @staticmethod
-    def from_masters(augmented_masters):
+    def from_masters(augmented_masters: tuple[FName, ...],
+            in_overlay_plugin: bool):
         """Return a subclass of FormId using the specified masters for long fid
         conversions."""
         try:
-            form_id_type = FormId._form_id_classes[augmented_masters]
+            form_id_type = FormId._form_id_classes[(augmented_masters,
+                                                    in_overlay_plugin)]
         except KeyError:
-            class _FormID(FormId):
-                @bolt.fast_cached_property
-                def long_fid(self, *, __masters=augmented_masters):
-                    try:
-                        return __masters[self.mod_dex], \
-                               self.short_fid & 0xFFFFFF
-                    except IndexError:
-                        # Clamp HITMEs by using at most max_masters for master
-                        # index
-                        return __masters[-1], self.short_fid & 0xFFFFFF
+            if in_overlay_plugin:
+                overlay_threshold = len(augmented_masters) - 1
+                class _FormID(FormId):
+                    @fast_cached_property
+                    def long_fid(self, *, __masters=augmented_masters):
+                        try:
+                            if self.mod_dex >= overlay_threshold:
+                                # Overlay plugins can't have new records (or
+                                # HITMEs), those get injected into the first
+                                # master instead
+                                return __masters[0], self.short_fid & 0xFFFFFF
+                            return __masters[self.mod_dex], \
+                                   self.short_fid & 0xFFFFFF
+                        except IndexError:
+                            # Clamp HITMEs to the plugin's own address space
+                            return __masters[-1], self.short_fid & 0xFFFFFF
+            else:
+                class _FormID(FormId):
+                    @fast_cached_property
+                    def long_fid(self, *, __masters=augmented_masters):
+                        try:
+                            return __masters[self.mod_dex], \
+                                   self.short_fid & 0xFFFFFF
+                        except IndexError:
+                            # Clamp HITMEs to the plugin's own address space
+                            return __masters[-1], self.short_fid & 0xFFFFFF
             form_id_type = FormId._form_id_classes[augmented_masters] = _FormID
         return form_id_type
 
-    @bolt.fast_cached_property
+    @fast_cached_property
     def long_fid(self):
         """Don't map by default."""
         return self.short_fid
@@ -117,8 +136,8 @@ class FormId:
         """Return the mod id - will raise if long_fid is not a tuple."""
         try:
             return self.long_fid[0]
-        except TypeError:
-            raise StateError(f'{self!r} not in long format')
+        except TypeError as e:
+            raise StateError(f'{self!r} not in long format') from e
 
     def is_null(self):
         """Return True if we are a round 0."""
@@ -257,16 +276,14 @@ class _NoneFid:
     def dump(self) -> int:
         return 0xFFFFFFFF
 
-
 class _Tes4Fid(FormId):
     """The special formid of the plugin header record - aka 0. Also used
     as a MelStruct default and when we set the form id to "zero" in some
     edge cases."""
     def dump(self): return 0
 
-    @bolt.fast_cached_property
+    @fast_cached_property
     def long_fid(self):
-        from .. import bush
         return bush.game.master_fid(0).long_fid
 
 # cache an instance of Tes4 and export that to the rest of Bash
@@ -299,7 +316,7 @@ int_unpacker = structs_cache['I'].unpack
 class FixedString(str):
     """An action for MelStructs that will decode and encode a fixed-length
     string. Note that you do not need to specify defaults when using this."""
-    __slots__ = ('str_length',)
+    __slots__ = ('_str_length',)
     _str_encoding = bolt.pluginEncoding
 
     def __new__(cls, str_length, target_str: str | bytes = ''):
@@ -310,46 +327,157 @@ class FixedString(str):
                 decoder(x, cls._str_encoding, avoidEncodings=('utf8', 'utf-8'))
                 for x in cstrip(target_str).split(b'\n'))
         new_str = super(FixedString, cls).__new__(cls, decoded_str)
-        new_str.str_length = str_length
+        new_str._str_length = str_length
         return new_str
 
     def __call__(self, new_str):
         # 0 is the default, so replace it with whatever we currently have
-        return self.__class__(self.str_length, new_str or str(self))
+        return self.__class__(self._str_length, new_str or str(self))
+
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
 
     def dump(self):
-        return bolt.encode_complex_string(self, max_size=self.str_length,
-                                          min_size=self.str_length)
+        return bolt.encode_complex_string(self, max_size=self._str_length,
+                                          min_size=self._str_length)
 
 class AutoFixedString(FixedString):
     """Variant of FixedString that uses chardet to detect encodings."""
     _str_encoding = None
 
 # Common flags ----------------------------------------------------------------
-class NotPlayableFlag:
-    """Mixin to add the not_playable flag to a HeaderFlags class."""
-    not_playable: bool = flag(2)
+class AMgefFlags(Flags):
+    """Base class for MGEF data flags shared by all games."""
+    hostile: bool = flag(0)
+    recover: bool = flag(1)
+    detrimental: bool = flag(2)
+    no_hit_effect: bool = flag(27)
 
-class VWDFlag:
-    """Mixin to add the Visible When Distant (has_distant_lod) flag to a
-    HeaderFlags class.
-    """
-    has_distant_lod: bool = flag(15)    # aka Visible when distant
+class AMgefFlagsTes4(AMgefFlags):
+    """Base class for MGEF data flags from Oblivion to FO3."""
+    mgef_self: bool = flag(4)
+    mgef_touch: bool = flag(5)
+    mgef_target: bool = flag(6)
+    no_duration: bool = flag(7)
+    no_magnitude: bool = flag(8)
+    no_area: bool = flag(9)
+    fx_persist: bool = flag(10)
+    use_skill: bool = flag(19)
+    use_attribute: bool = flag(20)
+    spray_projectile_type: bool = flag(25)
+    bolt_projectile_type: bool = flag(26)
 
-class NavMeshFlags:
-    """Mixin to add the NavMesh related flags to a HeaderFlags class."""
-    # These show up in FO3+
-    navmesh_filter: bool = flag(26)
-    navmesh_bounding_box: bool = flag(27)
-    navmesh_ground: bool = flag(30)
+    @property
+    def fog_projectile_type(self) -> bool:
+        """If flags 25 and 26 are set, specifies fog_projectile_type."""
+        mask = 0b00000110000000000000000000000000
+        return (self._field & mask) == mask
+
+    @fog_projectile_type.setter
+    def fog_projectile_type(self, new_fpt: bool) -> None:
+        mask = 0b00000110000000000000000000000000
+        new_bits = mask if new_fpt else 0
+        self._field = (self._field & ~mask) | new_bits
+
+class MgefFlags(AMgefFlags):
+    """Implements the MGEF data flags used since Skyrim."""
+    snap_to_navmesh: bool = flag(3)
+    no_hit_event: bool = flag(4)
+    dispel_with_keywords: bool = flag(8)
+    no_duration: bool = flag(9)
+    no_magnitude: bool = flag(10)
+    no_area: bool = flag(11)
+    fx_persist: bool = flag(12)
+    gory_visuals: bool = flag(14)
+    hide_in_ui: bool = flag(15)
+    no_recast: bool = flag(17)
+    power_affects_magnitude: bool = flag(21)
+    power_affects_duration: bool = flag(22)
+    painless: bool = flag(26)
+    no_death_dispel: bool = flag(28)
+
+class PackGeneralFlags(Flags):
+    """Implements the new version of the general PACK/PKDT flags (Skyrim and
+    newer)."""
+    offers_services: bool = flag(0)
+    must_complete: bool = flag(2)
+    maintain_speed_at_goal: bool = flag(3)
+    unlock_doors_at_package_start: bool = flag(6)
+    unlock_doors_at_package_end: bool = flag(7)
+    continue_if_pc_near: bool = flag(9)
+    once_per_day: bool = flag(10)
+    preferred_speed: bool = flag(13)
+    always_sneak: bool = flag(17)
+    allow_swimming: bool = flag(18)
+    ignore_combat: bool = flag(20)
+    weapons_unequipped: bool = flag(21)
+    weapon_drawn: bool = flag(23)
+    no_combat_alert: bool = flag(27)
+    wear_sleep_outfit: bool = flag(29)
+
+class PackGeneralOldFlags(Flags):
+    """Implements the old version of the general PACK/PKDT flags (FNV and
+    older)."""
+    offers_services: bool = flag(0)
+    must_reach_location: bool = flag(1)
+    must_complete: bool = flag(2)
+    lock_at_start: bool = flag(3)
+    lock_at_end: bool = flag(4)
+    lock_at_location: bool = flag(5)
+    unlock_at_start: bool = flag(6)
+    unlock_at_end: bool = flag(7)
+    unlock_at_location: bool = flag(8)
+    continue_if_pc_near: bool = flag(9)
+    once_per_day: bool = flag(10)
+    skip_fallout_behavior: bool = flag(12)
+    always_run: bool = flag(13)
+    always_sneak: bool = flag(17)
+    allow_swimming: bool = flag(18)
+    allow_falls: bool = flag(19)
+    unequip_armor: bool = flag(20)
+    unequip_weapons: bool = flag(21)
+    defensive_combat: bool = flag(22)
+    use_horse: bool = flag(23)
+    no_idle_anims: bool = flag(24)
+
+class PackInterruptFlags(Flags):
+    """Implements the since-Skyrim interrupt PACK/PKDT flags. Adapted from the
+    'Fallout Behavior Flags' in FO3/FNV."""
+    hellos_to_player: bool = flag(0)
+    random_conversations: bool = flag(1)
+    observe_combat_behavior: bool = flag(2)
+    greet_corpse_behavior: bool = flag(3)
+    reaction_to_player_actions: bool = flag(4)
+    friendly_fire_comments: bool = flag(5)
+    aggro_radius_behavior: bool = flag(6)
+    allow_idle_chatter: bool = flag(7)
+    world_interactions: bool = flag(9)
+
+class TemplateFlags(Flags):
+    """NPC_ (and CREA, in FO3) template flags, present since FO3."""
+    use_traits: bool
+    use_stats: bool
+    use_factions: bool
+    use_spell_list: bool
+    use_ai_data: bool
+    use_ai_packages: bool
+    use_model_animation: bool
+    use_base_data: bool
+    use_inventory: bool
+    use_script: bool
+    use_def_pack_list: bool # since Skyrim
+    use_attack_data: bool # since Skyrim
+    use_keywords: bool # since Skyrim
 
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
     """Base Biped flags element. Includes logic for checking if armor/clothing
-    can be marked as playable.  Should be subclassed to add the appropriate
-    flags and, if needed, the non-playable flags.
-    """
+    can be marked as playable. Should be subclassed to add the appropriate
+    flags and, if needed, the non-playable flags."""
     _not_playable_flags: set[str] = set()
 
     @property
@@ -415,24 +543,40 @@ def get_structs(struct_format):
     _struct = structs_cache[struct_format]
     return _struct.unpack, _struct.pack, _struct.size
 
-def gen_color(color_attr_pfx: str) -> list[str]:
-    """Helper method for generating red/green/blue/unused color attributes."""
-    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue',
-                                              'unused')]
-
-def gen_color3(color_attr_pfx: str) -> list[str]:
-    """Helper method for generating red/green/blue color attributes."""
-    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
-
-def gen_ambient_lighting(attr_prefix):
+def ambient_lighting_attrs(attr_prefix: str) -> list[str]:
     """Helper method for generating a ton of repetitive attributes that are
     shared between a couple record types (wbAmbientColors in xEdit)."""
     color_types = [f'directional_{t}' for t in (
         'x_plus', 'x_minus', 'y_plus', 'y_minus', 'z_plus', 'z_minus')]
     color_types.append('specular')
-    color_iters = chain.from_iterable(gen_color(d) for d in color_types)
+    color_iters = chain.from_iterable(color_attrs(d) for d in color_types)
     ambient_lighting = [f'{attr_prefix}_ac_{x}' for x in color_iters]
     return ambient_lighting + [f'{attr_prefix}_ac_scale']
+
+def color_attrs(color_attr_pfx: str, *,
+        rename_alpha: bool = False) -> list[str]:
+    """Helper method for generating red/green/blue/alpha color attributes. Note
+    that alpha is commonly unused when Bethesda uses this 4-float style of
+    colors and you may have to pass rename_alpha=True to name that attribute
+    '*_unused' instead of '*_alpha' if a separate alpha attribute exists."""
+    return [f'{color_attr_pfx}_{c}' for c in (
+        'red', 'green', 'blue', ('unused' if rename_alpha else 'alpha'))]
+
+def color3_attrs(color_attr_pfx: str) -> list[str]:
+    """Helper method for generating red/green/blue color attributes."""
+    return [f'{color_attr_pfx}_{c}' for c in ('red', 'green', 'blue')]
+
+def _gen_3d_attrs(attr_prefix: str) -> list[str]:
+    """Internal helper for position_attrs and rotation_attrs."""
+    return [f'{attr_prefix}_{d}' for d in ('x', 'y', 'z')]
+
+def position_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z position attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_pos')
+
+def rotation_attrs(attr_prefix: str) -> list[str]:
+    """Helper method for generating X/Y/Z rotation attributes."""
+    return _gen_3d_attrs(f'{attr_prefix}_rot')
 
 # Distributors ----------------------------------------------------------------
 # Shared distributor for LENS records

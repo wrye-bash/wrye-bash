@@ -51,7 +51,7 @@ def get_repo(org_name, repo_name):
             access_token = token
     except (NoOptionError, NoSectionError, OSError):
         pass # File is invalid or could not be found, proceed without token
-    git = github.Github(access_token)
+    git = github.Github(auth=github.Auth.Token(access_token))
     repo = git.get_repo(org_name + '/' + repo_name)
     try:
         # The github library returns a repo object even if the repo

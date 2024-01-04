@@ -22,14 +22,16 @@
 # =============================================================================
 from os.path import join as _j
 
-from .. import WS_COMMON_FILES, GameInfo
+from .. import WS_COMMON_FILES, GameInfo, MergeabilityCheck, ObjectIndexRange
 from ..patch_game import PatchGame
-from ..windows_store_game import WindowsStoreMixin
+from ..store_mixins import GOGMixin, SteamMixin, WindowsStoreMixin
 from ... import bolt
 
-class Fallout4GameInfo(PatchGame):
+_GOG_IDS = [1998527297]
+
+class AFallout4GameInfo(PatchGame):
     """GameInfo override for Fallout 4."""
-    displayName = u'Fallout 4'
+    display_name = 'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
     game_icon = u'fallout4_%u.png'
@@ -43,29 +45,33 @@ class Fallout4GameInfo(PatchGame):
     # copy of Fallout4VR.exe called Fallout4.exe to "trick" WB into launching.
     # That's from back when WB had no VR support, but those guides haven't been
     # updated since...
-    game_detect_excludes = WS_COMMON_FILES | {'Fallout4VR.exe'}
+    game_detect_excludes = (set(GOGMixin.get_unique_filenames(_GOG_IDS)) |
+                            WS_COMMON_FILES | {'Fallout4VR.exe'})
     version_detect_file = u'Fallout4.exe'
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
     loot_dir = u'Fallout4'
     loot_game_name = 'Fallout4'
-    registry_keys = [(r'Bethesda Softworks\Fallout4', 'Installed Path')]
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = u'bash.installers.openFallout4Nexus.continue'
 
-    espm_extensions = GameInfo.espm_extensions | {u'.esl'}
+    espm_extensions = {*GameInfo.espm_extensions, '.esl'}
     has_achlist = True
-    check_esl = True
+    mergeability_checks = {MergeabilityCheck.ESL_CHECK}
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
-        _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
-        _j(u'meshes', u'actors', u'character', u'facecustomization')]
+        _j('meshes', 'actors', 'character', 'facecustomization'),
+        _j('meshes', 'actors', 'character', 'facegendata', 'facegeom'),
+        _j('meshes', 'scol'),
+        _j('textures', 'actors', 'character', 'facecustomization'),
+        'vis',
+    ]
 
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        image_name = u'creationkit%s.png'
+        image_name = 'creationkit%s.png'
 
     class Se(GameInfo.Se):
         se_abbrev = u'F4SE'
@@ -104,7 +110,10 @@ class Fallout4GameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
+            'dtf', # 3P: Damage Threshold Framework
+            'dyndolod', # 3P: DynDOLOD (TexGen)
             'f4se', # 3P: F4SE
+            'folip', # 3P: Far Object LOD Improvement Project
             'interface',
             'lodsettings',
             'materials',
@@ -127,13 +136,29 @@ class Fallout4GameInfo(PatchGame):
     class Esp(GameInfo.Esp):
         canBash = True
         canEditHeader = True
-        expanded_plugin_range = True
         extension_forces_flags = True
+        # Because the FE slot is reserved for ESLs - yes, including in master
+        # lists. Thanks, Bethesda
+        master_limit = 253
         max_lvl_list_size = 255
+        object_index_range = ObjectIndexRange.EXPANDED_CONDITIONAL
+        object_index_range_expansion_ver = 1.0
         validHeaderVersions = (0.95, 1.0)
 
+    # Patchers that will need updating for future record types:
+    #  - ImportDestructible
+    #  - ImportEnchantments
+    #  - ImportKeywords
+    #  - ImportNames
+    #  - ImportObjectBounds
     patchers = {
-        'ImportObjectBounds', 'LeveledLists', 'TweakSettings',
+        'AliasPluginNames', 'ImportActors', 'ImportActorsAIPackages',
+        'ImportActorsFactions', 'ImportActorsPerks', 'ImportActorsSpells',
+        'ImportDestructible', 'ImportEffectStats', 'ImportEnchantments',
+        'ImportEnchantmentStats', 'ImportInventory', 'ImportKeywords',
+        'ImportNames', 'ImportObjectBounds', 'ImportOutfits',
+        'ImportRelations', 'LeveledLists', 'TimescaleChecker', 'TweakActors',
+        'TweakSettings',
     }
 
     bethDataFiles = {
@@ -708,28 +733,148 @@ class Fallout4GameInfo(PatchGame):
     getvatsvalue_index = 407
 
     #--------------------------------------------------------------------------
-    # Leveled Lists
+    # Import Actors
     #--------------------------------------------------------------------------
-    listTypes = (b'LVLI', b'LVLN', b'LVSP')
+    actor_importer_attrs = {
+        b'NPC_': {
+            'Actors.ACBS': (
+                'npc_flags.npc_female', 'npc_flags.npc_essential',
+                'npc_flags.is_chargen_face_preset', 'npc_flags.npc_respawn',
+                'npc_flags.npc_auto_calc', 'npc_flags.npc_unique',
+                'npc_flags.does_not_affect_stealth', 'npc_flags.npc_protected',
+                'npc_flags.npc_summonable', 'npc_flags.does_not_bleed',
+                'npc_flags.bleedout_override',
+                'npc_flags.opposite_gender_anims', 'npc_flags.simple_actor',
+                'npc_flags.no_activation_or_hellos',
+                'npc_flags.diffuse_alpha_test', 'npc_flags.npc_is_ghost',
+                'npc_flags.npc_invulnerable', 'xp_value_offset',
+                # This flag directly impacts how the level_offset is
+                # calculated, so use a fused attribute to always carry them
+                # forward together
+                ('npc_flags.pc_level_offset', 'level_offset'),
+                'calc_min_level', 'calc_max_level', 'disposition_base',
+                'bleedout_override',
+            ),
+            'Actors.AIData': (
+                'ai_aggression', 'ai_confidence', 'ai_energy_level',
+                'ai_responsibility', 'ai_mood', 'ai_assistance',
+                'ai_aggro_radius_behavior', 'ai_warn', 'ai_warn_attack',
+                'ai_attack', 'ai_no_slow_approach',
+            ),
+            'Actors.RecordFlags': ('flags1',),
+            # Has FormIDs, but will be filtered in
+            # _AMreWithProperties.keep_fids
+            'Actors.Stats': ('properties',),
+        }
+    }
+    actor_importer_fid_attrs = {
+        b'NPC_': {
+            'Actors.CombatStyle': ('combat_style',),
+            'Actors.DeathItem': ('death_item',),
+            'Actors.Voice': ('voice',),
+            'NPC.AIPackageOverrides': (
+                'override_package_list_spectator',
+                'override_package_list_observe_dead_body',
+                'override_package_list_guard_warn',
+                'override_package_list_combat',
+            ),
+            'NPC.AttackRace': ('attack_race',),
+            'NPC.Class': ('npc_class',),
+            'NPC.CrimeFaction': ('crime_faction',),
+            'NPC.DefaultOutfit': ('default_outfit',),
+            'NPC.Race': ('race',),
+        }
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Destructible
+    #--------------------------------------------------------------------------
+    destructible_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'CONT', b'DOOR', b'FLOR', b'FURN',
+        b'INGR', b'KEYM', b'LIGH', b'MISC', b'MSTT', b'NPC_', b'PROJ',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Effect Stats
+    #--------------------------------------------------------------------------
+    mgef_stats_attrs = (
+        'flags', 'base_cost', 'taper_weight', 'minimum_skill_level',
+        'spellmaking_area', 'spellmaking_casting_time', 'taper_curve',
+        'taper_duration', 'second_av_weight', 'effect_archetype',
+        'casting_type', 'delivery', 'skill_usage_multiplier',
+        'script_effect_ai_score', 'script_effect_ai_delay_time')
+    mgef_stats_fid_attrs = ('associated_item', 'resist_value', 'actorValue',
+                            'second_av', 'equip_ability', 'perk_to_apply')
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = {b'ARMO', b'EXPL'}
+
+    #--------------------------------------------------------------------------
+    # Import Enchantment Stats
+    #--------------------------------------------------------------------------
+    ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
+                        'enchantment_amount', 'enchantment_target_type',
+                        'enchantment_type', 'charge_time')
+    ench_stats_fid_attrs = ('base_enchantment', 'worn_restrictions')
 
     #--------------------------------------------------------------------------
     # Import Inventory
     #--------------------------------------------------------------------------
-    inventoryTypes = (b'NPC_', b'CONT')
+    inventory_types = {b'CONT', b'FURN', b'NPC_'}
+
+    #--------------------------------------------------------------------------
+    # Import Keywords
+    #--------------------------------------------------------------------------
+    keywords_types = {
+        b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'BOOK', b'CONT', b'DOOR',
+        b'FLOR', b'FURN', b'IDLM', b'INGR', b'KEYM', b'LCTN', b'LIGH', b'MGEF',
+        b'MISC', b'MSTT', b'NPC_',
+    }
+
+    #--------------------------------------------------------------------------
+    # Import Names
+    #--------------------------------------------------------------------------
+    names_types = {
+        b'AACT', b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS',
+        b'CLFM', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FACT', b'FLOR',
+        b'FLST', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM', b'KYWD', b'LIGH',
+        b'MESG', b'MGEF', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'OMOD', b'PERK',
+        b'PROJ', b'SCOL', b'SNCT',
+    }
 
     #--------------------------------------------------------------------------
     # Import Object Bounds
     #--------------------------------------------------------------------------
-    object_bounds_types = {b'LVLI', b'LVLN', b'LVSP'}
+    object_bounds_types = {
+        b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'ARMO', b'ARTO', b'ASPC', b'BNDS',
+        b'BOOK', b'CMPO', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'FLOR', b'FURN',
+        b'GRAS', b'HAZD', b'IDLM', b'INGR', b'KEYM', b'LIGH', b'LVLI', b'LVLN',
+        b'LVSP', b'MISC', b'MSTT', b'NOTE', b'NPC_', b'PKIN', b'PROJ', b'SCOL',
+    }
+
+    #--------------------------------------------------------------------------
+    # Leveled Lists
+    #--------------------------------------------------------------------------
+    leveled_list_types = {b'LVLI', b'LVLN', b'LVSP'}
 
     #--------------------------------------------------------------------------
     # Timescale Checker
     #--------------------------------------------------------------------------
     default_wp_timescale = 20
 
-    # ------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
+    # Tweak Actors
+    #--------------------------------------------------------------------------
+    actor_tweaks = {
+        'OppositeGenderAnimsPatcher_Female',
+        'OppositeGenderAnimsPatcher_Male',
+    }
+
+    # -------------------------------------------------------------------------
     # Tweak Settings
-    # ------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     settings_tweaks = {
         'GlobalsTweak_Timescale_Tes5',
         'GmstTweak_Actor_GreetingDistance',
@@ -783,7 +928,8 @@ class Fallout4GameInfo(PatchGame):
         b'MOVT', b'SNDR', b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
         b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP', b'ZOOM',
         b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG', b'NOCM',
-        b'LENS', b'GDRY', b'OVIS']
+        b'LENS', b'GDRY', b'OVIS',
+    ]
     complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
     @classmethod
@@ -801,25 +947,32 @@ class Fallout4GameInfo(PatchGame):
         # package name is fallout4 here
         super()._import_records(package_name, plugin_form_vers)
         cls.mergeable_sigs = set(cls.top_groups) - { # that's what it said
-            b'CELL',
-            b'MESG', b'MGEF', b'MISC', b'MOVT', b'MSTT', b'MSWP',
-            b'MUSC', b'MUST', b'NAVI', b'NOCM', b'NOTE', b'NPC_', b'OMOD',
-            b'OTFT', b'OVIS', b'PACK', b'PKIN', b'PROJ', b'QUST', b'RACE',
-            b'REGN', b'RELA', b'REVB', b'RFCT', b'RFGP', b'SCCO', b'SCEN',
-            b'SCOL', b'SCSN', b'SMBN', b'SMEN', b'SMQN', b'SNCT', b'SNDR',
+            b'CELL', b'NAVI', b'NOCM', b'QUST', b'SCEN',
+            b'RACE', # later :(
+            b'SNDR',
             b'SOPM', b'SOUN', b'SPEL', b'SPGD', b'STAG', b'STAT', b'TACT',
             b'TERM', b'TREE', b'TRNS', b'TXST', b'VTYP', b'WATR', b'WEAP',
             b'WRLD', b'WTHR', b'ZOOM'}
         _brec_.RecordType.simpleTypes = cls.mergeable_sigs
 
-class WSFallout4GameInfo(WindowsStoreMixin, Fallout4GameInfo):
+class GOGFallout4GameInfo(GOGMixin, AFallout4GameInfo):
+    """GameInfo override for the GOG version of Fallout 4."""
+    _gog_game_ids = _GOG_IDS
+    # appdata_name and my_games_name use the original locations
+
+class SteamFallout4GameInfo(SteamMixin, AFallout4GameInfo):
+    """GameInfo override for the Steam version of Fallout 4."""
+    class St(AFallout4GameInfo.St):
+        steam_ids = [377160]
+
+class WSFallout4GameInfo(WindowsStoreMixin, AFallout4GameInfo):
     """GameInfo override for the Windows Store version of Fallout 4."""
-    displayName = 'Fallout 4 (WS)'
     my_games_name = 'Fallout4 MS'
     appdata_name = 'Fallout4 MS'
 
-    class Ws(Fallout4GameInfo.Ws):
+    class Ws(AFallout4GameInfo.Ws):
         legacy_publisher_name = 'Bethesda'
         win_store_name = 'BethesdaSoftworks.Fallout4-PC'
 
-GAME_TYPE = {g.displayName: g for g in (Fallout4GameInfo, WSFallout4GameInfo)}
+GAME_TYPE = {g.unique_display_name: g for g in (
+    GOGFallout4GameInfo, SteamFallout4GameInfo, WSFallout4GameInfo)}

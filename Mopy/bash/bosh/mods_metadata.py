@@ -23,13 +23,13 @@
 import io
 from collections import Counter, defaultdict
 
-from ._mergeability import is_esl_capable
-from .. import balt, bass, bolt, bush, load_order
+from .. import bass, bolt, bush, load_order
 from ..bolt import SubProgress, dict_sort, sig_to_str, structs_cache
 from ..brec import ModReader, RecordHeader, RecordType, ShortFidWriteContext, \
     SubrecordBlob, unpack_header
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
+from ..wbtemp import TempFile
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
@@ -110,10 +110,9 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
+def checkMods(progress, modInfos, showModList=False, showCRC=False,
               showVersion=True, scan_plugins=True):
-    """Checks currently loaded mods for certain errors / warnings.
-    mc_parent should be the instance of PluginChecker, to scan."""
+    """Checks currently loaded mods for certain errors / warnings."""
     if not bush.game.Esp.canBash:
         # If we can't load plugins, then trying to do so will obviously fail
         scan_plugins = False
@@ -137,27 +136,34 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    if bush.game.check_esl:
-        # Check for ESL-capable plugins that aren't ESL-flagged.
-        can_esl_flag = modInfos.mergeable
-        can_merge = set()
-    else:
-        # Check for mergeable plugins that aren't merged into a BP.
-        can_esl_flag = set()
-        can_merge = all_active_plugins & modInfos.mergeable
-    # Don't show NoMerge-tagged plugins as mergeable
-    for mod in list(can_merge):
-        if u'NoMerge' in modInfos[mod].getBashTags():
-            can_merge.discard(mod)
+    can_merge = modInfos.mergeable_plugins
+    can_esl_flag = modInfos.esl_capable_plugins
+    can_overlay_flag = modInfos.overlay_capable_plugins
+    # Don't show NoMerge-tagged plugins as mergeable and remove ones that have
+    # already been merged into a BP
+    for m in list(can_merge):
+        if 'NoMerge' in modInfos[m].getBashTags() or m in modInfos.merged:
+            can_merge.discard(m)
     # -------------------------------------------------------------------------
-    # Check for ESL-flagged plugins that aren't ESL-capable.
+    # Check for ESL-flagged plugins that aren't ESL-capable and Overlay-flagged
+    # plugins that shouldn't be Overlay-flagged. Also check for conflicts
+    # between ESL and Overlay flags.
     remove_esl_flag = set()
+    overlays_with_new_recs = set()
+    overlays_with_no_masters = set()
+    conflicting_esl_overlay_flags = set()
     if bush.game.check_esl:
         for m, modinf in modInfos.items():
-            if not modinf.is_esl():
-                continue # we check .esl extension and ESL flagged mods
-            if not is_esl_capable(modinf, modInfos, reasons=None):
-                remove_esl_flag.add(m)
+            if m_is_esl := modinf.is_esl():
+                if not ModHeaderReader.formids_in_esl_range(modinf):
+                    remove_esl_flag.add(m)
+            if modinf.is_overlay():
+                if not modinf.masterNames:
+                    overlays_with_no_masters.add(m)
+                if ModHeaderReader.has_new_records(modinf):
+                    overlays_with_new_recs.add(m)
+                if m_is_esl:
+                    conflicting_esl_overlay_flags.add(m)
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -177,7 +183,11 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     cannot_scan_overrides = set()
     p_missing_masters = set()
     p_delinquent_masters = set()
+    p_circular_masters = set()
     for p_fn_key, p in all_present_minfs.items():
+        if p.has_circular_masters():
+            # The plugin depends on itself (possibly transitively) -> report
+            p_circular_masters.add(p_fn_key)
         if p_fn_key in all_active_plugins:
             for p_master in p.masterNames:
                 if p_master not in all_present_plugins:
@@ -212,17 +222,15 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
     scan_for_cleaning = set()
-    dirty_msgs = [(k, m.getDirtyMessage()) for k, m in
+    dirty_msgs = [(k, m.getDirtyMessage(scan_beth=True)) for k, m in
                   all_present_minfs.items()]
-    ignore_vanilla = bass.settings['bash.mods.ignore_dirty_vanilla_files']
     num_dirty_vanilla = 0
     for x, y in dirty_msgs:
-        if y[0]:
-            # Don't report vanilla plugins if the ignore setting is on
-            if ignore_vanilla and x in vanilla_masters:
+        if y:
+            if isinstance(y, str):
+                cleaning_messages[x] = y
+            else: # Don't report vanilla plugins if the ignore setting is on
                 num_dirty_vanilla += 1
-                continue
-            cleaning_messages[x] = y[1]
         elif scan_plugins:
             scan_for_cleaning.add(x)
     # -------------------------------------------------------------------------
@@ -242,12 +250,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     duplicate_formids = defaultdict(dict) # fid -> plugin -> int
     all_hitmes = defaultdict(list) # fn_key -> list[fid]
     if scan_plugins:
-        progress = None
         try:
             # Extract data for all plugins (we'll need the context from all of
             # them, even the game master)
-            progress = balt.Progress(_('Checking Plugins...'),
-                                     parent=mc_parent, abort=True)
             load_progress = SubProgress(progress, 0, 0.7)
             load_progress.setFull(len(all_present_minfs))
             all_extracted_data = {}
@@ -389,9 +394,6 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                     collision_progress(num_collisions, prog_msg % first_plugin)
         except CancelError:
             scanning_canceled = True
-        finally:
-            if progress:
-                progress.Destroy()
     # -------------------------------------------------------------------------
     # Check for unnecessary deletions, i.e. new records that have the Deleted
     # flag set and should probably just be removed entirely instead
@@ -545,10 +547,10 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             orig_minf = modInfos[fid_orig_plugin]
             proper_index = orig_minf.real_index()
             if orig_minf.is_esl():
-                return u'FE%03X%03X' % (proper_index - sort_offset,
-                                        whole_lo_fid & 0x00000FFF)
+                return f'FE{proper_index - sort_offset:03X}' \
+                       f'{whole_lo_fid & 0x00000FFF:03X}'
             else:
-                return u'%02X%06X' % (proper_index, whole_lo_fid & 0x00FFFFFF)
+                return f'{proper_index:02X}{whole_lo_fid & 0x00FFFFFF:06X}'
     else:
         def format_fid(whole_lo_fid: int, _fid_orig_plugin):
             # For non-ESL games simple hexadecimal formatting will do
@@ -587,8 +589,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'have corrupt or otherwise malformed headers.'))
         log_plugin_messages(all_corrupted) ##: Just log_plugins?
     if can_esl_flag:
-        log.setHeader(u'=== ' + _(u'ESL Capable'))
-        log(_(u'The following plugins could be assigned an ESL flag.'))
+        log.setHeader('=== ' + _('ESL-Capable'))
+        log(_('The following plugins could be assigned an ESL flag, but do '
+              'not have one right now.'))
         log_plugins(can_esl_flag)
     if remove_esl_flag:
         log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
@@ -596,10 +599,43 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u"Either remove the flag with 'Remove ESL Flag', or "
               u"change the extension to '.esp' if it is '.esl'."))
         log_plugins(remove_esl_flag)
+    if can_overlay_flag:
+        log.setHeader('=== ' + _('Overlay-Capable'))
+        log(_('The following plugins could be assigned an Overlay flag, but '
+              'do not have one right now.'))
+        log_plugins(can_overlay_flag)
+    if overlays_with_new_recs:
+        log.setHeader('=== ' + _('Incorrect Overlay Flag: New Records'))
+        log(_("The following plugins have an Overlay flag, but do not "
+              "qualify because they contain new records. These will be "
+              "injected into the first master of the plugins in question, "
+              "which can seriously break basic game data. Either remove the "
+              "flag with 'Remove Overlay Flag', or remove the new records."))
+        log_plugins(overlays_with_new_recs)
+    if overlays_with_no_masters:
+        log.setHeader('=== ' + _('Incorrect Overlay Flag: No Masters'))
+        log(_("The following plugins have an Overlay flag, but do not "
+              "qualify because they do not have any masters. %(game_name)s "
+              "will not treat these as Overlay plugins. Either remove the "
+              "flag with 'Remove Overlay Flag', or use %(xedit_name)s to add "
+              "at least one master to the plugin.") % {
+            'xedit_name': bush.game.Xe.full_name,
+            'game_name': bush.game.display_name})
+        log_plugins(overlays_with_no_masters)
+    if conflicting_esl_overlay_flags:
+        log.setHeader('=== ' + _('Incorrect Overlay Flag: ESL-Flagged'))
+        log(_("The following plugins have an Overlay flag, but do not "
+              "qualify because they also have an ESL flag. These flags are "
+              "mutually exclusive. %(game_name)s will not treat these as "
+              "overlay plugins. Either remove the Overlay flag with "
+              "'Remove Overlay Flag', or remove the ESL flag with 'Remove "
+              "ESL Flag'.") % {
+            'game_name': bush.game.display_name})
+        log_plugins(conflicting_esl_overlay_flags)
     if can_merge:
-        log.setHeader(u'=== ' + _(u'Mergeable'))
-        log(_(u'The following plugins are active, but could be merged into '
-              u'the Bashed Patch.'))
+        log.setHeader('=== ' + _('Mergeable'))
+        log(_('The following plugins could be merged into a Bashed Patch, but '
+              'are currently not merged.'))
         log_plugins(can_merge)
     if should_deactivate:
         log.setHeader(u'=== ' + _(u'Deactivate-tagged But Active'))
@@ -615,18 +651,36 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
         log_plugins(should_activate)
     if p_missing_masters:
         log.setHeader('=== ' + _('Missing Masters'))
-        log(_(u'The following plugins have missing masters and are active. '
-              u'This will cause a CTD at the main menu and must be '
-              u'corrected.'))
+        log(_('The following plugins have missing masters and are active. '
+              'This will cause a CTD at the main menu and must be corrected '
+              'by installing the missing plugins or removing the plugins with '
+              'missing masters.'))
         log_plugins(p_missing_masters)
     if p_delinquent_masters:
         log.setHeader('=== ' + _('Delinquent Masters'))
-        log(_(u'The following plugins have delinquent masters, i.e. masters '
-              u'that are set to load after their dependent plugins. The game '
-              u'will try to force them to load before the dependent plugins, '
-              u'which can lead to unpredictable or undefined behavior and '
-              u'must be corrected.'))
+        log(_('The following plugins have delinquent masters, i.e. masters '
+              'that are set to load after their dependent plugins. The game '
+              'will try to force them to load before the dependent plugins, '
+              'which can lead to unpredictable or undefined behavior and '
+              'must be corrected. You should correct the load order.'))
         log_plugins(p_delinquent_masters)
+    if p_circular_masters:
+        log.setHeader('=== ' + _('Circular Masters'))
+        log(_("The following plugins have circular masters, i.e. they depend "
+              "on themselves. This can happen either directly (%(example_a)s "
+              "has %(example_a)s as a master) or transitively (%(example_a)s "
+              "has %(example_b)s as a master, which, in turn, has "
+              "%(example_a)s as a master - such a chain may be even longer). "
+              "Resolving this is impossible for the game, which will most "
+              "likely crash when trying to load these plugins. You can try to "
+              "investigate by using the 'Change To...' command to reassign "
+              "the circular master so that the plugin can be opened in "
+              "%(xedit_name)s.") % {
+            'example_a': 'foo.esp',
+            'example_b': 'bar.esp',
+            'xedit_name': bush.game.Xe.full_name,
+        })
+        log_plugins(p_circular_masters)
     if invalid_tes4_versions:
         ver_list = u', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
@@ -644,7 +698,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'This probably means that the plugin was not properly '
               u'converted to work with %(game_name)s.') % {
             u'ck_name': bush.game.Ck.long_name,
-            u'game_name': bush.game.displayName,
+            'game_name': bush.game.display_name,
         })
         log_plugins(old_fvers)
     if cleaning_messages:
@@ -702,10 +756,10 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               'cannot be loaded by %(game_name)s and the %(ck_name)s cannot '
               'automatically fix them by resaving. They have to be manually '
               'fixed in the %(ck_name)s by changing the critical data (CRDT) '
-              'subrecord to restore the correct data, which should usally be '
+              'subrecord to restore the correct data, which should usually be '
               'done by the mod author. Failing that, the safest course of '
               'action is to uninstall the plugins.') % {
-            u'game_name': bush.game.displayName,
+            'game_name': bush.game.display_name,
             u'ck_name': bush.game.Ck.long_name,
         })
         log_plugin_messages(old_weaps)
@@ -824,38 +878,38 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader.from_info(self.modInfo) as ins:
-            with ShortFidWriteContext(minfo_path.temp) as out:
-                while not ins.atEnd():
-                    progress(ins.tell())
-                    header = unpack_header(ins)
-                    _rsig = header.recType
-                    out.write(header.pack_head()) # copy the GRUP/record header
-                    if (header.is_top_group_header and header.label != b'CELL'
-                        # treat CELL block subgroups record by record - analyze
+        with TempFile() as out_path:
+            with ModReader.from_info(self.modInfo) as ins:
+                with ShortFidWriteContext(out_path) as out:
+                    while not ins.atEnd():
+                        progress(ins.tell())
+                        header = unpack_header(ins)
+                        _rsig = header.recType
+                        # Copy the GRUP/record header
+                        out.write(header.pack_head())
+                        # Treat CELL block subgroups record by record - analyze
                         # CELLs but just copy cell-children records over. If
                         # _rsig == GRUP no need to do anything (copied above)
-                            ) or (_rsig != b'GRUP' and _rsig != b'CELL'):
-                        buff = ins.read(header.blob_size)
-                        out.write(buff)
-                    #--Handle cells
-                    elif _rsig == b'CELL':
-                        next_header = ins.tell() + header.blob_size
-                        while ins.tell() < next_header:
-                            subrec = SubrecordBlob(ins, _rsig)
-                            if subrec.mel_sig == b'XCLL':
-                                color, near, far, rotXY, rotZ, fade, clip = \
-                                    __unpacker(subrec.mel_data)
-                                if not (near or far or clip):
-                                    near = 0.0001
-                                    subrec.mel_data = __packer(color, near,
-                                        far, rotXY, rotZ, fade, clip)
-                                    fixedCells.add(header.fid)
-                            subrec.packSub(out, subrec.mel_data)
-        #--Done
-        if fixedCells:
-            self.modInfo.makeBackup()
-            minfo_path.untemp()
-            self.modInfo.setmtime(crc_changed=True) # fog fixes
-        else:
-            minfo_path.temp.remove()
+                        if ((header.is_top_group_header and
+                             header.label != b'CELL') or
+                                _rsig != b'GRUP' and _rsig != b'CELL'):
+                            buff = ins.read(header.blob_size)
+                            out.write(buff)
+                        #--Handle cells
+                        elif _rsig == b'CELL':
+                            next_header = ins.tell() + header.blob_size
+                            while ins.tell() < next_header:
+                                subrec = SubrecordBlob(ins, _rsig)
+                                if subrec.mel_sig == b'XCLL':
+                                    color, near, far, rotXY, rotZ, fade, \
+                                        clip = __unpacker(subrec.mel_data)
+                                    if not (near or far or clip):
+                                        near = 0.0001
+                                        subrec.mel_data = __packer(color, near,
+                                            far, rotXY, rotZ, fade, clip)
+                                        fixedCells.add(header.fid)
+                                subrec.packSub(out, subrec.mel_data)
+            if fixedCells:
+                self.modInfo.makeBackup()
+                minfo_path.replace_with_temp(out_path)
+                self.modInfo.setmtime(crc_changed=True) # fog fixes

@@ -129,7 +129,7 @@
         versions)</li>
     <li>Fallout 3 (Epic Games Store, GOG, Steam and Windows Store
         versions)</li>
-    <li>Fallout 4 (Steam and Windows Store versions)</li>
+    <li>Fallout 4 (GOG, Steam and Windows Store versions)</li>
     <li>Fallout 4 VR (Steam version)</li>
     <li>Fallout&colon; New Vegas (Epic Games Store, GOG, Steam and Windows
         Store versions)</li>
@@ -141,6 +141,8 @@
     <li>Skyrim&colon; Special Edition (Epic Games Store, GOG, Steam and Windows
         Store versions)</li>
     <li>Skyrim VR (Steam version)</li>
+    <li>Starfield (WIP due to modding support not being enabled yet; Steam and
+        Windows Store versions)</li>
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
@@ -195,6 +197,12 @@
     <li><strong>ESU</strong> (case-insensitive) refers to any file with a
         <code>.esu</code> extension. These are an unofficial type of plugin
         used by xEdit. It is an acronym for Elder Scrolls Update.</li>
+    <li><strong>Overlay</strong> refers to a flag introduced with Starfield. It
+        marks a plugin as an <strong>overlay plugin</strong>. Overlay plugins
+        do not take up a load order slot, allowing you to load an unlimited
+        number of them. However, they have some restrictions: such plugins may
+        not contain new records (only overrides) and must have at least one
+        master.</li>
     <li><strong>Plugin</strong> refers to any of the above file types.</li>
     <li><strong>Master</strong> refers to any plugins that another plugin is
         dependent on to function. (It can also refer to an ESM file, as it used
@@ -276,7 +284,7 @@
         same game data. This type of conflict can be managed by altering the
         load order of plugins or creating patches.</li>
     <li><strong>BSAs</strong> are Bethesda Softwork Archives, with
-        <code>.bsa</code> (<strong>All but Fallout 4</strong>) or
+        <code>.bsa</code> (<strong>All games but Fallout 4</strong>) or
         <code>.ba2</code> (<strong>Fallout 4</strong>) file extensions. They
         can be used to store resource files such as textures and meshes.</li>
     <li><strong>ITMs</strong> are Identical To Master records, i.e. data in a
@@ -502,8 +510,9 @@ be restructured.</p>
         </tr>
         <tr>
             <td>Fallout 4</td>
-            <td>f4se, interface, lodsettings, materials, mcm, misc, programs,
-                scripts, seq, shadersfx, strings, tools, vis</td>
+            <td>dtf, dyndolod, f4se, folip, interface, lodsettings, materials,
+                mcm, misc, programs, scripts, seq, shadersfx, strings, tools,
+                vis</td>
         </tr>
     </tbody>
 </table>
@@ -513,19 +522,58 @@ All these directories (either in the Global or Extra and Bonus Game directories)
 will be skipped (and their content listed in Skipped tab). There are also some directories and files that will be always skipped (for all the gory details see
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-skipped">Skipped Files</a>).
 
-<p>There are, loosely speaking, three types of BAIN-compatible package structures:
-
+<p>There are, loosely speaking, four types of BAIN-compatible package
+    structures:</p>
 <table>
-    <thead><tr><th>Structure<th>Description
+    <thead>
+        <tr>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
-        <tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level
-            subdirectories (known as sub-packages) <strong>must NOT have the same name as any of the standard game directories for this game</strong>
-            (like docs, or meshes). Otherwise BAIN thinks this is a simple package and will skip sub-packages.<br>
-            Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
-        <tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
-            top level subdirectory. Examples include mods packaged with a top-level Data directory.
+        <tr>
+            <td>Simple</td>
+            <td>The package has .esp, .esm, .esl and/or .bsa files, and/or any
+                of the standard game subdirectories at the root level.</td>
+        </tr>
+        <tr>
+            <td>Complex</td>
+            <td>The package has top-level subdirectories that each have a
+                simple structure (as defined above). The top level
+                subdirectories (known as sub-packages) <strong>must NOT have
+                    the same name as any of the standard game directories for
+                    this game</strong> (like <q>docs</q>, or <q>meshes</q>).
+                Otherwise BAIN will think that this is a simple package and
+                will treat it as such.<br>
+                Each top-level subdirectory will be treated as a sub-package,
+                and can be independently activated or deactivated as
+                desired.</td>
+        </tr>
+        <tr>
+            <td>Complex/Simple</td>
+            <td>A complex package with only one top-level subdirectory. It is
+                treated as a simple package, starting at this top-level
+                subdirectory. Examples include mods packaged with a top-level
+                Data directory.</td>
+        </tr>
+        <tr>
+            <td>Scattered</td>
+            <td>A package with no recognizable structure, that can nonetheless
+                be handled by BAIN because it contains information that lets
+                BAIN make sense of the scattered files in the package. The only
+                currently supported type of scattered package is an
+                FOMOD-guided scattered package, shown as <q>Scattered
+                    (FOMOD)</q> on the Installers tab.</td>
+        </tr>
+    </tbody>
 </table>
+
+<p><strong>Note for mod authors:</strong> it is strongly recommended that you
+    use either a simple or complex structure, not a scattered one! This will
+    make it easier for users to inspect your package and will even allow them
+    to perform the installation by manually checking the sub-packages. All
+    major mod managers support these types of packages.</p>
 
 <h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
@@ -552,6 +600,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     which will automatically use wizards and FOMODs if they are present, and fall back to manual configuration
     if they are not. If you want to learn more about each type of package and how to install and configure
     their options manually, read on.</p>
+<!-- TODO: This should probably go into the advanced readme instead -->
 <p>If a package contains a BAIN wizard (i.e. there is
     <img src="../bash/images/readme/wand-icon.png" alt="a magic wand icon">
     overlaid on its checkbox):</p>
@@ -600,7 +649,9 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     <li>Right-click the package and select
         <a href="#bainInstall">Install...</a>.</li>
 </ol>
-<p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
+<p>If a package has a Scattered structure, you must use a guided installation
+    type (see the instructions for FOMOD installation above).</p>
+<p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complicated mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (e.g. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
 <p>To uninstall any package from the Installers tab select the package and
     right click on it, then select <a href="#bainUninstall">Uninstall</a>.
@@ -669,15 +720,54 @@ from other packages previously overridden by the uninstalled package's
         <tr><td><img alt="square" src="../bash/images/checkbox_white_off.png" width="16" height="16"><td>The package is an archive.
 </table>
 <table>
-    <thead><tr><th>Checkbox Colour<th>Meaning
+    <thead>
+        <tr>
+            <th>Checkbox Color</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"><td>All the files in the package are installed as configured.
-        <tr><td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"><td>Some or all of the files in the package are not installed as configured.
-        <tr><td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"><td>All the package files are installed, but the .esp/.esm plugins are not identical (e.g. another package has overwritten them with another version of the plugins).
-        <tr><td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"><td>All the package files are installed, but some resource (i.e. non-plugin) files are not identical (e.g. another package has overwritten them with another version of the files)
-        <tr><td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
-        <tr><td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"><td>BAIN does not recognise the structure of this package so cannot install it.
-        <tr><td><img alt="no checkbox, just a red X" src="../bash/images/red_x.svg" width="16" height="16" role="img"></td><td>The package is corrupt or can not be read by BAIN for some reason.</td></tr>
+        <tr>
+            <td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"></td>
+            <td>All the files in the package are installed as configured.</td>
+        </tr>
+        <tr>
+            <td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"></td>
+            <td>Some or all of the files in the package are not installed as
+                configured.</td>
+        </tr>
+        <tr>
+            <td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"></td>
+            <td>All the package files are installed, but the plugins are not
+                identical (e.g. one package installed <code>mymod.esp</code>,
+                another package installed a cleaned version of that
+                plugin).</td>
+        </tr>
+        <tr>
+            <td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"></td>
+            <td>All the package files are installed, but some resource files
+                (i.e. anything but plugins) are not identical (e.g. one
+                package installed <code>textures/mytexture.dds</code>, another
+                package installed a higher-resolution version of that
+                texture).</td>
+        </tr>
+        <tr>
+            <td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"></td>
+            <td>The package, as configured, has no files to install. This can
+                happen for complex packages where none of the sub-packages are
+                selected for installation. Will also happen for scattered
+                packages that need to have their guided installation run.</td>
+        </tr>
+        <tr>
+            <td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"></td>
+            <td>BAIN does not recognise the structure of this package and so
+                cannot install it.</td>
+        <tr>
+            <td><img alt="no checkbox, just a red X" src="../bash/images/red_x.svg" width="16" height="16" role="img"></td>
+            <td>The package is corrupt or can not be read by BAIN for some
+                reason.</td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
@@ -686,7 +776,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td class="bain-symbols-grytxt">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
         <tr><td class="bain-symbols-orgbg">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td class="bain-symbols-ylwbg">Yellow Background<td>The package has "underrides" i.e. some of its installed files <em>should</em> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
+        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complicated structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
@@ -864,18 +954,70 @@ from other packages previously overridden by the uninstalled package's
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
 <p>Generally speaking, if you end up with an invalid load order of some kind, Wrye Bash will automatically fix it upon booting or refreshing,
     but a backup copy (with the <code>.bak</code> extension) will be made before doing so.</p>
-<p>With the advent of <strong>ESL files</strong>, the load order system was modified.
-The following list contains the most important facts you need to know about how Wrye Bash handles ESL files:</p>
+<h4 id="intro-esls">ESLs</h4>
+<p>With the advent of <strong>ESL files</strong>, the load order system was
+    modified. The following list contains the most important facts you need to
+    know about how Wrye Bash handles ESL files:</p>
 <ol>
-    <li>.esl files implicitly receive the ESM flag, so they load among masters in the order of the plugins txt.</li>
-    <li>.esl files implicitly recieve the ESL flag, so they are always treated as light plugins.</li>
+    <li><code>.esl</code> files implicitly receive the ESM flag, so they load
+        among masters in the order specified in <code>plugins.txt</code>.</li>
+    <li><code>.esl</code> files implicitly recieve the ESL flag, so they are
+        always treated as light plugins.</li>
     <li>ESPs with the ESL flag are also treated as light plugins.</li>
-    <li>ESLs can surpass the 255 mod limit - Wrye Bash allows up to 4096, the theoretical limit,
-        but your game will likely give up long before that number is reached.</li>
+    <li>ESLs can surpass the 255 mod limit - Wrye Bash allows up to 4096, the
+        theoretical limit, but your game will likely give up long before that
+        number is reached.</li>
+    <li>The ESL flag is mutually exclusive with the Overlay flag (see
+        below).</li>
 </ol>
-<p>Creation Club ESL files (of the form <code>cc*.esl</code>) are read from the game's <code>.ccc</code> file, if the game has Creation Club support.
-For example, Skyrim&colon; Special Edition uses <code>[GAME]\Skyrim.ccc</code>, while Fallout 4 uses <code>[GAME]\Fallout4.ccc</code>.
-Just like the game's masters, this load order is hardcoded, and so it cannot be changed - Wrye Bash will show an error message when an attempt is made.</p>
+<p>Creation Club files (of the form <code>cc*.esl</code> or
+    <code>cc*.esm</code>) are read from the game's <code>.ccc</code> file, if
+    the game has Creation Club support. For example, Skyrim&colon; Special
+    Edition uses <code>[GAME]\Skyrim.ccc</code>, while Fallout 4 uses
+    <code>[GAME]\Fallout4.ccc</code>. Just like the game's masters, this load
+    order is hardcoded, and so it cannot be changed - Wrye Bash will show an
+    error message when an attempt is made.</p>
+<h4 id="intro-overlays">Overlay Plugins</h4>
+<p>With Starfield and the advent of <strong>Overlay plugins</strong>, another
+    addition was made to the load order system. Here are the important facts
+    you need to know about Overlay plugins and Wrye Bash's handling of
+    them:</p>
+<ol>
+    <li>Overlay plugins do not take up a load order slot at all. This means you
+        can load an unlimited number of them, making them ideal for e.g.
+        conflict resolution patches.</li>
+    <li>Overlay plugins should not contain new records (i.e. records with
+        FormIDs like <code>XY012345</code>, where <code>XY</code> is greater
+        than or equal to the number of masters the plugin has). If they do,
+        those records will be injected into the first master of the overlay
+        plugin, which could cause all kinds of issues, from spurious overrides
+        to CTDs.
+        <ul>
+            <li>Wrye Bash does not let you flag plugins with new records as
+                Overlay plugins and xEdit will not let you save them. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+    <li>Overlay plugins must have at least one master. If they do not, the game
+        will ignore the Overlay flag and treat them as regular plugins.
+        <ul>
+            <li>Wrye Bash does not let you flag plugins with no masters as
+                Overlay plugins and xEdit will not let you save them. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+    <li>The Overlay flag is mutually exclusive with the ESL flag (see
+        above). If the game finds both, it will ignore the ESL flag.
+        <ul>
+            <li>Wrye Bash and xEdit both do not let you flag plugins with the
+                ESL flag as Overlay plugins and vice versa. The
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>
+                will also highlight such plugins when run.</li>
+        </ul>
+    </li>
+</ol>
 
 <h3 id="load-set">Setting The Load Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as xEdit is required.
@@ -947,6 +1089,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 one that can be ESL-flagged <em>(for games with ESL
                     support)</em>.</td>
         </tr>
+        <tr>
+            <td class="load-symbols-orgtxt">Orange Text</td>
+            <td><em>Only for games with Overlay support.</em> An Overlay
+                plugin.</td>
+        </tr>
         <tr id="load-colors-esls">
             <td class="load-symbols-pnktxt">Pink Text</td>
             <td><em>Only for games with ESL support.</em> An ESL-flagged
@@ -957,6 +1104,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td><em>Only for games with ESL support.</em> An ESL-flagged plugin
                 that is also a master. The color is a combination of the blue
                 one for masters and the pink one for ESLs.</td>
+        </tr>
+        <tr>
+            <td class="load-symbols-redtxt">Red Text</td>
+            <td><em>Only for games with Overlay support.</em> An Overlay plugin
+                that is also a master. The color is a combination of the blue
+                one for masters and the orange one for Overlay plugins.</td>
         </tr>
         <tr>
             <td class="load-symbols-ylwtxt">Yellow Text</td>
@@ -1135,7 +1288,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Preserves changes made to actors (i.e. NPCs and creatures) by
                 the mods selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchImportActorsAIPackages">Import Actors: AI
@@ -1143,7 +1296,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Merges the changes made to actor AI packages by all the mods
                 selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchImportActorsFaces">Import Actors: Faces</td>
@@ -1159,22 +1312,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Preserves the changes made to the factions an actor belongs to
                 by the mods selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Actors: Perks</td>
             <td>Merges the changes made to the perk list of NPCs by the mods
                 selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
-                Special Edition</td>
+            <td>All games since Skyrim</td>
         </tr>
         <tr>
             <td id="patchImportActorsSpells">Import Actors: Spells</td>
             <td>Merges the changes made to the spells actors have by the mods
                 selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchImportCells">Import Cells</td>
@@ -1182,36 +1334,39 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 settings such as lighting, climate, music, name, owner, water
                 and more.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Import Destructible</td>
             <td>Preserves the changes made to the ability to destroy certain
                 parts of the environment.</td>
-            <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
-                Fallout 4</td>
+            <td>Always, unless you are told otherwise by a mod's readme. You
+                will have to use this if a mod that allows you to destroy part
+                of the environment is installed.</td>
+            <td>All games since Fallout 3</td>
         </tr>
         <tr>
             <td>Import Effect Stats</td>
             <td>Preserves the changes made to the stats of magic / base
                 effects.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Enchantments</td>
             <td>Preserves the changes made to the enchantments of items like
-                armor, weapons, etc.</td>
+                armor, weapons, etc. These are also sometimes called 'object
+                effects', depending on the game.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4.</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Enchantment Stats</td>
-            <td>Preserves the changes made to the effect data of enchantments
-                / object effects.</td>
+            <td>Preserves the changes made to the effect data of enchantments.
+                These are also sometimes called 'object effects', depending on
+                the game.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchImportGraphics">Import Graphics</td>
@@ -1219,22 +1374,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 textures and models throughout the game.</td>
             <td>The decision is entirely based on user preference. Choose
                 whichever mods' graphics you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchImportInventory">Import Inventory</td>
-            <td>Merges the changes made to the items in an actor's inventory by
-                all the mods selected.</td>
+            <td>Merges the changes made to the items in various types of
+                inventories by the plugins selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Keywords</td>
             <td>Preserves the changes made to the keywords attached to various
                 things throughout the game by the mods selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
-                Special Edition</td>
+            <td>All games since Skyrim</td>
         </tr>
         <tr>
             <td id="patchImportNames">Import Names</td>
@@ -1242,22 +1396,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 by the mods selected.</td>
             <td>The decision is entirely based on user preference. Choose
                 whichever mods' names you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Object Bounds</td>
             <td>Preserves the changes made by the mods selected to the bounds
                 of many types of objects throughout the world.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>All games since Fallout 3</td>
         </tr>
         <tr>
             <td>Import Outfits</td>
             <td>Merges the changes made to the items in NPC outfits by all the
                 mods selected.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
-                Special Edition</td>
+            <td>All games since Skyrim</td>
         </tr>
         <tr>
             <td>Import Races</td>
@@ -1288,7 +1441,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Merges additions, changes and deletions to faction
                 relations.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td>Import Roads</td>
@@ -1311,17 +1464,18 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 sounds in the game.</td>
             <td>The decision is entirely based on user preference. Choose
                 whichever mods' sounds you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchImportSpellStats">Import Spell Stats</td>
-            <td>Preserves the changes made by the mods selected to spells /
-                actor effects in order to fix bugs or rebalance them.</td>
+            <td>Preserves the changes made by the mods selected to spells in
+                order to fix bugs or rebalance them. These are also sometimes
+                called 'actor effects', depending on the game.</td>
             <td>Always, unless you are told otherwise by a mod's readme. There
                 is an element of user preference, for instance if you are using
                 several mods that overhaul spell stats. In such cases, choose
                 whichever mods' stats you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Import Stats</td>
@@ -1331,7 +1485,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 is an element of user preference, for instance if you are using
                 several mods that overhaul spell stats. In such cases, choose
                 whichever mods' stats you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Import Text</td>
@@ -1342,7 +1496,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 is an element of user preference, for instance if you are using
                 several mods that overhaul spell stats. In such cases, choose
                 whichever mods' stats you prefer.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td>Import Weapon Modifications</td>
@@ -1376,7 +1530,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Allows you to change a number of the game's settings relating
                 to actors (i.e. NPCs).</td>
             <td>The decision is entirely based on user preference.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchTweakAssorted">Tweak Assorted</td>
@@ -1390,7 +1544,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                     Fix</strong> is recommended for all users as it fixes an
                 issue that affects many mods. Beyond that, the decision is
                 entirely based on user preference.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchTweakClothes">Tweak Clothes</td>
@@ -1405,13 +1559,13 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 the game. Most change the names to change how they are sorted
                 in your inventory.</td>
             <td>The decision is entirely based on user preference.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr><td id="patchTweakRaces">Tweak Races</td>
             <td>Contains a set of tweaks that alter race-related things (e.g.
                 height, eyes, hairs, etc.).</td>
             <td>The decision is entirely based on user preference.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchTweakSettings">Tweak Settings</td>
@@ -1438,7 +1592,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     </thead>
     <tbody>
         <tr>
-            <td id="patchAliasModNames">Alias Mod Names</td>
+            <td id="patchAliasPluginNames">Alias Plugin Names</td>
             <td>Allows Wrye Bash to recognise some common renamings of plugins
                 that are referenced in .csv data files that it imports as part
                 of some Bashed Patch sections. Renamings should be listed in
@@ -1448,7 +1602,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 you have selected in the Bashed Patch's configuration. It is
                 recommended that you refrain from renaming plugins, as it can
                 break parts of Wrye Bash and other utilities.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
         <tr>
             <td id="patchReplaceFormIDs">Replace Form IDs</td>
@@ -1478,7 +1632,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 contain the correct types of entries, and removes any incorrect
                 entries.</td>
             <td>Always.</td>
-            <td>All but Fallout 4</td>
+            <td>All games but Fallout 4</td>
         </tr>
         <tr>
             <td id="patchLeveledLists">Leveled Lists</td>
@@ -1539,7 +1693,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Always. Does nothing if you are not using a nonstandard
                 timescale, in which case it doesn't hurt to have it
                 enabled.</td>
-            <td>All but Fallout 4</td>
+            <td>All games</td>
         </tr>
     </tbody>
 </table>
@@ -1991,33 +2145,33 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td><img alt="" src="../bash/images/tools/loot.svg" width="32" height="32" role="img"><td><a href="https://loot.github.io/">LOOT</a>
         <tr><td><img alt="" src="../bash/images/tools/tes4edit32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>
             <td><img alt="" src="../bash/images/tools/tes4edit32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/skyrim/mods/25859">TES5Edit</a>
-        <tr><td><img alt="" src="../bash/images/tools/tes4lodgen32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/15781">TES4LODGen</a>
-            <td><img alt="" src="../bash/images/tools/tes4lodgen32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/skyrim/mods/62698/">TES5LODGen</a>
-        <tr><td><img alt="" src="../bash/images/tools/bsacommander32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/3311">BSA Commander</a>
+        <tr><td><img alt="" src="../bash/images/tools/tes4lodgenpath32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/15781">TES4LODGen</a>
+            <td><img alt="" src="../bash/images/tools/tes4lodgenpath32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/skyrim/mods/62698/">TES5LODGen</a>
+        <tr><td><img alt="" src="../bash/images/tools/bsacmd32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/3311">BSA Commander</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/interactivemapofcyrodiil32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
+        <tr><td><img alt="" src="../bash/images/tools/map32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/42132">Oblivion Book Creator</a>
+        <tr><td><img alt="" src="../bash/images/tools/oblivionbookcreatorpath32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/42132">Oblivion Book Creator</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/7808">Oblivion Face Exchange Lite</a>
+        <tr><td><img alt="" src="../bash/images/tools/obfel32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/7808">Oblivion Face Exchange Lite</a>
             <td><td>
         <tr><td><img alt="" src="../bash/images/tools/obmm32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/2097">Oblivion Mod Manager</a>
             <td><td>
         <tr><td><img alt="" src="../bash/images/tools/tabula32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/33486">Tabula</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/tes4files32.png" width="32" height="32"><td><a href="http://modsreloaded.com/tes4files">TES4Files</a>
+        <tr><td><img alt="" src="../bash/images/tools/tes4filespath32.png" width="32" height="32"><td><a href="http://modsreloaded.com/tes4files">TES4Files</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/tes4gecko32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/8665">TES4Gecko</a>
+        <tr><td><img alt="" src="../bash/images/tools/tes4geckopath32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/8665">TES4Gecko</a>
             <td><td>
         <tr><td><img alt="" src="../bash/images/tools/isobl32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20121102053259/https://tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher (offline)</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/modlistgenerator32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20121108015410/https://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Insanity Sorrow's Oblivion Mod List Generator (offline)</a>
+        <tr><td><img alt="" src="../bash/images/tools/obmlg32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20121108015410/https://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Insanity Sorrow's Oblivion Mod List Generator (offline)</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/insanity'srng32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20120618163702/https://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator (offline)</a>
+        <tr><td><img alt="" src="../bash/images/tools/isrng32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20120618163702/https://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator (offline)</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/randomnpc32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20121105223820/https://tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator (offline)</a>
+        <tr><td><img alt="" src="../bash/images/tools/isrnpcg32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20121105223820/https://tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator (offline)</a>
             <td><td>
-        <tr><td><img alt="" src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20120603032215/https://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator (offline)</a>
+        <tr><td><img alt="" src="../bash/images/tools/isrmg32.png" width="32" height="32"><td><a href="https://web.archive.org/web/20120603032215/https://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator (offline)</a>
             <td><td>
 </table>
 <h3 id="launchers-apps">Other Applications <a class="back2top" href="#contents">Back to top</a></h3>
@@ -2034,38 +2188,38 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td><img alt="" src="../bash/images/tools/artweaver32.png" width="32" height="32"><td><a href="https://www.artweaver.de/en">Artweaver</a>
                 <td><img alt="" src="../bash/images/tools/audacity32.png" width="32" height="32"><td><a href="https://www.audacityteam.org/">Audacity</a>
                     <td><img alt="" src="../bash/images/tools/evgaprecision32.png" width="32" height="32"><td><a href="https://www.evga.com/">EVGA Precision</a>
-        <tr><td><img alt="" src="../bash/images/tools/blender32.png" width="32" height="32"><td><a href="https://www.blender.org">Blender</a>
+        <tr><td><img alt="" src="../bash/images/tools/blenderpath32.png" width="32" height="32"><td><a href="https://www.blender.org">Blender</a>
             <td><img alt="" src="../bash/images/tools/crazybump32.png" width="32" height="32"><td><a href="https://www.crazybump.com/">CrazyBump</a>
                 <td><img alt="" src="../bash/images/tools/switch32.png" width="32" height="32"><td><a href="https://www.nch.com.au/switch/index.html">Switch</a>
                     <td><img alt="" src="../bash/images/tools/fraps32.png" width="32" height="32"><td><a href="http://www.fraps.com/">Fraps</a>
-        <tr><td><img alt="" src="../bash/images/tools/gmax32.png" width="32" height="32"><td><a href="https://www.turbosquid.com/gmax">GMax</a>
+        <tr><td><img alt="" src="../bash/images/tools/gmaxpath32.png" width="32" height="32"><td><a href="https://www.turbosquid.com/gmax">GMax</a>
             <td><img alt="" src="../bash/images/tools/ddsconverter32.png" width="32" height="32"><td><a href="https://www.nexusmods.com/oblivion/mods/8698/">DDSConverter2</a>
                 <td><td>
                     <td><img alt="" src="../bash/images/tools/freemind32.png" width="32" height="32"><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
-        <tr><td><img alt="" src="../bash/images/tools/maya32.png" width="32" height="32"><td><a href="https://www.autodesk.com/products/maya/overview">Maya</a>
+        <tr><td><img alt="" src="../bash/images/tools/mayapath32.png" width="32" height="32"><td><a href="https://www.autodesk.com/products/maya/overview">Maya</a>
             <td><img alt="" src="../bash/images/tools/deeppaint32.png" width="32" height="32"><td><a href="https://www.chip.de/downloads/Deep-Paint_16395518.html">DeepPaint</a>
                 <td><td>
                     <td><img alt="" src="../bash/images/tools/freeplane32.png" width="32" height="32"><td><a href="https://freeplane.sourceforge.io/wiki/index.php/Home">Freeplane</a>
-        <tr><td><img alt="" src="../bash/images/tools/3dsmax32.png" width="32" height="32"><td><a href="https://www.autodesk.com/products/3ds-max/overview">3ds Max</a>
+        <tr><td><img alt="" src="../bash/images/tools/maxpath32.png" width="32" height="32"><td><a href="https://www.autodesk.com/products/3ds-max/overview">3ds Max</a>
             <td><img alt="" src="../bash/images/tools/dogwaffle32.png" width="32" height="32"><td><a href="https://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
                 <td><td>
                     <td><img alt="" src="../bash/images/tools/filezilla32.png" width="32" height="32"><td><a href="https://filezilla-project.org/">Filezilla</a>
         <tr><td><img alt="" src="../bash/images/tools/milkshape3d32.png" width="32" height="32"><td><a href="http://www.milkshape3d.com/">MilkShape 3D</a>
-            <td><img alt="" src="../bash/images/tools/faststoneimageviewer32.png" width="32" height="32"><td><a href="https://www.faststone.org/">FastStone Image Viewer</a>
+            <td><img alt="" src="../bash/images/tools/faststone32.png" width="32" height="32"><td><a href="https://www.faststone.org/">FastStone Image Viewer</a>
                 <td><td>
                     <td><img alt="" src="../bash/images/tools/logitechkeyboard32.png" width="32" height="32"><td><a href="https://support.logitech.com/en_ca/product/g11-gaming-keyboard">Logitech G11 Keyboard Profiler</a>
         <tr><td><img alt="" src="../bash/images/tools/mudbox32.png" width="32" height="32"><td><a href="https://www.autodesk.com/products/mudbox/overview">Mudbox</a>
             <td><img alt="" src="../bash/images/tools/genetica32.png" width="32" height="32"><td><a href="http://spiralgraphics.biz/genetica.htm">Genetica</a>
                 <td><td>
                     <td><img alt="" src="../bash/images/tools/mediamonkey32.png" width="32" height="32"><td><a href="https://www.mediamonkey.com/">Media Monkey</a>
-        <tr><td><img alt="" src="../bash/images/tools/nifskope32.png" width="32" height="32"><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
+        <tr><td><img alt="" src="../bash/images/tools/nifskopepath32.png" width="32" height="32"><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
             <td><img alt="" src="../bash/images/tools/geneticaviewer32.png" width="32" height="32"><td><a href="http://spiralgraphics.biz/viewer/">Genetica Viewer</a>
                 <td><td>
-                     <td><img alt="" src="../bash/images/tools/notepad++32.png" width="32" height="32"><td><a href="https://notepad-plus-plus.org/">Notepad++</a>
+                     <td><img alt="" src="../bash/images/tools/npp32.png" width="32" height="32"><td><a href="https://notepad-plus-plus.org/">Notepad++</a>
         <tr><td><img alt="" src="../bash/images/tools/sculptris32.png" width="32" height="32"><td><a href="https://pixologic.com/sculptris/">Sculptris</a>
             <td><img alt="" src="../bash/images/tools/gimp32.png" width="32" height="32"><td><a href="https://www.gimp.org/">GIMP</a>
                 <td><td>
-                    <td><img alt="" src="../bash/images/tools/radvideotools32.png" width="32" height="32"><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
+                    <td><img alt="" src="../bash/images/tools/radvideo32.png" width="32" height="32"><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
         <tr><td><img alt="" src="../bash/images/tools/softimagemodtool32.png" width="32" height="32"><td><a href="https://developer.valvesoftware.com/wiki/Softimage_Mod_Tool">Softimage Mod Tool</a>
             <td><img alt="" src="../bash/images/tools/krita32.png" width="32" height="32"><td><a href="https://krita.org/">Krita</a>
                 <td><td>
@@ -2087,11 +2241,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img alt="" src="../bash/images/tools/paint.net32.png" width="32" height="32"><td><a href="https://www.getpaint.net/index.html">Paint.NET</a>
+            <td><img alt="" src="../bash/images/tools/paintnet32.png" width="32" height="32"><td><a href="https://www.getpaint.net/index.html">Paint.NET</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img alt="" src="../bash/images/tools/paintshopprox332.png" width="32" height="32"><td><a href="https://www.paintshoppro.com/en/products/paintshop-pro/standard/?pid=prod4220093&storeKey=us">PaintShop Photo Pro</a>
+            <td><img alt="" src="../bash/images/tools/paintshopphotopro32.png" width="32" height="32"><td><a href="https://www.paintshoppro.com/en/products/paintshop-pro/standard/?pid=prod4220093&storeKey=us">PaintShop Photo Pro</a>
                 <td><td>
                     <td><td>
             <tr><td><td>
@@ -2111,11 +2265,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img alt="" src="../bash/images/tools/photoshop32.png" width="32" height="32"><td><a href="https://www.adobe.com/ca/products/photoshop.html">Photoshop</a>
+            <td><img alt="" src="../bash/images/tools/photoshoppath32.png" width="32" height="32"><td><a href="https://www.adobe.com/ca/products/photoshop.html">Photoshop</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img alt="" src="../bash/images/tools/pixelstudiopro32.png" width="32" height="32"><td><a href="https://www.softpedia.com/get/Multimedia/Graphic/Graphic-Editors/Pixel32.shtml">Pixel Studio Pro</a>
+            <td><img alt="" src="../bash/images/tools/pixelstudio32.png" width="32" height="32"><td><a href="https://www.softpedia.com/get/Multimedia/Graphic/Graphic-Editors/Pixel32.shtml">Pixel Studio Pro</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
@@ -2177,8 +2331,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 </table>
 
 <h3 id="manually-add">Manually adding tools to the Launcher Bar <a class="back2top" href="#contents">Back to top</a></h3>
-<p>To do this find and Right Click on a tools .exe file, and choose send to desktop
-<p>Copy this Icon from the desktop and paste it into the Mopy \ Apps \ folder ( The temporary desktop icon copy can now be deleted )
+<p>Find the executable of the tool you want to add and Right Click on it. Choose "create shortcut".
+<p>Cut (ctrl-x) the resulting icon and paste it into the Mopy \ Apps \ folder. You can also take a shortcut by opening two Explorer windows
+    and alt-drag the executable you want to add to the Mopy\Apps folder.
 <p>When you next run Wrye Bash the icon will be in the Launcher Bar, and you can Drag and drop the new icon to a desired position
 <p>Be careful not to use up all the available space and prevent tooltip messages appearing next to the Launcher Bar</p>
 
@@ -2331,6 +2486,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 <h3>Authors and Contributors <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
     <li><img class="smallcred" alt="Badhair's Icon" src="../bash/images/people/gencavi32.png"><span><a href="https://github.com/Badhair">Badhair:</a> OBSE cofile reading code, various optimizations etc.</span></li>
+    <li><img class="smallcred" alt="BGazotti's Icon" src="../bash/images/people/bgazavi32.png"><span><a href="https://github.com/BGazotti">BGazotti:</a> Linux fixes and improvements</span></li>
     <li><img class="smallcred" alt="Beermotor's Icon" src="../bash/images/people/brmtavi32.png"><span><a href="https://github.com/BeermotorWB">Beermotor:</a> Installer directory refinement, new settings tweaks</span></li>
     <li><img class="smallcred" alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, boot process refactoring</span></li>
     <li><img class="smallcred" alt="Diana's Icon" src="../bash/images/people/dianavi32.png"><span><a href="https://github.com/DianaNites">Diana:</a> Refactoring Export/Import links and argument parsing</span></li>
@@ -2342,8 +2498,8 @@ Respect developer's time - keep discussions there short, sweet and technical. No
     <li><img class="smallcred" alt="Jfpelland's Icon" src="../bash/images/people/genbavi32.png"><span><a href="https://github.com/jfpelland">jfpelland:</a> Patcher updates, bug fixes, corrected GMST checks</span></li>
     <li><img class="smallcred" alt="Kenneth M. Glassey's Icon" src="../bash/images/people/kmglavi32.png"><span><a href="https://github.com/Gavvers/">Kenneth M. Glassey:</a> Several FOMOD fixes</span></li>
     <li><img class="smallcred" alt="Leandor's Icon" src="../bash/images/people/lndravi32.jpg"><span><a href="https://github.com/leandor">Leandor:</a> CBash and CBashAPI updates</span></li>
-    <li><img class="smallcred" alt="Lord Nyriox's Icon" src="../bash/images/people/lonyavi32.png"><span><a href="https://github.com/LordNyriox">Lord Nyriox:</a> Expanded Oblivion.esm swapping support</span></li>
     <li><img class="smallcred" alt="Lojack's Icon" src="../bash/images/people/lojkavi32.png"><span><a href="https://github.com/lojack5">Lojack:</a> Maintainer from 278-305: BAIN Wizards, Ini Edits tab, etc.</span></li>
+    <li><img class="smallcred" alt="Lord Nyriox's Icon" src="../bash/images/people/lonyavi32.png"><span><a href="https://github.com/LordNyriox">Lord Nyriox:</a> Expanded Oblivion.esm swapping support</span></li>
     <li><img class="smallcred" alt="Luna Nova's Icon" src="../bash/images/people/nalravi32.png"><span><a href="https://github.com/LunNova">Luna Nova:</a> Initial Skyrim VR support.</span></li>
     <li><img class="smallcred" alt="MacSplody's Icon" src="../bash/images/people/mcspavi32.png"><span><a href="https://github.com/MacSplody">MacSplody:</a> Patcher refinement, updating LOOT integration, cell handling</span></li>
     <li><img class="smallcred" alt="Myktaylor's Icon" src="../bash/images/people/myk2avi32.png"><span><a href="https://github.com/myk002">myktaylor:</a> Project management, Asynchronous installer tab, etc</span></li>
@@ -2456,8 +2612,10 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                 a mod by <a href="https://www.nexusmods.com/users/77237">Tom Supergan</a>.</span></li>
             <li><img class="smallcred" alt="Woodman's Icon" src="../bash/images/bash.svg" role="img"><span>
                 <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-camera-chase-tightness">Camera: Chase Tightness</a> was inspired by
-                <a href="https://www.nexusmods.com/oblivion/mods/1840">ChaseCameraMod</a> by
-                <a href="https://www.nexusmods.com/users/85866">Woodman</a>.</span></li>
+                <a href="https://www.nexusmods.com/oblivion/mods/1840">ChaseCameraMod</a>.
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-camera-vanity-speed-mult">Camera: Vanity Speed Multiplier</a> was inspired by
+                <a href="https://www.nexusmods.com/oblivion/mods/1852">Vanity Camera Smoother</a>.
+                Both mods were created by <a href="https://www.nexusmods.com/users/85866">Woodman</a>.</span></li>
             <li><img class="smallcred" alt="David Moyer's Icon" src="../bash/images/bash.svg" role="img"><span>
                 <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tweak-settings-camera-pdt">Camera: PC Death Time</a> was inspired by
                 <q>Extended Death Camera</q> by
@@ -2575,7 +2733,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v311</div>
+    <div id="version">Wrye Bash v312</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

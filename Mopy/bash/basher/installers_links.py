@@ -23,16 +23,16 @@
 
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
+from collections import defaultdict
 from itertools import chain
 
 from . import Installers_Link
-from .dialogs import CreateNewProject, CleanDataEditor, \
-    MonitorExternalInstallationEditor
-from .. import balt, bass, bolt, bosh, bush, exception, load_order
+from .dialogs import CreateNewProject, CleanDataEditor, ImportOrderDialog, \
+    MonitorExternalInstallationEditor, AImportOrderParser
+from .. import balt, bass, bosh, bush, load_order
 from ..balt import AppendableLink, BoolLink, EnabledLink, ItemLink, \
     SeparatorLink
-from ..gui import copy_text_to_clipboard
-from ..parsers import CsvParser
+from ..gui import copy_text_to_clipboard, askYes
 
 __all__ = ['Installers_InstalledFirst', 'Installers_ProjectsFirst',
            u'Installers_RefreshData', u'Installers_AddMarker',
@@ -88,28 +88,33 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         # Refresh Data
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
-        data_sizeCrcDate = self.idata.data_sizeCrcDate.copy()
-        oldFiles = set(data_sizeCrcDate)
+        scd_before_install = self.idata.data_sizeCrcDate.copy()
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
-        bosh.bsaInfos.refresh() # TODO: add bsas to BAIN refresh
-        with load_order.Unlock():
-            mods_changed = bosh.modInfos.refresh()
-        inis_changed = bosh.iniInfos.refresh()
-        ui_refresh = [bool(mods_changed), bool(inis_changed)]
+        ui_refresh = defaultdict(bool)
+        with load_order.Unlock(): ##: single use outside refreshLoadOrder
+            for store in bosh.data_tracking_stores():
+                refresh_result = store.refresh()
+                ##: This is really ugly - refresh() should pick one type and
+                # return that consistently, not sometimes tuple[set, set, set]
+                # and sometimes bool - plus this is *duplicated in RefreshData
+                # now*!
+                if isinstance(refresh_result, tuple):
+                    refresh_result = any(refresh_result)
+                # May be an int etc.
+                ui_refresh[store.unique_store_key] = bool(refresh_result)
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
-        curFiles = set(curData)
-        newFiles = curFiles - oldFiles
-        delFiles = oldFiles - curFiles
-        sameFiles = curFiles & oldFiles
+        newFiles = curData.keys() - scd_before_install.keys()
+        delFiles = scd_before_install.keys() - curData.keys()
+        sameFiles = curData.keys() & scd_before_install.keys()
         changedFiles = {file_ for file_ in sameFiles if
-                        data_sizeCrcDate[file_][1] != curData[file_][1]}
+                        scd_before_install[file_][1] != curData[file_][1]}
         touchedFiles = {file_ for file_ in sameFiles if
-                        data_sizeCrcDate[file_][2] != curData[file_][2]}
+                        scd_before_install[file_][2] != curData[file_][2]}
         touchedFiles -= changedFiles
         if not (newFiles or changedFiles or touchedFiles or delFiles):
             self._showOk(_('No changes were detected in the %(data_folder)s '
@@ -135,13 +140,13 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
-        with balt.Progress(_('Creating Project...')) as prog:
-            self.idata.createFromData(pr_path, include, prog) # will order last
+        with balt.Progress(_('Creating Project...')) as prog: # will order last
+            self.idata.createFromData(pr_path, include, prog, bosh.modInfos)
         # createFromData placed the new project last in install order - install
         try:
             self.idata.bain_install([pr_path], ui_refresh, override=False)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
         # Select new installer
         self.window.SelectLast()
 
@@ -149,8 +154,8 @@ class Installers_MonitorExternalInstallation(Installers_Link):
 class Installers_ListPackages(Installers_Link):
     """Copies list of packages to clipboard."""
     _text = _(u'List Packages...')
-    _help = _(u'Displays a list of all packages.  Also copies that list to '
-        u'the clipboard.  Useful for posting your package order on forums.')
+    _help = _('Displays a list of all packages.  Also copies that list to the '
+              'clipboard.  Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):
@@ -161,7 +166,7 @@ class Installers_ListPackages(Installers_Link):
         package_list = self.idata.getPackageList(
             showInactive=not installed_only)
         copy_text_to_clipboard(package_list)
-        self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
+        self._showLog(package_list, title=_('BAIN Packages'))
 
 #------------------------------------------------------------------------------
 class Installers_AnnealAll(Installers_Link):
@@ -175,12 +180,13 @@ class Installers_AnnealAll(Installers_Link):
     @balt.conversation
     def Execute(self):
         """Anneal all packages."""
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Annealing...')) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
+            self.window.issue_warnings(warn_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class Installers_UninstallAllPackages(Installers_Link):
@@ -192,12 +198,12 @@ class Installers_UninstallAllPackages(Installers_Link):
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_('Really uninstall all packages?')): return
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Uninstalling...')) as progress:
                 self.idata.bain_uninstall_all(ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class _AInstallers_Refresh(AppendableLink, Installers_Link):
@@ -266,13 +272,13 @@ class Installers_CleanData(Installers_Link):
             unknown_files=all_unknown_files)
         if not ed_ok or not ed_unknown:
             return # Aborted by user or nothing left to clean, cancel
-        ui_refresh = [False, False]
+        ui_refresh = defaultdict(bool)
         try:
             with balt.Progress(_('Cleaning %(data_folder)s '
                                  'contents...') % mdir_fmt, f'\n{" " * 65}'):
                 self.idata.clean_data_dir(ed_unknown, ui_refresh)
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh)
+            self.window.RefreshUI(refresh_others=ui_refresh)
 
 #------------------------------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
@@ -286,12 +292,7 @@ class Installers_CreateNewProject(ItemLink):
         CreateNewProject.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
-class _AInstallers_Order(Installers_Link, CsvParser):
-    """Base class for export/import package order links."""
-    _csv_header = _('Package'), (_('Installed? (%(inst_y)s/%(inst_n)s)')
-                                 % {'inst_y': 'Y', 'inst_n': 'N'})
-
-class Installers_ExportOrder(_AInstallers_Order):
+class Installers_ExportOrder(Installers_Link, AImportOrderParser):
     """Export order and installation status for all packages."""
     _text = _('Export Order...')
     _help = _('Export the order and installation status of all packages.')
@@ -328,7 +329,7 @@ class Installers_ExportOrder(_AInstallers_Order):
             self.packages_exported += 1
 
 #------------------------------------------------------------------------------
-class Installers_ImportOrder(_AInstallers_Order):
+class Installers_ImportOrder(Installers_Link):
     """Import order and installation status for a subset of all packages from a
     previous export."""
     _text = _('Import Order...')
@@ -337,47 +338,13 @@ class Installers_ImportOrder(_AInstallers_Order):
 
     def Execute(self):
         if not self._askWarning(
-            _('This will reorder and change the installation status of all'
-              'packages from the chosen CSV file. It will not change the '
-              'contents of the Data folder, you will have to manuall install '
-              'or uninstall affected packages for that. Packages that are '
-              'not listed in the CSV file will not be touched.') + '\n\n' +
-            _('Are you sure you want to proceed?'),
+            _('This will reorder all packages from the chosen CSV file. It '
+              'will not change the contents of the Data folder, you will have '
+              'to manually install/anneal/uninstall affected packages for '
+              'that. Packages that are not listed in the CSV file will not be '
+              'touched.') + '\n\n' + _('Are you sure you want to proceed?'),
                 title=_('Import Order - Warning')): return
-        imp_path = self._askOpen(title=_('Import Order - Choose Source'),
-            defaultDir=bass.dirs['patches'], defaultFile='PackageOrder.csv',
-            wildcard='*.csv')
-        if not imp_path: return
-        self.first_line = True
-        self.partial_package_order = []
-        try:
-            self.read_csv(imp_path)
-        except (exception.BoltError, NotImplementedError):
-            self._showError(_('The selected file is not a valid '
-                              'package order CSV export.'),
-                title=_('Import Order - Invalid CSV'))
-            return
-        reorder_err = self.idata.reorder_packages(self.partial_package_order)
-        self.idata.irefresh(what='NS')
-        self.window.RefreshUI()
-        if reorder_err:
-            self._showError(reorder_err, title=_('Import Order - Error'))
-        else:
-            self._showInfo(_('Imported order and installation status for '
-                             '%(total_imported)d package(s).') % {
-                'total_imported': len(self.partial_package_order)},
-                title=_('Import Order - Done'))
-
-    def _parse_line(self, csv_fields):
-        if self.first_line: # header validation
-            self.first_line = False
-            if len(csv_fields) != 2:
-                raise exception.BoltError(f'Header error: {csv_fields}')
-            return
-        pkg_fstr, pkg_installed_yn = csv_fields
-        if (pkg_fname := bolt.FName(pkg_fstr)) in self.idata:
-            self.idata[pkg_fname].is_active = pkg_installed_yn == 'Y'
-            self.partial_package_order.append(pkg_fname)
+        ImportOrderDialog.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------
@@ -440,7 +407,7 @@ class Installers_ApplyEmbeddedBCFs(ItemLink):
     @balt.conversation
     def Execute(self):
         with balt.Progress(_('Auto-Applying Embedded BCFs...')) as progress:
-            destinations, converted = self.window.data_store.applyEmbeddedBCFs(
+            destinations, converted = self._data_store.applyEmbeddedBCFs(
                 progress=progress)
             if not destinations: return
         self.window.RefreshUI()
@@ -519,11 +486,12 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
         if bass.settings[self._bl_key]:
             # Delete ArchiveInvalidation.txt, if it exists
             bosh.bsaInfos.remove_invalidation_file()
-            if bush.game.displayName == u'Oblivion':
+            ##: Hack, this should not use display_name
+            if bush.game.display_name == 'Oblivion':
                 # For Oblivion, undo any alterations done to the textures BSA
                 # and reset the mtimes of vanilla BSAs ##: port to FO3/FNV?
                 bsaPath = bosh.modInfos.store_dir.join(
-                        bass.inisettings[u'OblivionTexturesBSAName'])
+                        bass.inisettings['OblivionTexturesBSAName'])
                 bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                      names_only=False)
                 with balt.Progress(
@@ -623,7 +591,7 @@ class _Installers_RescanningLink(Installers_Link, BoolLink):
 class _Installers_Skip(_Installers_RescanningLink):
     """Toggle global skip settings and update."""
     def _pre_rescan_action(self):
-        bosh.bain.Installer.init_global_skips()
+        bosh.bain.Installer.init_global_skips(askYes)
 
 #------------------------------------------------------------------------------
 class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
