@@ -191,12 +191,15 @@ class Master_ChangeTo(_Master_EditList):
                                 defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard)
         if not newPath: return
-        (newDir,newName) = newPath.headTail
+        newDir, newName = newPath.headTail
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
             self._showError(_(u'File must be selected from %s '
                               u'directory.') % bush.game.mods_dir)
             return
+        # Handle ghosts: simply chop off the extension
+        if newName.cext == '.ghost':
+            newName = newName.root
         if (new_fname := FName(newName.s)) == master_name:
             return
         curr_master_names = {m.curr_name for m in
