@@ -661,6 +661,8 @@ class ModInfo(FileInfo):
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
         self._mark_unchanged()
+        # This is necessary if BAIN externally tracked the (un)ghosted file
+        self.get_store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
