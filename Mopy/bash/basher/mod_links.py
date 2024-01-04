@@ -589,17 +589,17 @@ class Mod_Groups(_Mod_Labels):
 
     def _doRefresh(self):
         """Add to the list of groups currently assigned to mods."""
-        self.listEditor.SetItemsTo(list(set(bass.settings[
-            u'bash.mods.groups']) | _ModGroups.assignedGroups()))
+        self.SetItemsTo(list(set(
+            bass.settings['bash.mods.groups']) | _ModGroups.assignedGroups()))
 
     def _doSync(self):
         """Set the list of groups to groups currently assigned to mods."""
-        msg = _(u'This will set the list of available groups to the groups '
-                u'currently assigned to mods. Continue ?')
+        msg = _('This will set the list of available groups to the groups '
+                'currently assigned to plugins. Continue?')
         if not balt.askContinue(self.listEditor, msg,
-                                u'bash.groups.sync.continue',
-                                _(u'Sync Groups')): return
-        self.listEditor.SetItemsTo(list(_ModGroups.assignedGroups()))
+                                'bash.groups.sync.continue',
+                                _('Sync Groups')): return
+        self.SetItemsTo(list(_ModGroups.assignedGroups()))
 
     def _doReset(self):
         """Set the list of groups to the default groups list.
@@ -607,18 +607,19 @@ class Mod_Groups(_Mod_Labels):
         Won't clear user set groups from the modlist - most probably not
         what the user wants.
         """
-        msg = _(u'This will reset the list of available groups to the default '
-                u"group list. It won't however remove non default groups from "
-                u'mods that are already tagged with them. Continue ?')
+        msg = _("This will reset the list of available groups to the default "
+                "group list. However, it won't remove non-default groups from "
+                "plugins that are already tagged with them. Continue?")
         if not balt.askContinue(self.listEditor, msg,
-                                u'bash.groups.reset.continue',
-                                _(u'Reset Groups')): return
-        self.listEditor.SetItemsTo(list(settingDefaults[u'bash.mods.groups']))
+                                'bash.groups.reset.continue',
+                                _('Reset Groups')): return
+        self.SetItemsTo(list(settingDefaults['bash.mods.groups']))
 
     def SetItemsTo(self, items):
-        if self._listEditorData.setTo(items):
-            self._list_items = self._listEditorData.getItemList()
-            self.listBox.lb_set_items(self._list_items)
+        led = self.listEditor._listEditorData
+        if led.setTo(items):
+            self._list_items = led.getItemList()
+            self.listEditor.listBox.lb_set_items(self._list_items)
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):

@@ -269,6 +269,16 @@ class FileInfo(AFile, ListInfo):
         :return: A list of the masters of this file, as paths."""
         raise NotImplementedError
 
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        """Check if this file has circular masters, i.e. if it depends on
+        itself (either directly or transitively). If it doesn't have masters,
+        raise a NotImplementedError.
+
+        :param fake_masters: If not None, use this instead of self.masterNames
+            for determining which masters to recurse into. Useful for checking
+            if altering a master list would cause it to become circular."""
+        raise NotImplementedError
+
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
         return self.get_store().hidden_dir
@@ -576,6 +586,9 @@ class ModInfo(FileInfo):
         """Return the plugin masters, in the order listed in its header."""
         return self.header.masters
 
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        return self.fn_key in self.recurse_masters(fake_masters=fake_masters)
+
     def get_dependents(self):
         """Return a set of all plugins that have this plugin as a master."""
         return modInfos.dependents[self.fn_key]
@@ -604,15 +617,6 @@ class ModInfo(FileInfo):
                         (src_master_info := modInfos.get(src_master))):
                     plugins_to_check.append(src_master_info)
         return ret_masters
-
-    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
-        """Check if this plugin has circular masters, i.e. if it depends on
-        itself (either directly or transitively).
-
-        :param fake_masters: If not None, use this instead of self.masterNames
-            for determining which masters to recurse into. Useful for checking
-            if altering a master list would cause it to become circular."""
-        return self.fn_key in self.recurse_masters(fake_masters=fake_masters)
 
     # Ghosting and ghosting related overrides ---------------------------------
     def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
@@ -657,6 +661,8 @@ class ModInfo(FileInfo):
         self.is_ghost = ghostify
         # reset cache info as un/ghosting should not make do_update return True
         self._mark_unchanged()
+        # This is necessary if BAIN externally tracked the (un)ghosted file
+        self.get_store()._notify_bain(renamed={ghost_source: ghost_target})
         return True
 
     #--Bash Tags --------------------------------------------------------------
@@ -1473,6 +1479,9 @@ class SaveInfo(FileInfo):
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return self.header.masters
+
+    def has_circular_masters(self, *, fake_masters: list[FName] | None = None):
+        return False # Saves can't have circular masters
 
     def _reset_masters(self):
         super(SaveInfo, self)._reset_masters()
