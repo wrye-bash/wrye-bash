@@ -499,7 +499,7 @@ class WryeParser(PreParser):
         self.parser_finished = False
         ##: Figure out why BAIN insists on including an empty sub-package
         # everywhere. Broke this part of the code, hence the 'if s' below.
-        self.sublist = bolt.FNDict.fromkeys([*installer.subNames][:1], False)
+        self.sublist = bolt.FNDict.fromkeys([*installer.subNames][1:], False)
         # all plugins mapped to their must-install state - initially False
         self._plugin_enabled = FNDict.fromkeys(  # type:FNDict[(f:=FName),f]
             sorted(fn_ for sub_plugins in installer.espmMap.values() for fn_ in
