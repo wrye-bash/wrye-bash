@@ -46,10 +46,10 @@ class WizInstallInfo(object):
                  'select_sub_packages', 'ini_edits', 'should_install')
     # canceled: Set to true if the user canceled the wizard, or if an error
     # occurred
-    # select_plugins: List of plugins to 'select' for install
+    # select_plugins: Set of plugins to 'select' for install
     # rename_plugins: Dictionary of renames for plugins.  In the format of:
     #   'original name':'new name'
-    # select_sub_packages: List of sub-packages to 'select' for install
+    # select_sub_packages: Set of sub-packages to 'select' for install
     # ini_edits: Dictionary of INI edits to apply/create.  In the format of:
     #   'ini file': {
     #      'section': {
@@ -63,9 +63,9 @@ class WizInstallInfo(object):
 
     def __init__(self):
         self.canceled = False
-        self.select_plugins = []
+        self.select_plugins = set()
         self.rename_plugins: FNDict[FName, FName] = FNDict()
-        self.select_sub_packages = {}
+        self.select_sub_packages = set()
         self.ini_edits = bolt.LowerDict()
         self.should_install = False
 
@@ -356,7 +356,7 @@ class PageFinish(PageInstaller):
         for index, (key, do_enable) in enumerate(plugin_enabled.items()):
             if do_enable:
                 self.plugin_selection.lb_check_at_index(index, True)
-                self._wiz_parent.ret.select_plugins.append(key)
+                self._wiz_parent.ret.select_plugins.add(key)
         # Ini tweaks
         self.listInis = ListBox(self, onSelect=self._on_select_ini,
                                 choices=list(iniedits))
