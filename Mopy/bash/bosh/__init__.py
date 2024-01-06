@@ -173,11 +173,11 @@ class MasterInfo:
         return self.mod_info.getDirtyMessage(scan_beth) if self.mod_info else ''
 
     def hasTimeConflict(self):
-        """True if has an mtime conflict with another mod."""
+        """True if it has a mtime conflict with another mod."""
         return bool(self.mod_info) and self.mod_info.hasTimeConflict()
 
     def hasActiveTimeConflict(self):
-        """True if has an active mtime conflict with another mod."""
+        """True if it has an active mtime conflict with another mod."""
         return bool(self.mod_info) and self.mod_info.hasActiveTimeConflict()
 
     def getBashTags(self):
@@ -217,25 +217,20 @@ class FileInfo(AFile, ListInfo):
         self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self.file_mod_time, self.ctime) != stat_tuple
+        return (self.fsize, self.ftime, self.ctime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        self.fsize, self.file_mod_time, self.ctime = stat_tuple
+        self.fsize, self.ftime, self.ctime = stat_tuple
         if kwargs['load_cache']: self.readHeader()
 
     def _mark_unchanged(self):
         self._reset_cache(self._stat_tuple(), load_cache=False)
 
-    ##: DEPRECATED-------------------------------------------------------------
-    def getPath(self): return self.abs_path
-    @property
-    def mtime(self): return self.file_mod_time
-    #--------------------------------------------------------------------------
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        set_time = set_time or self.mtime
+        """Sets ftime. Defaults to current value (i.e. reset)."""
+        set_time = set_time or self.ftime
         self.abs_path.mtime = set_time
-        self.file_mod_time = set_time
+        self.ftime = set_time
         return set_time
 
     def readHeader(self):
@@ -305,7 +300,7 @@ class FileInfo(AFile, ListInfo):
         :rtype: list[tuple]
         """
         restore_path = (fname and self.get_store().store_dir.join(
-            fname)) or self.getPath()
+            fname)) or self.abs_path
         fname = fname or self.fn_key
         return [(self.backup_dir.join(fname) + (u'f' if first else u''),
                  restore_path)]
@@ -327,7 +322,7 @@ class FileInfo(AFile, ListInfo):
                 backup_paths.remove(tup)
         env.shellCopy(dict(backup_paths))
         # do not change load order for timestamp games - rest works ok
-        self.setmtime(self.file_mod_time, crc_changed=True)
+        self.setmtime(self.ftime, crc_changed=True)
         ##: _in_refresh=True is not entirely correct here but can't be made
         # entirely correct by leaving _in_refresh to False either as we
         # don't back up the config so we can't really detect changes in
@@ -539,17 +534,16 @@ class ModInfo(FileInfo):
     # CRCs --------------------------------------------------------------------
     def calculate_crc(self, recalculate=False):
         cached_crc = self.get_table_prop(u'crc')
-        if not recalculate:
-            recalculate = cached_crc is None \
-                    or self.file_mod_time != self.get_table_prop('crc_mtime') \
-                          or self.fsize != self.get_table_prop(u'crc_size')
+        recalculate = recalculate or cached_crc is None or \
+            self.ftime != self.get_table_prop('crc_mtime') or \
+            self.fsize != self.get_table_prop(u'crc_size')
         path_crc = cached_crc
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
                 self.set_table_prop(u'crc', path_crc)
                 self.set_table_prop(u'ignoreDirty', False)
-            self.set_table_prop('crc_mtime', self.file_mod_time)
+            self.set_table_prop('crc_mtime', self.ftime)
             self.set_table_prop(u'crc_size', self.fsize)
         return path_crc, cached_crc
 
@@ -574,7 +568,7 @@ class ModInfo(FileInfo):
         return modInfos.real_index_strings[self.fn_key]
 
     def setmtime(self, set_time: int | float = 0.0, crc_changed=False):
-        """Set mtime and if crc_changed is True recalculate the crc."""
+        """Set ftime and if crc_changed is True recalculate the crc."""
         set_time = super().setmtime(set_time)
         # Prevent re-calculating the File CRC
         if not crc_changed:
@@ -806,11 +800,11 @@ class ModInfo(FileInfo):
         else: return _('Inactive')
 
     def hasTimeConflict(self):
-        """True if there is another mod with the same mtime."""
+        """True if there is another mod with the same ftime."""
         return load_order.has_load_order_conflict(self.fn_key)
 
     def hasActiveTimeConflict(self):
-        """True if has an active mtime conflict with another mod."""
+        """True if it has an active mtime conflict with another mod."""
         return load_order.has_load_order_conflict_active(self.fn_key)
 
     def hasBadMasterNames(self): # used in status calculation
@@ -1420,7 +1414,7 @@ class SaveInfo(FileInfo):
             inst = instances.get(co_typ, None)
             if inst and inst.abs_path.exists():
                 co_ui_strings[j] = self._cosave_ui_string[co_typ][
-                    abs(inst.abs_path.mtime - self.mtime) < 10]
+                    abs(inst.abs_path.mtime - self.ftime) < 10]
         return u'\n'.join(co_ui_strings)
 
     def backup_restore_paths(self, first=False, fname=None):
@@ -1732,7 +1726,7 @@ class TableFileInfos(DataStore):
         See usages.
 
         :param save_lo_cache: ModInfos only save the mod infos load order cache
-        :param set_mtime: if None self[fileName].mtime is copied to destination
+        :param set_mtime: if None self[fileName].ftime is copied to destination
         """
         destDir.makedirs()
         if not destName: destName = fileName
@@ -1845,9 +1839,8 @@ class FileInfos(TableFileInfos):
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite! The client is
         responsible for calling delete_refresh of the data store."""
-        srcPath = self[fileName].getPath()
         destPath = destDir.join(fileName)
-        srcPath.moveTo(destPath)
+        self[fileName].abs_path.moveTo(destPath)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFileInfo, AINIInfo):
@@ -2309,8 +2302,8 @@ class ModInfos(FileInfos):
                 next_mod = self._lo_wip[previous_index + 1]
             except IndexError: # last mod
                 next_mod = None
-            end_time = self[next_mod].mtime if next_mod else None
-            start_time  = self[previous].mtime
+            end_time = self[next_mod].ftime if next_mod else None
+            start_time = self[previous].ftime
             if end_time is not None and \
                     end_time <= start_time: # can happen on esm/esp boundary
                 start_time = end_time - 60.0
@@ -3346,8 +3339,8 @@ class ModInfos(FileInfos):
         newInfo = self[newName]
         #--Rename
         baseInfo = self[self._master_esm]
-        master_time = baseInfo.mtime
-        new_info_time = newInfo.mtime
+        master_time = baseInfo.ftime
+        new_info_time = newInfo.ftime
         is_master_active = load_order.cached_is_active(self._master_esm)
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename because it will mess up the load order
@@ -3358,7 +3351,7 @@ class ModInfos(FileInfos):
                 break
             except PermissionError: ##: can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
-                if self._retry(baseInfo.getPath(),
+                if self._retry(baseInfo.abs_path,
                         self.store_dir.join(oldName), ask_yes):
                     continue
                 raise
@@ -3369,7 +3362,7 @@ class ModInfos(FileInfos):
                 file_info_rename_op(newInfo, self._master_esm)
                 break
             except PermissionError:
-                if self._retry(newInfo.getPath(), baseInfo.getPath(), ask_yes):
+                if self._retry(newInfo.abs_path, baseInfo.abs_path, ask_yes):
                     continue
                 #Undo any changes
                 file_info_rename_op(oldName, self._master_esm)
@@ -3665,7 +3658,7 @@ class BSAInfos(FileInfos):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
                     u'ResetBSATimestamps']:
                     default_mtime = bush.game.Bsa.redate_dict[self.fn_key]
-                    if self.file_mod_time != default_mtime:
+                    if self.ftime != default_mtime:
                         self.setmtime(default_mtime)
 
         super().__init__(dirs['mods'], BSAInfo)

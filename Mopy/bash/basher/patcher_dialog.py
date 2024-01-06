@@ -294,7 +294,7 @@ class PatchDialog(DialogWindow):
                 # but *I* do, so...
                 info = bosh.modInfos.new_info(bp_fname, notify_bain=True)
                 if bp_fname == patch_name and info.fsize == patch_size:
-                    # Needed if size remains the same - mtime is set in
+                    # Needed if size remains the same - ftime is set in
                     # ModFile.safeSave which can't use setmtime(crc_changed),
                     # as no info is there. In this case _reset_cache >
                     # calculate_crc() would not detect the crc change. That's a

@@ -332,7 +332,7 @@ def refresh_lo(cached: bool, cached_active: bool):
     those except if _game_handle.***_changed() respective methods return
     True. In the case of timestamp games, cached is effectively always False,
     as load_order_changed returns True - that's not slow, as getting the load
-    order just involves getting mtime info from modInfos cache. This last one
+    order just involves getting ftime info from modInfos cache. This last one
     **must be up to date** for correct load order/active validation."""
     if locked and _saved_load_orders:
         saved: LoadOrder = _saved_load_orders[_current_list_index].lord

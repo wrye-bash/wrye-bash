@@ -397,10 +397,9 @@ class SaveFile(object):
     def safeSave(self,progress=None):
         """Save data to file safely."""
         self.fileInfo.makeBackup()
-        filePath = self.fileInfo.getPath()
         with TempFile() as tmp_path:
             self.save(tmp_path, progress)
-            filePath.replace_with_temp(tmp_path)
+            self.fileInfo.abs_path.replace_with_temp(tmp_path)
         self.fileInfo.setmtime()
 
     def addMaster(self, master):

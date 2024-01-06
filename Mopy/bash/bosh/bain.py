@@ -133,7 +133,7 @@ class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data - do *not* add 'fn_key' in persistent
-    persistent = ('order', 'group', 'file_mod_time', 'fsize', 'crc',
+    persistent = ('order', 'group', 'ftime', 'fsize', 'crc',
         'fileSizeCrcs', 'bain_type', 'is_active', 'subNames', 'subActives',
         'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
@@ -253,7 +253,7 @@ class Installer(ListInfo):
         """Initialize everything to default values."""
         self.fn_key = FName('')
         #--Persistent: set by _fs_refresh called by _reset_cache
-        self.file_mod_time = 0 #--Modified date
+        self.ftime = 0 #--Modified date
         self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
         self.isSolid = False #--archives only - solid 7z archive
@@ -1257,7 +1257,7 @@ class _InstallerPackage(Installer, AFile):
         return self.refreshDataSizeCrc()
 
     def _fs_refresh(self, progress, stat_tuple, **kwargs):
-        """Refresh fileSizeCrcs, fsize, and file_mod_time from source
+        """Refresh fileSizeCrcs, fsize, and ftime from source
         archive/directory. Only called in _reset_cache. kwargs:
             - recalculate_project_crc: only used in InstallerProject override
         """
@@ -1325,7 +1325,7 @@ class _InstallerPackage(Installer, AFile):
                     inf = store.new_info(owned_file, owner=self.fn_key,
                          # we refresh info sets in cached_lo_append_if_missing
                          _in_refresh=True)
-                    data_sizeCrcDate_update[dest][2] = inf.file_mod_time
+                    data_sizeCrcDate_update[dest][2] = inf.ftime
                     mtimes.append(owned_file)
                 except FileError as error: # repeated from refresh
                     store.corrupted[owned_file] = error.message
@@ -1431,7 +1431,7 @@ class InstallerMarker(Installer):
 
     def initDefault(self):
         super().initDefault()
-        self.file_mod_time = time.time()
+        self.ftime = time.time()
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
@@ -1499,8 +1499,7 @@ class InstallerArchive(_InstallerPackage):
 
     #--File Operations --------------------------------------------------------
     def _fs_refresh(self, progress, stat_tuple, **kwargs):
-        """Refresh fileSizeCrcs, fsize, file_mod_time, crc, isSolid from
-        archive."""
+        """Refresh fileSizeCrcs, fsize, ftime, crc, isSolid from archive."""
         #--Basic file info
         super(Installer, self)._reset_cache(stat_tuple)
         #--Get fileSizeCrcs
@@ -1688,7 +1687,7 @@ class InstallerProject(_InstallerPackage):
         the cached mod times/sizes of all files."""
         size_apath_date, proj_size, max_mtime = stat_tuple
         cached = self.src_sizeCrcDate
-        return self.file_mod_time != max_mtime or self.fsize != proj_size or \
+        return self.ftime != max_mtime or self.fsize != proj_size or \
             cached.keys() != size_apath_date.keys() or any( # keep := below!
                 (sap := size_apath_date[k])[0] != s or sap[2] != d for
                 k, (s, _c, d) in cached.items())
@@ -1712,7 +1711,7 @@ class InstallerProject(_InstallerPackage):
 
     def _fs_refresh(self, progress, stat_tuple,
                     recalculate_project_crc=False, **kwargs):
-        """Refresh src_sizeCrcDate, fileSizeCrcs, fsize, file_mod_time,
+        """Refresh src_sizeCrcDate, fileSizeCrcs, fsize, ftime,
         crc from project directory, set project_refreshed to True."""
         #--Scan for changed files
         # populate the project's src_sizeCrcDate with _all_ files present in
@@ -1741,7 +1740,7 @@ class InstallerProject(_InstallerPackage):
         Installer.calc_crcs(to_calc, rootName, size_apath_date, progress)
         self.src_sizeCrcDate = size_apath_date
         #--Done
-        self.file_mod_time = max_node_mtime
+        self.ftime = max_node_mtime
         self.fileSizeCrcs = [(path, src_size, crc) for path, (src_size, crc,
             _date) in self.src_sizeCrcDate.items()]
         self.fsize = proj_size
@@ -2320,7 +2319,7 @@ class InstallersData(DataStore):
                     modInfo = modInfos[rpFile] # modInfos MUST BE UPDATED
                     non_ghosts.add(rpFile.lower())
                     plugins_scd[rpFile] = (modInfo.fsize,
-                        modInfo.cached_mod_crc(), modInfo.mtime)
+                        modInfo.cached_mod_crc(), modInfo.ftime)
                     continue
                 except KeyError:
                     pass # not a mod or corrupted (we still need the crc)
@@ -2432,7 +2431,7 @@ class InstallersData(DataStore):
                     try:
                         modInfo = modInfos[rpFile] # modInfos MUST BE UPDATED
                         new_sizeCrcDate[rpFile] = (modInfo.fsize,
-                            modInfo.cached_mod_crc(), modInfo.mtime)
+                            modInfo.cached_mod_crc(), modInfo.ftime)
                         continue
                     except KeyError:
                         pass # not a mod/corrupted/missing, let os.lstat decide

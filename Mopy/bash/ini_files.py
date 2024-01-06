@@ -716,22 +716,22 @@ class GameIni(IniFileInfo):
         if self.isCorrupted: return
         br_section, br_key = bush.game.Ini.bsa_redirection_key
         if not br_section or not br_key: return
-        aiBsa = dirs[u'mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
+        ai_path = dirs['mods'].join('ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
-        if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
-            aiBsa.mtime = aiBsaMTime
+        if ai_path.exists() and ai_path.mtime > aiBsaMTime:
+            ai_path.mtime = aiBsaMTime
         # check if BSA redirection is active
         sArchives = self.getSetting(br_section, br_key, u'')
         is_bsa_redirection_active = any(x for x in sArchives.split(u',')
             if x.strip().lower() in self.bsaRedirectors)
         if doRedirect == is_bsa_redirection_active:
             return
-        if doRedirect and not aiBsa.exists():
+        if doRedirect and not ai_path.exists():
             source = dirs[u'templates'].join(
                 bush.game.template_dir, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                env.shellCopy({source: aiBsa}, allow_undo=True, auto_rename=True)
+                env.shellCopy({source: ai_path}, allow_undo=True, auto_rename=True)
             except (PermissionError, CancelError, SkipError):
                 return
         sArchives = self.getSetting(br_section, br_key, u'')

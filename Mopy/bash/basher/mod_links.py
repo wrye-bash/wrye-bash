@@ -1422,13 +1422,13 @@ class _CopyToLink(EnabledLink):
                 timeSource = None
                 if newName in modInfos:
                     existing = modInfos[newName]
-                    # getPath() as existing may be ghosted
+                    # abs_path as existing may be ghosted
                     if not self._askYes(_(u'Replace existing %s?') %
-                                        existing.getPath()):
+                                        existing.abs_path):
                         continue
                     existing.makeBackup()
                     timeSource = newName
-                newTime = modInfos[timeSource].mtime if timeSource else None
+                newTime = modInfos[timeSource].ftime if timeSource else None
                 # Copy and set flag - will use ghosted path if needed
                 modInfos.copy_info(curName, minfo.info_dir, newName,
                                    set_mtime=newTime)

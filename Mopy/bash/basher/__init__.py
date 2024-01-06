@@ -964,7 +964,7 @@ class ModList(_ModsUIList):
                             u'installer', u''),
         u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         u'Indices'   : lambda self, a: self.data_store[a].real_index(),
-        u'Modified'  : lambda self, a: self.data_store[a].mtime,
+        u'Modified'  : lambda self, a: self.data_store[a].ftime,
         u'Size'      : lambda self, a: self.data_store[a].fsize,
         u'Status'    : lambda self, a: self.data_store[a].getStatus(),
         u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
@@ -983,7 +983,7 @@ class ModList(_ModsUIList):
                                                                    ''),
         'Installer': lambda self, p: self.data_store[p].get_table_prop(
             'installer', ''),
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
         'Size': lambda self, p: round_size(self.data_store[p].fsize),
         'Author': lambda self, p: self.data_store[p].header.author if
         self.data_store[p].header else '-',
@@ -1611,7 +1611,7 @@ class ModDetails(_ModsSavesDetails):
             #--Remember values for edit checks
             self.fileStr = modInfo.fn_key
             self.authorStr = modInfo.header.author
-            self.modifiedStr = format_date(modInfo.mtime)
+            self.modifiedStr = format_date(modInfo.ftime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = f'v{modInfo.header.version:0.2f}'
             minf_tags = list(modInfo.getBashTags())
@@ -1735,7 +1735,7 @@ class ModDetails(_ModsSavesDetails):
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
         if not modInfo or (self.fileStr == modInfo.fn_key and
-                           self.modifiedStr == format_date(modInfo.mtime) and
+                           self.modifiedStr == format_date(modInfo.ftime) and
                            self.authorStr == modInfo.header.author and
                            self.descriptionStr == modInfo.header.description):
             self.DoCancel()
@@ -1749,7 +1749,7 @@ class ModDetails(_ModsSavesDetails):
         #--Change Tests
         file_str = FName(self.fileStr.strip())
         changeName = file_str != modInfo.fn_key
-        changeDate = (self.modifiedStr != format_date(modInfo.mtime))
+        changeDate = (self.modifiedStr != format_date(modInfo.ftime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
@@ -2196,7 +2196,7 @@ class SaveList(UIList):
     _editLabels = _copy_paths = True
     _sort_keys = {
         u'File'    : None, # just sort by name
-        u'Modified': lambda self, a: self.data_store[a].mtime,
+        u'Modified': lambda self, a: self.data_store[a].ftime,
         u'Size'    : lambda self, a: self.data_store[a].fsize,
         u'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
         u'Player'  : lambda self, a: self.data_store[a].header.pcName,
@@ -2215,7 +2215,7 @@ class SaveList(UIList):
         return f'{playMinutes // 60}:{playMinutes % 60:02d}'
     labels = {
         'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
         'Size':     lambda self, p: round_size(self.data_store[p].fsize),
         'PlayTime': lambda self, p: self._playTime(self.data_store[p]),
         'Player': lambda self, p: self._headInfo(self.data_store[p], 'pcName'),
@@ -2460,7 +2460,7 @@ class SaveDetails(_ModsSavesDetails):
         changeMasters = self.uilist.edited
         #--Backup
         saveInfo.makeBackup() ##: why backup when just renaming - #292
-        prevMTime = saveInfo.mtime
+        prevMTime = saveInfo.ftime
         #--Change Name?
         to_del = set()
         if changeName:
@@ -2522,7 +2522,7 @@ class InstallersList(UIList):
     _sort_keys = {
         u'Package' : None,
         u'Order'   : lambda self, x: self.data_store[x].order,
-        u'Modified': lambda self, x: self.data_store[x].file_mod_time,
+        u'Modified': lambda self, x: self.data_store[x].ftime,
         u'Size'    : lambda self, x: self.data_store[x].fsize,
         u'Files'   : lambda self, x: self.data_store[x].num_of_files,
     }
@@ -2541,7 +2541,7 @@ class InstallersList(UIList):
     labels = {
         'Package':  lambda self, p: p,
         'Order':    lambda self, p: f'{self.data_store[p].order}',
-        'Modified': lambda self, p: format_date(self.data_store[p].file_mod_time),
+        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
         'Size':     lambda self, p: self.data_store[p].size_string(),
         'Files':    lambda self, p: self.data_store[p].number_string(
             self.data_store[p].num_of_files),
@@ -3157,7 +3157,7 @@ class InstallersDetails(_SashDetailsPanel):
             inf_.extend([
                 _('Modified: %(modified_date)s') % {
                     'modified_date': 'N/A' if is_mark else
-                    format_date(installer.file_mod_time)},
+                    format_date(installer.ftime)},
                 _('Data CRC: %(data_crc)s') % {
                     'data_crc': 'N/A' if is_mark else f'{installer.crc:08X}'},
                 _('Files: %(num_files)s') % {
@@ -3510,13 +3510,13 @@ class ScreensList(UIList):
     _editLabels = _copy_paths = True
 
     _sort_keys = {u'File'    : None,
-                  u'Modified': lambda self, a: self.data_store[a].mtime,
+                  u'Modified': lambda self, a: self.data_store[a].ftime,
                   u'Size'    : lambda self, a: self.data_store[a].fsize,
     }
     #--Labels
     labels ={
         'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
         'Size':     lambda self, p: round_size(self.data_store[p].fsize),
     }
 
@@ -3637,13 +3637,13 @@ class BSAList(UIList):
     context_links = Links() #--Single item menu
     global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {'File'    : None,
-                  'Modified': lambda self, a: self.data_store[a].mtime,
+                  'Modified': lambda self, a: self.data_store[a].ftime,
                   'Size'    : lambda self, a: self.data_store[a].fsize,
     }
     #--Labels
     labels = {
         'File':     lambda self, p: p,
-        'Modified': lambda self, p: format_date(self.data_store[p].mtime),
+        'Modified': lambda self, p: format_date(self.data_store[p].ftime),
         'Size':     lambda self, p: round_size(self.data_store[p].fsize),
     }
 

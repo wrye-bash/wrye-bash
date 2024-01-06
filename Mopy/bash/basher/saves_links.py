@@ -337,7 +337,7 @@ class Save_DiffMasters(EnabledLink):
 
     def Execute(self):
         oldNew = self.selected
-        oldNew.sort(key=lambda x: bosh.saveInfos[x].mtime)
+        oldNew.sort(key=lambda x: bosh.saveInfos[x].ftime)
         oldName = oldNew[0]
         oldInfo = self._data_store[oldName]
         oldMasters = set(oldInfo.masterNames)

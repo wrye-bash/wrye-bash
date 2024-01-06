@@ -35,7 +35,7 @@ import time
 from collections import defaultdict
 
 from . import bass, bolt, env, exception
-from .bolt import FName, GPath, Path, dict_sort
+from .bolt import FName, GPath, Path, dict_sort, attrgetter_cache
 from .ini_files import get_ini_type_and_encoding
 
 # Typing
@@ -119,14 +119,13 @@ def _resolve_case_ambiguity(lo_file_path: Path):
     load order file path and cleans up multiple load order files in the same
     dir by using the one with the newest mtime and deleting the older ones."""
     lo_dir, lo_fname = lo_file_path.head, lo_file_path.stail
-    matching_names = [t_fname for t_fname in lo_dir.ilist()
+    matching_paths = [lo_dir.join(t_fname) for t_fname in lo_dir.ilist()
                       if t_fname == lo_fname]
-    if len(matching_names) > 1:
-        matching_paths = [lo_dir.join(t_fname) for t_fname in matching_names]
+    if len(matching_paths) > 1:
         matching_paths.sort(key=lambda tp: tp.mtime, reverse=True)
+        filenames = [p.stail for p in matching_paths]
         bolt.deprint(f'Resolving ambiguous {lo_fname} case (found '
-                     f'[{", ".join(map(str, matching_names))}]) to newest file '
-                     f'({matching_paths[0].stail})')
+                     f'{filenames}) to newest file ({filenames[0]})')
         for p in matching_paths[1:]:
             try:
                 p.remove()
@@ -134,7 +133,7 @@ def _resolve_case_ambiguity(lo_file_path: Path):
                 bolt.deprint(f'Failed to resolve ambiguous {lo_fname} case',
                     traceback=True)
         return matching_paths[0]
-    return lo_dir.join(matching_names[0]) if matching_names else lo_file_path
+    return matching_paths[0] if matching_paths else lo_file_path
 
 class FixInfo(object):
     """Encapsulate info on load order and active lists fixups."""
@@ -860,16 +859,17 @@ class TimestampGame(LoGame):
     def _must_update_active(cls, deleted_plugins, reordered): return deleted_plugins
 
     def has_load_order_conflict(self, mod_name):
-        mtime = int(self.mod_infos[mod_name].mtime)
-        return mtime in self._mtime_mods and len(self._mtime_mods[mtime]) > 1
+        ti = int(self.mod_infos[mod_name].ftime)
+        return ti in self._mtime_mods and len(self._mtime_mods[ti]) > 1
 
     def has_load_order_conflict_active(self, mod_name, active):
-        mtime = int(self.mod_infos[mod_name].mtime)
+        ti = int(self.mod_infos[mod_name].ftime)
         return self.has_load_order_conflict(mod_name) and bool(
-            (self._mtime_mods[mtime] - {mod_name}) & active)
+            (self._mtime_mods[ti] - {mod_name}) & active)
 
-    def get_free_time(self, start_time, end_time=None):
-        all_mtimes = {x.mtime for x in self.mod_infos.values()}
+    def get_free_time(self, start_time, end_time=None,
+                      __getmtime=attrgetter_cache['ftime']):
+        all_mtimes = {*map(__getmtime, self.mod_infos.values())}
         end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
             if not start_time in all_mtimes:
@@ -884,7 +884,7 @@ class TimestampGame(LoGame):
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
         # sort case insensitive (for time conflicts)
         mods = sorted(self.mod_infos if mods is None else mods)
-        mods.sort(key=lambda x: self.mod_infos[x].mtime)
+        mods.sort(key=lambda x: self.mod_infos[x].ftime)
         mods.sort(key=lambda x: not self.mod_infos[x].in_master_block())
         return mods
 
@@ -911,11 +911,11 @@ class TimestampGame(LoGame):
         if not lord: return
         current = self.__calculate_mtime_order()
         # break conflicts
-        older = self.mod_infos[current[0]].mtime # initialize to game master
+        older = self.mod_infos[current[0]].ftime # initialize to game master
         for i, mod in enumerate(current[1:]):
             info = self.mod_infos[mod]
-            if info.mtime == older: break
-            older = info.mtime
+            if info.ftime == older: break
+            older = info.ftime
         else: mod = i = None # define i to avoid warning below
         if mod is not None: # respace this and next mods in 60 sec intervals
             for mod in current[i + 1:]:
@@ -925,16 +925,16 @@ class TimestampGame(LoGame):
         restamp = []
         for ordered, mod in zip(lord, current):
             if ordered == mod: continue
-            restamp.append((ordered, self.mod_infos[mod].mtime))
-        for ordered, mtime in restamp:
-            self.mod_infos[ordered].setmtime(mtime)
+            restamp.append((ordered, self.mod_infos[mod].ftime))
+        for ordered, modification_time in restamp:
+            self.mod_infos[ordered].setmtime(modification_time)
         # rebuild our cache
         self._rebuild_mtimes_cache()
 
     def _rebuild_mtimes_cache(self):
         self._mtime_mods.clear()
         for mod, info in self.mod_infos.items():
-            self._mtime_mods[int(info.mtime)].add(mod)
+            self._mtime_mods[int(info.ftime)].add(mod)
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)

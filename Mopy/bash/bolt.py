@@ -1057,8 +1057,8 @@ class Path(os.PathLike):
     def _getmtime(self):
         """Return mtime for path."""
         return os.path.getmtime(self._s)
-    def _setmtime(self, mtime):
-        os.utime(self._s, (self.atime, mtime))
+    def _setmtime(self, new_time):
+        os.utime(self._s, (self.atime, new_time))
     mtime = property(_getmtime, _setmtime, doc='Time file was last modified.')
 
     def size_mtime(self):
@@ -1206,7 +1206,7 @@ class Path(os.PathLike):
             else: ##: TTT linux - WIP move this switch to env launch_file
                 subprocess.call(['xdg-open', f'{self._s}'])
     def copyTo(self,destName):
-        """Copy self to destName, make dirs if necessary and preserve mtime."""
+        """Copy self to destName, make dirs if necessary and preserve ftime."""
         destName = GPath(destName)
         if self.is_dir():
             ##: Does not preserve mtimes - is that a problem?
@@ -1639,7 +1639,7 @@ class AFile(object):
     def __init__(self, fullpath, load_cache=False, *, raise_on_error=False,
                  **kwargs):
         self._file_key = GPath(fullpath) # abs path of the file but see ModInfo
-        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
+        #Set cache info (ftime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache=load_cache,
                               **kwargs)
@@ -1685,15 +1685,15 @@ class AFile(object):
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self.fsize, self.file_mod_time) != stat_tuple
+        return (self.fsize, self.ftime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, **kwargs):
-        """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, ftime,...) and possibly reload the cache.
         :param **kwargs: various
             - load_cache: if True either load the cache (header in Mod and
             SaveInfo) or reset it, so it gets reloaded later
         """
-        self.fsize, self.file_mod_time = stat_tuple
+        self.fsize, self.ftime = stat_tuple
 
     def __repr__(self): return f'{self.__class__.__name__}<' \
                                f'{self.abs_path.stail}>'

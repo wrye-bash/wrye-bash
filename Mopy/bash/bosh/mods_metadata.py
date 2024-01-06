@@ -877,7 +877,6 @@ class NvidiaFogFixer(object):
         fixedCells = self.fixedCells
         fixedCells.clear()
         #--File stream
-        minfo_path = self.modInfo.getPath()
         #--Scan/Edit
         with TempFile() as out_path:
             with ModReader.from_info(self.modInfo) as ins:
@@ -912,5 +911,5 @@ class NvidiaFogFixer(object):
                                 subrec.packSub(out, subrec.mel_data)
             if fixedCells:
                 self.modInfo.makeBackup()
-                minfo_path.replace_with_temp(out_path)
+                self.modInfo.abs_path.replace_with_temp(out_path)
                 self.modInfo.setmtime(crc_changed=True) # fog fixes

@@ -244,15 +244,14 @@ class ModFile(object):
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.makeBackup()
-        filePath = self.fileInfo.getPath()
         with TempFile() as tmp_plugin:
             self.save(tmp_plugin)
             # fileInfo created before the file
-            if self.fileInfo.mtime is not None:
-                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.mtime ##: ugh
+            if self.fileInfo.ftime is not None:
+                GPath_no_norm(tmp_plugin).mtime = self.fileInfo.ftime ##: ugh
             # FIXME If saving a locked (by xEdit f.i.) bashed patch a bogus UAC
             #  permissions dialog is displayed (should display file in use)
-            env.shellMove({tmp_plugin: filePath})
+            env.shellMove({tmp_plugin: self.fileInfo.abs_path})
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
