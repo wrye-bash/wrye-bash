@@ -457,10 +457,6 @@ class MasterList(_ModsUIList):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings[self.__class__.keyPrefix + u'.cols']
 
-    message = _(u'Edit/update the masters list? Note that the update process '
-                u'may automatically rename some files. Be sure to review the '
-                u'changes before saving.')
-
     def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
                  detailsPanel=None):
         #--Data/Items
@@ -484,8 +480,10 @@ class MasterList(_ModsUIList):
     @allowEdit.setter
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
-               balt.askContinue(
-                   self, self.message, self.keyPrefix + u'.update.continue',
+            balt.askContinue(self, _(
+                'Edit/update the masters list? Note that the update process '
+                'may automatically rename some files. Be sure to review the '
+                'changes before saving.'), f'{self.keyPrefix}.update.continue',
                    _('Update Masters') + ' - ' + _('BETA'))):
             return
         bass.settings[self._allowEditKey] = val
@@ -4110,13 +4108,13 @@ class BashFrame(WindowFrame):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         lo_warnings = []
         if bosh.modInfos.warn_missing_lo_act:
-            bosh.modInfos.warn_missing_lo_act.clear()
             lo_warnings.append(LoadOrderSanitizedDialog.make_change_entry(
                 _('The following plugins could not be found in the '
                   '%(data_folder)s folder or are corrupt and have thus been '
                   'removed from the load order.') % {
                     'data_folder': bush.game.mods_dir,
                 }, bosh.modInfos.warn_missing_lo_act))
+            bosh.modInfos.warn_missing_lo_act.clear()
         if bosh.modInfos.selectedExtra:
             if bush.game.has_esl:
                 warn_msg = _('The following plugins have been deactivated '

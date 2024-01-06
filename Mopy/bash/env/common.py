@@ -473,7 +473,7 @@ def is_case_sensitive(test_path):
 def set_cwd(func):
     """Function decorator to switch current working dir."""
     @functools.wraps(func)
-    def _switch_dir(self, exe_path, *args):
+    def _switch_dir(self, exe_path: _Path, *args):
         cwd = os.getcwd()
         os.chdir(exe_path.head.s)
         try:

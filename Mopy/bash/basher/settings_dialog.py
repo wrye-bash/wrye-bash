@@ -29,10 +29,11 @@ from collections import defaultdict
 from . import tabInfo
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
-from .. import balt, barb, bass, bolt, bosh, bush, env, exception
+from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
 from ..bolt import deprint, dict_sort, os_name, readme_url, LooseVersion, \
     reverse_dict
+from ..env import is_uac, shellDelete, shellMove
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
     CheckBox, CheckListBox, ClickableImage, Color, ColorPicker, DialogWindow, \
     DirOpen, DoubleListBox, DropDown, FileOpen, FileSave, HBoxedLayout, \
@@ -81,9 +82,8 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, get_image('help.24'),
-            btn_tooltip=_(u'View the readme section for the currently active '
-                          u'settings page.'))
+        help_btn = ClickableImage(self, get_image('help.24'), btn_tooltip=_(
+            'View the readme section for the currently active settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
         ok_btn.on_clicked.subscribe(self._send_apply)
@@ -122,7 +122,7 @@ class SettingsDialog(DialogWindow):
         advanced_radme = readme_url(mopy=bass.dirs[u'mopy'], advanced=True,
                                     skip_local=True)
         help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
-        webbrowser.open(advanced_radme + u'#' + help_anchor)
+        webbrowser.open(f'{advanced_radme}#{help_anchor}')
 
     def _send_apply(self):
         """Propagates an Apply button click to all child pages."""
@@ -210,7 +210,7 @@ class _ASettingsPage(ATreeMixin):
             if not askYes(self, fstr, title=_('Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
-            env.shellMove({old_fpath: new_fpath}, parent=self)
+            shellMove({old_fpath: new_fpath}, parent=self)
             return True
         except (exception.CancelError, exception.SkipError):
             return False # user canceled
@@ -800,7 +800,7 @@ class StatusBarPage(_AScrollablePage):
             self._request_restart(_('Icon Size: %(new_icon_size)d') % {
                 'new_icon_size': new_icon_size})
         # Hidden Icons
-        hidden_icons_changed = self._is_changed(u'hidden_icons')
+        hidden_icons_changed = self._is_changed('hidden_icons')
         if hidden_icons_changed:
             # Compare old and new hidden, then hide the newly hidden buttons
             # and unhide the newly visible ones
@@ -894,7 +894,7 @@ class BackupsPage(_AFixedPage):
         """Deletes the currently selected backup."""
         settings_file = self._backup_dir.join(self._chosen_backup)
         try:
-            env.shellDelete([settings_file], parent=self, ask_confirm=askYes,
+            shellDelete([settings_file], parent=self, ask_confirm=askYes,
                 recycle=True)
         except (exception.CancelError, exception.SkipError): pass
         finally:
@@ -1340,7 +1340,7 @@ class GeneralPage(_AScrollablePage):
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
-        self._uac_restart_checkbox.visible = env.is_uac()
+        self._uac_restart_checkbox.visible = is_uac()
         ##: This should be on its own page for configuring all kinds of paths,
         # see #572
         self._temp_folder_path = TextField(self,

@@ -26,10 +26,10 @@ import webbrowser
 
 from .frames import DocBrowser, PluginChecker
 from .settings_dialog import SettingsDialog
-from .. import balt, bass, bolt, bosh, bush, load_order
+from .. import balt, bass, bolt, bosh, bush
 from ..balt import BoolLink, ItemLink, Link, SeparatorLink, BashStatusBar
 from ..bass import Store
-from ..bolt import GPath, undefinedPath
+from ..bolt import undefinedPath
 from ..env import getJava, get_file_version, AppLauncher, get_registry_path, \
     ExeLauncher, LnkLauncher, set_cwd
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down, \
@@ -443,10 +443,9 @@ class GameButton(_ExeButton):
         super().__init__(bass.dirs['app'].join(bush.game.launch_exe), images,
             _('Launch %(game_name)s') % {'game_name': bush.game.display_name},
             'Oblivion') # the uid
-        self._obseTip = self._obseTip % {
-            'game_name': bush.game.display_name,
-            'app_version': self._app_version
-        } + f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
+        self._obseTip %= {'game_name': bush.game.display_name,
+                          'app_version': self._app_version}
+        self._obseTip += f' + {bush.game.Se.se_abbrev}{self.obseVersion}'
 
     def sb_click(self):
         if bush.ws_info.installed:

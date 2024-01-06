@@ -173,7 +173,7 @@ class MergePatchesPatcher(ListPatcher):
     @classmethod
     def _validate_mod(cls, p_file, merge_src, raise_on_error):
         if merge_src not in p_file.bp_mergeable:
-            raise RuntimeError(f'{cls.__name__}: {merge_src} is not mergeable')
+            err = f'{cls.__name__}: {merge_src} is not mergeable'
         # Then, perform an error check for missing/inactive masters
         elif ((mm := p_file.active_mm.get(merge_src)) # should not happen
                 or (mm := p_file.inactive_mm.get(merge_src))):

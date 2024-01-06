@@ -103,6 +103,16 @@ _CosaveDict = dict[type[cosaves.ACosave], cosaves.ACosave]
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+def _mod_info_delegate(fn):
+    """Decorator for MasterInfo methods that delegate to self.mod_info methods
+    if the latter is not None."""
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        if self.mod_info is not None:
+            return getattr(self.mod_info, fn.__name__)(*args, **kwargs)
+        return fn(self, *args, **kwargs)
+    return wrapper
+
 class MasterInfo:
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -137,52 +147,48 @@ class MasterInfo:
         self.is_ghost = False
         self.mod_info = None
 
+    @_mod_info_delegate
     def has_esm_flag(self):
-        if self.mod_info:
-            return self.mod_info.has_esm_flag()
-        else:
-            return self.get_extension() in (u'.esm', u'.esl')
+        return self.get_extension() in ('.esm', '.esl')
 
+    @_mod_info_delegate
     def in_master_block(self):
-        if self.mod_info:
-            return self.mod_info.in_master_block()
-        else:
-            return self.get_extension() in (u'.esm', u'.esl')
+        return self.get_extension() in ('.esm', '.esl')
 
+    @_mod_info_delegate
     def is_esl(self):
         """Delegate to self.modInfo.is_esl if exists, else rely on _was_esl."""
-        if self.mod_info:
-            return self.mod_info.is_esl()
-        else:
-            return self._was_esl
+        return self._was_esl
 
+    @_mod_info_delegate
     def is_overlay(self):
         """Delegate to self.modInfo.is_overlay if exists - we should deprint,
         overlay plugins won't be in master lists."""
-        if self.mod_info:
-            return self.mod_info.is_overlay()
-        else:
-            return False
+        return False
 
     def has_master_size_mismatch(self, do_test): # used in set_item_format
         return _('Stored size does not match the one on disk.') if do_test \
           and modInfos.size_mismatch(self.curr_name, self.stored_size) else ''
 
+    @_mod_info_delegate
     def getDirtyMessage(self, scan_beth=False):
         """Returns a dirty message from LOOT."""
-        return self.mod_info.getDirtyMessage(scan_beth) if self.mod_info else ''
+        return ''
 
+    @_mod_info_delegate
     def hasTimeConflict(self):
         """True if it has a mtime conflict with another mod."""
-        return bool(self.mod_info) and self.mod_info.hasTimeConflict()
+        return False
 
+    @_mod_info_delegate
     def hasActiveTimeConflict(self):
         """True if it has an active mtime conflict with another mod."""
-        return bool(self.mod_info) and self.mod_info.hasActiveTimeConflict()
+        return False
 
+    @_mod_info_delegate
     def getBashTags(self):
         """Retrieve bash tags for master info if it's present in Data."""
-        return self.mod_info.getBashTags() if self.mod_info else set()
+        return set()
 
     def getStatus(self):
         return 30 if not self.mod_info else 0
