@@ -394,10 +394,10 @@ def gen_enum_parser(enum_type: type[Enum]):
 
 _not_cached = object()
 
-# PY3.12: Benchmark to see if we can now replace this with cached_property
+# Still 2x faster on 3.12 - PY3.13: retest?
 class fast_cached_property:
-    """Similar to functools.cached_property, but ~2x faster because it does not
-    feature locking and lacks that decorator's runtime error checking."""
+    """Similar to functools.cached_property, but ~2x faster because it lacks
+    that decorator's runtime error checking."""
     def __init__(self, wrapped_func):
         self._wrapped_func = wrapped_func
         self._wrapped_attr = None # set later
@@ -406,11 +406,9 @@ class fast_cached_property:
         self._wrapped_attr = name
 
     def __get__(self, instance, owner=None):
-        # Do *not* change this to EAFP without benchmarking. Even on 3.11, with
-        # zero-cost-try, a try here will make the BP slower.
-        wrapped_val = instance.__dict__.get(self._wrapped_attr, _not_cached)
-        if wrapped_val is _not_cached:
-            # This whole branch is only done once, so can afford to be slower
+        try:
+            wrapped_val = instance.__dict__[self._wrapped_attr]
+        except KeyError:
             wrapped_val = self._wrapped_func(instance)
             instance.__dict__[self._wrapped_attr] = wrapped_val
         return wrapped_val

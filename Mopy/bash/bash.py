@@ -406,7 +406,7 @@ def main(opts):
                                        not _rightPythonVersion()): return
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None: ##: we should do this before localization and wx import
-            print(_(f"Generating HTML file from '%(gen_target)s'") % {
+            print(_("Generating HTML file from '%(gen_target)s'") % {
                 'gen_target': opts.genHtml})
             wrye_text.genHtml(opts.genHtml)
             print(_('Done'))
@@ -871,13 +871,13 @@ def _rightPythonVersion():
     """Shows an error if the wrong Python version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
     sysVersion = sys.version_info[:3]
-    if sysVersion < (3, 11) or sysVersion >= (4,):
+    if sysVersion < (3, 12) or sysVersion >= (4,):
         from . import gui
         gui.showError(None, _(
             "Only Python %(min_py_ver)s and newer is supported "
             "(%(curr_py_ver)s detected). If you know what you're doing, "
             "install the Python version of Wrye Bash and edit this warning "
-            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.11',
+            "out. Wrye Bash will now exit.") % {'min_py_ver': '3.12',
                                                 'curr_py_ver': sysVersion},
             title=_('Unsupported Python Version Detected'))
         return False

@@ -513,10 +513,7 @@ def _find_ws_games() -> dict[str, _Path]:
     installed games in the resulting 'Xbox' game libraries."""
     # First, look for the libraries
     found_libraries = []
-    # Couldn't just return a list of strings of course - thanks pywin32
-    # PY3.12: Use os.listdrives()
-    all_drives = win32api.GetLogicalDriveStrings().rstrip('\x00').split('\x00')
-    for curr_drive in all_drives:
+    for curr_drive in os.listdrives():
         library_path = _parse_gamingroot(curr_drive + '.GamingRoot')
         if library_path is None:
             continue # No .GamingRoot or failed to parse - either way, skip
@@ -1223,11 +1220,6 @@ def _real_sys_prefix():
         return sys.base_prefix
     else:
         return sys.prefix
-
-def python_tools_dir():
-    """Returns the absolute path to the Tools directory of the currently used
-    Python installation."""
-    return os.path.join(_real_sys_prefix(), 'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""

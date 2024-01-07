@@ -206,9 +206,7 @@ class ExteriorGrupHeader(GrupHeader):
 
 def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
                   __children=frozenset({1, 6, 7, 8, 9, 10}),
-                  __exterior=frozenset({4, 5}),
-                  __packer=structs_cache['I'].pack,
-                  __unpacker=structs_cache['2h'].unpack):
+                  __exterior=frozenset({4, 5})):
     """Header factory. For GRUP headers it will unpack the 'label' according
     to groupType."""
     # args = header_sig, size, uint0, uint1, uint2[, uint3]
@@ -224,7 +222,7 @@ def unpack_header(ins, *, __rh=RecordHeader, _entering_context=False,
             return ChildrenGrupHeader(grup_size, FID(grup_label), grup_type,
                                       *rest)
         if grup_type in __exterior: # exterior cell (sub)block
-            yx_coords: (int, int) = __unpacker(__packer(grup_label))
+            yx_coords = (grup_label & 0xFFFF, grup_label >> 16)
             return ExteriorGrupHeader(grup_size, yx_coords, grup_type, *rest)
         return GrupHeader(*args)
     #--Record

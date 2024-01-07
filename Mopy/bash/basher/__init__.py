@@ -55,7 +55,7 @@ import sys
 import time
 from collections import OrderedDict, defaultdict, namedtuple
 from collections.abc import Iterable
-from functools import partial, cached_property
+from functools import partial
 from itertools import chain
 
 import wx
@@ -75,7 +75,8 @@ from ..balt import AppendableLink, BashStatusBar, CheckLink, ColorChecks, \
 from ..bass import Store
 from ..bolt import FName, GPath, SubProgress, deprint, dict_sort, \
     forward_compat_path_to_fn, os_name, round_size, str_to_sig, \
-    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion
+    to_unix_newlines, to_win_newlines, top_level_items, LooseVersion, \
+    fast_cached_property
 from ..bosh import ModInfo, omods
 from ..exception import BoltError, CancelError, FileError, SkipError, \
     UnknownListener
@@ -2551,7 +2552,7 @@ class InstallersList(UIList):
     _status_color = {-20: u'grey', -10: u'red', 0: u'white', 10: u'orange',
                      20: u'yellow', 30: u'green'}
 
-    @cached_property
+    @fast_cached_property
     def icons(self):
         return ColorChecks(get_installer_color_checks())
 

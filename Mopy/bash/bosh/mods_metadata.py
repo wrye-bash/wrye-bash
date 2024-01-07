@@ -306,7 +306,8 @@ def checkMods(progress, modInfos, showModList=False, showCRC=False,
                 p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
-                    for r_fid, (r_header, r_eid) in d.items():
+                    for r_header, r_eid in d:
+                        r_fid = r_header.fid
                         w_rec_type = r_header.recType
                         if (r_fid.object_dex == 0 and
                                 w_rec_type != plgn_header_sig):
