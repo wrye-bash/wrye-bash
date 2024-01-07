@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Fallout 3 setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'Credits.txt',
     'CreditsWacky.txt',
     'LODSettings\\aaaForgotten1.DLODSettings',
@@ -139,4 +140,4 @@ vanilla_files = {
     'Video\\B29.bik',
     'Video\\Fallout INTRO Vsk.bik',
     'DLCList.txt',
-}
+}}

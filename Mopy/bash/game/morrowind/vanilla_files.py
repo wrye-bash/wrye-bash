@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Morrowind setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     #-- Morrowind GOTY both normal and WS versions
     'Fonts\\century_gothic_big.fnt',
     'Fonts\\century_gothic_big_0_Lod_A.tex',
@@ -7280,4 +7281,4 @@ vanilla_files = {
     'Sound\\Vo\\n\\f\\bhlo_nf008.mp3',
     'Sound\\Vo\\n\\f\\bhlo_nf009.mp3',
     'Sound\\Vo\\n\\f\\bidl_nf021.mp3'
-}
+}}

@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Oblivion setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     # Verified correct for all WS language variants:
     #   English, French, German, Italian, Spanish
     'Credits.txt',
@@ -85,4 +86,4 @@ vanilla_files = {
     'Video\\Oblivion Legal.bik',
     'Video\\OblivionIntro.bik',
     'Video\\OblivionOutro.bik',
-}
+}}
