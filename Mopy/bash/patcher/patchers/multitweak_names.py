@@ -89,6 +89,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     try:
                         wanted_fmt % fmt_params
                     except TypeError:
+                        # Do *not* change the %s/%02d, they're on purpose
                         return _("The format you entered is not valid for "
                                  "this tweak. It may contain exactly one '%s' "
                                  "and one '%02d' as well as any regular "
@@ -101,6 +102,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     try:
                         wanted_fmt % 'A'
                     except TypeError:
+                        # Do *not* change the %s, it's on purpose
                         return _("The format you entered is not valid for "
                                  "this tweak. It may contain exactly one '%s' "
                                  "and any regular characters, but no other "
@@ -113,6 +115,7 @@ class _ANamesTweak(CustomChoiceTweak):
             try:
                 wanted_fmt % fmt_params
             except TypeError:
+                # Do *not* change the %s/%02d, they're on purpose
                 return _("The format you entered is not valid for this tweak. "
                          "It must contain exactly one '%s' and may contain "
                          "one '%02d' as well as any regular characters, but "
@@ -124,6 +127,7 @@ class _ANamesTweak(CustomChoiceTweak):
             try:
                 wanted_fmt % 'A'
             except TypeError:
+                # Do *not* change the %s, it's on purpose
                 return _("The format you entered is not valid for this tweak. "
                          "It must contain exactly one '%s' and may contain "
                          "any regular characters, but no other format "
