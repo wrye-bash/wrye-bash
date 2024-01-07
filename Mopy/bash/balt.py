@@ -2060,8 +2060,8 @@ def ask_uac_restart(message, mopy):
         switches = [_('Use one of the following command line switches:'), '',
                     _('--no-uac: always run normally'),
                     _('--uac: always run with Admin Privileges'), '',
-                    _('See the <A href="%(readmePath)s">readme</A> '
-                      'for more information.') % {'readmePath': readme}]
+                    _('See the %(readme)s for more information.') % {
+                        'readme': f'<A href="{readme}">readme</A>'}]
         ex = [_('How to avoid this message in the future'),
               _('Less information'), '\n'.join(switches)]
     return askYes(None, message, _('UAC Protection'), vista_buttons=btns,

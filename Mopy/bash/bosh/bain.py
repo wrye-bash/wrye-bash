@@ -668,7 +668,7 @@ class Installer(ListInfo):
                 self.hasBethFiles = True
                 if not self.overrideSkips and not bass.settings[
                     u'bash.installers.autoRefreshBethsoft']:
-                    self.skipDirFiles.add(_('[Bethesda Content]') + f' {full}')
+                    self.skipDirFiles.add(_('[Vanilla Content]') + f' {full}')
                     return None # FIXME - after renames ?
             fn_mod = FName(file_relative)
             fn_mod = self._remaps.get(fn_mod, fn_mod)
@@ -911,7 +911,7 @@ class Installer(ListInfo):
                         elif fileLower in bethFiles:
                             self.hasBethFiles = True
                             skipDirFilesDiscard(file_relative)
-                            skipDirFilesAdd(_('[Bethesda Content]') + ' ' +
+                            skipDirFilesAdd(_('[Vanilla Content]') + ' ' +
                                             file_relative)
                             continue
                         elif not rootLower and fileExt in plugin_extensions:
@@ -968,7 +968,7 @@ class Installer(ListInfo):
                 if fileLower in bethFiles:
                     self.hasBethFiles = True
                     if bethFilesSkip:
-                        skipDirFilesAdd(_('[Bethesda Content]') + ' ' + full)
+                        skipDirFilesAdd(_('[Vanilla Content]') + ' ' + full)
                         continue
                 elif (not hasExtraData and rootLower and
                       rootLower not in dataDirsPlus):

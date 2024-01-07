@@ -217,8 +217,8 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
     """Set all imps to have the Bethesda imp spells that were never assigned
     (discovered by the UOP team, made into a mod by Tejon)."""
     tweak_name = _(u'As Intended: Imps')
-    tweak_tip = _(u'Set imps to have the unassigned Bethesda Imp Spells as '
-                  u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_tip = _('Set imps to have the unassigned vanilla imp spells as '
+                  'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious imps!'
     tweak_choices = [(_(u'All imps'), u'all'),
                      (_(u'Only fullsize imps'), u'big'),
@@ -247,8 +247,8 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
     """Set all boars to have the Bethesda boar spells that were never
     assigned (discovered by the UOP team, made into a mod by Tejon)."""
     tweak_name = _(u'As Intended: Boars')
-    tweak_tip = _(u'Set boars to have the unassigned Bethesda Boar Spells as '
-                  u'discovered by the UOP team and made into a mod by Tejon.')
+    tweak_tip = _('Set boars to have the unassigned vanilla boar spells as '
+                  'discovered by the UOP team and made into a mod by Tejon.')
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')
