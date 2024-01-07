@@ -1325,7 +1325,7 @@ class _InstallerPackage(Installer, AFile):
                     inf = store.new_info(owned_file, owner=self.fn_key,
                          # we refresh info sets in cached_lo_append_if_missing
                          _in_refresh=True)
-                    data_sizeCrcDate_update[dest][2] = inf.mtime
+                    data_sizeCrcDate_update[dest][2] = inf.file_mod_time
                     mtimes.append(owned_file)
                 except FileError as error: # repeated from refresh
                     store.corrupted[owned_file] = error.message
