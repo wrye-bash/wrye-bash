@@ -101,6 +101,8 @@ bugfixes and enhancements. Feedback appreciated!
 Please see our [dedicated Contributing.md][15] document for information on how
 to contribute.
 
+We are currently in the process of reworking our translations to use [Weblate][20]. Please see [issue #500][21] for more information.
+
 #### Main Branches
 
 - [`dev`][17]: The main development branch - approved commits end up here.
@@ -130,3 +132,5 @@ to contribute.
   [17]: https://github.com/wrye-bash/wrye-bash/tree/dev
   [18]: https://github.com/wrye-bash/wrye-bash/tree/master
   [19]: https://github.com/wrye-bash/wrye-bash/tree/nightly
+  [20]: https://hosted.weblate.org/projects/wrye-bash/wrye-bash/
+  [21]: https://github.com/wrye-bash/wrye-bash/issues/500
