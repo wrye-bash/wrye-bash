@@ -22,8 +22,9 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Skyrim setup."""
+import os
 
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'DialogueViews\\0001A2A8.xml',
     'DialogueViews\\0001A2D8.xml',
     'DialogueViews\\0001A2DA.xml',
@@ -15353,4 +15354,4 @@ vanilla_files = {
     'Strings\\Update_English.ILSTRINGS',
     'Strings\\Update_English.STRINGS',
     'Video\\BGS_Logo.bik',
-}
+}}

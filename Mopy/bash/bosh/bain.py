@@ -1294,7 +1294,7 @@ class _InstallerPackage(Installer, AFile):
             for store in stores:
                 if fname_key := store.data_path_to_info(dest, would_be=True):
                     try: # FName
-                        dest_path = join_data_dir(fname_key)
+                        dest_path = store.store_dir.join(fname_key)
                     except TypeError: # info is present, possibly ghosted
                         dest_path = fname_key.abs_path
                         fname_key = fname_key.fn_key
@@ -1325,7 +1325,7 @@ class _InstallerPackage(Installer, AFile):
                     inf = store.new_info(owned_file, owner=self.fn_key,
                          # we refresh info sets in cached_lo_append_if_missing
                          _in_refresh=True)
-                    data_sizeCrcDate_update[dest][2] = inf.mtime
+                    data_sizeCrcDate_update[dest][2] = inf.file_mod_time
                     mtimes.append(owned_file)
                 except FileError as error: # repeated from refresh
                     store.corrupted[owned_file] = error.message

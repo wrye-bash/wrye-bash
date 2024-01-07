@@ -22,10 +22,11 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Fallout 4 setup."""
+import os
 
 # Entries for other languages manually added from SteamDB:
 # https://steamdb.info/app/377160/depots/
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'ccBGSFO4001-PipBoy(Black) - Main.ba2',
     'ccBGSFO4001-PipBoy(Black) - Textures.ba2',
     'ccBGSFO4003-PipBoy(Camo01) - Main.ba2',
@@ -97,4 +98,4 @@ vanilla_files = {
     'Video\\MainMenuLoop.bk2',
     'Video\\PERCEPTION.bk2',
     'Video\\STRENGTH.bk2',
-}
+}}

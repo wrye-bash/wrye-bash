@@ -22,10 +22,11 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Enderal SE setup."""
+import os
 
 # Entries for other languages manually added from SteamDB:
 # https://steamdb.info/app/976620/depots/
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     'Enderal - Forgotten Stories.ini',
     'Enderal Credits.txt',
     'Enderal SE v2.0.12.4 Changelog.txt',
@@ -523,4 +524,4 @@ vanilla_files = {
     'Video\\MQ17BlackGuardian.bik',
     'Video\\MQP03NearDeathExperience.bik',
     '_Enderal - Forgotten Stories.ini',
-}
+}}

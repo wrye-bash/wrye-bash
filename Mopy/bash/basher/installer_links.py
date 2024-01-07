@@ -355,11 +355,12 @@ class Installer_Wizard(_Installer_AWizardLink):
                     sel_package.subActives[index + 1] = select
                 idetails.refreshCurrent(sel_package)
                 # Check the plugins that were selected by the wizard
-                espm_strs = idetails.gEspmList.lb_get_str_items()
+                espm_fns = list(map(FName,
+                    idetails.gEspmList.lb_get_str_items()))
                 sel_package.espmNots = set()
                 for index, espm in enumerate(idetails.espm_checklist_fns):
-                    do_check = espm_strs[index] in ret.select_plugins or bool(
-                        sel_package.espmNots.add(espm)) # bool(None) == False
+                    do_check = (espm_fns[index] in ret.select_plugins
+                                or bool(sel_package.espmNots.add(espm)))
                     idetails.gEspmList.lb_check_at_index(index, do_check)
                 idetails.refreshCurrent(sel_package)
                 #Rename the plugins that need renaming

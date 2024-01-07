@@ -22,10 +22,11 @@
 # =============================================================================
 """This module lists the files installed in the Data folder in a completely
 vanilla Enderal setup."""
+import os
 
 # Entries for other languages manually added from SteamDB:
 # https://steamdb.info/sub/302557/depots/
-vanilla_files = {
+vanilla_files = {f.replace('\\', os.sep) for f in {
     '1.5.9.0patchnote and Japanes localization updates.txt',
     'credits.txt',
     'Interface\\.idea\\Interface.iml',
@@ -588,4 +589,4 @@ vanilla_files = {
     'Video\\Enderal_Credits.bik',
     'Video\\MQ17BlackGuardian.bik',
     'Video\\MQP03NearDeathExperience.bik',
-}
+}}
