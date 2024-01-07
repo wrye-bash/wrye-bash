@@ -31,19 +31,21 @@ from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 def _pbash_mergeable_no_load(modInfo, minfos, reasons):
     verbose = reasons is not None
     _exit = lambda x: not verbose or reasons.append(x) # append returns None
-    if modInfo.has_esm_flag() and _exit(_('Has ESM flag.')):
+    if modInfo.has_esm_flag() and _exit(_('This plugin has the ESM flag.')):
         return False
     #--Bashed Patch
-    if modInfo.isBP() and _exit(_('Is Bashed Patch.')):
+    if modInfo.isBP() and _exit(_('This plugin is a Bashed Patch.')):
         return False
     # Plugin INIs would get deactivated if the plugin got merged
-    if (plugin_ini_name := modInfo.get_ini_name()) in minfos.plugin_inis and \
-            _exit(_('Has plugin INI (%(plugin_ini_name)s).') % {
-                'plugin_ini_name': plugin_ini_name}):
+    if ((plugin_ini_name := modInfo.get_ini_name()) in minfos.plugin_inis and
+            _exit(_('This plugin has an associated INI file '
+                    '(%(plugin_ini_name)s).') % {
+                'plugin_ini_name': plugin_ini_name})):
         return False
     #--Bsa / blocking resources?
     hasBsa, has_blocking_resources = modInfo.hasResources()
-    if hasBsa and _exit(_('Has BSA archive.')):
+    if hasBsa and _exit(_('This plugin has an associated %(bsa_ext)s '
+                          'file.') % {'bsa_ext': bush.game.Bsa.bsa_extension}):
         return False
     if has_blocking_resources:
         dir_list = '\n  - '.join(f'{pnd}{os.sep}%(blocking_plugin_name)s'
@@ -83,11 +85,13 @@ def isPBashMergeable(modInfo, minfos, reasons):
     except ModError as error:
         if _exit(f'{error}.'): return False
     #--Skipped over types?
-    if modFile.topsSkipped and _exit(_('Unsupported types: ') +
-                                     f'{_join_sigs(modFile.topsSkipped)}.'):
+    if modFile.topsSkipped and _exit(
+            _('Wrye Bash does not support the following record types: '
+              '%(unsupported_rec_types)s.') % {
+                'unsupported_rec_types': _join_sigs(modFile.topsSkipped)}):
         return False
     #--Empty mod
-    elif not modFile.tops and _exit(_('Empty mod.')):
+    elif not modFile.tops and _exit(_('This plugin is empty.')):
         return False
     #--New record
     newblocks = []
@@ -99,10 +103,12 @@ def isPBashMergeable(modInfo, minfos, reasons):
                 newblocks.append(top_sig)
                 break
     if newblocks: reasons.append(
-        _(u'New record(s) in block(s): ') + f'{_join_sigs(newblocks)}.')
+        _('This plugin has new records in the following groups: '
+          '%(new_rec_groups)s.') % {'new_rec_groups': _join_sigs(newblocks)})
     dependent = _dependent(self_name, minfos)
-    if dependent and _exit(_('Is a master of non-mergeable plugins: ') +
-                           ', '.join(sorted(dependent)) + '.'):
+    if dependent and _exit(_('This plugin is a master of the following non-mergeable '
+              'plugins: %(non_mergeable_plugins)s.') % {
+                'non_mergeable_plugins': ', '.join(sorted(dependent))}):
         return False
     return False if reasons else True
 
@@ -130,17 +136,17 @@ def is_esl_capable(modInfo, _minfos, reasons):
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
     _exit = lambda x: not verbose or reasons.append(x) # append returns None
-    if modInfo.is_esl() and _exit(_('Already ESL-flagged.')):
+    if modInfo.is_esl() and _exit(_('This plugin is already ESL-flagged.')):
         return False
-    if modInfo.is_overlay() and _exit(_('Has Overlay flag.')):
+    if modInfo.is_overlay() and _exit(_('This plugin has the Overlay flag.')):
         return False
     formids_valid = True
     try:
         formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
     except ModError as e:
         if _exit(f'{e}.'): return False
-    if not formids_valid and _exit(
-            _('Contains records with FormIDs greater than 0xFFF.')):
+    if not formids_valid and _exit(_('This plugin contains records with '
+                                     'FormIDs greater than 0xFFF.')):
         return False
     return False if reasons else True
 
@@ -157,17 +163,19 @@ def is_overlay_capable(modInfo, _minfos, reasons):
     :return: True if the specified mod could be flagged as Overlay."""
     verbose = reasons is not None
     _exit = lambda x: not verbose or reasons.append(x) # append returns None
-    if modInfo.is_overlay() and _exit(_('Already Overlay-flagged.')):
+    if modInfo.is_overlay() and _exit(_('This plugin is already '
+                                        'Overlay-flagged.')):
         return False
-    if modInfo.is_esl() and _exit(_('Has ESL flag.')):
+    if modInfo.is_esl() and _exit(_('This plugin has the ESL flag.')):
         return False
-    if not modInfo.masterNames and _exit(_('Does not have any masters.')):
+    if not modInfo.masterNames and _exit(_('This plugin does not have any '
+                                           'masters.')):
         return False
     has_new_recs = False
     try:
         has_new_recs = ModHeaderReader.has_new_records(modInfo)
     except ModError as e:
         if _exit(f'{e}.'): return False
-    if has_new_recs and _exit(_('Contains new records.')):
+    if has_new_recs and _exit(_('This plugin contains new records.')):
         return False
     return False if reasons else True

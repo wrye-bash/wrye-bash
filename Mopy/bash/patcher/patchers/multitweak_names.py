@@ -89,6 +89,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     try:
                         wanted_fmt % fmt_params
                     except TypeError:
+                        # Do *not* change the %s/%02d, they're on purpose
                         return _("The format you entered is not valid for "
                                  "this tweak. It may contain exactly one '%s' "
                                  "and one '%02d' as well as any regular "
@@ -101,6 +102,7 @@ class _ANamesTweak(CustomChoiceTweak):
                     try:
                         wanted_fmt % 'A'
                     except TypeError:
+                        # Do *not* change the %s, it's on purpose
                         return _("The format you entered is not valid for "
                                  "this tweak. It may contain exactly one '%s' "
                                  "and any regular characters, but no other "
@@ -113,6 +115,7 @@ class _ANamesTweak(CustomChoiceTweak):
             try:
                 wanted_fmt % fmt_params
             except TypeError:
+                # Do *not* change the %s/%02d, they're on purpose
                 return _("The format you entered is not valid for this tweak. "
                          "It must contain exactly one '%s' and may contain "
                          "one '%02d' as well as any regular characters, but "
@@ -124,6 +127,7 @@ class _ANamesTweak(CustomChoiceTweak):
             try:
                 wanted_fmt % 'A'
             except TypeError:
+                # Do *not* change the %s, it's on purpose
                 return _("The format you entered is not valid for this tweak. "
                          "It must contain exactly one '%s' and may contain "
                          "any regular characters, but no other format "
@@ -202,10 +206,11 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
         cho_len = len(chosen_values[0])
         req_len = len(self.tweak_choices[0][0])
         if cho_len != req_len:
-            return _("The value has length %d, but must have length %d to "
-                     "match the number of body part types for this game. See "
-                     "the 'Tweak Names' section of the Advanced Readme for "
-                     "more information.") % (cho_len, req_len)
+            return _("The value has length %(actual_len)d, but must have "
+                     "length %(expected_len)d to match the number of body "
+                     "part types for this game. See the 'Tweak Names' section "
+                     "of the Advanced Readme for more information.") % {
+                'actual_len': cho_len, 'expected_len': req_len}
         return super().validate_values(chosen_values)
 
 #------------------------------------------------------------------------------
@@ -885,7 +890,8 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 if not body_part_tags:
-                    msg = _("'Body Part Codes' must be enabled when using the "
-                            "'%s' tweak.")
-                    raise BPConfigError(msg % names_tweak.tweak_name)
+                    raise BPConfigError(
+                        _("'Body Part Codes' must be enabled when using the "
+                          "'%(bpc_dependent_tweak)s' tweak.") % {
+                            'bpc_dependent_tweak': names_tweak.tweak_name})
                 names_tweak._tweak_body_tags = body_part_tags

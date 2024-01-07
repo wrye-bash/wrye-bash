@@ -227,8 +227,8 @@ class OmodFile(object):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         # Extracted data stream is saved as a file named 'a'
-        base_msg = (self.omod_path.stail + u'\n' +
-                    _(u'Unpacking %s') % dataPath.stail)
+        msg = _('Unpacking %(omod_data)s') % {'omod_data': dataPath.stail}
+        base_msg = f'{self.omod_path.stail}\n{msg}'
         progress(0, base_msg)
         cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s,
                f'-o{outPath}']
@@ -261,8 +261,8 @@ class OmodFile(object):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         totalSize = sum(sizes_)
-        base_msg = (self.omod_path.stail + u'\n' +
-                    _(u'Unpacking %s') % dataPath.stail)
+        msg = _('Unpacking %(omod_data)s') % {'omod_data': dataPath.stail}
+        base_msg = f'{self.omod_path.stail}\n{msg}'
         # Extract data stream to an uncompressed stream
         dpath_size = dataPath.psize
         out = io.BytesIO()

@@ -440,7 +440,8 @@ class ModHeaderReader(object):
         plugin_fn = mod_info.fn_key
         sh_unpack = Subrecord.sub_header_unpack
         sh_size = Subrecord.sub_header_size
-        main_progress_msg = _(u'Loading: %s') % plugin_fn
+        main_progress_msg = _('Loading: %(loading_plugin)s') % {
+            'loading_plugin': plugin_fn}
         # Where we'll store all the collected record data
         group_records: _ModDataDict = defaultdict(list)
         # The current top GRUP label - starts out as TES4/TES3

@@ -105,7 +105,9 @@ def InitStatusBar():
         uid=tool[0][:-4]) for tool in skyrim_tools.items())
     # xEdit -------------------------------------------------------------------
     for xe_name in all_xes:
-        args = f'{xe_name}.exe', _('Launch %s') % xe_name, {'root_dirs': 'app'}
+        args = (f'{xe_name}.exe',
+                _('Launch %(xedit_name)s') % {'xedit_name': xe_name},
+                {'root_dirs': 'app'})
         all_links.append(_tool_args(f'{xe_name}Path', args, uid=xe_name,
             display_launcher=bush.game.Xe.full_name == xe_name,
             cli_args=(f'-{xe_name[:-4]}', '-edit'), clazz=AppXEdit))
@@ -263,8 +265,7 @@ def InitInstallerLinks():
     InstallersList.context_links.append_link(SeparatorLink())
     InstallersList.context_links.append_link(Installer_OpenReadme())
     InstallersList.context_links.append_link(Installer_Anneal())
-    InstallersList.context_links.append_link(
-        Installer_Refresh(calculate_projects_crc=False))
+    InstallersList.context_links.append_link(Installer_QuickRefresh())
     InstallersList.context_links.append_link(Installer_Move())
     InstallersList.context_links.append_link(Installer_SyncFromData())
     InstallersList.context_links.append_link(SeparatorLink())
@@ -852,8 +853,8 @@ def InitScreenLinks():
         ScreensList.column_links.append_link(files_menu)
     ScreensList.column_links.append_link(SeparatorLink())
     ScreensList.column_links.append_link(Screens_NextScreenShot())
-    if True: #--JPEG Quality
-        qualityMenu = MenuLink(_('JPEG Quality..'))
+    if True: #--JPG Quality
+        qualityMenu = MenuLink(_('JPG Quality..'))
         for i in range(100, 80, -5):
             qualityMenu.links.append_link(Screens_JpgQuality(i))
         qualityMenu.links.append_link(Screens_JpgQualityCustom())
@@ -889,10 +890,10 @@ def InitScreenLinks():
     # Settings Menu
     settings_menu = ScreensList.global_links[_('Settings')]
     settings_menu.append_link(Screens_NextScreenShot())
-    jpeg_quality_menu = MenuLink(_('JPEG Quality..'))
+    jpg_quality_menu = MenuLink(_('JPG Quality..'))
     for i in range(100, 80, -5):
-        jpeg_quality_menu.links.append_link(Screens_JpgQuality(i))
-    jpeg_quality_menu.links.append_link(Screens_JpgQualityCustom())
+        jpg_quality_menu.links.append_link(Screens_JpgQuality(i))
+    jpg_quality_menu.links.append_link(Screens_JpgQualityCustom())
     settings_menu.append_link(qualityMenu)
     settings_menu.append_link(SeparatorLink())
     ScreensList.global_links[_('Settings')].append_link(Misc_SettingsDialog())

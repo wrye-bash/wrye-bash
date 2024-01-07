@@ -204,8 +204,9 @@ class _ASettingsPage(ATreeMixin):
         new_fpath = parent_dir.join(new_fstr)
         old_fpath = parent_dir.join(chosen_file)
         if new_fpath.is_file():
-            fstr = _('The chosen filename (%s) already exists. Do you want '
-                     'to replace the file?') % new_fstr
+            fstr = _('The chosen filename (%(chosen_filename)s) already '
+                     'exists. Do you want to replace the file?') % {
+                'chosen_filename': new_fstr}
             if not askYes(self, fstr, title=_('Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
@@ -221,12 +222,12 @@ class _AFixedPage(_ASettingsPage, PanelWin): pass
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     """Color configuration page."""
     _keys_to_tabs = {
-        'mods': _('[Mods] %s'),
-        'screens': _('[Saves, Screenshots] %s'),
-        'installers': _('[Installers] %s'),
-        'ini': _('[INI Edits] %s'),
-        'tweak': _('[INI Edits] %s'),
-        'default': _('[All] %s'),
+        'mods': _('[Mods] %(color_description)s'),
+        'screens': _('[Saves, Screenshots] %(color_description)s'),
+        'installers': _('[Installers] %(color_description)s'),
+        'ini': _('[INI Edits] %(color_description)s'),
+        'tweak': _('[INI Edits] %(color_description)s'),
+        'default': _('[All] %(color_description)s'),
     }
 
     def __init__(self, parent, page_desc):
@@ -234,7 +235,8 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.changes = {}
         #--DropDown
         def _display_text(k):
-            return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
+            return self._keys_to_tabs[k.split('.')[0]] % {
+                'color_description': colorInfo[k][0]}
         # Note the 'in colorInfo' to filter out colors that this game doesn't
         # actually use
         self._txt_key = {_display_text(x): x for x in colors if x in colorInfo}
@@ -359,8 +361,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                         color = col_value
                     out.write(f'{col_key}: {color.to_rgb_tuple()}\n')
         except Exception as e:
-            msg = _('An error occurred writing to %s:') % outPath.stail
-            showError(self, msg + f'\n\n{e}')
+            msg = _('An error occurred writing to %(color_export_file)s:') % {
+                'color_export_file': outPath.stail}
+            showError(self, f'{msg}\n\n{e}')
 
     def OnImport(self):
         inDir = bass.dirs[u'patches']
@@ -398,8 +401,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                             continue # skip, identical to our current state
                         self.changes[color_key] = color
         except Exception as e:
-            msg = _('An error occurred reading from %s:') % inPath.stail
-            showError(self, msg + f'\n\n{e}')
+            msg = _('An error occurred reading from '
+                    '%(color_import_file)s:') % {
+                'color_import_file': inPath.stail}
+            showError(self, f'{msg}\n\n{e}')
         self.UpdateUIButtons()
 
     def OnComboBox(self):
@@ -440,8 +445,9 @@ class ConfigureEditorDialog(DialogWindow):
             Spacer(12),
             VBoxedLayout(self, title=_(u'Parameters'), spacing=4, items=[
                 (self._params_field, LayoutOptions(expand=True, weight=1)),
-                Label(self, _(u"Note: '%s' will be replaced by the path "
-                              u'to the localization file.')),
+                # Do *not* change this %s, it's on purpose
+                Label(self, _("Note: '%s' will be replaced by the path "
+                              'to the localization file.')),
             ]),
             Stretch(), HLayout(spacing=5, items=[
                 Stretch(), ok_btn, CancelButton(self),
@@ -520,10 +526,11 @@ class LanguagePage(_AScrollablePage):
               u'to dump localizations.'))
         is_standalone_warning.set_foreground_color(colors[u'default.warn'])
         is_standalone_warning.visible = bass.is_standalone
-        dump_localization_btn = Button(self, _(u'Dump Localization...'),
-            btn_tooltip=_(u'Generates an up-to-date version of the '
-                          u'localization file for the currently active '
-                          u'language (%s).') % active_lang.split(u' ')[0])
+        dump_localization_btn = Button(self, _('Dump Localization...'),
+            btn_tooltip=_('Generates an up-to-date version of the '
+                          'localization file for the currently active '
+                          'language (%(active_language)s).') % {
+                'active_language': active_lang.split(' ')[0]})
         dump_localization_btn.enabled = not bass.is_standalone
         dump_localization_btn.on_clicked.subscribe(self._dump_localization)
         self._edit_l10n_btn = OpenButton(self, _(u'Edit...'),
@@ -575,8 +582,10 @@ class LanguagePage(_AScrollablePage):
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
             outFile = dump_translator(outPath, bass.active_locale)
-        showOk(self, _('Translation keys written to %s') % outFile,
-               _('Dump Localization: %s') % outPath.stail)
+        showOk(self, _('Translation keys written to '
+                       '%(l10n_path)s.') % {'l10n_path': outFile},
+            title=_('Dump Localization: '
+                    '%(l10n_file)s') % {'l10n_file': outPath.stail})
         # Make the new localization show up in the list
         self._populate_l10n_list()
         # wx unselects here, so disable the context buttons
@@ -642,8 +651,9 @@ class LanguagePage(_AScrollablePage):
             ##: #26, our oldest open issue; This should be a
             # parameterless restart request, with us having saved the
             # new language to some 'early boot' info file
-            self._request_restart(_(u'Language: %s') % selected_lang,
-                [(u'--Language', internal_name)])
+            self._request_restart(_('Language: %(selected_language)s') % {
+                'selected_language': selected_lang},
+                [('--Language', internal_name)])
 
     def _populate_l10n_list(self):
         """Clears and repopulates the localization list."""
@@ -952,10 +962,10 @@ class BackupsPage(_AFixedPage):
     def _restore_backup(self):
         """Restores the currently selected backup."""
         if not askYes(self, '\n\n'.join([
-            _("Are you sure you want to restore your Bash settings from '%s'?"
-              ) % self._chosen_backup,
-            _(u'This will force a restart of Wrye Bash once your settings are '
-              u'restored.')]), _(u'Restore Bash Settings?')):
+            _("Are you sure you want to restore your Bash settings from "
+              "'%(chosen_backup)s'?") % {'chosen_backup': self._chosen_backup},
+            _('This will force a restart of Wrye Bash once your settings are '
+              'restored.')]), title=_('Restore Bash Settings?')):
             return
         # former may be None
         settings_file = self._backup_dir.join(self._chosen_backup)
@@ -975,11 +985,15 @@ class BackupsPage(_AFixedPage):
             if error_msg and not askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            m = [_('Your Bash settings have been successfully extracted.'), _(
-                'Backup Path: ') + settings_file.s, '', _('Before the '
-                'settings can take effect, Wrye Bash must restart.'),
+            m = [_('Your Wrye Bash settings have been successfully '
+                   'extracted.'),
+                 _('Backup Path: %(backup_file)s') % {
+                     'backup_file': settings_file.s},
+                 '',
+                 _('Before the settings can take effect, Wrye Bash must '
+                   'restart.'),
                 _('Click OK to restart now.')]
-            showInfo(self, '\n'.join(m), _('Bash Settings Extracted'))
+            showInfo(self, '\n'.join(m), _('Wrye Bash Settings Extracted'))
             try: # we currently disallow backup and restore on the same boot
                 bass.sys_argv.remove(u'--backup')
             except ValueError:
@@ -1024,10 +1038,10 @@ class ConfirmationsPage(_AFixedPage):
     # askContinue to proceed, so that we won't ever forget to add one here (or
     # come up with a better way to store these)
     _confirmations = {
-        _(u'[INI Edits] Applying an INI tweak'):
-            u'bash.iniTweaks.continue',
-        _(u'[Installers, Screenshots] Opening a lot of items'):
-            u'bash.maxItemsOpen.continue',
+        _('[INI Edits] Applying an INI tweak'):
+            'bash.iniTweaks.continue',
+        _('[Installers, Screenshots] Opening a lot of items'):
+            'bash.maxItemsOpen.continue',
         _('[Installers] Exporting package order'):
             'bash.installers.export_order.continue',
         _('[Installers] Installing unconfigured complex packages'):
@@ -1035,81 +1049,88 @@ class ConfirmationsPage(_AFixedPage):
         _("[Installers] Opening a mod's page at the %(target_nexus_name)s") % {
             'target_nexus_name': bush.game.nexusName}:
             bush.game.nexusKey,
-        _(u"[Installers] Opening a mod's page at TES Alliance"):
-            u'bash.installers.openTESA.continue',
+        _("[Installers] Opening a mod's page at TES Alliance"):
+            'bash.installers.openTESA.continue',
         _('[Installers] Overwriting a package via drag and drop'):
             'bash.installers.onDropFiles.overwrite_pkg.continue',
         _('[Installers] Overwriting a BCF via drag and drop'):
             'bash.installers.onDropFiles.overwrite_conv.continue',
-        _(u'[Installers] Searching for a mod on Google'):
-            u'bash.installers.opensearch.continue',
-        _(u'[Installers] Trying to reorder installers, but Install Order '
-          u'column not selected'):
-            u'bash.installers.dnd.column.continue',
-        _(u'[Masters] Editing or updating a master list'):
-            u'bash.masters.update.continue',
-        _(u'[Mods] Adding or removing the ESL flag from a plugin'):
-            u'bash.flipToEslp.continue',
-        _(u'[Mods] Adding or removing the ESM flag from a plugin'):
-            u'bash.flipToEsmp.continue',
-        _(u"[Mods] Adding or removing the ESM flag from a plugin's masters"):
-            u'bash.flipMasters.continue',
-        _(u'[Mods] Applying the Nvidia Fog Fix'):
-            u'bash.cleanMod.continue',
-        _(u"[Mods] Changing a plugin's version to 0.8"):
-            u'bash.setModVersion.continue',
-        _(u'[Mods] Exporting NPC levels to a text file'):
-            u'bash.actorLevels.export.continue',
-        _(u'[Mods] Importing groups from a text file'):
-            u'bash.groups.import.continue',
-        _(u'[Mods] Locking or unlocking the load order'):
-            u'bash.load_order.lock.continue',
-        _(u'[Mods] Removing world orphans'):
-            u'bash.removeWorldOrphans.continue',
+        _('[Installers] Searching for a mod on Google'):
+            'bash.installers.opensearch.continue',
+        _('[Installers] Trying to reorder installers, but Install Order '
+          'column not selected'):
+            'bash.installers.dnd.column.continue',
+        _('[Masters] Editing or updating a master list'):
+            'bash.masters.update.continue',
+        _('[Mods] Adding or removing the ESL flag from a plugin'):
+            'bash.flipToEslp.continue',
+        _('[Mods] Adding or removing the ESM flag from a plugin'):
+            'bash.flipToEsmp.continue',
+        _("[Mods] Adding or removing the ESM flag from a plugin's masters"):
+            'bash.flipMasters.continue',
+        _('[Mods] Applying the Nvidia Fog Fix'):
+            'bash.cleanMod.continue',
+        _("[Mods] Changing a plugin's version to 0.8"):
+            'bash.setModVersion.continue',
+        _('[Mods] Exporting NPC levels to a text file'):
+            'bash.actorLevels.export.continue',
+        _('[Mods] Importing groups from a text file'):
+            'bash.groups.import.continue',
+        _('[Mods] Importing editor IDs from a text file'):
+            'bash.editorIds.import.continue',
+        _('[Mods] Importing ingredients from a text file'):
+            'bash.Ingredient.import.continue',
+        _('[Mods] Importing names from a text file'):
+            'bash.fullNames.import.continue',
+        _('[Mods] Importing NPC levels from a text file'):
+            'bash.actorLevels.import.continue',
+        _('[Mods] Importing prices from a text file'):
+            'bash.prices.import.continue',
+        _('[Mods] Importing relations from a text file'):
+            'bash.factionRelations.import.continue',
+        _('[Mods] Importing scripts from a text file'):
+            'bash.scripts.import.continue',
+        _('[Mods] Importing sigil stones from a text file'):
+            'bash.SigilStone.import.continue',
+        _('[Mods] Importing spells from a text file'):
+            'bash.SpellRecords.import.continue',
+        _('[Mods] Importing stats from a text file'):
+            'bash.stats.import.continue',
+        _('[Mods] Locking or unlocking the load order'):
+            'bash.load_order.lock.continue',
+        _('[Mods] Removing world orphans'):
+            'bash.removeWorldOrphans.continue',
         _("[Mods] Renaming a plugin to something that %(game_name)s can't "
           'load') % {'game_name': bush.game.display_name}:
             'bash.rename.isBadFileName.continue',
-        _(u'[Mods] Reordering plugins by name'):
-            u'bash.sortMods.continue',
-        _(u"[Mods] Replacing a plugin's FormIDs based on a text file"):
-            u'bash.formIds.replace.continue',
-        _(u'[Mods] Resetting groups to default ones'):
-            u'bash.groups.reset.continue',
-        _(u'[Mods] Synchronizing groups to currently active ones'):
-            u'bash.groups.sync.continue',
-        _(u"[Mods] Trying to activate plugins that can't be activated"):
-            u'bash.mods.dnd.illegal_activation.continue',
-        _(u"[Mods] Trying to deactivate plugins that can't be deactivated"):
-            u'bash.mods.dnd.illegal_deactivation.continue',
-        _(u'[Mods] Trying to reorder plugins, but Load Order column not '
-          u'selected'):
-            u'bash.mods.dnd.column.continue',
-        _(u"[Mods] Trying to reorder plugins that can't be reordered"):
-            u'bash.mods.dnd.pinned.continue',
-        _(u"[Mods] Using Decompile All to undo a 'Recompile All'"):
-            u'bash.decompileAll.continue',
-        _(u'[Saves] Disabling a save'):
-            u'bash.saves.askDisable.continue',
-        _(u'[Saves] Updating NPC levels in a save based on current plugins'):
-            u'bash.updateNpcLevels.continue',
-        _(u'[Settings] Dumping a new translation file'):
-            u'bash.dump_translator.continue',
-        _(u'[Settings] Switching the currently managed game'):
-            u'bash.switch_games_warning.continue',
+        _('[Mods] Reordering plugins by name'):
+            'bash.sortMods.continue',
+        _("[Mods] Replacing a plugin's FormIDs based on a text file"):
+            'bash.formIds.replace.continue',
+        _('[Mods] Resetting groups to default ones'):
+            'bash.groups.reset.continue',
+        _('[Mods] Synchronizing groups to currently active ones'):
+            'bash.groups.sync.continue',
+        _("[Mods] Trying to activate plugins that can't be activated"):
+            'bash.mods.dnd.illegal_activation.continue',
+        _("[Mods] Trying to deactivate plugins that can't be deactivated"):
+            'bash.mods.dnd.illegal_deactivation.continue',
+        _('[Mods] Trying to reorder plugins, but Load Order column not '
+          'selected'):
+            'bash.mods.dnd.column.continue',
+        _("[Mods] Trying to reorder plugins that can't be reordered"):
+            'bash.mods.dnd.pinned.continue',
+        _("[Mods] Using Decompile All to undo a 'Recompile All'"):
+            'bash.decompileAll.continue',
+        _('[Saves] Disabling a save'):
+            'bash.saves.askDisable.continue',
+        _('[Saves] Updating NPC levels in a save based on current plugins'):
+            'bash.updateNpcLevels.continue',
+        _('[Settings] Dumping a new translation file'):
+            'bash.dump_translator.continue',
+        _('[Settings] Switching the currently managed game'):
+            'bash.switch_games_warning.continue',
     }
-    # The Import links are highly formulaic, so we just generate these here
-    for k, v in {_(u'Editor IDs'):   u'editorIds',
-                 _(u'Ingredients'):  u'Ingredient',
-                 _(u'Names'):        u'fullNames',
-                 _(u'NPC Levels'):   u'actorLevels',
-                 _(u'Prices'):       u'prices',
-                 _(u'Relations'):    u'factionRelations',
-                 _(u'Scripts'):      u'scripts',
-                 _(u'Sigil Stones'): u'SigilStone',
-                 _(u'Spells'):       u'SpellRecords',
-                 _(u'Stats'):        u'stats'}.items():
-        _confirmations[_(u'[Mods] Importing %s from a text '
-                         u'file') % k] = u'bash.%s.import.continue' % v
     # Detect parentheses in the confirmation names, which will cause problems
     # when we go to strip out the internal keys
     for conf_key in _confirmations:
@@ -1449,9 +1470,9 @@ class GeneralPage(_AScrollablePage):
                     u'bash.switch_games_warning.continue'):
             chosen_game = self._managed_game.get_value()
             ##: The [0] here is ugly, doesn't allow changing WS variations
-            self._request_restart(
-                _(u'Managed Game: %s') % chosen_game,
-                [(u'--oblivionPath', bush.game_path(chosen_game)[0].s)])
+            self._request_restart(_('Managed Game: %(chosen_game)s') % {
+                'chosen_game': chosen_game},
+                [('--oblivionPath', bush.game_path(chosen_game)[0].s)])
         # Plugin Encoding
         if self._is_changed(u'plugin_encoding'):
             chosen_encoding = self._plugin_encoding.get_value()
@@ -1459,7 +1480,8 @@ class GeneralPage(_AScrollablePage):
             bass.settings[u'bash.pluginEncoding'] = internal_encoding
             bolt.pluginEncoding = internal_encoding
             # Request a restart so that alrady loaded plugins can be reparsed
-            self._request_restart(_(u'Plugin Encoding: %s') % chosen_encoding)
+            self._request_restart(_('Plugin Encoding: %(chosen_encoding)s') % {
+                'chosen_encoding': chosen_encoding})
         # Check on Startup
         if self._is_changed('update_check_enabled'):
             new_uc_on = self._update_check_enable.is_checked
@@ -1538,8 +1560,8 @@ class TrustedBinariesPage(_AFixedPage):
         with textPath.open(u'w', encoding=u'utf-8') as out:
             # Stick a header in there and include the version. Should always be
             # a comment anyways, but to be sure, put a '#' in front of it
-            out.write(u'# %s\n' % (_(u'Exported by Wrye Bash v%s')
-                                   % bass.AppVersion))
+            out.write(f"# {_('Exported by Wrye Bash v%(wb_version)s')}\n" % {
+                'wb_version': bass.AppVersion})
             out.write(u'goodDlls # %s\n' % _(u'Binaries whose installation '
                                              u'you have allowed'))
             self._dump_dlls(bass.settings['bash.installers.goodDlls'], out)
@@ -1633,14 +1655,15 @@ class TrustedBinariesPage(_AFixedPage):
                 self._binaries_list.left_items = sorted(Dlls[u'goodDlls'])
                 self._binaries_list.right_items = sorted(Dlls[u'badDlls'])
         except UnicodeError:
-            msg = _('Wrye Bash could not load %s, because it is not saved in '
-                    'UTF-8 format.  Please resave it in UTF-8 format and try '
-                    'again.') % textPath
+            msg = _('Wrye Bash could not load %(import_file)s, because it '
+                    'is not saved in UTF-8 format. Please resave it in UTF-8 '
+                    'format and try again.') % {'import_file': textPath}
             showError(self, msg)
         except SyntaxError:
             deprint(f'Error reading {textPath}', traceback=True)
-            msg = _('Wrye Bash could not load %s, because there was an error '
-                    'in the format of the file.') % textPath
+            msg = _('Wrye Bash could not load %(import_file)s, because '
+                    'there was an error in the format of the file.') % {
+                'import_file': textPath}
             showError(self, msg)
         finally:
             self._check_changed()

@@ -279,8 +279,8 @@ class ImportActorsFacesPatcher(APreserver):
 
 #------------------------------------------------------------------------------
 class ImportActorsFactionsPatcher(APreserver):
-    logMsg = u'\n=== ' + _(u'Refactioned Actors')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    logMsg = '\n=== ' + _('Refactioned Actors')
+    srcsHeader = '=== ' + _('Source Mods/Files')
     # Has FormIDs, but will be filtered in AMreActor.keep_fids
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
@@ -344,7 +344,7 @@ class ImportKeywordsPatcher(APreserver):
 #------------------------------------------------------------------------------
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
-    logMsg =  '\n=== ' + _('Renamed Items')
+    logMsg = '\n=== ' + _('Renamed Items')
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = {x: ('full',) for x in bush.game.names_types}
     _csv_parser = parsers.FullNames
@@ -385,8 +385,8 @@ class ImportSpellStatsPatcher(APreserver):
 class ImportStatsPatcher(APreserver):
     """Import stats from mod file."""
     patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
-    logMsg = u'\n=== ' + _(u'Imported Stats')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    logMsg = '\n=== ' + _('Imported Stats')
+    srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
     _csv_parser = parsers.ItemStats
@@ -403,7 +403,7 @@ class ImportTextPatcher(APreserver):
 #------------------------------------------------------------------------------
 ##: absorbing this one will be hard - or not :P
 class ImportCellsPatcher(ImportPatcher):
-    logMsg = '\n=== ' + _('Cells Patched') + ': %d'
+    logMsg = '\n=== ' + _('Cells Patched')
     _read_sigs = (b'CELL', b'WRLD')
     patcher_tags = set(bush.game.cellRecAttrs)
 
@@ -516,8 +516,6 @@ class ImportCellsPatcher(ImportPatcher):
                 keep(worldId, worldBlock)
         self.cellData.clear()
         self._patchLog(log, count)
-
-    def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 #------------------------------------------------------------------------------
 class ImportGraphicsPatcher(APreserver):

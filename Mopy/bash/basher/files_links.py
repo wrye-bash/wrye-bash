@@ -87,8 +87,8 @@ class Files_Unhide(ItemLink):
 #------------------------------------------------------------------------------
 class File_Duplicate(ItemLink):
     """Create a duplicate of the file - mod, save, bsa, etc."""
-    _text = _(u'Duplicate...')
-    _help = _(u'Make a copy of the selected file(s).')
+    _text = _('Duplicate...')
+    _help = _('Make a copy of the selected files.')
 
     _bsa_and_blocking_msg = _(
         'This plugin has an associated BSA (%(assoc_bsa_name)s) and an '
@@ -167,7 +167,7 @@ class File_ListMasters(OneItemLink):
 #------------------------------------------------------------------------------
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
-    _help = _("Creates a snapshot copy of the selected file(s) in a "
+    _help = _("Creates a snapshot copy of the selected files in a "
               "'Snapshots' subdirectory.")
 
     @property
@@ -263,8 +263,8 @@ class File_RevertToSnapshot(OneItemLink):
 #------------------------------------------------------------------------------
 class File_Backup(ItemLink):
     """Backup file."""
-    _text = _(u'Backup')
-    _help = _(u'Create a backup of the selected file(s).')
+    _text = _('Backup')
+    _help = _('Creates a backup of the selected files.')
 
     def Execute(self):
         for fileInfo in self.iselected_infos():
@@ -336,9 +336,9 @@ class File_RevertToBackup(MultiLink):
 #------------------------------------------------------------------------------
 class File_Redate(ItemLink):
     """Move the selected files to start at a specified date."""
-    _text = _(u'Redate...')
-    _help = _(u'Change the modification time(s) of the selected file(s) to '
-              u'start at a specified date.')
+    _text = _('Redate...')
+    _help = _('Changes the modification times of the selected files to start '
+              'at a specified date.')
 
     @balt.conversation
     def Execute(self):

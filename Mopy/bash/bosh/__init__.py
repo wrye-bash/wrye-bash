@@ -3216,7 +3216,7 @@ class ModInfos(FileInfos):
         return self.get_bsa_lo(for_plugins=load_order.cached_active_tuple())
 
     @staticmethod
-    def plugin_wildcard(file_str=_(u'Mod Files')):
+    def plugin_wildcard(file_str=_('Plugins')):
         joinstar = ';*'.join(bush.game.espm_extensions)
         return f'{bush.game.display_name} {file_str} (*{joinstar})|*{joinstar}'
 
@@ -3393,7 +3393,9 @@ class ModInfos(FileInfos):
     def swapPluginsAndMasterVersion(self, arcSaves, newSaves, ask_yes):
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
-        arcPath, newPath = map(dirs[u'saveBase'].join, (arcSaves, newSaves))
+        # arcSave and newSaves always have backslash separators
+        arcPath, newPath = (dirs['saveBase'].join(env.convert_separators(s))
+                            for s in (arcSaves, newSaves))
         if load_order.swap(arcPath, newPath):
             self.refreshLoadOrder(unlock_lo=True)
         # Swap Oblivion version to memorized version
@@ -3455,14 +3457,14 @@ class SaveInfos(FileInfos):
         self.localSave = oblivionIni.getSetting(
             *bush.game.Ini.save_profiles_key,
             default=bush.game.Ini.save_prefix)
-        if self.localSave.endswith(u'\\'): self.localSave = self.localSave[:-1]
         # Hopefully will solve issues with unicode usernames # TODO(ut) test
-        self.localSave = decoder(self.localSave) # encoding = u'cp1252' ?
+        self.localSave = decoder(self.localSave.rstrip('\\')) ##: use cp1252?
 
     def __init__(self):
         self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
-        super().__init__(dirs['saveBase'].join(self.localSave), SaveInfo)
+        super().__init__(dirs['saveBase'].join(
+            env.convert_separators(self.localSave)), SaveInfo)
         # Save Profiles database
         self.profiles = bolt.PickleDict(
             dirs[u'saveBase'].join(u'BashProfiles.dat'), load_pickle=True)
@@ -3599,7 +3601,8 @@ class SaveInfos(FileInfos):
         self._setLocalSaveFromIni()
         if localSave == self.localSave: return # no change
         self.table.save()
-        self._initDB(dirs[u'saveBase'].join(self.localSave))
+        self._initDB(dirs['saveBase'].join(
+            env.convert_separators(self.localSave))) # always has backslashes
 
     def setLocalSave(self, localSave: str, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
@@ -3609,7 +3612,8 @@ class SaveInfos(FileInfos):
         # the setting correctly, kept previous behavior
         oblivionIni.saveSetting(*bush.game.Ini.save_profiles_key,
                                 value=localSave + u'\\')
-        self._initDB(dirs[u'saveBase'].join(self.localSave))
+        self._initDB(dirs['saveBase'].join(
+            env.convert_separators(self.localSave))) # always has backslashes
         if refreshSaveInfos: self.refresh()
 
 #------------------------------------------------------------------------------

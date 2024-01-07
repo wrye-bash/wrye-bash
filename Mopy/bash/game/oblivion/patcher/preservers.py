@@ -36,7 +36,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
     patcher_tags = {'Roads'}
     _config_key = u'RoadImporter'
 
-    logMsg = u'\n=== ' + _(u'Worlds Patched')
+    logMsg = '\n=== ' + _('Worlds Patched')
     _read_sigs = (b'CELL', b'WRLD', b'ROAD') ##: do we need cell??
 
     def __init__(self, p_name, p_file, p_sources):
@@ -132,7 +132,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
-        log('* ' + _('Powers Tweaked') + f': {sum(count.values())}')
+        log('* ' + _('Powers Tweaked: %(total_changed)d') % {
+            'total_changed': sum(count.values())})
         for srcMod in load_order.get_ordered(count):
             log(f'  * {srcMod}: {count[srcMod]:d}')
 

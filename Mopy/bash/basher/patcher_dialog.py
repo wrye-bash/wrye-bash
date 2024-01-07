@@ -72,7 +72,7 @@ class PatchDialog(DialogWindow):
         self.parent = parent
         self.bashed_patch = bashed_patch
         self.patchInfo = bashed_patch.fileInfo
-        title = _('Update ') + f'{self.patchInfo}'
+        title = _('Update %(bp_name)s') % {'bp_name': f'{self.patchInfo}'}
         super().__init__(parent, title=title, icon_bundle=Resources.bashBlue,
             sizes_dict=bass.settings)
         #--Data

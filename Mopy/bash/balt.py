@@ -1867,7 +1867,6 @@ class OneItemLink(EnabledLink):
 
     To be used in Link subclasses where self.selected is a list instance.
     """
-    ##: maybe edit _help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
     @property
@@ -2061,8 +2060,8 @@ def ask_uac_restart(message, mopy):
         switches = [_('Use one of the following command line switches:'), '',
                     _('--no-uac: always run normally'),
                     _('--uac: always run with Admin Privileges'), '',
-                    _('See the <A href="%(readmePath)s">readme</A> '
-                      'for more information.') % {'readmePath': readme}]
+                    _('See the %(readme)s for more information.') % {
+                        'readme': f'<A href="{readme}">readme</A>'}]
         ex = [_('How to avoid this message in the future'),
               _('Less information'), '\n'.join(switches)]
     return askYes(None, message, _('UAC Protection'), vista_buttons=btns,

@@ -189,6 +189,8 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     for module_loader, pkg_name, is_pkg in pkgutil.iter_modules([cur_dir]):
         if not is_pkg: # Skip it if it's not a package
             continue
+        if pkg_name == '_i18n': # Skip the vendored stuff, not ours
+            continue
         # Recurse into the package we just found
         _find_all_bash_modules(
             os.path.join(bash_path, pkg_name) if bash_path else u'bash',

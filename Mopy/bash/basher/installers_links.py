@@ -313,7 +313,7 @@ class Installers_ExportOrder(Installers_Link, AImportOrderParser):
         self.packages_exported = 0
         self.write_text_file(exp_path)
         self._showInfo(_('Exported order and installation status for '
-                         '%(exp_num)d package(s) to %(exp_path)s.') % {
+                         '%(exp_num)d packages to %(exp_path)s.') % {
             'exp_num': self.packages_exported, 'exp_path': exp_path},
             title=_('Export Order - Done'))
 

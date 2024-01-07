@@ -32,9 +32,9 @@ __all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
 
 class BSA_ExtractToProject(ItemLink):
     """Extracts one or more BSAs into projects."""
-    _text = _(u'Extract to Project(s)...')
-    _help = _(u'Extracts the contents of the selected BSA(s) into one or more '
-              u'projects, where they can be edited.')
+    _text = _('Extract to Project...')
+    _help = _('Extracts the contents of the selected BSAs into projects, '
+              'where they can be edited.')
 
     # TODO(inf) This is almost entirely copy-pasted from
     #  InstallerArchive_Unpack! Should be absorbed by a base class
@@ -42,13 +42,15 @@ class BSA_ExtractToProject(ItemLink):
         selected_bsas = [x for x in self.iselected_infos()]
         if len(selected_bsas) == 1:
             fn_bsa = selected_bsas[0].fn_key
-            result = self._askText(_(u'Extract %s to Project:') % fn_bsa,
+            result = self._askText(_('Extract %(target_bsa_name)s to '
+                                     'Project:') % {'target_bsa_name': fn_bsa},
                                    default=fn_bsa.fn_body)
             if not result: return
             # Error checking
             if (result := FName(result)).fn_ext in archives.readExts:
-                self._showWarning(_('%s is not a valid project name.') %
-                                  result)
+                self._showWarning(_('%(invalid_proj_name)s is not a valid '
+                                    'project name.') % {
+                    'invalid_proj_name': result})
                 return
             to_unpack = [(result, selected_bsas[0])]
         else:
@@ -57,16 +59,18 @@ class BSA_ExtractToProject(ItemLink):
         # More error checking
         # TODO(inf) Maybe create bosh.installers_data singleton?
         for project, _bsa_inf in to_unpack:
-            proj_path = bass.dirs[u'installers'].join(project)
+            proj_path = bass.dirs['installers'].join(project)
             if proj_path.is_file():
-                self._showWarning(_('%s is a file.') % project)
+                self._showWarning(_('%(invalid_proj_name)s is a '
+                                    'file.') % {'invalid_proj_name': project})
                 return
             if proj_path.is_dir():
-                question = _('%s already exists. Overwrite it?') % project
+                question = _('%(existing_proj)s already exists. Overwrite '
+                             'it?') % {'existing_proj': project}
                 if not self._askYes(question, default_is_yes=False):
                     return
                 # Clear existing project, user wanted to overwrite it
-                proj_path.rmtree(safety=u'Installers')
+                proj_path.rmtree(safety='Installers')
         # All error checking is done, proceed to extract
         with Progress(_(u'Extracting BSAs...')) as prog:
             prog_curr = 0.0
@@ -82,7 +86,7 @@ class BSA_ExtractToProject(ItemLink):
                 prog_curr += step_size
                 prog_next += step_size
         msg = _('Successfully extracted all selected BSAs. Open the '
-                'Installers tab to view and manage the created project(s).')
+                'Installers tab to view and manage the created projects.')
         self._showOk(msg, _('Extraction Completed'))
 
 class BSA_ListContents(ItemLink):

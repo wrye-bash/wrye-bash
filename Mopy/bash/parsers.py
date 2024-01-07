@@ -986,7 +986,9 @@ class ScriptText(_TextParser):
             if skipcomments:
                 scpt_lines =  self._filter_comments(scpt_lines)
                 if not scpt_lines: continue
-            progress((0.5 + (0.5 / y) * z), _(u'Exporting script %s.') % eid)
+            progress((0.5 + (0.5 / y) * z),
+                _('Exporting script %(script_fname)s.') % {
+                         'script_fname': eid})
             if x == 0 or skip != eid[:x].lower():
                 fileName = eid
                 if r and deprefix == fileName[:r].lower():
@@ -1030,7 +1032,9 @@ class ScriptText(_TextParser):
             present_recs = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(present_recs)
             for z, (rfid, record) in enumerate(present_recs):
-                progress((0.5 / y) * z, _('Reading scripts in %s.') % modInfo)
+                progress((0.5 / y) * z,
+                    _('Reading scripts in %(source_plugin)s.') % {
+                        'source_plugin': modInfo})
                 eid_data[record.eid] = record.script_source.splitlines(), rfid
 
     _changed_type = list
@@ -1074,9 +1078,12 @@ class ScriptText(_TextParser):
             y = len(files)
             for z, f in enumerate(files):
                 if f.cext != inisettings['ScriptFileExt']:
-                    progress(((1 / y) * z), _(u'Skipping file %s.') % f)
+                    progress(((1 / y) * z),
+                        _('Skipping file %(script_fname)s.') % {
+                            'script_fname': f})
                     continue
-                progress(((1 / y) * z), _(u'Reading file %s.') % f)
+                progress(((1 / y) * z), _('Reading file %(script_fname)s.') % {
+                    'script_fname': f})
                 self._read_script(root_dir.join(f))
         return bool(self.eid_data)
 

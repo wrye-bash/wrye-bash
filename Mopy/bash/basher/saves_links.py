@@ -25,6 +25,7 @@
 attribute points to SaveList singleton."""
 
 import io
+import os
 import re
 import shutil
 
@@ -82,8 +83,9 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         profileSaves = _win_join(item)
-        return bosh.saveInfos.get_profile_attr(profileSaves, u'info',
-                                               _(u'About %s:') % item)
+        return bosh.saveInfos.get_profile_attr(profileSaves, 'info',
+            _('About %(save_profile)s:') % {'save_profile': item})
+
     def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         profileSaves = _win_join(item)
@@ -148,8 +150,9 @@ class Saves_ProfilesData(balt.ListEditorData):
         files = [save_file for save_file in profileDir.ilist() if
                  bosh.SaveInfos.rightFileType(save_file)]
         if files:
-            message = _('Delete profile %s and the %d save files it '
-                        'contains?') % (profile, len(files))
+            message = _('Delete profile %(save_profile)s and the '
+                        '%(num_contained_saves)d save files it contains?') % {
+                'save_profile': profile, 'num_contained_saves': len(files)}
             if not askYes(self.parent, message, _('Delete Profile')):
                 return False
         #--Remove directory
@@ -174,12 +177,20 @@ class Saves_Profiles(ChoiceLink):
     class _ProfileLink(CheckLink, EnabledLink):
         @property
         def link_help(self):
-            profile_dir = Saves_Profiles._my_games.join(self._text)
-            return _(u'Set profile to %s (%s)') % (self._text, profile_dir)
+            profile_dir = Saves_Profiles._my_games.join(
+                bush.game.Ini.save_prefix, self._text)
+            return _('Set profile to %(save_profile_name)s '
+                     '(%(save_profile_dir)s).') % {
+                'save_profile_name': self._text,
+                'save_profile_dir': profile_dir}
+
         @property
         def relativePath(self): return _win_join(self._text)
+
         def _check(self): return bosh.saveInfos.localSave == self.relativePath
+
         def _enable(self): return not self._check()
+
         def Execute(self):
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
@@ -202,7 +213,8 @@ class Saves_Profiles(ChoiceLink):
         def link_help(self):
             profile_dir = Saves_Profiles._my_games.join(
                 bush.game.Ini.save_prefix)
-            return _(u'Set profile to the default (%s).') % profile_dir
+            return _('Set profile to the default (%(save_profile_dir)s).') % {
+                'save_profile_dir': profile_dir}
 
         @property
         def relativePath(self): return bush.game.Ini.save_prefix
@@ -263,8 +275,7 @@ class Save_ImportFace(OneItemLink):
         srcDir = self._selected_info.info_dir
         exts = u';*'.join(bush.game.espm_extensions | {
             bush.game.Ess.ext, bush.game.Ess.ext[-1] + u'r'})
-        wildcard = _('%s Files') % bush.game.display_name + \
-                   f' (*{exts})|*{exts}'
+        wildcard = _('Source Files') + f' (*{exts})|*{exts}'
         #--File dialog
         srcPath = self._askOpen(title=_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
@@ -318,8 +329,9 @@ class Save_ExportScreenshot(OneItemLink):
 
     def Execute(self):
         imagePath = FileSave.display_dialog(Link.Frame,
-            _(u'Save Screenshot as:'), bass.dirs[u'patches'].s,
-            _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
+            title=_('Save Screenshot As:'), defaultDir=bass.dirs['patches'].s,
+            defaultFile=_('Screenshot %(save_name)s.jpg') % {
+                'save_name': self._selected_item}, wildcard='*.jpg')
         if not imagePath: return
         image = BmpFromStream(*self._selected_info.header.image_parameters)
         image.save_bmp(imagePath.s)
@@ -435,9 +447,12 @@ class Save_EditCreatedData(balt.ListEditorData):
         items.sort(key=lambda x: self.name_nameRecords[x][1][0]._rec_sig)
         return items
 
-    _attrs = {b'CLOT': (f'{_("Clothing")}\n{_("Flags: ")}', ()), b'ARMO': (
-        f'{_("Armor")}\n{_("Flags: ")}', ('strength', 'value', 'weight')),
-              b'WEAP': ('', ('damage', 'value', 'speed', 'reach', 'weight'))}
+    _attrs = {
+        b'CLOT': (f'{_("Clothing")}\n{_("Flags: %(active_flags)s")}', ()),
+        b'ARMO': (f'{_("Armor")}\n{_("Flags: %(active_flags)s")}', (
+            'strength', 'value', 'weight')),
+        b'WEAP': ('', ('damage', 'value', 'speed', 'reach', 'weight')),
+    }
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = []
@@ -450,8 +465,8 @@ class Save_EditCreatedData(balt.ListEditorData):
             if rsig == b'WEAP':
                 buff.append(bush.game.weaponTypes[record.weaponType])
             else:
-                buff.append(info_str + ', '.join(
-                    record.biped_flags.getTrueAttrs()))
+                buff.append(info_str % {'active_flags': ', '.join(
+                    record.biped_flags.getTrueAttrs())})
             for attr in attrs:
                 buff.append(f'{attr}: {getattr(record, attr)}')
         #--Enchanted? Switch record to enchantment.
@@ -497,8 +512,9 @@ class Save_EditCreatedData(balt.ListEditorData):
                         record.getSize()
                     count += 1
             self.saveFile.safeSave()
-            showOk(self.parent, _('Names modified: %d.') % count,
-                   self.saveFile.fileInfo.fn_key)
+            msg = _('Names modified: %(num_names_changed)d.') % {
+                'num_names_changed': count}
+            showOk(self.parent, msg, title=self.saveFile.fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
 class Save_EditCreated(OneItemLink):
@@ -608,8 +624,9 @@ class Save_Move(ChoiceLink):
     def __init__(self, copyMode=False):
         super(Save_Move, self).__init__()
         self.copyMode = copyMode
-        self._help_str = _(u'Copy save(s) to %s') if copyMode else _(
-            u'Move save(s) to %s')
+        self._help_str = (_('Copy the selected saves to %(save_profile)s.')
+                          if copyMode else
+                          _('Copy the selected saves to %(save_profile)s.'))
 
     @property
     def _choices(self): return initialization.getLocalSaveDirs()
@@ -619,26 +636,27 @@ class Save_Move(ChoiceLink):
         Save_Move.local = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
-            _text = _(u'Default')
-            _help = _self._help_str % bass.dirs[u'saveBase'].join(
-                bush.game.Ini.save_prefix)
+            _text = _('Default')
+            _help = _self._help_str % {
+                'save_profile': bush.game.Ini.save_prefix}
             def _enable(self):
                 return Save_Move.local != bush.game.Ini.save_prefix
-            def Execute(self): _self.MoveFiles(_(u'Default'))
+            def Execute(self): _self.MoveFiles(profile=None)
         class _SaveProfileLink(EnabledLink):
             @property
             def link_help(self):
-                return _self._help_str % bass.dirs[u'saveBase'].join(
-                    bush.game.Ini.save_prefix, self._text)
+                return _self._help_str % {
+                    'save_profile': os.path.join(
+                        bush.game.Ini.save_prefix, self._text)}
             def _enable(self):
                 return Save_Move.local != _win_join(self._text)
-            def Execute(self): _self.MoveFiles(self._text)
+            def Execute(self): _self.MoveFiles(profile=self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
 
-    def MoveFiles(self,profile):
-        destDir = bass.dirs[u'saveBase'].join(u'Saves')
-        if profile != _(u'Default'):
+    def MoveFiles(self, profile: str | None):
+        destDir = bass.dirs['saveBase'].join('Saves')
+        if profile is not None:
             destDir = destDir.join(profile)
         if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
@@ -650,11 +668,15 @@ class Save_Move(ChoiceLink):
                 moved = bosh.saveInfos.delete_refresh(self.selected, None,
                                                       check_existence=True)
                 self.window.RefreshUI(to_del=moved)
-        msg = (_(u'%d files copied to %s.') if self.copyMode else _(
-            u'%d files moved to %s.')) % (count, profile)
-        self._showInfo(msg, title=_(u'Copy File'))
+        profile_rel = os.path.relpath(destDir, bass.dirs['saveBase'])
+        msg = (_('%(num_save_files)d files copied to %(save_profile)s.')
+               if self.copyMode else
+               _('%(num_save_files)d files moved to %(save_profile)s.'))
+        self._showInfo(msg % {'num_save_files': count,
+                              'save_profile': profile_rel},
+            title=_('Saves Copied') if self.copyMode else _('Saves Moved'))
 
-    def _move_saves(self, destDir, profile):
+    def _move_saves(self, destDir, profile: str | None):
         savesTable = bosh.saveInfos.table
         #--bashDir
         destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
@@ -663,8 +685,13 @@ class Save_Move(ChoiceLink):
         ask = True
         for fileName in self.selected:
             if ask and destDir.join(fileName).exists():
-                message = (_(u'A file named %s already exists in %s. Overwrite it?')
-                    % (fileName,profile))
+                profile_dir = bush.game.Ini.save_prefix
+                if profile is not None:
+                    profile_dir = os.path.join(profile_dir, profile)
+                message = (_('A file named %(conflicting_save)s already '
+                             'exists in %(save_profile)s. Overwrite it?') % {
+                    'conflicting_save': fileName,
+                    'save_profile': profile_dir})
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -702,11 +729,12 @@ class Save_RepairAbomb(OneItemLink):
         if abombCounter <= newCounter:
             self._showOk(_(u'Abomb counter is too low to reset.'))
             return
-        message = _('Reset Abomb counter? (Current progress: %.0f%%.)'
-                    ) % progress
-        message += '\n\n' + _("Note: Abomb animation slowing won't occur "
-                              "until progress is near 100%.")
-        if self._askYes(message, _('Repair Abomb'), default_is_yes=False):
+        msg = '\n\n'.join([
+            _('Reset Abomb counter (current progress: '
+              '%(abomb_progress)s)?') % {'abomb_progress': f'{progress:.0f}%'},
+            _("Note: Abomb animation slowing won't occur until progress is "
+              "near %(critical_pct)s.") % {'critical_pct': '100%'}])
+        if self._askYes(msg, title=_('Repair Abomb'), default_is_yes=False):
             saveFile.setAbomb(newCounter)
             saveFile.safeSave()
             self._showOk(_(u'Abomb counter reset.'))
@@ -734,14 +762,16 @@ class Save_ReweighPotions(OneItemLink):
         #--Query value
         default = u'%0.2f' % (bass.settings.get(
             u'bash.reweighPotions.newWeight', 0.2),)
-        newWeight = self._askText(_(u'Set weight of all player potions to...'),
-                                  title=_(u'Reweigh Potions'), default=default)
+        newWeight = self._askText(
+            _('Set weight of all player-created potions to:'),
+            default=default, title=_('Reweigh Potions'))
         if not newWeight: return
         try:
             newWeight = float(newWeight)
             if newWeight < 0 or newWeight > 100: raise ValueError
         except ValueError:
-            self._showOk(_(u'Invalid weight: %s') % newWeight)
+            self._showError(_('Invalid weight: %(invalid_weight)s') % {
+                'invalid_weight': newWeight}, title=_('Reweigh Potions'))
             return
         bass.settings[u'bash.reweighPotions.newWeight'] = newWeight
         #--Do it
@@ -760,11 +790,12 @@ class Save_ReweighPotions(OneItemLink):
             if count:
                 saveFile.safeSave(SubProgress(progress,0.6,1.0))
                 progress.Destroy()
-                self._showOk(_(u'Potions reweighed: %d.') % count,
-                             self._selected_item)
+                self._showOk(_('Potions reweighed: %(num_reweighed)d.') % {
+                    'num_reweighed': count}, title=_('Reweigh Potions'))
             else:
                 progress.Destroy()
-                self._showOk(_(u'No potions to reweigh!'), self._selected_item)
+                self._showOk(_('No potions to reweigh!'),
+                    title=_('Reweigh Potions'))
 
 #------------------------------------------------------------------------------
 class Save_Stats(OneItemLink):
@@ -804,9 +835,10 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
 #------------------------------------------------------------------------------
 class Save_StatObse(_Save_StatCosave):
     """Dump .obse records."""
-    _text = _(u'Dump %s Contents') % bush.game.Se.cosave_ext.lower()
-    _help = _(u'Dumps contents of associated %s cosave into a log.') % \
-            bush.game.Se.se_abbrev
+    _text = _('Dump %(co_ext)s Contents') % {
+        'co_ext': bush.game.Se.cosave_ext.lower()}
+    _help = _('Create a report of the contents of the associated %(xse_abbr)s '
+              'cosave.') % {'xse_abbr': bush.game.Se.se_abbrev}
 
     def _get_cosave(self):
         return self._selected_info.get_xse_cosave()
@@ -842,26 +874,31 @@ class Save_Unbloat(OneItemLink):
         if not createdCounts and not nullRefCount:
             self._showOk(_(u'No bloating found.'), self._selected_item)
             return
-        message = [_(u'Remove savegame bloating?')]
+        msg = [_('Remove savegame bloating?')]
         if createdCounts:
             for (created_item_rec_type, rec_full), count_ in sorted(
                     createdCounts.items()):
-                message.append(u'  %s %s: %u' % (
-                    created_item_rec_type, rec_full, count_))
+                msg.append(f'  {created_item_rec_type} {rec_full}: {count_}')
         if nullRefCount:
-            message.append(f'  {_("Null Ref Objects:")} {nullRefCount:d}')
-        message.extend(['', _('WARNING: This is a risky procedure that may '
-            'corrupt your savegame!  Use only if necessary!')])
-        if not self._askYes('\n'.join(message), _('Remove bloating?')):
+            msg.append('  ' + _('Null Reference Objects: %(num_ref_objs)d') % {
+                'num_ref_objs': nullRefCount})
+        msg.append('')
+        msg.append(_('WARNING: This is a risky procedure that may corrupt '
+                     'your savegame! Use it only if necessary!'))
+        if not self._askYes('\n'.join(msg), _('Remove bloating?')):
             return
         #--Remove bloating
-        with balt.Progress(_(u'Removing Bloat')) as progress:
+        with balt.Progress(_('Removing Bloat')) as progress:
             nums = saveFile.removeBloating(createdCounts,True,SubProgress(progress,0,0.9))
-            progress(0.9,_(u'Saving...'))
+            progress(0.9,_('Saving...'))
             saveFile.safeSave()
-        self._showOk((_(u'Uncreated Objects: %d') + u'\n' +
-                      _(u'Uncreated Refs: %d') + u'\n' +
-                      _(u'UnNulled Refs: %d')) % nums, self._selected_item)
+        msg = [_('Uncreated Objects: %(num_uncreated_objs)d'),
+               _('Uncreated References: %(num_uncreated_refs)d'),
+               _('Un-nulled Refs: %(num_unnulled_refs)d')]
+        self._showOk('\n'.join(msg) % {'num_uncreated_objs': nums[0],
+                                       'num_uncreated_refs': nums[1],
+                                       'num_unnulled_refs': nums[2]},
+            self._selected_item)
         self.window.RefreshUI(redraw=[self._selected_item])
 
 #------------------------------------------------------------------------------
@@ -873,9 +910,9 @@ class Save_UpdateNPCLevels(EnabledLink):
     def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
-        msg = _('This will relevel the NPCs in the selected save game(s) '
-                'according to the npc levels in the currently active mods.  '
-                'This supersedes the older "Import NPC Levels" command.')
+        msg = _('This will relevel the NPCs in the selected saves according '
+                'to the NPC levels in the currently active plugins. This '
+                'supersedes the older "Import NPC Levels" command.')
         if not self._askContinue(msg, u'bash.updateNpcLevels.continue',
                                  _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
@@ -886,7 +923,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
-                subProgress(index, _(u'Scanning %s') % modName)
+                subProgress(index, _('Scanning %(scanning_plugin)s') % {
+                    'scanning_plugin': modName})
                 modInfo = bosh.modInfos[modName]
                 modFile = ModFile(modInfo, lf)
                 try:
@@ -907,7 +945,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             msg = [_(u'NPCs Releveled:')]
             for index, saveInfo in enumerate(self.iselected_infos()):
-                subProgress(index, _('Updating %s') % saveInfo)
+                subProgress(index, _('Updating %(updating_save)s') % {
+                    'updating_save': saveInfo})
                 saveFile = _saves.SaveFile(saveInfo)
                 saveFile.load()
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
@@ -935,7 +974,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                         releveledCount += 1
                         fid_rec[recId] = npc.getTuple(version)
                 #--Save changes?
-                subProgress(index + 0.5, _('Updating %s') % saveInfo)
+                subProgress(index + 0.5, _('Updating %(updating_save)s') % {
+                    'updating_save': saveInfo})
                 if releveledCount:
                     saveFile.safeSave()
                 msg.append(f'{releveledCount:d} {saveInfo}')

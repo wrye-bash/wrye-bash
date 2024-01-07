@@ -77,45 +77,48 @@ class PatchFile(ModFile):
                         'imp_plugin': mod, 'num_recs': skipcount})
         if self.needs_filter_mods:
             log.setHeader('===' + _('Plugins Needing Filter Tag'))
-            log(_('The following plugins are missing masters and have tags '
-                  'that indicate that you want to import data from them into '
-                  'the Bashed Patch. However, since they have missing masters '
-                  'and do not have a Filter tag they have been skipped. '
-                  'Consider adding a Filter tag to them or installing the '
-                  'required masters. See the '
-                  '[[%(filtering_section)s|Filtering]] section of the readme '
-                  'for more information.') % {
-                'filtering_section': _link('patch-filter')})
+            log(_("The following plugins are missing masters and have tags "
+                  "that indicate that you want to import data from them into "
+                  "the Bashed Patch. However, since they have missing masters "
+                  "and do not have a Filter tag they have been skipped. "
+                  "Consider adding a Filter tag to them or installing the "
+                  "required masters. See the '%(filtering_link)s' section of "
+                  "the readme for more information.") % {
+                'filtering_link': f"[[{_link('patch-filter')}"
+                                  f"|{_('Filtering')}]]"})
             for mod in self.needs_filter_mods: log(f'* {mod}')
         if self.loadErrorMods:
             log.setHeader('=== ' + _('Load Error Plugins'))
             log(_('The following plugins had load errors and were skipped '
                   'while building the patch. Most likely this problem is due '
                   'to a badly formatted plugin. For more info, generate a '
-                  '[[%(url_bbd)s|BashBugDump]].') % {
-                'url_bbd': 'https://github.com/wrye-bash/wrye-bash/wiki/'
-                           '%5Bgithub%5D-Reporting-a-bug#the-bashbugdumplog'})
+                  '%(bashbugdump_link)s.') % {
+                'bashbugdump_link': f"[[https://github.com/wrye-bash"
+                                    f"/wrye-bash/wiki/%5Bgithub%5D-Reporting-a"
+                                    f"-bug#the-bashbugdumplog|BashBugDump]]"})
             for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
         if self.worldOrphanMods:
             log.setHeader('=== ' + _('World Orphans'))
             log(_("The following plugins had orphaned world groups, which "
                   "were skipped. This is not a major problem, but you might "
-                  "want to use Wrye Bash's "
-                  "[[%(url_rwo)s|Remove World Orphans]] command to repair "
+                  "want to use Wrye Bash's '%(link_rwo)s' command to repair "
                   "the plugins.") % {
-                'url_rwo': _link('modsRemoveWorldOrphans')})
+                'link_rwo': f"[[{_link('modsRemoveWorldOrphans')}"
+                            f"|{_('Remove World Orphans')}]]"})
             for mod in self.worldOrphanMods: log(f'* {mod}')
         if self.compiledAllMods:
             log.setHeader('=== ' + _('Compiled All'))
             log(_("The following plugins have an empty compiled version of "
                   "genericLoreScript. This is usually a sign that the plugin "
-                  "author did a __compile all__ while editing scripts. This "
-                  "may interfere with the behavior of other plugins that "
+                  "author did a %(compile_all)s while editing scripts. "
+                  "This may interfere with the behavior of other plugins that "
                   "intentionally modify scripts from %(game_name)s (e.g. Cobl "
                   "and Unofficial Oblivion Patch). You can use Wrye Bash's "
-                  "[[%(url_decomp)s|Decompile All]] command to repair the "
-                  "plugins.") % {'game_name': bush.game.master_file,
-                                 'url_decomp': _link('modsDecompileAll')})
+                  "'%(link_decomp_all)s' command to repair the plugins.") % {
+                'compile_all': f'__{_("Compile All")}__',
+                'game_name': bush.game.master_file,
+                'link_decomp_all': f"[[{_link('modsDecompileAll')}"
+                                   f"|{_('Decompile All')}]]"})
             for mod in self.compiledAllMods: log(f'* {mod}')
         log.setHeader('=== ' + _('Active Plugins'), True)
         for mname, modinfo in self.merged_or_loaded_ord.items():
