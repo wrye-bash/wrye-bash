@@ -322,7 +322,7 @@ class SaveFile(object):
                     rec_id, *atts, siz = unpack_many(ins, '=IBIBH')
                     self.fid_recNum[rec_id] = (*atts, ins.read(siz))
                 #--Temp Effects, fids, worldids
-                progress(ins.tell(), _('Reading fids, worldids...'))
+                progress(ins.tell(), _('Reading FormIDs and world IDs...'))
                 tmp_effects_size = unpack_int(ins)
                 self.tempEffects = ins.read(tmp_effects_size)
                 #--Fids
@@ -351,7 +351,7 @@ class SaveFile(object):
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.fsize)
             #--Header
-            progress(0,_(u'Writing Header.'))
+            progress(0,_('Writing header.'))
             self.header.dump_header(out)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
@@ -381,7 +381,7 @@ class SaveFile(object):
             _pack(u'I',len(self.tempEffects))
             out.write(self.tempEffects)
             #--Fids
-            progress(0.9,_(u'Writing fids, worldids.'))
+            progress(0.9,_('Writing FormIDs and world IDs.'))
             fidsPos = out.tell()
             out.seek(fidsPointerPos)
             _pack(u'I',fidsPos)
@@ -440,18 +440,19 @@ class SaveFile(object):
         #--ABomb
         (tesClassSize,abombCounter,abombFloat) = self.getAbomb()
         log.setHeader(_('Abomb Counter'))
-        log(_('  As integer: %(abomb_counter)s') % {
+        log(f"  {_('As integer: %(abomb_counter)s')}" % {
             'abomb_counter': f'0x{abombCounter:08X}'})
-        log(_('  As float: %(abomb_counter)f') % {'abomb_counter': abombFloat})
+        log(f"  {_('As float: %(abomb_counter)f')}" % {
+            'abomb_counter': abombFloat})
         #--FBomb
         log.setHeader(_('Fbomb Counter'))
-        log(_('  Next in-game object: %(next_obj_id)s') % {
+        log(f"  {_('Next in-game object: %(next_obj_id)s')}" % {
             'next_obj_id': f'{__unpacker(self.preGlobals[:4]):%08X}'})
         #--Array Sizes
-        log.setHeader(u'Array Sizes')
+        log.setHeader(_('Array Sizes'))
         log(f'  {len(self.created)}\t{_("Created Items")}')
         log(f'  {len(self.fid_recNum)}\t{_("Records")}')
-        log(f'  {len(self.fids)}\t{_("Fids")}')
+        log(f'  {len(self.fids)}\t{_("FormIDs")}')
         #--Created Types
         log.setHeader(_(u'Created Items'))
         created_sizes = defaultdict(int)
@@ -506,16 +507,16 @@ class SaveFile(object):
                     objRefNullBases += 1
         rec_type_map = bush.game.save_rec_types
         #--Fids log
-        log.setHeader(_(u'Fids'))
-        log('  Refed\tChanged\tMI    Mod Name')
-        log(f'  {lostRefs:d}\t\t     Lost Refs (Fid == 0)')
+        log.setHeader(_('FormIDs'))
+        log(f"  {_('Refed')}\t{_('Changed')}\t{_('MI')}\t    {_('Plugin')}")
+        log(f"  {lostRefs:d}\t\t     {_('Lost Refs (FormID is 0)')}")
         for modIndex, (irefed, changes) in enumerate(zip(idHist, changeHisto)):
             if irefed or changes:
                 log(f'  {irefed:d}\t{changes:d}\t{modIndex:02X}   '
                     f'{getMaster(modIndex)}')
         #--Lost Changes
         if lostChanges:
-            log.setHeader(_(u'LostChanges'))
+            log.setHeader(_('Lost Changes'))
             for rec_id, rec_kind in dict_sort(lostChanges):
                 log(hex(rec_id) + rec_type_map.get(rec_kind, f'{rec_kind}'))
         for rec_kind, modHisto in dict_sort(typeModHisto):
@@ -523,13 +524,13 @@ class SaveFile(object):
                           f'{rec_type_map.get(rec_kind, _("Unknown"))}')
             for modIndex,count in dict_sort(modHisto):
                 log(f'  {count:d}\t{getMaster(modIndex)}')
-            log(f'  {sum(modHisto.values()):d}\tTotal')
+            log(f"  {sum(modHisto.values()):d}\t{_('Total')}")
         objRefBases = {k: v for k, v in objRefBases.items() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
-            log(f' Null Bases: {objRefNullBases}')
+            log(f" {_('Null Bases')}: {objRefNullBases}")
         if objRefBases:
-            log(_(u' Count IRef     BaseId'))
+            log(f" {_('Count')} {_('IRef')}     {_('Base ID')}")
             for iref, (count, cumSize) in dict_sort(objRefBases):
                 if iref >> 24 == 255:
                     parentid = iref

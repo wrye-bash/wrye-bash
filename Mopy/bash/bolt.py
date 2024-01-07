@@ -1787,7 +1787,8 @@ class ListInfo:
     def unique_key(self, new_root, ext=u'', add_copy=False):
         if self.__class__._valid_exts_re and not ext:
             ext = self.fn_key.fn_ext
-        new_name = FName(new_root + (_(' Copy') if add_copy else '') + ext)
+        new_name = FName(new_root +
+                         (f" {_('Copy')}" if add_copy else '') + ext)
         if new_name == self.fn_key: # new and old names are ci-same
             return None
         return self.unique_name(new_name)

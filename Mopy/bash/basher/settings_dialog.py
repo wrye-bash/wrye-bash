@@ -985,11 +985,15 @@ class BackupsPage(_AFixedPage):
             if error_msg and not askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            m = [_('Your Bash settings have been successfully extracted.'), _(
-                'Backup Path: ') + settings_file.s, '', _('Before the '
-                'settings can take effect, Wrye Bash must restart.'),
+            m = [_('Your Wrye Bash settings have been successfully '
+                   'extracted.'),
+                 _('Backup Path: %(backup_file)s') % {
+                     'backup_file': settings_file.s},
+                 '',
+                 _('Before the settings can take effect, Wrye Bash must '
+                   'restart.'),
                 _('Click OK to restart now.')]
-            showInfo(self, '\n'.join(m), _('Bash Settings Extracted'))
+            showInfo(self, '\n'.join(m), _('Wrye Bash Settings Extracted'))
             try: # we currently disallow backup and restore on the same boot
                 bass.sys_argv.remove(u'--backup')
             except ValueError:

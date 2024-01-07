@@ -447,9 +447,12 @@ class Save_EditCreatedData(balt.ListEditorData):
         items.sort(key=lambda x: self.name_nameRecords[x][1][0]._rec_sig)
         return items
 
-    _attrs = {b'CLOT': (f'{_("Clothing")}\n{_("Flags: ")}', ()), b'ARMO': (
-        f'{_("Armor")}\n{_("Flags: ")}', ('strength', 'value', 'weight')),
-              b'WEAP': ('', ('damage', 'value', 'speed', 'reach', 'weight'))}
+    _attrs = {
+        b'CLOT': (f'{_("Clothing")}\n{_("Flags: %(active_flags)s")}', ()),
+        b'ARMO': (f'{_("Armor")}\n{_("Flags: %(active_flags)s")}', (
+            'strength', 'value', 'weight')),
+        b'WEAP': ('', ('damage', 'value', 'speed', 'reach', 'weight')),
+    }
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = []
@@ -462,8 +465,8 @@ class Save_EditCreatedData(balt.ListEditorData):
             if rsig == b'WEAP':
                 buff.append(bush.game.weaponTypes[record.weaponType])
             else:
-                buff.append(info_str + ', '.join(
-                    record.biped_flags.getTrueAttrs()))
+                buff.append(info_str % {'active_flags': ', '.join(
+                    record.biped_flags.getTrueAttrs())})
             for attr in attrs:
                 buff.append(f'{attr}: {getattr(record, attr)}')
         #--Enchanted? Switch record to enchantment.
